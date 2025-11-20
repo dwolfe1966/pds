@@ -416,10 +416,93 @@ const seedData = () => {
       emailAddresses: ['michael.williams@example.com'],
       relatives: [],
       associatedRecords: []
+    },
+    // Guaranteed test people for requested searches
+    {
+      id: generateId('person'),
+      fullName: 'David Wolfe',
+      age: 38,
+      ageRange: '35-39',
+      dateOfBirth: '1985-07-20',
+      location: 'San Francisco, CA',
+      addresses: [{
+        street: '100 Market St',
+        city: 'San Francisco',
+        state: 'CA',
+        zip: '94102',
+        type: 'current'
+      }],
+      phoneNumbers: ['555-2001'],
+      emailAddresses: ['david.wolfe@example.com'],
+      relatives: [{
+        name: 'Sarah Wolfe',
+        relation: 'spouse'
+      }],
+      associatedRecords: []
+    },
+    {
+      id: generateId('person'),
+      fullName: 'Tim Chin',
+      age: 29,
+      ageRange: '25-29',
+      dateOfBirth: '1994-11-05',
+      location: 'Seattle, WA',
+      addresses: [{
+        street: '200 Pine St',
+        city: 'Seattle',
+        state: 'WA',
+        zip: '98101',
+        type: 'current'
+      }],
+      phoneNumbers: ['555-2002'],
+      emailAddresses: ['tim.chin@example.com'],
+      relatives: [],
+      associatedRecords: []
+    },
+    {
+      id: generateId('person'),
+      fullName: 'Jerome Ang',
+      age: 45,
+      ageRange: '45-49',
+      dateOfBirth: '1978-02-14',
+      location: 'Boston, MA',
+      addresses: [{
+        street: '300 Boylston St',
+        city: 'Boston',
+        state: 'MA',
+        zip: '02116',
+        type: 'current'
+      }],
+      phoneNumbers: ['555-2003'],
+      emailAddresses: ['jerome.ang@example.com'],
+      relatives: [{
+        name: 'Lisa Ang',
+        relation: 'spouse'
+      }],
+      associatedRecords: []
+    },
+    {
+      id: generateId('person'),
+      fullName: 'Kwan Park',
+      age: 33,
+      ageRange: '30-34',
+      dateOfBirth: '1990-09-30',
+      location: 'Austin, TX',
+      addresses: [{
+        street: '400 Congress Ave',
+        city: 'Austin',
+        state: 'TX',
+        zip: '78701',
+        type: 'current'
+      }],
+      phoneNumbers: ['555-2004'],
+      emailAddresses: ['kwan.park@example.com'],
+      relatives: [],
+      associatedRecords: []
     }
   ];
   
-  // Generate 10 variations for each requested search name
+  // Generate 10 variations for each requested search name (for more realistic results)
   const requestedSearches = [
     { firstName: 'David', lastName: 'Wolfe' },
     { firstName: 'Tim', lastName: 'Chin' },

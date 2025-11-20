@@ -1,42 +1,63 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const ResultCard = ({ result }) => {
+const ResultCard = ({ result, onClick }) => {
   const navigate = useNavigate();
 
-  const handleViewDetails = () => {
-    // Store result in sessionStorage for signup page
+  const handleViewDetails = (e) => {
+    e.stopPropagation(); // Prevent parent onClick if present
+    // Store result in sessionStorage for preview/signup pages
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify({
+      id: result.id,
       fullName: result.fullName,
       location: result.location,
-      ageRange: result.ageRange
+      ageRange: result.ageRange,
+      ...result
     }));
     
-    // Navigate to signup with person info in URL
-    const params = new URLSearchParams({
-      selected: result.id,
-      personName: result.fullName,
-      personLocation: result.location || '',
-      personAge: result.ageRange || ''
-    });
-    navigate(`/signup?${params.toString()}`);
+    // Navigate to preview page (which will show teaser and link to signup)
+    navigate(`/search/${result.id}`);
   };
 
   return (
     <div style={{ 
-      border: '1px solid #ccc', 
+      border: '2px solid #ddd', 
       padding: '1.5rem', 
       marginBottom: '1rem', 
-      borderRadius: '4px',
-      transition: 'box-shadow 0.2s',
+      borderRadius: '8px',
+      backgroundColor: '#fff',
+      transition: 'all 0.2s',
       cursor: 'pointer'
     }}
-    onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
-    onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+      e.currentTarget.style.borderColor = '#0e123b';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.boxShadow = 'none';
+      e.currentTarget.style.borderColor = '#ddd';
+    }}
+    onClick={onClick || handleViewDetails}
     >
-      <h3 style={{ margin: 0, color: '#0e123b', marginBottom: '0.5rem' }}>{result.fullName}</h3>
-      <p style={{ margin: '0.5rem 0', color: '#666' }}>Age: {result.ageRange}</p>
-      <p style={{ margin: '0.5rem 0', color: '#666' }}>Location: {result.location}</p>
+      <h3 style={{ 
+        margin: 0, 
+        color: '#0e123b', 
+        marginBottom: '0.75rem',
+        fontSize: '1.3rem',
+        fontWeight: 'bold'
+      }}>
+        {result.fullName}
+      </h3>
+      {result.ageRange && (
+        <p style={{ margin: '0.5rem 0', color: '#666', fontSize: '0.95rem' }}>
+          <strong>Age:</strong> {result.ageRange}
+        </p>
+      )}
+      {result.location && (
+        <p style={{ margin: '0.5rem 0', color: '#666', fontSize: '0.95rem' }}>
+          <strong>Location:</strong> {result.location}
+        </p>
+      )}
       <button
         onClick={handleViewDetails}
         style={{
@@ -48,8 +69,11 @@ const ResultCard = ({ result }) => {
           borderRadius: '4px',
           cursor: 'pointer',
           fontSize: '1rem',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          transition: 'background-color 0.2s'
         }}
+        onMouseEnter={(e) => e.target.style.backgroundColor = '#1a1f4d'}
+        onMouseLeave={(e) => e.target.style.backgroundColor = '#0e123b'}
       >
         View Full Report
       </button>

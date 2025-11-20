@@ -7,6 +7,8 @@ import HomePage from './pages/sales/HomePage';
 import AboutPage from './pages/sales/AboutPage';
 import ContactPage from './pages/sales/ContactPage';
 import LandingPage from './pages/sales/LandingPage';
+import NameSearchLandingPage from './pages/sales/NameSearchLandingPage';
+import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
 import SalesSearchResultsPage from './pages/sales/SearchResultsPage';
 import SearchDetailPreviewPage from './pages/sales/SearchDetailPreviewPage';
 import SignupPage from './pages/sales/SignupPage';
@@ -59,6 +61,12 @@ const App = () => {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/search" element={<LandingPage />} />
+          {/* Name search flow (mimics privaterecords.net) */}
+          <Route path="/name/landing" element={<NameSearchLandingPage />} />
+          <Route path="/name/loader" element={<NameSearchLoaderPage />} />
+          <Route path="/name/search-result" element={<SalesSearchResultsPage />} />
+          <Route path="/name/signup" element={<SignupPage />} />
+          {/* Legacy routes */}
           <Route path="/search-results" element={<SalesSearchResultsPage />} />
           <Route path="/search/:id" element={<SearchDetailPreviewPage />} />
           <Route path="/signup" element={<SignupPage />} />
