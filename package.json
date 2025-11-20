@@ -1,0 +1,22 @@
+{
+  "name": "idlookup-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.10.0"
+  },
+  "scripts": {
+    "start": "parcel public/index.html --port 3000",
+    "build": "parcel build public/index.html --dist-dir build",
+    "server": "node server/index.js",
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "install-server": "cd server && npm install",
+    "predeploy": "npm run build"
+  },
+  "devDependencies": {
+    "parcel": "^2.9.3",
+    "concurrently": "^8.2.0"
+  }
+}
