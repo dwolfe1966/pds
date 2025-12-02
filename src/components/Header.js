@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import SalesNav from './SalesNav';
 import MemberNav from './MemberNav';
 import AdminNav from './AdminNav';
+import styles from './Header.module.css';
 
 const Header = () => {
   const { token, user } = useAuth();
@@ -16,7 +17,7 @@ const Header = () => {
     navComponent = <MemberNav />;
   }
   return (
-    <header style={{ backgroundColor: '#0e123b', color: '#fff', padding: '1rem' }}>
+    <header className={styles.header}>
       {navComponent}
     </header>
   );

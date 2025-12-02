@@ -1,11 +1,13 @@
 import React from 'react';
+import '../../styles/contentContainer.css';
 
 /**
  * Privacy Policy page outlining how IDLookup.AI handles user data and privacy.
  */
 const PrivacyPage = () => {
   return (
-    <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+    <main className="pageBackground">
+      <div className="contentContainer contentContainerNarrow">
       <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Privacy Policy</h1>
       <p style={{ marginBottom: '2rem', color: '#666', fontStyle: 'italic' }}>
         Last updated: {new Date().toLocaleDateString()}
@@ -84,6 +86,7 @@ const PrivacyPage = () => {
           Address: [Your Company Address]
         </p>
       </section>
+      </div>
     </main>
   );
 };

@@ -68,7 +68,7 @@ const PaymentPage = () => {
         <div style={{ 
           padding: '1.5rem', 
           backgroundColor: '#f0f7ff', 
-          border: '2px solid #0e123b',
+          border: '2px solid #0d5d2f',
           borderRadius: '8px', 
           marginBottom: '2rem' 
         }}>
@@ -178,7 +178,7 @@ const PaymentPage = () => {
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                backgroundColor: loading ? '#999' : '#0e123b',
+                backgroundColor: loading ? '#999' : '#0d5d2f',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '4px',

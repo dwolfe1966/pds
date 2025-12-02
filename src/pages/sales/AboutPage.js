@@ -1,11 +1,13 @@
 import React from 'react';
+import '../../styles/contentContainer.css';
 
 /**
  * About page describing the service and company.
  */
 const AboutPage = () => {
   return (
-    <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+    <main className="pageBackground">
+      <div className="contentContainer contentContainerNarrow">
       <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>About IDLookup.AI</h1>
       <p style={{ marginBottom: '2rem', color: '#666', lineHeight: '1.8', fontSize: '1.1rem' }}>
         IDLookup.AI aggregates publicly available records and helps you discover information
@@ -52,6 +54,7 @@ const AboutPage = () => {
           support, partnerships, or general inquiries.
         </p>
       </section>
+      </div>
     </main>
   );
 };

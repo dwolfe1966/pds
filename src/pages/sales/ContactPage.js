@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../api';
+import '../../styles/contentContainer.css';
 
 /**
  * Contact page where users can reach out for support or inquiries.
@@ -31,19 +32,22 @@ const ContactPage = () => {
 
   if (success) {
     return (
-      <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
-          <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>Message Sent Successfully</h2>
-          <p style={{ color: '#666', lineHeight: '1.6' }}>
-            Thank you for contacting us. We'll get back to you as soon as possible.
-          </p>
+      <main className="pageBackground">
+        <div className="contentContainer contentContainerNarrow" style={{ textAlign: 'center' }}>
+          <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
+            <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Message Sent Successfully</h2>
+            <p style={{ color: '#666', lineHeight: '1.6' }}>
+              Thank you for contacting us. We'll get back to you as soon as possible.
+            </p>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '700px', margin: '0 auto' }}>
+    <main className="pageBackground">
+      <div className="contentContainer contentContainerNarrow">
       <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Contact Us</h1>
       <p style={{ marginBottom: '2rem', color: '#666', lineHeight: '1.6' }}>
         Have questions or need support? Fill out the form below and we'll get back to you as soon as possible.
@@ -118,7 +122,7 @@ const ContactPage = () => {
           style={{
             width: '100%',
             padding: '0.75rem',
-            backgroundColor: loading ? '#999' : '#0e123b',
+            backgroundColor: loading ? '#999' : '#0d5d2f',
             color: '#fff',
             border: 'none',
             borderRadius: '4px',
@@ -139,6 +143,7 @@ const ContactPage = () => {
         <p style={{ color: '#666', lineHeight: '1.6' }}>
           <strong>Phone:</strong> [Your Support Phone Number]
         </p>
+      </div>
       </div>
     </main>
   );

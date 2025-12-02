@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
+import './styles/variables.css';
+import './styles/base.css';
+import './styles/contentContainer.css';
 
 const container = document.getElementById('root');
 const root = createRoot(container);

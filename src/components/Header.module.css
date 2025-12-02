@@ -1,0 +1,15 @@
+/**
+ * Header Component Styles
+ */
+
+.header {
+  background-color: rgba(13, 93, 47, 0.95); /* Translucent green background */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+

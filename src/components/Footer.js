@@ -1,66 +1,72 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import styles from './Footer.module.css';
 
 const Footer = () => (
-  <footer style={{ backgroundColor: '#0e123b', color: '#fff', padding: '2rem 1rem', marginTop: 'auto' }}>
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <div style={{ marginBottom: '1rem' }}>
-          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem' }}>IDLookup.AI</h4>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: '#ccc' }}>
-            Find people and monitor who searches for you.
+  <footer className={styles.footer}>
+    <div className={styles.footerContent}>
+      <div className={styles.footerGrid}>
+        {/* Brand Section */}
+        <div className={styles.brandSection}>
+          <h4>IDLookup.AI</h4>
+          <p>
+            Find people and monitor who searches for you. Access comprehensive public records and stay informed.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-          <div>
-            <h5 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Legal</h5>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <Link to="/privacy" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Privacy Policy
+
+        {/* Legal Section */}
+        <div>
+          <h5 className={styles.sectionTitle}>Legal</h5>
+          <div className={styles.sectionLinks}>
+            {[
+              { to: '/privacy', label: 'Privacy Policy' },
+              { to: '/terms', label: 'Terms of Service' },
+              { to: '/refund', label: 'Refund Policy' },
+              { to: '/cpcc', label: 'California Privacy' },
+            ].map((link) => (
+              <Link key={link.to} to={link.to} className={styles.sectionLink}>
+                {link.label}
               </Link>
-              <Link to="/terms" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Terms of Service
-              </Link>
-              <Link to="/refund" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Refund Policy
-              </Link>
-              <Link to="/cpcc" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                California Privacy
-              </Link>
-            </div>
+            ))}
           </div>
-          <div>
-            <h5 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Resources</h5>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <Link to="/opt-out" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Opt Out
+        </div>
+
+        {/* Resources Section */}
+        <div>
+          <h5 className={styles.sectionTitle}>Resources</h5>
+          <div className={styles.sectionLinks}>
+            {[
+              { to: '/opt-out', label: 'Opt Out' },
+              { to: '/suppression-list', label: 'Suppression List' },
+              { to: '/partner', label: 'Partner With Us' },
+              { to: '/addon', label: 'Add-On Services' },
+            ].map((link) => (
+              <Link key={link.to} to={link.to} className={styles.sectionLink}>
+                {link.label}
               </Link>
-              <Link to="/suppression-list" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Suppression List
-              </Link>
-              <Link to="/partner" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Partner With Us
-              </Link>
-              <Link to="/addon" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Add-On Services
-              </Link>
-            </div>
+            ))}
           </div>
-          <div>
-            <h5 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>Support</h5>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <Link to="/contact" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                Contact Us
+        </div>
+
+        {/* Support Section */}
+        <div>
+          <h5 className={styles.sectionTitle}>Support</h5>
+          <div className={styles.sectionLinks}>
+            {[
+              { to: '/contact', label: 'Contact Us' },
+              { to: '/about', label: 'About' },
+            ].map((link) => (
+              <Link key={link.to} to={link.to} className={styles.sectionLink}>
+                {link.label}
               </Link>
-              <Link to="/about" style={{ color: '#fff', textDecoration: 'none', fontSize: '0.85rem' }}>
-                About
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
       </div>
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '1rem', textAlign: 'center' }}>
-        <small style={{ fontSize: '0.85rem', color: '#ccc' }}>
+
+      {/* Copyright Section */}
+      <div className={styles.copyright}>
+        <small className={styles.copyrightText}>
           © {new Date().getFullYear()} IDLookup.AI. All rights reserved.
         </small>
       </div>

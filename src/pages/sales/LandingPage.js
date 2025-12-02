@@ -12,17 +12,17 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const q = params.get('q') || '';
-  const zip = params.get('zip') || '';
+  const state = params.get('state') || '';
 
   // If query parameter exists, redirect to search results
   useEffect(() => {
     if (q) {
       const searchParams = new URLSearchParams();
       searchParams.set('q', q);
-      if (zip) searchParams.set('zip', zip);
+      if (state) searchParams.set('state', state);
       navigate(`/search-results?${searchParams.toString()}`, { replace: true });
     }
-  }, [q, zip, navigate]);
+  }, [q, state, navigate]);
 
   return (
     <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>

@@ -1,4 +1,5 @@
 import React from 'react';
+import '../../styles/contentContainer.css';
 
 /**
  * CPCC (California Privacy Compliance) page explaining California privacy rights
@@ -6,7 +7,8 @@ import React from 'react';
  */
 const CPCCPage = () => {
   return (
-    <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+    <main className="pageBackground">
+      <div className="contentContainer contentContainerNarrow">
       <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>California Privacy Rights (CPCC)</h1>
       <p style={{ marginBottom: '2rem', color: '#666', fontStyle: 'italic' }}>
         This page explains your privacy rights under the California Consumer Privacy Act (CCPA) and 
@@ -101,6 +103,7 @@ const CPCCPage = () => {
           You can also submit requests through our <a href="/opt-out" style={{ color: '#0e123b' }}>opt-out page</a>.
         </p>
       </section>
+      </div>
     </main>
   );
 };

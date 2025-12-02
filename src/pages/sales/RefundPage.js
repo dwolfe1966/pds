@@ -1,11 +1,13 @@
 import React from 'react';
+import '../../styles/contentContainer.css';
 
 /**
  * Refund Policy page outlining IDLookup.AI's refund policy and procedures.
  */
 const RefundPage = () => {
   return (
-    <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+    <main className="pageBackground">
+      <div className="contentContainer contentContainerNarrow">
       <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Refund Policy</h1>
       <p style={{ marginBottom: '2rem', color: '#666', fontStyle: 'italic' }}>
         Last updated: {new Date().toLocaleDateString()}
@@ -83,6 +85,7 @@ const RefundPage = () => {
           Hours: Monday - Friday, 9:00 AM - 5:00 PM EST
         </p>
       </section>
+      </div>
     </main>
   );
 };

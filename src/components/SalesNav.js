@@ -1,25 +1,58 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import styles from './SalesNav.module.css';
 
 /**
  * Navigation bar for unauthenticated (sales) pages.
- * Shows links to home, about, contact, search and account actions.
+ * Enhanced design based on PQS production site patterns.
  */
 const SalesNav = () => {
+  const location = useLocation();
+
+  const navLinks = [
+    { path: '/', label: 'Home' },
+    { path: '/name/landing', label: 'Search' },
+    { path: '/about', label: 'About' },
+    { path: '/contact', label: 'Contact' },
+  ];
+
+  const isActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <nav className={styles.nav}>
+      {/* Logo */}
       <div>
-        <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
+        <Link to="/" className={styles.logo}>
           IDLookup.AI
         </Link>
       </div>
-      <div style={{ display: 'flex', gap: '1rem' }}>
-        <Link to="/" style={{ color: '#fff' }}>Home</Link>
-        <Link to="/about" style={{ color: '#fff' }}>About</Link>
-        <Link to="/contact" style={{ color: '#fff' }}>Contact</Link>
-        <Link to="/search" style={{ color: '#fff' }}>Search</Link>
-        <Link to="/login" style={{ color: '#fff' }}>Login</Link>
-        <Link to="/signup" style={{ color: '#fff' }}>Sign Up</Link>
+
+      {/* Desktop Navigation */}
+      <div className={styles.navLinks}>
+        {navLinks.map((link) => (
+          <Link
+            key={link.path}
+            to={link.path}
+            className={`${styles.navLink} ${isActive(link.path) ? styles.navLinkActive : ''}`}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+
+      {/* Auth Buttons */}
+      <div className={styles.authButtons}>
+        <Link to="/login" className={styles.loginLink}>
+          Login
+        </Link>
+        <Link to="/signup" className={styles.signupButton}>
+          Sign Up
+        </Link>
       </div>
     </nav>
   );

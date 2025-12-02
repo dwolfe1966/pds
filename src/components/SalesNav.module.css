@@ -1,0 +1,91 @@
+/**
+ * Sales Navigation Component Styles
+ */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.logo {
+  color: var(--color-text-inverse);
+  text-decoration: none;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-2xl);
+  letter-spacing: -0.02em;
+  transition: opacity var(--transition-base);
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.navLink {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.navLink:hover {
+  color: var(--color-text-inverse);
+  border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.navLinkActive {
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-semibold);
+  border-bottom-color: var(--color-text-inverse);
+}
+
+.authButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.loginLink {
+  color: var(--color-text-inverse);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: opacity var(--transition-base);
+}
+
+.loginLink:hover {
+  opacity: 0.8;
+}
+
+.signupButton {
+  background-color: var(--color-text-inverse);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  padding: 0.625rem var(--spacing-lg);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.signupButton:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+

@@ -340,7 +340,7 @@ app.post('/api/v1/logout', authenticateToken, (req, res) => {
 
 // GET /api/v1/search
 app.get('/api/v1/search', (req, res) => {
-  let { firstName, lastName, name, zip, page = 1, limit = 20 } = req.query;
+  let { firstName, lastName, name, state, zip, page = 1, limit = 20 } = req.query;
 
   // Support both formats: firstName/lastName or single "name" parameter
   if (name && !firstName && !lastName) {
@@ -359,7 +359,8 @@ app.get('/api/v1/search', (req, res) => {
     });
   }
 
-  // Normalize zip - only use if it's a non-empty string
+  // Normalize filters - only use if they're non-empty strings
+  const stateFilter = state && state.trim() ? state.trim().toUpperCase() : null;
   const zipFilter = zip && zip.trim() ? zip.trim() : null;
 
   // More flexible search - match if full name contains both first and last name
@@ -373,10 +374,13 @@ app.get('/api/v1/search', (req, res) => {
     // This ensures "John Smith" matches "John Smith" but not just "John" or "Smith"
     const nameMatch = fullNameLower.includes(searchFull);
     
-    // Only filter by ZIP if one was provided
+    // Filter by state if provided (check addresses)
+    const stateMatch = !stateFilter || (p.addresses && p.addresses.some(a => a.state === stateFilter));
+    
+    // Filter by ZIP if provided (for backward compatibility, but state is preferred)
     const zipMatch = !zipFilter || (p.addresses && p.addresses.some(a => a.zip === zipFilter));
     
-    return nameMatch && zipMatch;
+    return nameMatch && stateMatch && zipMatch;
   });
 
   const pageNum = parseInt(page);

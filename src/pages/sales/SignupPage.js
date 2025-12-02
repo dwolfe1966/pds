@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
+import '../../styles/contentContainer.css';
 
 /**
  * Sign‑up page collects basic information and creates a new account.
@@ -105,7 +106,8 @@ const SignupPage = () => {
   };
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+    <main className="pageBackground">
+      <div className="contentContainer contentContainerNarrow">
       <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Create your account</h1>
       
       {/* Teaser block when coming from search result */}
@@ -113,7 +115,7 @@ const SignupPage = () => {
         <div style={{ 
           padding: '1.5rem', 
           backgroundColor: '#f0f7ff', 
-          border: '2px solid #0e123b',
+          border: '2px solid #0d5d2f',
           borderRadius: '8px', 
           marginBottom: '2rem' 
         }}>
@@ -231,7 +233,7 @@ const SignupPage = () => {
             style={{
               width: '100%',
               padding: '0.75rem',
-              backgroundColor: loading ? '#999' : '#0e123b',
+              backgroundColor: loading ? '#999' : '#0d5d2f',
               color: '#fff',
               border: 'none',
               borderRadius: '4px',
@@ -247,6 +249,7 @@ const SignupPage = () => {
           </p>
         </form>
       )}
+      </div>
     </main>
   );
 };

@@ -1,0 +1,58 @@
+/**
+ * SearchBar Component Styles
+ */
+
+.searchForm {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.75rem;
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.searchInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 18, 59, 0.1);
+}
+
+.stateSelect {
+  padding: 0.75rem;
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-default);
+  cursor: pointer;
+  min-width: 120px;
+  transition: all var(--transition-base);
+}
+
+.stateSelect:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 18, 59, 0.1);
+}
+
+.searchButton {
+  padding: 0.75rem var(--spacing-lg);
+  cursor: pointer;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-base);
+}
+
+.searchButton:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+

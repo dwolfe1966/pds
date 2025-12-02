@@ -48,187 +48,226 @@ const SearchDetailPreviewPage = () => {
     return (
       <main style={{ padding: '2rem', textAlign: 'center' }}>
         <p>Person not found. Please try searching again.</p>
-        <Link to="/name/landing" style={{ color: '#0e123b' }}>Back to Search</Link>
+        <Link to="/name/landing" style={{ color: '#0d5d2f' }}>Back to Search</Link>
       </main>
     );
   }
 
   return (
     <main style={{ 
-      padding: '2rem',
-      maxWidth: '900px',
-      margin: '0 auto'
+      padding: '3rem 2rem',
+      maxWidth: '1000px',
+      margin: '0 auto',
+      minHeight: '60vh'
     }}>
+      {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
         <Link 
           to="/name/search-result" 
           style={{ 
-            color: '#0e123b', 
+            color: '#0d5d2f', 
             textDecoration: 'none',
             fontSize: '0.95rem',
             marginBottom: '1rem',
-            display: 'inline-block'
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontWeight: 500,
+            transition: 'color 0.2s ease'
           }}
+          onMouseEnter={(e) => e.target.style.color = '#1a7a4a'}
+          onMouseLeave={(e) => e.target.style.color = '#0d5d2f'}
         >
           ← Back to Results
         </Link>
         <h1 style={{ 
-          color: '#0e123b', 
+          color: '#0d5d2f', 
           marginTop: '1rem',
           marginBottom: '0.5rem',
-          fontSize: '2rem'
+          fontSize: '2.5rem',
+          fontWeight: 700,
+          letterSpacing: '-0.02em'
         }}>
           {person.fullName}
         </h1>
         {person.location && (
-          <p style={{ color: '#666', fontSize: '1rem', marginBottom: '2rem' }}>
+          <p style={{ 
+            color: '#6b7280', 
+            fontSize: '1.125rem', 
+            marginBottom: '2rem',
+            lineHeight: 1.5
+          }}>
             {person.location}
-            {person.ageRange && ` • Age: ${person.ageRange}`}
+            {person.ageRange && <span style={{ color: '#9ca3af' }}> • Age: {person.ageRange}</span>}
           </p>
         )}
       </div>
 
       {/* Preview/Teaser Section */}
       <div style={{ 
-        backgroundColor: '#f5f5f5',
-        padding: '2rem',
-        borderRadius: '8px',
+        backgroundColor: '#f9fafb',
+        padding: '2.5rem',
+        borderRadius: '0.75rem',
         marginBottom: '2rem',
-        border: '2px solid #ddd'
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
       }}>
         <h2 style={{ 
-          color: '#0e123b', 
+          color: '#0d5d2f', 
           marginTop: 0,
           marginBottom: '1rem',
-          fontSize: '1.5rem'
+          fontSize: '1.875rem',
+          fontWeight: 700
         }}>
           Preview Report
         </h2>
-        <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-          This is a preview of the information available for <strong>{person.fullName}</strong>.
+        <p style={{ 
+          color: '#6b7280', 
+          lineHeight: 1.6, 
+          marginBottom: '2rem',
+          fontSize: '1.125rem'
+        }}>
+            This is a preview of the information available for <strong style={{ color: '#0d5d2f' }}>{person.fullName}</strong>.
           Sign up to view the complete report with full details.
         </p>
 
+        {/* Available Information Grid */}
         <div style={{ 
           backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '4px',
-          border: '1px solid #ddd',
-          marginBottom: '1.5rem'
+          padding: '2rem',
+          borderRadius: '0.5rem',
+          border: '1px solid #e5e7eb',
+          marginBottom: '2rem'
         }}>
           <h3 style={{ 
-            color: '#0e123b', 
+            color: '#0d5d2f', 
             marginTop: 0,
-            marginBottom: '1rem',
-            fontSize: '1.2rem'
+            marginBottom: '1.5rem',
+            fontSize: '1.25rem',
+            fontWeight: 600
           }}>
-            Available Information (Preview)
+            Available Information
           </h3>
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
             gap: '1rem' 
           }}>
-            <div>
-              <p style={{ color: '#666', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#0e123b' }}>✓</strong> Basic Information
-              </p>
-            </div>
-            <div>
-              <p style={{ color: '#999', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#999' }}>🔒</strong> Contact Details
-              </p>
-            </div>
-            <div>
-              <p style={{ color: '#999', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#999' }}>🔒</strong> Address History
-              </p>
-            </div>
-            <div>
-              <p style={{ color: '#999', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#999' }}>🔒</strong> Phone Numbers
-              </p>
-            </div>
-            <div>
-              <p style={{ color: '#999', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#999' }}>🔒</strong> Email Addresses
-              </p>
-            </div>
-            <div>
-              <p style={{ color: '#999', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#999' }}>🔒</strong> Relatives & Family
-              </p>
-            </div>
-            <div>
-              <p style={{ color: '#999', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#999' }}>🔒</strong> Social Media Profiles
-              </p>
-            </div>
-            <div>
-              <p style={{ color: '#999', margin: '0.5rem 0', fontSize: '0.95rem' }}>
-                <strong style={{ color: '#999' }}>🔒</strong> Public Records
-              </p>
-            </div>
+            {[
+              { label: 'Basic Information', available: true },
+              { label: 'Contact Details', available: false },
+              { label: 'Address History', available: false },
+              { label: 'Phone Numbers', available: false },
+              { label: 'Email Addresses', available: false },
+              { label: 'Relatives & Family', available: false },
+              { label: 'Social Media Profiles', available: false },
+              { label: 'Public Records', available: false },
+            ].map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  padding: '0.75rem',
+                  backgroundColor: item.available ? '#f0fdf4' : '#f9fafb',
+                  borderRadius: '0.375rem',
+                  border: `1px solid ${item.available ? '#86efac' : '#e5e7eb'}`
+                }}
+              >
+                <p style={{ 
+                  color: item.available ? '#166534' : '#9ca3af', 
+                  margin: 0, 
+                  fontSize: '0.95rem',
+                  fontWeight: item.available ? 600 : 400
+                }}>
+                  {item.available ? '✓' : '🔒'} {item.label}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
+        {/* CTA Section */}
         <div style={{ 
-          backgroundColor: '#0e123b',
+          background: 'linear-gradient(135deg, #0d5d2f 0%, #1a7a4a 100%)',
           color: '#fff',
-          padding: '2rem',
-          borderRadius: '8px',
-          textAlign: 'center'
+          padding: '2.5rem',
+          borderRadius: '0.75rem',
+          textAlign: 'center',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
         }}>
           <h3 style={{ 
             marginTop: 0,
             marginBottom: '1rem',
-            fontSize: '1.3rem'
+            fontSize: '1.5rem',
+            fontWeight: 700
           }}>
             Unlock Full Report
           </h3>
           <p style={{ 
-            marginBottom: '1.5rem',
-            lineHeight: '1.6',
-            fontSize: '1rem'
+            marginBottom: '2rem',
+            lineHeight: 1.6,
+            fontSize: '1.125rem',
+            color: 'rgba(255, 255, 255, 0.9)',
+            maxWidth: '600px',
+            margin: '0 auto 2rem auto'
           }}>
             Sign up now to access the complete report for <strong>{person.fullName}</strong>.
             Get instant access to contact information, addresses, relatives, and more.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: '1rem', 
+            justifyContent: 'center', 
+            flexWrap: 'wrap' 
+          }}>
             <button
               onClick={handleSignup}
               style={{
-                padding: '1rem 2rem',
+                padding: '1rem 2.5rem',
                 backgroundColor: '#fff',
-                color: '#0e123b',
+                color: '#0d5d2f',
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '0.5rem',
                 cursor: 'pointer',
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
-                transition: 'background-color 0.2s'
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
               }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#fff'}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#f9fafb';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#fff';
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+              }}
             >
               Sign Up to View Full Report
             </button>
             <Link
               to="/login"
               style={{
-                padding: '1rem 2rem',
+                padding: '1rem 2.5rem',
                 backgroundColor: 'transparent',
                 color: '#fff',
                 border: '2px solid #fff',
-                borderRadius: '4px',
+                borderRadius: '0.5rem',
                 textDecoration: 'none',
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
+                fontSize: '1.125rem',
+                fontWeight: 600,
                 display: 'inline-block',
-                transition: 'background-color 0.2s'
+                transition: 'all 0.2s ease'
               }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.transform = 'translateY(0)';
+              }}
             >
               Already have an account? Log In
             </Link>
@@ -238,23 +277,26 @@ const SearchDetailPreviewPage = () => {
 
       {/* Additional Info */}
       <div style={{ 
-        padding: '1.5rem',
+        padding: '2rem',
         backgroundColor: '#f0f7ff',
-        borderRadius: '8px',
-        border: '1px solid #0e123b'
+        borderRadius: '0.75rem',
+        border: '1px solid #bfdbfe'
       }}>
         <h3 style={{ 
-          color: '#0e123b', 
+          color: '#0d5d2f', 
           marginTop: 0,
-          marginBottom: '1rem'
+          marginBottom: '1rem',
+          fontSize: '1.25rem',
+          fontWeight: 600
         }}>
           What's Included in the Full Report?
         </h3>
         <ul style={{ 
-          color: '#666', 
-          lineHeight: '1.8', 
+          color: '#374151', 
+          lineHeight: 1.8, 
           paddingLeft: '1.5rem',
-          margin: 0
+          margin: 0,
+          fontSize: '1rem'
         }}>
           <li>Complete contact information (phone numbers, email addresses)</li>
           <li>Current and previous addresses with dates</li>

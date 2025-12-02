@@ -1,15 +1,70 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import styles from './NameSearchLandingPage.module.css';
 
 /**
  * Name search landing page - Entry point for name searches.
- * Mimics the privaterecords.net/name/landing flow with IDLookup design.
+ * Enhanced design with PQS production site styling and marketing content.
  */
 const NameSearchLandingPage = () => {
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [zip, setZip] = useState('');
+  const [state, setState] = useState('');
+
+  const usStates = [
+    { value: '', label: 'Select State (Optional)' },
+    { value: 'AL', label: 'Alabama' },
+    { value: 'AK', label: 'Alaska' },
+    { value: 'AZ', label: 'Arizona' },
+    { value: 'AR', label: 'Arkansas' },
+    { value: 'CA', label: 'California' },
+    { value: 'CO', label: 'Colorado' },
+    { value: 'CT', label: 'Connecticut' },
+    { value: 'DE', label: 'Delaware' },
+    { value: 'FL', label: 'Florida' },
+    { value: 'GA', label: 'Georgia' },
+    { value: 'HI', label: 'Hawaii' },
+    { value: 'ID', label: 'Idaho' },
+    { value: 'IL', label: 'Illinois' },
+    { value: 'IN', label: 'Indiana' },
+    { value: 'IA', label: 'Iowa' },
+    { value: 'KS', label: 'Kansas' },
+    { value: 'KY', label: 'Kentucky' },
+    { value: 'LA', label: 'Louisiana' },
+    { value: 'ME', label: 'Maine' },
+    { value: 'MD', label: 'Maryland' },
+    { value: 'MA', label: 'Massachusetts' },
+    { value: 'MI', label: 'Michigan' },
+    { value: 'MN', label: 'Minnesota' },
+    { value: 'MS', label: 'Mississippi' },
+    { value: 'MO', label: 'Missouri' },
+    { value: 'MT', label: 'Montana' },
+    { value: 'NE', label: 'Nebraska' },
+    { value: 'NV', label: 'Nevada' },
+    { value: 'NH', label: 'New Hampshire' },
+    { value: 'NJ', label: 'New Jersey' },
+    { value: 'NM', label: 'New Mexico' },
+    { value: 'NY', label: 'New York' },
+    { value: 'NC', label: 'North Carolina' },
+    { value: 'ND', label: 'North Dakota' },
+    { value: 'OH', label: 'Ohio' },
+    { value: 'OK', label: 'Oklahoma' },
+    { value: 'OR', label: 'Oregon' },
+    { value: 'PA', label: 'Pennsylvania' },
+    { value: 'RI', label: 'Rhode Island' },
+    { value: 'SC', label: 'South Carolina' },
+    { value: 'SD', label: 'South Dakota' },
+    { value: 'TN', label: 'Tennessee' },
+    { value: 'TX', label: 'Texas' },
+    { value: 'UT', label: 'Utah' },
+    { value: 'VT', label: 'Vermont' },
+    { value: 'VA', label: 'Virginia' },
+    { value: 'WA', label: 'Washington' },
+    { value: 'WV', label: 'West Virginia' },
+    { value: 'WI', label: 'Wisconsin' },
+    { value: 'WY', label: 'Wyoming' },
+  ];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -21,200 +76,131 @@ const NameSearchLandingPage = () => {
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
     params.set('lastName', lastName.trim());
-    if (zip.trim()) {
-      params.set('zip', zip.trim());
+    if (state.trim()) {
+      params.set('state', state.trim());
     }
     navigate(`/name/loader?${params.toString()}`);
   };
 
   return (
-    <main style={{ 
-      padding: '3rem 2rem', 
-      maxWidth: '900px', 
-      margin: '0 auto',
-      minHeight: '60vh',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center'
-    }}>
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ 
-          color: '#0e123b', 
-          marginBottom: '1rem', 
-          fontSize: '2.5rem',
-          fontWeight: 'bold'
-        }}>
-          Search by Name
-        </h1>
-        <p style={{ 
-          color: '#666', 
-          fontSize: '1.2rem', 
-          lineHeight: '1.6', 
-          marginBottom: '2rem',
-          maxWidth: '600px',
-          margin: '0 auto 2rem auto'
-        }}>
-          Enter a first and last name to search our comprehensive database of public records.
-        </p>
-      </div>
+    <main className={styles.main}>
+      {/* Hero Section */}
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>
+            Search by Name
+          </h1>
+          <p className={styles.heroSubtitle}>
+            Enter a first and last name to search our comprehensive database of over 12 billion public records.
+          </p>
+        </div>
+      </section>
 
-      <form onSubmit={handleSubmit} style={{ 
-        maxWidth: '600px', 
-        margin: '0 auto',
-        backgroundColor: '#fff',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem', 
-              color: '#333', 
-              fontWeight: 'bold',
-              fontSize: '0.95rem'
-            }}>
-              First Name *
-            </label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="First Name"
-              required
-              style={{ 
-                width: '100%', 
-                padding: '0.75rem', 
-                fontSize: '1rem', 
-                border: '2px solid #ddd', 
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '0.5rem', 
-              color: '#333', 
-              fontWeight: 'bold',
-              fontSize: '0.95rem'
-            }}>
-              Last Name *
-            </label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              placeholder="Last Name"
-              required
-              style={{ 
-                width: '100%', 
-                padding: '0.75rem', 
-                fontSize: '1rem', 
-                border: '2px solid #ddd', 
-                borderRadius: '4px',
-                boxSizing: 'border-box'
-              }}
-            />
+      {/* Search Form Section */}
+      <section className={styles.searchFormSection}>
+        <div className={styles.searchFormContainer}>
+          <form onSubmit={handleSubmit} className={styles.searchForm}>
+            <div className={styles.nameFields}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First Name"
+                  required
+                  className={styles.input}
+                />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last Name"
+                  required
+                  className={styles.input}
+                />
+              </div>
+            </div>
+            
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>
+                State (Optional)
+              </label>
+              <select
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                className={styles.select}
+              >
+                {usStates.map((stateOption) => (
+                  <option key={stateOption.value} value={stateOption.value}>
+                    {stateOption.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button type="submit" className={styles.submitButton}>
+              Search Now
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className={styles.benefits}>
+        <div className={styles.benefitsContent}>
+          <h2 className={styles.benefitsTitle}>
+            What You'll Find
+          </h2>
+          <div className={styles.benefitsGrid}>
+            {[
+              {
+                title: 'Contact Information',
+                description: 'Phone numbers, email addresses, and social media profiles',
+                icon: '📞'
+              },
+              {
+                title: 'Address History',
+                description: 'Current and previous addresses with dates and locations',
+                icon: '📍'
+              },
+              {
+                title: 'Family & Relatives',
+                description: 'Family connections, relatives, and associated people',
+                icon: '👨‍👩‍👧‍👦'
+              },
+              {
+                title: 'Public Records',
+                description: 'Background information, court records, and more',
+                icon: '📋'
+              }
+            ].map((item, index) => (
+              <div key={index} className={styles.benefitCard}>
+                <div className={styles.benefitIcon}>
+                  {item.icon}
+                </div>
+                <h3 className={styles.benefitTitle}>
+                  {item.title}
+                </h3>
+                <p className={styles.benefitDescription}>
+                  {item.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
-        
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: '0.5rem', 
-            color: '#333', 
-            fontWeight: 'bold',
-            fontSize: '0.95rem'
-          }}>
-            ZIP Code (Optional)
-          </label>
-          <input
-            type="text"
-            value={zip}
-            onChange={(e) => setZip(e.target.value)}
-            placeholder="ZIP Code"
-            pattern="[0-9]{5}"
-            maxLength="5"
-            style={{ 
-              width: '100%', 
-              padding: '0.75rem', 
-              fontSize: '1rem', 
-              border: '2px solid #ddd', 
-              borderRadius: '4px',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-
-        <button
-          type="submit"
-          style={{
-            width: '100%',
-            padding: '1rem',
-            backgroundColor: '#0e123b',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseOver={(e) => e.target.style.backgroundColor = '#1a1f4d'}
-          onMouseOut={(e) => e.target.style.backgroundColor = '#0e123b'}
-        >
-          Search Now
-        </button>
-      </form>
-
-      <div style={{ 
-        marginTop: '3rem', 
-        padding: '2rem', 
-        backgroundColor: '#f5f5f5', 
-        borderRadius: '8px',
-        maxWidth: '600px',
-        margin: '3rem auto 0 auto'
-      }}>
-        <h3 style={{ color: '#0e123b', marginTop: 0, marginBottom: '1rem' }}>
-          What You'll Find
-        </h3>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '1rem' 
-        }}>
-          <div>
-            <p style={{ color: '#666', margin: 0, lineHeight: '1.6' }}>
-              <strong style={{ color: '#0e123b' }}>Contact Info</strong><br />
-              Phone numbers, email addresses
-            </p>
-          </div>
-          <div>
-            <p style={{ color: '#666', margin: 0, lineHeight: '1.6' }}>
-              <strong style={{ color: '#0e123b' }}>Addresses</strong><br />
-              Current and previous locations
-            </p>
-          </div>
-          <div>
-            <p style={{ color: '#666', margin: 0, lineHeight: '1.6' }}>
-              <strong style={{ color: '#0e123b' }}>Relatives</strong><br />
-              Family connections
-            </p>
-          </div>
-          <div>
-            <p style={{ color: '#666', margin: 0, lineHeight: '1.6' }}>
-              <strong style={{ color: '#0e123b' }}>Public Records</strong><br />
-              Background information
-            </p>
-          </div>
-        </div>
-      </div>
+      </section>
     </main>
   );
 };
 
 export default NameSearchLandingPage;
+
 

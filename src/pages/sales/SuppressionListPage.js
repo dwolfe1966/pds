@@ -77,7 +77,7 @@ const SuppressionListPage = () => {
           style={{
             display: 'inline-block',
             padding: '0.75rem 2rem',
-            backgroundColor: '#0e123b',
+            backgroundColor: '#0d5d2f',
             color: '#fff',
             textDecoration: 'none',
             borderRadius: '4px',

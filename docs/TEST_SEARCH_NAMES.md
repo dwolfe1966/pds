@@ -179,3 +179,4 @@ After verifying the search works:
 
 **Note:** The search is case-insensitive, so "david wolfe", "David Wolfe", and "DAVID WOLFE" will all work.
 
+

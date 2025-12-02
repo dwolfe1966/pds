@@ -59,7 +59,7 @@ const PhoneLoaderPage = () => {
           width: '60px',
           height: '60px',
           border: '4px solid #f3f3f3',
-          borderTop: '4px solid #0e123b',
+          borderTop: '4px solid #0d5d2f',
           borderRadius: '50%',
           animation: 'spin 1s linear infinite',
           margin: '0 auto'

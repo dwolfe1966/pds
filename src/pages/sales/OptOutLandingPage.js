@@ -50,7 +50,7 @@ const OptOutLandingPage = () => {
           style={{ 
             padding: '0.75rem 2rem', 
             cursor: 'pointer', 
-            backgroundColor: '#0e123b', 
+            backgroundColor: '#0d5d2f', 
             color: '#fff', 
             border: 'none', 
             borderRadius: '4px',

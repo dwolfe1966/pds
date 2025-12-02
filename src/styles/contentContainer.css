@@ -1,0 +1,30 @@
+/**
+ * Content Container Styles
+ * Background bevel/container for main content on all pages
+ */
+
+.contentContainer {
+  background-color: var(--color-bg-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-2xl);
+  margin: var(--spacing-xl) auto;
+  max-width: 1200px;
+  min-height: calc(100vh - 200px);
+}
+
+.contentContainerNarrow {
+  max-width: 900px;
+}
+
+.contentContainerWide {
+  max-width: 1400px;
+}
+
+/* Page background wrapper */
+.pageBackground {
+  background: linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%);
+  padding: 40px 0;
+  min-height: 100vh;
+}
+

@@ -77,7 +77,7 @@ const PhoneSearchResultsPage = () => {
             style={{
               marginTop: '1rem',
               padding: '0.75rem 2rem',
-              backgroundColor: '#0e123b',
+              backgroundColor: '#0d5d2f',
               color: '#fff',
               border: 'none',
               borderRadius: '4px',
