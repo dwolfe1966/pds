@@ -1,0 +1,50 @@
+Desc,path,method,param,return,misc
+Login,/auth/login,post,"username: string
+password: string",,
+Logout,/auth/logout,post,,{ success: true },
+Teaser search,/api/idLookup/teaser/search,post,"1) name case
+type: 'name'
+fName: 'first name'
+lName: 'last name'
+state: 'state' (FL)
+
+2) phone case
+type: 'phone'
+phone: 'phone number'
+
+3) email case
+type: 'email'
+email: 'email address'","raws.0.transient.identities : Search results array
+
+raws.0.transient.total : Total number
+
+raws.0.transient.perPage : Number of results per page",
+Report search,/api/idLookup/report/create,post,"1) extId case
+type: 'extId'
+extId: 'extId number'
+
+2) reversePhone case
+type: 'reversePhone'
+phone: 'phone number'","raws.0.transient.identities : Search results array
+
+raws.1.transient.fullContact : FullContact Results
+
+raws.2.transient.familyWatchdog.offenders : A list of criminals around the zip code at the front of the list for the property or address being searched.",
+Get Report,/api/idLookup/report/detail/:commerceContentId,get,"commerceContentId
+(The _id value in the commerceContents array of Get Reports)",Same as Report search results,
+Get Reports,/api/idLookup/report/list?lastId={lastCommerceContentId},get,"lastId: lastCommerceContentId
+(The first page is called without lastId. The next page is called with lastId including the last commerceContent._id of the previous page.)","perPage: number
+
+commerceContents : An array of reports previously created by the user
+
+data.teaserInput : Teaser information searched by users when generating reports",
+OptOut request,/api/optOut/request,post,"targetId: string (extId)
+provider: string (raw.meta.provider)
+email: string
+fullName: string
+address: string
+phone: string
+referenceId: commerceContent._id",{ success: true },
+"OptOut confirmation
+
+(After a user requests opt-out and checks their email, there will be a link in the email. Clicking the link will take them to a page containing a specific query string. The opt-out modal will automatically display based on the query string.)",/api/optOut/confirmation,get,value: string,{ success: true },

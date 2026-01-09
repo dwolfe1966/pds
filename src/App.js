@@ -49,6 +49,8 @@ import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
+// Test page (development only)
+import ApiTestPage from './pages/ApiTestPage';
 
 const App = () => {
   return (
@@ -88,6 +90,8 @@ const App = () => {
           <Route path="/suppression-list" element={<SuppressionListPage />} />
           <Route path="/cpcc" element={<CPCCPage />} />
           <Route path="/addon" element={<AddonPage />} />
+          {/* Development test route */}
+          <Route path="/api-test" element={<ApiTestPage />} />
 
           {/* Member routes (authenticated) */}
           <Route

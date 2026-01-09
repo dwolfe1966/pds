@@ -15,9 +15,21 @@ export const AuthProvider = ({ children }) => {
     setTokenGetter(() => token);
   }, [token]);
 
-  // Optionally load token from cookie or session here
+  // Check for stored session on mount
   useEffect(() => {
-    // In this simple implementation we do not persist tokens between reloads
+    const storedToken = localStorage.getItem('accessToken');
+    const storedUser = localStorage.getItem('user');
+
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error('Error parsing stored user:', err);
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+      }
+    }
     setLoading(false);
   }, []);
 
@@ -25,13 +37,19 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await api.login({ email, password });
       if (data.accessToken) {
+        const userData = data.user || { role: 'member' };
+
+        // Update state
         setToken(data.accessToken);
-        // Fallback role: assume member if none provided
-        const userData = data.user || {};
-        if (!userData.role) {
-          userData.role = 'member';
-        }
         setUser(userData);
+
+        // Persist to local storage
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
+
         navigate('/dashboard');
       }
     } catch (err) {
@@ -43,6 +61,10 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setToken(null);
     setUser(null);
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    api.logout(); // Call API logout
     navigate('/');
   };
 

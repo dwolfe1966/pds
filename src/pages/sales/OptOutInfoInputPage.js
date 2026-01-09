@@ -12,11 +12,14 @@ const OptOutInfoInputPage = () => {
   const params = new URLSearchParams(location.search);
   const resultId = params.get('resultId');
   const [form, setForm] = useState({
-    fullName: '',
+    name: '',
+    middleName: '',
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
     email: '',
-    phone: '',
-    address: '',
-    reason: ''
+    phone: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -93,12 +96,12 @@ const OptOutInfoInputPage = () => {
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
-            Full Name *
+            Name *
           </label>
           <input
             type="text"
-            name="fullName"
-            value={form.fullName}
+            name="name"
+            value={form.name}
             onChange={handleChange}
             required
             style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
@@ -107,57 +110,98 @@ const OptOutInfoInputPage = () => {
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
-            Email Address *
+            Middle Name
+          </label>
+          <input
+            type="text"
+            name="middleName"
+            value={form.middleName}
+            onChange={handleChange}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            Street Address *
+          </label>
+          <input
+            type="text"
+            name="street"
+            value={form.street}
+            onChange={handleChange}
+            required
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+              City *
+            </label>
+            <input
+              type="text"
+              name="city"
+              value={form.city}
+              onChange={handleChange}
+              required
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+              State *
+            </label>
+            <input
+              type="text"
+              name="state"
+              value={form.state}
+              onChange={handleChange}
+              required
+              maxLength="2"
+              placeholder="XX"
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px', textTransform: 'uppercase' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            ZIP Code
+          </label>
+          <input
+            type="text"
+            name="zip"
+            value={form.zip}
+            onChange={handleChange}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            Email Address
           </label>
           <input
             type="email"
             name="email"
             value={form.email}
             onChange={handleChange}
-            required
             style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
-            Phone Number *
+            Phone Number
           </label>
           <input
             type="tel"
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            required
             style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
-            Address *
-          </label>
-          <textarea
-            name="address"
-            value={form.address}
-            onChange={handleChange}
-            required
-            rows="3"
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'inherit' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
-            Reason for Opt-Out (Optional)
-          </label>
-          <textarea
-            name="reason"
-            value={form.reason}
-            onChange={handleChange}
-            rows="4"
-            placeholder="Please provide any additional information that may help us process your request."
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'inherit' }}
           />
         </div>
 

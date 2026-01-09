@@ -14,7 +14,7 @@ const NameSearchLoaderPage = () => {
   const firstName = params.get('firstName');
   const lastName = params.get('lastName');
   const state = params.get('state');
-  
+
   const [status, setStatus] = useState('Initializing search...');
   const [progress, setProgress] = useState(0);
 
@@ -38,24 +38,39 @@ const NameSearchLoaderPage = () => {
         }, 200);
 
         setStatus('Searching our database...');
-        
-        // Build search parameters
-        const searchParams = { firstName, lastName };
+
+        // Build search parameters for the new API
+        const searchParams = {
+          firstName,
+          lastName,
+          type: 'name'
+        };
         if (state && state.trim()) {
           searchParams.state = state.trim();
         }
 
-        // Perform the search
-        const response = await api.searchPublic(searchParams);
-        
+        // Perform the search using ByteCreators ApiWrapper via our helper
+        const response = await api.searchPeople(searchParams);
+
         clearInterval(progressInterval);
         setProgress(100);
         setStatus('Search complete!');
 
+        // Extract and map identities based on the new API return structure
+        const identities = typeof response.getIdentities === 'function' ? response.getIdentities() : [];
+        const mappedResults = identities.map(identity => ({
+          id: identity.extId,
+          fullName: identity.nameList?.[0]?.data || 'Unknown',
+          location: identity.addressList?.map(a => a.state).join(', ') || '',
+          ageRange: identity.ageRange || '',
+          ...identity
+        }));
+
         // Store results in sessionStorage for the results page
         sessionStorage.setItem('nameSearchResults', JSON.stringify({
-          results: response.data || [],
-          query: { firstName, lastName, state }
+          results: mappedResults,
+          query: { firstName, lastName, state },
+          teaserInput: typeof response.getTeaserInput === 'function' ? response.getTeaserInput() : null
         }));
 
         // Redirect to results page after a brief delay
@@ -77,7 +92,7 @@ const NameSearchLoaderPage = () => {
   }, [firstName, lastName, state, navigate]);
 
   return (
-    <main style={{ 
+    <main style={{
       padding: 0,
       minHeight: '70vh',
       display: 'flex',
@@ -86,7 +101,7 @@ const NameSearchLoaderPage = () => {
       alignItems: 'center',
       background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)'
     }}>
-      <div style={{ 
+      <div style={{
         maxWidth: '600px',
         width: '100%',
         padding: '3rem 2rem',
@@ -108,17 +123,17 @@ const NameSearchLoaderPage = () => {
             100% { transform: rotate(360deg); }
           }
         `}</style>
-        
-        <h2 style={{ 
-          color: '#0d5d2f', 
+
+        <h2 style={{
+          color: '#0d5d2f',
           marginBottom: '1rem',
           fontSize: '2rem',
           fontWeight: 700
         }}>
           Searching...
         </h2>
-        <p style={{ 
-          color: '#6b7280', 
+        <p style={{
+          color: '#6b7280',
           fontSize: '1.125rem',
           marginBottom: '2rem',
           lineHeight: 1.6
@@ -145,8 +160,8 @@ const NameSearchLoaderPage = () => {
             boxShadow: '0 2px 4px rgba(14, 18, 59, 0.2)'
           }}></div>
         </div>
-        <p style={{ 
-          color: '#9ca3af', 
+        <p style={{
+          color: '#9ca3af',
           fontSize: '0.875rem',
           margin: 0,
           fontWeight: 500
@@ -155,7 +170,7 @@ const NameSearchLoaderPage = () => {
         </p>
 
         {/* Search Query Display */}
-        <div style={{ 
+        <div style={{
           marginTop: '3rem',
           padding: '1.5rem',
           backgroundColor: '#fff',
@@ -163,8 +178,8 @@ const NameSearchLoaderPage = () => {
           border: '1px solid #e5e7eb',
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
         }}>
-          <p style={{ 
-            color: '#6b7280', 
+          <p style={{
+            color: '#6b7280',
             fontSize: '0.875rem',
             marginBottom: '0.5rem',
             textTransform: 'uppercase',
@@ -173,8 +188,8 @@ const NameSearchLoaderPage = () => {
           }}>
             Searching for
           </p>
-          <p style={{ 
-            color: '#0d5d2f', 
+          <p style={{
+            color: '#0d5d2f',
             fontSize: '1.25rem',
             lineHeight: 1.5,
             margin: 0,
