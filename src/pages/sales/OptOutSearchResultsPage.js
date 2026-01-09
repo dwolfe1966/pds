@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
+import { setSearchContext } from '../../services/searchContext';
 
 /**
  * Displays search results for opt-out requests.
@@ -35,8 +36,20 @@ const OptOutSearchResultsPage = () => {
           return;
         }
         
-        const response = await api.get('/search', { params: { firstName, lastName, zip } });
+        const searchParams = {
+          firstName,
+          lastName,
+          type: 'name'
+        };
+        
+        const response = await api.searchPeople(searchParams);
+        // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
         setResults(response.data || []);
+        
+        // Store search context for opt-out request
+        if (response.searchContext) {
+          setSearchContext(response.searchContext);
+        }
       } catch (err) {
         setError(err.message || 'An error occurred while searching.');
       } finally {

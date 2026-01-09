@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { setSearchContext } from '../../services/searchContext';
 
 /**
  * Name search loader page - Shows loading state while performing search.
@@ -56,22 +57,31 @@ const NameSearchLoaderPage = () => {
         setProgress(100);
         setStatus('Search complete!');
 
-        // Extract and map identities based on the new API return structure
-        const identities = typeof response.getIdentities === 'function' ? response.getIdentities() : [];
-        const mappedResults = identities.map(identity => ({
-          id: identity.extId,
-          fullName: identity.nameList?.[0]?.data || 'Unknown',
-          location: identity.addressList?.map(a => a.state).join(', ') || '',
-          ageRange: identity.ageRange || '',
-          ...identity
+        // Response is already adapted by the API router
+        // It has the format: { data: [...], pagination: {...}, searchContext: {...} }
+        const mappedResults = (response.data || []).map(result => ({
+          ...result,
+          // Ensure we have all required fields
+          id: result.id || result.extId,
+          extId: result.extId,
+          fullName: result.fullName || 'Unknown',
+          location: result.location || '',
+          ageRange: result.ageRange || '',
+          provider: result.provider
         }));
 
-        // Store results in sessionStorage for the results page
+        // Store results and search context in sessionStorage for the results page
         sessionStorage.setItem('nameSearchResults', JSON.stringify({
           results: mappedResults,
           query: { firstName, lastName, state },
-          teaserInput: typeof response.getTeaserInput === 'function' ? response.getTeaserInput() : null
+          searchContext: response.searchContext || {},
+          pagination: response.pagination || {}
         }));
+
+        // Also store search context globally for report creation and opt-out
+        if (response.searchContext) {
+          setSearchContext(response.searchContext);
+        }
 
         // Redirect to results page after a brief delay
         setTimeout(() => {

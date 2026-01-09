@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { setSearchContext } from '../../services/searchContext';
 
 /**
  * Phone search loading page that shows a loading state while searching.
@@ -22,7 +23,22 @@ const PhoneLoaderPage = () => {
 
       try {
         setStatus('Processing your request...');
-        const response = await api.get('/search/phone', { params: { phone } });
+        const response = await api.searchPeople({
+          phone,
+          type: 'phone'
+        });
+        
+        // Store search context
+        if (response.searchContext) {
+          setSearchContext(response.searchContext);
+        }
+        
+        // Store results for results page
+        sessionStorage.setItem('phoneSearchResults', JSON.stringify({
+          results: response.data || [],
+          query: { phone },
+          searchContext: response.searchContext || {}
+        }));
         
         if (response.data && response.data.length > 0) {
           navigate(`/phone-search-results?phone=${encodeURIComponent(phone)}`);

@@ -1,18 +1,30 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setIdentityContext, getSearchContext } from '../services/searchContext';
 import styles from './ResultCard.module.css';
 
 const ResultCard = ({ result, onClick }) => {
   const navigate = useNavigate();
 
-  const handleViewDetails = (e) => {
+  const handleViewDetails = async (e) => {
     e.stopPropagation(); // Prevent parent onClick if present
+    
+    // Get current search context
+    const searchContext = getSearchContext();
+    
+    // Store identity context for report creation
+    if (result.extId && searchContext) {
+      setIdentityContext(result, searchContext);
+    }
+    
     // Store result in sessionStorage for preview/signup pages
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify({
       id: result.id,
+      extId: result.extId,
       fullName: result.fullName,
       location: result.location,
       ageRange: result.ageRange,
+      provider: result.provider,
       ...result
     }));
     

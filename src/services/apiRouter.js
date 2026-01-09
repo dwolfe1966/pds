@@ -95,15 +95,26 @@ async function callMockAPI(endpoint, params = {}) {
  */
 export async function routeApiRequest(endpoint, params = {}) {
   const endpointConfig = getEndpointConfig(endpoint);
-  const useNewAPI = USE_NEW_API && endpointConfig.newApi && FEATURE_FLAGS[endpoint] !== false;
+  // Check if feature flag is explicitly set to true (not just not false)
+  const featureFlagEnabled = FEATURE_FLAGS[endpoint] === true;
+  // Use new API if: global flag is on, endpoint is available in new API, AND feature flag is enabled
+  const useNewAPI = USE_NEW_API && endpointConfig.newApi && featureFlagEnabled;
   const useMockAPI = USE_MOCK_API && endpointConfig.mockApi;
 
   // Log which API is being used (for debugging)
   if (process.env.NODE_ENV === 'development') {
     console.log(`[API Router] ${endpoint}:`, {
-      newApi: useNewAPI,
-      mockApi: useMockAPI,
-      available: { newApi: endpointConfig.newApi, mockApi: endpointConfig.mockApi }
+      USE_NEW_API,
+      endpointAvailable: endpointConfig.newApi,
+      featureFlag: FEATURE_FLAGS[endpoint],
+      featureFlagEnabled,
+      useNewAPI,
+      useMockAPI,
+      available: { newApi: endpointConfig.newApi, mockApi: endpointConfig.mockApi },
+      envVars: {
+        NEW_API_ENABLED: process.env.REACT_APP_NEW_API_ENABLED,
+        USE_NEW_API_SEARCH: process.env.REACT_APP_USE_NEW_API_SEARCH
+      }
     });
   }
 
@@ -113,10 +124,34 @@ export async function routeApiRequest(endpoint, params = {}) {
       const result = await callNewAPI(endpoint, params);
       return result;
     } catch (error) {
-      console.warn(`[API Router] New API failed for ${endpoint}, falling back to mock API:`, error);
+      // Check if this is a CORS error or network error
+      const isCorsError = error.isCorsError ||
+                         error.message?.includes('CORS') || 
+                         error.message?.includes('Access-Control-Allow-Origin') ||
+                         error.message?.includes('Failed to fetch') ||
+                         error.message?.includes('NetworkError') ||
+                         error.name === 'NetworkError' ||
+                         (error.code === 'ERR_FAILED' && !error.response) ||
+                         (error.originalError && (
+                           error.originalError.message?.includes('CORS') ||
+                           error.originalError.message?.includes('Access-Control-Allow-Origin') ||
+                           error.originalError.message?.includes('Failed to fetch')
+                         ));
+      
+      if (isCorsError) {
+        console.warn(`[API Router] CORS error detected for ${endpoint}. This is expected in development when the API server doesn't allow localhost. Falling back to mock API.`);
+      } else {
+        console.warn(`[API Router] New API failed for ${endpoint}, falling back to mock API:`, error.message || error);
+      }
+      
       // Fallback to mock API if new API fails
       if (useMockAPI) {
-        return await callMockAPI(endpoint, params);
+        try {
+          return await callMockAPI(endpoint, params);
+        } catch (fallbackError) {
+          console.error(`[API Router] Both new API and mock API failed for ${endpoint}:`, fallbackError);
+          throw fallbackError;
+        }
       }
       throw error;
     }

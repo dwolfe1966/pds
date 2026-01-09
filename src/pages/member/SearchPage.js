@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { setSearchContext } from '../../services/searchContext';
 
 /**
  * Enhanced people search page for authenticated members.
@@ -86,14 +87,23 @@ const SearchPage = () => {
         return;
       }
 
-      const params = {
+      const searchParams = {
         firstName,
         lastName,
-        state: form.state || undefined,
+        type: 'name'
       };
+      if (form.state && form.state.trim()) {
+        searchParams.state = form.state.trim();
+      }
       
-      const response = await api.get('/search', { params, token });
+      const response = await api.searchPeople(searchParams);
+      // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
       setResults(response.data || []);
+      
+      // Store search context for report creation
+      if (response.searchContext) {
+        setSearchContext(response.searchContext);
+      }
     } catch (err) {
       setError(err.message);
     } finally {

@@ -4,6 +4,7 @@ import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SearchBar from '../../components/SearchBar';
 import { useAuth } from '../../context/AuthContext';
+import { setSearchContext } from '../../services/searchContext';
 
 /**
  * Search results page for authenticated members.
@@ -34,8 +35,24 @@ const MemberSearchResultsPage = () => {
           return;
         }
         
-        const response = await api.get('/search', { params: { firstName, lastName, zip }, token });
+        const searchParams = {
+          firstName,
+          lastName,
+          type: 'name'
+        };
+        if (zip) {
+          // Note: zip is not directly supported by new API, but we can pass it
+          // The mock API will use it if available
+        }
+        
+        const response = await api.searchPeople(searchParams);
+        // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
         setResults(response.data || []);
+        
+        // Store search context for report creation
+        if (response.searchContext) {
+          setSearchContext(response.searchContext);
+        }
       } catch (err) {
         setError(err.message);
       } finally {

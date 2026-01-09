@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SearchBar from '../../components/SearchBar';
+import { setSearchContext } from '../../services/searchContext';
 import styles from './SearchResultsPage.module.css';
 
 /**
@@ -61,14 +62,25 @@ const SalesSearchResultsPage = () => {
         
         setSearchQuery({ firstName, lastName, state: state || '' });
         
-        // Build search parameters
-        const searchParams = { firstName, lastName };
+        // Build search parameters for new API
+        const searchParams = {
+          firstName,
+          lastName,
+          type: 'name'
+        };
         if (state && state.trim()) {
           searchParams.state = state.trim();
         }
         
-        const response = await api.get('/search', { params: searchParams });
+        const response = await api.searchPeople(searchParams);
+        
+        // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
         setResults(response.data || []);
+        
+        // Store search context for report creation and opt-out
+        if (response.searchContext) {
+          setSearchContext(response.searchContext);
+        }
       } catch (err) {
         setErrorMessage(err.message || 'An error occurred during the search.');
       } finally {

@@ -61,52 +61,123 @@ class ApiWrapperService {
    * Auth endpoints
    */
   async login(body) {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.auth.login(body);
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.auth.login(body);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Login failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 
   async logout() {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.auth.logout();
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.auth.logout();
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Logout failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Check if an error is a CORS error
+   */
+  _isCorsError(error) {
+    const message = error.message || '';
+    const name = error.name || '';
+    return message.includes('CORS') || 
+           message.includes('Access-Control-Allow-Origin') ||
+           message.includes('Failed to fetch') ||
+           message.includes('NetworkError') ||
+           name === 'NetworkError' ||
+           (error.code === 'ERR_FAILED' && !error.response);
   }
 
   /**
    * ID Lookup (Teaser Search)
    */
   async searchTeaser(query) {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.idLookup.searchTeaser(query);
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.idLookup.searchTeaser(query);
+    } catch (error) {
+      // Enhance error with more context for CORS detection
+      const enhancedError = new Error(error.message || 'Search failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 
   /**
    * Report endpoints
    */
   async createReport(params) {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.idLookup.createReport(params);
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.idLookup.createReport(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Create report failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 
   async getReportList(params) {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.idLookup.getReportList(params);
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.idLookup.getReportList(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Get report list failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 
   async getReportDetail(id) {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.idLookup.getReportDetail(id);
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.idLookup.getReportDetail(id);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Get report detail failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 
   /**
    * Opt-Out endpoints
    */
   async requestOptOut(body) {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.optOut.request(body);
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.optOut.request(body);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Opt-out request failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 
   async confirmOptOut(params) {
-    const wrapper = await this.getWrapper();
-    return await wrapper.api.optOut.confirmation(params);
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.optOut.confirmation(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Opt-out confirmation failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 }
 

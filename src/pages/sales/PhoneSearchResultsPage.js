@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
+import { setSearchContext } from '../../services/searchContext';
 
 /**
  * Displays phone search results for public searches.
@@ -17,6 +18,20 @@ const PhoneSearchResultsPage = () => {
 
   useEffect(() => {
     const fetchResults = async () => {
+      // Check if we have results from the loader page
+      const storedResults = sessionStorage.getItem('phoneSearchResults');
+      if (storedResults) {
+        try {
+          const data = JSON.parse(storedResults);
+          setResults(data.results || []);
+          sessionStorage.removeItem('phoneSearchResults');
+          setLoading(false);
+          return;
+        } catch (err) {
+          console.error('Error parsing stored results:', err);
+        }
+      }
+
       if (!phone) {
         navigate('/phone-search');
         return;
@@ -24,8 +39,17 @@ const PhoneSearchResultsPage = () => {
 
       setLoading(true);
       try {
-        const response = await api.get('/search/phone', { params: { phone } });
+        const response = await api.searchPeople({
+          phone,
+          type: 'phone'
+        });
+        // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
         setResults(response.data || []);
+        
+        // Store search context for opt-out
+        if (response.searchContext) {
+          setSearchContext(response.searchContext);
+        }
       } catch (err) {
         setError(err.message || 'An error occurred while searching.');
       } finally {
