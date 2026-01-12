@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
+const cookieParser = require('cookie-parser');
 const { seedData } = require('./seed');
 const { authenticateToken, requireRole } = require('./middleware/auth');
 
@@ -45,9 +47,24 @@ try {
 // Middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
+  credentials: true, // CRITICAL: Allow cookies to be sent
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'Cookie', 
+    'X-Captcha-Pass',
+    'x-captcha-id',        // Custom header used by ByteCrtrs library
+    'X-Captcha-Id',        // Case variations
+    'x-captcha-token',     // May be used by library
+    'X-Captcha-Token',     // Case variations
+    'x-requested-with',    // Common header
+    'X-Requested-With',    // Case variations
+    // Allow all custom headers that start with x- (common pattern)
+  ],
+  exposedHeaders: ['Set-Cookie'] // Expose Set-Cookie header to browser
 }));
 app.use(express.json());
+app.use(cookieParser()); // Parse cookies from requests
 
 // Health check endpoint
 app.get('/api/v1/health', (req, res) => {
@@ -80,6 +97,656 @@ app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
+
+// ==================== PROXY ENDPOINTS FOR CORS BYPASS ====================
+// These endpoints proxy requests to the external API to bypass CORS restrictions
+
+const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
+
+// Store cookies from API responses so we can forward them with subsequent requests
+// Since clientId and apiId change between requests, we'll use origin + a stable identifier
+// Key: origin-based session identifier, Value: array of cookies
+const apiCookies = new Map();
+
+// Store captcha verification data (commerceContentId, searchContextKey) from captcha responses
+// Key: origin-based session identifier, Value: object with captcha data
+const captchaData = new Map();
+
+// Helper to get a stable session key (since clientId/apiId change)
+function getSessionKey(req) {
+  // Use origin as the base, since all requests from same browser should share cookies
+  const origin = req.headers.origin || 'http://localhost:3000';
+  // For now, use origin as the key (all requests from same origin share cookies)
+  // In the future, we could add user identification if needed
+  return `origin:${origin}`;
+}
+
+/**
+ * Handle CORS preflight requests for proxy endpoints
+ */
+app.options('/api/proxy/*', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin && (origin.includes('localhost:3000') || origin.includes('localhost:3001'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', [
+    'Content-Type',
+    'Authorization',
+    'Cookie',
+    'X-Captcha-Pass',
+    'x-captcha-id',
+    'X-Captcha-Id',
+    'x-captcha-token',
+    'X-Captcha-Token',
+    'x-requested-with',
+    'X-Requested-With'
+  ].join(', '));
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
+  res.status(204).send();
+});
+
+/**
+ * Generic proxy endpoint that forwards requests to the external API
+ * This bypasses CORS by making the request from the server instead of the browser
+ * 
+ * The JS library will make requests like: /api/proxy/idLookup/teaser/search
+ * This endpoint forwards them to: https://dev1.dev.www.bytecrtrs.com/api/idLookup/teaser/search
+ */
+app.all('/api/proxy/*', async (req, res) => {
+  try {
+    // Extract the path after /api/proxy/
+    // e.g., /api/proxy/idLookup/teaser/search -> /idLookup/teaser/search
+    const proxyPath = req.path.replace('/api/proxy', '');
+    const targetUrl = `${EXTERNAL_API_URL}${proxyPath}`;
+    
+    // Forward query parameters
+    const url = new URL(targetUrl);
+    Object.keys(req.query).forEach(key => {
+      url.searchParams.append(key, req.query[key]);
+    });
+    
+    // Prepare headers - forward all headers from the browser request
+    // This is important because the API library may set security headers
+    // that the API server expects to see
+    const headers = {};
+    
+    // Forward all headers from the original request (except those that would break)
+    const headersToSkip = [
+      'host',           // Server hostname - must be the target API
+      'connection',     // Connection header
+      'content-length', // Will be recalculated by axios
+      'x-powered-by',   // Express header, not needed
+      'set-cookie',     // This is a response header, not a request header
+    ];
+    
+    Object.keys(req.headers).forEach(key => {
+      const lowerKey = key.toLowerCase();
+      if (!headersToSkip.includes(lowerKey)) {
+        // Preserve original header name casing
+        headers[key] = req.headers[key];
+      }
+    });
+    
+    // Ensure Content-Type is set (critical for POST requests)
+    if (!headers['Content-Type'] && !headers['content-type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    // The API might check User-Agent to verify it's a real browser request
+    // Make sure we forward the browser's User-Agent
+    if (!headers['User-Agent'] && !headers['user-agent']) {
+      headers['User-Agent'] = req.headers['user-agent'] || 'Mozilla/5.0 (compatible; IDLookup-Proxy/1.0)';
+    }
+    
+    // Forward cookies - CRITICAL: The API uses cookies for captcha verification
+    // The captcha/verify endpoint sets a cookie that must be sent with subsequent requests
+    
+    // Get stable session key (based on origin, not clientId/apiId which change)
+    const sessionKey = getSessionKey(req);
+    
+    // Try to get cookies from multiple sources:
+    // 1. Browser request (if sent)
+    const cookieHeader = req.headers.cookie || req.headers.Cookie;
+    
+    // 2. Parsed cookies from cookie-parser
+    const parsedCookies = req.cookies || {};
+    
+    // 3. Server-side stored cookies (from previous API responses)
+    let storedCookies = [];
+    if (apiCookies.has(sessionKey)) {
+      storedCookies = apiCookies.get(sessionKey);
+      console.log(`[Proxy] Found ${storedCookies.length} stored cookie(s) for session: ${sessionKey}`);
+    } else {
+      console.log(`[Proxy] No stored cookies found for session: ${sessionKey}`);
+    }
+    
+    // Combine all cookie sources
+    let allCookies = [];
+    
+    if (cookieHeader) {
+      // Parse browser cookies
+      cookieHeader.split(';').forEach(c => {
+        const trimmed = c.trim();
+        if (trimmed) allCookies.push(trimmed);
+      });
+    }
+    
+    // Add stored cookies from API responses
+    storedCookies.forEach(cookie => {
+      // Extract cookie name=value from stored cookie string
+      const match = cookie.match(/^([^=]+)=([^;]+)/);
+      if (match) {
+        allCookies.push(`${match[1]}=${match[2]}`);
+      }
+    });
+    
+    if (allCookies.length > 0) {
+      headers['Cookie'] = allCookies.join('; ');
+      console.log(`[Proxy] Forwarding cookies (${allCookies.length} total): ${headers['Cookie'].substring(0, 150)}...`);
+    } else {
+      // Log if cookies are missing - this is likely the issue
+      console.warn('[Proxy] WARNING: No cookies found in request. Captcha verification cookie may be missing.');
+      console.warn('[Proxy] Request headers:', Object.keys(req.headers).filter(k => k.toLowerCase().includes('cookie')));
+      console.warn('[Proxy] Parsed cookies:', parsedCookies);
+      console.warn('[Proxy] Stored cookies for session:', sessionKey ? (apiCookies.has(sessionKey) ? 'found' : 'not found') : 'no session key');
+    }
+    
+    // Add dev captcha pass if configured (for development API)
+    // The API might require this as a header or query parameter
+    const captchaPass = process.env.CAPTCHA_PASS || 'bcEdgeApiPass';
+    // Try adding as a custom header (API might check for this)
+    if (!headers['X-Captcha-Pass'] && !headers['x-captcha-pass']) {
+      headers['X-Captcha-Pass'] = captchaPass;
+    }
+    
+    // Also try adding captcha pass as query parameter (some APIs expect it there)
+    if (captchaPass && !url.searchParams.has('captcha') && !url.searchParams.has('captchaPass')) {
+      url.searchParams.append('captchaPass', captchaPass);
+    }
+    
+    // Prepare request body
+    let requestBody = req.body || {};
+    
+    // For teaser search requests, handle missing required fields
+    // The API requires commerceContentId and searchContextKey
+    // These might come from the captcha verification response, or we need to generate placeholders
+    if (req.path.includes('/idLookup/teaser/search') && req.method === 'POST') {
+      // Log the original request body
+      console.log('[Proxy] Original teaser search request body:', JSON.stringify(requestBody));
+      
+      // Check if we have captcha data stored for this session
+      const sessionKey = getSessionKey(req);
+      const storedCaptchaData = captchaData.get(sessionKey);
+      
+      // Log captcha-related headers from the request
+      // HTTP headers are case-insensitive, but JavaScript object keys are case-sensitive
+      // So we need to check multiple case variations
+      const getHeaderCaseInsensitive = (headerName) => {
+        const lower = headerName.toLowerCase();
+        // Check in headers object (already processed)
+        for (const key in headers) {
+          if (key.toLowerCase() === lower) return headers[key];
+        }
+        // Check in original request headers
+        for (const key in req.headers) {
+          if (key.toLowerCase() === lower) return req.headers[key];
+        }
+        return null;
+      };
+      
+      const requestCaptchaId = getHeaderCaseInsensitive('x-captcha-id');
+      console.log('[Proxy] Captcha ID in request:', requestCaptchaId || 'NOT FOUND');
+      console.log('[Proxy] All captcha-related headers:', {
+        'x-captcha-id': getHeaderCaseInsensitive('x-captcha-id') || 'NOT FOUND',
+        'X-Captcha-Pass': getHeaderCaseInsensitive('x-captcha-pass') || 'NOT FOUND'
+      });
+      
+      // Helper to generate a placeholder commerceContentId (must be >= 24 characters)
+      const generateCommerceContentId = () => {
+        // Generate a 24+ character ID that looks like a MongoDB ObjectId
+        // Format: 24 hex characters (MongoDB ObjectId format)
+        const chars = '0123456789abcdef';
+        let id = '';
+        for (let i = 0; i < 24; i++) {
+          id += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return id;
+      };
+      
+      // Helper to generate a placeholder searchContextKey (must be >= 1 character)
+      const generateSearchContextKey = () => {
+        // Generate a unique key based on timestamp and random
+        return `search_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      };
+      
+      // Try to get values from stored captcha data first
+      if (storedCaptchaData) {
+        console.log('[Proxy] Found stored captcha data:', {
+          hasCommerceContentId: !!storedCaptchaData.commerceContentId,
+          hasSearchContextKey: !!storedCaptchaData.searchContextKey
+        });
+        
+        // Add missing required fields from stored captcha data
+        if (!requestBody.commerceContentId && storedCaptchaData.commerceContentId) {
+          requestBody.commerceContentId = storedCaptchaData.commerceContentId;
+          console.log('[Proxy] Added commerceContentId from stored captcha data');
+        }
+        if (!requestBody.searchContextKey && storedCaptchaData.searchContextKey) {
+          requestBody.searchContextKey = storedCaptchaData.searchContextKey;
+          console.log('[Proxy] Added searchContextKey from stored captcha data');
+        }
+      }
+      
+      // Check if captcha was verified for this session
+      const captchaVerified = storedCaptchaData?.verified === true;
+      const verifiedCaptchaId = storedCaptchaData?.captchaId;
+      
+      // If we have a captchaId in the request header, check if it matches verified one
+      if (requestCaptchaId) {
+        // If captcha is verified and the request captchaId matches, we're good
+        if (captchaVerified && verifiedCaptchaId === requestCaptchaId) {
+          console.log(`[Proxy] ✓ Captcha verified and matches request (captchaId: ${requestCaptchaId})`);
+        } else if (captchaVerified && verifiedCaptchaId !== requestCaptchaId) {
+          console.warn(`[Proxy] WARNING: Request captchaId (${requestCaptchaId}) doesn't match verified captchaId (${verifiedCaptchaId})`);
+        } else if (!captchaVerified) {
+          console.warn('[Proxy] WARNING: Captcha not verified yet. Search request may fail with 412.');
+          console.warn('[Proxy] The API requires captcha verification before search requests.');
+          console.warn('[Proxy] Flow: Search → 412 (captcha challenge) → Verify captcha → Retry search');
+          console.warn(`[Proxy] Request has captchaId: ${requestCaptchaId}, but it hasn't been verified yet.`);
+        }
+      } else {
+        // No captchaId in request - this might be the first request that triggers the challenge
+        if (!captchaVerified) {
+          console.log('[Proxy] No captchaId in request - this may trigger a 412 captcha challenge');
+        } else {
+          console.warn('[Proxy] WARNING: Captcha verified but no captchaId in request header');
+        }
+      }
+      
+      // If still missing, generate placeholder values
+      // commerceContentId must be >= 24 characters
+      if (!requestBody.commerceContentId || requestBody.commerceContentId === '' || requestBody.commerceContentId.length < 24) {
+        requestBody.commerceContentId = generateCommerceContentId();
+        console.log(`[Proxy] Generated placeholder commerceContentId: ${requestBody.commerceContentId.substring(0, 20)}...`);
+      }
+      
+      // searchContextKey must be >= 1 character
+      if (!requestBody.searchContextKey || requestBody.searchContextKey === '') {
+        requestBody.searchContextKey = generateSearchContextKey();
+        console.log(`[Proxy] Generated placeholder searchContextKey: ${requestBody.searchContextKey}`);
+      }
+      
+      // Remove any other empty/null/undefined fields that might cause validation errors
+      const cleanedBody = { ...requestBody };
+      Object.keys(cleanedBody).forEach(key => {
+        const value = cleanedBody[key];
+        // Don't remove commerceContentId or searchContextKey - we just set them
+        if (key !== 'commerceContentId' && key !== 'searchContextKey') {
+          if (value === '' || value === null || value === undefined) {
+            delete cleanedBody[key];
+            console.log(`[Proxy] Removed empty field from request: ${key}`);
+          }
+        }
+      });
+      
+      requestBody = cleanedBody;
+      
+      // Log the final body
+      console.log('[Proxy] Final teaser search request body:', JSON.stringify(requestBody));
+    }
+    
+    // Forward the request
+    const config = {
+      method: req.method,
+      url: url.toString(),
+      headers,
+      data: requestBody,
+      validateStatus: () => true, // Don't throw on any status code
+      // Important: Forward cookies from the browser request
+      // The API uses cookies to track captcha verification
+      maxRedirects: 0, // Don't follow redirects
+    };
+    
+    console.log(`[Proxy] ${req.method} ${req.path} -> ${targetUrl}`);
+    if (req.query.clientId) {
+      console.log(`[Proxy] Query params: clientId=${req.query.clientId.substring(0, 10)}..., apiId=${req.query.apiId ? req.query.apiId.substring(0, 10) + '...' : 'none'}`);
+    }
+    
+    // Log headers being sent (for debugging - always log in development, or when we get errors)
+    const headerLog = { ...headers };
+    if (headerLog['Authorization']) {
+      headerLog['Authorization'] = 'Bearer ***';
+    }
+    if (headerLog['Cookie']) {
+      // Show first 50 chars of cookie for debugging
+      const cookieStr = String(headerLog['Cookie']);
+      headerLog['Cookie'] = cookieStr.length > 50 ? cookieStr.substring(0, 50) + '...' : cookieStr;
+    }
+    if (process.env.NODE_ENV === 'development' || process.env.LOG_PROXY_HEADERS === 'true') {
+      console.log(`[Proxy] Headers being sent:`, JSON.stringify(headerLog, null, 2));
+    }
+    
+    // Log if cookies are missing (critical for captcha)
+    // Check if we have cookies from ANY source (browser, parsed, or stored)
+    const hasAnyCookies = cookieHeader || Object.keys(parsedCookies).length > 0 || storedCookies.length > 0;
+    
+    if (!hasAnyCookies && req.path.includes('/idLookup/teaser/search')) {
+      console.error('[Proxy] ========== CRITICAL: No cookies in search request ==========');
+      console.error('[Proxy] This will cause 412 errors. The captcha verification cookie is missing.');
+      console.error('[Proxy] Check browser DevTools -> Application -> Cookies to see if cookies are being stored.');
+      console.error('[Proxy] The captcha/verify endpoint should set a cookie that gets sent here.');
+      console.error('[Proxy] ============================================================');
+    } else if (req.path.includes('/idLookup/teaser/search')) {
+      console.log(`[Proxy] ✓ Cookies available for search: browser=${!!cookieHeader}, parsed=${Object.keys(parsedCookies).length}, stored=${storedCookies.length}`);
+    }
+    
+    // Always log cookie status for captcha-related requests
+    if (req.path.includes('/captcha/') || req.path.includes('/idLookup/')) {
+      console.log(`[Proxy] Cookie status for ${req.path}:`, {
+        hasCookieHeader: !!cookieHeader,
+        cookieHeaderLength: cookieHeader ? cookieHeader.length : 0,
+        parsedCookiesCount: Object.keys(parsedCookies).length,
+        parsedCookieKeys: Object.keys(parsedCookies)
+      });
+    }
+    
+    const response = await axios(config);
+    
+    // Store captcha verification data if this is a captcha/verify response
+    if (req.path.includes('/captcha/verify') && response.status === 200) {
+      const sessionKey = getSessionKey(req);
+      try {
+        // Log the full captcha response to see what it contains
+        const responseData = response.data;
+        console.log('[Proxy] ========== Captcha Verify Response ==========');
+        console.log('[Proxy] Full response data:', JSON.stringify(responseData, null, 2));
+        console.log('[Proxy] Response keys:', Object.keys(responseData || {}));
+        console.log('[Proxy] Request query params:', JSON.stringify(req.query));
+        
+        // Get captchaId from multiple sources:
+        // 1. Query params (if the JS library sends it)
+        // 2. Pending captchaId from previous 412 response
+        // 3. From the search request's x-captcha-id header (if available)
+        const sessionKey = getSessionKey(req);
+        const existingCaptchaData = captchaData.get(sessionKey) || {};
+        const captchaId = req.query.captchaId || 
+                         req.query.id || 
+                         existingCaptchaData.pendingCaptchaId ||
+                         null;
+        
+        console.log('[Proxy] CaptchaId sources:', {
+          fromQuery: req.query.captchaId || req.query.id || 'NOT FOUND',
+          fromPending: existingCaptchaData.pendingCaptchaId || 'NOT FOUND',
+          final: captchaId || 'NOT FOUND'
+        });
+        
+        // Try to extract commerceContentId and searchContextKey from response
+        // Check multiple possible locations
+        const captchaInfo = {
+          captchaId: captchaId, // Store the captchaId that was verified
+          commerceContentId: responseData.commerceContentId || 
+                            responseData.commerceContent?._id || 
+                            responseData.commerceContentId ||
+                            responseData.data?.commerceContentId ||
+                            null,
+          searchContextKey: responseData.searchContextKey || 
+                           responseData.searchContext?.key || 
+                           responseData.searchContextKey ||
+                           responseData.data?.searchContextKey ||
+                           null,
+          verified: true, // Mark that captcha was verified
+          verifiedAt: new Date().toISOString(),
+          // Store the full response for debugging
+          _rawResponse: responseData
+        };
+        
+        console.log('[Proxy] Extracted captcha data:', {
+          captchaId: captchaInfo.captchaId || 'NOT FOUND',
+          commerceContentId: captchaInfo.commerceContentId || 'NOT FOUND',
+          searchContextKey: captchaInfo.searchContextKey || 'NOT FOUND',
+          verified: captchaInfo.verified
+        });
+        
+        // Store even if empty - we'll log what we found
+        captchaData.set(sessionKey, captchaInfo);
+        console.log(`[Proxy] Stored captcha data for session: ${sessionKey}`);
+        console.log('[Proxy] ============================================');
+      } catch (error) {
+        console.error('[Proxy] Error storing captcha data:', error.message);
+        console.error('[Proxy] Error stack:', error.stack);
+      }
+    }
+    
+    // For 412 responses with captcha challenge, store the captchaId for later verification
+    if (response.status === 412 && response.data?.captchaId) {
+      const sessionKey = getSessionKey(req);
+      const captchaId = response.data.captchaId;
+      console.log(`[Proxy] Storing captchaId from 412 response: ${captchaId} for session: ${sessionKey}`);
+      
+      // Update or create captcha data entry
+      const existing = captchaData.get(sessionKey) || {};
+      captchaData.set(sessionKey, {
+        ...existing,
+        pendingCaptchaId: captchaId, // Store the captchaId that needs to be verified
+        challengeReceivedAt: new Date().toISOString()
+      });
+    }
+    
+    // Log response for search requests (success or failure)
+    if (req.path.includes('/idLookup/teaser/search')) {
+      console.log('='.repeat(80));
+      console.log(`[Proxy] Search Response Status: ${response.status}`);
+      // 200 (OK) and 201 (Created) are both success status codes
+      if (response.status === 200 || response.status === 201) {
+        console.log('[Proxy] ✓ Search request SUCCEEDED');
+        console.log('[Proxy] Response data keys:', Object.keys(response.data || {}));
+        
+        // Check response structure based on API documentation
+        if (response.data?.raws) {
+          console.log('[Proxy] Response contains raws array with', response.data.raws?.length || 0, 'items');
+          if (response.data.raws[0]?.transient?.identities) {
+            const identities = response.data.raws[0].transient.identities;
+            console.log('[Proxy] Found', identities.length, 'identities in results');
+          }
+        } else if (response.data?.commerceContent) {
+          console.log('[Proxy] Response contains commerceContent');
+        } else if (response.data?.commerceContent === null) {
+          console.log('[Proxy] ⚠ Response has commerceContent: null - This might mean no results found, or API returned empty response');
+          console.log('[Proxy] Full response structure:', JSON.stringify(response.data, null, 2));
+          console.log('[Proxy] Note: API docs say response should have raws.0.transient.identities, but we got commerceContent: null');
+          console.log('[Proxy] This could mean: (1) No results found, (2) Different response format, or (3) API needs different parameters');
+        } else {
+          console.log('[Proxy] ⚠ Unexpected response structure. Full response:', JSON.stringify(response.data, null, 2).substring(0, 1000));
+        }
+      } else {
+        console.log('[Proxy] ✗ Search request FAILED');
+      }
+      console.log('[Proxy] Response status:', response.status);
+      console.log('[Proxy] Response data:', JSON.stringify(response.data).substring(0, 500));
+      console.log('='.repeat(80));
+    }
+    
+    // Check for errors and log details
+    if (response.status === 412) {
+      console.error('='.repeat(80));
+      console.error('[Proxy] 412 Precondition Failed - API security check failed');
+      console.error('[Proxy] Request URL:', url.toString());
+      console.error('[Proxy] Request method:', req.method);
+      console.error('[Proxy] Request headers sent:', JSON.stringify(headers, null, 2));
+      console.error('[Proxy] Request body:', JSON.stringify(req.body).substring(0, 500));
+      console.error('[Proxy] Response status:', response.status);
+      console.error('[Proxy] Response headers:', JSON.stringify(response.headers, null, 2));
+      console.error('[Proxy] Response data:', JSON.stringify(response.data));
+      console.error('[Proxy] Possible causes:');
+      console.error('  - Missing security headers (check what the JS library sets)');
+      console.error('  - Missing cookies/session tokens');
+      console.error('  - Origin/Referer header mismatch');
+      console.error('  - Missing captcha verification token');
+      console.error('  - API expects request from specific domain');
+      console.error('  - Missing X-Captcha-Pass header or incorrect value');
+      console.error('='.repeat(80));
+    } else if (response.status >= 400) {
+      // Log other errors (400, 500, etc.) with details
+      console.error('='.repeat(80));
+      console.error(`[Proxy] ${response.status} Error from API`);
+      console.error('[Proxy] Request URL:', url.toString());
+      console.error('[Proxy] Request method:', req.method);
+      console.error('[Proxy] Request headers sent:', JSON.stringify(headers, null, 2));
+      console.error('[Proxy] Request body:', JSON.stringify(req.body).substring(0, 500));
+      console.error('[Proxy] Response status:', response.status);
+      console.error('[Proxy] Response data:', JSON.stringify(response.data));
+      console.error('='.repeat(80));
+    }
+    
+    // Forward the response
+    res.status(response.status);
+    
+    // Forward response headers (except those that shouldn't be forwarded)
+    Object.keys(response.headers).forEach(key => {
+      const lowerKey = key.toLowerCase();
+      if (!['content-encoding', 'content-length', 'transfer-encoding', 'connection', 'host'].includes(lowerKey)) {
+        res.setHeader(key, response.headers[key]);
+      }
+    });
+    
+    // CRITICAL: Store and forward Set-Cookie headers from the API response
+    // The captcha verification sets cookies that must be sent with subsequent requests
+    // Since cookies can't be shared across origins (localhost:3000 vs localhost:3001),
+    // we store them server-side and automatically include them in requests
+    if (response.headers['set-cookie']) {
+      const cookies = Array.isArray(response.headers['set-cookie']) 
+        ? response.headers['set-cookie'] 
+        : [response.headers['set-cookie']];
+      
+      // Get stable session key (based on origin, not clientId/apiId which change)
+      const sessionKey = getSessionKey(req);
+      
+      // Store cookies server-side for this session
+      // Merge with existing cookies (don't overwrite, in case there are multiple)
+      const existingCookies = apiCookies.get(sessionKey) || [];
+      const allCookies = [...existingCookies];
+      
+      // Add new cookies, avoiding duplicates
+      cookies.forEach(newCookie => {
+        const newCookieName = newCookie.match(/^([^=]+)=/)?.[1];
+        if (newCookieName) {
+          // Remove old cookie with same name
+          const filtered = allCookies.filter(c => {
+            const oldCookieName = c.match(/^([^=]+)=/)?.[1];
+            return oldCookieName !== newCookieName;
+          });
+          allCookies.length = 0;
+          allCookies.push(...filtered, newCookie);
+        } else {
+          allCookies.push(newCookie);
+        }
+      });
+      
+      apiCookies.set(sessionKey, allCookies);
+      console.log(`[Proxy] Stored ${cookies.length} new cookie(s) server-side for session: ${sessionKey} (${allCookies.length} total)`);
+      console.log(`[Proxy] Cookie names: ${allCookies.map(c => {
+        const match = c.match(/^([^=]+)=/);
+        return match ? match[1] : 'unknown';
+      }).join(', ')}`);
+      
+      // Also try to forward to browser (though it may not work due to cross-origin)
+      // Get the browser's origin
+      const browserOrigin = req.headers.origin || 'http://localhost:3000';
+      const isLocalhost = browserOrigin.includes('localhost');
+      
+      cookies.forEach(cookie => {
+        // Modify cookie to work with browser's origin (localhost:3000)
+        let modifiedCookie = cookie;
+        
+        // Remove domain restrictions
+        modifiedCookie = modifiedCookie.replace(/;\s*Domain=[^;]+/gi, '');
+        
+        // Remove Secure flag (allows cookie to work with http://localhost)
+        modifiedCookie = modifiedCookie.replace(/;\s*Secure/gi, '');
+        
+        // Ensure Path is set to /
+        if (!modifiedCookie.match(/;\s*Path=/i)) {
+          modifiedCookie += '; Path=/';
+        }
+        
+        // Remove existing SameSite attribute
+        modifiedCookie = modifiedCookie.replace(/;\s*SameSite=[^;]+/gi, '');
+        
+        // For localhost cross-origin, try SameSite=None (some browsers allow without Secure)
+        if (isLocalhost) {
+          modifiedCookie += '; SameSite=None';
+        } else {
+          modifiedCookie += '; SameSite=Lax';
+        }
+        
+        res.appendHeader('Set-Cookie', modifiedCookie);
+        console.log(`[Proxy] Also forwarding Set-Cookie to browser: ${modifiedCookie.substring(0, 150)}...`);
+      });
+    }
+    
+    // Set CORS headers to allow the frontend to receive the response
+    const origin = req.headers.origin;
+    if (origin && (origin.includes('localhost:3000') || origin.includes('localhost:3001'))) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', [
+      'Content-Type',
+      'Authorization',
+      'Cookie',
+      'X-Captcha-Pass',
+      'x-captcha-id',
+      'X-Captcha-Id',
+      'x-captcha-token',
+      'X-Captcha-Token',
+      'x-requested-with',
+      'X-Requested-With'
+    ].join(', '));
+    res.setHeader('Access-Control-Allow-Credentials', 'true'); // Allow cookies to be sent
+    res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
+    
+    res.send(response.data);
+  } catch (error) {
+    console.error('[Proxy] Error:', error.message);
+    if (error.response) {
+      console.error('[Proxy] Response status:', error.response.status);
+      console.error('[Proxy] Response headers:', JSON.stringify(error.response.headers, null, 2));
+      console.error('[Proxy] Response data:', JSON.stringify(error.response.data).substring(0, 500));
+      
+      // If we get a 412, log more details about what might be wrong
+      if (error.response.status === 412) {
+        console.error('[Proxy] 412 Precondition Failed - API security check failed');
+        console.error('[Proxy] Request URL:', url.toString());
+        console.error('[Proxy] Request method:', req.method);
+        console.error('[Proxy] Request headers sent:', JSON.stringify(headers, null, 2));
+        console.error('[Proxy] Request body:', JSON.stringify(req.body).substring(0, 200));
+        console.error('[Proxy] Response data:', JSON.stringify(error.response.data));
+        console.error('[Proxy] Possible causes:');
+        console.error('  - Missing security headers (check what the JS library sets)');
+        console.error('  - Missing cookies/session tokens');
+        console.error('  - Origin/Referer header mismatch');
+        console.error('  - Missing captcha verification token');
+        console.error('  - API expects request from specific domain');
+      }
+    }
+    res.status(error.response?.status || 500).json({
+      error: {
+        code: 'PROXY_ERROR',
+        message: error.message || 'Proxy request failed',
+        details: error.response?.data || []
+      }
+    });
+  }
+});
+
+// Note: The generic /api/proxy/* endpoint above handles all proxy requests
+// including /api/proxy/idLookup/teaser/search, so we don't need a specific endpoint
 
 // Helper functions
 const generateTokens = (user) => {

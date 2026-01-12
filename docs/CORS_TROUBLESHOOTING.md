@@ -13,9 +13,37 @@ from origin 'http://localhost:3000' has been blocked by CORS policy
 
 The new API server (`https://dev1.dev.www.bytecrtrs.com/api`) doesn't allow requests from `http://localhost:3000` by default. This is a security feature of browsers.
 
-## Solution 1: Automatic Fallback (Current Behavior)
+## Solution: Proxy Mode (Implemented)
 
-**Good News:** The hybrid API router automatically detects CORS errors and falls back to the mock API. You should still see results, even though the console shows CORS errors.
+**Good News:** We've implemented a proxy solution that bypasses CORS entirely!
+
+### How It Works
+
+1. The JavaScript library is configured to point to our Express server proxy (`http://localhost:3001/api/proxy`)
+2. The library makes requests to our server (same origin, no CORS issues)
+3. Our Express server forwards the requests to the external API
+4. The response is returned to the browser
+
+### Configuration
+
+Proxy mode is **enabled by default**. The API wrapper automatically uses the proxy when making requests.
+
+**Environment Variables:**
+- `REACT_APP_USE_API_PROXY=true` (default) - Enable proxy mode
+- `REACT_APP_PROXY_URL=http://localhost:3001/api/proxy` (default) - Proxy server URL
+- `EXTERNAL_API_URL=https://dev1.dev.www.bytecrtrs.com/api` (server-side) - External API URL
+
+### To Disable Proxy Mode
+
+If you want to use the library directly (and handle CORS another way):
+
+```env
+REACT_APP_USE_API_PROXY=false
+```
+
+## Solution 2: Automatic Fallback (Legacy)
+
+If proxy mode is disabled, the hybrid API router automatically detects CORS errors and falls back to the mock API. You should still see results, even though the console shows CORS errors.
 
 The errors in the console are informational - the app will automatically use the mock API when CORS fails.
 
@@ -30,17 +58,9 @@ Access-Control-Allow-Origin: https://yourdomain.com (for production)
 
 **Note:** This must be done by the API team/server administrators.
 
-## Solution 3: Use a Proxy (Development Only)
+## Solution 3: Use Mock API for Development
 
-For local development, you can set up a proxy to avoid CORS issues. However, since we're using Parcel, this requires additional configuration.
-
-### Option A: Parcel Proxy (if supported)
-
-Create a `package.json` proxy configuration (Parcel 2 may not support this directly).
-
-### Option B: Use Mock API for Development
-
-The simplest solution for development is to use the mock API:
+If you prefer to use the mock API instead of the proxy:
 
 ```env
 # In .env file
@@ -59,28 +79,30 @@ CORS errors won't occur when:
 
 ## Current Behavior
 
-With the current implementation:
+With the current implementation (proxy mode enabled by default):
 
-1. ✅ New API is attempted first (if enabled)
-2. ⚠️ CORS error occurs (expected in development)
-3. ✅ Automatic fallback to mock API
-4. ✅ Search results are displayed (from mock API)
+1. ✅ JavaScript library is configured to use proxy (`http://localhost:3001/api/proxy`)
+2. ✅ Library makes requests to our Express server (no CORS issues)
+3. ✅ Express server forwards requests to external API
+4. ✅ Response is returned to the browser
+5. ✅ Search results are displayed
 
-**The CORS errors in the console are expected and don't prevent the app from working.**
+**No CORS errors should occur when using proxy mode!**
 
-## Verifying Fallback Works
+## Verifying Proxy Works
 
-1. Check the browser console - you should see:
+1. Check the server console - you should see:
    ```
-   [API Router] CORS error detected for teaser-search. 
-   This is expected in development. Falling back to mock API.
+   [Proxy] POST /api/proxy/idLookup/teaser/search -> https://dev1.dev.www.bytecrtrs.com/api/idLookup/teaser/search
    ```
 
-2. Check the Network tab - you should see:
-   - Failed request to `dev1.dev.www.bytecrtrs.com` (CORS error)
-   - Successful request to `localhost:3001/api/v1/search` (mock API)
+2. Check the browser Network tab - you should see:
+   - Successful request to `localhost:3001/api/proxy/idLookup/teaser/search` (proxy endpoint)
+   - No CORS errors in the console
 
-3. Results should still appear on the page
+3. Check the browser console - you should NOT see any CORS errors
+
+4. Results should appear on the page from the external API
 
 ## For Production
 
@@ -90,9 +112,39 @@ When deploying to production:
 2. The CORS errors will not occur if properly configured
 3. The fallback will still work as a safety net
 
+## Troubleshooting Proxy Mode
+
+### Proxy Not Working
+
+If you still see CORS errors:
+
+1. **Verify the server is running:**
+   ```bash
+   npm run server
+   ```
+   Should be running on `http://localhost:3001`
+
+2. **Check environment variables:**
+   ```env
+   REACT_APP_USE_API_PROXY=true
+   REACT_APP_PROXY_URL=http://localhost:3001/api/proxy
+   ```
+
+3. **Check server logs:**
+   Look for `[Proxy]` messages indicating proxy requests are being received
+
+4. **Verify the proxy endpoint:**
+   The server should have the `/api/proxy/*` endpoint configured
+
+### Common Issues
+
+- **"Proxy request failed"**: Check that `EXTERNAL_API_URL` is correct in server environment
+- **"Network error"**: Ensure the Express server is running on port 3001
+- **Still seeing CORS errors**: Verify `REACT_APP_USE_API_PROXY` is set to `true` (or not set, as it defaults to true)
+
 ## Summary
 
-- **CORS errors are expected in development** when testing the new API from localhost
-- **The app automatically falls back to mock API** when CORS fails
-- **Results will still appear** - the errors are just console warnings
-- **For production**, ensure CORS is configured on the API server
+- **Proxy mode is enabled by default** - no CORS errors should occur
+- **Requests go through Express server** at `localhost:3001/api/proxy`
+- **Server forwards to external API** and returns the response
+- **For production**, you may want to configure CORS on the API server directly, or continue using the proxy
