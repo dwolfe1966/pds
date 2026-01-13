@@ -5,26 +5,34 @@ import ResultCard from '../../components/ResultCard';
 import { setSearchContext } from '../../services/searchContext';
 
 /**
- * Displays phone search results for public searches.
+ * Displays email search results for public searches.
+ * Mimics the name search results flow with IDLookup design.
  */
-const PhoneSearchResultsPage = () => {
+const EmailSearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
-  const phone = params.get('phone');
+  const email = params.get('email');
+  const error = params.get('error');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const fetchResults = async () => {
       // Check if we have results from the loader page
-      const storedResults = sessionStorage.getItem('phoneSearchResults');
+      const storedResults = sessionStorage.getItem('emailSearchResults');
       if (storedResults) {
         try {
           const data = JSON.parse(storedResults);
           setResults(data.results || []);
-          sessionStorage.removeItem('phoneSearchResults');
+          
+          // Store search context
+          if (data.searchContext) {
+            setSearchContext(data.searchContext);
+          }
+          
+          sessionStorage.removeItem('emailSearchResults');
           setLoading(false);
           return;
         } catch (err) {
@@ -32,41 +40,53 @@ const PhoneSearchResultsPage = () => {
         }
       }
 
-      if (!phone) {
-        navigate('/phone/landing');
+      if (!email) {
+        navigate('/email/landing');
+        return;
+      }
+
+      if (error) {
+        setErrorMessage('An error occurred during the search. Please try again.');
+        setLoading(false);
         return;
       }
 
       setLoading(true);
       try {
         const response = await api.searchPeople({
-          phone,
-          type: 'phone'
+          email,
+          type: 'email'
         });
+        
         // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
         setResults(response.data || []);
         
-        // Store search context for opt-out
+        // Store search context for report creation and opt-out
         if (response.searchContext) {
           setSearchContext(response.searchContext);
         }
       } catch (err) {
-        setError(err.message || 'An error occurred while searching.');
+        setErrorMessage(err.message || 'An error occurred during the search.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchResults();
-  }, [phone, navigate]);
+  }, [email, error, navigate]);
 
   return (
     <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Phone Search Results</h1>
+      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Email Search Results</h1>
       
-      <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+      <div style={{ 
+        marginBottom: '2rem', 
+        padding: '1rem', 
+        backgroundColor: '#f5f5f5', 
+        borderRadius: '4px' 
+      }}>
         <p style={{ margin: 0, color: '#666' }}>
-          <strong>Searching for:</strong> {phone}
+          <strong>Searching for:</strong> {email}
         </p>
       </div>
 
@@ -76,28 +96,36 @@ const PhoneSearchResultsPage = () => {
         </div>
       )}
 
-      {error && (
-        <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>
-          <p style={{ margin: 0 }}>{error}</p>
+      {errorMessage && (
+        <div style={{ 
+          padding: '1rem', 
+          backgroundColor: '#fee', 
+          color: '#c00', 
+          borderRadius: '4px', 
+          marginBottom: '1rem' 
+        }}>
+          <p style={{ margin: 0 }}>{errorMessage}</p>
         </div>
       )}
 
-      {!loading && !error && results.length > 0 && (
+      {!loading && !errorMessage && results.length > 0 && (
         <div style={{ marginTop: '1rem' }}>
           <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>
             Found {results.length} result{results.length !== 1 ? 's' : ''}
           </h2>
           {results.map((result) => (
-            <ResultCard key={result.id} result={result} />
+            <ResultCard key={result.id || result.extId} result={result} />
           ))}
         </div>
       )}
 
-      {!loading && !error && results.length === 0 && (
+      {!loading && !errorMessage && results.length === 0 && (
         <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p style={{ color: '#666', fontSize: '1.1rem' }}>No results found for this phone number.</p>
+          <p style={{ color: '#666', fontSize: '1.1rem' }}>
+            No results found for this email address.
+          </p>
           <button
-            onClick={() => navigate('/phone/landing')}
+            onClick={() => navigate('/email/landing')}
             style={{
               marginTop: '1rem',
               padding: '0.75rem 2rem',
@@ -117,5 +145,4 @@ const PhoneSearchResultsPage = () => {
   );
 };
 
-export default PhoneSearchResultsPage;
-
+export default EmailSearchResultsPage;

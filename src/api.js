@@ -104,7 +104,18 @@ function pathToEndpoint(path) {
  * Generic GET request handler
  */
 async function handleGet(path, options = {}) {
-  const { params, token } = options;
+  // Handle case where options is just { token } or { params, token }
+  let params, token;
+  if (options.token && !options.params) {
+    // If only token is provided, extract it
+    token = options.token;
+    params = undefined;
+  } else {
+    // Normal case: { params, token } or { params }
+    params = options.params;
+    token = options.token;
+  }
+  
   const endpoint = pathToEndpoint(path);
   const mockPath = getMockAPIPath(endpoint, { id: path.split('/').pop() });
 
@@ -203,28 +214,57 @@ const api = {
    * Auth endpoints
    */
   login: async (body) => {
-    return await routeApiRequest('login', { body });
+    return await routeApiRequest('login', { method: 'POST', body });
   },
 
   logout: async () => {
-    return await routeApiRequest('logout');
+    return await routeApiRequest('logout', { method: 'POST' });
   },
 
   /**
    * ID Lookup (Teaser Search)
    */
   searchPeople: async (params) => {
-    const { firstName, lastName, type = 'name', phone, email, state } = params;
+    const { firstName, lastName, type = 'name', phone, email, state, searchContextKey } = params;
 
     const query = { type };
     if (type === 'name') {
       query.fName = firstName;
       query.lName = lastName;
-      if (state) query.state = state;
+      if (state) {
+        // Ensure state is uppercase two-letter abbreviation (API expects this format)
+        query.state = state.trim().toUpperCase();
+      }
     } else if (type === 'phone') {
       query.phone = phone;
     } else if (type === 'email') {
       query.email = email;
+    }
+    
+    // Include searchContextKey if provided (from library constants or previous search)
+    // The library exposes window.ApiWrapper.searchContextKey as an enum/object
+    if (searchContextKey) {
+      query.searchContextKey = searchContextKey;
+    } else if (typeof window !== 'undefined' && window.ApiWrapper?.searchContextKey) {
+      // Try to get a default searchContextKey from the library if available
+      // The library exposes searchContextKey as an object with nested values
+      const searchContextKeys = window.ApiWrapper.searchContextKey;
+      // Get the first available value (similar to development page)
+      const getAllLeafValues = (obj) => {
+        return Object.values(obj).flatMap((value) => {
+          if (typeof value === 'object' && value !== null) {
+            return getAllLeafValues(value);
+          }
+          return value;
+        });
+      };
+      const availableKeys = getAllLeafValues(searchContextKeys);
+      if (availableKeys.length > 0) {
+        query.searchContextKey = availableKeys[0]; // Use first available key
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[API] Using searchContextKey from library:', query.searchContextKey);
+        }
+      }
     }
 
     const response = await routeApiRequest('teaser-search', query);
@@ -244,8 +284,15 @@ const api = {
     return await routeApiRequest('create-report', params);
   },
 
-  getReportList: async (params) => {
-    return await routeApiRequest('report-list', params);
+  getReportList: async (params = {}) => {
+    // Use provided token or fall back to token getter
+    const token = params.token || getToken();
+    // Remove token from params before spreading to avoid duplication
+    const { token: _, ...restParams } = params;
+    return await routeApiRequest('report-list', {
+      ...restParams,
+      token: token
+    });
   },
 
   getReportDetail: async (id) => {

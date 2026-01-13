@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
+import { createReportForIdentity } from '../../services/reportService';
 
 /**
  * Payment capture page shown after signup.
@@ -43,7 +44,24 @@ const PaymentPage = () => {
       await api.updateSubscription({ plan: 'basic', paymentToken: 'tok_demo' });
       setSuccess(true);
       
-      // Redirect to person detail page after payment
+      // After successful payment, create report if we have a selected person
+      if (selectedPerson && selectedPerson.extId) {
+        try {
+          const reportResult = await createReportForIdentity(selectedPerson.extId, selectedPerson);
+          if (reportResult.success && reportResult.commerceContentId) {
+            // Redirect to report detail page using commerceContentId
+            setTimeout(() => {
+              navigate(`/people/${reportResult.commerceContentId}`);
+            }, 2000);
+            return;
+          }
+        } catch (reportError) {
+          console.error('Failed to create report after payment:', reportError);
+          // Continue to redirect even if report creation fails
+        }
+      }
+      
+      // Redirect to person detail page or dashboard
       if (selectedPersonId) {
         setTimeout(() => {
           navigate(`/people/${selectedPersonId}`);

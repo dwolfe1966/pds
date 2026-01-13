@@ -275,8 +275,12 @@ app.all('/api/proxy/*', async (req, res) => {
     // The API requires commerceContentId and searchContextKey
     // These might come from the captcha verification response, or we need to generate placeholders
     if (req.path.includes('/idLookup/teaser/search') && req.method === 'POST') {
-      // Log the original request body
-      console.log('[Proxy] Original teaser search request body:', JSON.stringify(requestBody));
+      // Log the original request body from the library
+      console.log('[Proxy] ========== TEASER SEARCH REQUEST ==========');
+      console.log('[Proxy] Original request body from library:', JSON.stringify(requestBody, null, 2));
+      console.log('[Proxy] Request body keys:', Object.keys(requestBody || {}));
+      console.log('[Proxy] Library sent commerceContentId?', !!requestBody.commerceContentId, requestBody.commerceContentId ? `(${requestBody.commerceContentId.length} chars)` : '');
+      console.log('[Proxy] Library sent searchContextKey?', !!requestBody.searchContextKey, requestBody.searchContextKey ? `(${requestBody.searchContextKey.length} chars)` : '');
       
       // Check if we have captcha data stored for this session
       const sessionKey = getSessionKey(req);
@@ -367,17 +371,31 @@ app.all('/api/proxy/*', async (req, res) => {
         }
       }
       
-      // If still missing, generate placeholder values
-      // commerceContentId must be >= 24 characters
+      // Only add commerceContentId and searchContextKey if we have real values from captcha verification
+      // The API might reject placeholder values, so we'll only include them if we got them from the captcha response
+      // If the library sends them in the request body, we'll use those; otherwise, only use stored values
       if (!requestBody.commerceContentId || requestBody.commerceContentId === '' || requestBody.commerceContentId.length < 24) {
-        requestBody.commerceContentId = generateCommerceContentId();
-        console.log(`[Proxy] Generated placeholder commerceContentId: ${requestBody.commerceContentId.substring(0, 20)}...`);
+        // Don't generate placeholder - only use if we have a real value from captcha
+        if (storedCaptchaData?.commerceContentId && storedCaptchaData.commerceContentId.length >= 24) {
+          requestBody.commerceContentId = storedCaptchaData.commerceContentId;
+          console.log(`[Proxy] Using commerceContentId from captcha data: ${storedCaptchaData.commerceContentId.substring(0, 20)}...`);
+        } else {
+          // Remove the field entirely if we don't have a valid value
+          delete requestBody.commerceContentId;
+          console.log('[Proxy] No valid commerceContentId available - removing from request (API may not require it)');
+        }
       }
       
-      // searchContextKey must be >= 1 character
+      // Same for searchContextKey - only include if we have a real value
       if (!requestBody.searchContextKey || requestBody.searchContextKey === '') {
-        requestBody.searchContextKey = generateSearchContextKey();
-        console.log(`[Proxy] Generated placeholder searchContextKey: ${requestBody.searchContextKey}`);
+        if (storedCaptchaData?.searchContextKey && storedCaptchaData.searchContextKey.length >= 1) {
+          requestBody.searchContextKey = storedCaptchaData.searchContextKey;
+          console.log(`[Proxy] Using searchContextKey from captcha data: ${storedCaptchaData.searchContextKey}`);
+        } else {
+          // Remove the field entirely if we don't have a valid value
+          delete requestBody.searchContextKey;
+          console.log('[Proxy] No valid searchContextKey available - removing from request (API may not require it)');
+        }
       }
       
       // Remove any other empty/null/undefined fields that might cause validation errors
@@ -395,8 +413,23 @@ app.all('/api/proxy/*', async (req, res) => {
       
       requestBody = cleanedBody;
       
-      // Log the final body
-      console.log('[Proxy] Final teaser search request body:', JSON.stringify(requestBody));
+      // Log the final body with full details
+      console.log('[Proxy] Final teaser search request body:', JSON.stringify(requestBody, null, 2));
+      console.log('[Proxy] Request body field check:', {
+        hasType: !!requestBody.type,
+        type: requestBody.type,
+        hasFName: !!requestBody.fName,
+        fName: requestBody.fName,
+        hasLName: !!requestBody.lName,
+        lName: requestBody.lName,
+        hasState: !!requestBody.state,
+        state: requestBody.state,
+        hasSearchContextKey: !!requestBody.searchContextKey,
+        searchContextKey: requestBody.searchContextKey,
+        hasCommerceContentId: !!requestBody.commerceContentId,
+        commerceContentIdLength: requestBody.commerceContentId?.length || 0,
+        allKeys: Object.keys(requestBody)
+      });
     }
     
     // Forward the request
@@ -1358,6 +1391,69 @@ app.put('/api/v1/subscription', authenticateToken, (req, res) => {
     plan: subscription.plan,
     status: subscription.status,
     renewalDate: subscription.renewalDate
+  });
+});
+
+// GET /api/v1/reports (report list)
+app.get('/api/v1/reports', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { lastId } = req.query;
+  
+  // Get all reports for this user (in a real app, these would be stored per user)
+  // For now, return empty array or mock data
+  const reports = [];
+  
+  // If we had report storage, we'd filter by userId and paginate
+  // For now, return empty array with pagination info
+  res.json({
+    data: reports,
+    pagination: {
+      hasMore: false,
+      lastId: null
+    }
+  });
+});
+
+// GET /api/v1/reports/:id (report detail)
+app.get('/api/v1/reports/:id', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { id } = req.params;
+  
+  // In a real app, fetch report by id and userId
+  // For now, return 404
+  res.status(404).json({
+    error: {
+      code: 'NOT_FOUND',
+      message: 'Report not found',
+      details: []
+    }
+  });
+});
+
+// POST /api/v1/reports (create report)
+app.post('/api/v1/reports', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { type, extId, phone, searchContextKey, teaserInput } = req.body;
+  
+  // In a real app, create a report and store it
+  // For now, return a mock report
+  const mockReport = {
+    _id: `report-${Date.now()}`,
+    userId,
+    type,
+    extId: extId || null,
+    phone: phone || null,
+    createdAt: new Date().toISOString(),
+    data: {
+      teaserInput
+    }
+  };
+  
+  res.status(201).json({
+    commerceContents: [{
+      _id: mockReport._id
+    }],
+    data: mockReport
   });
 });
 

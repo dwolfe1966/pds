@@ -17,6 +17,39 @@ export function adaptTeaserResponse(response) {
   let teaserInput = null;
   let provider = null;
 
+  // Log response structure for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[API Adapter] adaptTeaserResponse called with:', {
+      type: typeof response,
+      hasGetIdentities: typeof response?.getIdentities === 'function',
+      hasRaws: !!response?.raws,
+      hasCommerceContent: 'commerceContent' in (response || {}),
+      keys: response ? Object.keys(response) : []
+    });
+    
+    // Try to inspect the underlying response data if the library exposes it
+    // Some libraries store the raw response in a private property
+    if (response && typeof response === 'object') {
+      // Check for common property names where libraries might store raw data
+      const possibleDataProps = ['_data', '_response', 'data', '_raw', '__data'];
+      for (const prop of possibleDataProps) {
+        if (prop in response) {
+          console.log(`[API Adapter] Found ${prop} property:`, JSON.stringify(response[prop]).substring(0, 300));
+        }
+      }
+      
+      // Also try to see if we can access the raw response through getCommerceContent
+      if (typeof response.getCommerceContent === 'function') {
+        const commerceContent = response.getCommerceContent();
+        if (commerceContent) {
+          console.log('[API Adapter] getCommerceContent() returned data:', JSON.stringify(commerceContent).substring(0, 300));
+        } else {
+          console.log('[API Adapter] getCommerceContent() returned null/undefined - this might indicate no results or incomplete response');
+        }
+      }
+    }
+  }
+
   // Try to get identities using the getIdentities method if available
   if (response && typeof response.getIdentities === 'function') {
     identities = response.getIdentities() || [];
@@ -25,6 +58,10 @@ export function adaptTeaserResponse(response) {
     searchContextKey = response.getSearchContextKey?.() || null;
     teaserInput = response.getTeaserInput?.() || null;
     provider = response.getProvider?.() || null;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Adapter] Used getIdentities() method, found', identities.length, 'identities');
+    }
   } else if (response?.raws?.[0]?.transient) {
     // Fallback to direct property access
     const transient = response.raws[0].transient;
@@ -34,6 +71,50 @@ export function adaptTeaserResponse(response) {
     searchContextKey = response.searchContextKey || null;
     teaserInput = response.teaserInput || null;
     provider = response.meta?.provider || response.raws[0]?.meta?.provider || null;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Adapter] Used raws[0].transient, found', identities.length, 'identities');
+    }
+  } else if (response?.commerceContent === null) {
+    // Handle case where API returns {commerceContent: null} - this might mean no results
+    // But we should still check if there's data elsewhere
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[API Adapter] Response has commerceContent: null. This might mean no results found.');
+      console.log('[API Adapter] Full response structure:', JSON.stringify(response, null, 2));
+    }
+    // Return empty results
+    identities = [];
+  } else if (response && typeof response === 'object') {
+    // The library wrapper might have transformed the response
+    // Try to access underlying data through various methods
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Adapter] Response is an object but no standard structure found. Checking for alternative data sources...');
+      
+      // Check if response has a method to get raw data
+      if (typeof response.getData === 'function') {
+        const rawData = response.getData();
+        console.log('[API Adapter] getData() returned:', JSON.stringify(rawData).substring(0, 500));
+        if (rawData?.raws?.[0]?.transient?.identities) {
+          identities = rawData.raws[0].transient.identities;
+          total = rawData.raws[0].transient.total || 0;
+          perPage = rawData.raws[0].transient.perPage || 20;
+          console.log('[API Adapter] Found identities in getData():', identities.length);
+        }
+      }
+    }
+    
+    // If still no identities, return empty
+    if (identities.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[API Adapter] No identities found in response. Returning empty results.');
+      }
+    }
+  } else {
+    // Unknown response structure
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[API Adapter] Unknown response structure:', response);
+    }
+    identities = [];
   }
 
   return {

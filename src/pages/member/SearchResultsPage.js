@@ -22,9 +22,29 @@ const MemberSearchResultsPage = () => {
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (!query) return;
       setLoading(true);
       try {
+        // First, check sessionStorage for results from MemberGeneralSearchPage
+        const storedResults = sessionStorage.getItem('memberSearchResults');
+        if (storedResults) {
+          try {
+            const parsed = JSON.parse(storedResults);
+            setResults(parsed.results || []);
+            // Clear sessionStorage after reading
+            sessionStorage.removeItem('memberSearchResults');
+            setLoading(false);
+            return;
+          } catch (e) {
+            console.error('Failed to parse stored results:', e);
+          }
+        }
+
+        // Fallback to query params (legacy flow)
+        if (!query) {
+          setLoading(false);
+          return;
+        }
+
         // Parse query into firstName and lastName
         const nameParts = query.trim().split(/\s+/);
         const firstName = nameParts[0] || '';
@@ -32,6 +52,7 @@ const MemberSearchResultsPage = () => {
         
         if (!firstName || !lastName) {
           setError('Please provide both first and last name');
+          setLoading(false);
           return;
         }
         

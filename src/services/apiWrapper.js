@@ -116,7 +116,93 @@ class ApiWrapperService {
       // So we can use the library normally - it will make requests to our proxy (no CORS)
       // and our proxy will forward to the external API
       const wrapper = await this.getWrapper();
-      return await wrapper.api.idLookup.searchTeaser(query);
+      const response = await wrapper.api.idLookup.searchTeaser(query);
+      
+      // Log the response structure for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[API Wrapper] searchTeaser response type:', typeof response);
+        console.log('[API Wrapper] response has getIdentities?', typeof response?.getIdentities === 'function');
+        console.log('[API Wrapper] response has getCommerceContent?', typeof response?.getCommerceContent === 'function');
+        console.log('[API Wrapper] response has getTeaserInput?', typeof response?.getTeaserInput === 'function');
+        console.log('[API Wrapper] response has hasMore?', typeof response?.hasMore === 'function');
+        console.log('[API Wrapper] response object keys:', Object.keys(response || {}));
+        
+        if (typeof response?.getIdentities === 'function') {
+          const identities = response.getIdentities();
+          console.log('[API Wrapper] getIdentities() returned:', identities?.length || 0, 'items');
+          if (identities && identities.length > 0) {
+            console.log('[API Wrapper] First identity sample:', JSON.stringify(identities[0]).substring(0, 200));
+          }
+        }
+        if (typeof response?.getCommerceContent === 'function') {
+          const commerceContent = response.getCommerceContent();
+          console.log('[API Wrapper] getCommerceContent() returned:', commerceContent ? JSON.stringify(commerceContent).substring(0, 200) : 'null/undefined');
+        }
+        if (typeof response?.getTeaserInput === 'function') {
+          const teaserInput = response.getTeaserInput();
+          console.log('[API Wrapper] getTeaserInput() returned:', teaserInput ? JSON.stringify(teaserInput).substring(0, 200) : 'null/undefined');
+        }
+        if (typeof response?.hasMore === 'function') {
+          const hasMore = response.hasMore();
+          console.log('[API Wrapper] hasMore() returned:', hasMore);
+        }
+        // Check the wrapper's internal structure
+        if (response && typeof response === 'object') {
+          // The library wrapper might store data in params or other properties
+          if (response.params) {
+            console.log('[API Wrapper] response.params:', JSON.stringify(response.params).substring(0, 500));
+            // Check the actual response data structure
+            if (response.params.response) {
+              const apiResponse = response.params.response;
+              console.log('[API Wrapper] API Response status:', apiResponse.status);
+              console.log('[API Wrapper] API Response data keys:', Object.keys(apiResponse.data || {}));
+              console.log('[API Wrapper] API Response data:', JSON.stringify(apiResponse.data).substring(0, 500));
+              
+              // Check if it has raws structure (expected format)
+              if (apiResponse.data?.raws) {
+                console.log('[API Wrapper] ✓ Found raws array with', apiResponse.data.raws.length, 'items');
+                if (apiResponse.data.raws[0]?.transient?.identities) {
+                  console.log('[API Wrapper] ✓ Found', apiResponse.data.raws[0].transient.identities.length, 'identities in raws[0].transient.identities');
+                } else {
+                  console.log('[API Wrapper] ✗ No identities found in raws[0].transient');
+                }
+              } else if (apiResponse.data?.commerceContent === null) {
+                console.log('[API Wrapper] ✗ Response has commerceContent: null - API returned empty result');
+              } else {
+                console.log('[API Wrapper] ⚠ Unexpected response structure');
+              }
+            }
+          }
+          if (response.options) {
+            console.log('[API Wrapper] response.options:', JSON.stringify(response.options).substring(0, 300));
+          }
+          if (response.currentPage !== undefined) {
+            console.log('[API Wrapper] response.currentPage:', response.currentPage);
+          }
+          
+          // Try to access any data property
+          const dataKeys = Object.keys(response).filter(key => 
+            !['getIdentities', 'getCommerceContent', 'getTeaserInput', 'hasMore', 'getMore', 'params', 'options', 'currentPage'].includes(key)
+          );
+          if (dataKeys.length > 0) {
+            console.log('[API Wrapper] Other response keys:', dataKeys);
+            dataKeys.forEach(key => {
+              try {
+                const value = response[key];
+                if (typeof value === 'object' && value !== null) {
+                  console.log(`[API Wrapper] response.${key}:`, JSON.stringify(value).substring(0, 200));
+                } else {
+                  console.log(`[API Wrapper] response.${key}:`, value);
+                }
+              } catch (e) {
+                console.log(`[API Wrapper] Could not access response.${key}:`, e.message);
+              }
+            });
+          }
+        }
+      }
+      
+      return response;
     } catch (error) {
       // If we get a CORS error (shouldn't happen in proxy mode, but handle it anyway)
       if (this._isCorsError(error)) {
