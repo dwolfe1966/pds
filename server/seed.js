@@ -223,6 +223,71 @@ const seedData = () => {
     lastLogin: new Date().toISOString()
   };
   dataStore.users.push(memberUser);
+  
+  // Create a paid member user with active subscription
+  const paidMemberUser = {
+    id: 'user-paid-member',
+    email: 'paid@test.com',
+    fullName: 'Paid Member User',
+    zip: '90210',
+    password: 'password123',
+    emailVerified: true,
+    role: 'member',
+    status: 'active',
+    createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(),
+    lastLogin: new Date().toISOString()
+  };
+  dataStore.users.push(paidMemberUser);
+  
+  // Create active subscription for paid member
+  const paidMemberSubscription = {
+    id: generateId('sub'),
+    userId: paidMemberUser.id,
+    plan: 'basic',
+    amount: 29.99,
+    currency: 'USD',
+    status: 'active', // Guaranteed active subscription
+    renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    paymentMethod: {
+      type: 'card',
+      last4: '1234',
+      brand: 'visa'
+    },
+    billingAddress: {
+      street: '123 Main St',
+      city: 'Los Angeles',
+      state: 'CA',
+      zip: '90210',
+      type: 'current'
+    },
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  };
+  dataStore.subscriptions.push(paidMemberSubscription);
+  
+  // Also create an active subscription for member@test.com (for convenience)
+  const memberSubscription = {
+    id: generateId('sub'),
+    userId: memberUser.id,
+    plan: 'basic',
+    amount: 29.99,
+    currency: 'USD',
+    status: 'active', // Guaranteed active subscription
+    renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    paymentMethod: {
+      type: 'card',
+      last4: '5678',
+      brand: 'mastercard'
+    },
+    billingAddress: {
+      street: '456 Oak Ave',
+      city: 'Los Angeles',
+      state: 'CA',
+      zip: '90210',
+      type: 'current'
+    },
+    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
+  };
+  dataStore.subscriptions.push(memberSubscription);
 
   // Create 20 more member users
   for (let i = 0; i < 20; i++) {

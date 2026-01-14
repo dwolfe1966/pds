@@ -2,15 +2,22 @@
 
 ## Login Credentials
 
-### Member Account
+### Member Account (with active subscription)
 - **Email**: `member@test.com`
 - **Password**: `password123`
+- **Subscription**: Active (Basic plan)
+
+### Paid Member Account (with active subscription)
+- **Email**: `paid@test.com`
+- **Password**: `password123`
+- **Subscription**: Active (Basic plan)
+- **Note**: Use this account to test paid member features like viewing full reports
 
 ### Admin Account
 - **Email**: `admin@test.com`
 - **Password**: `admin123`
 
-Both accounts are pre-verified and ready to use.
+All accounts are pre-verified and ready to use.
 
 ## Search Terms That Work
 

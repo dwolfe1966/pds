@@ -1,13 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import api from '../api';
 import { setIdentityContext, getSearchContext } from '../services/searchContext';
+import { createReportForIdentity } from '../services/reportService';
 import styles from './ResultCard.module.css';
 
-const ResultCard = ({ result, onClick }) => {
+const ResultCard = ({ result, onClick, isMember = false }) => {
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleViewDetails = async (e) => {
     e.stopPropagation(); // Prevent parent onClick if present
+    
+    // If custom onClick handler provided, use it
+    if (onClick) {
+      onClick(result);
+      return;
+    }
     
     // Get current search context
     const searchContext = getSearchContext();
@@ -28,14 +39,94 @@ const ResultCard = ({ result, onClick }) => {
       ...result
     }));
     
-    // Navigate to preview page (which will show teaser and link to signup)
-    navigate(`/search/${result.id}`);
+    // If this is a member context and user is authenticated, check subscription
+    if (isMember && token) {
+      setLoading(true);
+      try {
+        // Check subscription status
+        let subscription = null;
+        try {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ResultCard] Fetching subscription with token:', token ? 'present' : 'missing');
+          }
+          subscription = await api.get('/subscription', { token });
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ResultCard] Subscription response:', subscription);
+          }
+        } catch (err) {
+          // Subscription not found or error - treat as no subscription
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[ResultCard] Failed to fetch subscription:', {
+              message: err?.message,
+              status: err?.status,
+              statusText: err?.statusText,
+              data: err?.data
+            });
+          }
+        }
+        
+        // Check subscription status - handle both direct response and wrapped response
+        const subscriptionStatus = subscription?.status || subscription?.data?.status;
+        const isActive = subscriptionStatus === 'active';
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[ResultCard] Subscription check:', {
+            hasSubscription: !!subscription,
+            subscription,
+            status: subscriptionStatus,
+            isActive
+          });
+        }
+        
+        // If user has active subscription, go directly to report detail
+        if (isActive) {
+          // User has active subscription - create/get report and navigate to it
+          if (result.extId) {
+            try {
+              // Create report (API will return existing report if it already exists)
+              const createResult = await createReportForIdentity(result.extId, result);
+              if (createResult.success && createResult.commerceContentId) {
+                navigate(`/people/${createResult.commerceContentId}`);
+              } else {
+                throw new Error('Failed to create report');
+              }
+            } catch (err) {
+              console.error('[ResultCard] Failed to create report:', err);
+              // Fallback to payment page if report creation fails
+              sessionStorage.setItem('selectedPersonId', result.id);
+              navigate('/payment');
+            }
+          } else {
+            // No extId, can't create report - go to payment
+            sessionStorage.setItem('selectedPersonId', result.id);
+            navigate('/payment');
+          }
+        } else {
+          // No active subscription, go to payment page
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[ResultCard] No active subscription found, redirecting to payment');
+          }
+          sessionStorage.setItem('selectedPersonId', result.id);
+          navigate('/payment');
+        }
+      } catch (err) {
+        console.error('[ResultCard] Error checking subscription:', err);
+        // On error, default to payment page
+        sessionStorage.setItem('selectedPersonId', result.id);
+        navigate('/payment');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Non-member flow: navigate to preview page (which will show teaser and link to signup)
+      navigate(`/search/${result.id}`);
+    }
   };
 
   return (
     <div 
       className={styles.card}
-      onClick={onClick || handleViewDetails}
+      onClick={!onClick ? handleViewDetails : undefined}
     >
       <h3 className={styles.cardTitle}>
         {result.fullName}
@@ -53,8 +144,9 @@ const ResultCard = ({ result, onClick }) => {
       <button
         onClick={handleViewDetails}
         className={styles.cardButton}
+        disabled={loading}
       >
-        View Full Report
+        {loading ? 'Loading...' : 'View Full Report'}
       </button>
     </div>
   );

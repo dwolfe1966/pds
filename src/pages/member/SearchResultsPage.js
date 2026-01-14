@@ -17,7 +17,7 @@ const MemberSearchResultsPage = () => {
   const query = params.get('q');
   const zip = params.get('zip');
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -92,7 +92,7 @@ const MemberSearchResultsPage = () => {
       {results && results.length > 0 ? (
         <div style={{ marginTop: '1rem' }}>
           {results.map((result) => (
-            <ResultCard key={result.id} result={result} />
+            <ResultCard key={result.id} result={result} isMember={true} />
           ))}
         </div>
       ) : !loading ? (

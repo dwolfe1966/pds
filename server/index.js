@@ -2048,7 +2048,8 @@ app.listen(PORT, () => {
   console.log(`- Searches: ${dataStore.searches.length}`);
   console.log(`- Alerts: ${dataStore.alerts.length}`);
   console.log(`\nTest credentials:`);
-  console.log(`- Member: member@test.com / password123`);
+  console.log(`- Member: member@test.com / password123 (with active subscription)`);
+  console.log(`- Paid Member: paid@test.com / password123 (with active subscription)`);
   console.log(`- Admin: admin@test.com / admin123`);
 });
 
