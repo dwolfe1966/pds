@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 // Sales pages
@@ -10,13 +11,18 @@ import LandingPage from './pages/sales/LandingPage';
 import NameSearchLandingPage from './pages/sales/NameSearchLandingPage';
 import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
 import SalesSearchResultsPage from './pages/sales/SearchResultsPage';
+import GeneralSearchPage from './pages/sales/GeneralSearchPage';
 import SearchDetailPreviewPage from './pages/sales/SearchDetailPreviewPage';
 import SignupPage from './pages/sales/SignupPage';
 import LoginPage from './pages/sales/LoginPage';
 import PaymentPage from './pages/sales/PaymentPage';
 import PhoneSearchLandingPage from './pages/sales/PhoneSearchLandingPage';
+import PhoneLandingPage from './pages/sales/PhoneLandingPage';
 import PhoneLoaderPage from './pages/sales/PhoneLoaderPage';
 import PhoneSearchResultsPage from './pages/sales/PhoneSearchResultsPage';
+import EmailLandingPage from './pages/sales/EmailLandingPage';
+import EmailLoaderPage from './pages/sales/EmailLoaderPage';
+import EmailSearchResultsPage from './pages/sales/EmailSearchResultsPage';
 import OptOutLandingPage from './pages/sales/OptOutLandingPage';
 import OptOutSearchResultsPage from './pages/sales/OptOutSearchResultsPage';
 import OptOutInfoInputPage from './pages/sales/OptOutInfoInputPage';
@@ -31,6 +37,7 @@ import AddonPage from './pages/sales/AddonPage';
 import DashboardHome from './pages/member/DashboardHome';
 import ProfilePage from './pages/member/ProfilePage';
 import SearchPage from './pages/member/SearchPage';
+import MemberGeneralSearchPage from './pages/member/MemberGeneralSearchPage';
 import MemberSearchResultsPage from './pages/member/SearchResultsPage';
 import SearchResultDetailPage from './pages/member/SearchResultDetailPage';
 import WhoIsSearchingPage from './pages/member/WhoIsSearchingPage';
@@ -49,8 +56,18 @@ import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
-// Test page (development only)
+// Test pages (development only)
 import ApiTestPage from './pages/ApiTestPage';
+import SearchTestPage from './pages/SearchTestPage';
+
+// Component to redirect logged-in users from home to dashboard
+const HomePageRedirect = () => {
+  const { token } = useAuth();
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <HomePage />;
+};
 
 const App = () => {
   return (
@@ -59,10 +76,12 @@ const App = () => {
       <div style={{ flex: 1 }}>
         <Routes>
           {/* Sales/public routes */}
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomePageRedirect />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/search" element={<LandingPage />} />
+          {/* General search page with tabs for name, phone, and email */}
+          <Route path="/search/all" element={<GeneralSearchPage />} />
           {/* Name search flow (mimics privaterecords.net) */}
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
           <Route path="/name/loader" element={<NameSearchLoaderPage />} />
@@ -74,10 +93,18 @@ const App = () => {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/payment" element={<PaymentPage />} />
-          {/* Phone search routes */}
+          {/* Phone search routes (new pattern matching name search) */}
+          <Route path="/phone/landing" element={<PhoneLandingPage />} />
+          <Route path="/phone/loader" element={<PhoneLoaderPage />} />
+          <Route path="/phone/search-result" element={<PhoneSearchResultsPage />} />
+          {/* Legacy phone search routes (kept for backward compatibility) */}
           <Route path="/phone-search" element={<PhoneSearchLandingPage />} />
           <Route path="/phone-search-loading" element={<PhoneLoaderPage />} />
           <Route path="/phone-search-results" element={<PhoneSearchResultsPage />} />
+          {/* Email search routes */}
+          <Route path="/email/landing" element={<EmailLandingPage />} />
+          <Route path="/email/loader" element={<EmailLoaderPage />} />
+          <Route path="/email/search-result" element={<EmailSearchResultsPage />} />
           {/* Opt-out routes */}
           <Route path="/opt-out" element={<OptOutLandingPage />} />
           <Route path="/opt-out-results" element={<OptOutSearchResultsPage />} />
@@ -90,8 +117,9 @@ const App = () => {
           <Route path="/suppression-list" element={<SuppressionListPage />} />
           <Route path="/cpcc" element={<CPCCPage />} />
           <Route path="/addon" element={<AddonPage />} />
-          {/* Development test route */}
+          {/* Development test routes */}
           <Route path="/api-test" element={<ApiTestPage />} />
+          <Route path="/search-test" element={<SearchTestPage />} />
 
           {/* Member routes (authenticated) */}
           <Route
@@ -114,7 +142,7 @@ const App = () => {
             path="/people-search"
             element={
               <ProtectedRoute>
-                <SearchPage />
+                <MemberGeneralSearchPage />
               </ProtectedRoute>
             }
           />

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { createReportForIdentity, getExistingReportId } from '../../services/reportService';
+import { getIdentityContext } from '../../services/searchContext';
 
 /**
  * Preview page that shows a truncated preview of a search result.
@@ -9,21 +12,52 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 const SearchDetailPreviewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { token } = useAuth();
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reportCreated, setReportCreated] = useState(false);
+  const [reportId, setReportId] = useState(null);
 
   useEffect(() => {
-    // Get person data from sessionStorage
-    const storedPerson = sessionStorage.getItem(`result_${id}`);
-    if (storedPerson) {
-      try {
-        setPerson(JSON.parse(storedPerson));
-      } catch (err) {
-        console.error('Error parsing stored person:', err);
+    const loadPersonAndCreateReport = async () => {
+      // Get person data from sessionStorage
+      const storedPerson = sessionStorage.getItem(`result_${id}`);
+      if (storedPerson) {
+        try {
+          const personData = JSON.parse(storedPerson);
+          setPerson(personData);
+          
+          // If user is logged in, create report automatically
+          if (token && personData.extId) {
+            try {
+              // Check if report already exists
+              const existingReportId = getExistingReportId(personData.extId);
+              if (existingReportId) {
+                setReportId(existingReportId);
+                setReportCreated(true);
+              } else {
+                // Create report
+                const identityContext = getIdentityContext();
+                const result = await createReportForIdentity(personData.extId, personData);
+                if (result.success && result.commerceContentId) {
+                  setReportId(result.commerceContentId);
+                  setReportCreated(true);
+                }
+              }
+            } catch (error) {
+              console.error('Failed to create report:', error);
+              // Continue to show preview even if report creation fails
+            }
+          }
+        } catch (err) {
+          console.error('Error parsing stored person:', err);
+        }
       }
-    }
-    setLoading(false);
-  }, [id]);
+      setLoading(false);
+    };
+    
+    loadPersonAndCreateReport();
+  }, [id, token]);
 
   const handleSignup = () => {
     // Navigate to signup with person info
@@ -33,7 +67,17 @@ const SearchDetailPreviewPage = () => {
       personLocation: person?.location || '',
       personAge: person?.ageRange || ''
     });
-    navigate(`/signup?${params.toString()}`);
+    navigate(`/name/signup?${params.toString()}`);
+  };
+
+  const handleViewFullReport = () => {
+    // If report is created and user is logged in, navigate to report detail
+    if (reportCreated && reportId && token) {
+      navigate(`/people/${reportId}`);
+    } else {
+      // Otherwise, go to signup
+      handleSignup();
+    }
   };
 
   if (loading) {
@@ -200,7 +244,7 @@ const SearchDetailPreviewPage = () => {
             fontSize: '1.5rem',
             fontWeight: 700
           }}>
-            Unlock Full Report
+            {reportCreated && token ? 'View Full Report' : 'Unlock Full Report'}
           </h3>
           <p style={{ 
             marginBottom: '2rem',
@@ -210,8 +254,11 @@ const SearchDetailPreviewPage = () => {
             maxWidth: '600px',
             margin: '0 auto 2rem auto'
           }}>
-            Sign up now to access the complete report for <strong>{person.fullName}</strong>.
-            Get instant access to contact information, addresses, relatives, and more.
+            {reportCreated && token ? (
+              <>Your report for <strong>{person.fullName}</strong> is ready. View complete contact information, addresses, relatives, and more.</>
+            ) : (
+              <>Sign up now to access the complete report for <strong>{person.fullName}</strong>. Get instant access to contact information, addresses, relatives, and more.</>
+            )}
           </p>
           <div style={{ 
             display: 'flex', 
@@ -219,58 +266,90 @@ const SearchDetailPreviewPage = () => {
             justifyContent: 'center', 
             flexWrap: 'wrap' 
           }}>
-            <button
-              onClick={handleSignup}
-              style={{
-                padding: '1rem 2.5rem',
-                backgroundColor: '#fff',
-                color: '#0d5d2f',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                fontSize: '1.125rem',
-                fontWeight: 600,
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#f9fafb';
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#fff';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-              }}
-            >
-              Sign Up to View Full Report
-            </button>
-            <Link
-              to="/login"
-              style={{
-                padding: '1rem 2.5rem',
-                backgroundColor: 'transparent',
-                color: '#fff',
-                border: '2px solid #fff',
-                borderRadius: '0.5rem',
-                textDecoration: 'none',
-                fontSize: '1.125rem',
-                fontWeight: 600,
-                display: 'inline-block',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              Already have an account? Log In
-            </Link>
+            {reportCreated && token ? (
+              <button
+                onClick={handleViewFullReport}
+                style={{
+                  padding: '1rem 2.5rem',
+                  backgroundColor: '#fff',
+                  color: '#0d5d2f',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer',
+                  fontSize: '1.125rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#f9fafb';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#fff';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                }}
+              >
+                View Full Report
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleSignup}
+                  style={{
+                    padding: '1rem 2.5rem',
+                    backgroundColor: '#fff',
+                    color: '#0d5d2f',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer',
+                    fontSize: '1.125rem',
+                    fontWeight: 600,
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = '#f9fafb';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = '#fff';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                  }}
+                >
+                  Sign Up to View Full Report
+                </button>
+                <Link
+                  to="/login"
+                  style={{
+                    padding: '1rem 2.5rem',
+                    backgroundColor: 'transparent',
+                    color: '#fff',
+                    border: '2px solid #fff',
+                    borderRadius: '0.5rem',
+                    textDecoration: 'none',
+                    fontSize: '1.125rem',
+                    fontWeight: 600,
+                    display: 'inline-block',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    e.target.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.transform = 'translateY(0)';
+                  }}
+                >
+                  Already have an account? Log In
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

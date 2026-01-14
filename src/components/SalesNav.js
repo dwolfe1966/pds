@@ -13,7 +13,7 @@ const SalesNav = () => {
 
   const navLinks = [
     { path: '/', label: 'Home' },
-    { path: '/name/landing', label: 'Search' },
+    { path: '/search/all', label: 'Search' },
     { path: '/about', label: 'About' },
     { path: '/contact', label: 'Contact' },
   ];
@@ -21,6 +21,13 @@ const SalesNav = () => {
   const isActive = (path) => {
     if (path === '/') {
       return location.pathname === '/';
+    }
+    if (path === '/search/all') {
+      // Highlight search link for all search-related pages
+      return location.pathname.startsWith('/search') || 
+             location.pathname.startsWith('/name/') || 
+             location.pathname.startsWith('/phone/') || 
+             location.pathname.startsWith('/email/');
     }
     return location.pathname.startsWith(path);
   };

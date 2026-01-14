@@ -4,21 +4,21 @@ import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 
 /**
- * Phone search loading page that shows a loading state while searching.
+ * Email search loading page that shows a loading state while searching.
  * Automatically redirects to results when search completes.
  */
-const PhoneLoaderPage = () => {
+const EmailLoaderPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
-  const phone = params.get('phone');
-  const [status, setStatus] = useState('Initializing search...');
+  const email = params.get('email');
+  const [status, setStatus] = useState('Searching...');
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const performSearch = async () => {
-      if (!phone) {
-        navigate('/phone/landing');
+      if (!email) {
+        navigate('/email/landing');
         return;
       }
 
@@ -38,8 +38,8 @@ const PhoneLoaderPage = () => {
 
         // Perform the search using ByteCreators ApiWrapper via our helper
         const response = await api.searchPeople({
-          phone,
-          type: 'phone'
+          email,
+          type: 'email'
         });
 
         clearInterval(progressInterval);
@@ -52,22 +52,22 @@ const PhoneLoaderPage = () => {
         }
 
         // Store results for results page
-        sessionStorage.setItem('phoneSearchResults', JSON.stringify({
+        sessionStorage.setItem('emailSearchResults', JSON.stringify({
           results: response.data || [],
-          query: { phone },
+          query: { email },
           searchContext: response.searchContext || {},
           pagination: response.pagination || {}
         }));
 
         // Redirect to results page after a brief delay
         setTimeout(() => {
-          navigate(`/phone/search-result?phone=${encodeURIComponent(phone)}`);
+          navigate(`/email/search-result?email=${encodeURIComponent(email)}`);
         }, 500);
       } catch (err) {
         console.error('Search error:', err);
         setStatus('Error occurred. Redirecting...');
         setTimeout(() => {
-          navigate(`/phone/search-result?phone=${encodeURIComponent(phone)}&error=true`);
+          navigate(`/email/search-result?email=${encodeURIComponent(email)}&error=true`);
         }, 2000);
       }
     };
@@ -75,7 +75,7 @@ const PhoneLoaderPage = () => {
     // Small delay before starting search for better UX
     const timer = setTimeout(performSearch, 300);
     return () => clearTimeout(timer);
-  }, [phone, navigate]);
+  }, [email, navigate]);
 
   return (
     <main style={{
@@ -162,7 +162,7 @@ const PhoneLoaderPage = () => {
             margin: 0,
             fontWeight: 600
           }}>
-            {phone ? `(${phone.slice(0, 3)}) ${phone.slice(3, 6)}-${phone.slice(6)}` : phone}
+            {email}
           </p>
         </div>
 
@@ -179,5 +179,4 @@ const PhoneLoaderPage = () => {
   );
 };
 
-export default PhoneLoaderPage;
-
+export default EmailLoaderPage;

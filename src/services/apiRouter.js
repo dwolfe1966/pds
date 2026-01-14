@@ -69,6 +69,8 @@ async function callMockAPI(endpoint, params = {}) {
   const token = providedToken || getToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else if (process.env.NODE_ENV === 'development') {
+    console.warn(`[callMockAPI] No token provided for endpoint: ${endpoint}. Request may fail if authentication is required.`);
   }
 
   const options = {
@@ -83,8 +85,32 @@ async function callMockAPI(endpoint, params = {}) {
   const response = await fetch(url.toString(), options);
   
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(error.message || `API request failed: ${response.statusText}`);
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { message: response.statusText };
+    }
+    
+    const errorMessage = errorData?.error?.message || errorData?.message || `API request failed: ${response.statusText}`;
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    error.statusText = response.statusText;
+    error.data = errorData;
+    error.isApiError = true; // Flag to identify API errors
+    
+    if (process.env.NODE_ENV === 'development') {
+      // Use console.warn instead of console.error to avoid triggering React error overlay
+      console.warn(`[callMockAPI] Request failed for ${endpoint}:`, {
+        status: response.status,
+        statusText: response.statusText,
+        url: url.toString(),
+        hasToken: !!token,
+        error: errorData
+      });
+    }
+    
+    throw error;
   }
 
   return await response.json();
@@ -279,6 +305,10 @@ export function getMockAPIPath(endpoint, params = {}) {
     'admin-update-cs-rep': `/admin/cs-reps/${params.id}`,
     // For search, use the existing mock API endpoint
     'teaser-search': '/search',
+    // Report endpoints
+    'create-report': '/reports',
+    'get-report': `/reports/${params.id}`,
+    'report-list': '/reports',
   };
 
   return pathMap[endpoint] || `/${endpoint}`;
