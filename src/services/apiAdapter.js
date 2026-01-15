@@ -16,6 +16,7 @@ export function adaptTeaserResponse(response) {
   let searchContextKey = null;
   let teaserInput = null;
   let provider = null;
+  let commerceContentId = null;
 
   // Log response structure for debugging
   if (process.env.NODE_ENV === 'development') {
@@ -55,8 +56,10 @@ export function adaptTeaserResponse(response) {
     identities = response.getIdentities() || [];
     total = response.getTotal?.() || 0;
     perPage = response.getPerPage?.() || 20;
-    searchContextKey = response.getSearchContextKey?.() || null;
     teaserInput = response.getTeaserInput?.() || null;
+    searchContextKey = response.getSearchContextKey?.() || teaserInput?.searchContextKey || null;
+    const commerceContent = response.getCommerceContent?.();
+    commerceContentId = commerceContent?._id || commerceContent?.id || null;
     provider = response.getProvider?.() || null;
     
     if (process.env.NODE_ENV === 'development') {
@@ -68,8 +71,9 @@ export function adaptTeaserResponse(response) {
     identities = transient.identities || [];
     total = transient.total || 0;
     perPage = transient.perPage || 20;
-    searchContextKey = response.searchContextKey || null;
     teaserInput = response.teaserInput || null;
+    searchContextKey = response.searchContextKey || teaserInput?.searchContextKey || null;
+    commerceContentId = response.commerceContent?._id || response.commerceContent?.id || null;
     provider = response.meta?.provider || response.raws[0]?.meta?.provider || null;
     
     if (process.env.NODE_ENV === 'development') {
@@ -129,7 +133,8 @@ export function adaptTeaserResponse(response) {
     searchContext: {
       searchContextKey,
       teaserInput,
-      provider
+      provider,
+      commerceContentId
     }
   };
 }
@@ -176,12 +181,23 @@ function adaptIdentity(identity) {
 export function adaptReportResponse(response) {
   // The report response structure may vary
   // This is a basic adapter - may need to be extended based on actual response
+  let commerceContent = null;
+
   if (response?.commerceContents?.[0]) {
-    const commerceContent = response.commerceContents[0];
+    commerceContent = response.commerceContents[0];
+  } else if (response?.commerceContent) {
+    commerceContent = response.commerceContent;
+  } else if (typeof response?.getCommerceContent === 'function') {
+    commerceContent = response.getCommerceContent();
+  } else if (response?.params?.response?.data?.commerceContent) {
+    commerceContent = response.params.response.data.commerceContent;
+  }
+
+  if (commerceContent) {
     return {
-      reportId: commerceContent._id,
+      reportId: commerceContent._id || commerceContent.id,
       reportData: response,
-      commerceContentId: commerceContent._id,
+      commerceContentId: commerceContent._id || commerceContent.id,
       // Extract other relevant fields as needed
     };
   }

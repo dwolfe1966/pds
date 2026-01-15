@@ -113,6 +113,15 @@ async function callMockAPI(endpoint, params = {}) {
     throw error;
   }
 
+  // Handle no-content responses (e.g., logout)
+  if (response.status === 204 || response.status === 205) {
+    return null;
+  }
+  const contentLength = response.headers.get('content-length');
+  if (contentLength === '0') {
+    return null;
+  }
+
   return await response.json();
 }
 
@@ -123,9 +132,15 @@ export async function routeApiRequest(endpoint, params = {}) {
   const endpointConfig = getEndpointConfig(endpoint);
   // Check if feature flag is explicitly set to true (not just not false)
   const featureFlagEnabled = FEATURE_FLAGS[endpoint] === true;
-  // Use new API if: global flag is on, endpoint is available in new API, AND feature flag is enabled
-  const useNewAPI = USE_NEW_API && endpointConfig.newApi && featureFlagEnabled;
-  const useMockAPI = USE_MOCK_API && endpointConfig.mockApi;
+  // Force new API for report creation/detail to avoid mock endpoints
+  const FORCE_NEW_API_ENDPOINTS = new Set(['create-report', 'get-report']);
+  const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
+  // Use new API if forced and available, otherwise require flags
+  const useNewAPI =
+    (forceNewApi && apiWrapper.isAvailable()) ||
+    (USE_NEW_API && endpointConfig.newApi && featureFlagEnabled);
+  // Avoid mock for forced endpoints
+  const useMockAPI = USE_MOCK_API && endpointConfig.mockApi && !forceNewApi;
 
   // Log which API is being used (for debugging)
   if (process.env.NODE_ENV === 'development') {
@@ -145,11 +160,15 @@ export async function routeApiRequest(endpoint, params = {}) {
   }
 
   // Try new API first if available and enabled
-  if (useNewAPI && apiWrapper.isAvailable()) {
+    if (useNewAPI && apiWrapper.isAvailable()) {
     try {
       const result = await callNewAPI(endpoint, params);
       return result;
     } catch (error) {
+        if (forceNewApi) {
+          // Do not fall back to mock for forced new API endpoints
+          throw error;
+        }
       // Check if this is a CORS error or network error
       const isCorsError = error.isCorsError ||
                          error.message?.includes('CORS') || 
@@ -197,6 +216,14 @@ export async function routeApiRequest(endpoint, params = {}) {
           state,
           zip
         }
+      });
+    }
+    if (endpoint === 'create-report') {
+      const { token, ...body } = params || {};
+      return await callMockAPI(endpoint, {
+        method: 'POST',
+        body,
+        token
       });
     }
     return await callMockAPI(endpoint, params);

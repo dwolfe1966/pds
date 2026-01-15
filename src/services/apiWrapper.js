@@ -308,7 +308,13 @@ class ApiWrapperService {
   async getReportDetail(id) {
     try {
       const wrapper = await this.getWrapper();
-      return await wrapper.api.idLookup.getReportDetail(id);
+      if (typeof wrapper.api?.idLookup?.getReportDetail === 'function') {
+        return await wrapper.api.idLookup.getReportDetail(id);
+      }
+      if (typeof wrapper.api?.idLookup?.getReport === 'function') {
+        return await wrapper.api.idLookup.getReport(id);
+      }
+      throw new Error('Report detail method not available in ApiWrapper');
     } catch (error) {
       const enhancedError = new Error(error.message || 'Get report detail failed');
       enhancedError.originalError = error;

@@ -58,14 +58,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    api.logout(); // Call API logout
-    navigate('/');
+    try {
+      await api.logout(); // Call API logout
+    } catch (err) {
+      console.warn('[Auth] Logout request failed:', err?.message || err);
+    } finally {
+      navigate('/');
+    }
   };
 
   const value = {

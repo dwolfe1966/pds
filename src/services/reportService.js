@@ -33,11 +33,15 @@ export async function createReport(extId, options = {}) {
   
   // Add search context if available
   if (context) {
-    if (context.searchContextKey) {
-      params.searchContextKey = context.searchContextKey;
+    const contextKey = context.searchContextKey || context.teaserInput?.searchContextKey;
+    if (contextKey) {
+      params.searchContextKey = contextKey;
     }
     if (context.teaserInput) {
       params.teaserInput = context.teaserInput;
+    }
+    if (context.commerceContentId) {
+      params.commerceContentId = context.commerceContentId;
     }
   }
   
@@ -106,7 +110,9 @@ export async function getReportDetail(commerceContentId) {
       fullResponse: response
     };
   } catch (error) {
-    console.error('Failed to get report detail:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Failed to get report detail:', error);
+    }
     throw error;
   }
 }

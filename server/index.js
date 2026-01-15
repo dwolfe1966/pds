@@ -431,6 +431,48 @@ app.all('/api/proxy/*', async (req, res) => {
         allKeys: Object.keys(requestBody)
       });
     }
+
+    // For report creation, inject captcha/session context if available
+    if (req.path.includes('/idLookup/report/create') && req.method === 'POST') {
+      const sessionKey = getSessionKey(req);
+      const storedCaptchaData = captchaData.get(sessionKey);
+
+      if (storedCaptchaData) {
+        // Ensure captcha id header is present if we have one
+        const captchaIdToUse = storedCaptchaData.captchaId || storedCaptchaData.pendingCaptchaId;
+        if (captchaIdToUse) {
+          const hasCaptchaHeader = Object.keys(headers).some(key => key.toLowerCase() === 'x-captcha-id');
+          if (!hasCaptchaHeader) {
+            headers['x-captcha-id'] = captchaIdToUse;
+          }
+        }
+        // Ensure captcha token header is present if we have one
+        if (storedCaptchaData.captchaToken) {
+          const hasCaptchaTokenHeader = Object.keys(headers).some(key => key.toLowerCase() === 'x-captcha-token');
+          if (!hasCaptchaTokenHeader) {
+            headers['x-captcha-token'] = storedCaptchaData.captchaToken;
+          }
+        }
+
+        // Add missing context fields to body
+        if (!requestBody.searchContextKey && storedCaptchaData.searchContextKey) {
+          requestBody.searchContextKey = storedCaptchaData.searchContextKey;
+        }
+        if (!requestBody.commerceContentId && storedCaptchaData.commerceContentId) {
+          requestBody.commerceContentId = storedCaptchaData.commerceContentId;
+        }
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Proxy] Report create request body:', JSON.stringify(requestBody, null, 2));
+        console.log('[Proxy] Report create headers:', JSON.stringify({
+          hasCaptchaId: Object.keys(headers).some(key => key.toLowerCase() === 'x-captcha-id'),
+          hasCaptchaToken: Object.keys(headers).some(key => key.toLowerCase() === 'x-captcha-token'),
+          hasSearchContextKey: !!requestBody.searchContextKey,
+          hasCommerceContentId: !!requestBody.commerceContentId
+        }));
+      }
+    }
     
     // Forward the request
     const config = {
@@ -519,8 +561,27 @@ app.all('/api/proxy/*', async (req, res) => {
         
         // Try to extract commerceContentId and searchContextKey from response
         // Check multiple possible locations
+        const requestCaptchaToken =
+          getHeaderCaseInsensitive('x-captcha-token') ||
+          req.body?.captchaToken ||
+          req.body?.captcha_token ||
+          req.body?.token ||
+          null;
+
+        const captchaIdFromHeaders = getHeaderCaseInsensitive('x-captcha-id');
+        const captchaTokenFromHeaders = getHeaderCaseInsensitive('x-captcha-token');
+
         const captchaInfo = {
           captchaId: captchaId, // Store the captchaId that was verified
+          captchaToken: responseData.captchaToken ||
+                       responseData.captcha_token ||
+                       responseData.token ||
+                       responseData.data?.captchaToken ||
+                       responseData.data?.captcha_token ||
+                       responseData.data?.token ||
+                       captchaTokenFromHeaders ||
+                       requestCaptchaToken ||
+                       null,
           commerceContentId: responseData.commerceContentId || 
                             responseData.commerceContent?._id || 
                             responseData.commerceContentId ||
@@ -538,7 +599,8 @@ app.all('/api/proxy/*', async (req, res) => {
         };
         
         console.log('[Proxy] Extracted captcha data:', {
-          captchaId: captchaInfo.captchaId || 'NOT FOUND',
+          captchaId: captchaInfo.captchaId || captchaIdFromHeaders || 'NOT FOUND',
+          captchaToken: captchaInfo.captchaToken ? 'FOUND' : 'NOT FOUND',
           commerceContentId: captchaInfo.commerceContentId || 'NOT FOUND',
           searchContextKey: captchaInfo.searchContextKey || 'NOT FOUND',
           verified: captchaInfo.verified

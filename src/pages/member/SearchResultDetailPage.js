@@ -41,7 +41,9 @@ const SearchResultDetailPage = () => {
           }
         } catch (detailError) {
           // If that fails, id might be an extId - try to create report
-          console.log('Report detail not found, attempting to create report from extId:', id);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Report detail not found, attempting to create report from extId:', id);
+          }
         }
 
         // If report doesn't exist, try to create it from extId
@@ -77,15 +79,17 @@ const SearchResultDetailPage = () => {
                 }
               }
             } else {
-              setError('Unable to create report. Please try searching again.');
+              setError('We could not load this report right now. Please try again later.');
             }
           } else {
-            setError('Report not found. Please try searching again.');
+            setError('We could not load this report right now. Please try again later.');
           }
         }
       } catch (err) {
-        console.error('Error fetching/creating report:', err);
-        setError(err.message || 'Failed to load report. Please try again.');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Error fetching/creating report:', err);
+        }
+        setError('We could not load this report right now. Please try again later.');
       } finally {
         setLoading(false);
         setCreatingReport(false);
@@ -148,14 +152,32 @@ const SearchResultDetailPage = () => {
       )}
       
       {error && (
-        <div style={{ 
-          padding: '1rem', 
-          backgroundColor: '#fee', 
-          color: '#c00', 
-          borderRadius: '4px', 
-          marginBottom: '1rem' 
+        <div style={{
+          padding: '1.5rem',
+          backgroundColor: '#f8fafc',
+          color: '#0f172a',
+          borderRadius: '0.75rem',
+          marginBottom: '1.5rem',
+          border: '1px solid #e2e8f0'
         }}>
-          <p style={{ margin: 0 }}>{error}</p>
+          <p style={{ margin: 0, fontWeight: 600 }}>We couldn’t load this report.</p>
+          <p style={{ margin: '0.5rem 0 1rem', color: '#475569' }}>
+            {error}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => navigate('/people-search')}
+              style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #94a3b8', background: '#fff' }}
+            >
+              Back to Search
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #0d5d2f', background: '#0d5d2f', color: '#fff' }}
+            >
+              Go to Dashboard
+            </button>
+          </div>
         </div>
       )}
       

@@ -178,10 +178,10 @@ const api = {
 
 **Missing from New API:**
 - User signup/registration
+- Subscription/billing
 - User profile management
 - Dashboard data
 - Alerts management
-- Subscription/billing
 - Notifications
 - Admin endpoints (users, sessions, purchases, analytics, etc.)
 - Who is searching for me

@@ -20,18 +20,21 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
       return;
     }
     
+    // Normalize extId for mock API results (use id if extId missing)
+    const extId = result.extId || result.id;
+
     // Get current search context
     const searchContext = getSearchContext();
     
     // Store identity context for report creation
-    if (result.extId && searchContext) {
-      setIdentityContext(result, searchContext);
+    if (extId && searchContext) {
+      setIdentityContext({ ...result, extId }, searchContext);
     }
     
     // Store result in sessionStorage for preview/signup pages
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify({
       id: result.id,
-      extId: result.extId,
+      extId,
       fullName: result.fullName,
       location: result.location,
       ageRange: result.ageRange,
@@ -81,25 +84,25 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
         // If user has active subscription, go directly to report detail
         if (isActive) {
           // User has active subscription - create/get report and navigate to it
-          if (result.extId) {
+          if (extId) {
             try {
               // Create report (API will return existing report if it already exists)
-              const createResult = await createReportForIdentity(result.extId, result);
+              const createResult = await createReportForIdentity(extId, { ...result, extId });
               if (createResult.success && createResult.commerceContentId) {
                 navigate(`/people/${createResult.commerceContentId}`);
               } else {
                 throw new Error('Failed to create report');
               }
             } catch (err) {
-              console.error('[ResultCard] Failed to create report:', err);
-              // Fallback to payment page if report creation fails
-              sessionStorage.setItem('selectedPersonId', result.id);
-              navigate('/payment');
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[ResultCard] Failed to create report:', err);
+              }
+              // Paid users should not see payment form; go to detail page to show graceful error
+              navigate(`/people/${extId}`);
             }
           } else {
-            // No extId, can't create report - go to payment
-            sessionStorage.setItem('selectedPersonId', result.id);
-            navigate('/payment');
+            // No extId, can't create report - send to search instead of payment
+            navigate('/people-search');
           }
         } else {
           // No active subscription, go to payment page
@@ -110,7 +113,9 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           navigate('/payment');
         }
       } catch (err) {
-        console.error('[ResultCard] Error checking subscription:', err);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[ResultCard] Error checking subscription:', err);
+        }
         // On error, default to payment page
         sessionStorage.setItem('selectedPersonId', result.id);
         navigate('/payment');
