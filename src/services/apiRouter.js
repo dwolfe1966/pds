@@ -266,6 +266,9 @@ async function callNewAPI(endpoint, params) {
     }
     
     case 'get-report': {
+      if (!params?.id || params.id === 'undefined' || params.id === 'null') {
+        throw new Error('Report detail requires a valid commerceContentId');
+      }
       const response = await apiWrapper.getReportDetail(params.id);
       return adaptReportResponse(response);
     }

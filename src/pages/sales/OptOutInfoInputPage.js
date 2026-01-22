@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { getSearchContext } from '../../services/searchContext';
 
 /**
  * Opt-out information input page where users provide details to verify their identity
@@ -41,9 +42,35 @@ const OptOutInfoInputPage = () => {
     setLoading(true);
 
     try {
-      await api.post('/opt-out/request', {
-        resultId,
-        ...form
+      const searchContext = getSearchContext();
+      const storedResult =
+        (resultId && sessionStorage.getItem(`optout_result_${resultId}`)) ||
+        (resultId && sessionStorage.getItem(`result_${resultId}`));
+      const parsedResult = storedResult ? JSON.parse(storedResult) : null;
+      const identity = searchContext?.identity || parsedResult;
+
+      const extId = identity?.extId || identity?.id || resultId;
+      const provider = identity?.provider || searchContext?.provider || identity?.meta?.provider;
+      const referenceId =
+        searchContext?.commerceContentId ||
+        searchContext?.identity?.commerceContentId ||
+        null;
+
+      const addressParts = [form.street, form.city, form.state, form.zip].filter(Boolean);
+      const address = addressParts.join(', ');
+
+      if (!extId || !provider || !referenceId) {
+        throw new Error('Missing search context for opt-out. Please select a result from opt-out search results.');
+      }
+
+      await api.requestOptOut({
+        extId,
+        provider,
+        referenceId,
+        email: form.email,
+        fullName: form.name,
+        address,
+        phone: form.phone
       });
       setSuccess(true);
     } catch (err) {

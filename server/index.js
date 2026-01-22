@@ -169,6 +169,18 @@ app.all('/api/proxy/*', async (req, res) => {
       url.searchParams.append(key, req.query[key]);
     });
     
+    // Helper: get header value case-insensitively from one or more sources
+    const getHeaderCaseInsensitive = (headerName, primaryHeaders = headers, secondaryHeaders = req.headers) => {
+      const lower = headerName.toLowerCase();
+      const sources = [primaryHeaders, secondaryHeaders].filter(Boolean);
+      for (const source of sources) {
+        for (const key in source) {
+          if (key.toLowerCase() === lower) return source[key];
+        }
+      }
+      return null;
+    };
+
     // Prepare headers - forward all headers from the browser request
     // This is important because the API library may set security headers
     // that the API server expects to see
@@ -289,19 +301,6 @@ app.all('/api/proxy/*', async (req, res) => {
       // Log captcha-related headers from the request
       // HTTP headers are case-insensitive, but JavaScript object keys are case-sensitive
       // So we need to check multiple case variations
-      const getHeaderCaseInsensitive = (headerName) => {
-        const lower = headerName.toLowerCase();
-        // Check in headers object (already processed)
-        for (const key in headers) {
-          if (key.toLowerCase() === lower) return headers[key];
-        }
-        // Check in original request headers
-        for (const key in req.headers) {
-          if (key.toLowerCase() === lower) return req.headers[key];
-        }
-        return null;
-      };
-      
       const requestCaptchaId = getHeaderCaseInsensitive('x-captcha-id');
       console.log('[Proxy] Captcha ID in request:', requestCaptchaId || 'NOT FOUND');
       console.log('[Proxy] All captcha-related headers:', {
@@ -432,6 +431,16 @@ app.all('/api/proxy/*', async (req, res) => {
       });
     }
 
+    // For report detail, short-circuit invalid IDs to avoid proxying bad requests
+    if (req.path.includes('/idLookup/report/detail/') && req.method === 'GET') {
+      const idPart = req.path.split('/idLookup/report/detail/')[1];
+      if (!idPart || idPart === 'undefined' || idPart === 'null') {
+        console.warn('[Proxy] Blocking report detail request with invalid id:', idPart);
+        res.status(400).json({ message: 'Report detail requires a valid commerceContentId' });
+        return;
+      }
+    }
+
     // For report creation, inject captcha/session context if available
     if (req.path.includes('/idLookup/report/create') && req.method === 'POST') {
       const sessionKey = getSessionKey(req);
@@ -445,6 +454,8 @@ app.all('/api/proxy/*', async (req, res) => {
           if (!hasCaptchaHeader) {
             headers['x-captcha-id'] = captchaIdToUse;
           }
+          // Also set canonical casing for APIs that check specific header casing
+          headers['X-Captcha-Id'] = headers['X-Captcha-Id'] || captchaIdToUse;
         }
         // Ensure captcha token header is present if we have one
         if (storedCaptchaData.captchaToken) {
@@ -452,6 +463,8 @@ app.all('/api/proxy/*', async (req, res) => {
           if (!hasCaptchaTokenHeader) {
             headers['x-captcha-token'] = storedCaptchaData.captchaToken;
           }
+          // Also set canonical casing for APIs that check specific header casing
+          headers['X-Captcha-Token'] = headers['X-Captcha-Token'] || storedCaptchaData.captchaToken;
         }
 
         // Add missing context fields to body
@@ -460,6 +473,13 @@ app.all('/api/proxy/*', async (req, res) => {
         }
         if (!requestBody.commerceContentId && storedCaptchaData.commerceContentId) {
           requestBody.commerceContentId = storedCaptchaData.commerceContentId;
+        }
+        // Some API variants expect captcha identifiers in the body
+        if (!requestBody.captchaId && captchaIdToUse) {
+          requestBody.captchaId = captchaIdToUse;
+        }
+        if (!requestBody.captchaToken && storedCaptchaData.captchaToken) {
+          requestBody.captchaToken = storedCaptchaData.captchaToken;
         }
       }
 
@@ -471,6 +491,15 @@ app.all('/api/proxy/*', async (req, res) => {
           hasSearchContextKey: !!requestBody.searchContextKey,
           hasCommerceContentId: !!requestBody.commerceContentId
         }));
+        console.log('[Proxy] Report create values:', {
+          captchaId: requestBody.captchaId || getHeaderCaseInsensitive('x-captcha-id') || 'NOT FOUND',
+          captchaToken: requestBody.captchaToken ? 'FOUND' : (getHeaderCaseInsensitive('x-captcha-token') ? 'FOUND (header)' : 'NOT FOUND'),
+          searchContextKey: requestBody.searchContextKey || 'NOT FOUND',
+          commerceContentId: requestBody.commerceContentId || 'NOT FOUND'
+        });
+        if (!requestBody.captchaToken && !getHeaderCaseInsensitive('x-captcha-token')) {
+          console.warn('[Proxy] Report create missing captchaToken. This often causes 403.');
+        }
       }
     }
     
@@ -537,6 +566,7 @@ app.all('/api/proxy/*', async (req, res) => {
       try {
         // Log the full captcha response to see what it contains
         const responseData = response.data;
+        console.log('[Proxy] Captcha verify response headers:', Object.keys(response.headers || {}));
         console.log('[Proxy] ========== Captcha Verify Response ==========');
         console.log('[Proxy] Full response data:', JSON.stringify(responseData, null, 2));
         console.log('[Proxy] Response keys:', Object.keys(responseData || {}));
@@ -568,11 +598,26 @@ app.all('/api/proxy/*', async (req, res) => {
           req.body?.token ||
           null;
 
-        const captchaIdFromHeaders = getHeaderCaseInsensitive('x-captcha-id');
-        const captchaTokenFromHeaders = getHeaderCaseInsensitive('x-captcha-token');
+        const captchaIdFromHeaders =
+          getHeaderCaseInsensitive('x-captcha-id', response.headers, req.headers) ||
+          getHeaderCaseInsensitive('x-captcha-id');
+        const captchaTokenFromHeaders =
+          getHeaderCaseInsensitive('x-captcha-token', response.headers, req.headers) ||
+          getHeaderCaseInsensitive('x-captcha-token');
+
+        // Some APIs may set captchaToken in cookies; attempt to parse it
+        let captchaTokenFromCookies = null;
+        const setCookieHeader = response.headers['set-cookie'];
+        const cookieList = Array.isArray(setCookieHeader) ? setCookieHeader : (setCookieHeader ? [setCookieHeader] : []);
+        cookieList.forEach((cookie) => {
+          const match = cookie.match(/captchaToken=([^;]+)/i) || cookie.match(/captcha_token=([^;]+)/i);
+          if (match && match[1]) {
+            captchaTokenFromCookies = match[1];
+          }
+        });
 
         const captchaInfo = {
-          captchaId: captchaId, // Store the captchaId that was verified
+          captchaId: captchaId || captchaIdFromHeaders || null, // Store the captchaId that was verified
           captchaToken: responseData.captchaToken ||
                        responseData.captcha_token ||
                        responseData.token ||
@@ -580,6 +625,7 @@ app.all('/api/proxy/*', async (req, res) => {
                        responseData.data?.captcha_token ||
                        responseData.data?.token ||
                        captchaTokenFromHeaders ||
+                       captchaTokenFromCookies ||
                        requestCaptchaToken ||
                        null,
           commerceContentId: responseData.commerceContentId || 

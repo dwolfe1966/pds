@@ -21,7 +21,7 @@ const SearchResultDetailPage = () => {
 
   useEffect(() => {
     const fetchOrCreateReport = async () => {
-      if (!id) {
+      if (!id || id === 'undefined' || id === 'null') {
         setError('Report ID is required');
         setLoading(false);
         return;

@@ -22,12 +22,13 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
     
     // Normalize extId for mock API results (use id if extId missing)
     const extId = result.extId || result.id;
+    const isValidId = (value) => Boolean(value) && value !== 'undefined' && value !== 'null';
 
     // Get current search context
     const searchContext = getSearchContext();
     
     // Store identity context for report creation
-    if (extId && searchContext) {
+    if (isValidId(extId) && searchContext) {
       setIdentityContext({ ...result, extId }, searchContext);
     }
     
@@ -84,7 +85,7 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
         // If user has active subscription, go directly to report detail
         if (isActive) {
           // User has active subscription - create/get report and navigate to it
-          if (extId) {
+          if (isValidId(extId)) {
             try {
               // Create report (API will return existing report if it already exists)
               const createResult = await createReportForIdentity(extId, { ...result, extId });
@@ -98,7 +99,11 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
                 console.warn('[ResultCard] Failed to create report:', err);
               }
               // Paid users should not see payment form; go to detail page to show graceful error
-              navigate(`/people/${extId}`);
+              if (isValidId(extId)) {
+                navigate(`/people/${extId}`);
+              } else {
+                navigate('/people-search');
+              }
             }
           } else {
             // No extId, can't create report - send to search instead of payment

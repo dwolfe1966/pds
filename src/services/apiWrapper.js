@@ -296,7 +296,25 @@ class ApiWrapperService {
   async getReportList(params) {
     try {
       const wrapper = await this.getWrapper();
-      return await wrapper.api.idLookup.getReportList(params);
+      const idLookup = wrapper.api?.idLookup;
+      const candidateMethods = [
+        idLookup?.getReportList,
+        idLookup?.reportList,
+        idLookup?.getReports,
+        idLookup?.listReports,
+        idLookup?.getReportListV2,
+      ].filter((method) => typeof method === 'function');
+
+      if (candidateMethods.length > 0) {
+        return await candidateMethods[0](params);
+      }
+
+      // Fallback to direct proxy call if wrapper method is unavailable
+      if (this.useProxy) {
+        return await this._getReportListViaProxy(params);
+      }
+
+      throw new Error('Report list method not available in ApiWrapper');
     } catch (error) {
       const enhancedError = new Error(error.message || 'Get report list failed');
       enhancedError.originalError = error;
@@ -307,6 +325,9 @@ class ApiWrapperService {
 
   async getReportDetail(id) {
     try {
+      if (!id || id === 'undefined' || id === 'null') {
+        throw new Error('Report detail requires a valid commerceContentId');
+      }
       const wrapper = await this.getWrapper();
       if (typeof wrapper.api?.idLookup?.getReportDetail === 'function') {
         return await wrapper.api.idLookup.getReportDetail(id);
@@ -319,6 +340,54 @@ class ApiWrapperService {
       const enhancedError = new Error(error.message || 'Get report detail failed');
       enhancedError.originalError = error;
       enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Report list via proxy (bypasses wrapper when method is missing)
+   */
+  async _getReportListViaProxy(params = {}) {
+    try {
+      let clientId = params.clientId || process.env.REACT_APP_CLIENT_ID;
+      let apiId = params.apiId || process.env.REACT_APP_API_ID;
+
+      if (!clientId || !apiId) {
+        try {
+          const wrapper = await this.getWrapper();
+          if (wrapper && wrapper._config) {
+            clientId = clientId || wrapper._config.clientId;
+            apiId = apiId || wrapper._config.apiId;
+          }
+        } catch (e) {
+          // Wrapper not available, continue with params/env vars
+        }
+      }
+
+      const queryParams = new URLSearchParams();
+      if (clientId) queryParams.append('clientId', clientId);
+      if (apiId) queryParams.append('apiId', apiId);
+      if (params.lastId) queryParams.append('lastId', params.lastId);
+
+      const proxyPath = '/idLookup/report/list';
+      const url = `${this.proxyUrl}${proxyPath}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Proxy report list failed');
+      enhancedError.originalError = error;
       throw enhancedError;
     }
   }

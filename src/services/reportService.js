@@ -103,6 +103,9 @@ export async function createReport(extId, options = {}) {
  */
 export async function getReportDetail(commerceContentId) {
   try {
+    if (!commerceContentId || commerceContentId === 'undefined' || commerceContentId === 'null') {
+      throw new Error('Report ID is required');
+    }
     const response = await api.getReportDetail(commerceContentId);
     return {
       success: true,

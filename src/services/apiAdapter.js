@@ -211,8 +211,27 @@ export function adaptReportResponse(response) {
  * Transform report list response
  */
 export function adaptReportListResponse(response) {
-  // Handle report list pagination
-  const reports = response.data || response.reports || [];
+  // Handle report list pagination from multiple response shapes
+  let reports = [];
+  let hasMore = false;
+  let lastId = null;
+
+  if (response && typeof response.getReports === 'function') {
+    reports = response.getReports() || [];
+    hasMore = response.getHasMore?.() || false;
+    lastId = response.getLastId?.() || null;
+  } else if (response?.data?.reports || response?.data?.commerceContents) {
+    reports = response.data.reports || response.data.commerceContents || [];
+    hasMore = response.data.hasMore || false;
+    lastId = response.data.lastId || null;
+  } else if (response?.reports || response?.commerceContents) {
+    reports = response.reports || response.commerceContents || [];
+    hasMore = response.hasMore || false;
+    lastId = response.lastId || null;
+  } else if (Array.isArray(response?.data)) {
+    reports = response.data;
+  }
+
   return {
     data: reports.map(report => ({
       id: report._id || report.id,
@@ -222,8 +241,8 @@ export function adaptReportListResponse(response) {
       ...report
     })),
     pagination: {
-      hasMore: response.hasMore || false,
-      lastId: response.lastId || null
+      hasMore,
+      lastId
     }
   };
 }

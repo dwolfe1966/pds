@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
-import { setSearchContext } from '../../services/searchContext';
+import { setSearchContext, updateSearchContext } from '../../services/searchContext';
 
 /**
  * Displays search results for opt-out requests.
@@ -14,6 +14,7 @@ const OptOutSearchResultsPage = () => {
   const params = new URLSearchParams(location.search);
   const query = params.get('q');
   const zip = params.get('zip');
+  const state = params.get('state');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,26 +31,50 @@ const OptOutSearchResultsPage = () => {
         const nameParts = query.trim().split(/\s+/);
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
+        const stateValue = state ? state.trim().toUpperCase() : '';
         
         if (!firstName || !lastName) {
           setError('Please provide both first and last name');
+          return;
+        }
+        if (!stateValue || stateValue.length !== 2) {
+          setError('State is required for opt-out search.');
           return;
         }
         
         const searchParams = {
           firstName,
           lastName,
-          type: 'name'
+          type: 'name',
+          state: stateValue
         };
         
         const response = await api.searchPeople(searchParams);
         // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
-        setResults(response.data || []);
+        const fetchedResults = response.data || [];
+        setResults(fetchedResults);
         
         // Store search context for opt-out request
         if (response.searchContext) {
           setSearchContext(response.searchContext);
         }
+        // Cache results for the opt-out flow
+        fetchedResults.forEach((result) => {
+          const extId = result.extId || result.id;
+          if (!extId) return;
+          sessionStorage.setItem(
+            `optout_result_${extId}`,
+            JSON.stringify({
+              id: result.id,
+              extId,
+              fullName: result.fullName,
+              location: result.location,
+              ageRange: result.ageRange,
+              provider: result.provider || result.meta?.provider,
+              _rawIdentity: result._rawIdentity || result,
+            })
+          );
+        });
       } catch (err) {
         setError(err.message || 'An error occurred while searching.');
       } finally {
@@ -60,8 +85,19 @@ const OptOutSearchResultsPage = () => {
     fetchResults();
   }, [query, zip, navigate]);
 
-  const handleSelectResult = (resultId) => {
-    navigate(`/opt-out/request?resultId=${resultId}`);
+  const handleSelectResult = (result) => {
+    const extId = result.extId || result.id;
+    if (extId) {
+      updateSearchContext({
+        identity: {
+          extId,
+          provider: result.provider || result.meta?.provider,
+          fullName: result.fullName,
+          _rawIdentity: result._rawIdentity || result,
+        },
+      });
+    }
+    navigate(`/opt-out/request?resultId=${extId || result.id}`);
   };
 
   return (
@@ -107,7 +143,7 @@ const OptOutSearchResultsPage = () => {
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
-              onClick={() => handleSelectResult(result.id)}
+              onClick={() => handleSelectResult(result)}
             >
               <h3 style={{ margin: 0, color: '#0e123b' }}>{result.fullName}</h3>
               <p style={{ margin: '0.5rem 0', color: '#666' }}>Age: {result.ageRange}</p>
