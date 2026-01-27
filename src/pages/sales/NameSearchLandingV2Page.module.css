@@ -1,0 +1,225 @@
+/**
+ * NameSearchLandingV2Page Component Styles
+ */
+
+.main {
+  min-height: 70vh;
+  background: linear-gradient(135deg, rgb(243, 244, 246) 0%, rgb(255, 255, 255) 100%);
+  padding: var(--spacing-3xl) var(--spacing-xl);
+}
+
+.wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.card {
+  background-color: var(--color-bg-default);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-3xl);
+}
+
+.cardHeader {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.stepBadge {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  background-color: rgba(13, 93, 47, 0.1);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  margin: 0 auto;
+  max-width: 560px;
+  line-height: var(--line-height-relaxed);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.input,
+.select {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-medium);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.15);
+}
+
+.select {
+  background-color: var(--color-bg-default);
+}
+
+.helperText {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.buttonPrimary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.85rem 2.5rem;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+}
+
+.buttonPrimary:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.buttonSecondary {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 2.5rem;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.buttonSecondary:hover {
+  background-color: rgba(13, 93, 47, 0.1);
+}
+
+.searching {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+  text-align: center;
+}
+
+.spinner {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 6px solid var(--color-gray-200);
+  border-top-color: var(--color-primary);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.searchList {
+  display: grid;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.checkboxRow {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.checkboxRow input {
+  margin-top: 0.2rem;
+}
+
+.errorText {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: var(--spacing-2xl) var(--spacing-md);
+  }
+
+  .card {
+    padding: var(--spacing-2xl);
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .buttonPrimary,
+  .buttonSecondary {
+    width: 100%;
+  }
+}

@@ -235,6 +235,64 @@ app.all('/api/proxy/*', async (req, res) => {
     } else {
       console.log(`[Proxy] No stored cookies found for session: ${sessionKey}`);
     }
+
+    // Add dev captcha pass if configured (for development API)
+    // The API might require this as a header or query parameter
+    const captchaPass = process.env.CAPTCHA_PASS || 'bcEdgeApiPass';
+
+    // If we have no cookies for teaser search, warm up captcha cookies
+    const hasAnyCookiesInitial = cookieHeader || Object.keys(parsedCookies).length > 0 || storedCookies.length > 0;
+    if (!hasAnyCookiesInitial && req.path.includes('/idLookup/teaser/search') && req.method === 'POST') {
+      const clientId = req.query.clientId;
+      const apiId = req.query.apiId;
+      if (clientId && apiId) {
+        try {
+          const verifyUrl = new URL(`${EXTERNAL_API_URL}/captcha/verify`);
+          verifyUrl.searchParams.append('token', captchaPass);
+          verifyUrl.searchParams.append('type', 'password.v0');
+          verifyUrl.searchParams.append('step', '0-0');
+          verifyUrl.searchParams.append('clientId', clientId);
+          verifyUrl.searchParams.append('apiId', apiId);
+
+          const verifyResponse = await axios({
+            method: 'GET',
+            url: verifyUrl.toString(),
+            headers
+          });
+
+          const verifyCookies = verifyResponse.headers['set-cookie'];
+          if (verifyCookies) {
+            const cookies = Array.isArray(verifyCookies) ? verifyCookies : [verifyCookies];
+            const existingCookies = apiCookies.get(sessionKey) || [];
+            const allCookies = [...existingCookies];
+
+            cookies.forEach(newCookie => {
+              const newCookieName = newCookie.match(/^([^=]+)=/)?.[1];
+              if (newCookieName) {
+                const filtered = allCookies.filter(c => {
+                  const oldCookieName = c.match(/^([^=]+)=/)?.[1];
+                  return oldCookieName !== newCookieName;
+                });
+                allCookies.length = 0;
+                allCookies.push(...filtered, newCookie);
+              } else {
+                allCookies.push(newCookie);
+              }
+            });
+
+            apiCookies.set(sessionKey, allCookies);
+            storedCookies = allCookies;
+            console.log(`[Proxy] Captcha verify stored ${cookies.length} cookie(s) for session: ${sessionKey}`);
+          } else {
+            console.warn('[Proxy] Captcha verify returned no Set-Cookie headers');
+          }
+        } catch (error) {
+          console.warn('[Proxy] Captcha verify warm-up failed:', error.message || error);
+        }
+      } else {
+        console.warn('[Proxy] Captcha verify warm-up skipped: missing clientId/apiId');
+      }
+    }
     
     // Combine all cookie sources
     let allCookies = [];
@@ -267,9 +325,6 @@ app.all('/api/proxy/*', async (req, res) => {
       console.warn('[Proxy] Stored cookies for session:', sessionKey ? (apiCookies.has(sessionKey) ? 'found' : 'not found') : 'no session key');
     }
     
-    // Add dev captcha pass if configured (for development API)
-    // The API might require this as a header or query parameter
-    const captchaPass = process.env.CAPTCHA_PASS || 'bcEdgeApiPass';
     // Try adding as a custom header (API might check for this)
     if (!headers['X-Captcha-Pass'] && !headers['x-captcha-pass']) {
       headers['X-Captcha-Pass'] = captchaPass;

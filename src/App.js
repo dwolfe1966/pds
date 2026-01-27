@@ -9,6 +9,7 @@ import AboutPage from './pages/sales/AboutPage';
 import ContactPage from './pages/sales/ContactPage';
 import LandingPage from './pages/sales/LandingPage';
 import NameSearchLandingPage from './pages/sales/NameSearchLandingPage';
+import NameSearchLandingV2Page from './pages/sales/NameSearchLandingV2Page';
 import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
 import SalesSearchResultsPage from './pages/sales/SearchResultsPage';
 import GeneralSearchPage from './pages/sales/GeneralSearchPage';
@@ -84,6 +85,7 @@ const App = () => {
           <Route path="/search/all" element={<GeneralSearchPage />} />
           {/* Name search flow (mimics privaterecords.net) */}
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
+          <Route path="/name/landing/v2" element={<NameSearchLandingV2Page />} />
           <Route path="/name/loader" element={<NameSearchLoaderPage />} />
           <Route path="/name/search-result" element={<SalesSearchResultsPage />} />
           <Route path="/name/signup" element={<SignupPage />} />

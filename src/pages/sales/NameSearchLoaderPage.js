@@ -14,6 +14,9 @@ const NameSearchLoaderPage = () => {
   const params = new URLSearchParams(location.search);
   const firstName = params.get('firstName');
   const lastName = params.get('lastName');
+  const middleName = params.get('middleName');
+  const age = params.get('age');
+  const city = params.get('city');
   const state = params.get('state');
 
   const [status, setStatus] = useState('Initializing search...');
@@ -46,6 +49,15 @@ const NameSearchLoaderPage = () => {
           lastName,
           type: 'name'
         };
+        if (middleName && middleName.trim()) {
+          searchParams.middleName = middleName.trim();
+        }
+        if (age && age.trim()) {
+          searchParams.age = age.trim();
+        }
+        if (city && city.trim()) {
+          searchParams.city = city.trim();
+        }
         if (state && state.trim()) {
           searchParams.state = state.trim();
         }
@@ -73,7 +85,7 @@ const NameSearchLoaderPage = () => {
         // Store results and search context in sessionStorage for the results page
         sessionStorage.setItem('nameSearchResults', JSON.stringify({
           results: mappedResults,
-          query: { firstName, lastName, state },
+          query: { firstName, lastName, middleName, age, city, state },
           searchContext: response.searchContext || {},
           pagination: response.pagination || {}
         }));
@@ -99,7 +111,7 @@ const NameSearchLoaderPage = () => {
     // Small delay before starting search for better UX
     const timer = setTimeout(performSearch, 300);
     return () => clearTimeout(timer);
-  }, [firstName, lastName, state, navigate]);
+  }, [firstName, lastName, middleName, age, city, state, navigate]);
 
   return (
     <main style={{
@@ -109,13 +121,17 @@ const NameSearchLoaderPage = () => {
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)'
+      background: 'linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%)'
     }}>
       <div style={{
-        maxWidth: '600px',
+        maxWidth: '640px',
         width: '100%',
         padding: '3rem 2rem',
-        textAlign: 'center'
+        textAlign: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: '1rem',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
       }}>
         {/* Loading Spinner */}
         <div style={{
@@ -136,61 +152,45 @@ const NameSearchLoaderPage = () => {
 
         <h2 style={{
           color: '#0d5d2f',
-          marginBottom: '1rem',
+          marginBottom: '0.75rem',
           fontSize: '2rem',
           fontWeight: 700
         }}>
-          Searching...
+          Searching
         </h2>
         <p style={{
           color: '#6b7280',
-          fontSize: '1.125rem',
+          fontSize: '1rem',
           marginBottom: '2rem',
           lineHeight: 1.6
         }}>
           {status}
         </p>
 
-        {/* Progress bar */}
         <div style={{
-          width: '100%',
-          height: '10px',
-          backgroundColor: '#e5e7eb',
-          borderRadius: '9999px',
-          overflow: 'hidden',
-          marginBottom: '1rem',
-          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.06)'
+          display: 'grid',
+          gap: '0.5rem',
+          color: '#6b7280',
+          fontSize: '0.95rem',
+          marginBottom: '2rem'
         }}>
-          <div style={{
-            width: `${progress}%`,
-            height: '100%',
-            background: 'linear-gradient(90deg, #0d5d2f 0%, #1a7a4a 100%)',
-            transition: 'width 0.3s ease',
-            borderRadius: '9999px',
-            boxShadow: '0 2px 4px rgba(14, 18, 59, 0.2)'
-          }}></div>
+          <span>Possible relatives</span>
+          <span>Job &amp; education</span>
+          <span>Person information</span>
+          <span>Contact information</span>
+          <span>Social media profiles</span>
         </div>
-        <p style={{
-          color: '#9ca3af',
-          fontSize: '0.875rem',
-          margin: 0,
-          fontWeight: 500
-        }}>
-          {progress}% complete
-        </p>
 
         {/* Search Query Display */}
         <div style={{
-          marginTop: '3rem',
-          padding: '1.5rem',
+          padding: '1.25rem',
           backgroundColor: '#fff',
           borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+          border: '1px solid #e5e7eb'
         }}>
           <p style={{
             color: '#6b7280',
-            fontSize: '0.875rem',
+            fontSize: '0.8rem',
             marginBottom: '0.5rem',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
@@ -205,19 +205,29 @@ const NameSearchLoaderPage = () => {
             margin: 0,
             fontWeight: 600
           }}>
-            {firstName} {lastName}
+            {firstName} {middleName ? `${middleName} ` : ''}{lastName}
+            {age && <span style={{ color: '#6b7280', fontWeight: 400 }}> • {age}</span>}
+            {city && <span style={{ color: '#6b7280', fontWeight: 400 }}> • {city}</span>}
             {state && <span style={{ color: '#6b7280', fontWeight: 400 }}> • {state}</span>}
           </p>
         </div>
 
         {/* Info Message */}
         <p style={{
-          marginTop: '2rem',
+          marginTop: '1.75rem',
           color: '#9ca3af',
           fontSize: '0.875rem',
           lineHeight: 1.5
         }}>
           Searching through billions of public records...
+        </p>
+        <p style={{
+          marginTop: '0.5rem',
+          color: '#9ca3af',
+          fontSize: '0.875rem',
+          lineHeight: 1.5
+        }}>
+          {progress}% complete
         </p>
       </div>
     </main>
