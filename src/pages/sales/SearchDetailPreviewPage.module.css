@@ -1,0 +1,284 @@
+/**
+ * SearchDetailPreviewPage – V-card variants, IDLookup.ai design tokens
+ */
+
+.main {
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 60vh;
+}
+
+.backLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  transition: color var(--transition-base);
+}
+
+.backLink:hover {
+  color: var(--color-primary-hover);
+}
+
+.pageTitle {
+  color: var(--color-primary);
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+}
+
+.pageSubtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-2xl);
+  line-height: var(--line-height-relaxed);
+}
+
+.section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+/* Benefits rectangle (v2) */
+.benefitsCard {
+  background-color: var(--color-bg-paper);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-light);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.benefitsTitle {
+  margin: 0 0 var(--spacing-md);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.benefitsList {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  color: var(--color-text-primary);
+  line-height: 1.9;
+  font-size: var(--font-size-sm);
+}
+
+/* Signup form (v1, v2) */
+.signupCard {
+  background-color: var(--color-bg-default);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xl);
+}
+
+.signupTitle {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.signupSubtitle {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.stepIndicator {
+  margin: 0 0 var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.formGroup {
+  margin-bottom: var(--spacing-md);
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.formInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.15);
+}
+
+.formError {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: rgba(220, 53, 69, 0.08);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
+}
+
+.btnPrimary {
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.formActions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+.formActions .btnPrimary {
+  flex: 1;
+  min-width: 120px;
+}
+
+.btnSecondary {
+  padding: 0.85rem 1.5rem;
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btnSecondary:hover {
+  background-color: rgba(13, 93, 47, 0.08);
+}
+
+.loginLinkWrap {
+  margin-top: var(--spacing-md);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.loginLink {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}
+
+/* CTA only (v3) */
+.ctaCard {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  color: var(--color-text-inverse);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.ctaTitle {
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.ctaText {
+  margin: 0 0 var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  opacity: 0.95;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btnWhite {
+  padding: 0.85rem 1.75rem;
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.btnWhite:hover {
+  background-color: var(--color-gray-50);
+  transform: translateY(-1px);
+}
+
+.btnOutline {
+  padding: 0.85rem 1.75rem;
+  background-color: transparent;
+  color: var(--color-white);
+  border: 2px solid var(--color-white);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all var(--transition-base);
+}
+
+.btnOutline:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.loadingWrap,
+.notFoundWrap {
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.notFoundLink {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}

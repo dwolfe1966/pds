@@ -360,6 +360,19 @@ const api = {
       token: token || getToken() 
     });
   },
+
+  /**
+   * Create/update subscription (payment). Use body.simulate: 'success' | 'failure'
+   * for proxy testing when real payment API is not implemented.
+   */
+  updateSubscription: async (body, token) => {
+    return await routeApiRequest('update-subscription', {
+      method: 'PUT',
+      path: '/subscription',
+      body,
+      token: token || getToken(),
+    });
+  },
 };
 
 export default api;

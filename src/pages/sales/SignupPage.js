@@ -73,17 +73,23 @@ const SignupPage = () => {
       const response = await api.signup(form);
       console.log('Signup response:', response);
       
-      // Set token and user in AuthContext
+      // Set token and user in AuthContext and persist (so payment page has auth)
       if (response.accessToken) {
-        setToken(response.accessToken);
-        setUser(response.user || { 
-          email: form.email, 
-          fullName: form.fullName, 
+        const userData = response.user || {
+          email: form.email,
+          fullName: form.fullName,
           role: 'member',
           emailVerified: response.user?.emailVerified || false
-        });
+        };
+        setToken(response.accessToken);
+        setUser(userData);
+        localStorage.setItem('accessToken', response.accessToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (response.refreshToken) {
+          localStorage.setItem('refreshToken', response.refreshToken);
+        }
       }
-      
+
       setSuccess(true);
       
       // Store selected person ID in sessionStorage for payment page

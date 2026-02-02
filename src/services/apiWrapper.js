@@ -201,6 +201,17 @@ class ApiWrapperService {
           }
         }
       }
+
+      // Treat API error payload (401, 412, 400) as failure so callers can catch and fall back
+      if (response && response.params && response.params.error) {
+        const err = response.params.error;
+        const message = err.message || 'Search failed';
+        const status = err.response?.status || err.status;
+        const e = new Error(message);
+        e.originalError = err;
+        e.status = status;
+        throw e;
+      }
       
       return response;
     } catch (error) {

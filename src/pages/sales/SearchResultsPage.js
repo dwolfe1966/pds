@@ -33,7 +33,11 @@ const SalesSearchResultsPage = () => {
           const data = JSON.parse(storedResults);
           setResults(data.results || []);
           setSearchQuery(data.query || {});
-          sessionStorage.removeItem('nameSearchResults');
+          if (data.searchContext) {
+            setSearchContext(data.searchContext);
+          }
+          // Don't remove here: React Strict Mode double-mounts in dev, so the second
+          // mount would see empty storage and show no results. Next search overwrites.
           return;
         } catch (err) {
           console.error('Error parsing stored results:', err);

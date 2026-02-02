@@ -1525,12 +1525,41 @@ app.get('/api/v1/subscription', authenticateToken, (req, res) => {
   });
 });
 
-// PUT /api/v1/subscription
+// PUT /api/v1/subscription (proxy: supports simulate=success|failure for testing)
 app.put('/api/v1/subscription', authenticateToken, (req, res) => {
   const userId = req.user.userId;
-  let subscription = dataStore.subscriptions.find(s => s.userId === userId);
+  const { plan, paymentToken, simulate } = req.body;
 
-  const { plan, paymentToken } = req.body;
+  // Proxy: simulate failed payment for testing next-page (error) experience
+  if (simulate === 'failure' || simulate === 'decline') {
+    return res.status(402).json({
+      error: {
+        code: 'PAYMENT_DECLINED',
+        message: 'Your card was declined. Please try a different payment method.',
+        details: []
+      }
+    });
+  }
+  if (simulate === 'insufficient_funds') {
+    return res.status(402).json({
+      error: {
+        code: 'INSUFFICIENT_FUNDS',
+        message: 'Insufficient funds. Please use another card.',
+        details: []
+      }
+    });
+  }
+  if (simulate === 'expired_card') {
+    return res.status(400).json({
+      error: {
+        code: 'EXPIRED_CARD',
+        message: 'Your card has expired. Please use a different card.',
+        details: []
+      }
+    });
+  }
+
+  let subscription = dataStore.subscriptions.find(s => s.userId === userId);
 
   if (!subscription) {
     subscription = {

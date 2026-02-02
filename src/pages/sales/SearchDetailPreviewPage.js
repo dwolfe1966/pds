@@ -1,42 +1,62 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext } from '../../services/searchContext';
+import api from '../../api';
+import ProfileVCard from '../../components/ProfileVCard';
+import styles from './SearchDetailPreviewPage.module.css';
+
+/** Service benefit statements for variant 2 */
+const BENEFIT_STATEMENTS = [
+  'Instant access to full contact information',
+  '12B+ public records searched',
+  'Address history and current location',
+  'Relatives and family connections',
+  'Secure, FCRA-compliant reports',
+  'One-time purchase or subscription options',
+];
 
 /**
- * Preview page that shows a truncated preview of a search result.
- * Mimics the privaterecords.net flow - shows teaser and encourages signup.
- * When a user clicks on a result in the logged-out state, they land here.
+ * Preview page when a visitor clicks a search result.
+ * Three variants: v1 (V-card + signup form), v2 (+ benefits rectangle), v3 (V-card + CTA only).
+ * If ?v=1|2|3 is set, that variant is used; otherwise a random variant is chosen on each page load.
  */
 const SearchDetailPreviewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const [searchParams] = useSearchParams();
+  const queryV = searchParams.get('v');
+  const [randomVariant] = useState(() => String(Math.floor(Math.random() * 3) + 1));
+  const variant = (queryV === '1' || queryV === '2' || queryV === '3') ? queryV : randomVariant;
+  const { token, setToken, setUser } = useAuth();
+
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reportCreated, setReportCreated] = useState(false);
   const [reportId, setReportId] = useState(null);
 
+  // Embedded signup form (v1, v2) – multi-step: 1 = email/password, 2 = name, 3 = zip
+  const [signupStep, setSignupStep] = useState(1);
+  const [form, setForm] = useState({ fullName: '', zip: '', email: '', password: '' });
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupError, setSignupError] = useState('');
+
   useEffect(() => {
     const loadPersonAndCreateReport = async () => {
-      // Get person data from sessionStorage
       const storedPerson = sessionStorage.getItem(`result_${id}`);
       if (storedPerson) {
         try {
           const personData = JSON.parse(storedPerson);
           setPerson(personData);
-          
-          // If user is logged in, create report automatically
+
           if (token && personData.extId) {
             try {
-              // Check if report already exists
               const existingReportId = getExistingReportId(personData.extId);
               if (existingReportId) {
                 setReportId(existingReportId);
                 setReportCreated(true);
               } else {
-                // Create report
                 const identityContext = getIdentityContext();
                 const result = await createReportForIdentity(personData.extId, personData);
                 if (result.success && result.commerceContentId) {
@@ -46,7 +66,6 @@ const SearchDetailPreviewPage = () => {
               }
             } catch (error) {
               console.error('Failed to create report:', error);
-              // Continue to show preview even if report creation fails
             }
           }
         } catch (err) {
@@ -55,336 +74,274 @@ const SearchDetailPreviewPage = () => {
       }
       setLoading(false);
     };
-    
+
     loadPersonAndCreateReport();
   }, [id, token]);
 
-  const handleSignup = () => {
-    // Navigate to signup with person info
+  const handleSignupNav = () => {
     const params = new URLSearchParams({
       selected: id,
       personName: person?.fullName || '',
       personLocation: person?.location || '',
-      personAge: person?.ageRange || ''
+      personAge: person?.ageRange || '',
     });
     navigate(`/name/signup?${params.toString()}`);
   };
 
   const handleViewFullReport = () => {
-    // If report is created and user is logged in, navigate to report detail
     if (reportCreated && reportId && token) {
       navigate(`/people/${reportId}`);
     } else {
-      // Otherwise, go to signup
-      handleSignup();
+      handleSignupNav();
     }
+  };
+
+  const handleEmbeddedSignup = async (e) => {
+    e.preventDefault();
+    setSignupError('');
+    setSignupLoading(true);
+    try {
+      const response = await api.signup(form);
+      if (response.accessToken) {
+        setToken(response.accessToken);
+        setUser(response.user || {
+          email: form.email,
+          fullName: form.fullName,
+          role: 'member',
+          emailVerified: response.user?.emailVerified ?? false,
+        });
+      }
+      if (id) sessionStorage.setItem('selectedPersonId', id);
+      setTimeout(() => navigate('/payment'), 1500);
+    } catch (err) {
+      setSignupError(err.message || 'Signup failed. Please try again.');
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleSignupStepNext = (e) => {
+    e.preventDefault();
+    setSignupError('');
+    if (signupStep === 1) {
+      if (!form.email?.trim()) {
+        setSignupError('Please enter your email.');
+        return;
+      }
+      if (!form.password?.trim()) {
+        setSignupError('Please enter a password.');
+        return;
+      }
+      setSignupStep(2);
+    } else if (signupStep === 2) {
+      if (!form.fullName?.trim()) {
+        setSignupError('Please enter your full name.');
+        return;
+      }
+      setSignupStep(3);
+    }
+  };
+
+  const handleSignupStepBack = () => {
+    setSignupError('');
+    setSignupStep((s) => Math.max(1, s - 1));
   };
 
   if (loading) {
     return (
-      <main style={{ padding: '2rem', textAlign: 'center' }}>
-        <p>Loading...</p>
+      <main className={styles.main}>
+        <div className={styles.loadingWrap}>
+          <p>Loading...</p>
+        </div>
       </main>
     );
   }
 
   if (!person) {
     return (
-      <main style={{ padding: '2rem', textAlign: 'center' }}>
-        <p>Person not found. Please try searching again.</p>
-        <Link to="/name/landing" style={{ color: '#0d5d2f' }}>Back to Search</Link>
+      <main className={styles.main}>
+        <div className={styles.notFoundWrap}>
+          <p>Person not found. Please try searching again.</p>
+          <Link to="/name/search-result" className={styles.notFoundLink}>Back to Search</Link>
+        </div>
       </main>
     );
   }
 
+  // Logged-in user with report: show single CTA to view full report
+  if (reportCreated && token) {
+    return (
+      <main className={styles.main}>
+        <Link to="/name/search-result" className={styles.backLink}>← Back to Results</Link>
+        <h1 className={styles.pageTitle}>{person.fullName}</h1>
+        <section className={styles.section}>
+          <ProfileVCard person={person} />
+        </section>
+        <div className={styles.ctaCard}>
+          <h3 className={styles.ctaTitle}>Your report is ready</h3>
+          <p className={styles.ctaText}>
+            View the full report for <strong>{person.fullName}</strong>.
+          </p>
+          <button type="button" className={styles.btnWhite} onClick={handleViewFullReport}>
+            View Full Report
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // Visitor: render by variant
+  const showBenefits = variant === '2';
+  const showSignupForm = variant === '1' || variant === '2';
+  const showCtaOnly = variant === '3';
+
   return (
-    <main style={{ 
-      padding: '3rem 2rem',
-      maxWidth: '1000px',
-      margin: '0 auto',
-      minHeight: '60vh'
-    }}>
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <Link 
-          to="/name/search-result" 
-          style={{ 
-            color: '#0d5d2f', 
-            textDecoration: 'none',
-            fontSize: '0.95rem',
-            marginBottom: '1rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontWeight: 500,
-            transition: 'color 0.2s ease'
-          }}
-          onMouseEnter={(e) => e.target.style.color = '#1a7a4a'}
-          onMouseLeave={(e) => e.target.style.color = '#0d5d2f'}
-        >
-          ← Back to Results
-        </Link>
-        <h1 style={{ 
-          color: '#0d5d2f', 
-          marginTop: '1rem',
-          marginBottom: '0.5rem',
-          fontSize: '2.5rem',
-          fontWeight: 700,
-          letterSpacing: '-0.02em'
-        }}>
-          {person.fullName}
-        </h1>
-        {person.location && (
-          <p style={{ 
-            color: '#6b7280', 
-            fontSize: '1.125rem', 
-            marginBottom: '2rem',
-            lineHeight: 1.5
-          }}>
-            {person.location}
-            {person.ageRange && <span style={{ color: '#9ca3af' }}> • Age: {person.ageRange}</span>}
-          </p>
-        )}
-      </div>
+    <main className={styles.main}>
+      <Link to="/name/search-result" className={styles.backLink}>← Back to Results</Link>
+      <h1 className={styles.pageTitle}>{person.fullName}</h1>
 
-      {/* Preview/Teaser Section */}
-      <div style={{ 
-        backgroundColor: '#f9fafb',
-        padding: '2.5rem',
-        borderRadius: '0.75rem',
-        marginBottom: '2rem',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-      }}>
-        <h2 style={{ 
-          color: '#0d5d2f', 
-          marginTop: 0,
-          marginBottom: '1rem',
-          fontSize: '1.875rem',
-          fontWeight: 700
-        }}>
-          Preview Report
-        </h2>
-        <p style={{ 
-          color: '#6b7280', 
-          lineHeight: 1.6, 
-          marginBottom: '2rem',
-          fontSize: '1.125rem'
-        }}>
-            This is a preview of the information available for <strong style={{ color: '#0d5d2f' }}>{person.fullName}</strong>.
-          Sign up to view the complete report with full details.
-        </p>
+      {/* 1) V-card (all variants) */}
+      <section className={styles.section}>
+        <ProfileVCard person={person} />
+      </section>
 
-        {/* Available Information Grid */}
-        <div style={{ 
-          backgroundColor: '#fff',
-          padding: '2rem',
-          borderRadius: '0.5rem',
-          border: '1px solid #e5e7eb',
-          marginBottom: '2rem'
-        }}>
-          <h3 style={{ 
-            color: '#0d5d2f', 
-            marginTop: 0,
-            marginBottom: '1.5rem',
-            fontSize: '1.25rem',
-            fontWeight: 600
-          }}>
-            Available Information
-          </h3>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-            gap: '1rem' 
-          }}>
-            {[
-              { label: 'Basic Information', available: true },
-              { label: 'Contact Details', available: false },
-              { label: 'Address History', available: false },
-              { label: 'Phone Numbers', available: false },
-              { label: 'Email Addresses', available: false },
-              { label: 'Relatives & Family', available: false },
-              { label: 'Social Media Profiles', available: false },
-              { label: 'Public Records', available: false },
-            ].map((item, index) => (
-              <div
-                key={index}
-                style={{
-                  padding: '0.75rem',
-                  backgroundColor: item.available ? '#f0fdf4' : '#f9fafb',
-                  borderRadius: '0.375rem',
-                  border: `1px solid ${item.available ? '#86efac' : '#e5e7eb'}`
-                }}
-              >
-                <p style={{ 
-                  color: item.available ? '#166534' : '#9ca3af', 
-                  margin: 0, 
-                  fontSize: '0.95rem',
-                  fontWeight: item.available ? 600 : 400
-                }}>
-                  {item.available ? '✓' : '🔒'} {item.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, #0d5d2f 0%, #1a7a4a 100%)',
-          color: '#fff',
-          padding: '2.5rem',
-          borderRadius: '0.75rem',
-          textAlign: 'center',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h3 style={{ 
-            marginTop: 0,
-            marginBottom: '1rem',
-            fontSize: '1.5rem',
-            fontWeight: 700
-          }}>
-            {reportCreated && token ? 'View Full Report' : 'Unlock Full Report'}
-          </h3>
-          <p style={{ 
-            marginBottom: '2rem',
-            lineHeight: 1.6,
-            fontSize: '1.125rem',
-            color: 'rgba(255, 255, 255, 0.9)',
-            maxWidth: '600px',
-            margin: '0 auto 2rem auto'
-          }}>
-            {reportCreated && token ? (
-              <>Your report for <strong>{person.fullName}</strong> is ready. View complete contact information, addresses, relatives, and more.</>
-            ) : (
-              <>Sign up now to access the complete report for <strong>{person.fullName}</strong>. Get instant access to contact information, addresses, relatives, and more.</>
-            )}
-          </p>
-          <div style={{ 
-            display: 'flex', 
-            gap: '1rem', 
-            justifyContent: 'center', 
-            flexWrap: 'wrap' 
-          }}>
-            {reportCreated && token ? (
-              <button
-                onClick={handleViewFullReport}
-                style={{
-                  padding: '1rem 2.5rem',
-                  backgroundColor: '#fff',
-                  color: '#0d5d2f',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                  fontSize: '1.125rem',
-                  fontWeight: 600,
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#f9fafb';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#fff';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-                }}
-              >
-                View Full Report
-              </button>
-            ) : (
-              <>
+      {/* 2) Embedded signup form – multi-step (v1, v2) */}
+      {showSignupForm && (
+        <section className={styles.section}>
+          <div className={styles.signupCard}>
+            <h3 className={styles.signupTitle}>Unlock full report</h3>
+            <p className={styles.signupSubtitle}>
+              Create an account to view the complete report for {person.fullName}.
+            </p>
+            <p className={styles.stepIndicator}>Step {signupStep} of 3</p>
+            <form
+              onSubmit={signupStep === 3 ? handleEmbeddedSignup : handleSignupStepNext}
+            >
+              {/* Step 1: email and password */}
+              {signupStep === 1 && (
+                <>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} htmlFor="preview-email">Email *</label>
+                    <input
+                      id="preview-email"
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })}
+                      className={styles.formInput}
+                      required
+                      autoComplete="email"
+                    />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel} htmlFor="preview-password">Password *</label>
+                    <input
+                      id="preview-password"
+                      type="password"
+                      name="password"
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })}
+                      className={styles.formInput}
+                      required
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </>
+              )}
+              {/* Step 2: full name (pre-populated from prior step) */}
+              {signupStep === 2 && (
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel} htmlFor="preview-fullName">Full Name *</label>
+                  <input
+                    id="preview-fullName"
+                    type="text"
+                    name="fullName"
+                    value={form.fullName}
+                    onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })}
+                    className={styles.formInput}
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+              )}
+              {/* Step 3: zip (pre-populated from prior steps) */}
+              {signupStep === 3 && (
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel} htmlFor="preview-zip">ZIP Code</label>
+                  <input
+                    id="preview-zip"
+                    type="text"
+                    name="zip"
+                    value={form.zip}
+                    onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })}
+                    className={styles.formInput}
+                    autoComplete="postal-code"
+                  />
+                </div>
+              )}
+              {signupError && <div className={styles.formError}>{signupError}</div>}
+              <div className={styles.formActions}>
+                {signupStep > 1 ? (
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    onClick={handleSignupStepBack}
+                  >
+                    Back
+                  </button>
+                ) : null}
                 <button
-                  onClick={handleSignup}
-                  style={{
-                    padding: '1rem 2.5rem',
-                    backgroundColor: '#fff',
-                    color: '#0d5d2f',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    cursor: 'pointer',
-                    fontSize: '1.125rem',
-                    fontWeight: 600,
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#f9fafb';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#fff';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-                  }}
+                  type="submit"
+                  className={styles.btnPrimary}
+                  disabled={signupLoading}
                 >
-                  Sign Up to View Full Report
+                  {signupStep === 3
+                    ? (signupLoading ? 'Signing up…' : 'Sign Up')
+                    : 'Continue'}
                 </button>
-                <Link
-                  to="/login"
-                  style={{
-                    padding: '1rem 2.5rem',
-                    backgroundColor: 'transparent',
-                    color: '#fff',
-                    border: '2px solid #fff',
-                    borderRadius: '0.5rem',
-                    textDecoration: 'none',
-                    fontSize: '1.125rem',
-                    fontWeight: 600,
-                    display: 'inline-block',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                    e.target.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.transform = 'translateY(0)';
-                  }}
-                >
-                  Already have an account? Log In
-                </Link>
-              </>
-            )}
+              </div>
+              <p className={styles.loginLinkWrap}>
+                Already have an account?{' '}
+                <Link to="/login" className={styles.loginLink}>Log in</Link>
+              </p>
+            </form>
           </div>
-        </div>
-      </div>
+        </section>
+      )}
 
-      {/* Additional Info */}
-      <div style={{ 
-        padding: '2rem',
-        backgroundColor: '#f0f7ff',
-        borderRadius: '0.75rem',
-        border: '1px solid #bfdbfe'
-      }}>
-        <h3 style={{ 
-          color: '#0d5d2f', 
-          marginTop: 0,
-          marginBottom: '1rem',
-          fontSize: '1.25rem',
-          fontWeight: 600
-        }}>
-          What's Included in the Full Report?
-        </h3>
-        <ul style={{ 
-          color: '#374151', 
-          lineHeight: 1.8, 
-          paddingLeft: '1.5rem',
-          margin: 0,
-          fontSize: '1rem'
-        }}>
-          <li>Complete contact information (phone numbers, email addresses)</li>
-          <li>Current and previous addresses with dates</li>
-          <li>Family members and relatives</li>
-          <li>Social media profiles and online presence</li>
-          <li>Public records and background information</li>
-          <li>Associated records and connections</li>
-        </ul>
-      </div>
+      {/* 3) Benefits rectangle (v2 only) – below signup form */}
+      {showBenefits && (
+        <section className={styles.section}>
+          <div className={styles.benefitsCard}>
+            <h3 className={styles.benefitsTitle}>Why use IDLookup.ai?</h3>
+            <ul className={styles.benefitsList}>
+              {BENEFIT_STATEMENTS.map((text, i) => (
+                <li key={i}>{text}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* 4) CTA only, no form (v3) */}
+      {showCtaOnly && (
+        <section className={styles.section}>
+          <div className={styles.ctaCard}>
+            <h3 className={styles.ctaTitle}>Unlock full report</h3>
+            <p className={styles.ctaText}>
+              Sign up or log in to view the complete report for <strong>{person.fullName}</strong>.
+            </p>
+            <div className={styles.ctaButtons}>
+              <button type="button" className={styles.btnWhite} onClick={handleSignupNav}>
+                Sign Up to View Full Report
+              </button>
+              <Link to="/login" className={styles.btnOutline}>
+                Already have an account? Log in
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 };

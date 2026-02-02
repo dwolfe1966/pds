@@ -65,8 +65,9 @@ async function callMockAPI(endpoint, params = {}) {
     'Content-Type': 'application/json',
   };
 
-  // Use provided token or get from token getter
-  const token = providedToken || getToken();
+  // Use provided token, then getter, then localStorage (so payment works after signup redirect)
+  const token = providedToken || getToken() ||
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null);
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   } else if (process.env.NODE_ENV === 'development') {

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 // Sales pages
 import HomePage from './pages/sales/HomePage';
 import AboutPage from './pages/sales/AboutPage';
@@ -10,6 +11,7 @@ import ContactPage from './pages/sales/ContactPage';
 import LandingPage from './pages/sales/LandingPage';
 import NameSearchLandingPage from './pages/sales/NameSearchLandingPage';
 import NameSearchLandingV2Page from './pages/sales/NameSearchLandingV2Page';
+import NameSearchLandingV3Page from './pages/sales/NameSearchLandingV3Page';
 import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
 import SalesSearchResultsPage from './pages/sales/SearchResultsPage';
 import GeneralSearchPage from './pages/sales/GeneralSearchPage';
@@ -73,6 +75,7 @@ const HomePageRedirect = () => {
 const App = () => {
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <ScrollToTop />
       <Header />
       <div style={{ flex: 1 }}>
         <Routes>
@@ -86,6 +89,7 @@ const App = () => {
           {/* Name search flow (mimics privaterecords.net) */}
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
           <Route path="/name/landing/v2" element={<NameSearchLandingV2Page />} />
+          <Route path="/name/landing/v3" element={<NameSearchLandingV3Page />} />
           <Route path="/name/loader" element={<NameSearchLoaderPage />} />
           <Route path="/name/search-result" element={<SalesSearchResultsPage />} />
           <Route path="/name/signup" element={<SignupPage />} />
