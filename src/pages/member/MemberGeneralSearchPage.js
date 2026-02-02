@@ -103,6 +103,7 @@ const MemberGeneralSearchPage = () => {
     }
   };
 
+
   const handleNameSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -135,7 +136,7 @@ const MemberGeneralSearchPage = () => {
         query: { firstName: firstName.trim(), lastName: lastName.trim(), state: state.trim() },
         pagination: response.pagination
       }));
-      
+
       // Navigate to member results page
       navigate('/people-results');
     } catch (err) {
@@ -173,7 +174,7 @@ const MemberGeneralSearchPage = () => {
         query: { phone },
         pagination: response.pagination
       }));
-      
+
       // Navigate to member results page
       navigate('/people-results');
     } catch (err) {
@@ -218,7 +219,7 @@ const MemberGeneralSearchPage = () => {
         query: { email: email.trim() },
         pagination: response.pagination
       }));
-      
+
       // Navigate to member results page
       navigate('/people-results');
     } catch (err) {

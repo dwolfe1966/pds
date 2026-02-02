@@ -34,6 +34,9 @@ function pathToEndpoint(path) {
     'me': 'get-profile',
     'dashboard': 'dashboard',
     'searches/me': 'my-searches',
+    'searches': 'create-search',
+    'profile-views': 'profile-views',
+    'profile-views/me': 'profile-views-me',
     'alerts': 'alerts',
     'subscription': 'subscription',
     'invoices': 'invoices',
@@ -225,7 +228,7 @@ const api = {
    * ID Lookup (Teaser Search)
    */
   searchPeople: async (params) => {
-    const { firstName, lastName, type = 'name', phone, email, state, searchContextKey } = params;
+    const { firstName, lastName, type = 'name', phone, email, state, searchContextKey, middleName, age, city, source } = params;
 
     const query = { type };
     if (type === 'name') {
@@ -272,6 +275,41 @@ const api = {
     // Store search context
     if (response.searchContext) {
       setSearchContext(response.searchContext);
+    }
+
+    // Record search history for authenticated users (best-effort)
+    try {
+      const token = getToken();
+      if (token) {
+        let queryPayload = {};
+        if (type === 'name') {
+          queryPayload = { firstName, lastName };
+          if (middleName) queryPayload.middleName = middleName;
+          if (age) queryPayload.age = age;
+          if (city) queryPayload.city = city;
+          if (state) queryPayload.state = state;
+        } else if (type === 'phone') {
+          queryPayload = { phone };
+        } else if (type === 'email') {
+          queryPayload = { email };
+        }
+
+        await routeApiRequest('create-search', {
+          method: 'POST',
+          path: '/searches',
+          body: {
+            type,
+            query: queryPayload,
+            resultCount: response.data?.length || 0,
+            source: source || 'searchPeople'
+          },
+          token
+        });
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[API] Failed to record search history:', err?.message || err);
+      }
     }
     
     return response;

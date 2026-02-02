@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
@@ -18,6 +18,7 @@ const SearchResultDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [creatingReport, setCreatingReport] = useState(false);
+  const lastTrackedRef = useRef(null);
 
   useEffect(() => {
     const fetchOrCreateReport = async () => {
@@ -103,6 +104,32 @@ const SearchResultDetailPage = () => {
       setLoading(false);
     }
   }, [id, token, navigate]);
+
+  useEffect(() => {
+    if (!token || !id) {
+      return;
+    }
+    if (lastTrackedRef.current === id) {
+      return;
+    }
+    lastTrackedRef.current = id;
+
+    const identityContext = getIdentityContext();
+    const targetType = identityContext?.extId === id ? 'person' : 'report';
+
+    api.post('/profile-views', {
+      body: {
+        targetId: id,
+        targetType,
+        source: 'member-report'
+      },
+      token
+    }).catch((err) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[SearchResultDetailPage] Failed to record profile view:', err?.message || err);
+      }
+    });
+  }, [id, token]);
 
   // Extract report data from the new API response structure
   const extractReportData = (reportData) => {

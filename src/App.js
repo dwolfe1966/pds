@@ -48,6 +48,7 @@ import AlertsPage from './pages/member/AlertsPage';
 import AccountPage from './pages/member/AccountPage';
 import SettingsPage from './pages/member/SettingsPage';
 import LogoutPage from './pages/member/LogoutPage';
+import SearchHistoryPage from './pages/member/SearchHistoryPage';
 // Admin pages
 import UsersPage from './pages/admin/UsersPage';
 import UserDetailPage from './pages/admin/UserDetailPage';
@@ -181,6 +182,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <AlertsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/search-history"
+            element={
+              <ProtectedRoute>
+                <SearchHistoryPage />
               </ProtectedRoute>
             }
           />

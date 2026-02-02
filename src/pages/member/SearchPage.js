@@ -104,6 +104,7 @@ const SearchPage = () => {
       if (response.searchContext) {
         setSearchContext(response.searchContext);
       }
+
     } catch (err) {
       setError(err.message);
     } finally {

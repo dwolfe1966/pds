@@ -16,6 +16,7 @@ let dataStore = {
   users: [],
   people: [],
   searches: [],
+  profileViews: [],
   alerts: [],
   notifications: [],
   subscriptions: [],
@@ -33,6 +34,7 @@ try {
   // Preserve the refreshTokens Map
   dataStore = {
     ...seededData,
+    profileViews: seededData.profileViews || [],
     refreshTokens: new Map() // Re-initialize the Map
   };
   console.log('Seed data loaded successfully');
@@ -1349,7 +1351,7 @@ app.get('/api/v1/dashboard', authenticateToken, (req, res) => {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const searchesThisMonth = dataStore.searches.filter(s => 
-    s.targetUserId === userId && new Date(s.timestamp) >= startOfMonth
+    s.userId === userId && new Date(s.timestamp) >= startOfMonth
   ).length;
 
   const activeAlerts = dataStore.alerts.filter(a => 
@@ -1365,12 +1367,17 @@ app.get('/api/v1/dashboard', authenticateToken, (req, res) => {
       timestamp: s.timestamp
     }));
 
+  const profileViewsThisMonth = dataStore.profileViews.filter(v =>
+    v.viewerUserId === userId && new Date(v.timestamp) >= startOfMonth
+  ).length;
+
   const subscription = dataStore.subscriptions.find(s => s.userId === userId);
 
   res.json({
     searchesThisMonth,
     activeAlerts,
     recentSearches,
+    profileViewsThisMonth,
     subscription: subscription ? {
       plan: subscription.plan,
       status: subscription.status,
@@ -1379,12 +1386,47 @@ app.get('/api/v1/dashboard', authenticateToken, (req, res) => {
   });
 });
 
+// POST /api/v1/searches (record search history)
+app.post('/api/v1/searches', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { type, query, resultCount = 0, source = 'member' } = req.body || {};
+
+  if (!type || !query) {
+    return res.status(400).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'type and query are required',
+        details: []
+      }
+    });
+  }
+
+  const user = dataStore.users.find(u => u.id === userId);
+  const searchRecord = {
+    id: `search-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+    userId,
+    type,
+    query,
+    resultCount,
+    source,
+    searcherId: user?.id || userId,
+    searcherMembershipLevel: user?.membershipLevel || user?.plan || 'member',
+    timestamp: new Date().toISOString()
+  };
+
+  dataStore.searches.unshift(searchRecord);
+
+  res.status(201).json({
+    data: searchRecord
+  });
+});
+
 // GET /api/v1/searches/me
 app.get('/api/v1/searches/me', authenticateToken, (req, res) => {
   const userId = req.user.userId;
   const { limit = 20, cursor, filter } = req.query;
 
-  let searches = dataStore.searches.filter(s => s.targetUserId === userId);
+  let searches = dataStore.searches.filter(s => s.userId === userId);
 
   // Apply time filter
   if (filter) {
@@ -1415,6 +1457,8 @@ app.get('/api/v1/searches/me', authenticateToken, (req, res) => {
     data: results.map(s => ({
       id: s.id,
       timestamp: s.timestamp,
+      type: s.type,
+      resultCount: s.resultCount || 0,
       searcherLocation: s.searcherLocation,
       searcherId: s.searcherId,
       searcherMembershipLevel: s.searcherMembershipLevel,
@@ -1425,6 +1469,52 @@ app.get('/api/v1/searches/me', authenticateToken, (req, res) => {
       cursor: results.length === limitNum ? `cursor-${results.length}` : null,
       hasMore: searches.length > limitNum
     }
+  });
+});
+
+// POST /api/v1/profile-views (record profile view)
+app.post('/api/v1/profile-views', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { targetId, targetType = 'person', source = 'member' } = req.body || {};
+
+  if (!targetId) {
+    return res.status(400).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'targetId is required',
+        details: []
+      }
+    });
+  }
+
+  const viewRecord = {
+    id: `view-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+    viewerUserId: userId,
+    targetId,
+    targetType,
+    source,
+    timestamp: new Date().toISOString()
+  };
+
+  dataStore.profileViews.unshift(viewRecord);
+
+  res.status(201).json({
+    data: viewRecord
+  });
+});
+
+// GET /api/v1/profile-views/me
+app.get('/api/v1/profile-views/me', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { limit = 20 } = req.query;
+
+  const views = dataStore.profileViews.filter(v => v.viewerUserId === userId);
+  const limitNum = Math.min(parseInt(limit), 100);
+  const results = views.slice(0, limitNum);
+
+  res.json({
+    data: results,
+    total: views.length
   });
 });
 

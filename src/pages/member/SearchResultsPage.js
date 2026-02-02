@@ -20,6 +20,7 @@ const MemberSearchResultsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
@@ -69,7 +70,7 @@ const MemberSearchResultsPage = () => {
         const response = await api.searchPeople(searchParams);
         // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
         setResults(response.data || []);
-        
+
         // Store search context for report creation
         if (response.searchContext) {
           setSearchContext(response.searchContext);

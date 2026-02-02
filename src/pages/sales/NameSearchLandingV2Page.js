@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import apiWrapper from '../../services/apiWrapper';
-import { adaptTeaserResponse } from '../../services/apiAdapter';
+import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 import styles from './NameSearchLandingV2Page.module.css';
 
@@ -111,24 +110,16 @@ const NameSearchLandingV2Page = () => {
 
         const searchParams = {
           type: 'name',
-          fName: firstName.trim(),
-          lName: lastName.trim()
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          middleName: middleName.trim(),
+          age: age.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          source: 'name-landing-v2'
         };
-        if (middleName.trim()) {
-          searchParams.middleName = middleName.trim();
-        }
-        if (age.trim()) {
-          searchParams.age = age.trim();
-        }
-        if (city.trim()) {
-          searchParams.city = city.trim();
-        }
-        if (state.trim()) {
-          searchParams.state = state.trim();
-        }
 
-        const rawResponse = await apiWrapper.searchTeaser(searchParams);
-        const response = adaptTeaserResponse(rawResponse);
+        const response = await api.searchPeople(searchParams);
 
         if (isCancelled) {
           return;

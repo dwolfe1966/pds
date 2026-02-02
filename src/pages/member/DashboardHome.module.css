@@ -1,0 +1,334 @@
+/**
+ * Member Dashboard styles
+ */
+
+.main {
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: var(--color-gray-50);
+  min-height: 80vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+  flex-wrap: wrap;
+}
+
+.title {
+  color: var(--color-primary);
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.primaryLink,
+.secondaryLink {
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.primaryLink {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-md);
+}
+
+.primaryLink:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.secondaryLink {
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.secondaryLink:hover {
+  background-color: rgba(13, 93, 47, 0.08);
+}
+
+.statusCard {
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.statusContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.statusIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xl);
+}
+
+.statusTitle {
+  color: #166534;
+  margin: 0 0 0.25rem;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.statusSubtitle {
+  color: #166534;
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.statusBadge {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  padding: 0.5rem 1.5rem;
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-semibold);
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.metricCard {
+  background-color: var(--color-bg-default);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-light);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.metricHeader p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.metricValue {
+  color: var(--color-primary);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+.activityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.panel {
+  background-color: var(--color-bg-default);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-light);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.panelLink {
+  color: var(--color-text-link);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+}
+
+.panelLink:hover {
+  color: var(--color-text-link-hover);
+}
+
+.actionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.actionButtonPrimary,
+.actionButtonInfo,
+.actionButtonSecondary {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: all var(--transition-base);
+}
+
+.actionButtonPrimary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.actionButtonPrimary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.actionButtonInfo {
+  background-color: #3b82f6;
+  color: var(--color-text-inverse);
+}
+
+.actionButtonInfo:hover {
+  background-color: #2563eb;
+}
+
+.actionButtonSecondary {
+  background-color: #8b5cf6;
+  color: var(--color-text-inverse);
+}
+
+.actionButtonSecondary:hover {
+  background-color: #7c3aed;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.activityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-light);
+  padding-bottom: var(--spacing-md);
+}
+
+.activityRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.activityTitle {
+  margin: 0 0 0.25rem;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.activityMeta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.mutedText {
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.errorText {
+  color: var(--color-error);
+  margin: 0 0 var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.featureCard {
+  background-color: var(--color-bg-default);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.featureCard h3 {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+}
+
+.featureCard p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+.featureIcon {
+  font-size: 2rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: var(--spacing-2xl) var(--spacing-md);
+  }
+
+  .headerActions {
+    width: 100%;
+  }
+
+  .primaryLink,
+  .secondaryLink {
+    flex: 1;
+    text-align: center;
+  }
+}

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { getReportList } from '../../services/reportService';
+import styles from './DashboardHome.module.css';
 
 /**
  * Pro Dashboard for members.
@@ -19,6 +20,39 @@ const DashboardHome = () => {
     reports: null
   });
   const [loading, setLoading] = useState(true);
+  const [recentReports, setRecentReports] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [activityError, setActivityError] = useState('');
+
+  const displayName = useMemo(() => {
+    if (!user) return 'Member';
+    return user.fullName || user.name || user.email || 'Member';
+  }, [user]);
+
+  const formatDate = (value) => {
+    if (!value) return 'Recently';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Recently';
+    return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const getReportTitle = (report) => {
+    if (!report) return 'Report';
+    return (
+      report.fullName ||
+      report.name ||
+      report.title ||
+      report.targetName ||
+      report.data?.fullName ||
+      report.data?.teaserInput?.fullName ||
+      `Report ${report.id ? String(report.id).slice(0, 6) : ''}`.trim()
+    );
+  };
 
   useEffect(() => {
     const fetchMetrics = async () => {
@@ -38,9 +72,11 @@ const DashboardHome = () => {
             const reportResult = await getReportList({ token });
             if (reportResult && reportResult.success) {
               setMetrics(prev => ({ ...prev, reports: reportResult.reports?.length || 0 }));
+              setRecentReports(reportResult.reports?.slice(0, 5) || []);
             } else {
               console.warn('[Dashboard] Report list request returned unsuccessful result:', reportResult);
               setMetrics(prev => ({ ...prev, reports: 0 }));
+              setRecentReports([]);
             }
           }
         } catch (err) {
@@ -59,29 +95,52 @@ const DashboardHome = () => {
           }
           
           setMetrics(prev => ({ ...prev, reports: 0 }));
+          setRecentReports([]);
         }
 
         // Fetch alerts count (if API available)
         try {
-          const alertsData = await api.get('/alerts', { token });
+          const alertsData = await api.getAlerts(token);
           if (alertsData?.data) {
             setMetrics(prev => ({ ...prev, alerts: alertsData.data?.length || 0 }));
+            setRecentAlerts(alertsData.data?.slice(0, 5) || []);
           }
         } catch (err) {
           // Alerts API may not be available yet or user not authenticated
           console.error('Failed to fetch alerts:', err);
           setMetrics(prev => ({ ...prev, alerts: 0 }));
+          setRecentAlerts([]);
         }
 
-        // For now, use placeholder values for searches and profile views
-        // These would come from actual API endpoints when available
-        setMetrics(prev => ({
-          ...prev,
-          searches: 0,
-          profileViews: 0
-        }));
+        // Attempt to fetch search history if available
+        try {
+          const searchesData = await api.get('/searches/me', { token });
+          if (searchesData?.data) {
+            setMetrics(prev => ({ ...prev, searches: searchesData.data?.length || 0 }));
+            setRecentSearches(searchesData.data?.slice(0, 5) || []);
+          } else {
+            setMetrics(prev => ({ ...prev, searches: 0 }));
+            setRecentSearches([]);
+          }
+        } catch (err) {
+          setMetrics(prev => ({ ...prev, searches: 0 }));
+          setRecentSearches([]);
+        }
+
+        // Fetch profile views
+        try {
+          const viewsData = await api.get('/profile-views/me', { token });
+          if (viewsData?.total !== undefined) {
+            setMetrics(prev => ({ ...prev, profileViews: viewsData.total || 0 }));
+          } else {
+            setMetrics(prev => ({ ...prev, profileViews: viewsData?.data?.length || 0 }));
+          }
+        } catch (err) {
+          setMetrics(prev => ({ ...prev, profileViews: 0 }));
+        }
       } catch (err) {
         console.error('Failed to fetch dashboard metrics:', err);
+        setActivityError('We could not load all dashboard activity just now.');
       } finally {
         setLoading(false);
       }
@@ -91,434 +150,187 @@ const DashboardHome = () => {
   }, [token]);
 
   return (
-    <main style={{ 
-      padding: '2rem', 
-      maxWidth: '1400px', 
-      margin: '0 auto',
-      backgroundColor: '#f9fafb',
-      minHeight: '80vh'
-    }}>
+    <main className={styles.main}>
       {/* Dashboard Title */}
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ 
-          color: '#0d5d2f', 
-          fontSize: '2.5rem',
-          fontWeight: 700,
-          marginBottom: '0.5rem'
-        }}>
-          Pro Dashboard
-        </h1>
-        <p style={{ 
-          color: '#6b7280', 
-          fontSize: '1.125rem'
-        }}>
-          Welcome to your IDLookup Pro dashboard
-        </p>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Welcome back, {displayName}</h1>
+          <p className={styles.subtitle}>Here is a snapshot of your account activity.</p>
+        </div>
+        <div className={styles.headerActions}>
+          <Link to="/people-search" className={styles.primaryLink}>
+            Start a Search
+          </Link>
+          <Link to="/account" className={styles.secondaryLink}>
+            Account Settings
+          </Link>
+        </div>
       </div>
 
       {/* Pro Member Status Banner */}
-      <div style={{
-        backgroundColor: '#f0fdf4',
-        border: '1px solid #86efac',
-        borderRadius: '0.75rem',
-        padding: '1.5rem',
-        marginBottom: '2rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            backgroundColor: '#0d5d2f',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            fontSize: '1.25rem'
-          }}>
-            ⭐
-          </div>
+      <div className={styles.statusCard}>
+        <div className={styles.statusContent}>
+          <div className={styles.statusIcon}>⭐</div>
           <div>
-            <h3 style={{ 
-              color: '#166534', 
-              margin: 0,
-              marginBottom: '0.25rem',
-              fontSize: '1.25rem',
-              fontWeight: 600
-            }}>
-              Pro Member
-            </h3>
-            <p style={{ 
-              color: '#166534', 
-              margin: 0,
-              fontSize: '0.875rem'
-            }}>
-              You have full access to all Pro features including unlimited searches, detailed reports, and advanced analytics
+            <h3 className={styles.statusTitle}>Pro Member</h3>
+            <p className={styles.statusSubtitle}>
+              You have full access to unlimited searches, detailed reports, and advanced analytics.
             </p>
           </div>
         </div>
-        <button style={{
-          padding: '0.5rem 1.5rem',
-          backgroundColor: '#0d5d2f',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '0.5rem',
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}>
-          Active
-        </button>
+        <span className={styles.statusBadge}>Active</span>
       </div>
 
       {/* Activity Metrics Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '1.5rem',
-        marginBottom: '2rem'
-      }}>
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-            <h3 style={{ 
-              color: '#6b7280', 
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              margin: 0
-            }}>
-              Searches This Month
-            </h3>
-            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>⋯</span>
+      <div className={styles.metricsGrid}>
+        <div className={styles.metricCard}>
+          <div className={styles.metricHeader}>
+            <p>Searches This Month</p>
           </div>
-          <p style={{ 
-            color: '#0d5d2f', 
-            fontSize: '2rem',
-            fontWeight: 700,
-            margin: 0
-          }}>
+          <p className={styles.metricValue}>
             {loading ? '...' : metrics.searches !== null ? metrics.searches : '0'}
           </p>
         </div>
-
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-            <h3 style={{ 
-              color: '#6b7280', 
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              margin: 0
-            }}>
-              Active Alerts
-            </h3>
-            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>⋯</span>
+        <div className={styles.metricCard}>
+          <div className={styles.metricHeader}>
+            <p>Active Alerts</p>
           </div>
-          <p style={{ 
-            color: '#0d5d2f', 
-            fontSize: '2rem',
-            fontWeight: 700,
-            margin: 0
-          }}>
+          <p className={styles.metricValue}>
             {loading ? '...' : metrics.alerts !== null ? metrics.alerts : '0'}
           </p>
         </div>
-
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-            <h3 style={{ 
-              color: '#6b7280', 
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              margin: 0
-            }}>
-              Profile Views
-            </h3>
-            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>⋯</span>
+        <div className={styles.metricCard}>
+          <div className={styles.metricHeader}>
+            <p>Profile Views</p>
           </div>
-          <p style={{ 
-            color: '#0d5d2f', 
-            fontSize: '2rem',
-            fontWeight: 700,
-            margin: 0
-          }}>
+          <p className={styles.metricValue}>
             {loading ? '...' : metrics.profileViews !== null ? metrics.profileViews : '0'}
           </p>
         </div>
-
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
-            <h3 style={{ 
-              color: '#6b7280', 
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              margin: 0
-            }}>
-              Reports Generated
-            </h3>
-            <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>⋯</span>
+        <div className={styles.metricCard}>
+          <div className={styles.metricHeader}>
+            <p>Reports Generated</p>
           </div>
-          <p style={{ 
-            color: '#0d5d2f', 
-            fontSize: '2rem',
-            fontWeight: 700,
-            margin: 0
-          }}>
+          <p className={styles.metricValue}>
             {loading ? '...' : metrics.reports !== null ? metrics.reports : '0'}
           </p>
         </div>
       </div>
 
       {/* Recent Activity and Quick Actions */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '1.5rem',
-        marginBottom: '2rem'
-      }}>
+      <div className={styles.activityGrid}>
         {/* Recent Activity */}
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-        }}>
-          <h2 style={{ 
-            color: '#0d5d2f', 
-            marginTop: 0,
-            marginBottom: '1rem',
-            fontSize: '1.25rem',
-            fontWeight: 600
-          }}>
-            Recent Activity
-          </h2>
-          <p style={{ color: '#6b7280', margin: 0 }}>
-            Loading recent activity...
-          </p>
+        <div className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <h2>Recent Activity</h2>
+            <Link to="/search-history" className={styles.panelLink}>View all</Link>
+          </div>
+          {activityError && <p className={styles.errorText}>{activityError}</p>}
+          {!activityError && loading && <p className={styles.mutedText}>Loading recent activity...</p>}
+          {!loading && !activityError && recentReports.length === 0 && recentAlerts.length === 0 && recentSearches.length === 0 && (
+            <div className={styles.emptyState}>
+              <p>No activity yet. Start a search to generate your first report.</p>
+              <Link to="/people-search" className={styles.secondaryLink}>
+                Run a Search
+              </Link>
+            </div>
+          )}
+          {!loading && recentSearches.length > 0 && (
+            <div className={styles.activityList}>
+              {recentSearches.map((search) => (
+                <div key={search.id} className={styles.activityRow}>
+                  <div>
+                    <p className={styles.activityTitle}>Search • {search.type || 'name'}</p>
+                    <p className={styles.mutedText}>
+                      {search.query?.firstName || search.query?.email || search.query?.phone || 'Search'}{' '}
+                      {search.query?.lastName || ''}{search.query?.state ? ` • ${search.query.state}` : ''}
+                    </p>
+                  </div>
+                  <span className={styles.activityMeta}>{formatDate(search.timestamp)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {!loading && recentReports.length > 0 && (
+            <div className={styles.activityList}>
+              {recentReports.map((report) => (
+                <div key={report.id || report.reportId} className={styles.activityRow}>
+                  <div>
+                    <p className={styles.activityTitle}>{getReportTitle(report)}</p>
+                    <p className={styles.mutedText}>Report generated</p>
+                  </div>
+                  <span className={styles.activityMeta}>{formatDate(report.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {!loading && recentAlerts.length > 0 && (
+            <div className={styles.activityList}>
+              {recentAlerts.map((alert) => (
+                <div key={alert.id || alert.alertId || alert.name} className={styles.activityRow}>
+                  <div>
+                    <p className={styles.activityTitle}>{alert.name || alert.title || 'Alert'}</p>
+                    <p className={styles.mutedText}>Alert active</p>
+                  </div>
+                  <span className={styles.activityMeta}>{formatDate(alert.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-        }}>
-          <h2 style={{ 
-            color: '#0d5d2f', 
-            marginTop: 0,
-            marginBottom: '1rem',
-            fontSize: '1.25rem',
-            fontWeight: 600
-          }}>
-            Quick Actions
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <h2>Quick Actions</h2>
+          </div>
+          <div className={styles.actionList}>
             <button
               onClick={() => navigate('/people-search')}
-              style={{
-                padding: '0.75rem 1rem',
-                backgroundColor: '#0d5d2f',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '0.5rem',
-                fontSize: '1rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#1a7a4a';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#0d5d2f';
-              }}
+              className={styles.actionButtonPrimary}
             >
               <span>🔍</span>
               Advanced Search
             </button>
             <button
               onClick={() => navigate('/alerts')}
-              style={{
-                padding: '0.75rem 1rem',
-                backgroundColor: '#3b82f6',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '0.5rem',
-                fontSize: '1rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#2563eb';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#3b82f6';
-              }}
+              className={styles.actionButtonInfo}
             >
               <span>🔔</span>
               Manage Alerts
             </button>
             <button
               onClick={() => navigate('/account')}
-              style={{
-                padding: '0.75rem 1rem',
-                backgroundColor: '#8b5cf6',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '0.5rem',
-                fontSize: '1rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#7c3aed';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#8b5cf6';
-              }}
+              className={styles.actionButtonSecondary}
             >
               <span>📊</span>
-              Analytics Dashboard
+              Account & Billing
             </button>
           </div>
         </div>
       </div>
 
       {/* Feature Highlight Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1.5rem'
-      }}>
+      <div className={styles.featureGrid}>
         {/* Advanced Analytics Card */}
-        <div style={{
-          backgroundColor: '#eff6ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: '0.75rem',
-          padding: '2rem'
-        }}>
-          <div style={{
-            fontSize: '2.5rem',
-            marginBottom: '1rem'
-          }}>
-            📄
-          </div>
-          <h3 style={{
-            color: '#0d5d2f',
-            marginTop: 0,
-            marginBottom: '0.75rem',
-            fontSize: '1.25rem',
-            fontWeight: 600
-          }}>
-            Advanced Analytics
-          </h3>
-          <p style={{
-            color: '#374151',
-            margin: 0,
-            lineHeight: 1.6
-          }}>
-            Detailed insights into search patterns, trending names, and user behavior analytics.
-          </p>
+        <div className={styles.featureCard}>
+          <div className={styles.featureIcon}>📄</div>
+          <h3>Advanced Analytics</h3>
+          <p>Detailed insights into search patterns, trending names, and report activity.</p>
         </div>
 
         {/* Unlimited Searches Card */}
-        <div style={{
-          backgroundColor: '#f0fdf4',
-          border: '1px solid #86efac',
-          borderRadius: '0.75rem',
-          padding: '2rem'
-        }}>
-          <div style={{
-            fontSize: '2.5rem',
-            marginBottom: '1rem'
-          }}>
-            🔍
-          </div>
-          <h3 style={{
-            color: '#0d5d2f',
-            marginTop: 0,
-            marginBottom: '0.75rem',
-            fontSize: '1.25rem',
-            fontWeight: 600
-          }}>
-            Unlimited Searches
-          </h3>
-          <p style={{
-            color: '#374151',
-            margin: 0,
-            lineHeight: 1.6
-          }}>
-            No limits on searches with full access to phone numbers, emails, and addresses.
-          </p>
+        <div className={styles.featureCard}>
+          <div className={styles.featureIcon}>🔍</div>
+          <h3>Unlimited Searches</h3>
+          <p>No limits on searches with full access to phone numbers, emails, and addresses.</p>
         </div>
 
         {/* Priority Support Card */}
-        <div style={{
-          backgroundColor: '#fefce8',
-          border: '1px solid #fde047',
-          borderRadius: '0.75rem',
-          padding: '2rem'
-        }}>
-          <div style={{
-            fontSize: '2.5rem',
-            marginBottom: '1rem'
-          }}>
-            🚀
-          </div>
-          <h3 style={{
-            color: '#0d5d2f',
-            marginTop: 0,
-            marginBottom: '0.75rem',
-            fontSize: '1.25rem',
-            fontWeight: 600
-          }}>
-            Priority Support
-          </h3>
-          <p style={{
-            color: '#374151',
-            margin: 0,
-            lineHeight: 1.6
-          }}>
-            Get priority customer support with faster response times and dedicated assistance.
-          </p>
+        <div className={styles.featureCard}>
+          <div className={styles.featureIcon}>🚀</div>
+          <h3>Priority Support</h3>
+          <p>Get priority customer support with faster response times and dedicated assistance.</p>
         </div>
       </div>
     </main>
