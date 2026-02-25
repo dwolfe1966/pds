@@ -5,6 +5,7 @@
 
 import { routeApiRequest, setTokenGetter as setRouterTokenGetter, getMockAPIPath } from './services/apiRouter';
 import { setSearchContext } from './services/searchContext';
+import { adaptIdentity } from './services/apiAdapter';
 
 // Token getter function - will be set by AuthContext
 let getToken = () => null;
@@ -244,29 +245,26 @@ const api = {
       query.email = email;
     }
     
-    // Include searchContextKey if provided (from library constants or previous search)
-    // The library exposes window.ApiWrapper.searchContextKey as an enum/object
+    // Use consistent searchContextKey: sale vs member, name/phone/email
+    // The library exposes window.ApiWrapper.searchContextKey as { sale: { name, phone, email }, member: { ... } }
     if (searchContextKey) {
       query.searchContextKey = searchContextKey;
     } else if (typeof window !== 'undefined' && window.ApiWrapper?.searchContextKey) {
-      // Try to get a default searchContextKey from the library if available
-      // The library exposes searchContextKey as an object with nested values
-      const searchContextKeys = window.ApiWrapper.searchContextKey;
-      // Get the first available value (similar to development page)
-      const getAllLeafValues = (obj) => {
-        return Object.values(obj).flatMap((value) => {
-          if (typeof value === 'object' && value !== null) {
-            return getAllLeafValues(value);
-          }
-          return value;
-        });
-      };
-      const availableKeys = getAllLeafValues(searchContextKeys);
-      if (availableKeys.length > 0) {
-        query.searchContextKey = availableKeys[0]; // Use first available key
+      const ctx = window.ApiWrapper.searchContextKey;
+      const isMember = !!getToken();
+      const branch = isMember ? ctx.member : ctx.sale;
+      const typeKey = type === 'name' ? 'name' : type === 'phone' ? 'phone' : 'email';
+      const key = branch?.[typeKey]?.teaser;
+      if (key) {
+        query.searchContextKey = key;
         if (process.env.NODE_ENV === 'development') {
-          console.log('[API] Using searchContextKey from library:', query.searchContextKey);
+          console.log('[API] Using searchContextKey:', query.searchContextKey, `(${isMember ? 'member' : 'sale'}, ${type})`);
         }
+      } else {
+        // Fallback to first available
+        const getAllLeafValues = (obj) => Object.values(obj || {}).flatMap((v) => typeof v === 'object' && v !== null ? getAllLeafValues(v) : v);
+        const keys = getAllLeafValues(ctx);
+        if (keys.length > 0) query.searchContextKey = keys[0];
       }
     }
 
@@ -316,6 +314,24 @@ const api = {
   },
 
   /**
+   * Load more search results (pagination)
+   * @param {Object} rawResponse - The rawResponse from searchPeople (when using ByteCrtrs API)
+   * @returns {Promise<{data: Array}|null>} Next page of adapted identities, or null if no more
+   */
+  loadMoreSearchResults: async (rawResponse) => {
+    if (!rawResponse || typeof rawResponse.getMore !== 'function' || !rawResponse.hasMore()) {
+      return null;
+    }
+    const more = await rawResponse.getMore();
+    if (!more || !Array.isArray(more) || more.length === 0) {
+      return null;
+    }
+    return {
+      data: more.map(adaptIdentity)
+    };
+  },
+
+  /**
    * Report Generation
    */
   createReport: async (params) => {
@@ -346,6 +362,21 @@ const api = {
 
   confirmOptOut: async (params) => {
     return await routeApiRequest('opt-out-confirmation', params);
+  },
+
+  /**
+   * Search opt-out status (ByteCrtrs API)
+   * Check if a record is already opted out before submitting request
+   */
+  searchOptOut: async (params) => {
+    return await routeApiRequest('opt-out-search', { body: params });
+  },
+
+  /**
+   * Process payment via ByteCrtrs commerceBilling/sale
+   */
+  billingSale: async (params) => {
+    return await routeApiRequest('commerce-billing-sale', { body: params });
   },
 
   /**

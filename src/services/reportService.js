@@ -32,8 +32,12 @@ export async function createReport(extId, options = {}) {
   };
   
   // Add search context if available
+  // For report creation, use .report key (sale.name.report, member.name.report) not .teaser
   if (context) {
-    const contextKey = context.searchContextKey || context.teaserInput?.searchContextKey;
+    let contextKey = context.searchContextKey || context.teaserInput?.searchContextKey;
+    if (contextKey && contextKey.includes('.teaser')) {
+      contextKey = contextKey.replace('.teaser', '.report');
+    }
     if (contextKey) {
       params.searchContextKey = contextKey;
     }

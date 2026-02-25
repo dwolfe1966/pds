@@ -18,6 +18,8 @@ const OptOutSearchResultsPage = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [checkingOptOut, setCheckingOptOut] = useState(null);
+  const [alreadyOptedOut, setAlreadyOptedOut] = useState(null);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -85,19 +87,39 @@ const OptOutSearchResultsPage = () => {
     fetchResults();
   }, [query, zip, navigate]);
 
-  const handleSelectResult = (result) => {
+  const handleSelectResult = async (result) => {
     const extId = result.extId || result.id;
-    if (extId) {
-      updateSearchContext({
-        identity: {
-          extId,
-          provider: result.provider || result.meta?.provider,
-          fullName: result.fullName,
-          _rawIdentity: result._rawIdentity || result,
-        },
-      });
+    if (!extId) return;
+
+    updateSearchContext({
+      identity: {
+        extId,
+        provider: result.provider || result.meta?.provider,
+        fullName: result.fullName,
+        _rawIdentity: result._rawIdentity || result,
+      },
+    });
+
+    // Check opt-out status via ByteCrtrs API before proceeding
+    setCheckingOptOut(extId);
+    setAlreadyOptedOut(null);
+    try {
+      const searchResult = await api.searchOptOut({ targetId: extId, extId });
+      const data = searchResult?.params?.response?.data ?? searchResult?.data ?? searchResult;
+      const alreadyOpted = data?.alreadyOptedOut === true || data?.status === 'opted_out';
+      if (alreadyOpted) {
+        setAlreadyOptedOut(result.fullName || 'This record');
+        setCheckingOptOut(null);
+        return;
+      }
+    } catch (err) {
+      // Proceed anyway - API may not be available or params may differ
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[OptOut] searchOptOut failed, proceeding:', err?.message);
+      }
     }
-    navigate(`/opt-out/request?resultId=${extId || result.id}`);
+    setCheckingOptOut(null);
+    navigate(`/opt-out/request?resultId=${extId}`);
   };
 
   return (
@@ -119,6 +141,26 @@ const OptOutSearchResultsPage = () => {
       {error && (
         <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>
           <p style={{ margin: 0 }}>{error}</p>
+        </div>
+      )}
+
+      {alreadyOptedOut && (
+        <div style={{ padding: '1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', marginBottom: '1rem' }}>
+          <p style={{ margin: 0 }}>
+            <strong>{alreadyOptedOut}</strong> has already been opted out. No further action needed.
+          </p>
+          <button
+            onClick={() => setAlreadyOptedOut(null)}
+            style={{ marginTop: '0.5rem', padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {checkingOptOut && (
+        <div style={{ padding: '1rem', color: '#666', marginBottom: '1rem' }}>
+          Checking opt-out status…
         </div>
       )}
 

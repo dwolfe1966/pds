@@ -429,6 +429,44 @@ class ApiWrapperService {
       throw enhancedError;
     }
   }
+
+  /**
+   * Search opt-out status before submitting request
+   * POST /optOut/search - Check if a record is already opted out
+   */
+  async searchOptOut(params) {
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.optOut?.search === 'function') {
+        return await wrapper.api.optOut.search(params);
+      }
+      throw new Error('Opt-out search not available in ApiWrapper');
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Opt-out search failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Process payment/sale via ByteCrtrs billing
+   * POST /commerceBilling/sale
+   */
+  async sale(params) {
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.billing?.sale === 'function') {
+        return await wrapper.api.billing.sale(params);
+      }
+      throw new Error('Billing sale not available in ApiWrapper');
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Payment failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
 }
 
 // Export singleton instance

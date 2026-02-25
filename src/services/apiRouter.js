@@ -22,6 +22,8 @@ const FEATURE_FLAGS = {
   'report-list': process.env.REACT_APP_USE_NEW_API_REPORTS === 'true',
   'opt-out-request': process.env.REACT_APP_USE_NEW_API_OPTOUT === 'true',
   'opt-out-confirmation': process.env.REACT_APP_USE_NEW_API_OPTOUT === 'true',
+  'opt-out-search': true, // Always use new API when available
+  'commerce-billing-sale': true, // Always use new API when available
   'login': process.env.REACT_APP_USE_NEW_API_AUTH === 'true',
   'logout': process.env.REACT_APP_USE_NEW_API_AUTH === 'true',
 };
@@ -133,8 +135,11 @@ export async function routeApiRequest(endpoint, params = {}) {
   const endpointConfig = getEndpointConfig(endpoint);
   // Check if feature flag is explicitly set to true (not just not false)
   const featureFlagEnabled = FEATURE_FLAGS[endpoint] === true;
-  // Force new API for report creation/detail to avoid mock endpoints
-  const FORCE_NEW_API_ENDPOINTS = new Set(['create-report', 'get-report']);
+  // Force new API for report creation/detail/list and opt-out/billing to avoid mock endpoints
+  const FORCE_NEW_API_ENDPOINTS = new Set([
+    'create-report', 'get-report', 'report-list',
+    'opt-out-search', 'commerce-billing-sale'
+  ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
   const useNewAPI =
@@ -215,7 +220,8 @@ export async function routeApiRequest(endpoint, params = {}) {
           lastName: lastName || lName,
           phone,
           state,
-          zip
+          zip,
+          limit: 20
         }
       });
     }
@@ -257,8 +263,22 @@ async function callNewAPI(endpoint, params) {
         query.lName = query.lastName;
         delete query.lastName;
       }
+      // Request more results per page (ByteCrtrs may default to 5)
+      if (query.perPage == null && query.per_page == null && query.pageSize == null) {
+        query.perPage = 20;
+      }
       const response = await apiWrapper.searchTeaser(query);
-      return adaptTeaserResponse(response);
+      const adapted = adaptTeaserResponse(response);
+      // Attach raw response for pagination (hasMore, getMore)
+      if (response && typeof response.hasMore === 'function' && typeof response.getMore === 'function') {
+        adapted.rawResponse = response;
+        adapted.pagination = {
+          ...adapted.pagination,
+          hasMore: response.hasMore(),
+          total: typeof response.getTotalCount === 'function' ? response.getTotalCount() : adapted.pagination?.total
+        };
+      }
+      return adapted;
     }
     
     case 'create-report': {
@@ -284,6 +304,12 @@ async function callNewAPI(endpoint, params) {
     
     case 'opt-out-confirmation':
       return await apiWrapper.confirmOptOut(params);
+    
+    case 'opt-out-search':
+      return await apiWrapper.searchOptOut(params.body || params);
+    
+    case 'commerce-billing-sale':
+      return await apiWrapper.sale(params.body || params);
     
     default:
       throw new Error(`Endpoint ${endpoint} not implemented in new API router`);

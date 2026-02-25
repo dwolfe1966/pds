@@ -142,7 +142,7 @@ export function adaptTeaserResponse(response) {
 /**
  * Transform a single identity from new API format to application format
  */
-function adaptIdentity(identity) {
+export function adaptIdentity(identity) {
   // Extract name from nameList
   const nameList = identity.nameList || [];
   const fullName = nameList.length > 0 ? nameList[0].data : 'Unknown';
@@ -216,10 +216,21 @@ export function adaptReportListResponse(response) {
   let hasMore = false;
   let lastId = null;
 
+  // ByteCrtrs library: getData() returns params.response?.data
+  const rawData = response?.getData?.() ?? response?.params?.response?.data ?? response?.data;
+
   if (response && typeof response.getReports === 'function') {
     reports = response.getReports() || [];
     hasMore = response.getHasMore?.() || false;
     lastId = response.getLastId?.() || null;
+  } else if (rawData?.commerceContents) {
+    reports = rawData.commerceContents || [];
+    hasMore = !!rawData.hasMore;
+    lastId = rawData.lastId ?? (reports.length ? reports[reports.length - 1]?._id : null);
+  } else if (rawData?.reports) {
+    reports = rawData.reports || [];
+    hasMore = !!rawData.hasMore;
+    lastId = rawData.lastId ?? null;
   } else if (response?.data?.reports || response?.data?.commerceContents) {
     reports = response.data.reports || response.data.commerceContents || [];
     hasMore = response.data.hasMore || false;

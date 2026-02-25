@@ -23,6 +23,8 @@ const SalesSearchResultsPage = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState({ firstName: '', lastName: '', state: '' });
+  const [rawResponse, setRawResponse] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -78,8 +80,9 @@ const SalesSearchResultsPage = () => {
         
         const response = await api.searchPeople(searchParams);
         
-        // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...} }
+        // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...}, rawResponse? }
         setResults(response.data || []);
+        setRawResponse(response.rawResponse || null);
         
         // Store search context for report creation and opt-out
         if (response.searchContext) {
@@ -175,6 +178,36 @@ const SalesSearchResultsPage = () => {
                 </div>
               ))}
             </div>
+            {rawResponse?.hasMore?.() && (
+              <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                <button
+                  type="button"
+                  disabled={loadingMore}
+                  onClick={async () => {
+                    setLoadingMore(true);
+                    try {
+                      const more = await api.loadMoreSearchResults(rawResponse);
+                      if (more?.data?.length) {
+                        setResults(prev => [...prev, ...more.data]);
+                      }
+                    } catch (err) {
+                      console.error('Load more failed:', err);
+                    } finally {
+                      setLoadingMore(false);
+                    }
+                  }}
+                  style={{
+                    padding: '0.5rem 1.5rem',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    background: '#fff',
+                    cursor: loadingMore ? 'wait' : 'pointer'
+                  }}
+                >
+                  {loadingMore ? 'Loading…' : 'Load more results'}
+                </button>
+              </div>
+            )}
           </div>
         ) : !loading && !errorMessage ? (
           <div className={styles.noResults}>
