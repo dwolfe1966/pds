@@ -112,6 +112,13 @@ class ApiWrapperService {
    */
   async searchTeaser(query) {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ByteCrtrs API] searchTeaser called with params:', JSON.stringify(query, null, 2));
+        const perPageKeys = ['perPage', 'per_page', 'pageSize'];
+        const hasPerPage = perPageKeys.some(k => query[k] != null);
+        console.log('[ByteCrtrs API] Results-per-page:', hasPerPage ? perPageKeys.map(k => `${k}=${query[k]}`).filter(Boolean).join(', ') : 'NOT SET');
+        console.log('[ByteCrtrs API] Is pagination (getMore):', !!(query.commerceContentId && query.page != null));
+      }
       // When using proxy mode, the wrapper is configured to point to our proxy server
       // So we can use the library normally - it will make requests to our proxy (no CORS)
       // and our proxy will forward to the external API
