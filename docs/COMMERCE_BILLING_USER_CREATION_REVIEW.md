@@ -68,7 +68,7 @@ apiWrapper.api.billing.sale({
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| **userInfo** | object | Yes | User creation/identification |
+| **userInfo** | object | Yes | Identifies user on backend (user created at signup) |
 | userInfo.email | string | Yes | User email |
 | userInfo.firstName | string | Yes | First name |
 | userInfo.lastName | string | Yes | Last name |

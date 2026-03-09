@@ -13,7 +13,7 @@ const SignupPage = () => {
   const location = useLocation();
   const { setToken, setUser } = useAuth();
   
-  const [form, setForm] = useState({ fullName: '', zip: '', email: '', password: '' });
+  const [form, setForm] = useState({ fullName: '', zip: '', email: '', password: '', optin: true });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -61,7 +61,8 @@ const SignupPage = () => {
   }, [location.search]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
@@ -70,7 +71,7 @@ const SignupPage = () => {
     setLoading(true);
     try {
       console.log('Submitting signup form:', { email: form.email, fullName: form.fullName });
-      const response = await api.signup(form);
+      const response = await api.signup({ ...form, optin: !!form.optin });
       console.log('Signup response:', response);
       
       // Set token and user in AuthContext and persist (so payment page has auth)
@@ -78,6 +79,7 @@ const SignupPage = () => {
         const userData = response.user || {
           email: form.email,
           fullName: form.fullName,
+          optin: form.optin,
           role: 'member',
           emailVerified: response.user?.emailVerified || false
         };
@@ -91,17 +93,18 @@ const SignupPage = () => {
       }
 
       setSuccess(true);
-      
+
       // Store selected person ID in sessionStorage for payment page
       const params = new URLSearchParams(location.search);
       const selectedPersonId = params.get('selected');
       if (selectedPersonId) {
         sessionStorage.setItem('selectedPersonId', selectedPersonId);
       }
-      
-      // Redirect to payment page after a brief delay
+
+      // Redirect: use ?redirect= if present (e.g. from Payment page), else /payment or /dashboard
+      const redirectTo = params.get('redirect') || (selectedPersonId ? '/payment' : '/dashboard');
       setTimeout(() => {
-        navigate('/payment');
+        navigate(redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`);
       }, 2000);
     } catch (err) {
       console.error('Signup error:', err);
@@ -223,6 +226,17 @@ const SignupPage = () => {
               required
               style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
             />
+          </div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#333', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                name="optin"
+                checked={form.optin}
+                onChange={handleChange}
+              />
+              I agree to receive marketing communications and emails
+            </label>
           </div>
           {error && (
             <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>

@@ -12,8 +12,9 @@ const TRUST_BADGES = [
 ];
 
 /**
- * Payment capture page shown after signup.
- * Collects payment details and subscribes the user to a plan.
+ * Payment capture page. Requires logged-in user.
+ * userInfo is prefilled from auth (identifies user on backend).
+ * Uses Mock API for signup until ByteCrtrs signup endpoint is available.
  */
 // Parse MM/YY into { expMonth, expYear }
 function parseExpiry(expiry) {
@@ -27,12 +28,8 @@ function parseExpiry(expiry) {
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, setToken, setUser } = useAuth();
+  const { token, user, loading: authLoading, setToken, setUser } = useAuth();
   const [form, setForm] = useState({
-    email: '',
-    firstName: '',
-    lastName: '',
-    optin: true,
     cardNumber: '',
     expiry: '',
     cvv: '',
@@ -50,7 +47,15 @@ const PaymentPage = () => {
   // Proxy testing: ?simulate=success | ?simulate=failure (omit = success)
   const simulateParam = searchParams.get('simulate');
 
-  // Get selected person info from sessionStorage; prefill user from signup if available
+  // Require login – userInfo identifies the user on backend
+  useEffect(() => {
+    if (!authLoading && !token) {
+      const redirect = `/payment${window.location.search || ''}`;
+      navigate(`/signup?redirect=${encodeURIComponent(redirect)}`, { replace: true });
+    }
+  }, [token, authLoading, navigate]);
+
+  // Get selected person info from sessionStorage
   useEffect(() => {
     const personId = sessionStorage.getItem('selectedPersonId');
     if (personId) {
@@ -60,19 +65,17 @@ const PaymentPage = () => {
         setSelectedPerson(JSON.parse(storedResult));
       }
     }
-    // Prefill from localStorage if user just signed up
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user.email && !form.email) {
-        setForm((prev) => ({
-          ...prev,
-          email: user.email || prev.email,
-          firstName: (user.fullName || '').split(' ')[0] || prev.firstName,
-          lastName: (user.fullName || '').split(' ').slice(1).join(' ') || prev.lastName,
-        }));
-      }
-    } catch (_) {}
   }, []);
+
+  // Derive userInfo from logged-in user (firstName/lastName from fullName)
+  const userInfo = user
+    ? {
+        email: user.email,
+        firstName: (user.fullName || '').trim().split(/\s+/)[0] || '',
+        lastName: (user.fullName || '').trim().split(/\s+/).slice(1).join(' ') || '',
+        optin: user.optin !== false,
+      }
+    : null;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -84,18 +87,14 @@ const PaymentPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!userInfo) return;
     setError('');
     setLoading(true);
     try {
-      // Build commerceBilling/sale params per API spec (userInfo, billings, commerceOfferKeys)
+      // Build commerceBilling/sale params – userInfo identifies user on backend
       const { expMonth, expYear } = parseExpiry(form.expiry);
       const saleParams = {
-        userInfo: {
-          email: form.email,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          optin: !!form.optin,
-        },
+        userInfo,
         billings: [
           {
             billingType: 'creditCard',
@@ -106,8 +105,8 @@ const PaymentPage = () => {
               cvv: form.cvv || '123',
             },
             billingAddress: {
-              firstName: form.billingFirstName || form.firstName,
-              lastName: form.billingLastName || form.lastName,
+              firstName: form.billingFirstName || userInfo.firstName,
+              lastName: form.billingLastName || userInfo.lastName,
               street1: form.street1 || '123 main',
               zip: form.billingZip || '10001',
               bogusFields: {
@@ -146,7 +145,7 @@ const PaymentPage = () => {
           const data = saleResult?.params?.response?.data ?? saleResult?.data ?? {};
           if (data.accessToken) {
             setToken?.(data.accessToken);
-            setUser?.(data.user || { email: form.email, fullName: `${form.firstName} ${form.lastName}`.trim(), role: 'member' });
+            setUser?.(data.user || user);
             localStorage.setItem('accessToken', data.accessToken);
             if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
           }
@@ -238,61 +237,14 @@ const PaymentPage = () => {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className={styles.paymentFormBox}>
-              <h3 className={styles.formTitle}>Account Information</h3>
-              <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="payment-email">Email *</label>
-                <input
-                  id="payment-email"
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="you@example.com"
-                  className={styles.input}
-                />
+            {userInfo && (
+              <div className={styles.paymentFormBox}>
+                <h3 className={styles.formTitle}>Paying as</h3>
+                <p style={{ margin: 0, color: '#666' }}>
+                  {userInfo.email} · {[userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ')}
+                </p>
               </div>
-              <div className={styles.formGroupRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label} htmlFor="payment-firstName">First Name *</label>
-                  <input
-                    id="payment-firstName"
-                    type="text"
-                    name="firstName"
-                    value={form.firstName}
-                    onChange={handleChange}
-                    required
-                    placeholder="First"
-                    className={styles.input}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label} htmlFor="payment-lastName">Last Name *</label>
-                  <input
-                    id="payment-lastName"
-                    type="text"
-                    name="lastName"
-                    value={form.lastName}
-                    onChange={handleChange}
-                    required
-                    placeholder="Last"
-                    className={styles.input}
-                  />
-                </div>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    type="checkbox"
-                    name="optin"
-                    checked={form.optin}
-                    onChange={handleChange}
-                  />
-                  I agree to receive marketing communications
-                </label>
-              </div>
-            </div>
+            )}
 
             <div className={styles.paymentFormBox}>
               <h3 className={styles.formTitle}>Payment Information</h3>

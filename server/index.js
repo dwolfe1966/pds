@@ -793,15 +793,17 @@ app.all('/api/proxy/*', async (req, res) => {
       console.error('  - Missing X-Captcha-Pass header or incorrect value');
       console.error('='.repeat(80));
     } else if (response.status >= 400) {
-      // Log other errors (400, 500, etc.) with details
+      // Log other errors (400, 500, etc.) with full details for debugging
       console.error('='.repeat(80));
-      console.error(`[Proxy] ${response.status} Error from API`);
+      console.error(`[Proxy] ${response.status} Error from ByteCrtrs API`);
       console.error('[Proxy] Request URL:', url.toString());
       console.error('[Proxy] Request method:', req.method);
-      console.error('[Proxy] Request headers sent:', JSON.stringify(headers, null, 2));
-      console.error('[Proxy] Request body:', JSON.stringify(req.body).substring(0, 500));
+      console.error('[Proxy] Request body:', JSON.stringify(req.body, null, 2));
       console.error('[Proxy] Response status:', response.status);
-      console.error('[Proxy] Response data:', JSON.stringify(response.data));
+      console.error('[Proxy] Response data (full):', JSON.stringify(response.data, null, 2));
+      if (response.status === 500) {
+        console.error('[Proxy] 500 = ByteCrtrs server error. Check: API availability, request format, captcha/session.');
+      }
       console.error('='.repeat(80));
     }
     
@@ -979,7 +981,7 @@ const generateTokens = (user) => {
 
 // POST /api/v1/signup
 app.post('/api/v1/signup', (req, res) => {
-  const { fullName, zip, email, password, socialProvider } = req.body;
+  const { fullName, zip, email, password, socialProvider, optin } = req.body;
 
   // Validation
   if (!fullName || !email || !password) {
@@ -1003,13 +1005,14 @@ app.post('/api/v1/signup', (req, res) => {
     });
   }
 
-  // Create user
+  // Create user (optin: marketing emails for unpaid prospects)
   const newUser = {
     id: `user-${Date.now()}`,
     email,
     fullName,
     zip: zip || '',
     password, // In production, hash this
+    optin: optin !== false,
     emailVerified: false,
     role: 'member',
     createdAt: new Date().toISOString()
@@ -1023,6 +1026,7 @@ app.post('/api/v1/signup', (req, res) => {
       id: newUser.id,
       email: newUser.email,
       fullName: newUser.fullName,
+      optin: newUser.optin,
       emailVerified: false,
       role: newUser.role
     },
