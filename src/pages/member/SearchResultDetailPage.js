@@ -32,7 +32,24 @@ const SearchResultDetailPage = () => {
       setError('');
 
       try {
-        // First, try to get report detail (assuming id is commerceContentId)
+        // Check sessionStorage cache first (populated when report was just created)
+        // This avoids a redundant API call when navigating directly from a create step
+        try {
+          const cached = sessionStorage.getItem(`report_cache_${id}`);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            // Only use cache if it has identities — otherwise fall through to getReportDetail
+            if (parsed.success && parsed.identities?.length > 0) {
+              setReport(parsed);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          // Cache miss or parse error — fall through to API call
+        }
+
+        // Try to get report detail via API (id should be commerceContentId)
         try {
           const result = await getReportDetail(id);
           if (result.success) {
@@ -53,11 +70,9 @@ const SearchResultDetailPage = () => {
           setCreatingReport(true);
           const createResult = await createReportForIdentity(id, identityContext);
           if (createResult.success && createResult.commerceContentId) {
-            const detailResult = await getReportDetail(createResult.commerceContentId);
-            if (detailResult.success) {
-              setReport(detailResult);
-              navigate(`/people/${createResult.commerceContentId}`, { replace: true });
-            }
+            // Use the create result directly — it already contains the full report data
+            setReport(createResult);
+            navigate(`/people/${createResult.commerceContentId}`, { replace: true });
           }
         } else {
           const storedResult = sessionStorage.getItem(`result_${id}`);
@@ -67,11 +82,8 @@ const SearchResultDetailPage = () => {
               setCreatingReport(true);
               const createResult = await createReportForIdentity(personData.extId, personData);
               if (createResult.success && createResult.commerceContentId) {
-                const detailResult = await getReportDetail(createResult.commerceContentId);
-                if (detailResult.success) {
-                  setReport(detailResult);
-                  navigate(`/people/${createResult.commerceContentId}`, { replace: true });
-                }
+                setReport(createResult);
+                navigate(`/people/${createResult.commerceContentId}`, { replace: true });
               }
             } else {
               setError('We could not load this report right now. Please try again later.');

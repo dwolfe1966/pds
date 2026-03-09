@@ -11,6 +11,27 @@ import api from '../api';
 import { getSearchContext, getIdentityContext } from './searchContext';
 
 /**
+ * Cache a rich report result in sessionStorage so the detail page can skip a
+ * redundant getReportDetail call when navigating immediately from a create step.
+ */
+function cacheReportResult(commerceContentId, result) {
+  if (!commerceContentId) return;
+  try {
+    const cacheable = {
+      success: true,
+      commerceContentId,
+      identities: result.identities || [],
+      fullContact: result.fullContact || null,
+      familyWatchdog: result.familyWatchdog || null,
+      raws: result.raws || [],
+    };
+    sessionStorage.setItem(`report_cache_${commerceContentId}`, JSON.stringify(cacheable));
+  } catch (e) {
+    // sessionStorage unavailable or quota exceeded — skip cache
+  }
+}
+
+/**
  * Create a report for a given identity
  * @param {string} extId - The external ID from search results
  * @param {Object} options - Additional options
@@ -80,7 +101,7 @@ export async function createReport(extId, options = {}) {
       }
     }
 
-    return {
+    const result = {
       success: true,
       commerceContentId,
       identities: response.identities || [],
@@ -90,6 +111,11 @@ export async function createReport(extId, options = {}) {
       reportData: response.reportData || response,
       fullResponse: response
     };
+
+    // Cache so the detail page can skip a redundant getReportDetail call
+    cacheReportResult(commerceContentId, result);
+
+    return result;
   } catch (error) {
     console.error('Failed to create report:', error);
     throw error;
@@ -249,6 +275,9 @@ export async function createReportForPhone(phone) {
       reportData: response.reportData || response,
       fullResponse: response,
     };
+
+    cacheReportResult(commerceContentId, result);
+    return result;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[reportService] createReportForPhone failed:', error);

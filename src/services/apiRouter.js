@@ -312,7 +312,9 @@ async function callNewAPI(endpoint, params) {
     }
     
     case 'report-list': {
-      const response = await apiWrapper.getReportList(params);
+      // Strip our JWT token — ByteCrtrs manages its own session auth
+      const { token, ...listParams } = params || {};
+      const response = await apiWrapper.getReportList(listParams);
       return adaptReportListResponse(response);
     }
     

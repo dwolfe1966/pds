@@ -16,6 +16,10 @@ const MemberSearchResultsPage = () => {
   const params = new URLSearchParams(location.search);
   const query = params.get('q');
   const zip = params.get('zip');
+  // Name params from MemberGeneralSearchPage direct navigation
+  const firstNameParam = params.get('firstName');
+  const lastNameParam = params.get('lastName');
+  const stateParam = params.get('state');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -166,57 +170,65 @@ const MemberSearchResultsPage = () => {
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
+      setError('');
       try {
-        // First, check sessionStorage for results from MemberGeneralSearchPage
+        // Primary flow: firstName/lastName/state URL params (from MemberGeneralSearchPage)
+        if (firstNameParam && lastNameParam) {
+          const searchParams = {
+            firstName: firstNameParam,
+            lastName: lastNameParam,
+            type: 'name'
+          };
+          if (stateParam) {
+            searchParams.state = stateParam;
+          }
+
+          const response = await api.searchPeople(searchParams);
+          setResults(response.data || []);
+          setRawResponse(response.rawResponse || null);
+
+          if (response.searchContext) {
+            setSearchContext(response.searchContext);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Legacy flow: ?q=FirstName+LastName (e.g. from SearchBar)
+        if (query) {
+          const nameParts = query.trim().split(/\s+/);
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          if (!firstName || !lastName) {
+            setError('Please provide both first and last name');
+            setLoading(false);
+            return;
+          }
+
+          const searchParams = { firstName, lastName, type: 'name' };
+
+          const response = await api.searchPeople(searchParams);
+          setResults(response.data || []);
+          setRawResponse(response.rawResponse || null);
+
+          if (response.searchContext) {
+            setSearchContext(response.searchContext);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Check sessionStorage fallback (legacy — MemberGeneralSearchPage used to store here)
         const storedResults = sessionStorage.getItem('memberSearchResults');
         if (storedResults) {
           try {
             const parsed = JSON.parse(storedResults);
             setResults(parsed.results || []);
-            // Clear sessionStorage after reading
             sessionStorage.removeItem('memberSearchResults');
-            setLoading(false);
-            return;
           } catch (e) {
             console.error('Failed to parse stored results:', e);
           }
-        }
-
-        // Fallback to query params (legacy flow)
-        if (!query) {
-          setLoading(false);
-          return;
-        }
-
-        // Parse query into firstName and lastName
-        const nameParts = query.trim().split(/\s+/);
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        
-        if (!firstName || !lastName) {
-          setError('Please provide both first and last name');
-          setLoading(false);
-          return;
-        }
-        
-        const searchParams = {
-          firstName,
-          lastName,
-          type: 'name'
-        };
-        if (zip) {
-          // Note: zip is not directly supported by new API, but we can pass it
-          // The mock API will use it if available
-        }
-        
-        const response = await api.searchPeople(searchParams);
-        // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...}, rawResponse? }
-        setResults(response.data || []);
-        setRawResponse(response.rawResponse || null);
-
-        // Store search context for report creation
-        if (response.searchContext) {
-          setSearchContext(response.searchContext);
         }
       } catch (err) {
         setError(err.message);
@@ -225,7 +237,7 @@ const MemberSearchResultsPage = () => {
       }
     };
     fetchResults();
-  }, [query, zip, token]);
+  }, [firstNameParam, lastNameParam, stateParam, query, zip, token]);
 
   return (
     <main style={{ padding: '2rem' }}>

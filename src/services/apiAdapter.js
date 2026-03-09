@@ -205,10 +205,15 @@ export function adaptReportDetailResponse(response) {
     response?.commerceContentId ||
     null;
 
-  // Extract raws array
-  const raws = rawData?.raws ?? response?.raws ?? [];
+  // Extract raws array — ByteCrtrs stores raws inside commerceContent (same pattern as teaser search)
+  // Fall back to top-level raws for alternate response shapes
+  const raws =
+    rawData?.commerceContent?.raws ??
+    rawData?.raws ??
+    response?.raws ??
+    [];
 
-  // Extract structured data from raws
+  // Extract structured data from raws (search by transient key, not array index, for resilience)
   const identities =
     raws.find((r) => r.transient?.identities)?.transient?.identities ?? [];
   const fullContact =

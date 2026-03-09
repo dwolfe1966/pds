@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
-import { setSearchContext } from '../../services/searchContext';
 import { createReportForPhone } from '../../services/reportService';
 
 /**
@@ -105,46 +104,23 @@ const MemberGeneralSearchPage = () => {
   };
 
 
-  const handleNameSubmit = async (e) => {
+  const handleNameSubmit = (e) => {
     e.preventDefault();
     setError('');
     if (!firstName.trim() || !lastName.trim()) {
       setError('Please enter both first and last name');
       return;
     }
-    
-    setLoading(true);
-    try {
-      const searchParams = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        type: 'name'
-      };
-      if (state.trim()) {
-        searchParams.state = state.trim().toUpperCase();
-      }
-      
-      const response = await api.searchPeople(searchParams);
-      
-      // Store search context
-      if (response.searchContext) {
-        setSearchContext(response.searchContext);
-      }
-      
-      // Store results in sessionStorage for results page
-      sessionStorage.setItem('memberSearchResults', JSON.stringify({
-        results: response.data || [],
-        query: { firstName: firstName.trim(), lastName: lastName.trim(), state: state.trim() },
-        pagination: response.pagination
-      }));
 
-      // Navigate to member results page
-      navigate('/people-results');
-    } catch (err) {
-      setError(err.message || 'Search failed. Please try again.');
-    } finally {
-      setLoading(false);
+    // Navigate with URL params so SearchResultsPage can run the search itself
+    // and retain the rawResponse object needed for Load More pagination
+    const params = new URLSearchParams();
+    params.set('firstName', firstName.trim());
+    params.set('lastName', lastName.trim());
+    if (state.trim()) {
+      params.set('state', state.trim().toUpperCase());
     }
+    navigate(`/people-results?${params.toString()}`);
   };
 
   const handlePhoneSubmit = async (e) => {

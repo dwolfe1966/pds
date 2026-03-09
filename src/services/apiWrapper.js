@@ -351,7 +351,8 @@ class ApiWrapperService {
         return await wrapper.api.idLookup.getReportDetail(id);
       }
       if (typeof wrapper.api?.idLookup?.getReport === 'function') {
-        return await wrapper.api.idLookup.getReport(id);
+        // Library expects { commerceContentId } object, not a bare string
+        return await wrapper.api.idLookup.getReport({ commerceContentId: id });
       }
       throw new Error('Report detail method not available in ApiWrapper');
     } catch (error) {

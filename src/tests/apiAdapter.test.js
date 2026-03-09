@@ -37,19 +37,22 @@ const MOCK_FAMILY_WATCHDOG = {
   ],
 };
 
+// ByteCrtrs actual structure: raws are nested inside commerceContent (same as teaser search)
 const buildRawReportData = () => ({
-  commerceContent: { _id: 'cc-abc-123' },
-  raws: [
-    { transient: { identities: [MOCK_IDENTITY] } },
-    { transient: { fullContact: MOCK_FULL_CONTACT } },
-    { transient: { familyWatchdog: MOCK_FAMILY_WATCHDOG } },
-  ],
+  commerceContent: {
+    _id: 'cc-abc-123',
+    raws: [
+      { transient: { identities: [MOCK_IDENTITY] } },
+      { transient: { fullContact: MOCK_FULL_CONTACT } },
+      { transient: { familyWatchdog: MOCK_FAMILY_WATCHDOG } },
+    ],
+  },
 });
 
 // ─── adaptReportDetailResponse ───────────────────────────────────────────────
 
 describe('adaptReportDetailResponse', () => {
-  test('extracts data from a raw response object with .raws', () => {
+  test('extracts data from a raw response object with commerceContent.raws', () => {
     const raw = buildRawReportData();
     const result = adaptReportDetailResponse(raw);
 
@@ -61,7 +64,7 @@ describe('adaptReportDetailResponse', () => {
     expect(result.raws).toHaveLength(3);
   });
 
-  test('extracts data via getData() library pattern', () => {
+  test('extracts data via getData() returning params.response.data', () => {
     const raw = buildRawReportData();
     const libraryResponse = {
       getData: () => ({ params: { response: { data: raw } } }),
@@ -73,6 +76,20 @@ describe('adaptReportDetailResponse', () => {
     expect(result.identities).toHaveLength(1);
     expect(result.fullContact).toEqual(MOCK_FULL_CONTACT);
     expect(result.familyWatchdog).toEqual(MOCK_FAMILY_WATCHDOG);
+  });
+
+  test('extracts data via getData() returning raw data directly (ApiResponseHelperGeneral)', () => {
+    const raw = buildRawReportData();
+    // ByteCrtrs ApiResponseHelperGeneral.getData() returns this.params.response?.data directly
+    const libraryResponse = {
+      getData: () => raw,
+    };
+
+    const result = adaptReportDetailResponse(libraryResponse);
+
+    expect(result.commerceContentId).toBe('cc-abc-123');
+    expect(result.identities).toHaveLength(1);
+    expect(result.fullContact).toEqual(MOCK_FULL_CONTACT);
   });
 
   test('extracts data from response.params.response.data', () => {
