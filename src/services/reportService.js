@@ -51,26 +51,19 @@ export async function createReport(extId, options = {}) {
   
   try {
     const response = await api.createReport(params);
-    
-    // Extract commerceContentId from response
-    // The response structure may vary, so we check multiple possible locations
-    let commerceContentId = null;
-    
-    if (response.commerceContentId) {
-      commerceContentId = response.commerceContentId;
-    } else if (response.reportId) {
-      commerceContentId = response.reportId;
-    } else if (response.reportData?.commerceContents?.[0]?._id) {
-      commerceContentId = response.reportData.commerceContents[0]._id;
-    } else if (response.commerceContents?.[0]?._id) {
-      commerceContentId = response.commerceContents[0]._id;
-    }
-    
+
+    // adaptReportDetailResponse (via apiRouter) now populates these fields directly
+    const commerceContentId =
+      response.commerceContentId ||
+      response.reportId ||
+      response.reportData?.commerceContents?.[0]?._id ||
+      response.commerceContents?.[0]?._id ||
+      null;
+
     // Store commerceContentId in search context for later use
     if (commerceContentId && context) {
       const identityContext = getIdentityContext();
       if (identityContext && identityContext.extId === extId) {
-        // Update the identity context with the report ID
         const updatedContext = {
           ...context,
           identity: {
@@ -79,7 +72,6 @@ export async function createReport(extId, options = {}) {
             reportCreated: true
           }
         };
-        // Store updated context
         try {
           sessionStorage.setItem('searchContext', JSON.stringify(updatedContext));
         } catch (error) {
@@ -87,10 +79,14 @@ export async function createReport(extId, options = {}) {
         }
       }
     }
-    
+
     return {
       success: true,
       commerceContentId,
+      identities: response.identities || [],
+      fullContact: response.fullContact || null,
+      familyWatchdog: response.familyWatchdog || null,
+      raws: response.raws || [],
       reportData: response.reportData || response,
       fullResponse: response
     };
@@ -113,6 +109,11 @@ export async function getReportDetail(commerceContentId) {
     const response = await api.getReportDetail(commerceContentId);
     return {
       success: true,
+      commerceContentId: response.commerceContentId || commerceContentId,
+      identities: response.identities || [],
+      fullContact: response.fullContact || null,
+      familyWatchdog: response.familyWatchdog || null,
+      raws: response.raws || [],
       reportData: response.reportData || response,
       fullResponse: response
     };
@@ -241,6 +242,10 @@ export async function createReportForPhone(phone) {
     return {
       success: true,
       commerceContentId,
+      identities: response.identities || [],
+      fullContact: response.fullContact || null,
+      familyWatchdog: response.familyWatchdog || null,
+      raws: response.raws || [],
       reportData: response.reportData || response,
       fullResponse: response,
     };
