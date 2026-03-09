@@ -7,7 +7,7 @@
 
 import { getEndpointConfig, isAvailableInNewAPI, isAvailableInMockAPI } from './apiEndpointRegistry';
 import apiWrapper from './apiWrapper';
-import { adaptTeaserResponse, adaptReportResponse, adaptReportListResponse } from './apiAdapter';
+import { adaptTeaserResponse, adaptReportDetailResponse, adaptReportListResponse } from './apiAdapter';
 
 // Environment configuration
 const USE_NEW_API = process.env.REACT_APP_NEW_API_ENABLED === 'true';
@@ -301,15 +301,15 @@ async function callNewAPI(endpoint, params) {
     
     case 'create-report': {
       const response = await apiWrapper.createReport(params);
-      return adaptReportResponse(response);
+      return adaptReportDetailResponse(response);
     }
-    
+
     case 'get-report': {
       if (!params?.id || params.id === 'undefined' || params.id === 'null') {
         throw new Error('Report detail requires a valid commerceContentId');
       }
       const response = await apiWrapper.getReportDetail(params.id);
-      return adaptReportResponse(response);
+      return adaptReportDetailResponse(response);
     }
     
     case 'report-list': {

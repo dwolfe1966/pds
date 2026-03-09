@@ -51,26 +51,19 @@ export async function createReport(extId, options = {}) {
   
   try {
     const response = await api.createReport(params);
-    
-    // Extract commerceContentId from response
-    // The response structure may vary, so we check multiple possible locations
-    let commerceContentId = null;
-    
-    if (response.commerceContentId) {
-      commerceContentId = response.commerceContentId;
-    } else if (response.reportId) {
-      commerceContentId = response.reportId;
-    } else if (response.reportData?.commerceContents?.[0]?._id) {
-      commerceContentId = response.reportData.commerceContents[0]._id;
-    } else if (response.commerceContents?.[0]?._id) {
-      commerceContentId = response.commerceContents[0]._id;
-    }
-    
+
+    // adaptReportDetailResponse (via apiRouter) now populates these fields directly
+    const commerceContentId =
+      response.commerceContentId ||
+      response.reportId ||
+      response.reportData?.commerceContents?.[0]?._id ||
+      response.commerceContents?.[0]?._id ||
+      null;
+
     // Store commerceContentId in search context for later use
     if (commerceContentId && context) {
       const identityContext = getIdentityContext();
       if (identityContext && identityContext.extId === extId) {
-        // Update the identity context with the report ID
         const updatedContext = {
           ...context,
           identity: {
@@ -79,7 +72,6 @@ export async function createReport(extId, options = {}) {
             reportCreated: true
           }
         };
-        // Store updated context
         try {
           sessionStorage.setItem('searchContext', JSON.stringify(updatedContext));
         } catch (error) {
@@ -87,10 +79,14 @@ export async function createReport(extId, options = {}) {
         }
       }
     }
-    
+
     return {
       success: true,
       commerceContentId,
+      identities: response.identities || [],
+      fullContact: response.fullContact || null,
+      familyWatchdog: response.familyWatchdog || null,
+      raws: response.raws || [],
       reportData: response.reportData || response,
       fullResponse: response
     };
@@ -113,6 +109,11 @@ export async function getReportDetail(commerceContentId) {
     const response = await api.getReportDetail(commerceContentId);
     return {
       success: true,
+      commerceContentId: response.commerceContentId || commerceContentId,
+      identities: response.identities || [],
+      fullContact: response.fullContact || null,
+      familyWatchdog: response.familyWatchdog || null,
+      raws: response.raws || [],
       reportData: response.reportData || response,
       fullResponse: response
     };
@@ -198,6 +199,62 @@ export async function createReportForIdentity(extId, identity = null) {
   } : searchContext;
   
   return await createReport(extId, { searchContext: context });
+}
+
+/**
+ * Create a full report directly from a phone number (member use-case).
+ * Uses report/create with type: 'reversePhone' — bypasses teaser search entirely
+ * and returns full identity + fullContact + familyWatchdog data in one call.
+ * @param {string} phone - 10-digit phone number (digits only)
+ * @returns {Promise<{success: boolean, commerceContentId: string|null, reportData: Object}>}
+ */
+export async function createReportForPhone(phone) {
+  // Resolve member.phone.report searchContextKey from the library enum
+  let searchContextKey;
+  try {
+    if (typeof window !== 'undefined' && window.ApiWrapper?.searchContextKey) {
+      searchContextKey = window.ApiWrapper.searchContextKey?.member?.phone?.report;
+    }
+  } catch (e) {
+    // Library not yet initialised; proceed without it
+  }
+
+  const params = { type: 'reversePhone', phone };
+  if (searchContextKey) {
+    params.searchContextKey = searchContextKey;
+  }
+
+  try {
+    const response = await api.createReport(params);
+
+    // Extract commerceContentId — mirrors the same pattern used in createReport()
+    let commerceContentId = null;
+    if (response.commerceContentId) {
+      commerceContentId = response.commerceContentId;
+    } else if (response.reportId) {
+      commerceContentId = response.reportId;
+    } else if (response.reportData?.commerceContents?.[0]?._id) {
+      commerceContentId = response.reportData.commerceContents[0]._id;
+    } else if (response.commerceContents?.[0]?._id) {
+      commerceContentId = response.commerceContents[0]._id;
+    }
+
+    return {
+      success: true,
+      commerceContentId,
+      identities: response.identities || [],
+      fullContact: response.fullContact || null,
+      familyWatchdog: response.familyWatchdog || null,
+      raws: response.raws || [],
+      reportData: response.reportData || response,
+      fullResponse: response,
+    };
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[reportService] createReportForPhone failed:', error);
+    }
+    throw error;
+  }
 }
 
 /**

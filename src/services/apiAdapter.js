@@ -176,6 +176,69 @@ export function adaptIdentity(identity) {
 }
 
 /**
+ * Transform a full report (create or detail) response from ByteCrtrs.
+ * Extracts: commerceContentId, raws, identities, fullContact, familyWatchdog.
+ * Handles multiple response shapes: library object (getData()), params.response.data, direct .raws.
+ */
+export function adaptReportDetailResponse(response) {
+  // Resolve raw API data — ByteCrtrs library wraps responses; getData() exposes params.response.data
+  let rawData = null;
+  if (response && typeof response.getData === 'function') {
+    const d = response.getData();
+    rawData = d?.params?.response?.data ?? d?.data ?? d;
+  }
+  if (!rawData && response?.params?.response?.data) {
+    rawData = response.params.response.data;
+  }
+  if (!rawData && response?.data) {
+    rawData = response.data;
+  }
+  if (!rawData) {
+    rawData = response;
+  }
+
+  // Extract commerceContentId from multiple locations
+  const commerceContentId =
+    rawData?.commerceContent?._id ||
+    rawData?.commerceContents?.[0]?._id ||
+    rawData?.commerceContentId ||
+    response?.commerceContentId ||
+    null;
+
+  // Extract raws array
+  const raws = rawData?.raws ?? response?.raws ?? [];
+
+  // Extract structured data from raws
+  const identities =
+    raws.find((r) => r.transient?.identities)?.transient?.identities ?? [];
+  const fullContact =
+    raws.find((r) => r.transient?.fullContact)?.transient?.fullContact ?? null;
+  const familyWatchdog =
+    raws.find((r) => r.transient?.familyWatchdog)?.transient?.familyWatchdog ?? null;
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[API Adapter] adaptReportDetailResponse:', {
+      commerceContentId,
+      rawsCount: raws.length,
+      identitiesCount: identities.length,
+      hasFullContact: !!fullContact,
+      hasFamilyWatchdog: !!familyWatchdog,
+    });
+  }
+
+  return {
+    reportId: commerceContentId,
+    commerceContentId,
+    raws,
+    identities,
+    fullContact,
+    familyWatchdog,
+    reportData: rawData,
+    fullResponse: response,
+  };
+}
+
+/**
  * Transform report response from new API
  */
 export function adaptReportResponse(response) {

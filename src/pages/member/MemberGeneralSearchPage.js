@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { createReportForPhone } from '../../services/reportService';
 
 /**
  * General search page for authenticated members.
@@ -153,30 +154,19 @@ const MemberGeneralSearchPage = () => {
       setError('Please enter a valid 10-digit phone number');
       return;
     }
-    
+
     setLoading(true);
     try {
-      const searchParams = {
-        phone: phone,
-        type: 'phone'
-      };
-      
-      const response = await api.searchPeople(searchParams);
-      
-      // Store search context
-      if (response.searchContext) {
-        setSearchContext(response.searchContext);
-      }
-      
-      // Store results in sessionStorage
-      sessionStorage.setItem('memberSearchResults', JSON.stringify({
-        results: response.data || [],
-        query: { phone },
-        pagination: response.pagination
-      }));
+      // Phone search for members uses report/create (type: reversePhone) directly.
+      // This returns a full report — identities + fullContact + familyWatchdog — in a
+      // single call, bypassing the teaser search entirely.
+      const result = await createReportForPhone(phone);
 
-      // Navigate to member results page
-      navigate('/people-results');
+      if (result.success && result.commerceContentId) {
+        navigate(`/people/${result.commerceContentId}`);
+      } else {
+        setError('No report found for that phone number. Please check the number and try again.');
+      }
     } catch (err) {
       setError(err.message || 'Search failed. Please try again.');
     } finally {
