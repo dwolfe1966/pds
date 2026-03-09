@@ -5,6 +5,16 @@
 
 ---
 
+## Decisions & Assumptions (Current Implementation)
+
+| Assumption | Status |
+|------------|--------|
+| **ByteCrtrs will offer a signup endpoint** | Future – will migrate when available |
+| **userInfo in commerceBilling/sale identifies the user** | Assumed – backend matches by email/identity |
+| **Signup backend** | Mock API until ByteCrtrs signup is available |
+
+---
+
 ## Business Model Summary
 
 | Stage | User State | Capabilities |
@@ -173,5 +183,17 @@ The recent change added user creation fields to the Payment page and used `userI
 
 ---
 
-**Document Version:** 1.0  
+## 7. Future Migration: ByteCrtrs Signup
+
+When ByteCrtrs offers a signup endpoint:
+
+1. Add `signup` to `apiEndpointRegistry.js` with `newApi: true`
+2. Add signup route in `apiRouter.js` to call ByteCrtrs signup
+3. Update `api.js` to route signup to ByteCrtrs when available
+4. Ensure response shape (accessToken, user) matches AuthContext expectations
+5. Remove or deprecate mock signup
+
+---
+
+**Document Version:** 1.1  
 **Last Updated:** January 26, 2025

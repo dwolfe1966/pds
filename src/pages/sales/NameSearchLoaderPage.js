@@ -101,7 +101,10 @@ const NameSearchLoaderPage = () => {
         }, 500);
       } catch (err) {
         console.error('Search error:', err);
-        setStatus('Error occurred. Redirecting...');
+        if (process.env.NODE_ENV === 'development' && err?.apiResponse) {
+          console.error('[ByteCrtrs] API response:', err.apiResponse);
+        }
+        setStatus(err?.message || 'Error occurred. Redirecting...');
         setTimeout(() => {
           navigate('/name/search-result?error=true');
         }, 2000);

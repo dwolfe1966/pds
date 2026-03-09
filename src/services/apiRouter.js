@@ -135,8 +135,9 @@ export async function routeApiRequest(endpoint, params = {}) {
   const endpointConfig = getEndpointConfig(endpoint);
   // Check if feature flag is explicitly set to true (not just not false)
   const featureFlagEnabled = FEATURE_FLAGS[endpoint] === true;
-  // Force new API for report creation/detail/list and opt-out/billing to avoid mock endpoints
+  // Force new API – no mock fallback (surfaces real ByteCrtrs errors for debugging)
   const FORCE_NEW_API_ENDPOINTS = new Set([
+    'teaser-search',
     'create-report', 'get-report', 'report-list',
     'opt-out-search', 'commerce-billing-sale'
   ]);
@@ -195,7 +196,7 @@ export async function routeApiRequest(endpoint, params = {}) {
         console.warn(`[API Router] New API failed for ${endpoint}, falling back to mock API:`, error.message || error);
       }
       
-      // Fallback to mock API if new API fails
+      // Fallback to mock API if new API fails (teaser-search excluded – force ByteCrtrs for debugging)
       if (useMockAPI) {
         try {
           return await callMockAPI(endpoint, params);

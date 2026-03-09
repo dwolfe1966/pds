@@ -209,14 +209,19 @@ class ApiWrapperService {
         }
       }
 
-      // Treat API error payload (401, 412, 400) as failure so callers can catch and fall back
+      // Treat API error payload (401, 412, 400, 500) as failure – include ByteCrtrs details for debugging
       if (response && response.params && response.params.error) {
         const err = response.params.error;
-        const message = err.message || 'Search failed';
         const status = err.response?.status || err.status;
+        const apiData = err.response?.data;
+        const message = apiData?.message || apiData?.error?.message || (typeof apiData?.error === 'string' ? apiData.error : null) || err.message || 'Search failed';
         const e = new Error(message);
         e.originalError = err;
         e.status = status;
+        e.apiResponse = apiData;
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[ByteCrtrs] Search failed. Full API response:', apiData || err.response);
+        }
         throw e;
       }
       
@@ -228,10 +233,12 @@ class ApiWrapperService {
         // Fallback to direct proxy call if needed
         return await this._searchTeaserViaProxy(query);
       }
-      // Enhance error with more context for CORS detection
+      // Enhance error with ByteCrtrs response for debugging (500, etc.)
       const enhancedError = new Error(error.message || 'Search failed');
       enhancedError.originalError = error;
       enhancedError.isCorsError = this._isCorsError(error);
+      enhancedError.status = error.response?.status;
+      enhancedError.apiResponse = error.response?.data;
       throw enhancedError;
     }
   }

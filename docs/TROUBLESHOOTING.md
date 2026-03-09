@@ -50,7 +50,37 @@ Look for error messages in the server console when you try to login.
 curl -Method POST -Uri "http://localhost:3001/api/v1/login" -ContentType "application/json" -Body '{"email":"member@test.com","password":"password123"}'
 ```
 
-## Search Not Returning Results
+## ByteCrtrs Search 500 Error
+
+Search uses ByteCrtrs API (no mock fallback). When you get a 500:
+
+### 1. Check server terminal
+The proxy logs the full ByteCrtrs response. Look for:
+```
+[Proxy] 500 Error from ByteCrtrs API
+[Proxy] Response data (full): {...}
+```
+
+### 2. Common causes
+- **Captcha/session** – ByteCrtrs may require captcha verification. Proxy warms up cookies for teaser search; ensure `CAPTCHA_PASS=bcEdgeApiPass` (or your dev pass) is set.
+- **API availability** – ByteCrtrs dev API may be down or rate-limited.
+- **Request format** – Verify `searchContextKey`, `fName`, `lName`, `state`, etc. match the API spec.
+
+### 3. Browser console
+Errors include `apiResponse` with the ByteCrtrs error body. Inspect `err.apiResponse` in the console.
+
+### 4. Test ByteCrtrs directly
+```bash
+# Via proxy (from project root)
+curl -X POST "http://localhost:3001/api/proxy/idLookup/teaser/search?clientId=test123&apiId=test456" \
+  -H "Content-Type: application/json" \
+  -H "X-Captcha-Pass: bcEdgeApiPass" \
+  -d '{"type":"name","fName":"John","lName":"Doe","state":"CA","searchContextKey":"sale.name.teaser","perPage":20}'
+```
+
+---
+
+## Search Not Returning Results (Mock API)
 
 ### Check the search endpoint
 ```bash
