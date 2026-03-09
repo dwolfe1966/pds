@@ -1,31 +1,33 @@
-# ByteCrtrs API Update Analysis
+# ByteCrtrs API Update Analysis & Execution Plan
 
 **Date:** January 26, 2025  
 **Library Source:** `https://dev1.dev.www.bytecrtrs.com/libs/api-wrapper/index.iife.js`  
-**Local Copy:** `public/libs/api-wrapper/index.iife.js` (downloaded for version control)
+**Local Copy:** `public/libs/api-wrapper/index.iife.js`  
+**Reference Doc:** [Google Sheets](https://docs.google.com/spreadsheets/d/1R7fE5Jp4TNt14BlwsbTqpxpUwNh1BxihGhfXqn0qNpQ/edit?gid=49291190#gid=49291190) *(requires sign-in; not publicly accessible)*
 
 ---
 
 ## Note on API Documentation
 
-The Google Sheets API document (`https://docs.google.com/spreadsheets/d/1R7fE5Jp4TNt14BlwsbTqpxpUwNh1BxihGhfXqn0qNpQ/edit?gid=49291190`) requires sign-in and is not publicly accessible. This analysis is based on:
+The Google Sheets API document requires sign-in and is not publicly accessible. This analysis is based on:
 
 1. **Live library** fetched from the ByteCrtrs CDN
 2. **Local CSV spec** (`docs/new-api/bc client library - API.csv`)
 3. **Current codebase** integration status
 
-If you have access to the Google Sheets doc, please share any additional endpoints or parameter changes so this analysis can be updated.
+**If you have access to the Google Sheets doc and it contains updates not reflected here, please share the contents (export, screenshot, or copy-paste) so this analysis can be updated.**
 
 ---
 
-## Part 1: What Has Changed with the API
+## Part 1: API Changes (vs Original CSV Spec)
 
-### 1.1 New Endpoints (Not in Original CSV Spec)
+### 1.1 New Endpoints (Not in Original CSV)
 
-| Endpoint | Method | Purpose | Library Method |
-|----------|--------|---------|----------------|
-| `/optOut/search` | POST | Search for opt-out status before submitting request | `api.optOut.search` |
-| `/commerceBilling/sale` | POST | Process payment/sale (billing) | `api.billing.sale` |
+| Endpoint | Method | Purpose | Library Method | Implemented |
+|----------|--------|---------|----------------|-------------|
+| `/optOut/search` | POST | Check opt-out status before submitting request | `api.optOut.search` | ✅ Yes |
+| `/commerceBilling/sale` | POST | Process payment/sale (billing) | `api.billing.sale` | ✅ Yes |
+| `/idLookup/report/pdf/:commerceContentId` | GET | Download report as PDF | `api.idLookup.downloadPdfReport` | ❌ No |
 
 ### 1.2 Existing Endpoints (Unchanged)
 
@@ -42,216 +44,140 @@ If you have access to the Google Sheets doc, please share any additional endpoin
 
 ### 1.3 New Library Features (Beyond Raw Endpoints)
 
-#### A. Search Teaser Pagination
-
-The `searchTeaser` response now exposes pagination helpers:
-
-- **`hasMore()`** – Returns `true` if more results exist (`identities.length < total`)
-- **`getMore()`** – Fetches next page and appends identities to the response
-- **`getTotalCount()`** – Returns total result count
-- **`makeGetMoreParams()`** – Builds `{ commerceContentId, page }` for next request
-
-**Impact:** You can implement "Load more" or infinite scroll on search results without re-searching.
-
-#### B. `searchContextKey` Enum
-
-The library exposes `ApiWrapper.searchContextKey` for structured context:
-
-```javascript
-{
-  sale: {
-    name: { teaser, teaserOptOut, report },
-    phone: { teaser, teaserOptOut, report },
-    email: { teaser, teaserOptOut, report },
-  },
-  member: {
-    name: { teaser, teaserOptOut, report },
-    phone: { teaser, teaserOptOut, report },
-    email: { teaser, teaserOptOut, report },
-  },
-}
-```
-
-**Impact:** Report creation and opt-out flows can use the correct context key for sale vs member, name vs phone vs email.
-
-#### C. Opt-Out Query Handler
-
-- **`ApiWrapperQueryHandler.getHandler()`** – Reads `awqh[type]` and `awqh[value]` from URL
-- **`ApiWrapperQueryHandlerConfirmationOptOut`** – When `type=confirmationRequestOptOut`, shows confirmation modal and calls `optOut.confirmation`
-- **`removeQuery()`** – Cleans query params after handling
-
-**Impact:** Email opt-out links can use `?awqh[type]=confirmationRequestOptOut&awqh[value]=<token>` and the library handles the flow automatically.
-
-#### D. Built-in Modals
-
-- **`turnstileModal`** – Cloudflare Turnstile captcha
-- **`promptModal`** – Text/password input
-- **`messageModal`** – Info message with Close
-- **`confirmationModal`** – Yes/No confirmation
-
-**Impact:** Captcha and opt-out flows can use library modals instead of custom UI.
-
-#### E. Captcha Handling
-
-- **`ApiWrapperCaptcha`** – Intercepts 412 responses, runs captcha flow, retries with `x-captcha-id` header
-- Supports: `turnstile.v0`, `password.v0`, `svgCaptcha.text`, `svgCaptcha.math`, `gifCaptcha.v0`, `gifCaptcha.v1`
-
-**Impact:** Already used via proxy; dev uses `bcEdgeApiPass` for password captcha.
-
-#### F. Billing Sale Endpoint
-
-- **`api.billing.sale(params)`** – POST to `/commerceBilling/sale`
-- Expects `queryString` (optional) and `data` in body
-- Library auto-adds `billingSeriesId`: `sale|{clientId}|{apiId}|{timestamp}|{random}`
-
-**Impact:** Real payment processing can replace mock `updateSubscription`.
+| Feature | Description | Implemented |
+|---------|-------------|-------------|
+| **Search pagination** | `hasMore()`, `getMore()`, `getTotalCount()` on teaser search responses | ✅ Yes |
+| **searchContextKey** | Structured keys (e.g. `sale.name.teaser`, `member.phone.report`) | ✅ Yes |
+| **Opt-out query handler** | URL params `awqh[type]`, `awqh[value]` for email confirmation links | ❌ No |
+| **Built-in modals** | Turnstile, prompt, message, confirmation | Partial (library uses internally) |
+| **Captcha handling** | 412 → captcha flow → retry with `x-captcha-id` | ✅ Yes (via proxy) |
+| **Billing sale** | `api.billing.sale()` with auto `billingSeriesId` | ✅ Yes |
+| **PDF download** | `api.idLookup.downloadPdfReport()` with confirmation modal | ❌ No |
 
 ---
 
-## Part 2: Unfinished Use-Cases That Can Be Completed
+## Part 2: Use Cases & Pages We Can Implement
 
-### 2.1 Opt-Out Search (`optOut/search`)
+### 2.1 PDF Report Download (NEW – Not Yet Implemented)
 
-**Current state:** Opt-out flow uses `api.searchPeople` (teaser search) to find records. There is no dedicated opt-out search.
+**API:** `GET /idLookup/report/pdf/:commerceContentId`  
+**Library:** `api.idLookup.downloadPdfReport({ commerceContentId })`
 
-**New capability:** `api.optOut.search(params)` – Check opt-out status before submitting a request.
+**Use case:** Allow users to download a purchased report as a PDF file.
 
-**Use-case:** Before showing the opt-out form, call `optOut.search` to:
-- Verify the record exists and is eligible for opt-out
-- Show "Already opted out" if applicable
-- Reduce invalid submissions
+**Pages to implement:**
+- **SearchResultDetailPage** (`/people/:id`) – Add "Download PDF" button on report detail view
+- **AccountPage** – Add "Download PDF" on each report in the report list
+- **DashboardHome** – Add "Download PDF" on recent reports in activity feed
 
-**Implementation:**
-- Add `searchOptOut` to `apiWrapper.js`
-- Add `opt-out-search` endpoint to `apiRouter.js` and `apiEndpointRegistry.js`
-- Call from `OptOutSearchResultsPage` or `OptOutInfoInputPage` before proceeding
-
----
-
-### 2.2 Real Payment via `commerceBilling/sale`
-
-**Current state:** `PaymentPage` uses `api.updateSubscription` (mock API) with a demo token.
-
-**New capability:** `api.billing.sale(params)` – Process real payments through ByteCrtrs.
-
-**Use-case:** Replace mock payment with ByteCrtrs billing:
-- Pass `queryString` (e.g. plan, price) and payment data
-- Receive success/failure from API
-- Redirect to report or dashboard on success
-
-**Implementation:**
-- Add `sale` to `apiWrapper.js` (wrapper for `api.billing.sale`)
-- Add `commerce-billing-sale` to router and registry
-- Update `PaymentPage` to call `api.billingSale(...)` instead of `api.updateSubscription`
-- Add proxy route for `/commerceBilling/sale` if using proxy
+**Flow:**
+1. User clicks "Download PDF"
+2. Library shows confirmation modal: "Would you like to download the PDF?"
+3. On confirm, GET request returns blob; library triggers browser download with `x-pdf-file-name` header
 
 ---
 
-### 2.3 Search Results Pagination (`getMore` / `hasMore`)
+### 2.2 Opt-Out Email Link Handler (NOT YET IMPLEMENTED)
 
-**Current state:** Search results show first page only. No "Load more" or pagination.
+**API:** Uses `GET /optOut/confirmation` with `value` param  
+**Library:** `ApiWrapperQueryHandler.getHandler()` + `ApiWrapperQueryHandlerConfirmationOptOut.execute()`
 
-**New capability:** `response.hasMore()` and `response.getMore()` on teaser search response.
+**Use case:** User receives email with opt-out confirmation link. Clicking the link opens the app; the library auto-detects `?awqh[type]=confirmationRequestOptOut&awqh[value]=<token>` and runs the confirmation flow.
 
-**Use-case:** On `/people-results`, `/name/search-result`, etc.:
-- Show "Load more" when `hasMore()` is true
-- Call `getMore()` to append next page
-- Avoid full re-search
+**Pages:**
+- **Opt-out route** – Ensure `/opt-out` (or equivalent) is the landing page for email links
+- **App.js** – The library binds to `DOMContentLoaded` and auto-runs handlers. If our SPA loads after DOMContentLoaded, we may need to manually call `ApiWrapperQueryHandler.getHandler()` on route load when URL has these params.
 
-**Implementation:**
-- Store raw library response (with `getMore`/`hasMore`) when using apiWrapper directly
-- Or extend `api.searchPeople` to return pagination metadata and a `loadMore` callback
-- Add "Load more" button that calls `loadMore()` and appends to results
-
----
-
-### 2.4 Opt-Out Confirmation from Email Link
-
-**Current state:** `api.confirmOptOut` exists but is not wired to URL query params. Email links would need a custom page.
-
-**New capability:** `ApiWrapperQueryHandler.getHandler()` + `ApiWrapperQueryHandlerConfirmationOptOut.execute()`.
-
-**Use-case:** Email link format:
-```
-https://yoursite.com/opt-out?awqh[type]=confirmationRequestOptOut&awqh[value]=<token>
-```
-On page load, library detects params, shows "Would you like to opt out?" modal, calls confirmation API, shows success/failure.
-
-**Implementation:**
-- On app load (e.g. `App.js` or opt-out route), call `ApiWrapperQueryHandler.getHandler()`
-- If handler exists, call `handler.execute({ api: wrapper.api })`
-- Optionally use library modals or replace with app-styled modals
+**Flow:**
+1. User clicks link: `https://yoursite.com/opt-out?awqh[type]=confirmationRequestOptOut&awqh[value]=<token>`
+2. Library detects params, shows "Would you like to opt out?" modal
+3. On confirm, calls `optOut.confirmation({ value })`, shows success/failure message, removes query params from URL
 
 ---
 
-### 2.5 Report List for Members
+### 2.3 Already Implemented Use Cases
 
-**Current state:** `apiWrapper.getReportList` exists; `AccountPage` does not yet show report history.
-
-**New capability:** `GET /idLookup/report/list?lastId={lastId}` – Paginated list of user reports.
-
-**Use-case:** Member dashboard or Account page:
-- Show "Your Reports" with pagination
-- Link each report to detail view
-- Uses `commerceContentId` from list for detail URL
-
-**Implementation:**
-- Add report list section to `AccountPage` or `DashboardHome`
-- Call `apiWrapper.getReportList({ lastId })` (or route through apiRouter)
-- Add proxy route for `/idLookup/report/list` if not already proxied
+| Use Case | API | Pages | Status |
+|----------|-----|-------|--------|
+| Opt-out search before request | `optOut/search` | OptOutSearchResultsPage | ✅ Done |
+| Real payment processing | `commerceBilling/sale` | PaymentPage | ✅ Done |
+| Search pagination (Load more) | `getMore` / `hasMore` | SearchResultsPage (sales & member) | ✅ Done |
+| Report list for members | `report/list` | DashboardHome, AccountPage | ✅ Done |
+| Consistent searchContextKey | `ApiWrapper.searchContextKey` | reportService, searchContext | ✅ Done |
 
 ---
 
-### 2.6 Consistent `searchContextKey` Usage
+## Part 3: Execution Plan
 
-**Current state:** `api.js` and `searchContext.js` use `searchContextKey` from `window.ApiWrapper.searchContextKey` when available.
+### Phase 1: PDF Download (High Value, Low Effort)
 
-**New capability:** Structured keys for sale vs member, name vs phone vs email.
+**Priority:** High  
+**Effort:** Low  
+**Dependencies:** None
 
-**Use-case:** Ensure report creation and opt-out use the correct context:
-- Sales flow: `sale.name.teaser`, `sale.name.report`, etc.
-- Member flow: `member.name.teaser`, `member.name.report`, etc.
+| Step | Task | Files |
+|------|------|-------|
+| 1.1 | Add `downloadPdfReport` to apiWrapper.js | `src/services/apiWrapper.js` |
+| 1.2 | Add `report-pdf-download` to apiEndpointRegistry.js | `src/services/apiEndpointRegistry.js` |
+| 1.3 | Add route in apiRouter.js for PDF download | `src/services/apiRouter.js` |
+| 1.4 | Add `downloadReportPdf` to api.js | `src/api.js` |
+| 1.5 | Add `downloadReportPdf` to reportService.js | `src/services/reportService.js` |
+| 1.6 | Add "Download PDF" button to SearchResultDetailPage | `src/pages/member/SearchResultDetailPage.js` |
+| 1.7 | Add "Download PDF" to report cards in DashboardHome & AccountPage | `src/pages/member/DashboardHome.js`, `src/pages/member/AccountPage.js` |
 
-**Implementation:**
-- Audit all `createReport` and `requestOptOut` calls
-- Pass `searchContextKey` from `ApiWrapper.searchContextKey` based on flow (sale vs member, name vs phone vs email)
+**Proxy:** The generic `/api/proxy/*` already forwards all paths; `/idLookup/report/pdf/:id` will work without server changes. Ensure `responseType: 'blob'` is used and `x-pdf-file-name` is forwarded.
+
+---
+
+### Phase 2: Opt-Out Email Link Handler (Medium Value, Low Effort)
+
+**Priority:** Medium  
+**Effort:** Low  
+**Dependencies:** Opt-out route must exist
+
+| Step | Task | Files |
+|------|------|-------|
+| 2.1 | Verify opt-out route exists (e.g. `/opt-out`) | `src/App.js` |
+| 2.2 | On opt-out route mount, call `ApiWrapperQueryHandler.getHandler()` | `src/pages/sales/OptOutLandingPage.js` or `OptOutSearchResultsPage.js` |
+| 2.3 | If handler exists, execute with `{ api: wrapper.api }` before rendering page content | Same |
+| 2.4 | Document email link format for backend/email team | `docs/OPT_OUT_EMAIL_LINK.md` |
+
+**Note:** The library already binds to `DOMContentLoaded`. If the SPA loads the opt-out page after DOMContentLoaded, the handler may run before React mounts. We should also run it on route entry to cover SPA navigation.
+
+---
+
+### Phase 3: Verification & Testing
+
+| Step | Task |
+|------|------|
+| 3.1 | Test PDF download on report detail page (member flow) |
+| 3.2 | Test PDF download from Dashboard/Account report list |
+| 3.3 | Test opt-out email link with `?awqh[type]=confirmationRequestOptOut&awqh[value]=<test-token>` |
+| 3.4 | Verify proxy forwards blob responses and `x-pdf-file-name` header |
 
 ---
 
 ## Summary Table
 
-| Use-Case | New API Addition | Priority | Effort |
-|----------|------------------|----------|--------|
-| Opt-out search before request | `optOut/search` | Medium | Low |
-| Real payment processing | `commerceBilling/sale` | High | Medium |
-| Search pagination (Load more) | `getMore` / `hasMore` | Medium | Low |
-| Opt-out email link handling | `ApiWrapperQueryHandler` | Medium | Low |
-| Report list in Account | `getReportList` (existing) | High | Medium |
-| Consistent searchContextKey | `ApiWrapper.searchContextKey` | Low | Low |
+| Use Case | New API Addition | Priority | Effort | Status |
+|----------|------------------|----------|--------|--------|
+| Opt-out search before request | `optOut/search` | Medium | Low | ✅ Done |
+| Real payment processing | `commerceBilling/sale` | High | Medium | ✅ Done |
+| Search pagination (Load more) | `getMore` / `hasMore` | Medium | Low | ✅ Done |
+| Report list in Account/Dashboard | `report/list` | High | Medium | ✅ Done |
+| Consistent searchContextKey | `ApiWrapper.searchContextKey` | Low | Low | ✅ Done |
+| **PDF report download** | `idLookup/report/pdf` | **High** | **Low** | ❌ **TODO** |
+| **Opt-out email link handling** | `ApiWrapperQueryHandler` | **Medium** | **Low** | ❌ **TODO** |
 
 ---
 
-## Library Download
+## Next Steps
 
-The latest library has been saved locally at:
-
-```
-public/libs/api-wrapper/index.iife.js
-```
-
-To use the local copy instead of the CDN, update `public/index.html`:
-
-```html
-<!-- Option A: CDN (current) -->
-<script src="https://dev1.dev.www.bytecrtrs.com/libs/api-wrapper/index.iife.js"></script>
-
-<!-- Option B: Local copy -->
-<script src="/libs/api-wrapper/index.iife.js"></script>
-```
-
-Using the local copy allows version control and offline development.
+1. **Implement Phase 1 (PDF Download)** – Highest impact, minimal effort.
+2. **Implement Phase 2 (Opt-Out Email Link)** – Improves opt-out UX for email flows.
+3. **Sync with Google Sheets doc** – If the doc has additional endpoints or parameter changes, update this analysis and execution plan.
 
 ---
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Last Updated:** January 26, 2025

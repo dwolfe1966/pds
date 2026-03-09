@@ -15,11 +15,32 @@ const TRUST_BADGES = [
  * Payment capture page shown after signup.
  * Collects payment details and subscribes the user to a plan.
  */
+// Parse MM/YY into { expMonth, expYear }
+function parseExpiry(expiry) {
+  const match = String(expiry || '').match(/^(\d{1,2})\s*\/\s*(\d{2,4})$/);
+  if (!match) return { expMonth: '', expYear: '' };
+  let [, month, year] = match;
+  if (year.length === 2) year = `20${year}`;
+  return { expMonth: month.padStart(2, '0'), expYear: year.slice(-2) };
+}
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token } = useAuth();
-  const [form, setForm] = useState({ cardNumber: '', expiry: '', cvv: '', billingZip: '' });
+  const { token, setToken, setUser } = useAuth();
+  const [form, setForm] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    optin: true,
+    cardNumber: '',
+    expiry: '',
+    cvv: '',
+    billingFirstName: '',
+    billingLastName: '',
+    street1: '',
+    billingZip: '',
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -29,7 +50,7 @@ const PaymentPage = () => {
   // Proxy testing: ?simulate=success | ?simulate=failure (omit = success)
   const simulateParam = searchParams.get('simulate');
 
-  // Get selected person info from sessionStorage
+  // Get selected person info from sessionStorage; prefill user from signup if available
   useEffect(() => {
     const personId = sessionStorage.getItem('selectedPersonId');
     if (personId) {
@@ -39,10 +60,26 @@ const PaymentPage = () => {
         setSelectedPerson(JSON.parse(storedResult));
       }
     }
+    // Prefill from localStorage if user just signed up
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.email && !form.email) {
+        setForm((prev) => ({
+          ...prev,
+          email: user.email || prev.email,
+          firstName: (user.fullName || '').split(' ')[0] || prev.firstName,
+          lastName: (user.fullName || '').split(' ').slice(1).join(' ') || prev.lastName,
+        }));
+      }
+    } catch (_) {}
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -50,20 +87,69 @@ const PaymentPage = () => {
     setError('');
     setLoading(true);
     try {
-      // Try ByteCrtrs billing.sale first when available
+      // Build commerceBilling/sale params per API spec (userInfo, billings, commerceOfferKeys)
+      const { expMonth, expYear } = parseExpiry(form.expiry);
+      const saleParams = {
+        userInfo: {
+          email: form.email,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          optin: !!form.optin,
+        },
+        billings: [
+          {
+            billingType: 'creditCard',
+            creditCard: {
+              pan: (form.cardNumber || '').replace(/\s/g, ''),
+              expYear: expYear || '30',
+              expMonth: expMonth || '12',
+              cvv: form.cvv || '123',
+            },
+            billingAddress: {
+              firstName: form.billingFirstName || form.firstName,
+              lastName: form.billingLastName || form.lastName,
+              street1: form.street1 || '123 main',
+              zip: form.billingZip || '10001',
+              bogusFields: {
+                firstName: false,
+                lastName: false,
+                street1: true,
+                street2: true,
+                city: true,
+                state: true,
+                zip: false,
+                country: true,
+              },
+            },
+          },
+        ],
+        commerceOfferKeys: [
+          { key: 'comp.offer.signup.main', target: 'main', options: {} },
+        ],
+        sequenceOption: {
+          thinMatch: false,
+          thinMatchDataProviderDown: false,
+          thinMatchTooManyResults: false,
+          thinMatchNoResults: false,
+          thinMatchGeographic: false,
+        },
+        ...(searchParams.toString() && { queryString: searchParams.toString() }),
+      };
+
       let paymentSuccess = false;
       try {
-        const saleParams = {
-          queryString: `?plan=basic&amount=29.99`,
-          plan: 'basic',
-          amount: 29.99,
-          paymentToken: form.cardNumber ? `tok_${form.cardNumber.slice(-4)}` : 'tok_demo',
-          ...(simulateParam && { simulate: simulateParam }),
-        };
         const saleResult = await api.billingSale(saleParams);
         const ok = saleResult?.params?.response?.data?.success ?? saleResult?.data?.success ?? saleResult?.success;
         if (ok) {
           paymentSuccess = true;
+          // Handle auth tokens if API returns them (user creation)
+          const data = saleResult?.params?.response?.data ?? saleResult?.data ?? {};
+          if (data.accessToken) {
+            setToken?.(data.accessToken);
+            setUser?.(data.user || { email: form.email, fullName: `${form.firstName} ${form.lastName}`.trim(), role: 'member' });
+            localStorage.setItem('accessToken', data.accessToken);
+            if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+          }
         }
       } catch (saleErr) {
         if (process.env.NODE_ENV === 'development') {
@@ -153,6 +239,62 @@ const PaymentPage = () => {
 
           <form onSubmit={handleSubmit}>
             <div className={styles.paymentFormBox}>
+              <h3 className={styles.formTitle}>Account Information</h3>
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="payment-email">Email *</label>
+                <input
+                  id="payment-email"
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="you@example.com"
+                  className={styles.input}
+                />
+              </div>
+              <div className={styles.formGroupRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label} htmlFor="payment-firstName">First Name *</label>
+                  <input
+                    id="payment-firstName"
+                    type="text"
+                    name="firstName"
+                    value={form.firstName}
+                    onChange={handleChange}
+                    required
+                    placeholder="First"
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label} htmlFor="payment-lastName">Last Name *</label>
+                  <input
+                    id="payment-lastName"
+                    type="text"
+                    name="lastName"
+                    value={form.lastName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Last"
+                    className={styles.input}
+                  />
+                </div>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    name="optin"
+                    checked={form.optin}
+                    onChange={handleChange}
+                  />
+                  I agree to receive marketing communications
+                </label>
+              </div>
+            </div>
+
+            <div className={styles.paymentFormBox}>
               <h3 className={styles.formTitle}>Payment Information</h3>
 
               <div className={styles.formGroup}>
@@ -201,6 +343,47 @@ const PaymentPage = () => {
                 </div>
               </div>
 
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="payment-street1">Billing Address *</label>
+                <input
+                  id="payment-street1"
+                  type="text"
+                  name="street1"
+                  value={form.street1}
+                  onChange={handleChange}
+                  required
+                  placeholder="123 Main St"
+                  className={styles.input}
+                />
+              </div>
+              <div className={styles.formGroupRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label} htmlFor="payment-billingFirstName">Billing First Name *</label>
+                  <input
+                    id="payment-billingFirstName"
+                    type="text"
+                    name="billingFirstName"
+                    value={form.billingFirstName}
+                    onChange={handleChange}
+                    required
+                    placeholder="First"
+                    className={styles.input}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label} htmlFor="payment-billingLastName">Billing Last Name *</label>
+                  <input
+                    id="payment-billingLastName"
+                    type="text"
+                    name="billingLastName"
+                    value={form.billingLastName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Last"
+                    className={styles.input}
+                  />
+                </div>
+              </div>
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="payment-billingZip">Billing ZIP Code *</label>
                 <input

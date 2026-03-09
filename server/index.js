@@ -350,6 +350,11 @@ app.all('/api/proxy/*', async (req, res) => {
       console.log('[Proxy] Request body keys:', Object.keys(requestBody || {}));
       console.log('[Proxy] Library sent commerceContentId?', !!requestBody.commerceContentId, requestBody.commerceContentId ? `(${requestBody.commerceContentId.length} chars)` : '');
       console.log('[Proxy] Library sent searchContextKey?', !!requestBody.searchContextKey, requestBody.searchContextKey ? `(${requestBody.searchContextKey.length} chars)` : '');
+      // Pagination / results-per-page validation
+      const perPageVal = requestBody.perPage ?? requestBody.per_page ?? requestBody.pageSize;
+      const isGetMore = !!(requestBody.commerceContentId && requestBody.page != null);
+      console.log('[Proxy] Results-per-page param:', perPageVal != null ? `perPage/per_page/pageSize=${perPageVal}` : 'NOT SET');
+      console.log('[Proxy] Is pagination (getMore) request:', isGetMore, isGetMore ? `(page=${requestBody.page})` : '');
       
       // Check if we have captcha data stored for this session
       const sessionKey = getSessionKey(req);

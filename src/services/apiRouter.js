@@ -213,16 +213,21 @@ export async function routeApiRequest(endpoint, params = {}) {
     // For search endpoints, convert to query params format
     if (endpoint === 'teaser-search') {
       const { firstName, lastName, fName, lName, phone, state, zip } = params;
+      const queryParams = {
+        firstName: firstName || fName,
+        lastName: lastName || lName,
+        phone,
+        state,
+        zip,
+        limit: 20
+      };
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Mock API Search] Params sent to /search:', JSON.stringify(queryParams, null, 2));
+        console.log('[Mock API Search] Results-per-page (limit):', queryParams.limit);
+      }
       return await callMockAPI(endpoint, {
         method: 'GET',
-        queryParams: {
-          firstName: firstName || fName,
-          lastName: lastName || lName,
-          phone,
-          state,
-          zip,
-          limit: 20
-        }
+        queryParams
       });
     }
     if (endpoint === 'create-report') {
@@ -264,8 +269,20 @@ async function callNewAPI(endpoint, params) {
         delete query.lastName;
       }
       // Request more results per page (ByteCrtrs may default to 5)
-      if (query.perPage == null && query.per_page == null && query.pageSize == null) {
+      const hasPerPageParam = query.perPage != null || query.per_page != null || query.pageSize != null;
+      if (!hasPerPageParam) {
         query.perPage = 20;
+      }
+      const isPaginationRequest = !!query.commerceContentId && query.page != null;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ByteCrtrs Search] All params sent to searchTeaser:', JSON.stringify(query, null, 2));
+        console.log('[ByteCrtrs Search] Pagination request (getMore):', isPaginationRequest);
+        console.log('[ByteCrtrs Search] Results-per-page param:', {
+          perPage: query.perPage,
+          per_page: query.per_page,
+          pageSize: query.pageSize,
+          used: hasPerPageParam ? 'from caller' : 'default (20)'
+        });
       }
       const response = await apiWrapper.searchTeaser(query);
       const adapted = adaptTeaserResponse(response);
