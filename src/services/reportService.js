@@ -201,6 +201,58 @@ export async function createReportForIdentity(extId, identity = null) {
 }
 
 /**
+ * Create a full report directly from a phone number (member use-case).
+ * Uses report/create with type: 'reversePhone' — bypasses teaser search entirely
+ * and returns full identity + fullContact + familyWatchdog data in one call.
+ * @param {string} phone - 10-digit phone number (digits only)
+ * @returns {Promise<{success: boolean, commerceContentId: string|null, reportData: Object}>}
+ */
+export async function createReportForPhone(phone) {
+  // Resolve member.phone.report searchContextKey from the library enum
+  let searchContextKey;
+  try {
+    if (typeof window !== 'undefined' && window.ApiWrapper?.searchContextKey) {
+      searchContextKey = window.ApiWrapper.searchContextKey?.member?.phone?.report;
+    }
+  } catch (e) {
+    // Library not yet initialised; proceed without it
+  }
+
+  const params = { type: 'reversePhone', phone };
+  if (searchContextKey) {
+    params.searchContextKey = searchContextKey;
+  }
+
+  try {
+    const response = await api.createReport(params);
+
+    // Extract commerceContentId — mirrors the same pattern used in createReport()
+    let commerceContentId = null;
+    if (response.commerceContentId) {
+      commerceContentId = response.commerceContentId;
+    } else if (response.reportId) {
+      commerceContentId = response.reportId;
+    } else if (response.reportData?.commerceContents?.[0]?._id) {
+      commerceContentId = response.reportData.commerceContents[0]._id;
+    } else if (response.commerceContents?.[0]?._id) {
+      commerceContentId = response.commerceContents[0]._id;
+    }
+
+    return {
+      success: true,
+      commerceContentId,
+      reportData: response.reportData || response,
+      fullResponse: response,
+    };
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[reportService] createReportForPhone failed:', error);
+    }
+    throw error;
+  }
+}
+
+/**
  * Check if a report has already been created for an identity
  * @param {string} extId - The external ID
  * @returns {Object|null} CommerceContentId if report exists, null otherwise
