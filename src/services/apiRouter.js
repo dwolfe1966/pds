@@ -135,7 +135,7 @@ export async function routeApiRequest(endpoint, params = {}) {
   const endpointConfig = getEndpointConfig(endpoint);
   // Check if feature flag is explicitly set to true (not just not false)
   const featureFlagEnabled = FEATURE_FLAGS[endpoint] === true;
-  // Force new API – no mock fallback (surfaces real ByteCrtrs errors for debugging)
+  // Force new API – no mock fallback for these endpoints
   const FORCE_NEW_API_ENDPOINTS = new Set([
     'teaser-search',
     'create-report', 'get-report', 'report-list',
@@ -301,7 +301,28 @@ async function callNewAPI(endpoint, params) {
     
     case 'create-report': {
       const response = await apiWrapper.createReport(params);
-      return adaptReportDetailResponse(response);
+      const adapted = adaptReportDetailResponse(response);
+      // ByteCrtrs library can swallow HTTP errors (4xx) and return empty data.
+      // Detect this and throw a descriptive error so the UI can surface it.
+      if (!adapted.commerceContentId) {
+        // Try to extract any error message from the raw response
+        const rawData = response?.getData?.() ?? response?.params?.response?.data ?? response;
+        const apiError = rawData?.error || rawData?.message || rawData?.code || null;
+        const httpStatus = rawData?.status || response?.params?.response?.status || null;
+        const err = new Error(
+          `ByteCrtrs report/create returned no commerceContentId` +
+          (httpStatus ? ` (HTTP ${httpStatus})` : '') +
+          (apiError ? `: ${JSON.stringify(apiError)}` : '') +
+          `. Check server console for full ByteCrtrs response.`
+        );
+        err.bytecrtrsResponse = rawData;
+        err.httpStatus = httpStatus;
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[API Router] create-report failed — ByteCrtrs raw response:', JSON.stringify(rawData, null, 2));
+        }
+        throw err;
+      }
+      return adapted;
     }
 
     case 'get-report': {
@@ -309,7 +330,22 @@ async function callNewAPI(endpoint, params) {
         throw new Error('Report detail requires a valid commerceContentId');
       }
       const response = await apiWrapper.getReportDetail(params.id);
-      return adaptReportDetailResponse(response);
+      const adapted = adaptReportDetailResponse(response);
+      if (!adapted.commerceContentId) {
+        const rawData = response?.getData?.() ?? response?.params?.response?.data ?? response;
+        const apiError = rawData?.error || rawData?.message || rawData?.code || null;
+        const err = new Error(
+          `ByteCrtrs report/detail returned no data` +
+          (apiError ? `: ${JSON.stringify(apiError)}` : '') +
+          `. Check server console for full ByteCrtrs response.`
+        );
+        err.bytecrtrsResponse = rawData;
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[API Router] get-report failed — ByteCrtrs raw response:', JSON.stringify(rawData, null, 2));
+        }
+        throw err;
+      }
+      return adapted;
     }
     
     case 'report-list': {

@@ -46,28 +46,25 @@ export async function createReport(extId, options = {}) {
   // Get search context if not provided
   const context = searchContext || getSearchContext();
   
-  // Build report creation parameters
+  // API docs specify only type + extId (or phone) as required params.
+  // searchContextKey and teaserInput are optional context — pass them as-is from the
+  // teaser response (no transformation). Do NOT transform .teaser → .report; that key
+  // does not exist in ByteCrtrs and causes a 403.
   const params = {
     type,
     ...(type === 'extId' ? { extId } : { phone })
   };
-  
-  // Add search context if available
-  // For report creation, use .report key (sale.name.report, member.name.report) not .teaser
+
   if (context) {
-    let contextKey = context.searchContextKey || context.teaserInput?.searchContextKey;
-    if (contextKey && contextKey.includes('.teaser')) {
-      contextKey = contextKey.replace('.teaser', '.report');
-    }
+    const contextKey = context.searchContextKey || context.teaserInput?.searchContextKey;
     if (contextKey) {
-      params.searchContextKey = contextKey;
+      params.searchContextKey = contextKey; // pass as-is, e.g. "member.name.teaser"
     }
     if (context.teaserInput) {
       params.teaserInput = context.teaserInput;
     }
-    if (context.commerceContentId) {
-      params.commerceContentId = context.commerceContentId;
-    }
+    // Do NOT forward commerceContentId from the teaser search — the report/create
+    // endpoint creates its own commerceContent and doesn't need the teaser one.
   }
   
   try {
@@ -235,20 +232,9 @@ export async function createReportForIdentity(extId, identity = null) {
  * @returns {Promise<{success: boolean, commerceContentId: string|null, reportData: Object}>}
  */
 export async function createReportForPhone(phone) {
-  // Resolve member.phone.report searchContextKey from the library enum
-  let searchContextKey;
-  try {
-    if (typeof window !== 'undefined' && window.ApiWrapper?.searchContextKey) {
-      searchContextKey = window.ApiWrapper.searchContextKey?.member?.phone?.report;
-    }
-  } catch (e) {
-    // Library not yet initialised; proceed without it
-  }
-
+  // API docs: reversePhone only requires type + phone.
+  // Do not pass a searchContextKey — there is no verified phone.report context key.
   const params = { type: 'reversePhone', phone };
-  if (searchContextKey) {
-    params.searchContextKey = searchContextKey;
-  }
 
   try {
     const response = await api.createReport(params);

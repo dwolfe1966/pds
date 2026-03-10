@@ -205,11 +205,14 @@ export function adaptReportDetailResponse(response) {
     response?.commerceContentId ||
     null;
 
-  // Extract raws array — ByteCrtrs stores raws inside commerceContent (same pattern as teaser search)
-  // Fall back to top-level raws for alternate response shapes
+  // Per API docs, report/create response has raws at the top level:
+  //   raws[0].transient.identities
+  //   raws[1].transient.fullContact
+  //   raws[2].transient.familyWatchdog
+  // Fall back to commerceContent.raws in case the library wraps it differently.
   const raws =
-    rawData?.commerceContent?.raws ??
     rawData?.raws ??
+    rawData?.commerceContent?.raws ??
     response?.raws ??
     [];
 

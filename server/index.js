@@ -545,24 +545,21 @@ app.all('/api/proxy/*', async (req, res) => {
         }
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Proxy] Report create request body:', JSON.stringify(requestBody, null, 2));
-        console.log('[Proxy] Report create headers:', JSON.stringify({
-          hasCaptchaId: Object.keys(headers).some(key => key.toLowerCase() === 'x-captcha-id'),
-          hasCaptchaToken: Object.keys(headers).some(key => key.toLowerCase() === 'x-captcha-token'),
-          hasSearchContextKey: !!requestBody.searchContextKey,
-          hasCommerceContentId: !!requestBody.commerceContentId
-        }));
-        console.log('[Proxy] Report create values:', {
-          captchaId: requestBody.captchaId || getHeaderCaseInsensitive('x-captcha-id') || 'NOT FOUND',
-          captchaToken: requestBody.captchaToken ? 'FOUND' : (getHeaderCaseInsensitive('x-captcha-token') ? 'FOUND (header)' : 'NOT FOUND'),
-          searchContextKey: requestBody.searchContextKey || 'NOT FOUND',
-          commerceContentId: requestBody.commerceContentId || 'NOT FOUND'
-        });
-        if (!requestBody.captchaToken && !getHeaderCaseInsensitive('x-captcha-token')) {
-          console.warn('[Proxy] Report create missing captchaToken. This often causes 403.');
-        }
+        console.log('[Proxy] ══════ REPORT CREATE REQUEST ══════');
+      console.log('[Proxy] Endpoint: POST /idLookup/report/create');
+      console.log('[Proxy] Request body:', JSON.stringify(requestBody, null, 2));
+      console.log('[Proxy] Auth/captcha fields present:', {
+        captchaId: requestBody.captchaId || getHeaderCaseInsensitive('x-captcha-id') || 'MISSING',
+        captchaToken: requestBody.captchaToken ? 'PRESENT' : (getHeaderCaseInsensitive('x-captcha-token') ? 'PRESENT (header)' : 'MISSING'),
+        searchContextKey: requestBody.searchContextKey || 'MISSING',
+        commerceContentId: requestBody.commerceContentId || 'MISSING',
+        extId: requestBody.extId || 'MISSING',
+        type: requestBody.type || 'MISSING',
+      });
+      if (!requestBody.captchaToken && !getHeaderCaseInsensitive('x-captcha-token')) {
+        console.warn('[Proxy] ⚠ captchaToken missing from report/create request — this often causes 403');
       }
+      console.log('[Proxy] ══════════════════════════════════');
     }
     
     // Forward the request
@@ -793,16 +790,33 @@ app.all('/api/proxy/*', async (req, res) => {
       console.error('  - Missing X-Captcha-Pass header or incorrect value');
       console.error('='.repeat(80));
     } else if (response.status >= 400) {
-      // Log other errors (400, 500, etc.) with full details for debugging
+      const isReportCreate = req.path.includes('/idLookup/report/create');
+      const isReportDetail = req.path.includes('/idLookup/report/detail');
       console.error('='.repeat(80));
-      console.error(`[Proxy] ${response.status} Error from ByteCrtrs API`);
-      console.error('[Proxy] Request URL:', url.toString());
-      console.error('[Proxy] Request method:', req.method);
-      console.error('[Proxy] Request body:', JSON.stringify(req.body, null, 2));
-      console.error('[Proxy] Response status:', response.status);
-      console.error('[Proxy] Response data (full):', JSON.stringify(response.data, null, 2));
-      if (response.status === 500) {
-        console.error('[Proxy] 500 = ByteCrtrs server error. Check: API availability, request format, captcha/session.');
+      console.error(`[Proxy] ✗ HTTP ${response.status} from ByteCrtrs — ${req.method} ${req.path}`);
+
+      if (response.status === 403 && (isReportCreate || isReportDetail)) {
+        console.error('[Proxy] ══════ BYTECRTRS 403 DIAGNOSTIC (share this with ByteCrtrs support) ══════');
+        console.error('[Proxy] Endpoint called:', `${req.method} ${EXTERNAL_API_URL}${proxyPath}`);
+        console.error('[Proxy] clientId:', req.query.clientId || 'NOT IN QUERY');
+        console.error('[Proxy] apiId:', req.query.apiId || 'NOT IN QUERY');
+        console.error('[Proxy] Request body sent to ByteCrtrs:', JSON.stringify(requestBody, null, 2));
+        console.error('[Proxy] ByteCrtrs response status:', response.status);
+        console.error('[Proxy] ByteCrtrs response body:', JSON.stringify(response.data, null, 2));
+        console.error('[Proxy] ByteCrtrs response headers:', JSON.stringify(response.headers, null, 2));
+        console.error('[Proxy] Likely causes:');
+        console.error('  1. API account does not have idLookup.report.create permission enabled');
+        console.error('  2. Missing or invalid captchaToken (see captchaToken field above)');
+        console.error('  3. searchContextKey not configured for this account');
+        console.error('  4. commerceContentId from teaser search not accepted for report creation');
+        console.error('[Proxy] ════════════════════════════════════════════════════════════════════');
+      } else {
+        console.error('[Proxy] Request URL:', url.toString());
+        console.error('[Proxy] Request body:', JSON.stringify(requestBody, null, 2));
+        console.error('[Proxy] Response data (full):', JSON.stringify(response.data, null, 2));
+        if (response.status === 500) {
+          console.error('[Proxy] 500 = ByteCrtrs server error. Check: API availability, request format, captcha/session.');
+        }
       }
       console.error('='.repeat(80));
     }
