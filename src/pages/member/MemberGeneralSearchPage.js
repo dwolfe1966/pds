@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { createReportForPhone } from '../../services/reportService';
+import { setSearchContext } from '../../services/searchContext';
 
 /**
  * General search page for authenticated members.

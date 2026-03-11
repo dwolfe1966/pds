@@ -245,27 +245,24 @@ const api = {
       query.email = email;
     }
     
-    // Use consistent searchContextKey: sale vs member, name/phone/email
-    // The library exposes window.ApiWrapper.searchContextKey as { sale: { name, phone, email }, member: { ... } }
-    if (searchContextKey) {
-      query.searchContextKey = searchContextKey;
-    } else if (typeof window !== 'undefined' && window.ApiWrapper?.searchContextKey) {
-      const ctx = window.ApiWrapper.searchContextKey;
+    // searchContextKey is required by ByteCrtrs — without it the API returns 412 (captcha challenge).
+    // Use hardcoded constants matching the library enum (stable, verified from local IIFE reference).
+    // Caller-provided key takes precedence; otherwise derive from context (sale vs member, type).
+    {
+      const SEARCH_CONTEXT_KEYS = {
+        sale:   { name: 'sale.name.teaser',   phone: 'sale.phone.teaser',   email: 'sale.email.teaser'   },
+        member: { name: 'member.name.teaser', phone: 'member.phone.teaser', email: 'member.email.teaser' },
+      };
       const isMember = !!getToken();
-      const branch = isMember ? ctx.member : ctx.sale;
+      const branch = isMember ? 'member' : 'sale';
       const typeKey = type === 'name' ? 'name' : type === 'phone' ? 'phone' : 'email';
-      const key = branch?.[typeKey]?.teaser;
-      if (key) {
-        query.searchContextKey = key;
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[API] Using searchContextKey:', query.searchContextKey, `(${isMember ? 'member' : 'sale'}, ${type})`);
-        }
-      } else {
-        // Fallback to first available
-        const getAllLeafValues = (obj) => Object.values(obj || {}).flatMap((v) => typeof v === 'object' && v !== null ? getAllLeafValues(v) : v);
-        const keys = getAllLeafValues(ctx);
-        if (keys.length > 0) query.searchContextKey = keys[0];
+      // Allow library enum to override if available (future-proofing)
+      const libCtx = typeof window !== 'undefined' ? window.ApiWrapper?.searchContextKey : null;
+      const resolvedKey = searchContextKey || libCtx?.[branch]?.[typeKey]?.teaser || SEARCH_CONTEXT_KEYS[branch][typeKey];
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[API] Using searchContextKey:', resolvedKey, `(${branch}, ${type})`);
       }
+      query.searchContextKey = resolvedKey;
     }
 
     const response = await routeApiRequest('teaser-search', query);

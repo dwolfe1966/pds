@@ -242,6 +242,14 @@ app.all('/api/proxy/*', async (req, res) => {
     // The API might require this as a header or query parameter
     const captchaPass = process.env.CAPTCHA_PASS || 'bcEdgeApiPass';
 
+    // For password.v0 captcha verify calls in development, auto-substitute the token.
+    // The library shows an "Input Password" modal; the developer can click Confirm
+    // with any input and the proxy substitutes the correct dev password automatically.
+    if (req.path.includes('/captcha/verify') && req.query.type === 'password.v0') {
+      url.searchParams.set('token', captchaPass);
+      console.log('[Proxy] [Dev] Auto-substituting password.v0 captcha token for development');
+    }
+
     // If we have no cookies for teaser search, warm up captcha cookies
     const hasAnyCookiesInitial = cookieHeader || Object.keys(parsedCookies).length > 0 || storedCookies.length > 0;
     if (!hasAnyCookiesInitial && req.path.includes('/idLookup/teaser/search') && req.method === 'POST') {
@@ -327,14 +335,20 @@ app.all('/api/proxy/*', async (req, res) => {
       console.warn('[Proxy] Stored cookies for session:', sessionKey ? (apiCookies.has(sessionKey) ? 'found' : 'not found') : 'no session key');
     }
     
-    // Try adding as a custom header (API might check for this)
-    if (!headers['X-Captcha-Pass'] && !headers['x-captcha-pass']) {
-      headers['X-Captcha-Pass'] = captchaPass;
-    }
-    
-    // Also try adding captcha pass as query parameter (some APIs expect it there)
-    if (captchaPass && !url.searchParams.has('captcha') && !url.searchParams.has('captchaPass')) {
-      url.searchParams.append('captchaPass', captchaPass);
+    // captchaPass is a "bypass for an existing session" signal — it requires commerceContentId
+    // and contextKey to already be in the request body. For teaser/search those IDs don't
+    // exist on a fresh search, so ByteCrtrs returns 400 when captchaPass is present.
+    // Let the library's natural 412 flow handle captcha for teaser search:
+    //   412 → captcha modal → /captcha/verify → retry with x-captcha-id header (no captchaPass).
+    // captchaPass may still be appropriate for other endpoints that legitimately need it.
+    const isTeaserSearch = req.path.includes('/idLookup/teaser/search');
+    if (!isTeaserSearch) {
+      if (!headers['X-Captcha-Pass'] && !headers['x-captcha-pass']) {
+        headers['X-Captcha-Pass'] = captchaPass;
+      }
+      if (captchaPass && !url.searchParams.has('captcha') && !url.searchParams.has('captchaPass')) {
+        url.searchParams.append('captchaPass', captchaPass);
+      }
     }
     
     // Prepare request body
@@ -370,24 +384,6 @@ app.all('/api/proxy/*', async (req, res) => {
         'X-Captcha-Pass': getHeaderCaseInsensitive('x-captcha-pass') || 'NOT FOUND'
       });
       
-      // Helper to generate a placeholder commerceContentId (must be >= 24 characters)
-      const generateCommerceContentId = () => {
-        // Generate a 24+ character ID that looks like a MongoDB ObjectId
-        // Format: 24 hex characters (MongoDB ObjectId format)
-        const chars = '0123456789abcdef';
-        let id = '';
-        for (let i = 0; i < 24; i++) {
-          id += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return id;
-      };
-      
-      // Helper to generate a placeholder searchContextKey (must be >= 1 character)
-      const generateSearchContextKey = () => {
-        // Generate a unique key based on timestamp and random
-        return `search_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-      };
-      
       // Try to get values from stored captcha data first
       if (storedCaptchaData) {
         console.log('[Proxy] Found stored captcha data:', {
@@ -399,6 +395,10 @@ app.all('/api/proxy/*', async (req, res) => {
         if (!requestBody.commerceContentId && storedCaptchaData.commerceContentId) {
           requestBody.commerceContentId = storedCaptchaData.commerceContentId;
           console.log('[Proxy] Added commerceContentId from stored captcha data');
+        }
+        if (!requestBody.contextKey && storedCaptchaData.contextKey) {
+          requestBody.contextKey = storedCaptchaData.contextKey;
+          console.log('[Proxy] Added contextKey from stored captcha data');
         }
         if (!requestBody.searchContextKey && storedCaptchaData.searchContextKey) {
           requestBody.searchContextKey = storedCaptchaData.searchContextKey;
@@ -432,39 +432,36 @@ app.all('/api/proxy/*', async (req, res) => {
         }
       }
       
-      // Only add commerceContentId and searchContextKey if we have real values from captcha verification
-      // The API might reject placeholder values, so we'll only include them if we got them from the captcha response
-      // If the library sends them in the request body, we'll use those; otherwise, only use stored values
-      if (!requestBody.commerceContentId || requestBody.commerceContentId === '' || requestBody.commerceContentId.length < 24) {
-        // Don't generate placeholder - only use if we have a real value from captcha
-        if (storedCaptchaData?.commerceContentId && storedCaptchaData.commerceContentId.length >= 24) {
-          requestBody.commerceContentId = storedCaptchaData.commerceContentId;
-          console.log(`[Proxy] Using commerceContentId from captcha data: ${storedCaptchaData.commerceContentId.substring(0, 20)}...`);
-        } else {
-          // Remove the field entirely if we don't have a valid value
-          delete requestBody.commerceContentId;
-          console.log('[Proxy] No valid commerceContentId available - removing from request (API may not require it)');
-        }
+      // commerceContentId and contextKey: do NOT inject or generate these for teaser search.
+      // ByteCrtrs creates its own commerce session on a successful search — providing a
+      // client-generated ID causes ByteCrtrs to look up a non-existent session and return null.
+      // The captcha retry only needs x-captcha-id in the header (set by the library).
+      // Only keep these fields if the caller explicitly provided valid values.
+      if (!requestBody.commerceContentId || requestBody.commerceContentId === '' ||
+          (typeof requestBody.commerceContentId === 'string' && requestBody.commerceContentId.length < 24)) {
+        delete requestBody.commerceContentId;
       }
-      
-      // Same for searchContextKey - only include if we have a real value
+      if (!requestBody.contextKey || requestBody.contextKey === '') {
+        delete requestBody.contextKey;
+      }
+
+      // searchContextKey: keep as-is if present; fall back to stored value
       if (!requestBody.searchContextKey || requestBody.searchContextKey === '') {
         if (storedCaptchaData?.searchContextKey && storedCaptchaData.searchContextKey.length >= 1) {
           requestBody.searchContextKey = storedCaptchaData.searchContextKey;
           console.log(`[Proxy] Using searchContextKey from captcha data: ${storedCaptchaData.searchContextKey}`);
         } else {
-          // Remove the field entirely if we don't have a valid value
           delete requestBody.searchContextKey;
-          console.log('[Proxy] No valid searchContextKey available - removing from request (API may not require it)');
+          console.log('[Proxy] No valid searchContextKey available - removing from request');
         }
       }
-      
+
       // Remove any other empty/null/undefined fields that might cause validation errors
       const cleanedBody = { ...requestBody };
       Object.keys(cleanedBody).forEach(key => {
         const value = cleanedBody[key];
-        // Don't remove commerceContentId or searchContextKey - we just set them
-        if (key !== 'commerceContentId' && key !== 'searchContextKey') {
+        // Don't remove these fields - we just set them
+        if (key !== 'commerceContentId' && key !== 'searchContextKey' && key !== 'contextKey') {
           if (value === '' || value === null || value === undefined) {
             delete cleanedBody[key];
             console.log(`[Proxy] Removed empty field from request: ${key}`);
@@ -721,17 +718,24 @@ app.all('/api/proxy/*', async (req, res) => {
       }
     }
     
-    // For 412 responses with captcha challenge, store the captchaId for later verification
-    if (response.status === 412 && response.data?.captchaId) {
+    // For 412 responses with captcha challenge, store ALL fields ByteCrtrs returns.
+    // The library's retry will need commerceContentId and contextKey in the request body.
+    if (response.status === 412) {
       const sessionKey = getSessionKey(req);
-      const captchaId = response.data.captchaId;
-      console.log(`[Proxy] Storing captchaId from 412 response: ${captchaId} for session: ${sessionKey}`);
-      
-      // Update or create captcha data entry
+      const challengeBody = response.data || {};
+      const captchaId = challengeBody.captchaId;
+      console.log(`[Proxy] 412 challenge body keys: ${Object.keys(challengeBody).join(', ')}`);
+      console.log(`[Proxy] 412 commerceContentId: ${challengeBody.commerceContentId || 'NOT PRESENT'}`);
+      console.log(`[Proxy] 412 contextKey: ${challengeBody.contextKey || 'NOT PRESENT'}`);
+      if (captchaId) {
+        console.log(`[Proxy] Storing 412 challenge data for session: ${sessionKey}`);
+      }
       const existing = captchaData.get(sessionKey) || {};
       captchaData.set(sessionKey, {
         ...existing,
-        pendingCaptchaId: captchaId, // Store the captchaId that needs to be verified
+        pendingCaptchaId: captchaId || existing.pendingCaptchaId,
+        commerceContentId: challengeBody.commerceContentId || existing.commerceContentId,
+        contextKey: challengeBody.contextKey || existing.contextKey,
         challengeReceivedAt: new Date().toISOString()
       });
     }

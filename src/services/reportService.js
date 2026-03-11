@@ -251,7 +251,7 @@ export async function createReportForPhone(phone) {
       commerceContentId = response.commerceContents[0]._id;
     }
 
-    return {
+    const result = {
       success: true,
       commerceContentId,
       identities: response.identities || [],
