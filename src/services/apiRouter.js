@@ -269,21 +269,15 @@ async function callNewAPI(endpoint, params) {
         query.lName = query.lastName;
         delete query.lastName;
       }
-      // Request more results per page (ByteCrtrs may default to 5)
-      const hasPerPageParam = query.perPage != null || query.per_page != null || query.pageSize != null;
-      if (!hasPerPageParam) {
-        query.perPage = 20;
-      }
+      // ByteCrtrs teaser search supports up to 5 results per page; do not override.
+      // Remove any perPage override to let the API use its default (5).
+      delete query.perPage;
+      delete query.per_page;
+      delete query.pageSize;
       const isPaginationRequest = !!query.commerceContentId && query.page != null;
       if (process.env.NODE_ENV === 'development') {
         console.log('[ByteCrtrs Search] All params sent to searchTeaser:', JSON.stringify(query, null, 2));
         console.log('[ByteCrtrs Search] Pagination request (getMore):', isPaginationRequest);
-        console.log('[ByteCrtrs Search] Results-per-page param:', {
-          perPage: query.perPage,
-          per_page: query.per_page,
-          pageSize: query.pageSize,
-          used: hasPerPageParam ? 'from caller' : 'default (20)'
-        });
       }
       const response = await apiWrapper.searchTeaser(query);
       const adapted = adaptTeaserResponse(response);

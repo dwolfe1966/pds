@@ -335,20 +335,14 @@ app.all('/api/proxy/*', async (req, res) => {
       console.warn('[Proxy] Stored cookies for session:', sessionKey ? (apiCookies.has(sessionKey) ? 'found' : 'not found') : 'no session key');
     }
     
-    // captchaPass is a "bypass for an existing session" signal — it requires commerceContentId
-    // and contextKey to already be in the request body. For teaser/search those IDs don't
-    // exist on a fresh search, so ByteCrtrs returns 400 when captchaPass is present.
-    // Let the library's natural 412 flow handle captcha for teaser search:
-    //   412 → captcha modal → /captcha/verify → retry with x-captcha-id header (no captchaPass).
-    // captchaPass may still be appropriate for other endpoints that legitimately need it.
-    const isTeaserSearch = req.path.includes('/idLookup/teaser/search');
-    if (!isTeaserSearch) {
-      if (!headers['X-Captcha-Pass'] && !headers['x-captcha-pass']) {
-        headers['X-Captcha-Pass'] = captchaPass;
-      }
-      if (captchaPass && !url.searchParams.has('captcha') && !url.searchParams.has('captchaPass')) {
-        url.searchParams.append('captchaPass', captchaPass);
-      }
+    // captchaPass is required on ALL proxy requests including teaser search.
+    // ByteCrtrs needs captchaPass on the retry request (after captcha verify) to return real results.
+    // Without it, the retry gets 201 but commerceContent is null.
+    if (!headers['X-Captcha-Pass'] && !headers['x-captcha-pass']) {
+      headers['X-Captcha-Pass'] = captchaPass;
+    }
+    if (captchaPass && !url.searchParams.has('captcha') && !url.searchParams.has('captchaPass')) {
+      url.searchParams.append('captchaPass', captchaPass);
     }
     
     // Prepare request body
@@ -432,15 +426,20 @@ app.all('/api/proxy/*', async (req, res) => {
         }
       }
       
-      // commerceContentId and contextKey: do NOT inject or generate these for teaser search.
-      // ByteCrtrs creates its own commerce session on a successful search — providing a
-      // client-generated ID causes ByteCrtrs to look up a non-existent session and return null.
-      // The captcha retry only needs x-captcha-id in the header (set by the library).
-      // Only keep these fields if the caller explicitly provided valid values.
-      if (!requestBody.commerceContentId || requestBody.commerceContentId === '' ||
-          (typeof requestBody.commerceContentId === 'string' && requestBody.commerceContentId.length < 24)) {
+      // commerceContentId: ALWAYS remove for non-pagination teaser searches.
+      // ByteCrtrs generates its own commerce session — a client-supplied ID (even valid 24-char)
+      // causes ByteCrtrs to look up a non-existent session and return {"commerceContent": null}.
+      // Only keep for pagination (getMore) requests where it came from a prior search response.
+      if (!isGetMore) {
         delete requestBody.commerceContentId;
+        console.log('[Proxy] Removed commerceContentId from non-pagination teaser search');
       }
+
+      // perPage: ByteCrtrs teaser search only supports 5 results per page.
+      // Remove any override to let the API use its default.
+      delete requestBody.perPage;
+      delete requestBody.per_page;
+      delete requestBody.pageSize;
       if (!requestBody.contextKey || requestBody.contextKey === '') {
         delete requestBody.contextKey;
       }
