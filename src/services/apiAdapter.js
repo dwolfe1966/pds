@@ -57,7 +57,7 @@ export function adaptTeaserResponse(response) {
     total = response.getTotal?.() || 0;
     perPage = response.getPerPage?.() || 20;
     teaserInput = response.getTeaserInput?.() || null;
-    searchContextKey = response.getSearchContextKey?.() || teaserInput?.searchContextKey || null;
+    searchContextKey = response.getSearchContextKey?.() || teaserInput?.contextKey || teaserInput?.searchContextKey || null;
     const commerceContent = response.getCommerceContent?.();
     commerceContentId = commerceContent?._id || commerceContent?.id || null;
     provider = response.getProvider?.() || null;
@@ -131,7 +131,8 @@ export function adaptTeaserResponse(response) {
       cursor: identities.length > 0 ? identities[identities.length - 1].extId : null
     },
     searchContext: {
-      searchContextKey,
+      contextKey: searchContextKey,  // BC API spec uses contextKey
+      searchContextKey,              // kept for backwards compatibility
       teaserInput,
       provider,
       commerceContentId

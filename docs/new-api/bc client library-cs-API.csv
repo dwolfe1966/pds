@@ -1,0 +1,2170 @@
+﻿Desc,path,method,example,param,return,misc
+"Login
+
+csrWrapper.api.auth.login",/api/auth/login,post,"csrWrapper.api.auth.login({ username: 'admin@email.com', password: 'password' });
+
+Calling login without username or password will check if the user's session is already logged in on the server.",,,
+"Logout
+
+csrWrapper.api.auth.logout",/api/auth/logout,post,csrWrapper.api.auth.logout();,,{ success: true },
+"Create User
+
+csrWrapper.api.user.create",/api/user/management/create,post,"csrWrapper.api.user.create({ 
+  email: 'user@email.com',
+  password: 'passWORD123!@#', 
+  firstName: 'tim', 
+  lastName: 'chin', 
+  roles: [], 
+  shConId: '', 
+  shColId: ''
+});
+
+params
+- roles: ['admin'] or ['csr'] or []
+- shConId: (optional) 
+- shColId: (optional) ",,,
+"Update User
+
+csrWrapper.api.user.update",/api/user/management/update,post,"csrWrapper.api.user.update({ 
+  userId: '69aa174aba9d8bf27771b282',
+  firstName: 'kim',
+});
+
+You can pass email, password, firstName, lastName, roles, shConId, and shColId that can be entered when creating a user. (optional)",,,
+"Get User Detail
+
+csrWrapper.api.user.getUserDetail",/api/user/management/detail,post,csrWrapper.api.user.getUserDetail({ userId: '69aa174aba9d8bf27771b282' });,,,
+"Find Users
+
+csrWrapper.api.user.find",/api/database/search,post,"csrWrapper.api.user.find({ 
+  brandId: 'idlookup',
+});
+
+The response value returns N Users. To obtain more than N response values, pass the _id of the User received in the response to lastId. The first page does not pass lastId.
+
+params
+- brandId: (optional)
+- email: (optional)
+- lastId: (optional)",,,
+"Find Admin Users
+
+csrWrapper.api.user.findAdmin",/api/database/search,post,"csrWrapper.api.user.findAdmin({ 
+  brandId: 'idlookup',
+});
+
+The response value returns N Users. To obtain more than N response values, pass the _id of the User received in the response to lastId. The first page does not pass lastId.
+
+params
+- brandId: (optional)
+- email: (optional)
+- lastId: (optional)",,,
+Create Admin User Note,/api/message/admin/user/note/create,post,"csrWrapper.api.user.createAdminNote({ 
+  userId: '69aa174aba9d8bf27771b282', 
+  message: 'Create a Memo in User that only administrators can see.'
+});",,,
+"Find Admin User Notes
+
+csrWrapper.api.user.findAdminNotes",/api/database/search,post,"csrWrapper.api.user.findAdminNotes({ userId: '69aa174aba9d8bf27771b282' });
+
+The response value returns N Users. To obtain more than N response values, pass the _id of the User received in the response to lastId. The first page does not pass lastId.
+
+params
+- userId: 
+- lastId: (optional)",,,
+"Update Admin User Note
+
+csrWrapper.api.user.updateAdminNote",/api/message/admin/user/note/update,post,"csrWrapper.api.user.updateAdminNote({ 
+  messageId: '69af35499c5bb16194bfd741', 
+  message: 'Edit the message content.'
+});",,,
+"Find User Orders
+
+csrWrapper.api.user.findOrders",/api/commerceMgnt/userOrders,post,"csrWrapper.api.user.findOrders({ 
+  userId: '69aa174aba9d8bf27771b282', 
+});
+
+param
+- lastOrderId: (optional) Pass lastOrderId to get the next N orders.
+
+response
+- schedule: This is the next payment schedule for this order. You can change the next schedule time with [Update Schedule DueTimestamp].",,"{
+    ""orders"": [
+        {
+            ""_id"": ""69aa174aba9d8bf27771b299"",
+            ""index"": [],
+            ""status"": ""inactive"",
+            ""referenceIds"": [],
+            ""permissionIds"": [],
+            ""shConId"": ""69431fc43a915bc1be68b520"",
+            ""shColId"": ""694e14fca3088d7e6b682a12"",
+            ""shTimestamp"": 1772654358275,
+            ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+            ""payerId"": ""69aa174aba9d8bf27771b282"",
+            ""commerceTokens"": [
+                ""69aa174aba9d8bf27771b292""
+            ],
+            ""commerceOffers"": [
+                ""6913e0e0a4b8675e90771be7""
+            ],
+            ""commerceOfferRevisions"": [
+                {
+                    ""_id"": ""69a105f42f81321b1bd998ff"",
+                    ""trackingIds"": {
+                        ""trackingId"": ""69a105f42f81321b1bd998fa"",
+                        ""sessionId"": ""xhSxJYAsiFgsXLvJT5rAP-wdHaCpHCUK"",
+                        ""clientId"": ""QeE97rWA8TMSZhIKYjdKVsOvfYlouJEs"",
+                        ""apiId"": ""IotngwFRoPIonbtrpsJ355L9e2oNrVKp""
+                    },
+                    ""createdTimestamp"": 1772160500336,
+                    ""referenceId"": ""6913e0e0a4b8675e90771be7"",
+                    ""referenceCollection"": ""commerceoffers"",
+                    ""reference"": {
+                        ""_id"": ""6913e0e0a4b8675e90771be7"",
+                        ""index"": [],
+                        ""status"": ""active"",
+                        ""referenceIds"": [],
+                        ""permissionIds"": [],
+                        ""name"": ""membership.offer.default.1"",
+                        ""description"": ""default offer"",
+                        ""extName"": ""DEFAULT OFFER 1"",
+                        ""commerceProductDetail"": [
+                            {
+                                ""commerceProduct"": ""6913e0c3a4b8675e90771bd6"",
+                                ""commerceStockDetail"": {
+                                    ""commerceStock"": ""6913e0aea4b8675e90771bcb"",
+                                    ""quantity"": 50,
+                                    ""period"": {
+                                        ""quantity"": 1,
+                                        ""unit"": ""y""
+                                    }
+                                }
+                            },
+                            {
+                                ""commerceProduct"": ""6913e12fa4b8675e90771bf2"",
+                                ""commerceStockDetail"": {
+                                    ""commerceStock"": ""6913e0aea4b8675e90771bcb"",
+                                    ""quantity"": 10,
+                                    ""period"": {
+                                        ""quantity"": 1,
+                                        ""unit"": ""d""
+                                    }
+                                }
+                            }
+                        ],
+                        ""commercePrice"": {
+                            ""prices"": [
+                                {
+                                    ""amount"": 1.99,
+                                    ""code"": """",
+                                    ""sequence"": ""v.s == 0"",
+                                    ""period"": {
+                                        ""quantity"": 7,
+                                        ""unit"": ""d""
+                                    },
+                                    ""options"": {
+                                        ""test"": 123
+                                    }
+                                },
+                                {
+                                    ""amount"": 39.99,
+                                    ""code"": """",
+                                    ""sequence"": ""v.s > 0"",
+                                    ""period"": {
+                                        ""quantity"": 1,
+                                        ""unit"": ""m""
+                                    }
+                                },
+                                {
+                                    ""amount"": 0,
+                                    ""code"": """",
+                                    ""sequence"": ""v.s > 0"",
+                                    ""period"": {
+                                        ""quantity"": 1,
+                                        ""unit"": ""m""
+                                    }
+                                }
+                            ]
+                        },
+                        ""provides"": [],
+                        ""__v"": 45,
+                        ""createdAt"": ""2025-11-12T01:20:32.953Z"",
+                        ""updatedAt"": ""2026-02-27T02:48:20.324Z"",
+                        ""currentRevisionId"": ""69a105f22f81321b1bd998ef"",
+                        ""commercePriceRules"": [
+                            {
+                                ""_DESC_"": ""S0"",
+                                ""priority"": 1,
+                                ""conditions"": [
+                                    {
+                                        ""sequence"": 0
+                                    }
+                                ],
+                                ""candidates"": [
+                                    {
+                                        ""id"": {
+                                            ""amount"": 1.01,
+                                            ""code"": ""usd"",
+                                            ""period"": {
+                                                ""quantity"": 7,
+                                                ""unit"": ""d""
+                                            }
+                                        },
+                                        ""weight"": 1
+                                    }
+                                ]
+                            },
+                            {
+                                ""_DESC_"": ""S1+"",
+                                ""priority"": 2,
+                                ""conditions"": [
+                                    {
+                                        ""sequence"": ""v > 0""
+                                    }
+                                ],
+                                ""candidates"": [
+                                    {
+                                        ""id"": {
+                                            ""amount"": 39.01,
+                                            ""code"": ""usd"",
+                                            ""period"": {
+                                                ""quantity"": 30,
+                                                ""unit"": ""d""
+                                            }
+                                        },
+                                        ""weight"": 1
+                                    }
+                                ]
+                            }
+                        ],
+                        ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+                        ""option"": {
+                            ""nonMemberOnly"": true
+                        },
+                        ""extDesc"": ""11""
+                    },
+                    ""createdAt"": ""2026-02-27T02:48:20.337Z"",
+                    ""updatedAt"": ""2026-02-27T02:48:20.337Z"",
+                    ""__v"": 0
+                }
+            ],
+            ""commerceOfferInfos"": [
+                {
+                    ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
+                    ""commerceOfferRevisionId"": ""69a105f42f81321b1bd998ff"",
+                    ""commerceProductInfos"": [
+                        {
+                            ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
+                            ""commerceProductRevisionId"": ""699fbbb626a1804895701525"",
+                            ""commerceStockInfo"": {
+                                ""commerceStockId"": ""69aa174aba9d8bf27771b297"",
+                                ""commerceStockRevisionId"": null,
+                                ""options"": null
+                            },
+                            ""options"": null
+                        },
+                        {
+                            ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
+                            ""commerceProductRevisionId"": ""699fbbbc26a1804895701530"",
+                            ""commerceStockInfo"": {
+                                ""commerceStockId"": ""69aa174aba9d8bf27771b298"",
+                                ""commerceStockRevisionId"": null,
+                                ""options"": null
+                            },
+                            ""options"": null
+                        }
+                    ],
+                    ""options"": null
+                }
+            ],
+            ""commercePriceRules"": [
+                {
+                    ""_DESC_"": ""S0"",
+                    ""priority"": 1,
+                    ""conditions"": [
+                        {
+                            ""sequence"": 0
+                        }
+                    ],
+                    ""candidates"": [
+                        {
+                            ""id"": {
+                                ""amount"": 1.01,
+                                ""code"": ""usd"",
+                                ""period"": {
+                                    ""quantity"": 7,
+                                    ""unit"": ""d""
+                                }
+                            },
+                            ""weight"": 1
+                        }
+                    ]
+                },
+                {
+                    ""_DESC_"": ""S1+"",
+                    ""priority"": 2,
+                    ""conditions"": [
+                        {
+                            ""sequence"": ""v > 0""
+                        }
+                    ],
+                    ""candidates"": [
+                        {
+                            ""id"": {
+                                ""amount"": 39.01,
+                                ""code"": ""usd"",
+                                ""period"": {
+                                    ""quantity"": 30,
+                                    ""unit"": ""d""
+                                }
+                            },
+                            ""weight"": 1
+                        }
+                    ]
+                }
+            ],
+            ""sequenceOption"": {
+                ""thinMatch"": false,
+                ""thinMatchDataProviderDown"": false,
+                ""thinMatchTooManyResults"": false,
+                ""thinMatchNoResults"": false,
+                ""thinMatchGeographic"": false
+            },
+            ""ipAddress"": ""110.47.168.218"",
+            ""refer"": {
+                ""partnerId"": ""p1"",
+                ""afid"": ""af1"",
+                ""abc"": ""bcd""
+            },
+            ""sessionDuration"": 100404478,
+            ""orderTimestamp"": 1772754762746,
+            ""nonMemberOnly"": true,
+            ""immediateRetry"": false,
+            ""immediateRetryCount"": 0,
+            ""createdAt"": ""2026-03-05T23:52:42.767Z"",
+            ""updatedAt"": ""2026-03-05T23:53:32.630Z"",
+            ""createdTimestamp"": 1772754762767,
+            ""updatedTimestamp"": 1772754762767,
+            ""trackingIds"": {
+                ""trackingId"": ""69aa174aba9d8bf27771b278"",
+                ""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
+                ""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+                ""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+            },
+            ""brandId"": ""idlookup"",
+            ""__v"": 7,
+            ""currentRevisionId"": ""69aa177cba9d8bf27771b3c6"",
+            ""statusReason"": ""correct|refund"",
+            ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+            ""subStatus"": ""expired"",
+            ""orderHistories"": [
+                {
+                    ""_id"": ""69aa177cba9d8bf27771b3c6"",
+                    ""status"": ""inactive"",
+                    ""subStatus"": ""expired"",
+                    ""statusReason"": ""correct|refund"",
+                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+                    ""createdAt"": ""2026-03-05T23:53:32.624Z"",
+                    ""updaterName"": ""BC Admin""
+                },
+                {
+                    ""_id"": ""69aa1772ba9d8bf27771b384"",
+                    ""status"": ""inactive"",
+                    ""subStatus"": ""expired"",
+                    ""statusReason"": ""correct|refund"",
+                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+                    ""createdAt"": ""2026-03-05T23:53:22.556Z"",
+                    ""updaterName"": ""BC Admin""
+                },
+                {
+                    ""_id"": ""69aa1766ba9d8bf27771b33e"",
+                    ""status"": ""inactive"",
+                    ""subStatus"": ""expired"",
+                    ""statusReason"": ""correct|refund"",
+                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+                    ""createdAt"": ""2026-03-05T23:53:10.860Z"",
+                    ""updaterName"": ""BC Admin""
+                },
+                {
+                    ""_id"": ""69aa174bba9d8bf27771b2c6"",
+                    ""status"": ""active"",
+                    ""statusReason"": ""SuccessfulTx"",
+                    ""updaterId"": ""69aa174aba9d8bf27771b282"",
+                    ""createdAt"": ""2026-03-05T23:52:43.152Z"",
+                    ""updaterName"": ""TestFname TestLnameaaa""
+                }
+            ],
+            ""commercePayments"": [
+                {
+                    ""_id"": ""69aa177cba9d8bf27771b3be"",
+                    ""index"": [],
+                    ""type"": ""refund"",
+                    ""status"": ""fulfilled"",
+                    ""parentId"": ""69aa174aba9d8bf27771b2a2"",
+                    ""referenceIds"": [],
+                    ""permissionIds"": [],
+                    ""brandId"": ""idlookup"",
+                    ""shConId"": ""69431fc43a915bc1be68b520"",
+                    ""shColId"": ""694e14fca3088d7e6b682a12"",
+                    ""shTimestamp"": 1772654358275,
+                    ""childrenTypes"": [],
+                    ""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8|1772754811392|W7zqFlgC"",
+                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+                    ""payerId"": ""69aa174aba9d8bf27771b282"",
+                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
+                    ""velocityOptionKeys"": [],
+                    ""paymentTimestamp"": 1772754812471,
+                    ""totalPrice"": {
+                        ""code"": ""usd"",
+                        ""amount"": 0.2
+                    },
+                    ""sequence"": 0,
+                    ""retry"": 0,
+                    ""sequenceOption"": {
+                        ""thinMatch"": false,
+                        ""thinMatchDataProviderDown"": false,
+                        ""thinMatchTooManyResults"": false,
+                        ""thinMatchNoResults"": false,
+                        ""thinMatchGeographic"": false
+                    },
+                    ""commerceBillingRouting"": {
+                        ""typeSticky"": ""commerceToken"",
+                        ""processorId"": ""pdsActive"",
+                        ""processorSticky"": ""soft"",
+                        ""gateway"": ""nmi""
+                    },
+                    ""transactionMeta"": {
+                        ""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8|1772754811392|W7zqFlgC"",
+                        ""saleLikeTxBlocker"": false,
+                        ""nonMemberOnly"": true,
+                        ""immediateRetry"": false,
+                        ""immediateRetryCount"": 0,
+                        ""quadZero"": false,
+                        ""dropCvv"": false,
+                        ""passthru"": false,
+                        ""cascade"": false
+                    },
+                    ""createdAt"": ""2026-03-05T23:53:32.473Z"",
+                    ""updatedAt"": ""2026-03-05T23:53:32.644Z"",
+                    ""createdTimestamp"": 1772754812473,
+                    ""updatedTimestamp"": 1772754812473,
+                    ""trackingIds"": {
+                        ""trackingId"": ""69aa177cba9d8bf27771b3ab"",
+                        ""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
+                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+                        ""apiId"": ""Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8""
+                    },
+                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+                    ""__v"": 3,
+                    ""currentRevisionId"": ""69aa177cba9d8bf27771b3d0"",
+                    ""gatewayTransactionId"": ""69aa177c96fc315cf25a4275"",
+                    ""gatewayTransactionStatus"": ""fulfilled"",
+                    ""rawRequest"": {
+                        ""username"": ""test-bytecrtrs"",
+                        ""type"": ""refund"",
+                        ""amount"": 0.2,
+                        ""transactionid"": ""831398256""
+                    },
+                    ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=585184159&transactionid=357610345&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
+                    ""requestResult"": {
+                        ""httpStatusCode"": 200,
+                        ""authCode"": null,
+                        ""externalId"": ""357610345"",
+                        ""processorId"": ""emulator"",
+                        ""primaryCode"": ""100"",
+                        ""primaryCodeMessage"": ""100:EmulatorResponseText"",
+                        ""codes"": [
+                            ""success""
+                        ],
+                        ""codeMessages"": [
+                            ""EmulatorResponseText""
+                        ],
+                        ""results"": {
+                            ""response"": ""1"",
+                            ""responsetext"": ""EmulatorResponseText"",
+                            ""authcode"": ""585184159"",
+                            ""transactionid"": ""357610345"",
+                            ""avsresponse"": ""Y"",
+                            ""cvvresponse"": ""M"",
+                            ""orderid"": ""undefined"",
+                            ""type"": ""refund"",
+                            ""response_code"": ""100"",
+                            ""emulator"": ""true"",
+                            ""httpStatusCode"": ""200"",
+                            ""processor_id"": ""emulator""
+                        }
+                    },
+                    ""serverTrackingIds"": {
+                        ""trackingId"": ""69aa177ccacbb8c02671abc4"",
+                        ""sessionId"": ""sRUXkUOGcv8gIi1wkq9dbWKdz1Lvk6oj"",
+                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+                        ""apiId"": ""Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8""
+                    },
+                    ""updaterName"": ""BC Admin"",
+                    ""transient"": {
+                        ""amount"": {
+                            ""authorized"": 0,
+                            ""collected"": 0,
+                            ""refunded"": 0.2
+                        }
+                    }
+                },
+                {
+                    ""_id"": ""69aa1772ba9d8bf27771b37c"",
+                    ""index"": [],
+                    ""type"": ""refund"",
+                    ""status"": ""fulfilled"",
+                    ""parentId"": ""69aa174aba9d8bf27771b2a2"",
+                    ""referenceIds"": [],
+                    ""permissionIds"": [],
+                    ""brandId"": ""idlookup"",
+                    ""shConId"": ""69431fc43a915bc1be68b520"",
+                    ""shColId"": ""694e14fca3088d7e6b682a12"",
+                    ""shTimestamp"": 1772654358275,
+                    ""childrenTypes"": [],
+                    ""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX|1772754801360|TlrZiwMG"",
+                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+                    ""payerId"": ""69aa174aba9d8bf27771b282"",
+                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
+                    ""velocityOptionKeys"": [],
+                    ""paymentTimestamp"": 1772754802395,
+                    ""totalPrice"": {
+                        ""code"": ""usd"",
+                        ""amount"": 0.1
+                    },
+                    ""sequence"": 0,
+                    ""retry"": 0,
+                    ""sequenceOption"": {
+                        ""thinMatch"": false,
+                        ""thinMatchDataProviderDown"": false,
+                        ""thinMatchTooManyResults"": false,
+                        ""thinMatchNoResults"": false,
+                        ""thinMatchGeographic"": false
+                    },
+                    ""commerceBillingRouting"": {
+                        ""typeSticky"": ""commerceToken"",
+                        ""processorId"": ""pdsActive"",
+                        ""processorSticky"": ""soft"",
+                        ""gateway"": ""nmi""
+                    },
+                    ""transactionMeta"": {
+                        ""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX|1772754801360|TlrZiwMG"",
+                        ""saleLikeTxBlocker"": false,
+                        ""nonMemberOnly"": true,
+                        ""immediateRetry"": false,
+                        ""immediateRetryCount"": 0,
+                        ""quadZero"": false,
+                        ""dropCvv"": false,
+                        ""passthru"": false,
+                        ""cascade"": false
+                    },
+                    ""createdAt"": ""2026-03-05T23:53:22.397Z"",
+                    ""updatedAt"": ""2026-03-05T23:53:22.571Z"",
+                    ""createdTimestamp"": 1772754802397,
+                    ""updatedTimestamp"": 1772754802397,
+                    ""trackingIds"": {
+                        ""trackingId"": ""69aa1772ba9d8bf27771b369"",
+                        ""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
+                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+                        ""apiId"": ""TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX""
+                    },
+                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+                    ""__v"": 3,
+                    ""currentRevisionId"": ""69aa1772ba9d8bf27771b38e"",
+                    ""gatewayTransactionId"": ""69aa177296fc315cf25a4261"",
+                    ""gatewayTransactionStatus"": ""fulfilled"",
+                    ""rawRequest"": {
+                        ""username"": ""test-bytecrtrs"",
+                        ""type"": ""refund"",
+                        ""amount"": 0.1,
+                        ""transactionid"": ""831398256""
+                    },
+                    ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=829950966&transactionid=125542975&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
+                    ""requestResult"": {
+                        ""httpStatusCode"": 200,
+                        ""authCode"": null,
+                        ""externalId"": ""125542975"",
+                        ""processorId"": ""emulator"",
+                        ""primaryCode"": ""100"",
+                        ""primaryCodeMessage"": ""100:EmulatorResponseText"",
+                        ""codes"": [
+                            ""success""
+                        ],
+                        ""codeMessages"": [
+                            ""EmulatorResponseText""
+                        ],
+                        ""results"": {
+                            ""response"": ""1"",
+                            ""responsetext"": ""EmulatorResponseText"",
+                            ""authcode"": ""829950966"",
+                            ""transactionid"": ""125542975"",
+                            ""avsresponse"": ""Y"",
+                            ""cvvresponse"": ""M"",
+                            ""orderid"": ""undefined"",
+                            ""type"": ""refund"",
+                            ""response_code"": ""100"",
+                            ""emulator"": ""true"",
+                            ""httpStatusCode"": ""200"",
+                            ""processor_id"": ""emulator""
+                        }
+                    },
+                    ""serverTrackingIds"": {
+                        ""trackingId"": ""69aa1772cacbb8c02671abbd"",
+                        ""sessionId"": ""j6s2O05VFMN0wPOMYi6_P9IlAiGbzFsW"",
+                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+                        ""apiId"": ""TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX""
+                    },
+                    ""updaterName"": ""BC Admin"",
+                    ""transient"": {
+                        ""amount"": {
+                            ""authorized"": 0,
+                            ""collected"": 0,
+                            ""refunded"": 0.1
+                        }
+                    }
+                },
+                {
+                    ""_id"": ""69aa1766ba9d8bf27771b336"",
+                    ""index"": [],
+                    ""type"": ""refund"",
+                    ""status"": ""fulfilled"",
+                    ""parentId"": ""69aa174aba9d8bf27771b2a2"",
+                    ""referenceIds"": [],
+                    ""permissionIds"": [],
+                    ""brandId"": ""idlookup"",
+                    ""shConId"": ""69431fc43a915bc1be68b520"",
+                    ""shColId"": ""694e14fca3088d7e6b682a12"",
+                    ""shTimestamp"": 1772654358275,
+                    ""childrenTypes"": [],
+                    ""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Gjdo80atRFlXauMdRQVa5qpfRb3urzmd|1772754789654|PJQHivzF"",
+                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+                    ""payerId"": ""69aa174aba9d8bf27771b282"",
+                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
+                    ""velocityOptionKeys"": [],
+                    ""paymentTimestamp"": 1772754790694,
+                    ""totalPrice"": {
+                        ""code"": ""usd"",
+                        ""amount"": 0.1
+                    },
+                    ""sequence"": 0,
+                    ""retry"": 0,
+                    ""sequenceOption"": {
+                        ""thinMatch"": false,
+                        ""thinMatchDataProviderDown"": false,
+                        ""thinMatchTooManyResults"": false,
+                        ""thinMatchNoResults"": false,
+                        ""thinMatchGeographic"": false
+                    },
+                    ""commerceBillingRouting"": {
+                        ""typeSticky"": ""commerceToken"",
+                        ""processorId"": ""pdsActive"",
+                        ""processorSticky"": ""soft"",
+                        ""gateway"": ""nmi""
+                    },
+                    ""transactionMeta"": {
+                        ""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Gjdo80atRFlXauMdRQVa5qpfRb3urzmd|1772754789654|PJQHivzF"",
+                        ""saleLikeTxBlocker"": false,
+                        ""nonMemberOnly"": true,
+                        ""immediateRetry"": false,
+                        ""immediateRetryCount"": 0,
+                        ""quadZero"": false,
+                        ""dropCvv"": false,
+                        ""passthru"": false,
+                        ""cascade"": false
+                    },
+                    ""createdAt"": ""2026-03-05T23:53:10.697Z"",
+                    ""updatedAt"": ""2026-03-05T23:53:10.880Z"",
+                    ""createdTimestamp"": 1772754790697,
+                    ""updatedTimestamp"": 1772754790697,
+                    ""trackingIds"": {
+                        ""trackingId"": ""69aa1766ba9d8bf27771b323"",
+                        ""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
+                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+                        ""apiId"": ""Gjdo80atRFlXauMdRQVa5qpfRb3urzmd""
+                    },
+                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+                    ""__v"": 3,
+                    ""currentRevisionId"": ""69aa1766ba9d8bf27771b349"",
+                    ""gatewayTransactionId"": ""69aa176696fc315cf25a4252"",
+                    ""gatewayTransactionStatus"": ""fulfilled"",
+                    ""rawRequest"": {
+                        ""username"": ""test-bytecrtrs"",
+                        ""type"": ""refund"",
+                        ""amount"": 0.1,
+                        ""transactionid"": ""831398256""
+                    },
+                    ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=741240092&transactionid=224346794&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
+                    ""requestResult"": {
+                        ""httpStatusCode"": 200,
+                        ""authCode"": null,
+                        ""externalId"": ""224346794"",
+                        ""processorId"": ""emulator"",
+                        ""primaryCode"": ""100"",
+                        ""primaryCodeMessage"": ""100:EmulatorResponseText"",
+                        ""codes"": [
+                            ""success""
+                        ],
+                        ""codeMessages"": [
+                            ""EmulatorResponseText""
+                        ],
+                        ""results"": {
+                            ""response"": ""1"",
+                            ""responsetext"": ""EmulatorResponseText"",
+                            ""authcode"": ""741240092"",
+                            ""transactionid"": ""224346794"",
+                            ""avsresponse"": ""Y"",
+                            ""cvvresponse"": ""M"",
+                            ""orderid"": ""undefined"",
+                            ""type"": ""refund"",
+                            ""response_code"": ""100"",
+                            ""emulator"": ""true"",
+                            ""httpStatusCode"": ""200"",
+                            ""processor_id"": ""emulator""
+                        }
+                    },
+                    ""serverTrackingIds"": {
+                        ""trackingId"": ""69aa1766cacbb8c02671abb6"",
+                        ""sessionId"": ""ZRb1OHchbB2PwLoudmu5Gbz4_0zFgR5r"",
+                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+                        ""apiId"": ""Gjdo80atRFlXauMdRQVa5qpfRb3urzmd""
+                    },
+                    ""updaterName"": ""BC Admin"",
+                    ""transient"": {
+                        ""amount"": {
+                            ""authorized"": 0,
+                            ""collected"": 0,
+                            ""refunded"": 0.1
+                        }
+                    }
+                },
+                {
+                    ""_id"": ""69aa174aba9d8bf27771b2a2"",
+                    ""index"": [],
+                    ""type"": ""sale"",
+                    ""status"": ""fulfilled"",
+                    ""referenceIds"": [],
+                    ""permissionIds"": [],
+                    ""shConId"": ""69431fc43a915bc1be68b520"",
+                    ""shColId"": ""694e14fca3088d7e6b682a12"",
+                    ""shTimestamp"": 1772654358275,
+                    ""childrenTypes"": [
+                        ""refund""
+                    ],
+                    ""billingId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
+                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+                    ""payerId"": ""69aa174aba9d8bf27771b282"",
+                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
+                    ""velocityOptionKeys"": [
+                        ""declineDisputeCcNumber"",
+                        ""declineTooManySignupAttempts"",
+                        ""declineDupSignup""
+                    ],
+                    ""ipAddress"": ""110.47.168.218"",
+                    ""device"": ""desktop"",
+                    ""paymentTimestamp"": 1772754762746,
+                    ""totalPrice"": {
+                        ""code"": ""usd"",
+                        ""amount"": 1.01
+                    },
+                    ""sequence"": 0,
+                    ""retry"": 0,
+                    ""sequenceOption"": {
+                        ""thinMatch"": false,
+                        ""thinMatchDataProviderDown"": false,
+                        ""thinMatchTooManyResults"": false,
+                        ""thinMatchNoResults"": false,
+                        ""thinMatchGeographic"": false
+                    },
+                    ""commerceBillingRouting"": {
+                        ""typeSticky"": ""commerceToken"",
+                        ""processorId"": ""pdsActive"",
+                        ""proce",
+"Get User Order
+
+csrWrapper.api.user.getOrder",/api/commerceMgnt/getUserOrder,post,"csrWrapper.api.user.getOrder({ 
+  userId: '69aa174aba9d8bf27771b282',
+  orderId: '69aa174aba9d8bf27771b299',
+  lastPaymentId: '69ab30d430ad87f2692196a7'
+});
+
+You can retrieve the same order results as [Find User Orders] by specifying one.
+
+params
+- lastPaymentId: (optional) If you need to change the status of a specific order in the entire order list and re-fetch only that order to update its status, you can pass the last _id of the commercePayments fetched by the current order to lastPaymentId to retrieve the commercePayments up to that id.",,,
+"Find Order Payments
+
+csrWrapper.api.user.findOrderPayments",/api/commerceMgnt/orderPayments,post,"csrWrapper.api.user.findOrderPayments({ 
+  orderId: '69aa174aba9d8bf27771b299', 
+  lastPaymentId: '69aa174aba9d8bf27771b2a2'
+});
+
+The response from [Find User Orders] contains an array with a commercePayments field for each order. Only the first N items are returned. To retrieve additional commercePayments , pass the orderId and lastPaymentId .
+
+",,"{
+    ""payments"": [
+        {
+            ""_id"": ""69aa174aba9d8bf27771b2a2"",
+            ""index"": [],
+            ""type"": ""sale"",
+            ""status"": ""fulfilled"",
+            ""referenceIds"": [],
+            ""permissionIds"": [],
+            ""shConId"": ""69431fc43a915bc1be68b520"",
+            ""shColId"": ""694e14fca3088d7e6b682a12"",
+            ""shTimestamp"": 1772654358275,
+            ""childrenTypes"": [
+                ""refund""
+            ],
+            ""billingId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
+            ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+            ""payerId"": ""69aa174aba9d8bf27771b282"",
+            ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+            ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+            ""commerceToken"": ""69aa174aba9d8bf27771b292"",
+            ""velocityOptionKeys"": [
+                ""declineDisputeCcNumber"",
+                ""declineTooManySignupAttempts"",
+                ""declineDupSignup""
+            ],
+            ""ipAddress"": ""110.47.168.218"",
+            ""device"": ""desktop"",
+            ""paymentTimestamp"": 1772754762746,
+            ""totalPrice"": {
+                ""code"": ""usd"",
+                ""amount"": 1.01
+            },
+            ""sequence"": 0,
+            ""retry"": 0,
+            ""sequenceOption"": {
+                ""thinMatch"": false,
+                ""thinMatchDataProviderDown"": false,
+                ""thinMatchTooManyResults"": false,
+                ""thinMatchNoResults"": false,
+                ""thinMatchGeographic"": false
+            },
+            ""commerceBillingRouting"": {
+                ""typeSticky"": ""commerceToken"",
+                ""processorId"": ""pdsActive"",
+                ""processorSticky"": ""soft"",
+                ""gateway"": ""nmi""
+            },
+            ""storedCredentialOption"": {
+                ""resetStoredCredential"": true,
+                ""initiatedBy"": ""customer"",
+                ""storedCredentialIndicator"": ""stored""
+            },
+            ""transactionMeta"": {
+                ""billingSeriesId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
+                ""saleLikeTxBlocker"": false,
+                ""nonMemberOnly"": true,
+                ""immediateRetry"": false,
+                ""immediateRetryCount"": 0,
+                ""quadZero"": false,
+                ""dropCvv"": false,
+                ""passthru"": false,
+                ""cascade"": false
+            },
+            ""createdAt"": ""2026-03-05T23:52:42.802Z"",
+            ""updatedAt"": ""2026-03-05T23:53:10.883Z"",
+            ""createdTimestamp"": 1772754762802,
+            ""updatedTimestamp"": 1772754762802,
+            ""trackingIds"": {
+                ""trackingId"": ""69aa174aba9d8bf27771b278"",
+                ""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
+                ""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+                ""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+            },
+            ""brandId"": ""idlookup"",
+            ""__v"": 5,
+            ""currentRevisionId"": ""69aa1766ba9d8bf27771b34b"",
+            ""gatewayTransactionId"": ""69aa174a96fc315cf25a4241"",
+            ""gatewayTransactionStatus"": ""fulfilled"",
+            ""passable"": true,
+            ""rawRequest"": {
+                ""username"": ""test-bytecrtrs"",
+                ""type"": ""sale"",
+                ""amount"": 1.01,
+                ""ccnumber"": ""411111******1111"",
+                ""ccexp"": ""1230"",
+                ""cvv"": ""***"",
+                ""firstname"": ""TestFname"",
+                ""lastname"": ""TestLname"",
+                ""zip"": ""10001"",
+                ""ipAddress"": ""110.47.168.218"",
+                ""orderid"": ""69aa174aba9d8bf27771b2a2"",
+                ""orderdescription"": ""|default offer|"",
+                ""initiated_by"": ""customer"",
+                ""stored_credential_indicator"": ""stored"",
+                ""processor_id"": ""pdsActive"",
+                ""email"": ""aaa1111@bc.dev.none"",
+                ""merchant_defined_field_1"": ""69431fc43a915bc1be68b520"",
+                ""merchant_defined_field_2"": ""0"",
+                ""merchant_defined_field_3"": ""idlookup"",
+                ""merchant_defined_field_4"": ""20260305"",
+                ""merchant_defined_field_5"": ""p1"",
+                ""merchant_defined_field_6"": ""0"",
+                ""merchant_defined_field_7"": ""6913e0c3a4b8675e90771bd6.6913e12fa4b8675e90771bf2"",
+                ""merchant_defined_field_8"": ""y"",
+                ""merchant_defined_field_9"": ""69aa174aba9d8bf27771b282|69aa174aba9d8bf27771b2a2|69aa174aba9d8bf27771b299|6913e0e0a4b8675e90771be7"",
+                ""merchant_defined_field_10"": ""desktop|i|1.01|39.01"",
+                ""merchant_defined_field_11"": ""694e14fca3088d7e6b682a12|af1|"",
+                ""merchant_defined_field_14"": ""@||payer_TestFname_TestLname"",
+                ""merchant_defined_field_15"": ""100404478|""
+            },
+            ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=975506587&transactionid=831398256&avsresponse=Y&cvvresponse=M&orderid=69aa174aba9d8bf27771b2a2&type=sale&response_code=100&emulator=true&httpStatusCode=200&processor_id=pdsActive"",
+            ""requestResult"": {
+                ""httpStatusCode"": 200,
+                ""authCode"": null,
+                ""externalId"": ""831398256"",
+                ""processorId"": ""pdsActive"",
+                ""primaryCode"": ""100"",
+                ""primaryCodeMessage"": ""100:EmulatorResponseText"",
+                ""codes"": [
+                    ""success""
+                ],
+                ""codeMessages"": [
+                    ""EmulatorResponseText""
+                ],
+                ""results"": {
+                    ""response"": ""1"",
+                    ""responsetext"": ""EmulatorResponseText"",
+                    ""authcode"": ""975506587"",
+                    ""transactionid"": ""831398256"",
+                    ""avsresponse"": ""Y"",
+                    ""cvvresponse"": ""M"",
+                    ""orderid"": ""69aa174aba9d8bf27771b2a2"",
+                    ""type"": ""sale"",
+                    ""response_code"": ""100"",
+                    ""emulator"": ""true"",
+                    ""httpStatusCode"": ""200"",
+                    ""processor_id"": ""pdsActive""
+                }
+            },
+            ""serverTrackingIds"": {
+                ""trackingId"": ""69aa174acacbb8c02671abaf"",
+                ""sessionId"": ""ZFsghTHq32zH7AGTqlHCZ58U5PClRxHF"",
+                ""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+                ""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+            },
+            ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+            ""updaterName"": ""BC Admin"",
+            ""transient"": {
+                ""amount"": {
+                    ""authorized"": 0,
+                    ""collected"": 1.01,
+                    ""refunded"": 0
+                }
+            }
+        }
+    ],
+    ""perPage"": 5
+}",
+"Find Order Histories
+
+csrWrapper.api.user.findOrderHistories",/api/commerceMgnt/orderHistories,post,"csrWrapper.api.user.findOrderHistories({ 
+  orderId: '69aa174aba9d8bf27771b299',
+  lastRevisionId: '69aa1766ba9d8bf27771b33e',
+});
+
+The response from [Find User Orders] contains an orderHistories array field for each order. Initially, only N items are returned from this array. To receive the next N items, you must pass orderId and lastRevisionId . lastRevisionId is the _id of each orderHistories .",,"{
+    ""orderHistories"": [
+        {
+            ""_id"": ""69aa174bba9d8bf27771b2c6"",
+            ""status"": ""active"",
+            ""statusReason"": ""SuccessfulTx"",
+            ""updaterId"": ""69aa174aba9d8bf27771b282"",
+            ""createdAt"": ""2026-03-05T23:52:43.152Z"",
+            ""updaterName"": ""TestFname TestLnameaaa""
+        }
+    ],
+    ""perPage"": 5
+}",
+"Cancel or Uncancel Order
+
+csrWrapper.api.user.cancelUncancelOrder",/api/commerceMgnt/cancelUncancelOrder,post,"csrWrapper.api.user.cancelUncancelOrder({ 
+  orderId: '69aa174aba9d8bf27771b299',
+  flag: true,
+});
+
+params
+- flag: true (cancels the order), false (reactivates the canceled order)",,"{
+    ""success"": true,
+    ""commerceOrder"": {
+        ""_id"": ""69ab30d430ad87f26921969e"",
+        ""index"": [],
+        ""status"": ""active"",
+        ""referenceIds"": [],
+        ""permissionIds"": [],
+        ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+        ""shColId"": ""69aa41b648af3b202e7fb065"",
+        ""shTimestamp"": 1772765880560,
+        ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+        ""payerId"": ""69ab30d430ad87f269219687"",
+        ""commerceTokens"": [
+            ""69ab30d430ad87f269219697""
+        ],
+        ""commerceOffers"": [
+            ""6913e0e0a4b8675e90771be7""
+        ],
+        ""commerceOfferRevisions"": [
+            ""69a105f42f81321b1bd998ff""
+        ],
+        ""commerceOfferInfos"": [
+            {
+                ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
+                ""commerceOfferRevisionId"": ""69a105f42f81321b1bd998ff"",
+                ""commerceProductInfos"": [
+                    {
+                        ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
+                        ""commerceProductRevisionId"": ""699fbbb626a1804895701525"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69ab30d430ad87f26921969c"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    },
+                    {
+                        ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
+                        ""commerceProductRevisionId"": ""699fbbbc26a1804895701530"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69ab30d430ad87f26921969d"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    }
+                ],
+                ""options"": null
+            }
+        ],
+        ""commercePriceRules"": [
+            {
+                ""_DESC_"": ""S0"",
+                ""priority"": 1,
+                ""conditions"": [
+                    {
+                        ""sequence"": 0
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 1.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 7,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            },
+            {
+                ""_DESC_"": ""S1+"",
+                ""priority"": 2,
+                ""conditions"": [
+                    {
+                        ""sequence"": ""v > 0""
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 39.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 30,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            }
+        ],
+        ""sequenceOption"": {
+            ""thinMatch"": false,
+            ""thinMatchDataProviderDown"": false,
+            ""thinMatchTooManyResults"": false,
+            ""thinMatchNoResults"": false,
+            ""thinMatchGeographic"": false
+        },
+        ""ipAddress"": ""110.47.168.218"",
+        ""refer"": {
+            ""partnerId"": ""p1"",
+            ""afid"": ""af1"",
+            ""abc"": ""bcd""
+        },
+        ""sessionDuration"": 58956667,
+        ""orderTimestamp"": 1772826836716,
+        ""nonMemberOnly"": true,
+        ""immediateRetry"": false,
+        ""immediateRetryCount"": 0,
+        ""createdAt"": ""2026-03-06T19:53:56.737Z"",
+        ""updatedAt"": ""2026-03-10T00:51:43.972Z"",
+        ""createdTimestamp"": 1772826836737,
+        ""updatedTimestamp"": 1772826836737,
+        ""trackingIds"": {
+            ""trackingId"": ""69ab30d430ad87f26921967d"",
+            ""sessionId"": ""y_oORvCd6DXqr4yh2CQmXOKr8OfTWUaQ"",
+            ""clientId"": ""ucxaWwFknZgvchp85vsKffH7GRmoGgeh"",
+            ""apiId"": ""t1c2aM4g3gyq6QWX8r01CtKyQsTPTmbp""
+        },
+        ""brandId"": ""idlookup"",
+        ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+        ""__v"": 7,
+        ""currentRevisionId"": ""69af6b1f9c5bb16194bfe00b"",
+        ""dueTimestamp"": 1775370656716,
+        ""statusReason"": ""SuccessfulTx"",
+        ""id"": ""69ab30d430ad87f26921969e""
+    }
+}",
+"Refund or Void Order
+
+csrWrapper.api.user.refundVoidOrder",/api/commerceBilling/correct,post,"csrWrapper.api.user.refundVoidOrder({
+  commercePaymentType: 'refund',
+  targetCommerceOrderId: '69ab30d430ad87f26921969e',
+  targetCommerceOrderRevisionId: '69af6b1f9c5bb16194bfe00b',
+  targetCommercePaymentId: '69ab30d430ad87f2692196a7',
+  targetCommercePaymentRevisionId: '69ab30d530ad87f2692196c2',
+  amount: 0.1,
+});
+
+params
+- commercePaymentType: refund (refund a portion of the amount), void (void the entire amount)
+- targetCommerceOrderId
+- targetCommerceOrderRevisionId: commerceOrder's currentRevisionId
+- targetCommercePaymentId
+- targetCommercePaymentRevisionId: commercePayment's currentRevisionId
+- amount: Amount to be refunded or voided",,"{
+    ""status"": ""fulfilled"",
+    ""payerId"": ""69ab30d430ad87f269219687"",
+    ""commerceOrderId"": ""69ab30d430ad87f26921969e""
+}",
+"Update Schedule DueTimestamp
+
+csrWrapper.api.user.updateScheduleDueTimestamp",/api/commerceMgnt/updateScheduleDueTimestamp,post,"csrWrapper.api.user.updateScheduleDueTimestamp({ 
+  scheduleId: '69ab30d530ad87f2692196b3',
+  dueTimestamp: 1775371111111,
+});
+
+params
+- scheduleId: order.schedule._id
+- dueTimestamp: (number)",,"{
+    ""success"": true
+}",
+"Find OptOuts
+
+csrWrapper.api.optOut.find",/api/database/search,post,"csrWrapper.api.optOut.find({ 
+  status: 'requested',
+});
+
+params
+- status: (optional) requested, active
+- brandId: (optional)
+- email: (optional)
+- provider: (optional)
+- targetId: (optional)
+- lastId: (optional) You can get the next optOut by passing the _id of the last optOut.",,,
+"Find Contacts
+
+csrWrapper.api.contact.find",/api/database/search,post,"csrWrapper.api.contact.find({ 
+  status: 'requested',
+});
+
+params
+- status: (optional) requested, fulfilled
+- brandId: (optional)
+- email: (optional)
+- lastId: (optional) You can get the next optOut by passing the _id of the last contact.",,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,
+,,,,,,

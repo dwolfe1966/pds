@@ -56,9 +56,10 @@ export async function createReport(extId, options = {}) {
   };
 
   if (context) {
-    const contextKey = context.searchContextKey || context.teaserInput?.searchContextKey;
+    // Per BC API spec, the param is contextKey (e.g. "sale.name.teaser")
+    const contextKey = context.contextKey || context.searchContextKey || context.teaserInput?.contextKey || context.teaserInput?.searchContextKey;
     if (contextKey) {
-      params.searchContextKey = contextKey; // pass as-is, e.g. "member.name.teaser"
+      params.contextKey = contextKey;
     }
     if (context.teaserInput) {
       params.teaserInput = context.teaserInput;

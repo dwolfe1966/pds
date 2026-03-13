@@ -245,24 +245,21 @@ const api = {
       query.email = email;
     }
     
-    // searchContextKey is required by ByteCrtrs — without it the API returns 412 (captcha challenge).
-    // Use hardcoded constants matching the library enum (stable, verified from local IIFE reference).
-    // Caller-provided key takes precedence; otherwise derive from context (sale vs member, type).
+    // contextKey is required by ByteCrtrs API spec. Per spec, only sale.* keys exist.
+    // window.ApiWrapper.contextKey is the library enum; fall back to hardcoded sale.* values.
     {
-      const SEARCH_CONTEXT_KEYS = {
-        sale:   { name: 'sale.name.teaser',   phone: 'sale.phone.teaser',   email: 'sale.email.teaser'   },
-        member: { name: 'member.name.teaser', phone: 'member.phone.teaser', email: 'member.email.teaser' },
+      const CONTEXT_KEYS = {
+        name:  'sale.name.teaser',
+        phone: 'sale.phone.teaser',
+        email: 'sale.email.teaser',
       };
-      const isMember = !!getToken();
-      const branch = isMember ? 'member' : 'sale';
       const typeKey = type === 'name' ? 'name' : type === 'phone' ? 'phone' : 'email';
-      // Allow library enum to override if available (future-proofing)
-      const libCtx = typeof window !== 'undefined' ? window.ApiWrapper?.searchContextKey : null;
-      const resolvedKey = searchContextKey || libCtx?.[branch]?.[typeKey]?.teaser || SEARCH_CONTEXT_KEYS[branch][typeKey];
+      const libCtx = typeof window !== 'undefined' ? window.ApiWrapper?.contextKey : null;
+      const resolvedKey = searchContextKey || libCtx?.sale?.[typeKey]?.teaser || CONTEXT_KEYS[typeKey];
       if (process.env.NODE_ENV === 'development') {
-        console.log('[API] Using searchContextKey:', resolvedKey, `(${branch}, ${type})`);
+        console.log('[API] Using contextKey:', resolvedKey, `(type=${type})`);
       }
-      query.searchContextKey = resolvedKey;
+      query.contextKey = resolvedKey;
     }
 
     const response = await routeApiRequest('teaser-search', query);
