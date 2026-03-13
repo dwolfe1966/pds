@@ -24,6 +24,7 @@ const FEATURE_FLAGS = {
   'opt-out-confirmation': process.env.REACT_APP_USE_NEW_API_OPTOUT === 'true',
   'opt-out-search': true, // Always use new API when available
   'commerce-billing-sale': true, // Always use new API when available
+  'commerce-billing-signup': true, // Always use new API when available
   'login': process.env.REACT_APP_USE_NEW_API_AUTH === 'true',
   'logout': process.env.REACT_APP_USE_NEW_API_AUTH === 'true',
 };
@@ -139,7 +140,7 @@ export async function routeApiRequest(endpoint, params = {}) {
   const FORCE_NEW_API_ENDPOINTS = new Set([
     'teaser-search',
     'create-report', 'get-report', 'report-list',
-    'opt-out-search', 'commerce-billing-sale'
+    'opt-out-search', 'commerce-billing-sale', 'commerce-billing-signup'
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
@@ -360,7 +361,10 @@ async function callNewAPI(endpoint, params) {
     
     case 'commerce-billing-sale':
       return await apiWrapper.sale(params.body || params);
-    
+
+    case 'commerce-billing-signup':
+      return await apiWrapper.billingSignup(params.body || params);
+
     default:
       throw new Error(`Endpoint ${endpoint} not implemented in new API router`);
   }

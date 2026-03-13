@@ -367,7 +367,16 @@ const api = {
   },
 
   /**
+   * Register user in ByteCrtrs (pre-payment, no charge)
+   * Must be called before billingSale so ByteCrtrs knows the user.
+   */
+  billingSignup: async (params) => {
+    return await routeApiRequest('commerce-billing-signup', { body: params });
+  },
+
+  /**
    * Process payment via ByteCrtrs commerceBilling/sale
+   * Establishes an authenticated ByteCrtrs session in the browser (required for report endpoints).
    */
   billingSale: async (params) => {
     return await routeApiRequest('commerce-billing-sale', { body: params });

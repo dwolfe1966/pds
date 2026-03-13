@@ -46,18 +46,22 @@ export async function createReport(extId, options = {}) {
   // Get search context if not provided
   const context = searchContext || getSearchContext();
   
-  // API docs specify only type + extId (or phone) as required params.
-  // searchContextKey and teaserInput are optional context — pass them as-is from the
-  // teaser response (no transformation). Do NOT transform .teaser → .report; that key
-  // does not exist in ByteCrtrs and causes a 403.
+  // BC API spec: createReport requires contextKey ending in .report (not .teaser).
+  // Map teaser context keys to their report equivalents before sending.
+  const TEASER_TO_REPORT = {
+    'sale.name.teaser':  'sale.name.report',
+    'sale.phone.teaser': 'sale.phone.report',
+    'sale.email.teaser': 'sale.email.report',
+  };
+
   const params = {
     type,
     ...(type === 'extId' ? { extId } : { phone })
   };
 
   if (context) {
-    // Per BC API spec, the param is contextKey (e.g. "sale.name.teaser")
-    const contextKey = context.contextKey || context.searchContextKey || context.teaserInput?.contextKey || context.teaserInput?.searchContextKey;
+    const rawKey = context.contextKey || context.searchContextKey || context.teaserInput?.contextKey || context.teaserInput?.searchContextKey;
+    const contextKey = TEASER_TO_REPORT[rawKey] || rawKey;
     if (contextKey) {
       params.contextKey = contextKey;
     }

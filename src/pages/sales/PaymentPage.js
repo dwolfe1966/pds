@@ -138,31 +138,41 @@ const PaymentPage = () => {
       let paymentSuccess = false;
       try {
         const saleResult = await api.billingSale(saleParams);
-        const ok = saleResult?.params?.response?.data?.success ?? saleResult?.data?.success ?? saleResult?.success;
-        if (ok) {
+        // ByteCrtrs sale is considered successful when the library doesn't throw.
+        // The response shape varies; treat any non-error response as success.
+        const rawData = saleResult?.params?.response?.data ?? saleResult?.data ?? saleResult ?? {};
+        const explicitFail = rawData?.success === false;
+        if (!explicitFail) {
           paymentSuccess = true;
-          // Handle auth tokens if API returns them (user creation)
-          const data = saleResult?.params?.response?.data ?? saleResult?.data ?? {};
-          if (data.accessToken) {
-            setToken?.(data.accessToken);
-            setUser?.(data.user || user);
-            localStorage.setItem('accessToken', data.accessToken);
-            if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+          // Handle auth tokens if BC returns them
+          if (rawData.accessToken) {
+            setToken?.(rawData.accessToken);
+            setUser?.(rawData.user || user);
+            localStorage.setItem('accessToken', rawData.accessToken);
+            if (rawData.refreshToken) localStorage.setItem('refreshToken', rawData.refreshToken);
           }
         }
       } catch (saleErr) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[Payment] billingSale failed, falling back to mock:', saleErr?.message);
+          console.warn('[Payment] billingSale failed:', saleErr?.message, saleErr);
         }
+        // Re-throw so the user sees the real error (wrong card, etc.)
+        // Only fall through to mock in development when explicitly simulating
+        if (!simulateParam) throw saleErr;
       }
 
-      if (!paymentSuccess) {
-        // Fallback to mock subscription API
+      if (!paymentSuccess && simulateParam) {
+        // Development-only mock fallback — only reached when ?simulate= is in the URL
         await api.updateSubscription({
           plan: 'basic',
           paymentToken: 'tok_demo',
-          ...(simulateParam && { simulate: simulateParam }),
+          simulate: simulateParam,
         }, token);
+        paymentSuccess = true;
+      }
+
+      if (!paymentSuccess) {
+        throw new Error('Payment was not successful. Please check your card details and try again.');
       }
       setSuccess(true);
       

@@ -465,6 +465,25 @@ class ApiWrapperService {
   }
 
   /**
+   * Register a user in ByteCrtrs without payment (pre-payment signup step)
+   * POST /commerceBilling/signup
+   */
+  async billingSignup(params) {
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.billing?.signup === 'function') {
+        return await wrapper.api.billing.signup(params);
+      }
+      throw new Error('Billing signup not available in ApiWrapper');
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Billing signup failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
    * Process payment/sale via ByteCrtrs billing
    * POST /commerceBilling/sale
    */
