@@ -367,6 +367,15 @@ const api = {
   },
 
   /**
+   * Download report as PDF via ByteCrtrs.
+   * Triggers a BC-managed popup — the user clicks Confirm to start the download.
+   * Only valid for detail report commerceContentIds (not teaser commerceContentIds).
+   */
+  downloadPdfReport: async (commerceContentId) => {
+    return await routeApiRequest('download-pdf-report', { commerceContentId });
+  },
+
+  /**
    * Register user in ByteCrtrs (pre-payment, no charge)
    * Must be called before billingSale so ByteCrtrs knows the user.
    */

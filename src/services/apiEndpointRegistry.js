@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
   'opt-out-search': { newApi: true, mockApi: false },
   'commerce-billing-sale': { newApi: true, mockApi: false },
   'commerce-billing-signup': { newApi: true, mockApi: false },
+  'download-pdf-report': { newApi: true, mockApi: false },
   'login': { newApi: true, mockApi: true },
   'logout': { newApi: true, mockApi: true },
   

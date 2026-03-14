@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { createReportForPhone } from '../../services/reportService';
+import DevBCSession from '../../components/DevBCSession';
 import { setSearchContext } from '../../services/searchContext';
 
 /**
@@ -12,7 +13,7 @@ import { setSearchContext } from '../../services/searchContext';
  */
 const MemberGeneralSearchPage = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [activeTab, setActiveTab] = useState('name'); // 'name', 'phone', or 'email'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -197,12 +198,13 @@ const MemberGeneralSearchPage = () => {
   };
 
   return (
-    <main style={{ 
-      padding: '2rem', 
-      maxWidth: '1200px', 
+    <main style={{
+      padding: '2rem',
+      maxWidth: '1200px',
       margin: '0 auto',
       minHeight: '60vh'
     }}>
+      <DevBCSession user={user} />
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h1 style={{ 

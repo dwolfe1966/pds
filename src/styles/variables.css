@@ -4,6 +4,10 @@
  * These variables can be used throughout the application
  */
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 :root {
   /* Primary Colors - Green Palette */
   --color-primary: #0d5d2f;

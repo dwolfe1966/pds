@@ -465,6 +465,26 @@ class ApiWrapperService {
   }
 
   /**
+   * Download report as PDF — triggers a BC-managed download popup in the browser.
+   * Per BC API docs: calling this opens a popup where the user clicks Confirm to download.
+   * commerceContentId must be from a detail report (createReport), not a teaser.
+   */
+  async downloadPdfReport(commerceContentId) {
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.idLookup?.downloadPdfReport === 'function') {
+        return await wrapper.api.idLookup.downloadPdfReport({ commerceContentId });
+      }
+      throw new Error('downloadPdfReport not available in ApiWrapper');
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'PDF download failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
    * Register a user in ByteCrtrs without payment (pre-payment signup step)
    * POST /commerceBilling/signup
    */

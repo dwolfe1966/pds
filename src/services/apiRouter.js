@@ -140,7 +140,8 @@ export async function routeApiRequest(endpoint, params = {}) {
   const FORCE_NEW_API_ENDPOINTS = new Set([
     'teaser-search',
     'create-report', 'get-report', 'report-list',
-    'opt-out-search', 'commerce-billing-sale', 'commerce-billing-signup'
+    'opt-out-search', 'commerce-billing-sale', 'commerce-billing-signup',
+    'download-pdf-report'
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
@@ -364,6 +365,9 @@ async function callNewAPI(endpoint, params) {
 
     case 'commerce-billing-signup':
       return await apiWrapper.billingSignup(params.body || params);
+
+    case 'download-pdf-report':
+      return await apiWrapper.downloadPdfReport(params.commerceContentId || params.id);
 
     default:
       throw new Error(`Endpoint ${endpoint} not implemented in new API router`);

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { getReportList } from '../../services/reportService';
+import DevBCSession from '../../components/DevBCSession';
 import styles from './DashboardHome.module.css';
 
 /**
@@ -151,6 +152,7 @@ const DashboardHome = () => {
 
   return (
     <main className={styles.main}>
+      <DevBCSession user={user} />
       {/* Dashboard Title */}
       <div className={styles.header}>
         <div>
