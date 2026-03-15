@@ -17,7 +17,7 @@ const Modal = ({ isOpen, onClose, children }) => {
         zIndex: 1000,
       }}
     >
-      <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '4px', maxWidth: '500px', width: '100%' }}>
+      <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '0.75rem', maxWidth: '500px', width: '100%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
         <button onClick={onClose} style={{ float: 'right', background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>×</button>
         <div style={{ marginTop: '1rem' }}>{children}</div>
       </div>

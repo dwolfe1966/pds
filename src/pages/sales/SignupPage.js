@@ -135,7 +135,7 @@ const SignupPage = () => {
   return (
     <main className="pageBackground">
       <div className="contentContainer contentContainerNarrow">
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Create your account</h1>
+      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Create your account</h1>
       
       {/* Teaser block when coming from search result */}
       {selectedPerson && !success && (
@@ -143,13 +143,13 @@ const SignupPage = () => {
           padding: '1.5rem', 
           backgroundColor: '#f0f7ff', 
           border: '2px solid #0d5d2f',
-          borderRadius: '8px', 
+          borderRadius: '0.5rem',
           marginBottom: '2rem' 
         }}>
-          <h2 style={{ color: '#0e123b', marginTop: 0, marginBottom: '0.5rem', fontSize: '1.3rem' }}>
+          <h2 style={{ color: '#0d5d2f', marginTop: 0, marginBottom: '0.5rem', fontSize: '1.3rem' }}>
             View Full Report for {selectedPerson.fullName}
           </h2>
-          <p style={{ color: '#666', marginBottom: '1rem', lineHeight: '1.6' }}>
+          <p style={{ color: '#6b7280', marginBottom: '1rem', lineHeight: '1.6' }}>
             You're viewing a preview for <strong>{selectedPerson.fullName}</strong>
             {selectedPerson.location && ` from ${selectedPerson.location}`}.
             {selectedPerson.ageRange && ` Age: ${selectedPerson.ageRange}`}
@@ -157,13 +157,13 @@ const SignupPage = () => {
           <div style={{ 
             padding: '1rem', 
             backgroundColor: '#fff', 
-            borderRadius: '4px',
-            border: '1px solid #ddd'
+            borderRadius: '0.375rem',
+            border: '1px solid #d1d5db'
           }}>
-            <p style={{ margin: 0, color: '#333', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+            <p style={{ margin: 0, color: '#111827', fontWeight: 'bold', marginBottom: '0.5rem' }}>
               Sign up now to unlock:
             </p>
-            <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#666', lineHeight: '1.8' }}>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#6b7280', lineHeight: '1.8' }}>
               <li>Complete contact information</li>
               <li>Address history and current location</li>
               <li>Phone numbers and email addresses</li>
@@ -176,18 +176,18 @@ const SignupPage = () => {
       )}
       
       {!selectedPerson && (
-        <p style={{ marginBottom: '2rem', color: '#666', lineHeight: '1.6' }}>
+        <p style={{ marginBottom: '2rem', color: '#6b7280', lineHeight: '1.6' }}>
           Sign up to unlock full access to detailed reports and monitor who's searching for you.
         </p>
       )}
       {success ? (
-        <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '4px', textAlign: 'center' }}>
-          <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>Thank you for signing up!</h2>
-          <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '1rem' }}>
+        <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '0.375rem', textAlign: 'center' }}>
+          <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Thank you for signing up!</h2>
+          <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem' }}>
             Account created successfully! Redirecting to payment...
           </p>
           {selectedPerson && (
-            <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '1rem', fontSize: '0.9rem' }}>
+            <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem', fontSize: '0.9rem' }}>
               Complete your purchase to view the full report for {selectedPerson.fullName}.
             </p>
           )}
@@ -195,7 +195,7 @@ const SignupPage = () => {
       ) : (
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
               Full Name *
             </label>
             <input
@@ -204,11 +204,11 @@ const SignupPage = () => {
               value={form.fullName}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
             />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
               ZIP Code
             </label>
             <input
@@ -216,11 +216,11 @@ const SignupPage = () => {
               name="zip"
               value={form.zip}
               onChange={handleChange}
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
             />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
               Email *
             </label>
             <input
@@ -229,11 +229,11 @@ const SignupPage = () => {
               value={form.email}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
             />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
               Password *
             </label>
             <input
@@ -242,11 +242,11 @@ const SignupPage = () => {
               value={form.password}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
             />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#333', cursor: 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#111827', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 name="optin"
@@ -257,7 +257,7 @@ const SignupPage = () => {
             </label>
           </div>
           {error && (
-            <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>
+            <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '0.375rem', marginBottom: '1rem' }}>
               <p style={{ margin: 0, fontWeight: 'bold' }}>Error:</p>
               <p style={{ margin: '0.5rem 0 0 0' }}>{error}</p>
               <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#a00' }}>
@@ -271,10 +271,12 @@ const SignupPage = () => {
             style={{
               width: '100%',
               padding: '0.75rem',
-              backgroundColor: loading ? '#999' : '#0d5d2f',
+              backgroundColor: loading ? '#9ca3af' : '#0d5d2f',
               color: '#fff',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '0.375rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              transition: 'all 0.2s ease',
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: '1rem',
               fontWeight: 'bold'
@@ -282,8 +284,8 @@ const SignupPage = () => {
           >
             {loading ? 'Signing up…' : 'Sign Up'}
           </button>
-          <p style={{ marginTop: '1rem', textAlign: 'center', color: '#666' }}>
-            Already have an account? <a href="/login" style={{ color: '#0e123b' }}>Log in</a>
+          <p style={{ marginTop: '1rem', textAlign: 'center', color: '#6b7280' }}>
+            Already have an account? <a href="/login" style={{ color: '#0d5d2f', fontWeight: 600 }}>Log in</a>
           </p>
         </form>
       )}

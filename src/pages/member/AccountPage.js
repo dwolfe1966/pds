@@ -261,7 +261,7 @@ const AccountPage = () => {
         ) : reportsError ? (
           <p style={{ color: '#c00' }}>{reportsError}</p>
         ) : reports.length === 0 ? (
-          <p style={{ color: '#666' }}>You haven't created any reports yet.</p>
+          <p style={{ color: '#6b7280' }}>You haven't created any reports yet.</p>
         ) : (
           <>
             <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -299,7 +299,7 @@ const AccountPage = () => {
                       }}>
                         {reportInfo.name}
                       </h3>
-                      <p style={{ color: '#666', margin: 0, fontSize: '0.875rem' }}>
+                      <p style={{ color: '#6b7280', margin: 0, fontSize: '0.875rem' }}>
                         Created: {(() => {
                           try {
                             const date = new Date(reportInfo.createdAt);

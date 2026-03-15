@@ -124,7 +124,7 @@ const SearchPage = () => {
           name="state" 
           value={form.state} 
           onChange={handleChange}
-          style={{ padding: '0.5rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+          style={{ padding: '0.5rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
         >
           {usStates.map((stateOption) => (
             <option key={stateOption.value} value={stateOption.value}>

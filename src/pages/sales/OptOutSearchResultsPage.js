@@ -124,10 +124,10 @@ const OptOutSearchResultsPage = () => {
 
   return (
     <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Opt-Out Search Results</h1>
+      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Opt-Out Search Results</h1>
       
-      <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-        <p style={{ margin: 0, color: '#666' }}>
+      <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem' }}>
+        <p style={{ margin: 0, color: '#6b7280' }}>
           <strong>Searching for:</strong> {query} {zip && `(${zip})`}
         </p>
       </div>
@@ -139,13 +139,13 @@ const OptOutSearchResultsPage = () => {
       )}
 
       {error && (
-        <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>
+        <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '0.375rem', marginBottom: '1rem' }}>
           <p style={{ margin: 0 }}>{error}</p>
         </div>
       )}
 
       {alreadyOptedOut && (
-        <div style={{ padding: '1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', marginBottom: '1rem' }}>
+        <div style={{ padding: '1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '0.375rem', marginBottom: '1rem' }}>
           <p style={{ margin: 0 }}>
             <strong>{alreadyOptedOut}</strong> has already been opted out. No further action needed.
           </p>
@@ -159,37 +159,37 @@ const OptOutSearchResultsPage = () => {
       )}
 
       {checkingOptOut && (
-        <div style={{ padding: '1rem', color: '#666', marginBottom: '1rem' }}>
+        <div style={{ padding: '1rem', color: '#6b7280', marginBottom: '1rem' }}>
           Checking opt-out status…
         </div>
       )}
 
       {!loading && !error && results.length > 0 && (
         <div style={{ marginTop: '1rem' }}>
-          <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>
+          <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>
             Found {results.length} result{results.length !== 1 ? 's' : ''}
           </h2>
-          <p style={{ color: '#666', marginBottom: '1rem' }}>
+          <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
             Select the record that matches you to proceed with the opt-out request.
           </p>
           {results.map((result) => (
             <div 
               key={result.id} 
               style={{ 
-                border: '1px solid #ccc', 
+                border: '1px solid #d1d5db', 
                 padding: '1rem', 
                 marginBottom: '1rem', 
-                borderRadius: '4px',
+                borderRadius: '0.375rem',
                 cursor: 'pointer',
                 transition: 'background-color 0.2s'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9f9f9'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
               onClick={() => handleSelectResult(result)}
             >
-              <h3 style={{ margin: 0, color: '#0e123b' }}>{result.fullName}</h3>
-              <p style={{ margin: '0.5rem 0', color: '#666' }}>Age: {result.ageRange}</p>
-              <p style={{ margin: '0.5rem 0', color: '#666' }}>Location: {result.location}</p>
+              <h3 style={{ margin: 0, color: '#0d5d2f' }}>{result.fullName}</h3>
+              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>Age: {result.ageRange}</p>
+              <p style={{ margin: '0.5rem 0', color: '#6b7280' }}>Location: {result.location}</p>
               <button
                 style={{
                   marginTop: '0.5rem',
@@ -197,7 +197,7 @@ const OptOutSearchResultsPage = () => {
                   backgroundColor: '#0d5d2f',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '0.375rem',
                   cursor: 'pointer'
                 }}
               >
@@ -210,7 +210,7 @@ const OptOutSearchResultsPage = () => {
 
       {!loading && !error && results.length === 0 && (
         <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p style={{ color: '#666', fontSize: '1.1rem' }}>No results found.</p>
+          <p style={{ color: '#6b7280', fontSize: '1.1rem' }}>No results found.</p>
           <button
             onClick={() => navigate('/opt-out')}
             style={{
@@ -219,7 +219,7 @@ const OptOutSearchResultsPage = () => {
               backgroundColor: '#0d5d2f',
               color: '#fff',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '0.375rem',
               cursor: 'pointer',
               fontSize: '1rem'
             }}

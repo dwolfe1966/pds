@@ -83,13 +83,13 @@ const OptOutInfoInputPage = () => {
   if (success) {
     return (
       <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
-          <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>Opt-Out Request Submitted</h2>
-          <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '1rem' }}>
+        <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '0.375rem' }}>
+          <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Opt-Out Request Submitted</h2>
+          <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem' }}>
             Thank you for submitting your opt-out request. We have received your information and will 
             process your request within 5-7 business days.
           </p>
-          <p style={{ color: '#666', lineHeight: '1.6' }}>
+          <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
             You will receive a confirmation email at the address you provided. If you have any questions, 
             please contact our support team.
           </p>
@@ -101,7 +101,7 @@ const OptOutInfoInputPage = () => {
               backgroundColor: '#0d5d2f',
               color: '#fff',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '0.375rem',
               cursor: 'pointer',
               fontSize: '1rem'
             }}
@@ -115,14 +115,14 @@ const OptOutInfoInputPage = () => {
 
   return (
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Complete Your Opt-Out Request</h1>
-      <p style={{ marginBottom: '2rem', color: '#666', lineHeight: '1.6' }}>
+      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Complete Your Opt-Out Request</h1>
+      <p style={{ marginBottom: '2rem', color: '#6b7280', lineHeight: '1.6' }}>
         Please provide the following information to verify your identity and complete your opt-out request.
       </p>
 
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Name *
           </label>
           <input
@@ -131,12 +131,12 @@ const OptOutInfoInputPage = () => {
             value={form.name}
             onChange={handleChange}
             required
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Middle Name
           </label>
           <input
@@ -144,12 +144,12 @@ const OptOutInfoInputPage = () => {
             name="middleName"
             value={form.middleName}
             onChange={handleChange}
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Street Address *
           </label>
           <input
@@ -158,13 +158,13 @@ const OptOutInfoInputPage = () => {
             value={form.street}
             onChange={handleChange}
             required
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
               City *
             </label>
             <input
@@ -173,11 +173,11 @@ const OptOutInfoInputPage = () => {
               value={form.city}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
               State *
             </label>
             <input
@@ -188,13 +188,13 @@ const OptOutInfoInputPage = () => {
               required
               maxLength="2"
               placeholder="XX"
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px', textTransform: 'uppercase' }}
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', textTransform: 'uppercase' }}
             />
           </div>
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             ZIP Code
           </label>
           <input
@@ -202,12 +202,12 @@ const OptOutInfoInputPage = () => {
             name="zip"
             value={form.zip}
             onChange={handleChange}
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Email Address
           </label>
           <input
@@ -215,12 +215,12 @@ const OptOutInfoInputPage = () => {
             name="email"
             value={form.email}
             onChange={handleChange}
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Phone Number
           </label>
           <input
@@ -228,12 +228,12 @@ const OptOutInfoInputPage = () => {
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         {error && (
-          <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>
+          <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '0.375rem', marginBottom: '1rem' }}>
             <p style={{ margin: 0 }}>{error}</p>
           </div>
         )}
@@ -244,13 +244,15 @@ const OptOutInfoInputPage = () => {
           style={{
             width: '100%',
             padding: '0.75rem',
-            backgroundColor: loading ? '#999' : '#0d5d2f',
+            backgroundColor: loading ? '#9ca3af' : '#0d5d2f',
             color: '#fff',
             border: 'none',
-            borderRadius: '4px',
+            borderRadius: '0.375rem',
             cursor: loading ? 'not-allowed' : 'pointer',
             fontSize: '1rem',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            transition: 'all 0.2s ease',
           }}
         >
           {loading ? 'Submitting...' : 'Submit Opt-Out Request'}

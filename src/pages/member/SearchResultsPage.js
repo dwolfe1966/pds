@@ -258,89 +258,182 @@ const MemberSearchResultsPage = () => {
     fetchResults();
   }, [firstNameParam, lastNameParam, stateParam, emailParam, query, zip, token]);
 
+  const filterInputStyle = {
+    width: '100%',
+    padding: '0.5rem 0.75rem',
+    borderRadius: '0.375rem',
+    border: '1px solid #d1d5db',
+    fontSize: '0.875rem',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s ease'
+  };
+
+  const filterLabelStyle = {
+    fontSize: '0.6875rem',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    fontWeight: 600,
+    marginBottom: '0.25rem',
+    display: 'block'
+  };
+
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Search Results</h1>
-      <SearchBar initialQuery={query || ''} />
+    <main style={{
+      padding: '2.5rem 2rem',
+      maxWidth: '1200px',
+      margin: '0 auto',
+      minHeight: '60vh'
+    }}>
+      {/* Header */}
       <div style={{
-        marginTop: '1rem',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '0.75rem',
-        alignItems: 'end'
+        marginBottom: '2rem',
+        paddingBottom: '1.5rem',
+        borderBottom: '1px solid #e5e7eb'
       }}>
-        <div>
-          <label style={{ fontSize: '0.75rem', color: '#6b7280' }}>Name contains</label>
-          <input
-            value={nameFilter}
-            onChange={(e) => setNameFilter(e.target.value)}
-            placeholder="Filter by name"
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '0.75rem', color: '#6b7280' }}>State</label>
-          <select
-            value={stateFilter}
-            onChange={(e) => setStateFilter(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          >
-            {usStates.map((stateOption) => (
-              <option key={stateOption.value} value={stateOption.value}>
-                {stateOption.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: '0.75rem', color: '#6b7280' }}>Min age</label>
-          <input
-            type="number"
-            value={minAge}
-            onChange={(e) => setMinAge(e.target.value)}
-            placeholder="Any"
-            min="0"
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '0.75rem', color: '#6b7280' }}>Max age</label>
-          <input
-            type="number"
-            value={maxAge}
-            onChange={(e) => setMaxAge(e.target.value)}
-            placeholder="Any"
-            min="0"
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: '0.75rem', color: '#6b7280' }}>Sort by</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #d1d5db' }}
-          >
-            <option value="relevance">Relevance</option>
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="age-asc">Age (Low to High)</option>
-            <option value="age-desc">Age (High to Low)</option>
-            <option value="location-asc">Location (A-Z)</option>
-            <option value="location-desc">Location (Z-A)</option>
-          </select>
+        <h1 style={{
+          color: '#0d5d2f',
+          fontSize: '1.875rem',
+          fontWeight: 700,
+          marginBottom: '1rem',
+          letterSpacing: '-0.02em'
+        }}>
+          Search Results
+        </h1>
+        <div style={{ maxWidth: '600px' }}>
+          <SearchBar initialQuery={query || ''} />
         </div>
       </div>
+
+      {/* Filter Bar */}
+      <div style={{
+        padding: '1.25rem',
+        backgroundColor: '#f9fafb',
+        borderRadius: '0.75rem',
+        border: '1px solid #e5e7eb',
+        marginBottom: '1.5rem'
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '0.75rem',
+          alignItems: 'end'
+        }}>
+          <div>
+            <label style={filterLabelStyle}>Name contains</label>
+            <input
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              placeholder="Filter by name"
+              style={filterInputStyle}
+            />
+          </div>
+          <div>
+            <label style={filterLabelStyle}>State</label>
+            <select
+              value={stateFilter}
+              onChange={(e) => setStateFilter(e.target.value)}
+              style={{ ...filterInputStyle, backgroundColor: '#fff', cursor: 'pointer' }}
+            >
+              {usStates.map((stateOption) => (
+                <option key={stateOption.value} value={stateOption.value}>
+                  {stateOption.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={filterLabelStyle}>Min age</label>
+            <input
+              type="number"
+              value={minAge}
+              onChange={(e) => setMinAge(e.target.value)}
+              placeholder="Any"
+              min="0"
+              style={filterInputStyle}
+            />
+          </div>
+          <div>
+            <label style={filterLabelStyle}>Max age</label>
+            <input
+              type="number"
+              value={maxAge}
+              onChange={(e) => setMaxAge(e.target.value)}
+              placeholder="Any"
+              min="0"
+              style={filterInputStyle}
+            />
+          </div>
+          <div>
+            <label style={filterLabelStyle}>Sort by</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ ...filterInputStyle, backgroundColor: '#fff', cursor: 'pointer' }}
+            >
+              <option value="relevance">Relevance</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+              <option value="age-asc">Age (Low to High)</option>
+              <option value="age-desc">Age (High to Low)</option>
+              <option value="location-asc">Location (A-Z)</option>
+              <option value="location-desc">Location (Z-A)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results count */}
       {!loading && (
-        <p style={{ marginTop: '0.75rem', color: '#6b7280' }}>
-          Showing {filteredResults.length} of {results.length} results
-          {rawResponse?.hasMore?.() && ` (more available)`}
+        <p style={{
+          marginBottom: '1rem',
+          paddingTop: '1rem',
+          borderTop: '3px solid #0d5d2f',
+          color: '#6b7280',
+          fontSize: '0.875rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.03em',
+          fontWeight: 500
+        }}>
+          Showing <strong style={{ color: '#0d5d2f' }}>{filteredResults.length}</strong> of {results.length} results
+          {rawResponse?.hasMore?.() && ' (more available)'}
         </p>
       )}
-      {loading && <p>Loading…</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {/* Loading */}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid #e5e7eb',
+            borderTop: '4px solid #0d5d2f',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem auto'
+          }}></div>
+          <p style={{ color: '#6b7280' }}>Loading results...</p>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div style={{
+          padding: '1.25rem',
+          backgroundColor: '#fee',
+          border: '1px solid #fcc',
+          borderRadius: '0.375rem',
+          color: '#c33',
+          marginBottom: '1rem'
+        }}>
+          <p style={{ margin: 0 }}>{error}</p>
+        </div>
+      )}
+
+      {/* Results list */}
       {filteredResults && filteredResults.length > 0 ? (
-        <div style={{ marginTop: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {filteredResults.map((result) => (
             <ResultCard key={result.id} result={result} isMember={true} />
           ))}
@@ -363,20 +456,37 @@ const MemberSearchResultsPage = () => {
                   }
                 }}
                 style={{
-                  padding: '0.5rem 1.5rem',
-                  borderRadius: '6px',
-                  border: '1px solid #d1d5db',
+                  padding: '0.75rem 2rem',
+                  borderRadius: '0.375rem',
+                  border: '2px solid #0d5d2f',
                   background: '#fff',
-                  cursor: loadingMore ? 'wait' : 'pointer'
+                  color: '#0d5d2f',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  cursor: loadingMore ? 'wait' : 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
+                onMouseEnter={(e) => { if (!loadingMore) { e.currentTarget.style.backgroundColor = '#0d5d2f'; e.currentTarget.style.color = '#fff'; }}}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#0d5d2f'; }}
               >
-                {loadingMore ? 'Loading…' : 'Load more results'}
+                {loadingMore ? 'Loading...' : 'Load more results'}
               </button>
             </div>
           )}
         </div>
       ) : !loading ? (
-        <p>No results found.</p>
+        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+          <p style={{
+            fontSize: '1.5rem',
+            color: '#111827',
+            marginBottom: '0.5rem'
+          }}>
+            No results found
+          </p>
+          <p style={{ color: '#6b7280', lineHeight: 1.625 }}>
+            Try adjusting your search terms or filters.
+          </p>
+        </div>
       ) : null}
     </main>
   );

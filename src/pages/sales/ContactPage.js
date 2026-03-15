@@ -34,9 +34,9 @@ const ContactPage = () => {
     return (
       <main className="pageBackground">
         <div className="contentContainer contentContainerNarrow" style={{ textAlign: 'center' }}>
-          <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
+          <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '0.375rem' }}>
             <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Message Sent Successfully</h2>
-            <p style={{ color: '#666', lineHeight: '1.6' }}>
+            <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
               Thank you for contacting us. We'll get back to you as soon as possible.
             </p>
           </div>
@@ -48,14 +48,14 @@ const ContactPage = () => {
   return (
     <main className="pageBackground">
       <div className="contentContainer contentContainerNarrow">
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Contact Us</h1>
-      <p style={{ marginBottom: '2rem', color: '#666', lineHeight: '1.6' }}>
+      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Contact Us</h1>
+      <p style={{ marginBottom: '2rem', color: '#6b7280', lineHeight: '1.6' }}>
         Have questions or need support? Fill out the form below and we'll get back to you as soon as possible.
       </p>
 
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Name *
           </label>
           <input
@@ -64,12 +64,12 @@ const ContactPage = () => {
             value={form.name}
             onChange={handleChange}
             required
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Email *
           </label>
           <input
@@ -78,12 +78,12 @@ const ContactPage = () => {
             value={form.email}
             onChange={handleChange}
             required
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Subject *
           </label>
           <input
@@ -92,12 +92,12 @@ const ContactPage = () => {
             value={form.subject}
             onChange={handleChange}
             required
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
           />
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333', fontWeight: 'bold' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
             Message *
           </label>
           <textarea
@@ -106,12 +106,12 @@ const ContactPage = () => {
             onChange={handleChange}
             required
             rows="6"
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #ccc', borderRadius: '4px', fontFamily: 'inherit' }}
+            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', fontFamily: 'inherit' }}
           />
         </div>
 
         {error && (
-          <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>
+          <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '0.375rem', marginBottom: '1rem' }}>
             <p style={{ margin: 0 }}>{error}</p>
           </div>
         )}
@@ -122,25 +122,27 @@ const ContactPage = () => {
           style={{
             width: '100%',
             padding: '0.75rem',
-            backgroundColor: loading ? '#999' : '#0d5d2f',
+            backgroundColor: loading ? '#9ca3af' : '#0d5d2f',
             color: '#fff',
             border: 'none',
-            borderRadius: '4px',
+            borderRadius: '0.375rem',
             cursor: loading ? 'not-allowed' : 'pointer',
             fontSize: '1rem',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+            transition: 'all 0.2s ease',
           }}
         >
           {loading ? 'Sending...' : 'Send Message'}
         </button>
       </form>
 
-      <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-        <h3 style={{ color: '#0e123b', marginTop: 0 }}>Other Ways to Reach Us</h3>
-        <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '0.5rem' }}>
+      <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem' }}>
+        <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>Other Ways to Reach Us</h3>
+        <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '0.5rem' }}>
           <strong>Email:</strong> support@idlookup.ai
         </p>
-        <p style={{ color: '#666', lineHeight: '1.6' }}>
+        <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
           <strong>Phone:</strong> [Your Support Phone Number]
         </p>
       </div>

@@ -445,6 +445,19 @@ const SummaryBar = ({ data }) => {
 
 /* ─── Section wrapper ──────────────────────────────────────────────────── */
 
+const SECTION_ICONS = {
+  '1': 'person',
+  '2': 'home',
+  '3': 'phone',
+  '4': 'email',
+  '5': 'people',
+  '6': 'work',
+  '7': 'school',
+  '8': 'share',
+  '9': 'shield',
+  '10': 'badge',
+};
+
 const Section = ({ number, title, children, fullWidth }) => (
   <div style={{ ...styles.card, gridColumn: fullWidth ? '1 / -1' : undefined }}>
     <div style={styles.sectionHeader}>
@@ -561,7 +574,7 @@ const styles = {
   },
   breadcrumb: { margin: '0 0 0.5rem', fontSize: '0.8125rem', color: '#9ca3af' },
   breadcrumbBtn: { background: 'none', border: 'none', color: '#0d5d2f', cursor: 'pointer', padding: 0, fontSize: '0.8125rem' },
-  personName: { margin: '0 0 0.75rem', fontSize: '2rem', fontWeight: 700, color: '#0e123b' },
+  personName: { margin: '0 0 0.75rem', fontSize: '2rem', fontWeight: 700, color: '#0d5d2f', letterSpacing: '-0.02em' },
   headerMeta: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap' },
   metaBadge: {
     display: 'inline-block', padding: '0.25rem 0.75rem',
@@ -595,8 +608,9 @@ const styles = {
   // Summary
   summaryBar: {
     display: 'flex', flexWrap: 'wrap', gap: '0.75rem',
-    marginBottom: '1.5rem', padding: '1rem 1.25rem',
+    marginBottom: '2rem', padding: '1.25rem 1.5rem',
     backgroundColor: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0',
+    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
   },
   statBox: { display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '80px', flex: '1' },
   statNum: { fontSize: '1.75rem', fontWeight: 700, lineHeight: 1 },

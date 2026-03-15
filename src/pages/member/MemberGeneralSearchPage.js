@@ -173,29 +173,31 @@ const MemberGeneralSearchPage = () => {
 
   return (
     <main style={{
-      padding: '2rem',
+      padding: '2.5rem 2rem',
       maxWidth: '1200px',
       margin: '0 auto',
       minHeight: '60vh'
     }}>
       <DevBCSession user={user} />
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ 
-          color: '#0d5d2f', 
-          fontSize: '2.5rem',
+      <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+        <h1 style={{
+          color: '#0d5d2f',
+          fontSize: '2.25rem',
           fontWeight: 700,
-          marginBottom: '1rem'
+          marginBottom: '0.75rem',
+          letterSpacing: '-0.02em'
         }}>
           {activeTab === 'name' ? 'Search by Name' : activeTab === 'phone' ? 'Search by Phone Number' : 'Search by Email Address'}
         </h1>
-        <p style={{ 
-          color: '#6b7280', 
+        <p style={{
+          color: '#6b7280',
           fontSize: '1.125rem',
           maxWidth: '600px',
-          margin: '0 auto'
+          margin: '0 auto',
+          lineHeight: 1.625
         }}>
-          {activeTab === 'name' 
+          {activeTab === 'name'
             ? 'Enter a first and last name to search our comprehensive database of over 12 billion public records.'
             : activeTab === 'phone'
             ? 'Enter a phone number to search our comprehensive database and find associated information.'
@@ -204,12 +206,14 @@ const MemberGeneralSearchPage = () => {
       </div>
 
       {/* Search Form Section */}
-      <div style={{ 
-        backgroundColor: '#f9fafb',
+      <div style={{
+        backgroundColor: '#ffffff',
         padding: '2.5rem',
         borderRadius: '0.75rem',
         border: '1px solid #e5e7eb',
-        marginBottom: '2rem'
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        maxWidth: '700px',
+        margin: '0 auto 2rem'
       }}>
         {/* Tabs */}
         <div style={{
@@ -298,11 +302,12 @@ const MemberGeneralSearchPage = () => {
               marginBottom: '1rem'
             }}>
               <div>
-                <label style={{ 
+                <label style={{
                   display: 'block',
                   marginBottom: '0.5rem',
-                  color: '#374151',
-                  fontWeight: 500
+                  color: '#111827',
+                  fontWeight: 600,
+                  fontSize: '0.875rem'
                 }}>
                   First Name *
                 </label>
@@ -315,19 +320,23 @@ const MemberGeneralSearchPage = () => {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: '0.75rem',
+                    padding: '0.875rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '0.5rem',
-                    fontSize: '1rem'
+                    borderRadius: '0.375rem',
+                    fontSize: '1rem',
+                    fontFamily: 'inherit',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
               <div>
-                <label style={{ 
+                <label style={{
                   display: 'block',
                   marginBottom: '0.5rem',
-                  color: '#374151',
-                  fontWeight: 500
+                  color: '#111827',
+                  fontWeight: 600,
+                  fontSize: '0.875rem'
                 }}>
                   Last Name *
                 </label>
@@ -340,10 +349,13 @@ const MemberGeneralSearchPage = () => {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: '0.75rem',
+                    padding: '0.875rem',
                     border: '1px solid #d1d5db',
-                    borderRadius: '0.5rem',
-                    fontSize: '1rem'
+                    borderRadius: '0.375rem',
+                    fontSize: '1rem',
+                    fontFamily: 'inherit',
+                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
@@ -388,14 +400,15 @@ const MemberGeneralSearchPage = () => {
                 backgroundColor: loading ? '#9ca3af' : '#0d5d2f',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '0.5rem',
+                borderRadius: '0.375rem',
                 fontSize: '1.125rem',
                 fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
               }}
             >
-              {loading ? 'Searching...' : 'Search Now'}
+              {loading ? 'Searching...' : 'Search Records'}
             </button>
           </form>
         )}
@@ -422,38 +435,41 @@ const MemberGeneralSearchPage = () => {
                 maxLength={14}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.875rem',
                   border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem'
+                  borderRadius: '0.375rem',
+                  fontSize: '1rem',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box'
                 }}
               />
-              <p style={{ 
-                marginTop: '0.5rem', 
-                fontSize: '0.875rem', 
-                color: '#6b7280' 
+              <p style={{
+                marginTop: '0.5rem',
+                fontSize: '0.875rem',
+                color: '#6b7280'
               }}>
                 Enter a 10-digit phone number (digits only or formatted)
               </p>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading || !phone || phone.length < 10}
               style={{
                 width: '100%',
                 padding: '1rem',
-                backgroundColor: loading || !phone || phone.length < 10 ? '#9ca3af' : '#0d5d2f',
+                backgroundColor: (loading || !phone || phone.length < 10) ? '#9ca3af' : '#0d5d2f',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '0.5rem',
+                borderRadius: '0.375rem',
                 fontSize: '1.125rem',
                 fontWeight: 600,
-                cursor: loading || !phone || phone.length < 10 ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease'
+                cursor: (loading || !phone || phone.length < 10) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
               }}
             >
-              {loading ? 'Searching...' : 'Search Now'}
+              {loading ? 'Searching...' : 'Search Records'}
             </button>
           </form>
         )}
@@ -462,11 +478,12 @@ const MemberGeneralSearchPage = () => {
         {activeTab === 'email' && (
           <form onSubmit={handleEmailSubmit}>
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ 
+              <label style={{
                 display: 'block',
                 marginBottom: '0.5rem',
-                color: '#374151',
-                fontWeight: 500
+                color: '#111827',
+                fontWeight: 600,
+                fontSize: '0.875rem'
               }}>
                 Email Address *
               </label>
@@ -479,38 +496,41 @@ const MemberGeneralSearchPage = () => {
                 disabled={loading}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.875rem',
                   border: '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem'
+                  borderRadius: '0.375rem',
+                  fontSize: '1rem',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box'
                 }}
               />
-              <p style={{ 
-                marginTop: '0.5rem', 
-                fontSize: '0.875rem', 
-                color: '#6b7280' 
+              <p style={{
+                marginTop: '0.5rem',
+                fontSize: '0.875rem',
+                color: '#6b7280'
               }}>
                 Enter a complete email address to search
               </p>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading || !email.trim()}
               style={{
                 width: '100%',
                 padding: '1rem',
-                backgroundColor: loading || !email.trim() ? '#9ca3af' : '#0d5d2f',
+                backgroundColor: (loading || !email.trim()) ? '#9ca3af' : '#0d5d2f',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '0.5rem',
+                borderRadius: '0.375rem',
                 fontSize: '1.125rem',
                 fontWeight: 600,
-                cursor: loading || !email.trim() ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease'
+                cursor: (loading || !email.trim()) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
               }}
             >
-              {loading ? 'Searching...' : 'Search Now'}
+              {loading ? 'Searching...' : 'Search Records'}
             </button>
           </form>
         )}
