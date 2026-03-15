@@ -250,7 +250,7 @@ const PaymentPage = () => {
             {userInfo && (
               <div className={styles.paymentFormBox}>
                 <h3 className={styles.formTitle}>Paying as</h3>
-                <p style={{ margin: 0, color: '#666' }}>
+                <p style={{ margin: 0, color: '#6b7280' }}>
                   {userInfo.email} · {[userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ')}
                 </p>
               </div>

@@ -35,9 +35,9 @@ const SessionsPage = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>User</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>IP</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Started</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>User</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>IP</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Started</th>
             </tr>
           </thead>
           <tbody>

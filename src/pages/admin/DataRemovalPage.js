@@ -53,10 +53,10 @@ const DataRemovalPage = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Request ID</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>User</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Date</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Actions</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Request ID</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>User</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Date</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Actions</th>
             </tr>
           </thead>
           <tbody>

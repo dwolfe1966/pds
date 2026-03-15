@@ -35,10 +35,10 @@ const CsRepManagementPage = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>ID</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Name</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Email</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Role</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>ID</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Name</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Email</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Role</th>
             </tr>
           </thead>
           <tbody>

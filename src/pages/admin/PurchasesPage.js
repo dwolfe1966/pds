@@ -36,9 +36,9 @@ const PurchasesPage = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Purchase ID</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>User ID</th>
-              <th style={{ borderBottom: '1px solid #ccc', textAlign: 'left' }}>Amount</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Purchase ID</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>User ID</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Amount</th>
             </tr>
           </thead>
           <tbody>

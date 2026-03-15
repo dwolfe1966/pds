@@ -7,15 +7,15 @@ import React from 'react';
 const SuppressionListPage = () => {
   return (
     <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Suppression List</h1>
-      <p style={{ marginBottom: '2rem', color: '#333', lineHeight: '1.6', fontSize: '1.1rem' }}>
+      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Suppression List</h1>
+      <p style={{ marginBottom: '2rem', color: '#111827', lineHeight: '1.6', fontSize: '1.1rem' }}>
         The IDLookup.AI Suppression List allows individuals to limit the display of their information 
         in search results while maintaining compliance with public records laws.
       </p>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>What is a Suppression List?</h2>
-        <p style={{ color: '#666', lineHeight: '1.8' }}>
+        <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>What is a Suppression List?</h2>
+        <p style={{ color: '#6b7280', lineHeight: '1.8' }}>
           A suppression list is a registry of individuals who have requested that their information 
           be suppressed or limited in search results. When you add yourself to our suppression list, 
           we will take steps to reduce the visibility of your information in our search results, 
@@ -24,24 +24,24 @@ const SuppressionListPage = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>How to Add Yourself to the Suppression List</h2>
-        <div style={{ padding: '1.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px', marginBottom: '1rem' }}>
-          <h3 style={{ color: '#0e123b', marginTop: 0 }}>Step 1: Search for Your Information</h3>
-          <p style={{ color: '#666', lineHeight: '1.6' }}>
+        <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>How to Add Yourself to the Suppression List</h2>
+        <div style={{ padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', marginBottom: '1rem' }}>
+          <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>Step 1: Search for Your Information</h3>
+          <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
             First, search for your name to find your records in our database. This helps us identify 
             which records need to be suppressed.
           </p>
         </div>
-        <div style={{ padding: '1.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px', marginBottom: '1rem' }}>
-          <h3 style={{ color: '#0e123b', marginTop: 0 }}>Step 2: Submit Suppression Request</h3>
-          <p style={{ color: '#666', lineHeight: '1.6' }}>
+        <div style={{ padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', marginBottom: '1rem' }}>
+          <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>Step 2: Submit Suppression Request</h3>
+          <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
             Once you've identified your records, you can submit a suppression request through our 
             opt-out process. You'll need to provide verification information to confirm your identity.
           </p>
         </div>
-        <div style={{ padding: '1.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-          <h3 style={{ color: '#0e123b', marginTop: 0 }}>Step 3: Verification and Processing</h3>
-          <p style={{ color: '#666', lineHeight: '1.6' }}>
+        <div style={{ padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem' }}>
+          <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>Step 3: Verification and Processing</h3>
+          <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
             We will verify your identity and process your request. This typically takes 5-7 business days. 
             Once processed, your information will be suppressed from search results.
           </p>
@@ -49,8 +49,8 @@ const SuppressionListPage = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>Important Information</h2>
-        <div style={{ padding: '1.5rem', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '4px', marginBottom: '1rem' }}>
+        <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Important Information</h2>
+        <div style={{ padding: '1.5rem', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '0.375rem', marginBottom: '1rem' }}>
           <h3 style={{ color: '#856404', marginTop: 0 }}>Legal Limitations</h3>
           <p style={{ color: '#856404', lineHeight: '1.6' }}>
             Please note that we are required by law to maintain certain public records. Suppression 
@@ -59,7 +59,7 @@ const SuppressionListPage = () => {
             or other legal means.
           </p>
         </div>
-        <ul style={{ color: '#666', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
+        <ul style={{ color: '#6b7280', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
           <li>Suppression requests require identity verification</li>
           <li>Processing time is typically 5-7 business days</li>
           <li>Suppression applies to search results, not source data</li>
@@ -68,8 +68,8 @@ const SuppressionListPage = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>Get Started</h2>
-        <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '1rem' }}>
+        <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Get Started</h2>
+        <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem' }}>
           Ready to add yourself to the suppression list? Start by searching for your information.
         </p>
         <a
@@ -80,7 +80,7 @@ const SuppressionListPage = () => {
             backgroundColor: '#0d5d2f',
             color: '#fff',
             textDecoration: 'none',
-            borderRadius: '4px',
+            borderRadius: '0.375rem',
             fontWeight: 'bold'
           }}
         >
@@ -89,11 +89,11 @@ const SuppressionListPage = () => {
       </section>
 
       <section style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>Questions?</h2>
-        <p style={{ color: '#666', lineHeight: '1.6' }}>
+        <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Questions?</h2>
+        <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
           If you have questions about the suppression list or need assistance, please contact us:
         </p>
-        <p style={{ color: '#0e123b', fontWeight: 'bold' }}>
+        <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
           Email: support@idlookup.ai<br />
           Phone: [Your Support Phone Number]
         </p>
