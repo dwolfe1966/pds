@@ -60,59 +60,142 @@ const PhoneSearchResultsPage = () => {
     fetchResults();
   }, [phone, navigate]);
 
+  const formatPhoneDisplay = (p) => {
+    if (!p) return p;
+    const digits = p.replace(/\D/g, '');
+    if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+    return p;
+  };
+
   return (
-    <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem' }}>Phone Search Results</h1>
-      
-      <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-        <p style={{ margin: 0, color: '#666' }}>
-          <strong>Searching for:</strong> {phone}
-        </p>
+    <main style={{
+      background: 'linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%)',
+      padding: '2.5rem 0',
+      minHeight: '100vh'
+    }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '3rem',
+        backgroundColor: '#ffffff',
+        borderRadius: '0.75rem',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+      }}>
+        {/* Header */}
+        <div style={{
+          marginBottom: '3rem',
+          paddingBottom: '2rem',
+          borderBottom: '1px solid #e5e7eb'
+        }}>
+          <h1 style={{
+            color: '#0d5d2f',
+            fontSize: '1.875rem',
+            fontWeight: 700,
+            marginBottom: '1rem'
+          }}>
+            Phone Search Results
+          </h1>
+          <p style={{
+            color: '#6b7280',
+            fontSize: '1.125rem',
+            lineHeight: 1.625,
+            marginBottom: 0
+          }}>
+            Results for: <strong style={{ color: '#0d5d2f' }}>{formatPhoneDisplay(phone)}</strong>
+          </p>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div style={{ textAlign: 'center', padding: '6rem 0' }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              border: '5px solid #e5e7eb',
+              borderTop: '5px solid #0d5d2f',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 1.5rem auto'
+            }}></div>
+            <p style={{ color: '#6b7280' }}>Loading results...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div style={{
+            padding: '1.5rem',
+            backgroundColor: '#fee',
+            border: '1px solid #fcc',
+            borderRadius: '0.375rem',
+            color: '#c33',
+            marginBottom: '1.5rem'
+          }}>
+            <p style={{ margin: 0, fontWeight: 600, marginBottom: '0.5rem' }}>Error:</p>
+            <p style={{ margin: 0 }}>{error}</p>
+          </div>
+        )}
+
+        {/* Results */}
+        {!loading && !error && results.length > 0 && (
+          <div>
+            <div style={{
+              marginTop: '1.5rem',
+              paddingTop: '1.5rem',
+              borderTop: '5px solid #0d5d2f',
+              color: '#6b7280',
+              fontSize: '1rem',
+              marginBottom: '1rem'
+            }}>
+              Found <strong style={{ color: '#0d5d2f' }}>{results.length}</strong> {results.length === 1 ? 'result' : 'results'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {results.map((result) => (
+                <ResultCard key={result.id} result={result} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No Results */}
+        {!loading && !error && results.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '6rem 0' }}>
+            <p style={{
+              fontSize: '1.5rem',
+              color: '#111827',
+              marginBottom: '1rem'
+            }}>
+              No results found
+            </p>
+            <p style={{
+              color: '#6b7280',
+              marginBottom: '1.5rem',
+              lineHeight: 1.625
+            }}>
+              No results found for this phone number. Try a different number.
+            </p>
+            <button
+              onClick={() => navigate('/phone/landing')}
+              style={{
+                padding: '1rem 2rem',
+                backgroundColor: '#0d5d2f',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: 'pointer',
+                fontSize: '1.125rem',
+                fontWeight: 600,
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d8659'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0d5d2f'; }}
+            >
+              Try Another Search
+            </button>
+          </div>
+        )}
       </div>
-
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p>Loading results...</p>
-        </div>
-      )}
-
-      {error && (
-        <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '4px', marginBottom: '1rem' }}>
-          <p style={{ margin: 0 }}>{error}</p>
-        </div>
-      )}
-
-      {!loading && !error && results.length > 0 && (
-        <div style={{ marginTop: '1rem' }}>
-          <h2 style={{ color: '#0e123b', marginBottom: '1rem' }}>
-            Found {results.length} result{results.length !== 1 ? 's' : ''}
-          </h2>
-          {results.map((result) => (
-            <ResultCard key={result.id} result={result} />
-          ))}
-        </div>
-      )}
-
-      {!loading && !error && results.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <p style={{ color: '#666', fontSize: '1.1rem' }}>No results found for this phone number.</p>
-          <button
-            onClick={() => navigate('/phone/landing')}
-            style={{
-              marginTop: '1rem',
-              padding: '0.75rem 2rem',
-              backgroundColor: '#0d5d2f',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '1rem'
-            }}
-          >
-            Try Another Search
-          </button>
-        </div>
-      )}
     </main>
   );
 };

@@ -60,6 +60,8 @@ import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
+import NotFoundPage from './pages/NotFoundPage';
+import ErrorBoundary from './components/ErrorBoundary';
 // Test pages (development only)
 import ApiTestPage from './pages/ApiTestPage';
 import SearchTestPage from './pages/SearchTestPage';
@@ -79,6 +81,7 @@ const App = () => {
       <ScrollToTop />
       <Header />
       <div style={{ flex: 1 }}>
+        <ErrorBoundary>
         <Routes>
           {/* Sales/public routes */}
           <Route path="/" element={<HomePageRedirect />} />
@@ -165,7 +168,9 @@ const App = () => {
             path="/people/:id"
             element={
               <ProtectedRoute>
-                <SearchResultDetailPage />
+                <ErrorBoundary>
+                  <SearchResultDetailPage />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           />
@@ -284,9 +289,10 @@ const App = () => {
             }
           />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* 404 catch-all */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </ErrorBoundary>
       </div>
       <Footer />
     </div>

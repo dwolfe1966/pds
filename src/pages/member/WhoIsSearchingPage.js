@@ -16,7 +16,7 @@ const WhoIsSearchingPage = () => {
       setLoading(true);
       try {
         const data = await api.get('/searches/me', { token });
-        setEvents(data.results || data.searches || []);
+        setEvents(data?.data || data.results || data.searches || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -35,7 +35,7 @@ const WhoIsSearchingPage = () => {
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {events.map((ev, idx) => (
             <li key={idx} style={{ borderBottom: '1px solid #eee', padding: '0.5rem 0' }}>
-              {ev.timestamp} – {ev.location} – {ev.searcherId || 'anonymous'}
+              {ev.timestamp} – {ev.searcherLocation || ev.location} – {ev.searcherId || 'anonymous'}
             </li>
           ))}
         </ul>

@@ -133,31 +133,83 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
     }
   };
 
+  // Extract initials for avatar
+  const initials = (result.fullName || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase();
+
   return (
-    <div 
+    <div
       className={styles.card}
       onClick={!onClick ? handleViewDetails : undefined}
     >
-      <h3 className={styles.cardTitle}>
-        {result.fullName}
-      </h3>
-      {result.ageRange && (
-        <p className={styles.cardInfo}>
-          <strong>Age:</strong> {result.ageRange}
-        </p>
-      )}
-      {result.location && (
-        <p className={styles.cardInfo}>
-          <strong>Location:</strong> {result.location}
-        </p>
-      )}
-      <button
-        onClick={handleViewDetails}
-        className={styles.cardButton}
-        disabled={loading}
-      >
-        {loading ? 'Loading...' : 'View Full Report'}
-      </button>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+        {/* Avatar placeholder */}
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          backgroundColor: '#ecfdf5',
+          border: '2px solid #d1fae5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          color: '#0d5d2f',
+          fontWeight: 700,
+          fontSize: '0.875rem',
+          letterSpacing: '0.02em'
+        }}>
+          {initials || '?'}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 className={styles.cardTitle}>
+            {result.fullName}
+          </h3>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {result.ageRange && (
+              <p className={styles.cardInfo}>
+                <span style={{
+                  fontSize: '0.6875rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: '#9ca3af',
+                  fontWeight: 600,
+                  display: 'block',
+                  marginBottom: '0.125rem'
+                }}>Age</span>
+                {result.ageRange}
+              </p>
+            )}
+            {result.location && (
+              <p className={styles.cardInfo}>
+                <span style={{
+                  fontSize: '0.6875rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: '#9ca3af',
+                  fontWeight: 600,
+                  display: 'block',
+                  marginBottom: '0.125rem'
+                }}>Location</span>
+                {result.location}
+              </p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={handleViewDetails}
+          className={styles.cardButton}
+          disabled={loading}
+          style={{ alignSelf: 'center', whiteSpace: 'nowrap' }}
+        >
+          {loading ? 'Loading...' : 'View Full Report'}
+        </button>
+      </div>
     </div>
   );
 };

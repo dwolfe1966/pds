@@ -197,12 +197,18 @@ const SalesSearchResultsPage = () => {
                     }
                   }}
                   style={{
-                    padding: '0.5rem 1.5rem',
-                    borderRadius: '6px',
-                    border: '1px solid #d1d5db',
+                    padding: '0.75rem 2rem',
+                    borderRadius: '0.375rem',
+                    border: '2px solid #0d5d2f',
                     background: '#fff',
-                    cursor: loadingMore ? 'wait' : 'pointer'
+                    color: '#0d5d2f',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    cursor: loadingMore ? 'wait' : 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
+                  onMouseEnter={(e) => { if (!loadingMore) { e.currentTarget.style.backgroundColor = '#0d5d2f'; e.currentTarget.style.color = '#fff'; }}}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#0d5d2f'; }}
                 >
                   {loadingMore ? 'Loading…' : 'Load more results'}
                 </button>

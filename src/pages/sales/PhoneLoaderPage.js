@@ -85,69 +85,76 @@ const PhoneLoaderPage = () => {
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)'
+      background: 'linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%)'
     }}>
       <div style={{
-        maxWidth: '600px',
+        maxWidth: '640px',
         width: '100%',
         padding: '3rem 2rem',
-        textAlign: 'center'
+        textAlign: 'center',
+        backgroundColor: '#ffffff',
+        borderRadius: '1rem',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
       }}>
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{
-            width: '60px',
-            height: '60px',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #0d5d2f',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto'
-          }}></div>
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-        
-        <h2 style={{ 
-          color: '#0e123b', 
-          marginBottom: '1rem',
-          fontSize: '1.5rem',
-          fontWeight: '600'
+        {/* Loading Spinner */}
+        <div style={{
+          width: '80px',
+          height: '80px',
+          border: '6px solid #e5e7eb',
+          borderTop: '6px solid #0d5d2f',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto 2rem auto'
+        }}></div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+
+        <h2 style={{
+          color: '#0d5d2f',
+          marginBottom: '0.75rem',
+          fontSize: '2rem',
+          fontWeight: 700
+        }}>
+          Searching
+        </h2>
+        <p style={{
+          color: '#6b7280',
+          fontSize: '1rem',
+          marginBottom: '2rem',
+          lineHeight: 1.6
         }}>
           {status}
-        </h2>
-        
+        </p>
+
         <div style={{
-          width: '100%',
-          height: '8px',
-          backgroundColor: '#e5e7eb',
-          borderRadius: '4px',
-          overflow: 'hidden',
-          marginBottom: '1rem'
+          display: 'grid',
+          gap: '0.5rem',
+          color: '#6b7280',
+          fontSize: '0.95rem',
+          marginBottom: '2rem'
         }}>
-          <div style={{
-            width: `${progress}%`,
-            height: '100%',
-            backgroundColor: '#0d5d2f',
-            transition: 'width 0.3s ease'
-          }}></div>
+          <span>Owner identification</span>
+          <span>Location &amp; address history</span>
+          <span>Contact information</span>
+          <span>Associated people</span>
+          <span>Public records</span>
         </div>
-        
+
         {/* Search Query Display */}
         <div style={{
-          marginTop: '2rem',
-          padding: '1.5rem',
+          padding: '1.25rem',
           backgroundColor: '#fff',
           borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+          border: '1px solid #e5e7eb'
         }}>
           <p style={{
             color: '#6b7280',
-            fontSize: '0.875rem',
+            fontSize: '0.8rem',
             marginBottom: '0.5rem',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
@@ -166,13 +173,22 @@ const PhoneLoaderPage = () => {
           </p>
         </div>
 
-        <p style={{ 
-          color: '#9ca3af', 
+        {/* Info Message */}
+        <p style={{
+          marginTop: '1.75rem',
+          color: '#9ca3af',
           fontSize: '0.875rem',
-          marginTop: '2rem',
           lineHeight: 1.5
         }}>
           Searching through billions of public records...
+        </p>
+        <p style={{
+          marginTop: '0.5rem',
+          color: '#9ca3af',
+          fontSize: '0.875rem',
+          lineHeight: 1.5
+        }}>
+          {progress}% complete
         </p>
       </div>
     </main>

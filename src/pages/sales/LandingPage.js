@@ -25,24 +25,88 @@ const LandingPage = () => {
   }, [q, state, navigate]);
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0e123b', marginBottom: '1rem', fontSize: '2rem' }}>
-        Find people & monitor who searches for you
-      </h1>
-      <p style={{ marginBottom: '2rem', color: '#666', fontSize: '1.1rem', lineHeight: '1.6' }}>
-        Enter a name below to begin your search. Discover comprehensive information about people 
-        and see who's searching for you.
-      </p>
-      <SearchBar initialQuery={q} />
-      <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-        <h3 style={{ color: '#0e123b', marginTop: 0 }}>What You Can Find</h3>
-        <ul style={{ color: '#666', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-          <li>Contact information and addresses</li>
-          <li>Public records and background information</li>
-          <li>Social media profiles</li>
-          <li>Family and relatives</li>
-        </ul>
-      </div>
+    <main style={{ padding: 0, minHeight: '70vh' }}>
+      {/* Hero Section */}
+      <section style={{
+        background: 'linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%)',
+        padding: '4rem 1.5rem',
+        textAlign: 'center'
+      }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+          <h1 style={{
+            color: '#111827',
+            marginBottom: '1rem',
+            fontSize: '2.25rem',
+            fontWeight: 700,
+            lineHeight: 1.25,
+            letterSpacing: '-0.02em'
+          }}>
+            Find People &amp; Monitor Who Searches for You
+          </h1>
+          <p style={{
+            marginBottom: '2rem',
+            color: '#6b7280',
+            fontSize: '1.125rem',
+            lineHeight: 1.625,
+            maxWidth: '560px',
+            marginLeft: 'auto',
+            marginRight: 'auto'
+          }}>
+            Enter a name below to begin your search. Discover comprehensive information about people
+            and see who's searching for you.
+          </p>
+          <div style={{ maxWidth: '600px', margin: '0 auto 2rem' }}>
+            <SearchBar initialQuery={q} />
+          </div>
+          {/* Trust signal */}
+          <p style={{
+            color: '#9ca3af',
+            fontSize: '0.75rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginTop: '1rem'
+          }}>
+            Your search is confidential and secure
+          </p>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section style={{
+        padding: '3rem 1.5rem',
+        backgroundColor: '#ffffff'
+      }}>
+        <div style={{
+          maxWidth: '700px',
+          margin: '0 auto',
+          backgroundColor: '#f9fafb',
+          borderRadius: '0.75rem',
+          border: '1px solid #e5e7eb',
+          padding: '2rem'
+        }}>
+          <h3 style={{
+            color: '#0d5d2f',
+            marginTop: 0,
+            marginBottom: '1rem',
+            fontSize: '1.25rem',
+            fontWeight: 600
+          }}>
+            What You Can Find
+          </h3>
+          <ul style={{
+            color: '#4b5563',
+            lineHeight: 2,
+            paddingLeft: '1.25rem',
+            margin: 0,
+            fontSize: '0.9375rem'
+          }}>
+            <li>Contact information and addresses</li>
+            <li>Public records and background information</li>
+            <li>Social media profiles</li>
+            <li>Family and relatives</li>
+          </ul>
+        </div>
+      </section>
     </main>
   );
 };

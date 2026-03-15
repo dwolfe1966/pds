@@ -374,8 +374,18 @@ const GeneralSearchPage = () => {
               </div>
 
               <button type="submit" className={styles.submitButton}>
-                Search Now
+                Search Records
               </button>
+              <p style={{
+                textAlign: 'center',
+                color: '#9ca3af',
+                fontSize: '0.75rem',
+                marginTop: '1rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Your search is confidential and secure
+              </p>
             </form>
           )}
 
@@ -404,13 +414,23 @@ const GeneralSearchPage = () => {
                 </p>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className={styles.submitButton}
                 disabled={!phone || phone.length < 10}
               >
-                Search Now
+                Search Records
               </button>
+              <p style={{
+                textAlign: 'center',
+                color: '#9ca3af',
+                fontSize: '0.75rem',
+                marginTop: '1rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Your search is confidential and secure
+              </p>
             </form>
           )}
 
@@ -438,13 +458,23 @@ const GeneralSearchPage = () => {
                 </p>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className={styles.submitButton}
                 disabled={!email.trim()}
               >
-                Search Now
+                Search Records
               </button>
+              <p style={{
+                textAlign: 'center',
+                color: '#9ca3af',
+                fontSize: '0.75rem',
+                marginTop: '1rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Your search is confidential and secure
+              </p>
             </form>
           )}
         </div>
