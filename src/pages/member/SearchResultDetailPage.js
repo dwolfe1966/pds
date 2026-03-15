@@ -4,6 +4,7 @@ import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getReportDetail, createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext, getSearchContext } from '../../services/searchContext';
+import { extractAll, formatDateRange, fmtPhone } from '../../utils/reportExtract';
 
 /**
  * Shows a detailed report for a selected person.
@@ -180,6 +181,21 @@ const SearchResultDetailPage = () => {
               {pdfLoading ? '⏳ Preparing PDF…' : '⬇ Download PDF'}
             </button>
           )}
+          <button onClick={() => {
+            const nameParts = (data.fullName || '').split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            const state = data.addresses[0]?.state || '';
+            const zip = data.addresses[0]?.zip || '';
+            const params = new URLSearchParams();
+            if (firstName) params.set('firstName', firstName);
+            if (lastName) params.set('lastName', lastName);
+            if (state) params.set('state', state);
+            if (zip) params.set('zip', zip);
+            navigate(`/opt-out?${params.toString()}`);
+          }} style={styles.btnOptOut} title="Request removal of this person's data">
+            Opt-Out Request
+          </button>
           <button onClick={() => navigate('/people-search')} style={styles.btnSecondary}>
             New Search
           </button>
@@ -226,7 +242,10 @@ const SearchResultDetailPage = () => {
               <tbody>
                 {data.addresses.map((addr, i) => (
                   <tr key={i} style={i % 2 === 0 ? {} : { backgroundColor: '#f9fafb' }}>
-                    <Td>{addr.street || '—'}</Td>
+                    <Td>
+                      {i === 0 && <span style={styles.currentBadge}>Current</span>}
+                      {addr.street || '—'}
+                    </Td>
                     <Td>{addr.city || '—'}</Td>
                     <Td>{addr.state || '—'}</Td>
                     <Td>{addr.zip || '—'}</Td>
@@ -253,7 +272,10 @@ const SearchResultDetailPage = () => {
               <tbody>
                 {data.phones.map((p, i) => (
                   <tr key={i} style={i % 2 === 0 ? {} : { backgroundColor: '#f9fafb' }}>
-                    <Td><strong>{fmtPhone(p.number)}</strong></Td>
+                    <Td>
+                      {i === 0 && <span style={styles.currentBadge}>Current</span>}
+                      <strong>{fmtPhone(p.number)}</strong>
+                    </Td>
                     <Td>{p.type || '—'}</Td>
                     <Td>{p.carrier || '—'}</Td>
                     <Td>{formatDateRange(p.firstSeen, p.lastSeen)}</Td>
@@ -369,6 +391,20 @@ const SearchResultDetailPage = () => {
           <FamilyWatchdogSection offenders={data.offenders} />
         </Section>
 
+        {/* Section 10 — Secondary Identities */}
+        {data.secondaryIdentities.length > 0 && (
+          <Section number="10" title={`Additional Identities (${data.secondaryIdentities.length})`} fullWidth>
+            <p style={{ margin: '0.5rem 1.25rem 1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
+              Other records associated with this person's identity.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem', padding: '0 1.25rem 1.25rem' }}>
+              {data.secondaryIdentities.map((ident, i) => (
+                <SecondaryIdentityCard key={i} identity={ident} />
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* No data catch */}
         {data.phones.length === 0 && data.emails.length === 0 && data.addresses.length <= 1 && (
           <div style={{ ...styles.card, gridColumn: '1 / -1', color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
@@ -476,184 +512,33 @@ const FamilyWatchdogSection = ({ offenders }) => {
   );
 };
 
-/* ─── Data extraction helper ───────────────────────────────────────────── */
+/* ─── Secondary Identity Card ──────────────────────────────────────────── */
 
-function extractAll(result) {
-  const identities = result.identities || [];
-  const fullContact = result.fullContact || null;
-  const familyWatchdog = result.familyWatchdog || null;
-  const primary = identities[0] || {};
-
-  // Name
-  const nameList = primary.nameList || [];
-  const fullName = nameList[0]?.data || 'Unknown';
-  const aliases = nameList.slice(1).map(n => n.data).filter(Boolean);
-
-  // Age / DOB
-  const dobList = primary.dobList || [];
-  const dob = dobList[0]?.date?.data && dobList[0].date.data !== 'XX/XX/XXXX'
-    ? dobList[0].date.data : '';
-  const age = primary.ageRange || dobList[0]?.age || '';
-
-  // Gender
-  const gender = primary.gender || '';
-
-  // Provider
-  const provider = primary.meta?.provider || '';
-
-  // Addresses — merge identity + fullContact, deduplicate
-  const rawAddresses = [
-    ...(primary.addressList || []).map(a => ({
-      street: a.street || a.address || '',
-      city: a.city || '',
-      state: a.state || '',
-      zip: a.zip || '',
-      firstSeen: a.meta?.firstSeen || a.firstSeen || null,
-      lastSeen: a.meta?.lastSeen || a.lastSeen || null,
-    })),
-    ...((fullContact?.addresses || []).map(a => ({
-      street: a.street || a.address || '',
-      city: a.city || '',
-      state: a.state || '',
-      zip: a.zip || '',
-      firstSeen: a.firstSeen || null,
-      lastSeen: a.lastSeen || null,
-    }))),
-  ];
-  const addresses = dedup(rawAddresses, a => `${a.city}|${a.state}|${a.zip}|${a.street}`);
-  const currentLocation = addresses.length > 0
-    ? [addresses[0].city, addresses[0].state].filter(Boolean).join(', ')
+const SecondaryIdentityCard = ({ identity }) => {
+  const name = identity.nameList?.[0]?.data || 'Unknown';
+  const aliases = (identity.nameList || []).slice(1).map(n => n.data).filter(Boolean);
+  const topAddress = identity.addressList?.[0];
+  const location = topAddress
+    ? [topAddress.city, topAddress.state].filter(Boolean).join(', ')
     : '';
+  const topPhone = identity.phoneList?.[0];
+  const phone = topPhone ? fmtPhone(topPhone.number || topPhone.value || '') : '';
+  const age = identity.ageRange || '';
 
-  // Phones — merge phoneList + fullContact.phones
-  const rawPhones = [
-    ...(primary.phoneList || []).map(p => ({
-      number: p.number || p.value || (typeof p === 'string' ? p : ''),
-      type: p.type || p.phoneType || '',
-      carrier: p.carrier || '',
-      firstSeen: p.meta?.firstSeen || p.firstSeen || null,
-      lastSeen: p.meta?.lastSeen || p.lastSeen || null,
-    })),
-    ...((fullContact?.phones || fullContact?.phoneNumbers || []).map(p => ({
-      number: p.number || p.value || (typeof p === 'string' ? p : ''),
-      type: p.type || '',
-      carrier: p.carrier || '',
-      firstSeen: p.firstSeen || null,
-      lastSeen: p.lastSeen || null,
-    }))),
-  ].filter(p => p.number);
-  const phones = dedup(rawPhones, p => p.number.replace(/\D/g, ''));
-
-  // Emails
-  const rawEmails = [
-    ...(primary.emailList || []).map(e => ({
-      address: e.address || e.email || e.value || (typeof e === 'string' ? e : ''),
-      type: e.type || '',
-      firstSeen: e.meta?.firstSeen || e.firstSeen || null,
-      lastSeen: e.meta?.lastSeen || e.lastSeen || null,
-    })),
-    ...((fullContact?.emails || fullContact?.emailAddresses || []).map(e => ({
-      address: e.address || e.email || e.value || (typeof e === 'string' ? e : ''),
-      type: e.type || '',
-      firstSeen: e.firstSeen || null,
-      lastSeen: e.lastSeen || null,
-    }))),
-  ].filter(e => e.address);
-  const emails = dedup(rawEmails, e => e.address.toLowerCase());
-
-  // Relatives
-  const rawRelatives = [
-    ...(primary.relationList || []).map(r => ({
-      name: r.name || r.fullName || r.data || '',
-      relationship: r.relation || r.relationship || r.type || '',
-      age: r.age || '',
-      location: [r.city, r.state].filter(Boolean).join(', '),
-    })),
-    ...((fullContact?.relatives || fullContact?.associates || []).map(r => ({
-      name: r.name || r.fullName || '',
-      relationship: r.relationship || r.type || '',
-      age: r.age || '',
-      location: [r.city, r.state].filter(Boolean).join(', '),
-    }))),
-  ].filter(r => r.name);
-  const relatives = dedup(rawRelatives, r => r.name.toLowerCase());
-
-  // Employment
-  const jobs = (primary.jobList || fullContact?.employments || []).map(j => ({
-    employer: j.employer || j.company || j.organization || '',
-    title: j.title || j.position || '',
-    city: j.city || '',
-    state: j.state || '',
-    start: j.start || j.startDate || null,
-    end: j.end || j.endDate || null,
-  })).filter(j => j.employer);
-
-  // Education
-  const education = (primary.educationList || fullContact?.educations || []).map(e => ({
-    school: e.school || e.organization || '',
-    degree: e.degree || e.major || '',
-    start: e.start || null,
-    end: e.end || null,
-  })).filter(e => e.school);
-
-  // Social
-  const rawSocial = [
-    ...(primary.socialList || []),
-    ...(fullContact?.socialProfiles || fullContact?.social || []),
-  ].map(sp => ({
-    network: sp.network || sp.type || sp.platform || '',
-    url: sp.url || '',
-    username: sp.username || sp.handle || sp.id || '',
-  })).filter(sp => sp.network || sp.url);
-  const social = dedup(rawSocial, sp => (sp.url || sp.network + sp.username).toLowerCase());
-
-  // Family Watchdog
-  const offenders = familyWatchdog?.offenders || (Array.isArray(familyWatchdog) ? familyWatchdog : []);
-
-  return {
-    fullName, aliases, dob, age, gender, provider,
-    currentLocation, addresses, phones, emails, relatives,
-    jobs, education, social, offenders,
-  };
-}
-
-function dedup(arr, keyFn) {
-  const seen = new Set();
-  return arr.filter(item => {
-    const k = keyFn(item);
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-}
-
-/* ─── Formatting helpers ───────────────────────────────────────────────── */
-
-function fmtPhone(raw) {
-  if (!raw) return '';
-  const d = String(raw).replace(/\D/g, '');
-  if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-  if (d.length === 11 && d[0] === '1') return `+1 (${d.slice(1, 4)}) ${d.slice(4, 7)}-${d.slice(7)}`;
-  return raw;
-}
-
-function formatDateRange(first, last) {
-  const fmt = (v) => {
-    if (!v) return null;
-    const s = String(v);
-    if (s.length === 8) return `${s.slice(0, 4)}`;
-    if (s.length === 4) return s;
-    const d = new Date(v);
-    if (!isNaN(d.getTime())) return d.getFullYear().toString();
-    return null;
-  };
-  const f = fmt(first);
-  const l = fmt(last);
-  if (f && l && f !== l) return `${f}–${l}`;
-  if (f) return `Since ${f}`;
-  if (l) return `Until ${l}`;
-  return '—';
-}
+  return (
+    <div style={styles.secondaryCard}>
+      <p style={{ margin: '0 0 0.25rem', fontWeight: 600, color: '#111827', fontSize: '0.9375rem' }}>{name}</p>
+      {aliases.length > 0 && (
+        <p style={{ margin: '0 0 0.25rem', color: '#6b7280', fontSize: '0.8125rem' }}>
+          aka {aliases.join(', ')}
+        </p>
+      )}
+      {age && <p style={{ margin: '0 0 0.25rem', color: '#6b7280', fontSize: '0.8125rem' }}>Age: {age}</p>}
+      {location && <p style={{ margin: '0 0 0.25rem', color: '#374151', fontSize: '0.8125rem' }}>📍 {location}</p>}
+      {phone && <p style={{ margin: 0, color: '#374151', fontSize: '0.8125rem' }}>📞 {phone}</p>}
+    </div>
+  );
+};
 
 /* ─── Styles ───────────────────────────────────────────────────────────── */
 
@@ -697,6 +582,10 @@ const styles = {
     padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#374151',
     border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem',
   },
+  btnOptOut: {
+    padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#b45309',
+    border: '1px solid #d97706', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem',
+  },
   pdfErrorBanner: {
     margin: '0 0 1rem', padding: '0.75rem 1rem',
     backgroundColor: '#fee2e2', color: '#991b1b',
@@ -739,6 +628,21 @@ const styles = {
   listItemSub: { margin: '0 0 0.125rem', color: '#374151', fontSize: '0.875rem' },
   listItemMeta: { margin: 0, color: '#6b7280', fontSize: '0.8125rem' },
   link: { color: '#1d4ed8', fontSize: '0.875rem', wordBreak: 'break-all' },
+
+  // Current badge
+  currentBadge: {
+    display: 'inline-block', marginRight: '0.4rem',
+    padding: '0.125rem 0.4rem', backgroundColor: '#dcfce7',
+    color: '#15803d', borderRadius: '4px', fontSize: '0.6875rem',
+    fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em',
+    verticalAlign: 'middle',
+  },
+
+  // Secondary identity card
+  secondaryCard: {
+    padding: '0.875rem 1rem', border: '1px solid #e5e7eb',
+    borderRadius: '0.5rem', backgroundColor: '#fafafa',
+  },
 
   // Family Watchdog
   clearBanner: { display: 'flex', alignItems: 'center', margin: '1rem 1.25rem', padding: '1rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem', color: '#15803d', fontWeight: 500 },

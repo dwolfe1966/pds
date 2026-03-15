@@ -17,7 +17,7 @@ const UsersPage = () => {
       setLoading(true);
       try {
         const data = await api.get('/admin/users', { token });
-        setUsers(data.results || data.users || []);
+        setUsers(data?.data || data.results || data.users || []);
       } catch (err) {
         setError(err.message);
       } finally {

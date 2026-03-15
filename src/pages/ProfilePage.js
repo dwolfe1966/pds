@@ -34,7 +34,7 @@ const ProfilePage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const updated = await api.put('/me', form, { token });
+      const updated = await api.put('/me', { body: form, token });
       setProfile(updated);
     } catch (err) {
       setError(err.message);

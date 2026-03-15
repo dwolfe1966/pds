@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 /**
  * Opt-out landing page where users search for their record.
+ * Accepts optional URL params (firstName, lastName, state, zip) to pre-populate
+ * the form when navigating from a report detail page.
  */
 const OptOutLandingPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    state: '',
-    zip: ''
+    firstName: searchParams.get('firstName') || '',
+    lastName: searchParams.get('lastName') || '',
+    state: searchParams.get('state') || '',
+    zip: searchParams.get('zip') || ''
   });
   const [error, setError] = useState('');
 

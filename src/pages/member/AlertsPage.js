@@ -15,7 +15,7 @@ const AlertsPage = () => {
   const fetchAlerts = async () => {
     try {
       const data = await api.get('/alerts', { token });
-      setAlerts(data || []);
+      setAlerts(data?.data || data || []);
     } catch (err) {
       setError(err.message);
     }
@@ -35,7 +35,7 @@ const AlertsPage = () => {
     setLoading(true);
     setError('');
     try {
-      await api.post('/alerts', newAlert, { token });
+      await api.post('/alerts', { body: newAlert, token });
       setNewAlert({ criteria: '', frequency: 'daily' });
       fetchAlerts();
     } catch (err) {

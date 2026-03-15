@@ -16,7 +16,7 @@ const SessionsPage = () => {
       setLoading(true);
       try {
         const data = await api.get('/admin/sessions', { token });
-        setSessions(data.results || data.sessions || []);
+        setSessions(data?.data || data.results || data.sessions || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -45,7 +45,7 @@ const SessionsPage = () => {
               <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
                 <td>{s.userId}</td>
                 <td>{s.ipAddress}</td>
-                <td>{s.startedAt}</td>
+                <td>{s.createdAt || s.startedAt}</td>
               </tr>
             ))}
           </tbody>

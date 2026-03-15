@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../api';
 import { createReportForPhone } from '../../services/reportService';
 import DevBCSession from '../../components/DevBCSession';
-import { setSearchContext } from '../../services/searchContext';
 
 /**
  * General search page for authenticated members.
@@ -13,7 +11,7 @@ import { setSearchContext } from '../../services/searchContext';
  */
 const MemberGeneralSearchPage = () => {
   const navigate = useNavigate();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('name'); // 'name', 'phone', or 'email'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -152,49 +150,25 @@ const MemberGeneralSearchPage = () => {
     }
   };
 
-  const handleEmailSubmit = async (e) => {
+  const handleEmailSubmit = (e) => {
     e.preventDefault();
     setError('');
     if (!email.trim()) {
       setError('Please enter an email address');
       return;
     }
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address');
       return;
     }
-    
-    setLoading(true);
-    try {
-      const searchParams = {
-        email: email.trim(),
-        type: 'email'
-      };
-      
-      const response = await api.searchPeople(searchParams);
-      
-      // Store search context
-      if (response.searchContext) {
-        setSearchContext(response.searchContext);
-      }
-      
-      // Store results in sessionStorage
-      sessionStorage.setItem('memberSearchResults', JSON.stringify({
-        results: response.data || [],
-        query: { email: email.trim() },
-        pagination: response.pagination
-      }));
 
-      // Navigate to member results page
-      navigate('/people-results');
-    } catch (err) {
-      setError(err.message || 'Search failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    // Navigate with URL params so SearchResultsPage can run the search itself
+    const params = new URLSearchParams();
+    params.set('email', email.trim());
+    navigate(`/people-results?${params.toString()}`);
   };
 
   return (

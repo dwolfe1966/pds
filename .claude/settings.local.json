@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm test:*)",
       "Bash(npm init:*)",
-      "Bash(npx playwright:*)"
+      "Bash(npx playwright:*)",
+      "Bash(cd:*)"
     ]
   }
 }

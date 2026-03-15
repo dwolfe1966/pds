@@ -16,7 +16,7 @@ const DataRemovalPage = () => {
       setLoading(true);
       try {
         const data = await api.get('/admin/data-removal', { token });
-        setRequests(data.results || data.requests || []);
+        setRequests(data?.data || data.results || data.requests || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -28,7 +28,7 @@ const DataRemovalPage = () => {
 
   const handleApprove = async (id) => {
     try {
-      await api.post(`/admin/data-removal/${id}/approve`, null, { token });
+      await api.post(`/admin/data-removal/${id}/approve`, { token });
       setRequests(requests.filter((r) => r.id !== id));
     } catch (err) {
       setError(err.message);
@@ -37,7 +37,7 @@ const DataRemovalPage = () => {
 
   const handleReject = async (id) => {
     try {
-      await api.post(`/admin/data-removal/${id}/reject`, { reason: 'Not eligible' }, { token });
+      await api.post(`/admin/data-removal/${id}/reject`, { body: { reason: 'Not eligible' }, token });
       setRequests(requests.filter((r) => r.id !== id));
     } catch (err) {
       setError(err.message);
@@ -64,7 +64,7 @@ const DataRemovalPage = () => {
               <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
                 <td>{r.id}</td>
                 <td>{r.userId}</td>
-                <td>{r.date}</td>
+                <td>{r.requestedAt || r.date}</td>
                 <td>
                   <button onClick={() => handleApprove(r.id)} style={{ marginRight: '0.5rem' }}>Approve</button>
                   <button onClick={() => handleReject(r.id)}>Reject</button>

@@ -17,7 +17,7 @@ const PurchasesPage = () => {
       setLoading(true);
       try {
         const data = await api.get('/admin/purchases', { token });
-        setPurchases(data.results || data.purchases || []);
+        setPurchases(data?.data || data.results || data.purchases || []);
       } catch (err) {
         setError(err.message);
       } finally {

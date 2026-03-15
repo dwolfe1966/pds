@@ -16,7 +16,7 @@ const CsRepManagementPage = () => {
       setLoading(true);
       try {
         const data = await api.get('/admin/cs-reps', { token });
-        setReps(data.results || data.reps || []);
+        setReps(data?.data || data.results || data.reps || []);
       } catch (err) {
         setError(err.message);
       } finally {

@@ -14,7 +14,7 @@ const SettingsPage = () => {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/auth/change-password', passwordForm, { token });
+      await api.post('/auth/change-password', { body: passwordForm, token });
       setMessage('Password changed successfully');
     } catch (err) {
       setMessage(err.message);
@@ -27,7 +27,7 @@ const SettingsPage = () => {
     const newSearchable = !privacy.searchable;
     setPrivacy({ searchable: newSearchable });
     try {
-      await api.put('/privacy', { searchable: newSearchable }, { token });
+      await api.put('/privacy', { body: { searchable: newSearchable }, token });
     } catch (err) {
       setMessage(err.message);
     }

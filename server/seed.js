@@ -214,6 +214,7 @@ const seedData = () => {
     id: 'user-member',
     email: 'member@test.com',
     fullName: 'Member User',
+    phone: '555-0100',
     zip: '90210',
     password: 'password123',
     emailVerified: true,
@@ -229,6 +230,7 @@ const seedData = () => {
     id: 'user-paid-member',
     email: 'paid@test.com',
     fullName: 'Paid Member User',
+    phone: '555-0101',
     zip: '90210',
     password: 'password123',
     emailVerified: true,
@@ -288,6 +290,16 @@ const seedData = () => {
     createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
   };
   dataStore.subscriptions.push(memberSubscription);
+
+  // Create alerts and notifications for the known member users
+  for (let j = 0; j < 3; j++) {
+    dataStore.alerts.push(generateAlert(memberUser.id));
+    dataStore.alerts.push(generateAlert(paidMemberUser.id));
+  }
+  for (let j = 0; j < 4; j++) {
+    dataStore.notifications.push(generateNotification(memberUser.id));
+    dataStore.notifications.push(generateNotification(paidMemberUser.id));
+  }
 
   // Create 20 more member users
   for (let i = 0; i < 20; i++) {

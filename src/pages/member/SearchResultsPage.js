@@ -20,6 +20,7 @@ const MemberSearchResultsPage = () => {
   const firstNameParam = params.get('firstName');
   const lastNameParam = params.get('lastName');
   const stateParam = params.get('state');
+  const emailParam = params.get('email');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -172,6 +173,24 @@ const MemberSearchResultsPage = () => {
       setLoading(true);
       setError('');
       try {
+        // Email flow: email URL param (from MemberGeneralSearchPage email tab)
+        if (emailParam) {
+          const searchParams = {
+            email: emailParam,
+            type: 'email'
+          };
+
+          const response = await api.searchPeople(searchParams);
+          setResults(response.data || []);
+          setRawResponse(response.rawResponse || null);
+
+          if (response.searchContext) {
+            setSearchContext(response.searchContext);
+          }
+          setLoading(false);
+          return;
+        }
+
         // Primary flow: firstName/lastName/state URL params (from MemberGeneralSearchPage)
         if (firstNameParam && lastNameParam) {
           const searchParams = {
@@ -237,7 +256,7 @@ const MemberSearchResultsPage = () => {
       }
     };
     fetchResults();
-  }, [firstNameParam, lastNameParam, stateParam, query, zip, token]);
+  }, [firstNameParam, lastNameParam, stateParam, emailParam, query, zip, token]);
 
   return (
     <main style={{ padding: '2rem' }}>
