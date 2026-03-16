@@ -1,0 +1,273 @@
+/**
+ * AlertsPage styles — search alerts management
+ */
+
+.pageWrapper {
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: var(--color-gray-50);
+  min-height: 80vh;
+}
+
+.pageTitle {
+  color: var(--color-primary);
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-2xl);
+}
+
+/* ─── Create alert card ──────────────────────────────────────────────────── */
+
+.createSection {
+  background-color: var(--color-bg-default);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sectionTitle {
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* ─── Form row ───────────────────────────────────────────────────────────── */
+
+.formRow {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.input {
+  flex: 1 1 200px;
+  padding: 0.625rem 0.875rem;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-primary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-default);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.12);
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.select {
+  flex: 0 1 150px;
+  padding: 0.625rem 0.875rem;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-primary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-default);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  appearance: auto;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.12);
+}
+
+.addBtn {
+  flex-shrink: 0;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-base), transform var(--transition-base);
+}
+
+.addBtn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.addBtn:disabled {
+  background-color: var(--color-gray-400);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── Alerts list ────────────────────────────────────────────────────────── */
+
+.alertsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.alertItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  background-color: var(--color-bg-default);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-base);
+}
+
+.alertItem:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.alertIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.alertDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.alertDetails strong {
+  display: block;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  margin-bottom: 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Frequency badge ────────────────────────────────────────────────────── */
+
+.frequencyBadge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.frequencyBadge.instant {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.frequencyBadge.daily {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.frequencyBadge.weekly {
+  background-color: #ede9fe;
+  color: #5b21b6;
+}
+
+/* ─── Delete button ──────────────────────────────────────────────────────── */
+
+.deleteBtn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--color-error);
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  line-height: 1;
+  transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+.deleteBtn:hover {
+  background-color: var(--color-error);
+  color: var(--color-text-inverse);
+  border-color: var(--color-error);
+}
+
+/* ─── Error / empty states ───────────────────────────────────────────────── */
+
+.errorMsg {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding: 0.75rem 1rem;
+  background-color: #fff5f5;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-md);
+  color: #b91c1c;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.emptyState {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  background-color: var(--color-bg-default);
+  border: 1px dashed var(--color-border-medium);
+  border-radius: var(--radius-lg);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .pageWrapper {
+    padding: var(--spacing-2xl) var(--spacing-md);
+  }
+
+  .pageTitle {
+    font-size: var(--font-size-3xl);
+  }
+
+  .formRow {
+    flex-direction: column;
+  }
+
+  .select {
+    flex: 1 1 auto;
+  }
+
+  .addBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

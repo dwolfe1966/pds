@@ -84,11 +84,10 @@ const generateSearch = (userId, targetUserId = null) => {
 };
 
 const generateAlert = (userId) => {
-  const criteria = {
-    name: generateName(),
-    location: Math.random() > 0.5 ? cities[Math.floor(Math.random() * cities.length)] : null,
-    ageRange: Math.random() > 0.5 ? `${Math.floor(Math.random() * 10) * 5 + 20}-${Math.floor(Math.random() * 10) * 5 + 25}` : null
-  };
+  const name = generateName();
+  const location = Math.random() > 0.5 ? cities[Math.floor(Math.random() * cities.length)] : null;
+  // criteria is always a plain string so AlertsPage can render it directly
+  const criteria = location ? `${name}, ${location}` : name;
 
   return {
     id: generateId('alert'),

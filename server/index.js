@@ -541,6 +541,13 @@ app.all('/api/proxy/*', async (req, res) => {
         }
       }
 
+      // Dev fallback: if captchaToken is still missing, inject the dev bypass pass.
+      // The ByteCrtrs dev API accepts the bcEdgeApiPass value as a captchaToken.
+      if (!requestBody.captchaToken) {
+        requestBody.captchaToken = captchaPass;
+        console.log('[Proxy] [Dev] Injecting captchaPass as captchaToken fallback for report/create');
+      }
+
         console.log('[Proxy] ══════ REPORT CREATE REQUEST ══════');
       console.log('[Proxy] Endpoint: POST /idLookup/report/create');
       console.log('[Proxy] Request body:', JSON.stringify(requestBody, null, 2));

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import styles from './AlertsPage.module.css';
 
 /**
  * Manage search alerts for the current user.
@@ -13,6 +14,7 @@ const AlertsPage = () => {
   const [error, setError] = useState('');
 
   const fetchAlerts = async () => {
+    if (!token) return;
     try {
       const data = await api.get('/alerts', { token });
       setAlerts(data?.data || data || []);
@@ -23,8 +25,8 @@ const AlertsPage = () => {
 
   useEffect(() => {
     fetchAlerts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const handleChange = (e) => {
     setNewAlert({ ...newAlert, [e.target.name]: e.target.value });
@@ -54,39 +56,76 @@ const AlertsPage = () => {
     }
   };
 
+  const frequencyClass = (freq) => {
+    if (freq === 'instant') return `${styles.frequencyBadge} ${styles.instant}`;
+    if (freq === 'weekly') return `${styles.frequencyBadge} ${styles.weekly}`;
+    return `${styles.frequencyBadge} ${styles.daily}`;
+  };
+
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Search Alerts</h1>
-      <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <input
-          type="text"
-          name="criteria"
-          placeholder="Name or keyword"
-          value={newAlert.criteria}
-          onChange={handleChange}
-          required
-        />
-        <select name="frequency" value={newAlert.frequency} onChange={handleChange}>
-          <option value="instant">Instant</option>
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-        </select>
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating…' : 'Create Alert'}
-        </button>
-      </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {alerts.length === 0 && <li>No alerts</li>}
-        {alerts.map((alert) => (
-          <li key={alert.id} style={{ borderBottom: '1px solid #eee', padding: '0.5rem 0' }}>
-            <strong>{alert.criteria}</strong> – {alert.frequency}
-            <button onClick={() => handleDelete(alert.id)} style={{ marginLeft: '1rem' }}>
-              Delete
+    <main className={styles.pageWrapper}>
+      <h1 className={styles.pageTitle}>Search Alerts</h1>
+
+      {/* Create alert */}
+      <div className={styles.createSection}>
+        <h2 className={styles.sectionTitle}>Create New Alert</h2>
+        <form onSubmit={handleCreate}>
+          <div className={styles.formRow}>
+            <input
+              type="text"
+              name="criteria"
+              placeholder="Name or keyword to monitor"
+              value={newAlert.criteria}
+              onChange={handleChange}
+              required
+              className={styles.input}
+            />
+            <select
+              name="frequency"
+              value={newAlert.frequency}
+              onChange={handleChange}
+              className={styles.select}
+            >
+              <option value="instant">Instant</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+            <button type="submit" disabled={loading} className={styles.addBtn}>
+              {loading ? 'Adding…' : 'Add Alert'}
             </button>
-          </li>
-        ))}
-      </ul>
+          </div>
+        </form>
+      </div>
+
+      {error && <p className={styles.errorMsg}>{error}</p>}
+
+      {/* Existing alerts */}
+      {alerts.length === 0 ? (
+        <p className={styles.emptyState}>You have no alerts set up yet. Create one above to get started.</p>
+      ) : (
+        <div className={styles.alertsList}>
+          {alerts.map((alert) => (
+            <div key={alert.id} className={styles.alertItem}>
+              <div className={styles.alertIcon}>🔔</div>
+              <div className={styles.alertDetails}>
+                <strong>
+                  {typeof alert.criteria === 'object' && alert.criteria !== null
+                    ? [alert.criteria.name, alert.criteria.location].filter(Boolean).join(', ')
+                    : alert.criteria || '(no criteria)'}
+                </strong>
+                <span className={frequencyClass(alert.frequency)}>{alert.frequency}</span>
+              </div>
+              <button
+                className={styles.deleteBtn}
+                onClick={() => handleDelete(alert.id)}
+                aria-label={`Delete alert for ${alert.criteria}`}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 };

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getReportList } from '../../services/reportService';
+import styles from './AccountPage.module.css';
 
 /**
  * Account and billing management page for members.
@@ -18,6 +19,7 @@ const AccountPage = () => {
   const [hasMoreReports, setHasMoreReports] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,22 +145,17 @@ const AccountPage = () => {
     navigate(`/people/${commerceContentId}`);
   };
 
-  const handleCancel = async () => {
+  const handleCancelConfirm = async () => {
     if (!token) {
       setError('Not authenticated');
       return;
     }
-
-    if (!window.confirm('Are you sure you want to cancel your subscription?')) {
-      return;
-    }
-
+    setShowCancelModal(false);
     try {
       await api.delete('/subscription', { token });
       setSubscription(null);
-      setError(''); // Clear any errors
+      setError('');
     } catch (err) {
-      console.error('[AccountPage] Failed to cancel subscription:', err);
       const errorMessage = err?.message || err?.data?.error?.message || 'Failed to cancel subscription';
       setError(errorMessage);
     }
@@ -206,106 +203,109 @@ const AccountPage = () => {
   };
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0d5d2f', marginBottom: '2rem' }}>Account & Billing</h1>
-      
+    <main className={styles.pageWrapper}>
+      <h1 className={styles.pageTitle}>Account &amp; Billing</h1>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '0.75rem', padding: '2rem',
+            maxWidth: '420px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <h3 style={{ marginTop: 0, color: '#111827' }}>Cancel Subscription?</h3>
+            <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
+              Your access will remain active until the end of your billing period. After that, you will lose access to all reports and member features.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => setShowCancelModal(false)}
+                style={{ padding: '0.6rem 1.25rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', background: '#fff', cursor: 'pointer' }}
+              >
+                Keep Subscription
+              </button>
+              <button
+                onClick={handleCancelConfirm}
+                style={{ padding: '0.6rem 1.25rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Subscription Section */}
-      <div style={{ 
-        backgroundColor: '#f9fafb', 
-        padding: '2rem', 
-        borderRadius: '0.75rem',
-        marginBottom: '2rem',
-        border: '1px solid #e5e7eb'
-      }}>
-        <h2 style={{ color: '#0d5d2f', marginTop: 0, marginBottom: '1rem' }}>Subscription</h2>
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Subscription</h2>
         {loading ? (
-          <p>Loading subscription…</p>
+          <p className={styles.loadingText}>Loading subscription…</p>
         ) : error ? (
-          <p style={{ color: '#c00' }}>{error}</p>
+          <p className={styles.errorText}>{error}</p>
         ) : subscription ? (
           <div>
-            <p><strong>Plan:</strong> {subscription.plan || 'Basic'}</p>
-            <p><strong>Renewal date:</strong> {subscription.renewalDate || 'N/A'}</p>
-            <button 
-              onClick={handleCancel}
-              style={{
-                marginTop: '1rem',
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#dc2626',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                fontSize: '1rem'
-              }}
-            >
+            <div className={styles.planInfo}>
+              <span><strong>Plan:</strong> {subscription.plan || 'Basic'}</span>
+              <span className={`${styles.subscriptionBadge} ${styles.active}`}>Active</span>
+              <span><strong>Renewal date:</strong> {subscription.renewalDate || 'N/A'}</span>
+            </div>
+            <button className={styles.cancelBtn} onClick={() => setShowCancelModal(true)}>
               Cancel Subscription
             </button>
           </div>
         ) : (
-          <p>You do not have an active subscription.</p>
+          <div>
+            <p style={{ color: '#6b7280', marginBottom: '1rem' }}>You do not have an active subscription.</p>
+            <Link
+              to="/payment"
+              style={{
+                display: 'inline-block',
+                padding: '0.75rem 1.5rem',
+                background: '#0d5d2f',
+                color: '#fff',
+                borderRadius: '0.5rem',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+              }}
+            >
+              Upgrade to Pro — $29.99/month
+            </Link>
+          </div>
         )}
       </div>
 
       {/* Reports Section */}
-      <div style={{ 
-        backgroundColor: '#f9fafb', 
-        padding: '2rem', 
-        borderRadius: '0.75rem',
-        border: '1px solid #e5e7eb'
-      }}>
-        <h2 style={{ color: '#0d5d2f', marginTop: 0, marginBottom: '1.5rem' }}>Your Reports</h2>
-        
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Your Reports</h2>
+
         {reportsLoading && reports.length === 0 ? (
-          <p>Loading reports…</p>
+          <p className={styles.loadingText}>Loading reports…</p>
         ) : reportsError ? (
-          <p style={{ color: '#c00' }}>{reportsError}</p>
+          <p className={styles.errorText}>{reportsError}</p>
         ) : reports.length === 0 ? (
-          <p style={{ color: '#6b7280' }}>You haven't created any reports yet.</p>
+          <p className={styles.emptyState}>You haven't created any reports yet.</p>
         ) : (
           <>
-            <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+            <ul className={styles.reportsList}>
               {reports.map((report, index) => {
                 const reportInfo = getReportInfo(report);
                 return (
-                  <div 
+                  <li
                     key={reportInfo.id || index}
-                    style={{
-                      backgroundColor: '#fff',
-                      padding: '1.5rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid #e5e7eb',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
+                    className={styles.reportItem}
                     onClick={() => handleViewReport(reportInfo.id)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#0d5d2f';
-                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#e5e7eb';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
                   >
                     <div>
-                      <h3 style={{ 
-                        color: '#0d5d2f', 
-                        margin: '0 0 0.5rem 0',
-                        fontSize: '1.125rem'
-                      }}>
-                        {reportInfo.name}
-                      </h3>
-                      <p style={{ color: '#6b7280', margin: 0, fontSize: '0.875rem' }}>
+                      <p className={styles.reportName}>{reportInfo.name}</p>
+                      <p className={styles.reportDate}>
                         Created: {(() => {
                           try {
                             const date = new Date(reportInfo.createdAt);
-                            if (isNaN(date.getTime())) {
-                              return 'Unknown date';
-                            }
+                            if (isNaN(date.getTime())) return 'Unknown date';
                             return date.toLocaleDateString();
                           } catch (e) {
                             return 'Unknown date';
@@ -314,16 +314,7 @@ const AccountPage = () => {
                       </p>
                     </div>
                     <button
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#0d5d2f',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '0.375rem',
-                        cursor: 'pointer',
-                        fontSize: '0.875rem',
-                        fontWeight: 500
-                      }}
+                      className={styles.viewBtn}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleViewReport(reportInfo.id);
@@ -331,29 +322,25 @@ const AccountPage = () => {
                     >
                       View Report
                     </button>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
-            
-            {hasMoreReports && (
+            </ul>
+
+            {hasMoreReports ? (
               <button
+                className={styles.loadMoreBtn}
                 onClick={handleLoadMoreReports}
                 disabled={reportsLoading}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  backgroundColor: reportsLoading ? '#9ca3af' : '#0d5d2f',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: reportsLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 500
-                }}
               >
                 {reportsLoading ? 'Loading...' : 'Load More Reports'}
               </button>
+            ) : (
+              reports.length > 0 && (
+                <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.875rem', marginTop: '1rem' }}>
+                  All reports loaded
+                </p>
+              )
             )}
           </>
         )}

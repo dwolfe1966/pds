@@ -1,0 +1,244 @@
+/**
+ * AccountPage styles — account & billing management
+ */
+
+.pageWrapper {
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: var(--color-gray-50);
+  min-height: 80vh;
+}
+
+.pageTitle {
+  color: var(--color-primary);
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-2xl);
+}
+
+/* ─── Card sections ──────────────────────────────────────────────────────── */
+
+.section {
+  background-color: var(--color-bg-default);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.sectionTitle {
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* ─── Subscription info ──────────────────────────────────────────────────── */
+
+.planInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+}
+
+.planInfo strong {
+  color: var(--color-text-primary);
+}
+
+/* ─── Badges ─────────────────────────────────────────────────────────────── */
+
+.subscriptionBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.subscriptionBadge.active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.subscriptionBadge.inactive {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.statusBadge.active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.statusBadge.inactive {
+  background-color: var(--color-gray-100);
+  color: var(--color-gray-500);
+}
+
+/* ─── Reports list ───────────────────────────────────────────────────────── */
+
+.reportsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.reportItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+  border-radius: var(--radius-sm);
+}
+
+.reportItem:last-child {
+  border-bottom: none;
+}
+
+.reportItem:hover {
+  background-color: #f0fdf4;
+}
+
+.reportName {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  font-size: var(--font-size-base);
+  margin: 0 0 0.2rem;
+}
+
+.reportDate {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+
+.viewBtn {
+  padding: 0.45rem 1rem;
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--transition-base);
+  flex-shrink: 0;
+}
+
+.viewBtn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.loadMoreBtn {
+  display: block;
+  margin: var(--spacing-md) auto 0;
+  padding: 0.65rem 2rem;
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.loadMoreBtn:hover:not(:disabled) {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.loadMoreBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  margin-top: var(--spacing-md);
+  padding: 0.65rem 1.5rem;
+  background-color: transparent;
+  color: var(--color-error);
+  border: 1.5px solid var(--color-error);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.cancelBtn:hover {
+  background-color: var(--color-error);
+  color: var(--color-text-inverse);
+}
+
+/* ─── Empty / error states ───────────────────────────────────────────────── */
+
+.emptyState {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xl) 0;
+}
+
+.errorText {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.loadingText {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .pageWrapper {
+    padding: var(--spacing-2xl) var(--spacing-md);
+  }
+
+  .pageTitle {
+    font-size: var(--font-size-3xl);
+  }
+
+  .reportItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .viewBtn {
+    align-self: flex-end;
+  }
+
+  .planInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+}

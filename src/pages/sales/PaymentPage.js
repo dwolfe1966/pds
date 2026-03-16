@@ -29,12 +29,14 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, user, loading: authLoading, setToken, setUser } = useAuth();
+  // Pre-derive name parts so billing fields are pre-filled from the logged-in user
+  const _nameParts = (user?.fullName || '').trim().split(/\s+/);
   const [form, setForm] = useState({
     cardNumber: '',
     expiry: '',
     cvv: '',
-    billingFirstName: '',
-    billingLastName: '',
+    billingFirstName: _nameParts[0] || '',
+    billingLastName: _nameParts.slice(1).join(' ') || '',
     street1: '',
     billingZip: '',
   });
@@ -234,7 +236,8 @@ const PaymentPage = () => {
         <div className={styles.successBox}>
           <h2 className={styles.successTitle}>Payment Successful!</h2>
           <p className={styles.successText}>
-            Your membership has been activated. Redirecting to your report...
+            Your membership has been activated.{' '}
+            {selectedPerson ? 'Redirecting to your report…' : 'Redirecting to your dashboard…'}
           </p>
         </div>
       ) : (
@@ -400,6 +403,24 @@ const PaymentPage = () => {
               ))}
             </div>
           </form>
+
+          <p style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#6b7280',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                textDecoration: 'underline',
+                padding: 0,
+              }}
+            >
+              I'll upgrade later — go to my dashboard
+            </button>
+          </p>
         </div>
       )}
     </main>

@@ -12,6 +12,9 @@ import LandingPage from './pages/sales/LandingPage';
 import NameSearchLandingPage from './pages/sales/NameSearchLandingPage';
 import NameSearchLandingV2Page from './pages/sales/NameSearchLandingV2Page';
 import NameSearchLandingV3Page from './pages/sales/NameSearchLandingV3Page';
+import NameSearchLandingV4Page from './pages/sales/NameSearchLandingV4Page';
+import NameSearchLandingV5Page from './pages/sales/NameSearchLandingV5Page';
+import NameSearchLandingV6Page from './pages/sales/NameSearchLandingV6Page';
 import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
 import SalesSearchResultsPage from './pages/sales/SearchResultsPage';
 import GeneralSearchPage from './pages/sales/GeneralSearchPage';
@@ -94,6 +97,9 @@ const App = () => {
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
           <Route path="/name/landing/v2" element={<NameSearchLandingV2Page />} />
           <Route path="/name/landing/v3" element={<NameSearchLandingV3Page />} />
+          <Route path="/name/landing/v4" element={<NameSearchLandingV4Page />} />
+          <Route path="/name/landing/v5" element={<NameSearchLandingV5Page />} />
+          <Route path="/name/landing/v6" element={<NameSearchLandingV6Page />} />
           <Route path="/name/loader" element={<NameSearchLoaderPage />} />
           <Route path="/name/search-result" element={<SalesSearchResultsPage />} />
           <Route path="/name/signup" element={<SignupPage />} />

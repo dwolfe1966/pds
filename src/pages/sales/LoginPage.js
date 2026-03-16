@@ -42,6 +42,7 @@ const LoginPage = () => {
               value={form.email}
               onChange={handleChange}
               required
+              autoComplete="email"
               className={styles.input}
             />
           </div>
@@ -53,6 +54,7 @@ const LoginPage = () => {
               value={form.password}
               onChange={handleChange}
               required
+              autoComplete="current-password"
               className={styles.input}
             />
           </div>

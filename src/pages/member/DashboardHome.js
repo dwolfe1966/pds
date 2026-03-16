@@ -169,6 +169,26 @@ const DashboardHome = () => {
         </div>
       </div>
 
+      {/* Complete Profile Banner */}
+      {!loading && user && (!user.zip || !user.fullName) && (
+        <div style={{
+          background: '#fefce8', border: '1px solid #fde047',
+          borderRadius: '0.75rem', padding: '1rem 1.5rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap',
+        }}>
+          <div>
+            <strong style={{ color: '#713f12' }}>Complete your profile</strong>
+            <p style={{ margin: '0.25rem 0 0', color: '#92400e', fontSize: '0.875rem' }}>
+              Add your {!user.fullName ? 'name' : ''}{!user.fullName && !user.zip ? ' and ' : ''}{!user.zip ? 'ZIP code' : ''} to get personalized results.
+            </p>
+          </div>
+          <Link to="/profile" style={{ color: '#0d5d2f', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '0.875rem' }}>
+            Update Profile →
+          </Link>
+        </div>
+      )}
+
       {/* Pro Member Status Banner */}
       <div className={styles.statusCard}>
         <div className={styles.statusContent}>
@@ -231,9 +251,13 @@ const DashboardHome = () => {
           {!activityError && loading && <p className={styles.mutedText}>Loading recent activity...</p>}
           {!loading && !activityError && recentReports.length === 0 && recentAlerts.length === 0 && recentSearches.length === 0 && (
             <div className={styles.emptyState}>
-              <p>No activity yet. Start a search to generate your first report.</p>
+              <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</p>
+              <p style={{ fontWeight: 600, marginBottom: '0.25rem' }}>No activity yet</p>
+              <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '1rem' }}>
+                Run your first search to start building your activity history.
+              </p>
               <Link to="/people-search" className={styles.secondaryLink}>
-                Run a Search
+                Start a Search
               </Link>
             </div>
           )}

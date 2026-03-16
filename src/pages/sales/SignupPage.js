@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import '../../styles/contentContainer.css';
+import styles from './SignupPage.module.css';
 
 /**
  * Sign‑up page collects basic information and creates a new account.
@@ -17,6 +18,7 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [successRedirectTo, setSuccessRedirectTo] = useState('/dashboard');
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [loadingPerson, setLoadingPerson] = useState(false);
 
@@ -68,6 +70,13 @@ const SignupPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Client-side validation
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
       // Parse firstName/lastName from fullName for ByteCrtrs (needs them split)
@@ -95,11 +104,12 @@ const SignupPage = () => {
       // Set token and user in AuthContext and persist (so payment page has auth)
       if (response.accessToken) {
         const userData = response.user || {
+          id: response.user?.id || response.user?._id || response.userId || null,
           email: form.email,
           fullName: form.fullName,
           optin: form.optin,
           role: 'member',
-          emailVerified: response.user?.emailVerified || false
+          emailVerified: false,
         };
         setToken(response.accessToken);
         setUser(userData);
@@ -110,8 +120,6 @@ const SignupPage = () => {
         }
       }
 
-      setSuccess(true);
-
       // Store selected person ID in sessionStorage for payment page
       const params = new URLSearchParams(location.search);
       const selectedPersonId = params.get('selected');
@@ -119,10 +127,14 @@ const SignupPage = () => {
         sessionStorage.setItem('selectedPersonId', selectedPersonId);
       }
 
-      // Redirect: use ?redirect= if present (e.g. from Payment page), else /payment or /dashboard
+      // Determine redirect destination BEFORE showing success state
       const redirectTo = params.get('redirect') || (selectedPersonId ? '/payment' : '/dashboard');
+      const normalizedRedirect = redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`;
+      setSuccessRedirectTo(normalizedRedirect);
+      setSuccess(true);
+
       setTimeout(() => {
-        navigate(redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`);
+        navigate(normalizedRedirect);
       }, 2000);
     } catch (err) {
       console.error('Signup error:', err);
@@ -134,161 +146,125 @@ const SignupPage = () => {
 
   return (
     <main className="pageBackground">
-      <div className="contentContainer contentContainerNarrow">
-      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Create your account</h1>
-      
-      {/* Teaser block when coming from search result */}
-      {selectedPerson && !success && (
-        <div style={{ 
-          padding: '1.5rem', 
-          backgroundColor: '#f0f7ff', 
-          border: '2px solid #0d5d2f',
-          borderRadius: '0.5rem',
-          marginBottom: '2rem' 
-        }}>
-          <h2 style={{ color: '#0d5d2f', marginTop: 0, marginBottom: '0.5rem', fontSize: '1.3rem' }}>
-            View Full Report for {selectedPerson.fullName}
-          </h2>
-          <p style={{ color: '#6b7280', marginBottom: '1rem', lineHeight: '1.6' }}>
-            You're viewing a preview for <strong>{selectedPerson.fullName}</strong>
-            {selectedPerson.location && ` from ${selectedPerson.location}`}.
-            {selectedPerson.ageRange && ` Age: ${selectedPerson.ageRange}`}
-          </p>
-          <div style={{ 
-            padding: '1rem', 
-            backgroundColor: '#fff', 
-            borderRadius: '0.375rem',
-            border: '1px solid #d1d5db'
-          }}>
-            <p style={{ margin: 0, color: '#111827', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-              Sign up now to unlock:
-            </p>
-            <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#6b7280', lineHeight: '1.8' }}>
-              <li>Complete contact information</li>
-              <li>Address history and current location</li>
-              <li>Phone numbers and email addresses</li>
-              <li>Relatives and family connections</li>
-              <li>Social media profiles</li>
-              <li>Public records and background information</li>
-            </ul>
-          </div>
-        </div>
-      )}
-      
-      {!selectedPerson && (
-        <p style={{ marginBottom: '2rem', color: '#6b7280', lineHeight: '1.6' }}>
-          Sign up to unlock full access to detailed reports and monitor who's searching for you.
-        </p>
-      )}
-      {success ? (
-        <div style={{ padding: '2rem', backgroundColor: '#e8f5e9', borderRadius: '0.375rem', textAlign: 'center' }}>
-          <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Thank you for signing up!</h2>
-          <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem' }}>
-            Account created successfully! Redirecting to payment...
-          </p>
-          {selectedPerson && (
-            <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              Complete your purchase to view the full report for {selectedPerson.fullName}.
-            </p>
-          )}
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-              Full Name *
-            </label>
-            <input
-              type="text"
-              name="fullName"
-              value={form.fullName}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-              ZIP Code
-            </label>
-            <input
-              type="text"
-              name="zip"
-              value={form.zip}
-              onChange={handleChange}
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-              Email *
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-              Password *
-            </label>
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              required
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#111827', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                name="optin"
-                checked={form.optin}
-                onChange={handleChange}
-              />
-              I agree to receive marketing communications and emails
-            </label>
-          </div>
-          {error && (
-            <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '0.375rem', marginBottom: '1rem' }}>
-              <p style={{ margin: 0, fontWeight: 'bold' }}>Error:</p>
-              <p style={{ margin: '0.5rem 0 0 0' }}>{error}</p>
-              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#a00' }}>
-                Please check that the server is running on http://localhost:3001
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h1 className={styles.title}>Create your account</h1>
+
+          {/* Teaser block when coming from search result */}
+          {selectedPerson && !success && (
+            <div className={styles.teaserBox}>
+              <h2>View Full Report for {selectedPerson.fullName}</h2>
+              <p>
+                You're viewing a preview for <strong>{selectedPerson.fullName}</strong>
+                {selectedPerson.location && ` from ${selectedPerson.location}`}.
+                {selectedPerson.ageRange && ` Age: ${selectedPerson.ageRange}`}
               </p>
+              <div className={styles.teaserUnlockBox}>
+                <p>Sign up now to unlock:</p>
+                <ul>
+                  <li>Complete contact information</li>
+                  <li>Address history and current location</li>
+                  <li>Phone numbers and email addresses</li>
+                  <li>Relatives and family connections</li>
+                  <li>Social media profiles</li>
+                  <li>Public records and background information</li>
+                </ul>
+              </div>
             </div>
           )}
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              backgroundColor: loading ? '#9ca3af' : '#0d5d2f',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '0.375rem',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              transition: 'all 0.2s ease',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '1rem',
-              fontWeight: 'bold'
-            }}
-          >
-            {loading ? 'Signing up…' : 'Sign Up'}
-          </button>
-          <p style={{ marginTop: '1rem', textAlign: 'center', color: '#6b7280' }}>
-            Already have an account? <a href="/login" style={{ color: '#0d5d2f', fontWeight: 600 }}>Log in</a>
-          </p>
-        </form>
-      )}
+
+          {!selectedPerson && !success && (
+            <p className={styles.subtitle}>
+              Sign up to unlock full access to detailed reports and monitor who's searching for you.
+            </p>
+          )}
+
+          {success ? (
+            <div className={styles.successMsg}>
+              <h2>Thank you for signing up!</h2>
+              <p>
+                Account created successfully!{' '}
+                {successRedirectTo === '/dashboard'
+                  ? 'Redirecting to your dashboard…'
+                  : 'Redirecting to complete your purchase…'}
+              </p>
+              {selectedPerson && (
+                <p>Complete your purchase to view the full report for {selectedPerson.fullName}.</p>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="fullName">Full Name *</label>
+                <input
+                  id="fullName"
+                  type="text"
+                  name="fullName"
+                  value={form.fullName}
+                  onChange={handleChange}
+                  required
+                  className={styles.input}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="zip">ZIP Code</label>
+                <input
+                  id="zip"
+                  type="text"
+                  name="zip"
+                  value={form.zip}
+                  onChange={handleChange}
+                  className={styles.input}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="email">Email *</label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  className={styles.input}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="password">Password *</label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  className={styles.input}
+                />
+              </div>
+              <label className={styles.optinRow}>
+                <input
+                  type="checkbox"
+                  name="optin"
+                  checked={form.optin}
+                  onChange={handleChange}
+                />
+                <span>I agree to receive marketing communications and emails</span>
+              </label>
+              {error && (
+                <div className={styles.errorMsg}>
+                  <p><strong>Error:</strong></p>
+                  <p>{error}</p>
+                </div>
+              )}
+              <button type="submit" disabled={loading} className={styles.submitBtn}>
+                {loading ? 'Signing up…' : 'Sign Up'}
+              </button>
+              <p className={styles.loginLink}>
+                Already have an account? <a href="/login">Log in</a>
+              </p>
+            </form>
+          )}
+        </div>
       </div>
     </main>
   );

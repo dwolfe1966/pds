@@ -77,6 +77,10 @@ const NameSearchLandingV2Page = () => {
   ];
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
+  useEffect(() => {
     let timer;
     if (step === 'searching-one') {
       timer = setTimeout(() => setStep('location'), 1700);
