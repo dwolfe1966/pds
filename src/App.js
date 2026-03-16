@@ -20,13 +20,24 @@ import SalesSearchResultsPage from './pages/sales/SearchResultsPage';
 import GeneralSearchPage from './pages/sales/GeneralSearchPage';
 import SearchDetailPreviewPage from './pages/sales/SearchDetailPreviewPage';
 import SignupPage from './pages/sales/SignupPage';
+import SignupPageStepped from './pages/sales/SignupPageStepped';
 import LoginPage from './pages/sales/LoginPage';
 import PaymentPage from './pages/sales/PaymentPage';
 import PhoneSearchLandingPage from './pages/sales/PhoneSearchLandingPage';
 import PhoneLandingPage from './pages/sales/PhoneLandingPage';
+import PhoneLandingV2Page from './pages/sales/PhoneSearchLandingV2Page';
+import PhoneLandingV3Page from './pages/sales/PhoneSearchLandingV3Page';
+import PhoneLandingV4Page from './pages/sales/PhoneSearchLandingV4Page';
+import PhoneLandingV5Page from './pages/sales/PhoneSearchLandingV5Page';
+import PhoneLandingV6Page from './pages/sales/PhoneSearchLandingV6Page';
 import PhoneLoaderPage from './pages/sales/PhoneLoaderPage';
 import PhoneSearchResultsPage from './pages/sales/PhoneSearchResultsPage';
 import EmailLandingPage from './pages/sales/EmailLandingPage';
+import EmailLandingV2Page from './pages/sales/EmailSearchLandingV2Page';
+import EmailLandingV3Page from './pages/sales/EmailSearchLandingV3Page';
+import EmailLandingV4Page from './pages/sales/EmailSearchLandingV4Page';
+import EmailLandingV5Page from './pages/sales/EmailSearchLandingV5Page';
+import EmailLandingV6Page from './pages/sales/EmailSearchLandingV6Page';
 import EmailLoaderPage from './pages/sales/EmailLoaderPage';
 import EmailSearchResultsPage from './pages/sales/EmailSearchResultsPage';
 import OptOutLandingPage from './pages/sales/OptOutLandingPage';
@@ -107,18 +118,29 @@ const App = () => {
           <Route path="/search-results" element={<SalesSearchResultsPage />} />
           <Route path="/search/:id" element={<SearchDetailPreviewPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signup/v2" element={<SignupPageStepped />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/payment" element={<PaymentPage />} />
-          {/* Phone search routes (new pattern matching name search) */}
+          {/* Phone search routes */}
           <Route path="/phone/landing" element={<PhoneLandingPage />} />
+          <Route path="/phone/landing/v2" element={<PhoneLandingV2Page />} />
+          <Route path="/phone/landing/v3" element={<PhoneLandingV3Page />} />
+          <Route path="/phone/landing/v4" element={<PhoneLandingV4Page />} />
+          <Route path="/phone/landing/v5" element={<PhoneLandingV5Page />} />
+          <Route path="/phone/landing/v6" element={<PhoneLandingV6Page />} />
           <Route path="/phone/loader" element={<PhoneLoaderPage />} />
           <Route path="/phone/search-result" element={<PhoneSearchResultsPage />} />
-          {/* Legacy phone search routes (kept for backward compatibility) */}
+          {/* Legacy phone search routes */}
           <Route path="/phone-search" element={<PhoneSearchLandingPage />} />
           <Route path="/phone-search-loading" element={<PhoneLoaderPage />} />
           <Route path="/phone-search-results" element={<PhoneSearchResultsPage />} />
           {/* Email search routes */}
           <Route path="/email/landing" element={<EmailLandingPage />} />
+          <Route path="/email/landing/v2" element={<EmailLandingV2Page />} />
+          <Route path="/email/landing/v3" element={<EmailLandingV3Page />} />
+          <Route path="/email/landing/v4" element={<EmailLandingV4Page />} />
+          <Route path="/email/landing/v5" element={<EmailLandingV5Page />} />
+          <Route path="/email/landing/v6" element={<EmailLandingV6Page />} />
           <Route path="/email/loader" element={<EmailLoaderPage />} />
           <Route path="/email/search-result" element={<EmailSearchResultsPage />} />
           {/* Opt-out routes */}

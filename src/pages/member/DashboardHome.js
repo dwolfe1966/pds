@@ -13,7 +13,7 @@ import styles from './DashboardHome.module.css';
  */
 const DashboardHome = () => {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, token, isPaid } = useAuth();
   const [metrics, setMetrics] = useState({
     searches: null,
     alerts: null,
@@ -189,19 +189,62 @@ const DashboardHome = () => {
         </div>
       )}
 
-      {/* Pro Member Status Banner */}
-      <div className={styles.statusCard}>
-        <div className={styles.statusContent}>
-          <div className={styles.statusIcon}>⭐</div>
-          <div>
-            <h3 className={styles.statusTitle}>Pro Member</h3>
-            <p className={styles.statusSubtitle}>
-              You have full access to unlimited searches, detailed reports, and advanced analytics.
-            </p>
+      {/* Membership Status Banner */}
+      {!loading && isPaid ? (
+        <div className={styles.statusCard}>
+          <div className={styles.statusContent}>
+            <div className={styles.statusIcon}>⭐</div>
+            <div>
+              <h3 className={styles.statusTitle}>Pro Member</h3>
+              <p className={styles.statusSubtitle}>
+                You have full access to unlimited searches, detailed reports, and advanced analytics.
+              </p>
+            </div>
           </div>
+          <span className={styles.statusBadge}>Active</span>
         </div>
-        <span className={styles.statusBadge}>Active</span>
-      </div>
+      ) : !loading && (
+        <div style={{
+          background: 'linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%)',
+          border: '1px solid #d1fae5',
+          borderRadius: '0.75rem',
+          padding: '1.25rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap',
+          marginBottom: '1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>🔓</span>
+            <div>
+              <h3 style={{ margin: 0, color: '#111827', fontWeight: 700, fontSize: '1rem' }}>
+                Free Account
+              </h3>
+              <p style={{ margin: '0.25rem 0 0', color: '#6b7280', fontSize: '0.875rem' }}>
+                Upgrade to Pro to unlock unlimited searches, full reports, and more.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/payment')}
+            style={{
+              background: '#0d5d2f',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '0.5rem',
+              padding: '0.625rem 1.25rem',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Upgrade to Pro — $29.99/mo
+          </button>
+        </div>
+      )}
 
       {/* Activity Metrics Cards */}
       <div className={styles.metricsGrid}>
@@ -325,6 +368,20 @@ const DashboardHome = () => {
               <span>🔔</span>
               Manage Alerts
             </button>
+            {!isPaid && (
+              <button
+                onClick={() => navigate('/payment')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  padding: '0.75rem 1rem', borderRadius: '0.5rem', border: 'none',
+                  background: '#0d5d2f', color: '#fff', fontWeight: 600,
+                  fontSize: '0.9rem', cursor: 'pointer', width: '100%',
+                }}
+              >
+                <span>⭐</span>
+                Upgrade to Pro
+              </button>
+            )}
             <button
               onClick={() => navigate('/account')}
               className={styles.actionButtonSecondary}

@@ -28,7 +28,7 @@ function parseExpiry(expiry) {
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, user, loading: authLoading, setToken, setUser } = useAuth();
+  const { token, user, loading: authLoading, setToken, setUser, refreshSubscription } = useAuth();
   // Pre-derive name parts so billing fields are pre-filled from the logged-in user
   const _nameParts = (user?.fullName || '').trim().split(/\s+/);
   const [form, setForm] = useState({
@@ -177,6 +177,8 @@ const PaymentPage = () => {
         throw new Error('Payment was not successful. Please check your card details and try again.');
       }
       setSuccess(true);
+      // Refresh subscription context so dashboard shows paid status immediately
+      try { await refreshSubscription?.(); } catch { /* non-fatal */ }
       
       // After successful payment, create report if we have a selected person
       if (selectedPerson && selectedPerson.extId) {

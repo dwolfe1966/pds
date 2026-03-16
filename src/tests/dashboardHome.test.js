@@ -19,6 +19,8 @@ jest.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'u1', email: 'member@example.com', fullName: 'Test Member', role: 'member' },
     token: 'member-token',
+    isPaid: true,
+    subscription: { plan: 'basic', status: 'active' },
   }),
 }));
 

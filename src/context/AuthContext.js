@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { setTokenGetter } from '../api';
 
@@ -9,11 +9,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState(null);
 
   // Set token getter for API client
   useEffect(() => {
     setTokenGetter(() => token);
   }, [token]);
+
+  // Fetch subscription whenever token changes
+  const refreshSubscription = useCallback(async (currentToken) => {
+    const t = currentToken || token;
+    if (!t) { setSubscription(null); return; }
+    try {
+      const data = await api.getSubscription(t);
+      // Mock API returns { plan, status, renewalDate, ... } directly
+      setSubscription(data?.data ?? data ?? null);
+    } catch {
+      setSubscription(null);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      refreshSubscription(token);
+    } else {
+      setSubscription(null);
+    }
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check for stored session on mount
   useEffect(() => {
@@ -61,6 +83,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setToken(null);
     setUser(null);
+    setSubscription(null);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -73,6 +96,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const isPaid = !!(subscription?.status === 'active' && subscription?.plan);
+
   const value = {
     user,
     token,
@@ -81,6 +106,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     setUser,
     setToken,
+    subscription,
+    isPaid,
+    refreshSubscription,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
