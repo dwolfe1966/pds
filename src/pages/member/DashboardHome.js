@@ -322,15 +322,24 @@ const DashboardHome = () => {
           )}
           {!loading && recentReports.length > 0 && (
             <div className={styles.activityList}>
-              {recentReports.map((report) => (
-                <div key={report.id || report.reportId} className={styles.activityRow}>
-                  <div>
-                    <p className={styles.activityTitle}>{getReportTitle(report)}</p>
-                    <p className={styles.mutedText}>Report generated</p>
+              {recentReports.map((report) => {
+                const reportTarget = report.commerceContentId || report.id || report.reportId;
+                return (
+                  <div
+                    key={report.id || report.reportId}
+                    className={`${styles.activityRow} ${reportTarget ? styles.activityRowClickable : ''}`}
+                    onClick={reportTarget ? () => navigate(`/people/${reportTarget}`) : undefined}
+                    role={reportTarget ? 'button' : undefined}
+                    tabIndex={reportTarget ? 0 : undefined}
+                  >
+                    <div>
+                      <p className={styles.activityTitle}>{getReportTitle(report)}</p>
+                      <p className={styles.mutedText}>Report generated</p>
+                    </div>
+                    <span className={styles.activityMeta}>{formatDate(report.createdAt)}</span>
                   </div>
-                  <span className={styles.activityMeta}>{formatDate(report.createdAt)}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           {!loading && recentAlerts.length > 0 && (
@@ -393,29 +402,60 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Feature Highlight Cards */}
-      <div className={styles.featureGrid}>
-        {/* Advanced Analytics Card */}
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>📄</div>
-          <h3>Advanced Analytics</h3>
-          <p>Detailed insights into search patterns, trending names, and report activity.</p>
+      {/* Bottom cards — contextual to plan */}
+      {!loading && isPaid ? (
+        /* Pro member: tips + plan info + support */
+        <div className={styles.featureGrid}>
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>💡</div>
+            <h3>Search Tips</h3>
+            <p>Include a state to narrow results by location. Use phone or email search for direct lookups.</p>
+          </div>
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>⭐</div>
+            <h3>Pro Plan Active</h3>
+            <p>Unlimited searches, full reports, address history, relatives, and criminal records. Your subscription renews monthly — cancel anytime.</p>
+          </div>
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>🛡️</div>
+            <h3>Stay Protected</h3>
+            <p>Set up alerts to monitor when new records appear for people you care about.</p>
+            <Link to="/alerts" style={{ display: 'inline-block', marginTop: '0.75rem', color: '#0d5d2f', fontWeight: 600, fontSize: '0.875rem' }}>Manage Alerts →</Link>
+          </div>
         </div>
-
-        {/* Unlimited Searches Card */}
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>🔍</div>
-          <h3>Unlimited Searches</h3>
-          <p>No limits on searches with full access to phone numbers, emails, and addresses.</p>
+      ) : !loading && (
+        /* Free member: upsell comparison */
+        <div className={styles.upgradePanel}>
+          <div className={styles.upgradePanelHeader}>
+            <span className={styles.upgradePanelIcon}>🔓</span>
+            <div>
+              <h3 className={styles.upgradePanelTitle}>Unlock Everything with Pro</h3>
+              <p className={styles.upgradePanelSub}>Your free account gives you basic search. Here's what you're missing:</p>
+            </div>
+          </div>
+          <div className={styles.upgradeFeatureGrid}>
+            {[
+              ['📞', 'Phone numbers & emails'],
+              ['🏠', 'Full address history'],
+              ['👥', 'Relatives & associates'],
+              ['⚠️', 'Criminal & arrest records'],
+              ['🔔', 'Real-time alerts'],
+              ['📄', 'Downloadable PDF reports'],
+            ].map(([icon, label]) => (
+              <div key={label} className={styles.upgradeFeatureItem}>
+                <span>{icon}</span> {label}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => navigate('/payment')}
+            className={styles.upgradeCta}
+          >
+            Upgrade to Pro — $29.99/mo
+          </button>
+          <p className={styles.upgradeNote}>No lock-in. Cancel anytime.</p>
         </div>
-
-        {/* Priority Support Card */}
-        <div className={styles.featureCard}>
-          <div className={styles.featureIcon}>🚀</div>
-          <h3>Priority Support</h3>
-          <p>Get priority customer support with faster response times and dedicated assistance.</p>
-        </div>
-      </div>
+      )}
     </main>
   );
 };

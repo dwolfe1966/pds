@@ -88,10 +88,10 @@ const NameSearchLandingPage = () => {
       <section className={styles.hero}>
         <div className={styles.heroContent}>
           <h1 className={styles.heroTitle}>
-            Search by Name
+            Find Anyone — Search by Name
           </h1>
           <p className={styles.heroSubtitle}>
-            Enter a first and last name to search our comprehensive database of over 12 billion public records.
+            Enter a first and last name to search 12 billion+ public records. Instant results.
           </p>
         </div>
       </section>
@@ -147,8 +147,16 @@ const NameSearchLandingPage = () => {
             </div>
 
             <button type="submit" className={styles.submitButton}>
-              Search Records
+              Search Now
             </button>
+            <div style={{
+              display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center',
+              marginTop: '1rem', fontSize: '0.8rem', color: '#6b7280',
+            }}>
+              <span>🔍 2,400+ searches in the last hour</span>
+              <span>👥 Trusted by 3M+ members</span>
+              <span>🔒 100% confidential</span>
+            </div>
             <p style={{
               textAlign: 'center',
               color: '#9ca3af',

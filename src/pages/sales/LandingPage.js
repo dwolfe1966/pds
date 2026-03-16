@@ -41,7 +41,7 @@ const LandingPage = () => {
             lineHeight: 1.25,
             letterSpacing: '-0.02em'
           }}>
-            Find People &amp; Monitor Who Searches for You
+            Find Anyone in Seconds
           </h1>
           <p style={{
             marginBottom: '2rem',
@@ -52,11 +52,18 @@ const LandingPage = () => {
             marginLeft: 'auto',
             marginRight: 'auto'
           }}>
-            Enter a name below to begin your search. Discover comprehensive information about people
-            and see who's searching for you.
+            Search by name, phone, or email across 12 billion+ public records. Instant results. No hidden fees.
           </p>
           <div style={{ maxWidth: '600px', margin: '0 auto 2rem' }}>
             <SearchBar initialQuery={q} />
+          </div>
+          <div style={{
+            display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center',
+            margin: '1rem 0 0', fontSize: '0.8rem', color: '#6b7280',
+          }}>
+            <span>🔍 2,400+ searches in the last hour</span>
+            <span>👥 Trusted by 3M+ members</span>
+            <span>🔒 100% confidential</span>
           </div>
           {/* Trust signal */}
           <p style={{

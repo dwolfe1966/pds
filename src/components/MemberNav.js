@@ -11,7 +11,7 @@ import styles from './MemberNav.module.css';
  * Includes responsive hamburger menu for mobile devices.
  */
 const MemberNav = () => {
-  const { logout, user } = useAuth();
+  const { logout, user, isPaid } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -91,16 +91,20 @@ const MemberNav = () => {
         {/* Desktop Auth Section */}
         <div className={styles.authButtons}>
           {user && (
-            <span style={{ 
-              color: 'rgba(255, 255, 255, 0.9)', 
-              fontSize: 'var(--font-size-sm)',
-              padding: 'var(--spacing-sm) var(--spacing-md)'
-            }}>
-              {user.email || user.fullName || 'Member'}
-            </span>
+            <div className={styles.userDisplay}>
+              <div className={styles.userAvatar}>
+                {(user.fullName || user.email || 'M').charAt(0).toUpperCase()}
+              </div>
+              <span className={styles.userEmail}>
+                {user.fullName || user.email || 'Member'}
+              </span>
+              <span className={isPaid ? styles.tierBadgePro : styles.tierBadgeFree}>
+                {isPaid ? 'Pro' : 'Free'}
+              </span>
+            </div>
           )}
           <button onClick={handleLogout} className={styles.logoutButton}>
-            Logout
+            Sign out
           </button>
         </div>
 
@@ -175,20 +179,18 @@ const MemberNav = () => {
 
           <div className={styles.mobileAuthButtons}>
             {user && (
-              <div style={{ 
-                color: 'var(--color-text-secondary)', 
-                fontSize: 'var(--font-size-sm)',
-                padding: 'var(--spacing-sm) var(--spacing-md)',
-                textAlign: 'center'
-              }}>
-                {user.email || user.fullName || 'Member'}
+              <div className={styles.mobileUserRow}>
+                <span className={styles.mobileUserEmail}>{user.fullName || user.email || 'Member'}</span>
+                <span className={isPaid ? styles.tierBadgePro : styles.tierBadgeFree}>
+                  {isPaid ? 'Pro' : 'Free'}
+                </span>
               </div>
             )}
-            <button 
+            <button
               onClick={handleLogout}
               className={styles.mobileLogoutButton}
             >
-              Logout
+              Sign out
             </button>
           </div>
         </div>

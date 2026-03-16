@@ -92,7 +92,7 @@ const SearchBar = ({ initialQuery = '' }) => {
         ))}
       </select>
       <button type="submit" className={styles.searchButton}>
-        Search
+        Search Now
       </button>
     </form>
   );

@@ -1037,7 +1037,7 @@ app.post('/api/v1/signup', (req, res) => {
     zip: zip || '',
     password, // In production, hash this
     optin: optin !== false,
-    emailVerified: false,
+    emailVerified: true, // Auto-verified: no email infra in mock server
     role: 'member',
     createdAt: new Date().toISOString()
   };
@@ -1051,12 +1051,12 @@ app.post('/api/v1/signup', (req, res) => {
       email: newUser.email,
       fullName: newUser.fullName,
       optin: newUser.optin,
-      emailVerified: false,
+      emailVerified: true,
       role: newUser.role
     },
     accessToken,
     refreshToken,
-    message: 'Please verify your email'
+    message: 'Account created successfully'
   });
 });
 

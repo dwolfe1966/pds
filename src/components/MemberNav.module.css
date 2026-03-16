@@ -61,6 +61,73 @@
   gap: var(--spacing-md);
 }
 
+.userDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.userAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.userEmail {
+  color: rgba(255,255,255,0.9);
+  font-size: var(--font-size-sm);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tierBadgePro {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  background: #f59e0b;
+  color: #fff;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.tierBadgeFree {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.9);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.mobileUserRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.mobileUserEmail {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
 .logoutButton {
   background-color: transparent;
   color: var(--color-text-inverse);

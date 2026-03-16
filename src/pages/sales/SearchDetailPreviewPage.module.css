@@ -1,201 +1,417 @@
 /**
- * SearchDetailPreviewPage – V-card variants, IDLookup.ai design tokens
+ * SearchDetailPreviewPage — high-conversion teaser/preview layout
+ * BeenVerified/TruthFinder-style with locked sections, blur overlay,
+ * and inline signup card at ~40% scroll depth.
  */
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Page shell
+───────────────────────────────────────────────────────────────────────────── */
+
 .main {
-  padding: var(--spacing-2xl) var(--spacing-lg);
-  max-width: 640px;
+  padding: 0 0 6rem; /* bottom padding clears sticky mobile CTA */
+  max-width: 680px;
   margin: 0 auto;
-  min-height: 60vh;
+  min-height: 100vh;
+  background: var(--color-bg-default, #f8f9fa);
 }
 
-.backLink {
-  color: var(--color-primary);
+/* ─────────────────────────────────────────────────────────────────────────────
+   Minimal branded mini-header (replaces full site nav on this funnel page)
+───────────────────────────────────────────────────────────────────────────── */
+
+.miniHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--color-border-light, #e5e7eb);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.miniHeaderBack {
+  color: var(--color-primary, #0d5d2f);
   text-decoration: none;
-  font-size: var(--font-size-sm);
-  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-medium, 500);
+  transition: color var(--transition-base, 0.15s ease);
+}
+
+.miniHeaderBack:hover {
+  color: var(--color-primary-hover, #0a4a25);
+}
+
+.miniHeaderBrand {
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-primary, #0d5d2f);
+  letter-spacing: -0.01em;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Hero / above-the-fold section
+───────────────────────────────────────────────────────────────────────────── */
+
+.heroSection {
+  padding: 1.5rem 1.25rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--color-border-light, #e5e7eb);
+  margin-bottom: 1rem;
+}
+
+.urgencyBadge {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  font-weight: var(--font-weight-medium);
-  transition: color var(--transition-base);
+  gap: 0.35rem;
+  background: #fff3cd;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: var(--font-weight-semibold, 600);
+  margin-bottom: 1rem;
+  line-height: 1.4;
 }
 
-.backLink:hover {
-  color: var(--color-primary-hover);
+.personName {
+  font-size: clamp(1.6rem, 5vw, 2.25rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-primary, #111827);
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
-.pageTitle {
-  color: var(--color-primary);
-  margin-top: var(--spacing-md);
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--font-size-3xl);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: -0.02em;
+.personMeta {
+  font-size: var(--font-size-base, 1rem);
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0 0 1rem;
 }
 
-.pageSubtitle {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-lg);
-  margin-bottom: var(--spacing-2xl);
-  line-height: var(--line-height-relaxed);
+/* ─────────────────────────────────────────────────────────────────────────────
+   Unlocked data row (green pill)
+───────────────────────────────────────────────────────────────────────────── */
+
+.unlockedRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  border-radius: 999px;
+  padding: 0.35rem 1rem;
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-semibold, 600);
+  margin-bottom: 1.25rem;
 }
 
-.section {
-  margin-bottom: var(--spacing-2xl);
+.unlockedCheck {
+  font-size: 0.85rem;
 }
 
-/* Benefits rectangle (v2) */
-.benefitsCard {
-  background-color: var(--color-bg-paper);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border-light);
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-2xl);
+/* ─────────────────────────────────────────────────────────────────────────────
+   Progress strip / checklist
+───────────────────────────────────────────────────────────────────────────── */
+
+.progressStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
 }
 
-.benefitsTitle {
-  margin: 0 0 var(--spacing-md);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary);
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--font-size-sm, 0.875rem);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-md, 0.5rem);
 }
 
-.benefitsList {
-  margin: 0;
-  padding-left: var(--spacing-lg);
-  color: var(--color-text-primary);
-  line-height: 1.9;
-  font-size: var(--font-size-sm);
+.progressUnlocked {
+  color: #065f46;
+  background: #ecfdf5;
 }
 
-/* Signup form (v1, v2) */
-.signupCard {
-  background-color: var(--color-bg-default);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border-light);
-  box-shadow: var(--shadow-md);
-  padding: var(--spacing-xl);
+.progressLocked {
+  color: var(--color-text-secondary, #6b7280);
+  background: #f9fafb;
 }
 
-.signupTitle {
-  margin: 0 0 var(--spacing-sm);
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary);
+.progressIcon {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  width: 1.25rem;
+  text-align: center;
 }
 
-.signupSubtitle {
-  margin: 0 0 var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+.progressCount {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  font-weight: var(--font-weight-medium, 500);
 }
 
-.stepIndicator {
-  margin: 0 0 var(--spacing-lg);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary);
+/* ─────────────────────────────────────────────────────────────────────────────
+   Locked sections
+───────────────────────────────────────────────────────────────────────────── */
+
+.lockedSection {
+  background: #ffffff;
+  border: 1px solid var(--color-border-light, #e5e7eb);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin: 0 1rem 1rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-.formGroup {
-  margin-bottom: var(--spacing-md);
+.lockedSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--color-border-light, #e5e7eb);
+  background: #fafafa;
 }
 
-.formLabel {
-  display: block;
-  margin-bottom: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+.lockedSectionTitle {
+  font-size: var(--font-size-base, 1rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-primary, #111827);
 }
 
-.formInput {
+.lockedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.73rem;
+  font-weight: var(--font-weight-semibold, 600);
+  letter-spacing: 0.01em;
+}
+
+.lockedSectionBody {
+  position: relative;
+  padding: 0.75rem 1rem 0;
+  min-height: 5.5rem;
+}
+
+.blurredRow {
+  padding: 0.5rem 0;
+  font-size: var(--font-size-base, 1rem);
+  color: var(--color-text-primary, #111827);
+  filter: blur(5px);
+  user-select: none;
+  border-bottom: 1px solid #f3f4f6;
+  letter-spacing: 0.02em;
+  font-family: var(--font-mono, monospace);
+}
+
+.blurredRow:last-of-type {
+  border-bottom: none;
+}
+
+.gradientOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3rem;
+  background: linear-gradient(to bottom, transparent 0%, #ffffff 100%);
+  pointer-events: none;
+}
+
+.lockedSectionFooter {
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.unlockBtn {
   width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: var(--font-size-base);
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
-}
-
-.formInput:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.15);
-}
-
-.formError {
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-md);
-  background-color: rgba(220, 53, 69, 0.08);
-  color: var(--color-error);
-  font-size: var(--font-size-sm);
-  border-radius: var(--radius-md);
-}
-
-.btnPrimary {
-  width: 100%;
-  padding: 0.85rem 1.5rem;
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  padding: 0.7rem 1.25rem;
+  background: var(--color-primary, #0d5d2f);
+  color: #ffffff;
   border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-semibold, 600);
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: background-color var(--transition-base, 0.15s ease),
+              transform var(--transition-base, 0.15s ease);
 }
 
-.btnPrimary:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
+.unlockBtn:hover {
+  background: var(--color-primary-hover, #0a4a25);
+  transform: translateY(-1px);
 }
 
-.btnPrimary:disabled {
-  opacity: 0.7;
+/* ─────────────────────────────────────────────────────────────────────────────
+   Inline signup form card — deep green, sits at ~40% scroll depth
+───────────────────────────────────────────────────────────────────────────── */
+
+.signupFormCard {
+  background: #0d5d2f;
+  border-radius: 0.875rem;
+  padding: 2rem 1.5rem;
+  margin: 0 1rem 1rem;
+  box-shadow: 0 4px 24px rgba(13, 93, 47, 0.28);
+  scroll-margin-top: 4rem; /* offset for sticky mini-header when scrolled into view */
+}
+
+.signupFormLockIcon {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 0.65rem;
+}
+
+.signupFormTitle {
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: #ffffff;
+  margin: 0 0 0.5rem;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.signupFormSubtitle {
+  font-size: var(--font-size-sm, 0.875rem);
+  color: rgba(255, 255, 255, 0.82);
+  text-align: center;
+  margin: 0 0 1.5rem;
+  line-height: 1.55;
+}
+
+.signupFormSubtitle strong {
+  color: #ffffff;
+}
+
+.signupFormLabel {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.signupFormInput {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font-size: var(--font-size-base, 1rem);
+  background: #ffffff;
+  color: var(--color-text-primary, #111827);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md, 0.5rem);
+  font-family: inherit;
+  transition: border-color var(--transition-base, 0.15s ease),
+              box-shadow var(--transition-base, 0.15s ease);
+  box-sizing: border-box;
+}
+
+.signupFormInput:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35);
+}
+
+.signupFormInput::placeholder {
+  color: #9ca3af;
+}
+
+.signupSubmitBtn {
+  width: 100%;
+  padding: 0.95rem 1.5rem;
+  background: #f59e0b;
+  color: #1c1c1c;
+  border: none;
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: var(--font-size-base, 1rem);
+  font-weight: var(--font-weight-bold, 700);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background-color var(--transition-base, 0.15s ease),
+              transform var(--transition-base, 0.15s ease),
+              box-shadow var(--transition-base, 0.15s ease);
+  margin-top: 0.75rem;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+.signupSubmitBtn:hover:not(:disabled) {
+  background: #d97706;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+
+.signupSubmitBtn:disabled {
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
-.formActions {
+.noCardNote {
+  text-align: center;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0.6rem 0 0;
+}
+
+.signupSuccessMsg {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: var(--radius-md, 0.5rem);
+  text-align: center;
+  font-weight: var(--font-weight-semibold, 600);
+  font-size: var(--font-size-base, 1rem);
+}
+
+.trustRow {
   display: flex;
-  gap: var(--spacing-md);
   align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
   flex-wrap: wrap;
-  margin-top: var(--spacing-md);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: var(--font-weight-medium, 500);
 }
 
-.formActions .btnPrimary {
-  flex: 1;
-  min-width: 120px;
+/* ─────────────────────────────────────────────────────────────────────────────
+   Shared form primitives (used inside SignupFormCard)
+───────────────────────────────────────────────────────────────────────────── */
+
+.formGroup {
+  margin-bottom: 0.875rem;
 }
 
-.btnSecondary {
-  padding: 0.85rem 1.5rem;
-  background-color: transparent;
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
-
-.btnSecondary:hover {
-  background-color: rgba(13, 93, 47, 0.08);
+.formError {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.7rem 1rem;
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  font-size: var(--font-size-sm, 0.875rem);
+  border-radius: var(--radius-md, 0.5rem);
+  border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .loginLinkWrap {
-  margin-top: var(--spacing-md);
+  margin-top: 0.85rem;
   text-align: center;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm, 0.875rem);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .loginLink {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
+  color: #fcd34d;
+  font-weight: var(--font-weight-semibold, 600);
   text-decoration: none;
 }
 
@@ -203,82 +419,212 @@
   text-decoration: underline;
 }
 
-/* CTA only (v3) */
+/* ─────────────────────────────────────────────────────────────────────────────
+   Benefits card (v2 only)
+───────────────────────────────────────────────────────────────────────────── */
+
+.section {
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+.benefitsCard {
+  background: var(--color-bg-paper, #f9fafb);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-light, #e5e7eb);
+  padding: 1.25rem 1.25rem;
+}
+
+.benefitsTitle {
+  margin: 0 0 0.75rem;
+  font-size: var(--font-size-lg, 1.125rem);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-primary, #0d5d2f);
+}
+
+.benefitsList {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-text-primary, #111827);
+  line-height: 2;
+  font-size: var(--font-size-sm, 0.875rem);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CTA card (v3 / logged-in report ready)
+───────────────────────────────────────────────────────────────────────────── */
+
 .ctaCard {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  color: var(--color-text-inverse);
-  padding: var(--spacing-xl);
-  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--color-primary, #0d5d2f) 0%, #1a7a42 100%);
+  color: #ffffff;
+  padding: 2rem 1.5rem;
+  border-radius: 0.875rem;
   text-align: center;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 4px 20px rgba(13, 93, 47, 0.3);
 }
 
 .ctaTitle {
-  margin: 0 0 var(--spacing-sm);
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
+  margin: 0 0 0.5rem;
+  font-size: var(--font-size-xl, 1.25rem);
+  font-weight: var(--font-weight-bold, 700);
 }
 
 .ctaText {
-  margin: 0 0 var(--spacing-lg);
-  font-size: var(--font-size-sm);
-  line-height: var(--line-height-relaxed);
-  opacity: 0.95;
+  margin: 0 0 1.25rem;
+  font-size: var(--font-size-sm, 0.875rem);
+  line-height: 1.6;
+  opacity: 0.92;
 }
 
 .ctaButtons {
   display: flex;
-  gap: var(--spacing-md);
+  gap: 0.75rem;
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .btnWhite {
   padding: 0.85rem 1.75rem;
-  background-color: var(--color-white);
-  color: var(--color-primary);
+  background: #ffffff;
+  color: var(--color-primary, #0d5d2f);
   border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: var(--font-size-base, 1rem);
+  font-weight: var(--font-weight-semibold, 600);
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base, 0.15s ease);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .btnWhite:hover {
-  background-color: var(--color-gray-50);
+  background: #f3f4f6;
   transform: translateY(-1px);
 }
 
 .btnOutline {
   padding: 0.85rem 1.75rem;
-  background-color: transparent;
-  color: var(--color-white);
-  border: 2px solid var(--color-white);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: var(--font-size-base, 1rem);
+  font-weight: var(--font-weight-semibold, 600);
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
-  transition: all var(--transition-base);
+  transition: all var(--transition-base, 0.15s ease);
 }
 
 .btnOutline:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Page title (logged-in report-ready path)
+───────────────────────────────────────────────────────────────────────────── */
+
+.pageTitle {
+  padding: 1.25rem 1.25rem 0;
+  font-size: var(--font-size-3xl, 1.875rem);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-primary, #0d5d2f);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Sticky mobile CTA bar — hidden on desktop
+───────────────────────────────────────────────────────────────────────────── */
+
+.stickyMobileCta {
+  display: none; /* hidden by default; shown only on mobile via media query below */
+}
+
+@media (max-width: 767px) {
+  .stickyMobileCta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background: #0d5d2f;
+    padding: 0.85rem 1.25rem;
+    border-top: 2px solid #f59e0b;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.stickyMobileCtaLink {
+  color: #ffffff;
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: var(--font-weight-bold, 700);
+  text-decoration: none;
+  text-align: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.01em;
+  width: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Loading & not-found states
+───────────────────────────────────────────────────────────────────────────── */
+
 .loadingWrap,
 .notFoundWrap {
-  padding: var(--spacing-2xl);
+  padding: 3rem 1.25rem;
   text-align: center;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.loadingSpinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--color-primary, #0d5d2f);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .notFoundLink {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary, #0d5d2f);
+  font-weight: var(--font-weight-semibold, 600);
+  text-decoration: none;
+}
+
+.notFoundLink:hover {
+  text-decoration: underline;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Back link (used in logged-in report-ready path)
+───────────────────────────────────────────────────────────────────────────── */
+
+.backLink {
+  color: var(--color-primary, #0d5d2f);
+  text-decoration: none;
+  font-size: var(--font-size-sm, 0.875rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: var(--font-weight-medium, 500);
+  padding: 0.75rem 1.25rem;
+  transition: color var(--transition-base, 0.15s ease);
+}
+
+.backLink:hover {
+  color: var(--color-primary-hover, #0a4a25);
 }

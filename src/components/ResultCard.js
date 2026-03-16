@@ -207,7 +207,7 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           disabled={loading}
           style={{ alignSelf: 'center', whiteSpace: 'nowrap' }}
         >
-          {loading ? 'Loading...' : 'View Full Report'}
+          {loading ? 'Loading...' : 'View Full Report →'}
         </button>
       </div>
     </div>

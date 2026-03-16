@@ -1,21 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import styles from './PaymentPage.module.css';
 
-const TRUST_BADGES = [
-  { label: 'Secure Payment', icon: '🔒' },
-  { label: 'SSL Encrypted', icon: '🔐' },
-  { label: 'PCI Compliant', icon: '✓' },
-];
+// Detect card type from PAN prefix
+function detectCardType(pan) {
+  const n = (pan || '').replace(/\s/g, '');
+  if (/^4/.test(n)) return 'visa';
+  if (/^5[1-5]/.test(n) || /^2[2-7]/.test(n)) return 'mastercard';
+  if (/^3[47]/.test(n)) return 'amex';
+  if (/^6(?:011|5)/.test(n)) return 'discover';
+  return null;
+}
 
-/**
- * Payment capture page. Requires logged-in user.
- * userInfo is prefilled from auth (identifies user on backend).
- * Uses Mock API for signup until ByteCrtrs signup endpoint is available.
- */
+const CARD_TYPE_LABELS = { visa: 'Visa', mastercard: 'Mastercard', amex: 'Amex', discover: 'Discover' };
+const CARD_TYPE_COLORS = { visa: '#1a1f71', mastercard: '#eb001b', amex: '#2e77bc', discover: '#ff6600' };
+
+// Format card number with spaces
+function formatCardNumber(value, cardType) {
+  const digits = value.replace(/\D/g, '');
+  const maxLen = cardType === 'amex' ? 15 : 16;
+  const trimmed = digits.slice(0, maxLen);
+  if (cardType === 'amex') {
+    return trimmed.replace(/(\d{4})(\d{6})(\d{0,5})/, (_, a, b, c) =>
+      c ? `${a} ${b} ${c}` : b ? `${a} ${b}` : a
+    );
+  }
+  return trimmed.replace(/(\d{4})/g, '$1 ').trim();
+}
+
+// Format expiry as MM/YY
+function formatExpiry(value) {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return digits;
+}
+
 // Parse MM/YY into { expMonth, expYear }
 function parseExpiry(expiry) {
   const match = String(expiry || '').match(/^(\d{1,2})\s*\/\s*(\d{2,4})$/);
@@ -25,11 +47,35 @@ function parseExpiry(expiry) {
   return { expMonth: month.padStart(2, '0'), expYear: year.slice(-2) };
 }
 
+// Luhn check for card validation
+function luhnCheck(pan) {
+  const digits = pan.replace(/\s/g, '');
+  if (!/^\d+$/.test(digits)) return false;
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let n = parseInt(digits[i], 10);
+    if (alt) { n *= 2; if (n > 9) n -= 9; }
+    sum += n;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
+const PLAN_FEATURES = [
+  'Unlimited background report access',
+  'Reverse phone & email lookups',
+  'Address history & current location',
+  'Criminal & court record checks',
+  'Relatives & family connections',
+  'Cancel anytime — no lock-in',
+];
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, user, loading: authLoading, setToken, setUser, refreshSubscription } = useAuth();
-  // Pre-derive name parts so billing fields are pre-filled from the logged-in user
+
   const _nameParts = (user?.fullName || '').trim().split(/\s+/);
   const [form, setForm] = useState({
     cardNumber: '',
@@ -40,16 +86,18 @@ const PaymentPage = () => {
     street1: '',
     billingZip: '',
   });
+  const [touched, setTouched] = useState({});
+  const [billingOpen, setBillingOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
 
-  // Proxy testing: ?simulate=success | ?simulate=failure (omit = success)
   const simulateParam = searchParams.get('simulate');
+  const cardType = detectCardType(form.cardNumber);
 
-  // Require login – userInfo identifies the user on backend
+  // Require login
   useEffect(() => {
     if (!authLoading && !token) {
       const redirect = `/payment${window.location.search || ''}`;
@@ -57,19 +105,28 @@ const PaymentPage = () => {
     }
   }, [token, authLoading, navigate]);
 
-  // Get selected person info from sessionStorage
+  // Load selected person from sessionStorage
   useEffect(() => {
     const personId = sessionStorage.getItem('selectedPersonId');
     if (personId) {
       setSelectedPersonId(personId);
-      const storedResult = sessionStorage.getItem(`result_${personId}`);
-      if (storedResult) {
-        setSelectedPerson(JSON.parse(storedResult));
-      }
+      const stored = sessionStorage.getItem(`result_${personId}`);
+      if (stored) setSelectedPerson(JSON.parse(stored));
     }
   }, []);
 
-  // Derive userInfo from logged-in user (firstName/lastName from fullName)
+  // Sync billing name from user on mount
+  useEffect(() => {
+    if (user?.fullName) {
+      const parts = user.fullName.trim().split(/\s+/);
+      setForm(prev => ({
+        ...prev,
+        billingFirstName: prev.billingFirstName || parts[0] || '',
+        billingLastName: prev.billingLastName || parts.slice(1).join(' ') || '',
+      }));
+    }
+  }, [user]);
+
   const userInfo = user
     ? {
         email: user.email,
@@ -79,12 +136,35 @@ const PaymentPage = () => {
       }
     : null;
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setForm(prev => {
+      if (name === 'cardNumber') {
+        const ct = detectCardType(value);
+        return { ...prev, cardNumber: formatCardNumber(value, ct) };
+      }
+      if (name === 'expiry') {
+        return { ...prev, expiry: formatExpiry(value) };
+      }
+      if (name === 'cvv') {
+        const maxLen = detectCardType(prev.cardNumber) === 'amex' ? 4 : 3;
+        return { ...prev, cvv: value.replace(/\D/g, '').slice(0, maxLen) };
+      }
+      return { ...prev, [name]: value };
+    });
+  }, []);
+
+  const handleBlur = useCallback((e) => {
+    setTouched(prev => ({ ...prev, [e.target.name]: true }));
+  }, []);
+
+  // Field validation
+  const cardDigits = form.cardNumber.replace(/\s/g, '');
+  const expectedLen = cardType === 'amex' ? 15 : 16;
+  const validation = {
+    cardNumber: cardDigits.length === expectedLen && luhnCheck(form.cardNumber),
+    expiry: /^\d{2}\/\d{2}$/.test(form.expiry),
+    cvv: cardType === 'amex' ? form.cvv.length === 4 : form.cvv.length === 3,
   };
 
   const handleSubmit = async (e) => {
@@ -93,7 +173,6 @@ const PaymentPage = () => {
     setError('');
     setLoading(true);
     try {
-      // Build commerceBilling/sale params – userInfo identifies user on backend
       const { expMonth, expYear } = parseExpiry(form.expiry);
       const saleParams = {
         userInfo,
@@ -140,13 +219,10 @@ const PaymentPage = () => {
       let paymentSuccess = false;
       try {
         const saleResult = await api.billingSale(saleParams);
-        // ByteCrtrs sale is considered successful when the library doesn't throw.
-        // The response shape varies; treat any non-error response as success.
         const rawData = saleResult?.params?.response?.data ?? saleResult?.data ?? saleResult ?? {};
         const explicitFail = rawData?.success === false;
         if (!explicitFail) {
           paymentSuccess = true;
-          // Handle auth tokens if BC returns them
           if (rawData.accessToken) {
             setToken?.(rawData.accessToken);
             setUser?.(rawData.user || user);
@@ -158,273 +234,367 @@ const PaymentPage = () => {
         if (process.env.NODE_ENV === 'development') {
           console.warn('[Payment] billingSale failed:', saleErr?.message, saleErr);
         }
-        // Re-throw so the user sees the real error (wrong card, etc.)
-        // Only fall through to mock in development when explicitly simulating
         if (!simulateParam) throw saleErr;
       }
 
       if (!paymentSuccess && simulateParam) {
-        // Development-only mock fallback — only reached when ?simulate= is in the URL
-        await api.updateSubscription({
-          plan: 'basic',
-          paymentToken: 'tok_demo',
-          simulate: simulateParam,
-        }, token);
+        await api.updateSubscription({ plan: 'basic', paymentToken: 'tok_demo', simulate: simulateParam }, token);
         paymentSuccess = true;
       }
 
       if (!paymentSuccess) {
         throw new Error('Payment was not successful. Please check your card details and try again.');
       }
+
       setSuccess(true);
-      // Refresh subscription context so dashboard shows paid status immediately
       try { await refreshSubscription?.(); } catch { /* non-fatal */ }
-      
-      // After successful payment, create report if we have a selected person
+
       if (selectedPerson && selectedPerson.extId) {
         try {
           const reportResult = await createReportForIdentity(selectedPerson.extId, selectedPerson);
           if (reportResult.success && reportResult.commerceContentId) {
-            // Redirect to report detail page using commerceContentId
-            setTimeout(() => {
-              navigate(`/people/${reportResult.commerceContentId}`);
-            }, 2000);
+            setTimeout(() => navigate(`/people/${reportResult.commerceContentId}`), 2000);
             return;
           }
-        } catch (reportError) {
-          console.error('Failed to create report after payment:', reportError);
-          // Continue to redirect even if report creation fails
+        } catch {
+          // fall through
         }
       }
-      
-      // Redirect to person detail page or dashboard
-      if (selectedPersonId) {
-        setTimeout(() => {
-          navigate(`/people/${selectedPersonId}`);
-        }, 2000);
-      } else {
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
-      }
+
+      setTimeout(() => {
+        navigate(selectedPersonId ? `/people/${selectedPersonId}` : '/dashboard');
+      }, 2000);
     } catch (err) {
       const isUnauthorized = err?.status === 401;
       const message = isUnauthorized
         ? 'Please sign in or create an account first.'
-        : (err?.data?.error?.message || err?.message || 'Payment failed. Please try again.');
+        : (err?.data?.error?.message || err?.message || 'Payment failed. Please check your card details and try again.');
       setError(message);
     } finally {
       setLoading(false);
     }
   };
 
+  if (authLoading) return null;
+
   return (
     <main className={styles.main}>
-      <h1 className={styles.pageTitle}>Complete Your Purchase</h1>
+      <div className={styles.layout}>
 
-      {selectedPerson && (
-        <div className={styles.reportCta}>
-          <h2 className={styles.reportCtaTitle}>
-            Unlock Full Report for {selectedPerson.fullName}
-          </h2>
-          <p className={styles.reportCtaText}>
-            Complete your payment to access the complete report including contact information,
-            addresses, relatives, and more.
-          </p>
-        </div>
-      )}
+        {/* ── Left: Form ───────────────────────────────────────── */}
+        <div className={styles.formCol}>
 
-      {success ? (
-        <div className={styles.successBox}>
-          <h2 className={styles.successTitle}>Payment Successful!</h2>
-          <p className={styles.successText}>
-            Your membership has been activated.{' '}
-            {selectedPerson ? 'Redirecting to your report…' : 'Redirecting to your dashboard…'}
-          </p>
-        </div>
-      ) : (
-        <div>
-          <div className={styles.planBox}>
-            <h3 className={styles.planTitle}>Membership Plan</h3>
-            <p className={styles.planText}>
-              <strong>Basic Plan:</strong> $29.99/month - Full access to all reports and search features
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {userInfo && (
-              <div className={styles.paymentFormBox}>
-                <h3 className={styles.formTitle}>Paying as</h3>
-                <p style={{ margin: 0, color: '#6b7280' }}>
-                  {userInfo.email} · {[userInfo.firstName, userInfo.lastName].filter(Boolean).join(' ')}
+          {/* Person preview */}
+          {selectedPerson && !success && (
+            <div className={styles.personPreview}>
+              <div className={styles.personPreviewAvatar}>
+                {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
+              </div>
+              <div className={styles.personPreviewInfo}>
+                <p className={styles.personPreviewName}>{selectedPerson.fullName}</p>
+                <p className={styles.personPreviewMeta}>
+                  {[selectedPerson.ageRange && `Age ${selectedPerson.ageRange}`, selectedPerson.location].filter(Boolean).join(' · ')}
                 </p>
               </div>
-            )}
-
-            <div className={styles.paymentFormBox}>
-              <h3 className={styles.formTitle}>Payment Information</h3>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="payment-cardNumber">Card Number *</label>
-                <input
-                  id="payment-cardNumber"
-                  type="text"
-                  name="cardNumber"
-                  value={form.cardNumber}
-                  onChange={handleChange}
-                  required
-                  placeholder="1234 5678 9012 3456"
-                  maxLength="19"
-                  className={styles.input}
-                />
-              </div>
-
-              <div className={styles.formGroupRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label} htmlFor="payment-expiry">Expiry *</label>
-                  <input
-                    id="payment-expiry"
-                    type="text"
-                    name="expiry"
-                    value={form.expiry}
-                    onChange={handleChange}
-                    required
-                    placeholder="MM/YY"
-                    maxLength="5"
-                    className={styles.input}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label} htmlFor="payment-cvv">CVV *</label>
-                  <input
-                    id="payment-cvv"
-                    type="text"
-                    name="cvv"
-                    value={form.cvv}
-                    onChange={handleChange}
-                    required
-                    placeholder="123"
-                    maxLength="4"
-                    className={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="payment-street1">Billing Address *</label>
-                <input
-                  id="payment-street1"
-                  type="text"
-                  name="street1"
-                  value={form.street1}
-                  onChange={handleChange}
-                  required
-                  placeholder="123 Main St"
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.formGroupRow}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label} htmlFor="payment-billingFirstName">Billing First Name *</label>
-                  <input
-                    id="payment-billingFirstName"
-                    type="text"
-                    name="billingFirstName"
-                    value={form.billingFirstName}
-                    onChange={handleChange}
-                    required
-                    placeholder="First"
-                    className={styles.input}
-                  />
-                </div>
-                <div className={styles.formGroup}>
-                  <label className={styles.label} htmlFor="payment-billingLastName">Billing Last Name *</label>
-                  <input
-                    id="payment-billingLastName"
-                    type="text"
-                    name="billingLastName"
-                    value={form.billingLastName}
-                    onChange={handleChange}
-                    required
-                    placeholder="Last"
-                    className={styles.input}
-                  />
-                </div>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="payment-billingZip">Billing ZIP Code *</label>
-                <input
-                  id="payment-billingZip"
-                  type="text"
-                  name="billingZip"
-                  value={form.billingZip}
-                  onChange={handleChange}
-                  required
-                  placeholder="12345"
-                  maxLength="10"
-                  className={styles.input}
-                />
-              </div>
+              <span className={styles.personPreviewLock}>🔓 Ready to unlock</span>
             </div>
+          )}
 
-            {error && (
-              <div className={styles.formError}>
-                <p style={{ margin: 0 }}>{error}</p>
-                {error.includes('sign in or create an account') && (
-                  <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem' }}>
-                    <Link to="/signup">Sign up</Link> or <Link to="/login">Log in</Link>
-                  </p>
-                )}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={styles.submitButton}
-            >
-              {loading ? 'Processing Payment…' : 'Complete Purchase'}
-            </button>
-
-            <p className={styles.secureNote}>
-              Your payment is secure and encrypted. You can cancel your subscription at any time.
-            </p>
-
-            {process.env.NODE_ENV === 'development' && (
-              <p className={styles.devHint} role="status" aria-label="Testing options">
-                Test flows: <a href="?simulate=success">Success</a> · <a href="?simulate=failure">Decline</a>
+          {success ? (
+            <div className={styles.successBox}>
+              <div className={styles.successIcon}>✓</div>
+              <h2 className={styles.successTitle}>Payment Successful!</h2>
+              <p className={styles.successText}>
+                Your membership is now active.{' '}
+                {selectedPerson ? `Preparing your report for ${selectedPerson.fullName}…` : 'Redirecting to your dashboard…'}
               </p>
-            )}
-
-            <div className={styles.trustBadges}>
-              {TRUST_BADGES.map((badge, i) => (
-                <span key={i} className={styles.trustBadge}>
-                  <span className={styles.trustBadgeIcon} aria-hidden>{badge.icon}</span>
-                  {badge.label}
-                </span>
-              ))}
             </div>
-          </form>
+          ) : (
+            <>
+              <div className={styles.formCard}>
+                <h2 className={styles.formCardTitle}>Payment Information</h2>
 
-          <p style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#6b7280',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                textDecoration: 'underline',
-                padding: 0,
-              }}
-            >
-              I'll upgrade later — go to my dashboard
-            </button>
-          </p>
+                {userInfo && (
+                  <div className={styles.payingAs}>
+                    <span className={styles.payingAsLabel}>Paying as</span>
+                    <span className={styles.payingAsValue}>{userInfo.email}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} noValidate>
+                  {/* Card number */}
+                  <div className={styles.fieldGroup}>
+                    <div className={styles.fieldLabelRow}>
+                      <label className={styles.label} htmlFor="pay-card">Card Number</label>
+                      {cardType && (
+                        <span
+                          className={styles.cardTypePill}
+                          style={{ background: CARD_TYPE_COLORS[cardType] }}
+                        >
+                          {CARD_TYPE_LABELS[cardType]}
+                        </span>
+                      )}
+                    </div>
+                    <div className={styles.inputWrap}>
+                      <input
+                        id="pay-card"
+                        type="text"
+                        name="cardNumber"
+                        value={form.cardNumber}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        required
+                        placeholder="1234 5678 9012 3456"
+                        inputMode="numeric"
+                        autoComplete="cc-number"
+                        className={`${styles.input} ${touched.cardNumber && !validation.cardNumber ? styles.inputError : ''} ${touched.cardNumber && validation.cardNumber ? styles.inputValid : ''}`}
+                      />
+                      {touched.cardNumber && (
+                        <span className={styles.fieldIndicator}>
+                          {validation.cardNumber ? '✓' : '✗'}
+                        </span>
+                      )}
+                    </div>
+                    {touched.cardNumber && !validation.cardNumber && (
+                      <p className={styles.fieldErrMsg}>Please enter a valid card number</p>
+                    )}
+                  </div>
+
+                  {/* Expiry + CVV */}
+                  <div className={styles.fieldRow}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.label} htmlFor="pay-expiry">Expiry</label>
+                      <div className={styles.inputWrap}>
+                        <input
+                          id="pay-expiry"
+                          type="text"
+                          name="expiry"
+                          value={form.expiry}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          required
+                          placeholder="MM/YY"
+                          inputMode="numeric"
+                          autoComplete="cc-exp"
+                          maxLength="5"
+                          className={`${styles.input} ${touched.expiry && !validation.expiry ? styles.inputError : ''} ${touched.expiry && validation.expiry ? styles.inputValid : ''}`}
+                        />
+                        {touched.expiry && (
+                          <span className={styles.fieldIndicator}>
+                            {validation.expiry ? '✓' : '✗'}
+                          </span>
+                        )}
+                      </div>
+                      {touched.expiry && !validation.expiry && (
+                        <p className={styles.fieldErrMsg}>Enter MM/YY</p>
+                      )}
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.label} htmlFor="pay-cvv">
+                        CVV
+                        <span className={styles.cvvHint} title="3-digit code on the back of your card (4 digits for Amex)">?</span>
+                      </label>
+                      <div className={styles.inputWrap}>
+                        <input
+                          id="pay-cvv"
+                          type="text"
+                          name="cvv"
+                          value={form.cvv}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          required
+                          placeholder={cardType === 'amex' ? '1234' : '123'}
+                          inputMode="numeric"
+                          autoComplete="cc-csc"
+                          className={`${styles.input} ${touched.cvv && !validation.cvv ? styles.inputError : ''} ${touched.cvv && validation.cvv ? styles.inputValid : ''}`}
+                        />
+                        {touched.cvv && (
+                          <span className={styles.fieldIndicator}>
+                            {validation.cvv ? '✓' : '✗'}
+                          </span>
+                        )}
+                      </div>
+                      {touched.cvv && !validation.cvv && (
+                        <p className={styles.fieldErrMsg}>Check your CVV</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Billing address — collapsible */}
+                  <div className={styles.billingToggleRow}>
+                    <button
+                      type="button"
+                      className={styles.billingToggle}
+                      onClick={() => setBillingOpen(o => !o)}
+                    >
+                      <span>Billing Address</span>
+                      <span className={styles.billingToggleChevron}>{billingOpen ? '▲' : '▼'}</span>
+                    </button>
+                    {!billingOpen && (
+                      <span className={styles.billingToggleHint}>Optional — uses address on file</span>
+                    )}
+                  </div>
+                  {billingOpen && (
+                    <div className={styles.billingFields}>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.label} htmlFor="pay-street">Street Address</label>
+                        <input
+                          id="pay-street"
+                          type="text"
+                          name="street1"
+                          value={form.street1}
+                          onChange={handleChange}
+                          placeholder="123 Main St"
+                          autoComplete="billing street-address"
+                          className={styles.input}
+                        />
+                      </div>
+                      <div className={styles.fieldRow}>
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.label} htmlFor="pay-bfirst">First Name</label>
+                          <input
+                            id="pay-bfirst"
+                            type="text"
+                            name="billingFirstName"
+                            value={form.billingFirstName}
+                            onChange={handleChange}
+                            placeholder="First"
+                            autoComplete="billing given-name"
+                            className={styles.input}
+                          />
+                        </div>
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.label} htmlFor="pay-blast">Last Name</label>
+                          <input
+                            id="pay-blast"
+                            type="text"
+                            name="billingLastName"
+                            value={form.billingLastName}
+                            onChange={handleChange}
+                            placeholder="Last"
+                            autoComplete="billing family-name"
+                            className={styles.input}
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.fieldGroup}>
+                        <label className={styles.label} htmlFor="pay-zip">ZIP Code</label>
+                        <input
+                          id="pay-zip"
+                          type="text"
+                          name="billingZip"
+                          value={form.billingZip}
+                          onChange={handleChange}
+                          placeholder="12345"
+                          inputMode="numeric"
+                          autoComplete="billing postal-code"
+                          maxLength="10"
+                          className={styles.input}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error */}
+                  {error && (
+                    <div className={styles.errorBox}>
+                      <span className={styles.errorIcon}>!</span>
+                      <div>
+                        <p className={styles.errorTitle}>Payment declined</p>
+                        <p className={styles.errorMsg}>{error}</p>
+                        {error.includes('sign in') && (
+                          <p className={styles.errorLinks}>
+                            <Link to="/signup">Sign up</Link> or <Link to="/login">Log in</Link>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={styles.submitBtn}
+                  >
+                    {loading ? (
+                      <span className={styles.submitSpinner}>
+                        <span className={styles.spinner} /> Processing…
+                      </span>
+                    ) : selectedPerson ? `Unlock Report — $29.99/mo` : 'Subscribe Now — $29.99/mo'}
+                  </button>
+
+                  <p className={styles.cancelNote}>
+                    No lock-in. Cancel anytime from your account. Billed monthly.
+                  </p>
+
+                  <p className={styles.billingNote}>
+                    Your card will be charged $29.99 today. Plan auto-renews monthly.
+                  </p>
+
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className={styles.devHint} role="status" aria-label="Testing options">
+                      Test: <a href="?simulate=success">Success</a> · <a href="?simulate=failure">Decline</a>
+                    </p>
+                  )}
+                </form>
+              </div>
+
+              {/* Trust row */}
+              <div className={styles.trustRow}>
+                <span className={styles.trustItem}>🔒 256-bit SSL</span>
+                <span className={styles.trustItem}>✓ PCI Compliant</span>
+                <span className={styles.trustItem}>🔐 Encrypted</span>
+                <span className={styles.trustItem}>FCRA-Compliant</span>
+              </div>
+
+              <p className={styles.skipLink}>
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  className={styles.skipBtn}
+                >
+                  I'll upgrade later — go to my dashboard
+                </button>
+              </p>
+            </>
+          )}
         </div>
-      )}
+
+        {/* ── Right: Order summary ──────────────────────────────── */}
+        {!success && (
+          <div className={styles.summaryCol}>
+            <div className={styles.summaryCard}>
+              <div className={styles.summaryHeader}>
+                <p className={styles.summaryPlanName}>Basic Plan</p>
+                <p className={styles.summaryPrice}>$29.99<span className={styles.summaryPer}>/mo</span></p>
+              </div>
+              <p className={styles.summaryInstant}>⚡ Instant access after payment</p>
+              <ul className={styles.featureList}>
+                {PLAN_FEATURES.map((f, i) => (
+                  <li key={i} className={styles.featureItem}>
+                    <span className={styles.featureCheck}>✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <div className={styles.summaryTotal}>
+                <span>Today's charge</span>
+                <strong>$29.99</strong>
+              </div>
+              <p className={styles.summaryCancel}>Cancel anytime. No hidden fees.</p>
+            </div>
+
+            <div className={styles.summaryTrustCard}>
+              <p className={styles.summaryTrustTitle}>Why people trust us</p>
+              <p className={styles.summaryTrustItem}>🛡️ FCRA-compliant searches</p>
+              <p className={styles.summaryTrustItem}>🔒 Your data is never sold or shared</p>
+              <p className={styles.summaryTrustItem}>⭐ Trusted by 3M+ members</p>
+              <p className={styles.summaryTrustItem}>📞 Live support available</p>
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   );
 };

@@ -109,7 +109,9 @@ const SalesSearchResultsPage = () => {
         {/* Header Section */}
         <div className={styles.header}>
           <h1 className={styles.title}>
-            Search Results
+            {results.length > 0
+              ? `We found ${results.length} result${results.length !== 1 ? 's' : ''} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`
+              : 'Search Results'}
           </h1>
           {(searchQuery.firstName || query) && (
             <p className={styles.searchQuery}>
@@ -156,25 +158,50 @@ const SalesSearchResultsPage = () => {
         {!loading && !errorMessage && results && results.length > 0 ? (
           <div>
             <div className={styles.resultsCount}>
-              Found <strong>{results.length}</strong> {results.length === 1 ? 'result' : 'results'}
+              Found <strong>{results.length}</strong> {results.length === 1 ? 'result' : 'results'} — select a name to view the full report
             </div>
+            <p style={{ fontSize: '0.825rem', color: '#6b7280', margin: '0 0 1rem', padding: 0 }}>
+              All data sourced from publicly available records.
+            </p>
             <div className={styles.resultsList}>
-              {results.map((result) => (
-                <div 
-                  key={result.id}
-                  onClick={() => handleResultClick(result)}
-                  style={{
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <ResultCard result={result} />
+              {results.map((result, index) => (
+                <div key={result.id}>
+                  <div
+                    onClick={() => handleResultClick(result)}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s ease', position: 'relative' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                  >
+                    {index === 0 && (
+                      <div style={{
+                        position: 'absolute', top: '-10px', left: '1rem', zIndex: 1,
+                        background: '#d97706', color: '#fff',
+                        fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em',
+                        padding: '0.2rem 0.625rem', borderRadius: '9999px',
+                        textTransform: 'uppercase', boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      }}>
+                        ⭐ Most Likely Match
+                      </div>
+                    )}
+                    <ResultCard result={result} />
+                  </div>
+                  {index === 2 && results.length > 3 && (
+                    <div style={{
+                      margin: '0.5rem 0',
+                      padding: '0.75rem 1.25rem',
+                      background: '#f0fdf4',
+                      border: '1px solid #bbf7d0',
+                      borderRadius: '0.625rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.625rem',
+                      fontSize: '0.85rem',
+                      color: '#166534',
+                    }}>
+                      <span>🔒</span>
+                      <span>Your search is <strong>100% confidential</strong>. We never notify the person you searched.</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

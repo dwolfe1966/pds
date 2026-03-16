@@ -14,7 +14,7 @@ const SignupPage = () => {
   const location = useLocation();
   const { setToken, setUser } = useAuth();
   
-  const [form, setForm] = useState({ fullName: '', zip: '', email: '', password: '', optin: true });
+  const [form, setForm] = useState({ fullName: '', zip: '', email: '', password: '', optin: false });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -148,14 +148,17 @@ const SignupPage = () => {
     <main className="pageBackground">
       <div className={styles.container}>
         <div className={styles.card}>
-          <h1 className={styles.title}>Create your account</h1>
+          <h1 className={styles.title}>Create Your Free Account</h1>
 
           {/* Teaser block when coming from search result */}
           {selectedPerson && !success && (
             <div className={styles.teaserBox}>
-              <h2>View Full Report for {selectedPerson.fullName}</h2>
+              <h2>Unlock Full Report for {selectedPerson.fullName}</h2>
+              <p style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600, margin: '0 0 0.5rem' }}>
+                No credit card required to create your account.
+              </p>
               <p>
-                You're viewing a preview for <strong>{selectedPerson.fullName}</strong>
+                You're one step away from the complete report for <strong>{selectedPerson.fullName}</strong>
                 {selectedPerson.location && ` from ${selectedPerson.location}`}.
                 {selectedPerson.ageRange && ` Age: ${selectedPerson.ageRange}`}
               </p>
@@ -175,7 +178,10 @@ const SignupPage = () => {
 
           {!selectedPerson && !success && (
             <p className={styles.subtitle}>
-              Sign up to unlock full access to detailed reports and monitor who's searching for you.
+              Unlock full access to detailed reports and monitor who&apos;s searching for you.
+              <span style={{ display: 'block', marginTop: '0.375rem', fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
+                No credit card required.
+              </span>
             </p>
           )}
 
@@ -257,7 +263,7 @@ const SignupPage = () => {
                 </div>
               )}
               <button type="submit" disabled={loading} className={styles.submitBtn}>
-                {loading ? 'Signing up…' : 'Sign Up'}
+                {loading ? 'Creating account…' : 'Create My Free Account'}
               </button>
               <p className={styles.loginLink}>
                 Already have an account? <a href="/login">Log in</a>
