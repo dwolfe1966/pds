@@ -4,30 +4,114 @@
 import { test, expect } from '@playwright/test';
 import { loginViaAPI, USERS } from './helpers/auth.js';
 
+/**
+ * Minimal window.ApiWrapper mock injected before each page load.
+ * Prevents the ByteCrtrs "Input Password" auth dialog from blocking the UI
+ * and returns predictable fixture data for teaser searches.
+ * createReport is also mocked because it is in FORCE_NEW_API_ENDPOINTS and
+ * has no mock-API fallback.
+ */
+const MOCK_API_WRAPPER_SCRIPT = `
+  (function () {
+    var MOCK_IDENTITIES = [
+      {
+        extId: 'mock-ext-1',
+        nameList: [{ data: 'Tim Chin' }],
+        addressList: [{ city: 'Seattle', state: 'WA', zip: '98101' }],
+        ageRange: '25-29'
+      },
+      {
+        extId: 'mock-ext-2',
+        nameList: [{ data: 'Tim Chin' }],
+        addressList: [{ city: 'Portland', state: 'OR', zip: '97201' }],
+        ageRange: '30-34'
+      }
+    ];
+
+    var MOCK_REPORT = {
+      commerceContentId: 'mock-report-abc123',
+      raws: [
+        {
+          transient: {
+            identities: MOCK_IDENTITIES
+          }
+        }
+      ]
+    };
+
+    function mockSearchResponse() {
+      return {
+        getIdentities: function () { return MOCK_IDENTITIES; },
+        getTotal: function () { return MOCK_IDENTITIES.length; },
+        getPerPage: function () { return 20; },
+        getTeaserInput: function () { return null; },
+        getSearchContextKey: function () { return null; },
+        getCommerceContent: function () { return null; },
+        hasMore: function () { return false; },
+        getMore: function () { return Promise.resolve(mockSearchResponse()); }
+      };
+    }
+
+    window.ApiWrapper = {
+      getInstance: function () {
+        return {
+          api: {
+            idLookup: {
+              searchTeaser: function () {
+                return Promise.resolve(mockSearchResponse());
+              },
+              createReport: function () {
+                return Promise.resolve(MOCK_REPORT);
+              },
+              getReportDetail: function () {
+                return Promise.resolve(MOCK_REPORT);
+              },
+              getReport: function () {
+                return Promise.resolve(MOCK_REPORT);
+              }
+            }
+          }
+        };
+      }
+    };
+  })();
+`;
+
 test.beforeEach(async ({ page }) => {
+  // Block the remote ByteCrtrs IIFE so it cannot overwrite window.ApiWrapper.
+  // The init script below installs our mock before the page's own scripts run,
+  // but the IIFE is a remote <script> that would otherwise overwrite that mock.
+  await page.route('**/api-wrapper/index.iife.js', (route) => route.abort());
+  await page.route('**bytecrtrs.com/libs/**', (route) => route.abort());
+
+  // Inject the ApiWrapper mock before any page script runs
+  await page.addInitScript({ content: MOCK_API_WRAPPER_SCRIPT });
   await loginViaAPI(page, USERS.paid.email, USERS.paid.password);
 });
 
 test.describe('Member name search', () => {
   test('search form is visible on /people-search', async ({ page }) => {
     await page.goto('/people-search');
-    await expect(page.locator('input[placeholder="First Name"]')).toBeVisible();
-    await expect(page.locator('input[placeholder="Last Name"]')).toBeVisible();
+    // Placeholders are lowercase 'n' — matches the component's placeholder text
+    await expect(page.locator('input[placeholder="First name"]')).toBeVisible();
+    await expect(page.locator('input[placeholder="Last name"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
   test('submit with empty fields shows validation error', async ({ page }) => {
     await page.goto('/people-search');
-    // Click submit without filling in fields
-    await page.click('button[type="submit"]');
-    // Should stay on the same page (button is disabled or shows error)
+    // The submit button is disabled when required fields are empty — verify that
+    // directly rather than trying to click a disabled element.
+    const submitBtn = page.locator('button[type="submit"]');
+    await expect(submitBtn).toBeDisabled();
+    // URL should remain on people-search (nothing submitted)
     await expect(page).toHaveURL(/\/people-search/);
   });
 
   test('search navigates to results page with URL params', async ({ page }) => {
     await page.goto('/people-search');
-    await page.fill('input[placeholder="First Name"]', 'Tim');
-    await page.fill('input[placeholder="Last Name"]', 'Chin');
+    await page.fill('input[placeholder="First name"]', 'Tim');
+    await page.fill('input[placeholder="Last name"]', 'Chin');
     await page.click('button[type="submit"]');
 
     // Should navigate to /people-results with query params
@@ -54,14 +138,15 @@ test.describe('Member name search', () => {
     await page.goto('/people-results?firstName=John&lastName=Smith');
     await page.waitForLoadState('networkidle');
 
-    // Filter controls should be visible
-    await expect(page.locator('select')).toHaveCount.greaterThan(0);
+    // Filter controls (State and Sort-by selects) should be present
+    // toHaveCount().greaterThan() is not valid Playwright API — use count() instead
+    expect(await page.locator('select').count()).toBeGreaterThan(0);
   });
 
   test('search with state filter includes state in URL', async ({ page }) => {
     await page.goto('/people-search');
-    await page.fill('input[placeholder="First Name"]', 'John');
-    await page.fill('input[placeholder="Last Name"]', 'Smith');
+    await page.fill('input[placeholder="First name"]', 'John');
+    await page.fill('input[placeholder="Last name"]', 'Smith');
     // Select California
     await page.selectOption('select', 'CA');
     await page.click('button[type="submit"]');

@@ -54,6 +54,8 @@ function pathToEndpoint(path) {
     'admin/data-removal': 'admin-data-removal',
     'admin/analytics': 'admin-analytics',
     'admin/cs-reps': 'admin-cs-reps',
+    'admin/email-log': 'admin-email-log',
+    'admin/email-broadcast': 'admin-email-broadcast',
   };
 
   // Check for exact match first
@@ -453,6 +455,34 @@ const api = {
       method: 'PUT',
       path: '/subscription',
       body,
+      token: token || getToken(),
+    });
+  },
+
+  /**
+   * Admin: fetch the outbound email log.
+   */
+  getEmailLog: async ({ token } = {}) => {
+    return await routeApiRequest('admin-email-log', {
+      method: 'GET',
+      path: '/admin/email-log',
+      token: token || getToken(),
+    });
+  },
+
+  /**
+   * Admin: send a broadcast email to a user segment.
+   * @param {Object} params
+   * @param {string} params.subject
+   * @param {string} params.html
+   * @param {string} params.audience  'all' | 'paid' | 'unpaid' | 'optin'
+   * @param {string} [params.token]
+   */
+  sendEmailBroadcast: async ({ subject, html, audience, token } = {}) => {
+    return await routeApiRequest('admin-email-broadcast', {
+      method: 'POST',
+      path: '/admin/email-broadcast',
+      body: { subject, html, audience },
       token: token || getToken(),
     });
   },

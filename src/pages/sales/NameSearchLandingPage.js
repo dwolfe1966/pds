@@ -84,92 +84,144 @@ const NameSearchLandingPage = () => {
 
   return (
     <main className={styles.main}>
-      {/* Hero Section */}
-      <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>
-            Find Anyone — Search by Name
-          </h1>
-          <p className={styles.heroSubtitle}>
-            Enter a first and last name to search 12 billion+ public records. Instant results.
-          </p>
-        </div>
-      </section>
-
-      {/* Search Form Section */}
-      <section className={styles.searchFormSection}>
-        <div className={styles.searchFormContainer}>
-          <form onSubmit={handleSubmit} className={styles.searchForm}>
-            <div className={styles.nameFields}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First Name"
-                  required
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.fieldGroup}>
-                <label className={styles.label}>
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last Name"
-                  required
-                  className={styles.input}
-                />
-              </div>
+      {/* Hero + Search Section — two-column layout */}
+      <section className={styles.heroSearchSection}>
+        <div className={styles.heroTwoCol}>
+          {/* Left column: headline + form */}
+          <div className={styles.heroFormCol}>
+            <div className={styles.recordBadge}>
+              🔍 12B+ Public Records Searched
             </div>
-            
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>
-                State (Optional)
-              </label>
-              <select
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                className={styles.select}
-              >
-                {usStates.map((stateOption) => (
-                  <option key={stateOption.value} value={stateOption.value}>
-                    {stateOption.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button type="submit" className={styles.submitButton}>
-              Search Now
-            </button>
-            <div style={{
-              display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center',
-              marginTop: '1rem', fontSize: '0.8rem', color: '#6b7280',
-            }}>
-              <span>🔍 2,400+ searches in the last hour</span>
-              <span>👥 Trusted by 3M+ members</span>
-              <span>🔒 100% confidential</span>
-            </div>
-            <p style={{
-              textAlign: 'center',
-              color: '#9ca3af',
-              fontSize: '0.75rem',
-              marginTop: '1rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              Your search is confidential and secure
+            <h1 className={styles.heroTitleTwoCol}>
+              Find Anyone — Search by Name
+            </h1>
+            <p className={styles.heroSubtitleTwoCol}>
+              Enter a first and last name to instantly search 12 billion+ public records.
             </p>
-          </form>
+
+            <div className={styles.heroFormCard}>
+              <form onSubmit={handleSubmit} className={styles.searchForm}>
+                <div className={styles.nameFields}>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>
+                      First Name *
+                    </label>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputIcon}>🔍</span>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="First Name"
+                        required
+                        className={styles.inputWithIcon}
+                      />
+                    </div>
+                  </div>
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label}>
+                      Last Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Last Name"
+                      required
+                      className={styles.input}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <label className={styles.label}>
+                    State (Optional)
+                  </label>
+                  <select
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className={styles.select}
+                  >
+                    {usStates.map((stateOption) => (
+                      <option key={stateOption.value} value={stateOption.value}>
+                        {stateOption.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button type="submit" className={styles.submitButton}>
+                  Search Now
+                </button>
+
+                <p className={styles.socialProof}>
+                  <span className={styles.socialProofDot} />
+                  Over 2,400 searches completed in the last hour
+                </p>
+              </form>
+            </div>
+          </div>
+
+          {/* Right column: blurred result preview (desktop only) */}
+          <div className={styles.heroPreviewCol}>
+            <div className={styles.previewStack}>
+              {/* Card 1 — lock overlay */}
+              <div className={styles.previewCard}>
+                <div className={styles.previewCardInner}>
+                  <div className={styles.previewCardName}>John S.</div>
+                  <div className={styles.previewCardMeta}>Age 34–44 &bull; Los Angeles, CA</div>
+                  <div className={styles.previewCardDetails}>
+                    <span>📞 (***) ***-1234</span>
+                    <span>📍 *** Oak St</span>
+                    <span>👥 3 relatives</span>
+                  </div>
+                </div>
+                <div className={styles.previewLockOverlay}>
+                  <span className={styles.previewLockBadge}>🔒 Sign up to unlock</span>
+                </div>
+              </div>
+
+              {/* Card 2 */}
+              <div className={styles.previewCard}>
+                <div className={styles.previewCardInner}>
+                  <div className={styles.previewCardName}>John S.</div>
+                  <div className={styles.previewCardMeta}>Age 45–54 &bull; Phoenix, AZ</div>
+                  <div className={styles.previewCardDetails}>
+                    <span>📞 (***) ***-5678</span>
+                    <span>📍 *** Elm Ave</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3 */}
+              <div className={styles.previewCard}>
+                <div className={styles.previewCardInner}>
+                  <div className={styles.previewCardName}>John S.</div>
+                  <div className={styles.previewCardMeta}>Age 25–34 &bull; Chicago, IL</div>
+                  <div className={styles.previewCardDetails}>
+                    <span>📞 (***) ***-9012</span>
+                    <span>📍 *** Pine Rd</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className={styles.previewLabel}>Sample results — sign up to view full details</p>
+          </div>
         </div>
       </section>
+
+      {/* Trust Bar */}
+      <div className={styles.trustBar}>
+        <div className={styles.trustBarInner}>
+          <span className={styles.trustItem}>🔒 SSL Encrypted</span>
+          <span className={styles.trustDivider}>|</span>
+          <span className={styles.trustItem}>✓ FCRA Compliant</span>
+          <span className={styles.trustDivider}>|</span>
+          <span className={styles.trustItem}>★★★★★ 50,000+ Members</span>
+          <span className={styles.trustDivider}>|</span>
+          <span className={styles.trustItem}>Trusted by millions</span>
+        </div>
+      </div>
 
       {/* Benefits Section */}
       <section className={styles.benefits}>

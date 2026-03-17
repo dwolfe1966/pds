@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext } from '../../services/searchContext';
 import api from '../../api';
+import { track } from '../../services/trackingService';
 import styles from './SearchDetailPreviewPage.module.css';
 
 /** Service benefit statements for variant 2 */
@@ -79,6 +80,7 @@ const SearchDetailPreviewPage = () => {
         try {
           const personData = JSON.parse(storedPerson);
           setPerson(personData);
+          track('teaser_view', { personId: id });
 
           if (token && personData.extId) {
             try {

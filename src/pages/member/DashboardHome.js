@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { getReportList } from '../../services/reportService';
 import DevBCSession from '../../components/DevBCSession';
+import Skeleton from '../../components/Skeleton';
 import styles from './DashboardHome.module.css';
 
 /**
@@ -247,40 +248,49 @@ const DashboardHome = () => {
       )}
 
       {/* Activity Metrics Cards */}
-      <div className={styles.metricsGrid}>
-        <div className={styles.metricCard}>
-          <div className={styles.metricHeader}>
-            <p>Searches This Month</p>
-          </div>
-          <p className={styles.metricValue}>
-            {loading ? '...' : metrics.searches !== null ? metrics.searches : '0'}
-          </p>
+      {loading ? (
+        <div className={styles.metricsGrid}>
+          <Skeleton variant="card" height={100} />
+          <Skeleton variant="card" height={100} />
+          <Skeleton variant="card" height={100} />
+          <Skeleton variant="card" height={100} />
         </div>
-        <div className={styles.metricCard}>
-          <div className={styles.metricHeader}>
-            <p>Active Alerts</p>
+      ) : (
+        <div className={styles.metricsGrid}>
+          <div className={styles.metricCard}>
+            <div className={styles.metricHeader}>
+              <p>Searches This Month</p>
+            </div>
+            <p className={styles.metricValue}>
+              {metrics.searches !== null ? metrics.searches : '0'}
+            </p>
           </div>
-          <p className={styles.metricValue}>
-            {loading ? '...' : metrics.alerts !== null ? metrics.alerts : '0'}
-          </p>
-        </div>
-        <div className={styles.metricCard}>
-          <div className={styles.metricHeader}>
-            <p>Profile Views</p>
+          <div className={styles.metricCard}>
+            <div className={styles.metricHeader}>
+              <p>Active Alerts</p>
+            </div>
+            <p className={styles.metricValue}>
+              {metrics.alerts !== null ? metrics.alerts : '0'}
+            </p>
           </div>
-          <p className={styles.metricValue}>
-            {loading ? '...' : metrics.profileViews !== null ? metrics.profileViews : '0'}
-          </p>
-        </div>
-        <div className={styles.metricCard}>
-          <div className={styles.metricHeader}>
-            <p>Reports Generated</p>
+          <div className={styles.metricCard}>
+            <div className={styles.metricHeader}>
+              <p>Profile Views</p>
+            </div>
+            <p className={styles.metricValue}>
+              {metrics.profileViews !== null ? metrics.profileViews : '0'}
+            </p>
           </div>
-          <p className={styles.metricValue}>
-            {loading ? '...' : metrics.reports !== null ? metrics.reports : '0'}
-          </p>
+          <div className={styles.metricCard}>
+            <div className={styles.metricHeader}>
+              <p>Reports Generated</p>
+            </div>
+            <p className={styles.metricValue}>
+              {metrics.reports !== null ? metrics.reports : '0'}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recent Activity and Quick Actions */}
       <div className={styles.activityGrid}>
@@ -291,7 +301,16 @@ const DashboardHome = () => {
             <Link to="/search-history" className={styles.panelLink}>View all</Link>
           </div>
           {activityError && <p className={styles.errorText}>{activityError}</p>}
-          {!activityError && loading && <p className={styles.mutedText}>Loading recent activity...</p>}
+          {!activityError && loading && (
+            <div>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} style={{ marginBottom: '0.75rem' }}>
+                  <Skeleton variant="text" style={{ marginBottom: '0.375rem' }} />
+                  <Skeleton variant="textShort" />
+                </div>
+              ))}
+            </div>
+          )}
           {!loading && !activityError && recentReports.length === 0 && recentAlerts.length === 0 && recentSearches.length === 0 && (
             <div className={styles.emptyState}>
               <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</p>
@@ -362,7 +381,14 @@ const DashboardHome = () => {
           <div className={styles.panelHeader}>
             <h2>Quick Actions</h2>
           </div>
-          <div className={styles.actionList}>
+          {loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <Skeleton variant="button" style={{ width: '100%' }} />
+              <Skeleton variant="button" style={{ width: '100%' }} />
+              <Skeleton variant="button" style={{ width: '100%' }} />
+            </div>
+          )}
+          {!loading && <div className={styles.actionList}>
             <button
               onClick={() => navigate('/people-search')}
               className={styles.actionButtonPrimary}
@@ -398,7 +424,7 @@ const DashboardHome = () => {
               <span>📊</span>
               Account & Billing
             </button>
-          </div>
+          </div>}
         </div>
       </div>
 

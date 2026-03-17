@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
+import { track } from '../../services/trackingService';
 import styles from './PaymentPage.module.css';
 
 // Detect card type from PAN prefix
@@ -247,6 +248,7 @@ const PaymentPage = () => {
       }
 
       setSuccess(true);
+      track('payment_complete', { plan: 'pro' });
       try { await refreshSubscription?.(); } catch { /* non-fatal */ }
 
       if (selectedPerson && selectedPerson.extId) {

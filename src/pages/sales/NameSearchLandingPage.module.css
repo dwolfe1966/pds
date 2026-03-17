@@ -48,6 +48,11 @@
 }
 
 .searchForm {
+  /* Layout only — card chrome is handled by .heroFormCard or .searchFormContainer */
+}
+
+/* Phone/Email pages wrap .searchForm in .searchFormContainer — restore card chrome there */
+.searchFormContainer .searchForm {
   background-color: var(--color-bg-default);
   padding: 2.5rem;
   border-radius: var(--radius-xl);
@@ -180,3 +185,296 @@
   font-size: var(--font-size-sm);
 }
 
+/* ─── Hero Improvements ─────────────────────────────────────────── */
+
+/* Record count badge */
+.recordBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: rgba(13, 93, 47, 0.08);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(13, 93, 47, 0.18);
+  margin-bottom: var(--spacing-md);
+  letter-spacing: 0.01em;
+}
+
+/* Social proof line below CTA */
+.socialProof {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+.socialProofDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Input wrapper for magnifying glass icon */
+.inputWrapper {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.inputWithIcon {
+  width: 100%;
+  padding: 0.875rem 0.875rem 0.875rem 2.5rem;
+  font-size: var(--font-size-base);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  box-sizing: border-box;
+  transition: all var(--transition-base);
+  font-family: inherit;
+}
+
+.inputWithIcon:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.1);
+  outline: none;
+}
+
+/* Trust bar */
+.trustBar {
+  background: #f3f4f6;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #6b7280;
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.trustBarInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.trustItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.trustDivider {
+  color: var(--color-border-dark);
+  font-size: 0.7rem;
+}
+
+/* Blurred preview card stack */
+.heroTwoCol {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.heroFormCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.heroPreviewCol {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding-top: 0.5rem;
+}
+
+.previewStack {
+  position: relative;
+}
+
+.previewCard {
+  background: var(--color-bg-default);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: 0.875rem 1rem;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.previewCard:nth-child(2) {
+  opacity: 0.75;
+  transform: scale(0.97);
+  transform-origin: top center;
+}
+
+.previewCard:nth-child(3) {
+  opacity: 0.5;
+  transform: scale(0.94);
+  transform-origin: top center;
+}
+
+.previewCardInner {
+  filter: blur(3px);
+  user-select: none;
+  pointer-events: none;
+}
+
+.previewCardName {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.previewCardMeta {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.375rem;
+}
+
+.previewCardDetails {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* Lock overlay on first card */
+.previewLockOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xl);
+}
+
+.previewLockBadge {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-semibold);
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.previewLabel {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* Hero two-col section replaces hero + searchFormSection split */
+.heroSearchSection {
+  background: linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%);
+  padding: 3rem 2rem;
+}
+
+.heroTitleTwoCol {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.heroSubtitleTwoCol {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xl);
+}
+
+.heroFormCard {
+  background-color: var(--color-bg-default);
+  padding: 2rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-light);
+}
+
+/* In-form preview card (Phone + Email pages) */
+.phonePreviewCard {
+  position: relative;
+  background: var(--color-bg-paper);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: 0.875rem 1rem;
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+}
+
+.phonePreviewInner {
+  filter: blur(3px);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Hide preview col on mobile */
+@media (max-width: 768px) {
+  .heroPreviewCol {
+    display: none;
+  }
+
+  .heroTwoCol {
+    flex-direction: column;
+  }
+
+  .heroFormCol {
+    width: 100%;
+  }
+
+  .trustDivider {
+    display: none;
+  }
+
+  .trustBarInner {
+    gap: 0.4rem 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroSearchSection {
+    padding: 2rem 1rem;
+  }
+
+  .heroTitleTwoCol {
+    font-size: var(--font-size-3xl);
+  }
+}

@@ -34,6 +34,9 @@ const EmailLandingPage = () => {
       {/* Hero Section */}
       <section className={styles.hero}>
         <div className={styles.heroContent}>
+          <div className={styles.recordBadge}>
+            🔍 12B+ Public Records
+          </div>
           <h1 className={styles.heroTitle}>
             Search by Email Address
           </h1>
@@ -51,21 +54,40 @@ const EmailLandingPage = () => {
               <label className={styles.label}>
                 Email Address *
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@email.com"
-                required
-                className={styles.input}
-              />
-              <p style={{ 
-                marginTop: '0.5rem', 
-                fontSize: '0.875rem', 
-                color: '#6b7280' 
+              <div className={styles.inputWrapper}>
+                <span className={styles.inputIcon}>🔍</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="example@email.com"
+                  required
+                  className={styles.inputWithIcon}
+                />
+              </div>
+              <p style={{
+                marginTop: '0.5rem',
+                fontSize: '0.875rem',
+                color: '#6b7280'
               }}>
                 Enter a complete email address to search
               </p>
+            </div>
+
+            {/* Blurred email result preview */}
+            <div className={styles.phonePreviewCard}>
+              <div className={styles.phonePreviewInner}>
+                <div className={styles.previewCardName}>Unknown Sender</div>
+                <div className={styles.previewCardMeta}>✉️ j***@***.com</div>
+                <div className={styles.previewCardDetails}>
+                  <span>👤 Jane D. &bull; Age 28–38</span>
+                  <span>📍 Seattle, WA</span>
+                  <span>🔗 3 associated accounts</span>
+                </div>
+              </div>
+              <div className={styles.previewLockOverlay}>
+                <span className={styles.previewLockBadge}>🔒 Sign up to unlock</span>
+              </div>
             </div>
 
             <button
@@ -73,21 +95,29 @@ const EmailLandingPage = () => {
               className={styles.submitButton}
               disabled={!email.trim()}
             >
-              Search Records
+              Search Now
             </button>
-            <p style={{
-              textAlign: 'center',
-              color: '#9ca3af',
-              fontSize: '0.75rem',
-              marginTop: '1rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
-              Your search is confidential and secure
+
+            <p className={styles.socialProof}>
+              <span className={styles.socialProofDot} />
+              Over 900 email lookups completed in the last hour
             </p>
           </form>
         </div>
       </section>
+
+      {/* Trust Bar */}
+      <div className={styles.trustBar}>
+        <div className={styles.trustBarInner}>
+          <span className={styles.trustItem}>🔒 SSL Encrypted</span>
+          <span className={styles.trustDivider}>|</span>
+          <span className={styles.trustItem}>✓ FCRA Compliant</span>
+          <span className={styles.trustDivider}>|</span>
+          <span className={styles.trustItem}>★★★★★ 50,000+ Members</span>
+          <span className={styles.trustDivider}>|</span>
+          <span className={styles.trustItem}>Trusted by millions</span>
+        </div>
+      </div>
 
       {/* Benefits Section */}
       <section className={styles.benefits}>

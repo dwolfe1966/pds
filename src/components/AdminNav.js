@@ -22,6 +22,7 @@ const AdminNav = () => {
         <Link to="/admin/data-removal" style={{ color: '#fff' }}>Data Removal</Link>
         <Link to="/admin/analytics" style={{ color: '#fff' }}>Analytics</Link>
         <Link to="/admin/cs-reps" style={{ color: '#fff' }}>CS Reps</Link>
+        <Link to="/admin/email" style={{ color: '#fff' }}>Email</Link>
         <button onClick={logout} style={{ background: 'transparent', border: '1px solid #fff', color: '#fff', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
           Logout
         </button>

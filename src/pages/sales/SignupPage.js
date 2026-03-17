@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
+import { track } from '../../services/trackingService';
 import '../../styles/contentContainer.css';
 import styles from './SignupPage.module.css';
 
@@ -131,6 +132,7 @@ const SignupPage = () => {
       const redirectTo = params.get('redirect') || (selectedPersonId ? '/payment' : '/dashboard');
       const normalizedRedirect = redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`;
       setSuccessRedirectTo(normalizedRedirect);
+      track('signup_complete', { source: 'signup_page' });
       setSuccess(true);
 
       setTimeout(() => {

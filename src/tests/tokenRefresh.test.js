@@ -81,13 +81,15 @@ function mockResponse(status, body) {
 }
 
 /**
- * Build a fetch spy routing by URL pattern.
+ * Build a fetch mock routing by URL pattern.
+ * We assign directly to global.fetch (jest.spyOn fails if fetch isn't pre-defined).
  *
  * @param {Array<{url: string|RegExp, response: object|Function}>} routes
+ * @returns {jest.Mock} The mock function (store to restore later)
  */
 function buildFetchSpy(routes) {
   const fallback = mockResponse(500, { message: 'Unmatched URL in test' });
-  return jest.spyOn(global, 'fetch').mockImplementation((url, options) => {
+  const mockFn = jest.fn().mockImplementation((url, options) => {
     for (const { url: pattern, response } of routes) {
       const matches = typeof pattern === 'string' ? url.includes(pattern) : pattern.test(url);
       if (matches) {
@@ -97,6 +99,8 @@ function buildFetchSpy(routes) {
     }
     return Promise.resolve(fallback);
   });
+  global.fetch = mockFn;
+  return mockFn;
 }
 
 // ─── Module under test ───────────────────────────────────────────────────────
@@ -122,7 +126,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  if (fetchSpy) { fetchSpy.mockRestore(); fetchSpy = null; }
+  if (fetchSpy) {
+    fetchSpy.mockReset();
+    fetchSpy = null;
+    // Remove our mock so it doesn't bleed into other tests
+    delete global.fetch;
+  }
   localStorage.clear();
   jest.restoreAllMocks();
 });

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import Skeleton from '../../components/Skeleton';
 import styles from './AlertsPage.module.css';
 
 /**
@@ -11,15 +12,22 @@ const AlertsPage = () => {
   const [alerts, setAlerts] = useState([]);
   const [newAlert, setNewAlert] = useState({ criteria: '', frequency: 'daily' });
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchAlerts = async () => {
-    if (!token) return;
+    if (!token) {
+      setFetchLoading(false);
+      return;
+    }
+    setFetchLoading(true);
     try {
       const data = await api.get('/alerts', { token });
       setAlerts(data?.data || data || []);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setFetchLoading(false);
     }
   };
 
@@ -100,7 +108,14 @@ const AlertsPage = () => {
       {error && <p className={styles.errorMsg}>{error}</p>}
 
       {/* Existing alerts */}
-      {alerts.length === 0 ? (
+      {fetchLoading ? (
+        <div>
+          <Skeleton variant="card" height={64} style={{ marginBottom: '0.5rem' }} />
+          <Skeleton variant="card" height={64} style={{ marginBottom: '0.5rem' }} />
+          <Skeleton variant="card" height={64} style={{ marginBottom: '0.5rem' }} />
+          <Skeleton variant="card" height={64} style={{ marginBottom: '0.5rem' }} />
+        </div>
+      ) : alerts.length === 0 ? (
         <p className={styles.emptyState}>You have no alerts set up yet. Create one above to get started.</p>
       ) : (
         <div className={styles.alertsList}>

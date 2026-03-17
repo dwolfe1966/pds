@@ -5,6 +5,7 @@ const axios = require('axios');
 const cookieParser = require('cookie-parser');
 const { seedData } = require('./seed');
 const { authenticateToken, requireRole } = require('./middleware/auth');
+const emailService = require('./emailService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -26,6 +27,9 @@ let dataStore = {
   csReps: [],
   refreshTokens: new Map(), // Map of refreshToken -> userId
 };
+
+// In-memory event log for analytics tracking
+let eventLog = [];
 
 // Seed data on startup
 try {
@@ -1043,6 +1047,8 @@ app.post('/api/v1/signup', (req, res) => {
   };
 
   dataStore.users.push(newUser);
+  // Send welcome email (fire-and-forget)
+  emailService.sendWelcome(newUser).catch(() => {});
   const { accessToken, refreshToken } = generateTokens(newUser);
 
   res.status(201).json({
@@ -1702,6 +1708,12 @@ app.put('/api/v1/subscription', authenticateToken, (req, res) => {
     }
   }
 
+  // Send payment confirmation email (fire-and-forget)
+  const subUser = dataStore.users.find(u => u.id === userId);
+  if (subUser && subscription.status === 'active') {
+    emailService.sendPaymentConfirmation(subUser, subscription.plan).catch(() => {});
+  }
+
   res.json({
     plan: subscription.plan,
     status: subscription.status,
@@ -1828,6 +1840,16 @@ app.get('/api/v1/notifications', authenticateToken, (req, res) => {
   res.json({
     data: notifications
   });
+});
+
+// POST /api/v1/notifications (save notification preferences)
+app.post('/api/v1/notifications', authenticateToken, (req, res) => {
+  const userId = req.user.userId || req.user.id;
+  const { emailAlerts, weeklyDigest, marketingEmails } = req.body;
+  const user = dataStore.users.find(u => u.id === userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.notificationPreferences = { emailAlerts, weeklyDigest, marketingEmails };
+  res.json({ success: true, preferences: user.notificationPreferences });
 });
 
 // PUT /api/v1/notifications/:id/read
@@ -2339,6 +2361,97 @@ app.put('/api/v1/admin/cs-reps/:id', authenticateToken, requireRole('admin'), (r
   if (status) rep.status = status;
 
   res.json(rep);
+});
+
+// POST /api/v1/admin/events — receive a tracking event
+app.post('/api/v1/admin/events', (req, res) => {
+  const event = {
+    id: eventLog.length + 1,
+    ...req.body,
+    receivedAt: new Date().toISOString(),
+  };
+  eventLog.push(event);
+  res.status(201).json({ ok: true });
+});
+
+// GET /api/v1/admin/events — list all events (admin only, no auth for dev simplicity)
+app.get('/api/v1/admin/events', (req, res) => {
+  const limit = parseInt(req.query.limit) || 500;
+  res.json({ data: eventLog.slice(-limit), total: eventLog.length });
+});
+
+// GET /api/v1/admin/events/summary — aggregated counts for analytics dashboard
+app.get('/api/v1/admin/events/summary', (req, res) => {
+  const counts = {};
+  const byDay = {};
+  const bySessionId = new Set();
+
+  eventLog.forEach(ev => {
+    counts[ev.event] = (counts[ev.event] || 0) + 1;
+    if (ev.sessionId) bySessionId.add(ev.sessionId);
+    const day = (ev.timestamp || ev.receivedAt || '').slice(0, 10);
+    if (day) {
+      if (!byDay[day]) byDay[day] = {};
+      byDay[day][ev.event] = (byDay[day][ev.event] || 0) + 1;
+    }
+  });
+
+  // Funnel counts
+  const funnel = [
+    { step: 'Search', count: counts['search_submit'] || 0 },
+    { step: 'Results', count: counts['result_click'] || 0 },
+    { step: 'Teaser', count: counts['teaser_view'] || 0 },
+    { step: 'Signup', count: counts['signup_complete'] || 0 },
+    { step: 'Payment', count: counts['payment_complete'] || 0 },
+  ];
+
+  // Daily totals (last 14 days)
+  const daily = Object.entries(byDay)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-14)
+    .map(([date, events]) => ({
+      date,
+      total: Object.values(events).reduce((s, n) => s + n, 0),
+      ...events,
+    }));
+
+  res.json({
+    totalEvents: eventLog.length,
+    uniqueSessions: bySessionId.size,
+    counts,
+    funnel,
+    daily,
+  });
+});
+
+// GET /api/v1/admin/email-log (admin)
+app.get('/api/v1/admin/email-log', authenticateToken, requireRole('admin'), (req, res) => {
+  const log = [...emailService.emailLog].reverse(); // newest first
+  res.json({ data: log, total: log.length });
+});
+
+// POST /api/v1/admin/email-broadcast (admin)
+app.post('/api/v1/admin/email-broadcast', authenticateToken, requireRole('admin'), async (req, res) => {
+  const { subject, html, audience } = req.body;
+  if (!subject || !html) return res.status(400).json({ error: 'subject and html are required' });
+
+  let recipients = [...dataStore.users];
+  if (audience === 'paid') {
+    const paidIds = new Set(dataStore.subscriptions.filter(s => s.status === 'active').map(s => s.userId));
+    recipients = dataStore.users.filter(u => paidIds.has(u.id));
+  } else if (audience === 'unpaid') {
+    const paidIds = new Set(dataStore.subscriptions.filter(s => s.status === 'active').map(s => s.userId));
+    recipients = dataStore.users.filter(u => !paidIds.has(u.id));
+  } else if (audience === 'optin') {
+    recipients = dataStore.users.filter(u => u.notificationPreferences?.marketingEmails !== false && u.optin !== false);
+  }
+
+  const results = await emailService.sendBroadcast(recipients, subject, html).catch(e => {
+    return res.status(500).json({ error: e.message });
+  });
+  if (!res.headersSent) {
+    res.json({ sent: results.length, results });
+  }
 });
 
 // Error handling middleware (must be last, before app.listen)

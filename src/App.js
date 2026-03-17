@@ -72,6 +72,7 @@ import PurchaseDetailPage from './pages/admin/PurchaseDetailPage';
 import DataRemovalPage from './pages/admin/DataRemovalPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
+import EmailBroadcastPage from './pages/admin/EmailBroadcastPage';
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
 import PaidRoute from './pages/PaidRoute';
@@ -316,6 +317,14 @@ const App = () => {
             element={
               <ProtectedRoute role="admin">
                 <CsRepManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/email"
+            element={
+              <ProtectedRoute role="admin">
+                <EmailBroadcastPage />
               </ProtectedRoute>
             }
           />

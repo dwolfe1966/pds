@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import styles from './LoginPage.module.css';
@@ -7,12 +7,21 @@ import styles from './LoginPage.module.css';
  * Login page for returning users.
  */
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, token, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect already-authenticated users away from the login page
+  useEffect(() => {
+    if (!authLoading && token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [token, authLoading, navigate]);
+
+  if (authLoading) return null;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

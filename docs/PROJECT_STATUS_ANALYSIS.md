@@ -180,8 +180,19 @@ Pages rendered field names that didn't match mock API responses.
 
 ---
 
+## VIII. Completed Sprints
+
+| Sprint | Date | Focus | Status |
+|--------|------|-------|--------|
+| Member Experience Uplift | 2026-03-15 | Signup/payment fixes, member page UI, CSS Modules | ✅ Complete |
+| Visitor Experience | 2026-03-16 | Landing V2-V6 ×3, subscription context, signup stepped flow | ✅ Complete |
+| Payment Page Redesign | 2026-03-16 | Two-column layout, card validation, order summary | ✅ Complete |
+| Conversion Funnel Uplift | 2026-03-17 | PaidRoute, token refresh, redirect passthrough, loader animation, teaser upgrades | ✅ Complete |
+
+---
+
 ## Summary
 
-The application is feature-complete for its core use cases: all three search funnels (name/phone/email) work against the live ByteCrtrs API, report creation and 10-section detail view are fully implemented, visitor signup and payment flows are working, all member dashboard pages render correctly with proper data, and all admin pages display seeded data. Three classes of systemic bugs were identified and fixed across 13 files. The codebase has 148 passing unit tests, an error boundary for crash resilience, and a proper 404 page.
+The application is feature-complete for its core use cases: all three search funnels (name/phone/email) work against the live ByteCrtrs API, report creation and 10-section detail view are fully implemented, visitor signup and payment flows are working, and all member/admin pages render correctly. The paywall guards `/people/:id` (PaidRoute) for paid users only. Token refresh on 401 and post-login redirect passthrough are wired. The conversion funnel has been redesigned with blur/lock teaser UX, scanning loader animation, and mid-funnel CTAs.
 
-The primary remaining work is enabling ByteCrtrs authentication (flag flip + mapping), adding a toast notification system, and wiring the opt-out email confirmation handler.
+148+ unit tests pass. Playwright e2e: 25/35 passing (10 pre-existing failures related to auth setup in tests and ByteCrtrs API unavailability in CI).

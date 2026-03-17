@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { track } from '../../services/trackingService';
 import styles from './LoaderPage.module.css';
 
 const SCAN_PHASES = [
@@ -77,6 +78,7 @@ const NameSearchLoaderPage = () => {
 
         // Perform the search using ByteCreators ApiWrapper via our helper
         const response = await api.searchPeople(searchParams);
+        track('search_submit', { type: 'name', resultCount: (response.data || []).length });
 
         clearInterval(progressInterval);
         setProgress(100);

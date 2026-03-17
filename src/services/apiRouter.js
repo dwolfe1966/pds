@@ -95,8 +95,10 @@ async function callMockAPI(endpoint, params = {}) {
 
   const response = await fetch(url.toString(), options);
 
-  // 401 retry: attempt token refresh once, then logout
-  if (response.status === 401 && !params._retried) {
+  // 401 retry: attempt token refresh once, then logout.
+  // Skip for auth endpoints (login/refresh) — wrong credentials should not trigger logout.
+  const AUTH_ENDPOINTS = new Set(['login', 'logout', 'refresh-token', 'signup']);
+  if (response.status === 401 && !params._retried && !AUTH_ENDPOINTS.has(endpoint)) {
     const refreshToken = typeof localStorage !== 'undefined' ? localStorage.getItem('refreshToken') : null;
     if (!refreshToken) {
       doLogout();
@@ -289,8 +291,23 @@ export async function routeApiRequest(endpoint, params = {}) {
  */
 async function callNewAPI(endpoint, params) {
   switch (endpoint) {
-    case 'login':
-      return await apiWrapper.login(params.body || params);
+    case 'login': {
+      const loginBody = params.body || params;
+      // ByteCrtrs auth.login expects { username, password } — map from our { email, password }
+      const bcBody = {
+        username: loginBody.username || loginBody.email,
+        password: loginBody.password,
+      };
+      const raw = await apiWrapper.login(bcBody);
+      // Normalize ByteCrtrs login response to the shape AuthContext expects:
+      // { accessToken, refreshToken, user }
+      const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
+      return {
+        accessToken: d.accessToken || d.token || d.jwt || d.access_token || raw?.accessToken,
+        refreshToken: d.refreshToken || d.refresh_token || raw?.refreshToken,
+        user: d.user || d.userData || d.profile || raw?.user || { role: 'member' },
+      };
+    }
     
     case 'logout':
       return await apiWrapper.logout();

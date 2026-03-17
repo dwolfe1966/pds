@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getReportList } from '../../services/reportService';
+import Skeleton from '../../components/Skeleton';
 import styles from './AccountPage.module.css';
 
 /**
@@ -283,7 +284,11 @@ const AccountPage = () => {
         <h2 className={styles.sectionTitle}>Your Reports</h2>
 
         {reportsLoading && reports.length === 0 ? (
-          <p className={styles.loadingText}>Loading reports…</p>
+          <div>
+            <Skeleton variant="card" height={72} style={{ marginBottom: '0.75rem' }} />
+            <Skeleton variant="card" height={72} style={{ marginBottom: '0.75rem' }} />
+            <Skeleton variant="card" height={72} style={{ marginBottom: '0.75rem' }} />
+          </div>
         ) : reportsError ? (
           <p className={styles.errorText}>{reportsError}</p>
         ) : reports.length === 0 ? (
