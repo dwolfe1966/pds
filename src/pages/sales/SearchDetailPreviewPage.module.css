@@ -628,3 +628,54 @@
 .backLink:hover {
   color: var(--color-primary-hover, #0a4a25);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Recently viewed note + mid-page amber CTA
+───────────────────────────────────────────────────────────────────────────── */
+
+.recentlyViewed {
+  font-style: italic;
+  color: var(--color-text-muted, #9ca3af);
+  font-size: var(--font-size-sm, 0.875rem);
+  margin: 0.25rem 0 0.75rem;
+}
+
+.midPageCta {
+  margin: 0 1rem 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 0.875rem;
+  text-align: center;
+}
+
+.midPageCtaHeadline {
+  color: #92400e;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0 0 0.4rem;
+}
+
+.midPageCtaSub {
+  color: #78350f;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.midPageCtaBtn {
+  display: inline-block;
+  background: #f59e0b;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.75rem 1.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  min-height: 48px;
+  transition: background 0.15s ease;
+}
+
+.midPageCtaBtn:hover {
+  background: #d97706;
+}

@@ -74,6 +74,7 @@ import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
+import PaidRoute from './pages/PaidRoute';
 import NotFoundPage from './pages/NotFoundPage';
 import ErrorBoundary from './components/ErrorBoundary';
 // Test pages (development only)
@@ -196,9 +197,11 @@ const App = () => {
             path="/people/:id"
             element={
               <ProtectedRoute>
-                <ErrorBoundary>
-                  <SearchResultDetailPage />
-                </ErrorBoundary>
+                <PaidRoute>
+                  <ErrorBoundary>
+                    <SearchResultDetailPage />
+                  </ErrorBoundary>
+                </PaidRoute>
               </ProtectedRoute>
             }
           />

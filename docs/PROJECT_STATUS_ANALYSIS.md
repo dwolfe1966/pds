@@ -1,7 +1,9 @@
 # IDLookup.AI — Project Status Analysis
 
-**Updated:** March 15, 2026
-**Source:** Full codebase audit and implementation sprint
+**Updated:** March 17, 2026
+**Source:** Full codebase audit — Sprints 2026-03-15, 2026-03-16, 2026-03-17
+
+**Current Sprint:** 2026-03-17 — Conversion Funnel Uplift (completed)
 
 ---
 
@@ -108,7 +110,7 @@ Pages rendered field names that didn't match mock API responses.
 | `src/tests/apiCallSignatures.test.js` | ~30 | api.post/api.put correct signatures across all pages |
 | `src/tests/adminPageUnwrapping.test.js` | ~25 | Admin page response unwrapping (data?.data pattern) |
 
-**E2E tests:** 5 Playwright spec files exist (`tests/e2e/`) but fail due to Playwright import issues. These are not blocking unit tests.
+**E2E tests (Playwright):** 35 tests across 5 spec files. **25 passing, 10 failing.** No import issues — Playwright is fully operational. Failing tests are all pre-existing behavior gaps (see Section VI).
 
 ---
 
@@ -143,17 +145,26 @@ Pages rendered field names that didn't match mock API responses.
 
 ---
 
-## VI. Remaining Gaps (Non-Blocking)
+## VI. Remaining Gaps
 
 | Gap | Effort | Notes |
 |-----|--------|-------|
 | **Opt-out email confirmation handler** | Low | `ApiWrapperQueryHandler.getHandler()` not wired into App.js |
-| **Token refresh** | Medium | `refreshToken` stored but never used for 401 → refresh → retry |
 | **Toast notification system** | Medium | No shared toast component; actions use inline state |
-| **Loading skeletons** | Low | No shared loading component; pages use local boolean state |
+| **Loading skeletons** | Low | CSS pulse animations not yet implemented (spinners only) |
 | **Form validation** | Medium | Minimal client-side validation, no field-level API error display |
+| **LoginPage redirect-if-logged-in** | Low | Logged-in users visiting /login are not redirected to /dashboard |
+| **ByteCrtrs auth** | Medium | `REACT_APP_USE_NEW_API_AUTH=false` — ready to flip but untested |
 | **CI/CD pipeline** | Medium | No GitHub Actions / deployment automation |
-| **E2E test fixes** | Low | Playwright import issues in 5 spec files |
+| **Unpaid member guard broadening** | Low | Currently only `/people/:id` is gated; `/alerts` could be added later |
+| **ByteCrtrs search limit** | Unknown | `perPage: 10` set but ByteCrtrs may cap at 5 — monitor for malformed responses |
+
+### Playwright E2E — 10 Failing Tests (all pre-existing)
+| Test | Failure reason |
+|------|---------------|
+| Login — logged-in user redirected from /login | LoginPage has no redirect-if-already-authenticated logic |
+| Member search tests (6) | Test setup doesn't inject auth token before navigating to `/people-search` |
+| Report flow tests (3) | ByteCrtrs API unavailable in CI/test environment; requests timeout |
 
 ---
 

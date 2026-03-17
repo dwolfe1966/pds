@@ -36,6 +36,13 @@ export const setTokenGetter = (fn) => {
   getToken = fn;
 };
 
+// Logout handler - set by AuthContext so apiRouter can trigger logout on 401
+let doLogout = () => {};
+
+export const setLogoutHandler = (fn) => {
+  doLogout = fn;
+};
+
 /**
  * Make a request to the mock API
  */
@@ -87,7 +94,37 @@ async function callMockAPI(endpoint, params = {}) {
   }
 
   const response = await fetch(url.toString(), options);
-  
+
+  // 401 retry: attempt token refresh once, then logout
+  if (response.status === 401 && !params._retried) {
+    const refreshToken = typeof localStorage !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+    if (!refreshToken) {
+      doLogout();
+      throw new Error('Session expired. Please log in again.');
+    }
+    try {
+      const refreshRes = await fetch(`${MOCK_API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+      if (!refreshRes.ok) {
+        doLogout();
+        throw new Error('Session expired. Please log in again.');
+      }
+      const refreshData = await refreshRes.json();
+      const newToken = refreshData.accessToken;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('accessToken', newToken);
+      }
+      setTokenGetter(() => newToken);
+      return await callMockAPI(endpoint, { ...params, token: newToken, _retried: true });
+    } catch (refreshErr) {
+      doLogout();
+      throw refreshErr;
+    }
+  }
+
   if (!response.ok) {
     let errorData;
     try {
@@ -138,7 +175,6 @@ export async function routeApiRequest(endpoint, params = {}) {
   const featureFlagEnabled = FEATURE_FLAGS[endpoint] === true;
   // Force new API – no mock fallback for these endpoints
   const FORCE_NEW_API_ENDPOINTS = new Set([
-    'teaser-search',
     'create-report', 'get-report', 'report-list',
     'opt-out-search', 'commerce-billing-sale', 'commerce-billing-signup',
     'download-pdf-report'
@@ -271,9 +307,8 @@ async function callNewAPI(endpoint, params) {
         query.lName = query.lastName;
         delete query.lastName;
       }
-      // ByteCrtrs teaser search supports up to 5 results per page; do not override.
-      // Remove any perPage override to let the API use its default (5).
-      delete query.perPage;
+      // NOTE: ByteCrtrs API may cap at 5; revert if results come back malformed
+      query.perPage = 10;
       delete query.per_page;
       delete query.pageSize;
       const isPaginationRequest = !!query.commerceContentId && query.page != null;

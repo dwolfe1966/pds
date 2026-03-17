@@ -1,0 +1,106 @@
+.loaderMain {
+  padding: 0;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);
+}
+
+.loaderCard {
+  max-width: 640px;
+  width: 100%;
+  padding: 3rem 2rem;
+  text-align: center;
+  background-color: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.spinner {
+  width: 80px;
+  height: 80px;
+  border: 6px solid #e5e7eb;
+  border-top: 6px solid #0d5d2f;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 2rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.heading {
+  color: #0d5d2f;
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.phaseMessage {
+  color: #374151;
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+  min-height: 1.6em;
+  transition: opacity 0.2s ease;
+}
+
+.progressBarWrap {
+  width: 300px;
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto 2rem auto;
+}
+
+.progressBarFill {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: #0d5d2f;
+  border-radius: 2px;
+  animation: scan 1.2s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(400%); }
+}
+
+.dataPoints {
+  display: grid;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+.queryCard {
+  padding: 1.25rem;
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.queryLabel {
+  color: #6b7280;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.queryValue {
+  color: #0d5d2f;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 600;
+}

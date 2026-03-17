@@ -3,7 +3,7 @@
  * Uses hybrid API router to intelligently route requests to new API or mock API.
  */
 
-import { routeApiRequest, setTokenGetter as setRouterTokenGetter, getMockAPIPath } from './services/apiRouter';
+import { routeApiRequest, setTokenGetter as setRouterTokenGetter, setLogoutHandler as setRouterLogoutHandler, getMockAPIPath } from './services/apiRouter';
 import { setSearchContext } from './services/searchContext';
 import { adaptIdentity } from './services/apiAdapter';
 
@@ -15,6 +15,8 @@ export const setTokenGetter = (fn) => {
   // Also set in router
   setRouterTokenGetter(fn);
 };
+
+export const setLogoutHandler = setRouterLogoutHandler;
 
 /**
  * Map API path to endpoint name

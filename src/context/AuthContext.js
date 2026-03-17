@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { setTokenGetter } from '../api';
+import api, { setTokenGetter, setLogoutHandler } from '../api';
 
 const AuthContext = createContext();
 
@@ -15,6 +15,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     setTokenGetter(() => token);
   }, [token]);
+
+  // Wire logout handler for token refresh interceptor (runs once on mount)
+  useEffect(() => {
+    setLogoutHandler(logout);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch subscription whenever token changes
   const refreshSubscription = useCallback(async (currentToken) => {
@@ -72,7 +77,6 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem('refreshToken', data.refreshToken);
         }
 
-        navigate('/dashboard');
       }
     } catch (err) {
       console.error('Login failed', err);

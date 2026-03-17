@@ -350,6 +350,7 @@ const SearchDetailPreviewPage = () => {
 
         {/* Person name + sub-line */}
         <h1 className={styles.personName}>{person.fullName}</h1>
+        <p className={styles.recentlyViewed}>This profile has been viewed recently</p>
         {(person.ageRange || person.location) && (
           <p className={styles.personMeta}>
             {person.ageRange ? `Age ${person.ageRange}` : ''}
@@ -453,6 +454,19 @@ const SearchDetailPreviewPage = () => {
           )}
         </div>
       </section>
+
+      {/* ── MID-PAGE CTA (amber, between Email and Address sections) ── */}
+      <div className={styles.midPageCta}>
+        <h3 className={styles.midPageCtaHeadline}>Unlock {person.fullName}&rsquo;s Full Report</h3>
+        <p className={styles.midPageCtaSub}>Create your free account to see all records instantly</p>
+        <button
+          type="button"
+          className={styles.midPageCtaBtn}
+          onClick={showSignupForm ? scrollToSignup : handleSignupNav}
+        >
+          Create Free Account &rarr;
+        </button>
+      </div>
 
       {/* ── LOCKED SECTION 3: Address History ── */}
       <section className={styles.lockedSection}>

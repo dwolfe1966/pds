@@ -2,6 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import styles from './LoaderPage.module.css';
+
+const SCAN_PHASES = [
+  'Searching 247 million records\u2026',
+  'Analyzing matches\u2026',
+  'Compiling your results\u2026',
+];
 
 /**
  * Name search loader page - Shows loading state while performing search.
@@ -21,6 +28,12 @@ const NameSearchLoaderPage = () => {
 
   const [status, setStatus] = useState('Initializing search...');
   const [progress, setProgress] = useState(0);
+  const [phaseIndex, setPhaseIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setPhaseIndex(i => (i + 1) % SCAN_PHASES.length), 800);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const performSearch = async () => {
@@ -117,121 +130,30 @@ const NameSearchLoaderPage = () => {
   }, [firstName, lastName, middleName, age, city, state, navigate]);
 
   return (
-    <main style={{
-      padding: 0,
-      minHeight: '70vh',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      background: 'linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%)'
-    }}>
-      <div style={{
-        maxWidth: '640px',
-        width: '100%',
-        padding: '3rem 2rem',
-        textAlign: 'center',
-        backgroundColor: '#ffffff',
-        borderRadius: '1rem',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
-      }}>
-        {/* Loading Spinner */}
-        <div style={{
-          width: '80px',
-          height: '80px',
-          border: '6px solid #e5e7eb',
-          borderTop: '6px solid #0d5d2f',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 2rem auto'
-        }}></div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-
-        <h2 style={{
-          color: '#0d5d2f',
-          marginBottom: '0.75rem',
-          fontSize: '2rem',
-          fontWeight: 700
-        }}>
-          Searching
-        </h2>
-        <p style={{
-          color: '#6b7280',
-          fontSize: '1rem',
-          marginBottom: '2rem',
-          lineHeight: 1.6
-        }}>
-          {status}
-        </p>
-
-        <div style={{
-          display: 'grid',
-          gap: '0.5rem',
-          color: '#6b7280',
-          fontSize: '0.95rem',
-          marginBottom: '2rem'
-        }}>
+    <main className={styles.loaderMain}>
+      <div className={styles.loaderCard}>
+        <div className={styles.spinner} />
+        <h2 className={styles.heading}>Searching</h2>
+        <p className={styles.phaseMessage}>{SCAN_PHASES[phaseIndex]}</p>
+        <div className={styles.progressBarWrap}>
+          <span className={styles.progressBarFill} />
+        </div>
+        <div className={styles.dataPoints}>
           <span>Possible relatives</span>
           <span>Job &amp; education</span>
           <span>Person information</span>
           <span>Contact information</span>
           <span>Social media profiles</span>
         </div>
-
-        {/* Search Query Display */}
-        <div style={{
-          padding: '1.25rem',
-          backgroundColor: '#fff',
-          borderRadius: '0.75rem',
-          border: '1px solid #e5e7eb'
-        }}>
-          <p style={{
-            color: '#6b7280',
-            fontSize: '0.8rem',
-            marginBottom: '0.5rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-            fontWeight: 600
-          }}>
-            Searching for
-          </p>
-          <p style={{
-            color: '#0d5d2f',
-            fontSize: '1.25rem',
-            lineHeight: 1.5,
-            margin: 0,
-            fontWeight: 600
-          }}>
+        <div className={styles.queryCard}>
+          <p className={styles.queryLabel}>Searching for</p>
+          <p className={styles.queryValue}>
             {firstName} {middleName ? `${middleName} ` : ''}{lastName}
-            {age && <span style={{ color: '#6b7280', fontWeight: 400 }}> • {age}</span>}
-            {city && <span style={{ color: '#6b7280', fontWeight: 400 }}> • {city}</span>}
-            {state && <span style={{ color: '#6b7280', fontWeight: 400 }}> • {state}</span>}
+            {age && <span style={{ color: '#6b7280', fontWeight: 400 }}> &bull; {age}</span>}
+            {city && <span style={{ color: '#6b7280', fontWeight: 400 }}> &bull; {city}</span>}
+            {state && <span style={{ color: '#6b7280', fontWeight: 400 }}> &bull; {state}</span>}
           </p>
         </div>
-
-        {/* Info Message */}
-        <p style={{
-          marginTop: '1.75rem',
-          color: '#9ca3af',
-          fontSize: '0.875rem',
-          lineHeight: 1.5
-        }}>
-          Searching through billions of public records...
-        </p>
-        <p style={{
-          marginTop: '0.5rem',
-          color: '#9ca3af',
-          fontSize: '0.875rem',
-          lineHeight: 1.5
-        }}>
-          {progress}% complete
-        </p>
       </div>
     </main>
   );
