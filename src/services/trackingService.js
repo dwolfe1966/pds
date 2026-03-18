@@ -1,7 +1,17 @@
 // Tracking service — fire-and-forget event logging
 // Never throws; errors are silently swallowed so tracking never breaks the app.
+//
+// Target: REACT_APP_TRACKING_API_URL (standalone tracking-api service, port 3002).
+// Falls back to the legacy mock-server endpoint so existing dev flows keep working
+// if the tracking API is not running.
 
 const SESSION_KEY = 'trackingSessionId';
+
+const TRACKING_URL =
+  (process.env.REACT_APP_TRACKING_API_URL
+    ? `${process.env.REACT_APP_TRACKING_API_URL}/track`
+    : null) ||
+  'http://localhost:3002/track';
 
 function getSessionId() {
   let id = sessionStorage.getItem(SESSION_KEY);
@@ -20,7 +30,7 @@ export function track(eventName, properties = {}) {
     properties,
   };
   // Fire and forget — do not await, do not surface errors
-  fetch('http://localhost:3001/api/v1/admin/events', {
+  fetch(TRACKING_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

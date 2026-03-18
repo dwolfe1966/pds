@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SearchBar from '../../components/SearchBar';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 
 /**
  * Search landing page for visitors coming from marketing campaigns.
@@ -8,6 +9,7 @@ import SearchBar from '../../components/SearchBar';
  * If a query is present, automatically redirects to search results.
  */
 const LandingPage = () => {
+  useLandingTrack('name', 'v1');
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);

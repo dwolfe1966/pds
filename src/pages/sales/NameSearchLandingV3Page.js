@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV3Page.module.css';
 
 /** Step index for progress bar (1–4). Interstitials and final-search don't show a step. */
@@ -38,6 +39,7 @@ const BENEFIT_BULLETS = [
  * Same 4 steps, same data: Name → Location → Details → Confirm → Results.
  */
 const NameSearchLandingV3Page = () => {
+  useLandingTrack('name', 'v3');
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);

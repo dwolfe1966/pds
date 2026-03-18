@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './NameSearchLandingPage.module.css';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 
 /**
  * Email search landing page - Entry point for email searches.
  * Enhanced design with PQS production site styling and marketing content.
  */
 const EmailLandingPage = () => {
+  useLandingTrack('email', 'v1');
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
 

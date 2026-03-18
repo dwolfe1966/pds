@@ -4,6 +4,7 @@ import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SearchBar from '../../components/SearchBar';
 import { setSearchContext } from '../../services/searchContext';
+import { track } from '../../services/trackingService';
 import styles from './SearchResultsPage.module.css';
 
 /**
@@ -25,6 +26,10 @@ const SalesSearchResultsPage = () => {
   const [searchQuery, setSearchQuery] = useState({ firstName: '', lastName: '', state: '' });
   const [rawResponse, setRawResponse] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  useEffect(() => {
+    track('results_view', { search_type: 'name', query: query || '', state: state || '' });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fetchResults = async () => {

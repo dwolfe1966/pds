@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV3Page.module.css';
 
 /** Step index for progress bar (1–3). Interstitials and final-search don't show a step. */
@@ -37,6 +38,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * 3-step flow: Email → Context/Location → Confirm → Results.
  */
 const EmailSearchLandingV3Page = () => {
+  useLandingTrack('email', 'v3');
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);

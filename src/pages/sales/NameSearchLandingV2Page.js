@@ -2,9 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV2Page.module.css';
 
 const NameSearchLandingV2Page = () => {
+  useLandingTrack('name', 'v2');
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);

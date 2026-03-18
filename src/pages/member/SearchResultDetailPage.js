@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getReportDetail, createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext, getSearchContext } from '../../services/searchContext';
 import { extractAll, formatDateRange, fmtPhone } from '../../utils/reportExtract';
+import { track } from '../../services/trackingService';
 
 /**
  * Shows a detailed report for a selected person.
@@ -23,6 +24,12 @@ const SearchResultDetailPage = () => {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState('');
   const lastTrackedRef = useRef(null);
+
+  useEffect(() => {
+    if (id && id !== 'undefined' && id !== 'null') {
+      track('report_view', { commerceContentId: id });
+    }
+  }, [id]);
 
   // ── Data fetching ────────────────────────────────────────────────────────
   useEffect(() => {

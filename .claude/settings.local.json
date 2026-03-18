@@ -6,7 +6,9 @@
       "Bash(npx playwright:*)",
       "Bash(cd:*)",
       "Bash(ls:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 5 node index.js)"
     ]
   }
 }

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { track } from '../../services/trackingService';
 import styles from './NameSearchLandingPage.module.css';
 
 /**
@@ -8,6 +9,10 @@ import styles from './NameSearchLandingPage.module.css';
  */
 const NameSearchLandingPage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    track('landing_view', { search_type: 'name', variant: 'v1' });
+  }, []);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [state, setState] = useState('');

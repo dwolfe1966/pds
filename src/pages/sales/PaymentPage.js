@@ -98,6 +98,16 @@ const PaymentPage = () => {
   const simulateParam = searchParams.get('simulate');
   const cardType = detectCardType(form.cardNumber);
 
+  // Track page entry (after auth resolves so we know if it's an upgrade)
+  useEffect(() => {
+    if (!authLoading) {
+      track('payment_start', {
+        upgrade: searchParams.get('upgrade') === '1',
+        has_selected: !!searchParams.get('selected'),
+      });
+    }
+  }, [authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Require login
   useEffect(() => {
     if (!authLoading && !token) {

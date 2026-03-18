@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './NameSearchLandingPage.module.css';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 
 /**
  * Phone search landing page - Entry point for phone searches.
  * Enhanced design with PQS production site styling and marketing content.
  */
 const PhoneLandingPage = () => {
+  useLandingTrack('phone', 'v1');
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
 

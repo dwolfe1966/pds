@@ -23,6 +23,15 @@ const SignupPage = () => {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [loadingPerson, setLoadingPerson] = useState(false);
 
+  // Track page entry
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    track('signup_start', {
+      source: params.get('selected') ? 'teaser' : 'direct',
+      has_selected: !!params.get('selected'),
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fetch selected person details if coming from search result
   useEffect(() => {
     const params = new URLSearchParams(location.search);

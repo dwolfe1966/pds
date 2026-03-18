@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV4Page.module.css';
 
 const getStepIndex = (step) => {
@@ -36,6 +37,7 @@ const BENEFIT_BULLETS = [
  * Same 4-step flow: Name → Location → Details → Confirm → Results.
  */
 const NameSearchLandingV4Page = () => {
+  useLandingTrack('name', 'v4');
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);

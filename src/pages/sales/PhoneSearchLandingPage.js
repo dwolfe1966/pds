@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 
 /**
  * Phone search landing page for visitors.
  * Allows users to search by phone number.
  */
 const PhoneSearchLandingPage = () => {
+  useLandingTrack('phone', 'v1');
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
 

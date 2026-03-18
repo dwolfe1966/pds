@@ -11,14 +11,18 @@ npm start
 # Start mock API server (port 3001)
 npm run server
 
-# Run both concurrently
+# Start tracking API (port 3002)
+npm run tracking
+
+# Run all three concurrently
 npm run dev
 
 # Build for production
 npm run build
 
-# Install server dependencies (run once)
+# Install server dependencies (run once each)
 npm run install-server
+npm run install-tracking
 ```
 
 There is no test suite configured.
@@ -63,3 +67,6 @@ Certain endpoints (`create-report`, `get-report`, `report-list`, `opt-out-search
 
 ### Mock server
 `server/index.js` is a standalone Express app with its own `node_modules` (install separately via `npm run install-server`). It uses an in-memory data store seeded from `server/seed.js`. Auth uses `jsonwebtoken` via `server/middleware/auth.js`.
+
+### Tracking API
+`tracking-api/index.js` is an independently deployable Express service (port 3002) with its own `node_modules` (install via `npm run install-tracking`). Uses **NDJSON file storage** (`tracking-api/events.ndjson`) — zero native dependencies, works on any Node 18+ without Python/node-gyp. The React client posts events via `src/services/trackingService.js` → `REACT_APP_TRACKING_API_URL/track`. Admin summary endpoint at `/events/summary` requires `x-admin-key` header (`REACT_APP_TRACKING_ADMIN_KEY`). This service has no dependency on `/server` and can be deployed independently in production. Swap storage layer to a real DB by replacing `appendEvent()`/`readEvents()` in `tracking-api/index.js`.

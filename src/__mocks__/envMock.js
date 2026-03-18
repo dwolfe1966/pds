@@ -7,3 +7,5 @@ process.env.REACT_APP_USE_NEW_API_SEARCH = 'true';
 process.env.REACT_APP_USE_NEW_API_REPORTS = 'true';
 process.env.REACT_APP_USE_NEW_API_OPTOUT = 'false';
 process.env.REACT_APP_USE_NEW_API_AUTH = 'false';
+process.env.REACT_APP_TRACKING_API_URL = 'http://localhost:3002';
+process.env.REACT_APP_TRACKING_ADMIN_KEY = 'dev-admin-key';
