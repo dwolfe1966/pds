@@ -298,15 +298,54 @@ async function callNewAPI(endpoint, params) {
         username: loginBody.username || loginBody.email,
         password: loginBody.password,
       };
+
+      // 1. Login via ByteCrtrs — establishes session cookie needed for report endpoints
       const raw = await apiWrapper.login(bcBody);
-      // Normalize ByteCrtrs login response to the shape AuthContext expects:
-      // { accessToken, refreshToken, user }
       const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
-      return {
-        accessToken: d.accessToken || d.token || d.jwt || d.access_token || raw?.accessToken,
-        refreshToken: d.refreshToken || d.refresh_token || raw?.refreshToken,
-        user: d.user || d.userData || d.profile || raw?.user || { role: 'member' },
-      };
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[BC Login] Response keys:', Object.keys(d || {}));
+        console.log('[BC Login] accessToken present:', !!(d.accessToken || d.token || d.jwt || d.access_token));
+      }
+
+      const bcToken = d.accessToken || d.token || d.jwt || d.access_token || raw?.accessToken;
+      const bcRefresh = d.refreshToken || d.refresh_token || raw?.refreshToken;
+      const bcUser = d.user || d.userData || d.profile || raw?.user;
+
+      // 2. If ByteCrtrs returned a JWT, use it directly.
+      if (bcToken) {
+        return { accessToken: bcToken, refreshToken: bcRefresh, user: bcUser || { role: 'member' } };
+      }
+
+      // 3. ByteCrtrs uses cookie-based sessions and returns no JWT.
+      // BC session cookie IS now set (reports will work). Also call mock API to get
+      // a JWT for our own app-level protected routes during the transition period.
+      if (USE_MOCK_API) {
+        try {
+          const mockData = await callMockAPI('login', {
+            method: 'POST',
+            body: { email: loginBody.email || loginBody.username, password: loginBody.password },
+          });
+          if (mockData?.accessToken || mockData?.token) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[BC Login] No BC token — using mock JWT for app-level auth (BC session cookie handles reports)');
+            }
+            return {
+              accessToken: mockData.accessToken || mockData.token,
+              refreshToken: mockData.refreshToken,
+              user: mockData.user || bcUser || { role: 'member' },
+            };
+          }
+        } catch (mockErr) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[BC Login] Mock login fallback also failed:', mockErr?.message);
+          }
+        }
+      }
+
+      // 4. Last resort — BC session exists, but we have no JWT for app routes.
+      // Return bcUser so AuthContext can at least store the user info.
+      return { accessToken: null, refreshToken: null, user: bcUser || { role: 'member' } };
     }
     
     case 'logout':

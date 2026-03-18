@@ -81,7 +81,12 @@ const SearchResultDetailPage = () => {
         setError('We could not load this report right now. Please try again later.');
       } catch (err) {
         if (process.env.NODE_ENV === 'development') console.warn('Error fetching/creating report:', err);
-        setError('We could not load this report right now. Please try again later.');
+        const isAuthError = err?.message?.includes('403') || err?.httpStatus === 403 || err?.status === 403;
+        setError(
+          isAuthError
+            ? 'Your session has expired or needs to be refreshed. Please log out and log back in to view reports.'
+            : 'We could not load this report right now. Please try again later.'
+        );
       } finally {
         setLoading(false);
         setCreatingReport(false);
