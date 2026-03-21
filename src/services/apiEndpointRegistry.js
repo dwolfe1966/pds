@@ -20,8 +20,8 @@ export const API_ENDPOINTS = {
   'login': { newApi: true, mockApi: true },
   'logout': { newApi: true, mockApi: true },
   
-  // Only in mock API (for now)
-  'signup': { newApi: false, mockApi: true },
+  // BC handles user creation (billing.signup) + auto-login. mockApi kept for fallback awareness only.
+  'signup': { newApi: true, mockApi: false },
   'verify-email': { newApi: false, mockApi: true },
   'refresh-token': { newApi: false, mockApi: true },
   'get-profile': { newApi: false, mockApi: true },

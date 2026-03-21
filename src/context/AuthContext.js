@@ -63,20 +63,19 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const data = await api.login({ email, password });
-      if (data.accessToken) {
-        const userData = data.user || { role: 'member' };
+      if (!data.accessToken) {
+        // BC session established but no token returned — should not happen with synthetic token logic.
+        throw new Error('Login succeeded but no session token was returned. Please try again.');
+      }
+      const userData = data.user || { role: 'member' };
 
-        // Update state
-        setToken(data.accessToken);
-        setUser(userData);
+      setToken(data.accessToken);
+      setUser(userData);
 
-        // Persist to local storage
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        if (data.refreshToken) {
-          localStorage.setItem('refreshToken', data.refreshToken);
-        }
-
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('user', JSON.stringify(userData));
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
       }
     } catch (err) {
       console.error('Login failed', err);

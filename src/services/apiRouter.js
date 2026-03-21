@@ -14,6 +14,42 @@ const USE_NEW_API = process.env.REACT_APP_NEW_API_ENABLED === 'true';
 const USE_MOCK_API = process.env.REACT_APP_USE_MOCK_API !== 'false';
 const MOCK_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api/v1';
 
+// ---------------------------------------------------------------------------
+// BC synthetic session helpers
+// BC uses cookie-based sessions and does not issue JWTs to clients.
+// When BC auth succeeds we create a lightweight signed-less token so that
+// AuthContext / ProtectedRoute (which look for an accessToken in localStorage)
+// still work.  The token is NOT cryptographically verified — it exists only for
+// client-side route-gating.  Actual API authentication is handled by the BC
+// session cookie set during login.
+// ---------------------------------------------------------------------------
+function createBcSessionToken(user) {
+  const payload = {
+    bcSession: true,
+    user: user || { role: 'member' },
+    iat: Date.now(),
+    exp: Date.now() + 24 * 60 * 60 * 1000, // 24 h
+  };
+  return btoa(JSON.stringify(payload));
+}
+
+/**
+ * Returns the decoded payload if `token` is a BC synthetic session token
+ * that has not expired, otherwise returns null.
+ */
+function decodeBcSessionToken(token) {
+  if (!token) return null;
+  // Real JWTs have exactly 3 dot-separated segments.
+  if (token.split('.').length === 3) return null;
+  try {
+    const data = JSON.parse(atob(token));
+    if (data.bcSession && data.exp > Date.now()) return data;
+  } catch {
+    // not a BC token
+  }
+  return null;
+}
+
 // Per-endpoint feature flags
 const FEATURE_FLAGS = {
   'teaser-search': process.env.REACT_APP_USE_NEW_API_SEARCH === 'true',
@@ -38,9 +74,14 @@ export const setTokenGetter = (fn) => {
 
 // Logout handler - set by AuthContext so apiRouter can trigger logout on 401
 let doLogout = () => {};
+let _logoutInFlight = false;
 
 export const setLogoutHandler = (fn) => {
-  doLogout = fn;
+  doLogout = async () => {
+    if (_logoutInFlight) return;
+    _logoutInFlight = true;
+    try { await fn(); } finally { _logoutInFlight = false; }
+  };
 };
 
 /**
@@ -99,13 +140,36 @@ async function callMockAPI(endpoint, params = {}) {
   // Skip for auth endpoints (login/refresh) — wrong credentials should not trigger logout.
   const AUTH_ENDPOINTS = new Set(['login', 'logout', 'refresh-token', 'signup']);
   if (response.status === 401 && !params._retried && !AUTH_ENDPOINTS.has(endpoint)) {
+    const storedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
     const refreshToken = typeof localStorage !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+
+    // BC mode: synthetic session token — validate BC session cookie, refresh local token.
+    const bcSession = decodeBcSessionToken(storedToken);
+    if (bcSession) {
+      try {
+        // Calling login with no credentials checks if the BC session cookie is still live.
+        const raw = await apiWrapper.login({});
+        const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
+        const bcUser = d.user || d.userData || bcSession.user;
+        const newToken = createBcSessionToken(bcUser);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('accessToken', newToken);
+        }
+        setTokenGetter(() => newToken);
+        return await callMockAPI(endpoint, { ...params, token: newToken, _retried: true });
+      } catch {
+        doLogout();
+        throw new Error('Session expired. Please log in again.');
+      }
+    }
+
+    // JWT mode: hit the mock refresh endpoint.
     if (!refreshToken) {
       doLogout();
       throw new Error('Session expired. Please log in again.');
     }
     try {
-      const refreshRes = await fetch(`${MOCK_API_URL}/auth/refresh`, {
+      const refreshRes = await fetch(`${MOCK_API_URL}/refresh-token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
@@ -179,7 +243,9 @@ export async function routeApiRequest(endpoint, params = {}) {
   const FORCE_NEW_API_ENDPOINTS = new Set([
     'create-report', 'get-report', 'report-list',
     'opt-out-search', 'commerce-billing-sale', 'commerce-billing-signup',
-    'download-pdf-report'
+    'download-pdf-report',
+    // Auth & user creation — BC is the production user DB
+    'login', 'logout', 'signup',
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
@@ -299,7 +365,7 @@ async function callNewAPI(endpoint, params) {
         password: loginBody.password,
       };
 
-      // 1. Login via ByteCrtrs — establishes session cookie needed for report endpoints
+      // 1. Login via ByteCrtrs — establishes session cookie needed for report endpoints.
       const raw = await apiWrapper.login(bcBody);
       const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
 
@@ -310,46 +376,58 @@ async function callNewAPI(endpoint, params) {
 
       const bcToken = d.accessToken || d.token || d.jwt || d.access_token || raw?.accessToken;
       const bcRefresh = d.refreshToken || d.refresh_token || raw?.refreshToken;
-      const bcUser = d.user || d.userData || d.profile || raw?.user;
+      const bcUser = d.user || d.userData || d.profile || raw?.user || {
+        email: loginBody.email || loginBody.username,
+        role: 'member',
+      };
 
-      // 2. If ByteCrtrs returned a JWT, use it directly.
+      // 2. If BC returned a real JWT, use it directly.
       if (bcToken) {
-        return { accessToken: bcToken, refreshToken: bcRefresh, user: bcUser || { role: 'member' } };
+        return { accessToken: bcToken, refreshToken: bcRefresh, user: bcUser };
       }
 
-      // 3. ByteCrtrs uses cookie-based sessions and returns no JWT.
-      // BC session cookie IS now set (reports will work). Also call mock API to get
-      // a JWT for our own app-level protected routes during the transition period.
-      if (USE_MOCK_API) {
-        try {
-          const mockData = await callMockAPI('login', {
-            method: 'POST',
-            body: { email: loginBody.email || loginBody.username, password: loginBody.password },
-          });
-          if (mockData?.accessToken || mockData?.token) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[BC Login] No BC token — using mock JWT for app-level auth (BC session cookie handles reports)');
-            }
-            return {
-              accessToken: mockData.accessToken || mockData.token,
-              refreshToken: mockData.refreshToken,
-              user: mockData.user || bcUser || { role: 'member' },
-            };
-          }
-        } catch (mockErr) {
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[BC Login] Mock login fallback also failed:', mockErr?.message);
-          }
-        }
+      // 3. BC uses cookie-based sessions — no JWT issued to client.
+      //    The BC session cookie is now set (reports/billing will work).
+      //    Create a synthetic session token for app-level route protection only.
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[BC Login] BC session established (cookie). Issuing synthetic session token for app routing.');
       }
-
-      // 4. Last resort — BC session exists, but we have no JWT for app routes.
-      // Return bcUser so AuthContext can at least store the user info.
-      return { accessToken: null, refreshToken: null, user: bcUser || { role: 'member' } };
+      return {
+        accessToken: createBcSessionToken(bcUser),
+        refreshToken: null,
+        user: bcUser,
+      };
     }
     
     case 'logout':
-      return await apiWrapper.logout();
+      try {
+        return await apiWrapper.logout();
+      } catch (err) {
+        // BC logout failure should not block local session teardown.
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[BC Logout] request failed (ignored):', err?.message);
+        }
+        return { success: true };
+      }
+
+    case 'signup': {
+      const body = params.body || params;
+      const nameParts = (body.fullName || '').trim().split(/\s+/);
+      const firstName = body.firstName || nameParts[0] || '';
+      const lastName = body.lastName || nameParts.slice(1).join(' ') || '';
+
+      // 1. Register the user in ByteCrtrs (production user DB).
+      await apiWrapper.billingSignup({
+        userInfo: { email: body.email, firstName, lastName, optin: !!body.optin },
+        ...(body.queryString && { queryString: body.queryString }),
+      });
+
+      // 2. Auto-login to establish BC session cookie + synthetic token.
+      //    Returns { accessToken, refreshToken, user } — same shape as login.
+      return await callNewAPI('login', {
+        body: { email: body.email, password: body.password },
+      });
+    }
     
     case 'teaser-search': {
       // Convert params to new API format

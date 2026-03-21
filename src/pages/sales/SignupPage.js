@@ -89,26 +89,13 @@ const SignupPage = () => {
 
     setLoading(true);
     try {
-      // Parse firstName/lastName from fullName for ByteCrtrs (needs them split)
-      const nameParts = (form.fullName || '').trim().split(/\s+/);
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      // Run mock signup (for JWT) and ByteCrtrs billing signup in parallel.
-      // ByteCrtrs billing.signup registers the user in BC's system so that
-      // billing.sale on the payment page can establish an authenticated BC session.
-      const [response] = await Promise.all([
-        api.signup({ ...form, optin: !!form.optin }),
-        api.billingSignup({
-          userInfo: { email: form.email, firstName, lastName, optin: !!form.optin },
-          ...(window.location.search && { queryString: window.location.search.replace(/^\?/, '') }),
-        }).catch((err) => {
-          // Non-fatal — log but don't block the signup flow
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[Signup] ByteCrtrs billingSignup failed (non-fatal):', err?.message);
-          }
-        }),
-      ]);
+      // api.signup() routes to ByteCrtrs billing.signup (user creation) then auto-login.
+      // Returns { accessToken, user } — same shape as login.
+      const response = await api.signup({
+        ...form,
+        optin: !!form.optin,
+        queryString: window.location.search.replace(/^\?/, '') || undefined,
+      });
       console.log('Signup response:', response);
       
       // Set token and user in AuthContext and persist (so payment page has auth)
