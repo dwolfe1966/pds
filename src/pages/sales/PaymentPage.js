@@ -75,7 +75,7 @@ const PLAN_FEATURES = [
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, user, loading: authLoading, setToken, setUser, refreshSubscription } = useAuth();
+  const { token, user, loading: authLoading, isPaid, setToken, setUser, refreshSubscription } = useAuth();
 
   const _nameParts = (user?.fullName || '').trim().split(/\s+/);
   const [form, setForm] = useState({
@@ -108,13 +108,16 @@ const PaymentPage = () => {
     }
   }, [authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Require login
+  // Require login; redirect existing subscribers away from the payment page
   useEffect(() => {
     if (!authLoading && !token) {
       const redirect = `/payment${window.location.search || ''}`;
       navigate(`/signup?redirect=${encodeURIComponent(redirect)}`, { replace: true });
     }
-  }, [token, authLoading, navigate]);
+    if (!authLoading && token && isPaid) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [token, authLoading, isPaid, navigate]);
 
   // Load selected person from sessionStorage
   useEffect(() => {

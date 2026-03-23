@@ -13,7 +13,7 @@ import styles from './SearchResultsPage.module.css';
  */
 const MemberSearchResultsPage = () => {
   const location = useLocation();
-  const { token } = useAuth();
+  const { token, isPaid } = useAuth();
   const params = new URLSearchParams(location.search);
   const query = params.get('q');
   const zip = params.get('zip');
@@ -257,7 +257,7 @@ const MemberSearchResultsPage = () => {
       }
     };
     fetchResults();
-  }, [firstNameParam, lastNameParam, stateParam, emailParam, query, zip, token]);
+  }, [firstNameParam, lastNameParam, stateParam, emailParam, query, zip]);
 
   const queryLabel = firstNameParam
     ? `${firstNameParam} ${lastNameParam}${stateParam ? `, ${stateParam}` : ''}`
@@ -364,6 +364,23 @@ const MemberSearchResultsPage = () => {
       {/* Results */}
       {filteredResults.length > 0 ? (
         <div className={styles.resultList}>
+          {!isPaid && (
+            <div style={{
+              background: '#fef9c3',
+              border: '1px solid #fde047',
+              borderRadius: '0.5rem',
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              fontSize: '0.875rem',
+              color: '#713f12',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}>
+              <span>Viewing full reports requires a Pro subscription.</span>
+              <a href="/payment" style={{ color: '#0d5d2f', fontWeight: 600, textDecoration: 'underline' }}>Upgrade now</a>
+            </div>
+          )}
           {filteredResults.map((result) => (
             <ResultCard key={result.id} result={result} isMember={true} />
           ))}

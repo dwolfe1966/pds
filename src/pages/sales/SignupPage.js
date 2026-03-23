@@ -82,6 +82,11 @@ const SignupPage = () => {
     setError('');
 
     // Client-side validation
+    const nameParts = form.fullName.trim().split(/\s+/);
+    if (nameParts.length < 2 || !nameParts[1]) {
+      setError('Please enter your full name (first and last name).');
+      return;
+    }
     if (form.password.length < 8) {
       setError('Password must be at least 8 characters.');
       return;

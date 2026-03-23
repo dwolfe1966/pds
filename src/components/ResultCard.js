@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../api';
 import { setIdentityContext, getSearchContext } from '../services/searchContext';
 import { createReportForIdentity } from '../services/reportService';
 import styles from './ResultCard.module.css';
 
 const ResultCard = ({ result, onClick, isMember = false }) => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, isPaid } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleViewDetails = async (e) => {
@@ -43,47 +42,11 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
       ...result
     }));
     
-    // If this is a member context and user is authenticated, check subscription
+    // If this is a member context and user is authenticated, use isPaid from AuthContext
     if (isMember && token) {
       setLoading(true);
       try {
-        // Check subscription status
-        let subscription = null;
-        try {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[ResultCard] Fetching subscription with token:', token ? 'present' : 'missing');
-          }
-          subscription = await api.get('/subscription', { token });
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[ResultCard] Subscription response:', subscription);
-          }
-        } catch (err) {
-          // Subscription not found or error - treat as no subscription
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[ResultCard] Failed to fetch subscription:', {
-              message: err?.message,
-              status: err?.status,
-              statusText: err?.statusText,
-              data: err?.data
-            });
-          }
-        }
-        
-        // Check subscription status - handle both direct response and wrapped response
-        const subscriptionStatus = subscription?.status || subscription?.data?.status;
-        const isActive = subscriptionStatus === 'active';
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[ResultCard] Subscription check:', {
-            hasSubscription: !!subscription,
-            subscription,
-            status: subscriptionStatus,
-            isActive
-          });
-        }
-        
-        // If user has active subscription, go directly to report detail
-        if (isActive) {
+        if (isPaid) {
           // User has active subscription - create/get report and navigate to it
           if (isValidId(extId)) {
             try {
@@ -111,19 +74,9 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           }
         } else {
           // No active subscription, go to payment page
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[ResultCard] No active subscription found, redirecting to payment');
-          }
           sessionStorage.setItem('selectedPersonId', result.id);
           navigate('/payment');
         }
-      } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[ResultCard] Error checking subscription:', err);
-        }
-        // On error, default to payment page
-        sessionStorage.setItem('selectedPersonId', result.id);
-        navigate('/payment');
       } finally {
         setLoading(false);
       }

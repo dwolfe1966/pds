@@ -136,31 +136,23 @@ async function callMockAPI(endpoint, params = {}) {
 
   const response = await fetch(url.toString(), options);
 
-  // 401 retry: attempt token refresh once, then logout.
+  // 401 handling: BC session users get a safe throw (no logout); JWT users get a refresh attempt.
   // Skip for auth endpoints (login/refresh) — wrong credentials should not trigger logout.
   const AUTH_ENDPOINTS = new Set(['login', 'logout', 'refresh-token', 'signup']);
   if (response.status === 401 && !params._retried && !AUTH_ENDPOINTS.has(endpoint)) {
     const storedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
     const refreshToken = typeof localStorage !== 'undefined' ? localStorage.getItem('refreshToken') : null;
 
-    // BC mode: synthetic session token — validate BC session cookie, refresh local token.
+    // BC mode: synthetic session token — mock server cannot validate these tokens,
+    // so a 401 here means the endpoint is mock-only and the BC session is still valid.
+    // Do NOT call doLogout() — that would terminate an active BC session unnecessarily.
+    // Just throw so the calling page can handle gracefully (e.g. show empty state).
     const bcSession = decodeBcSessionToken(storedToken);
     if (bcSession) {
-      try {
-        // Calling login with no credentials checks if the BC session cookie is still live.
-        const raw = await apiWrapper.login({});
-        const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
-        const bcUser = d.user || d.userData || bcSession.user;
-        const newToken = createBcSessionToken(bcUser);
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('accessToken', newToken);
-        }
-        setTokenGetter(() => newToken);
-        return await callMockAPI(endpoint, { ...params, token: newToken, _retried: true });
-      } catch {
-        doLogout();
-        throw new Error('Session expired. Please log in again.');
-      }
+      const error = new Error('This feature is not yet available in your account.');
+      error.status = 401;
+      error.isMockUnavailable = true;
+      throw error;
     }
 
     // JWT mode: hit the mock refresh endpoint.
@@ -431,9 +423,10 @@ async function callNewAPI(endpoint, params) {
       const lastName = body.lastName || nameParts.slice(1).join(' ') || '';
 
       // 1. Register the user in BC (no password at this stage — billing.signup doesn't accept one).
+      // queryString must always be present (BC requires the field even if empty).
       await apiWrapper.billingSignup({
         userInfo: { email: body.email, firstName, lastName, optin: !!body.optin },
-        ...(body.queryString && { queryString: body.queryString }),
+        queryString: body.queryString || '',
       });
 
       // 2. BC auto-establishes a session after billing.signup.

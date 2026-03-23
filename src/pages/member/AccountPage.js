@@ -11,82 +11,27 @@ import styles from './AccountPage.module.css';
  */
 const AccountPage = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
-  const [subscription, setSubscription] = useState(null);
+  const { token, subscription, isPaid, refreshSubscription } = useAuth();
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(true);
   const [reportsError, setReportsError] = useState('');
   const [lastReportId, setLastReportId] = useState(null);
   const [hasMoreReports, setHasMoreReports] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!token) {
-        setLoading(false);
-        setError('Not authenticated');
-        return;
-      }
+    if (!token) {
+      setError('Not authenticated');
+      return;
+    }
 
-      // Fetch subscription - wrap in promise to ensure errors are caught
-      try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[AccountPage] Fetching subscription with token:', token ? 'present' : 'missing');
-        }
-        const data = await api.get('/subscription', { token }).catch(err => {
-          // Handle error here to prevent unhandled promise rejection
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[AccountPage] Subscription API error:', {
-              message: err?.message,
-              status: err?.status,
-              statusText: err?.statusText,
-              data: err?.data
-            });
-          }
-          throw err; // Re-throw to be caught by outer catch
-        });
-        if (data) {
-          setSubscription(data);
-          setError(''); // Clear any previous errors
-        } else {
-          setSubscription(null);
-        }
-      } catch (err) {
-        // Silently handle errors - don't log to console.error to avoid React error overlay
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[AccountPage] Failed to fetch subscription:', {
-            message: err?.message,
-            status: err?.status,
-            statusText: err?.statusText,
-            data: err?.data
-          });
-        }
-        const errorMessage = err?.message || err?.data?.error?.message || err?.statusText || 'Failed to load subscription';
-        setError(errorMessage);
-        // Set subscription to null so UI shows appropriate message
-        setSubscription(null);
-      } finally {
-        setLoading(false);
+    // Fetch reports list - errors are handled in fetchReports function
+    fetchReports().catch(err => {
+      // Ensure fetchReports errors don't cause unhandled promise rejection
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[AccountPage] fetchReports error caught in useEffect:', err);
       }
-      
-      // Fetch reports list - errors are handled in fetchReports function
-      if (token) {
-        fetchReports().catch(err => {
-          // Ensure fetchReports errors don't cause unhandled promise rejection
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[AccountPage] fetchReports error caught in useEffect:', err);
-          }
-        });
-      }
-    };
-    
-    // Wrap in try-catch to ensure no unhandled errors
-    fetchData().catch(err => {
-      console.warn('[AccountPage] Unhandled error in fetchData:', err);
-      setLoading(false);
-      setError('An unexpected error occurred');
     });
   }, [token]);
 
@@ -154,7 +99,7 @@ const AccountPage = () => {
     setShowCancelModal(false);
     try {
       await api.delete('/subscription', { token });
-      setSubscription(null);
+      refreshSubscription();
       setError('');
     } catch (err) {
       const errorMessage = err?.message || err?.data?.error?.message || 'Failed to cancel subscription';
@@ -242,11 +187,9 @@ const AccountPage = () => {
       {/* Subscription Section */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Subscription</h2>
-        {loading ? (
-          <p className={styles.loadingText}>Loading subscription…</p>
-        ) : error ? (
+        {error ? (
           <p className={styles.errorText}>{error}</p>
-        ) : subscription ? (
+        ) : isPaid && subscription ? (
           <div>
             <div className={styles.planInfo}>
               <span><strong>Plan:</strong> {subscription.plan || 'Basic'}</span>
