@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Email Tickets</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Email Tickets</h1>    <div class='filter-bar'>      <input type='text' placeholder='Search tickets'>      <select><option>Status</option><option>Open</option><option>Closed</option></select>      <button class='primary-btn'>Search</button>    </div>    <div class='emails-wrapper'>      <div class='tickets-list'>        <ul>          <li class='active'>CUS123 – Unable to login <span class='badge success'>Open</span></li>          <li>CUS124 – Billing question <span class='badge warning'>Pending</span></li>          <li>CUS125 – Feature request <span class='badge danger'>Closed</span></li>        </ul>      </div>      <div class='ticket-preview'>        <h3>Ticket Details</h3>        <p><strong>From:</strong> customer@example.com</p>        <p><strong>Subject:</strong> Unable to login</p>        <p>Date: 2025‑09‑08</p>        <p>Status: <span class='badge success'>Open</span></p>        <textarea rows='8'>Customer description of the issue...</textarea>        <button class='primary-btn small'>Respond</button>      </div>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

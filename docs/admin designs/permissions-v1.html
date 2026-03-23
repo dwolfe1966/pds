@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Permissions</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Permissions Management</h1>    <p>Assign roles and module permissions for staff members.</p>    <div class='filter-bar'>      <input type='text' placeholder='Search roles'>      <select><option>All Modules</option><option>Customer</option><option>Orders</option><option>Payments</option><option>Content</option></select>      <button class='primary-btn'>Filter</button>    </div>    <table class='data-table permissions-table'>      <thead>        <tr>          <th>Role</th>          <th>Module</th>          <th>Create</th>          <th>Read</th>          <th>Update</th>          <th>Delete</th>        </tr>      </thead>      <tbody>        <tr>          <td>Admin</td>          <td>Customer</td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox' checked></td>        </tr>        <tr>          <td>Admin</td>          <td>Orders</td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox'></td>          <td><input type='checkbox'></td>        </tr>        <tr>          <td>Support</td>          <td>Payments</td>          <td><input type='checkbox'></td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox'></td>          <td><input type='checkbox'></td>        </tr>        <tr>          <td>Editor</td>          <td>Content</td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox' checked></td>          <td><input type='checkbox'></td>        </tr>      </tbody>    </table>    <button class='primary-btn'>Save Changes</button>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Manage User Opt‑Outs</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Info</a></li>        <li><a href='#'>Emails</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>OptOut</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Manage User Opt‑Outs</h1>    <div class='stats-grid'>      <div class='stat-card'><h3>Total Requests</h3><p>54</p></div>      <div class='stat-card'><h3>Approved</h3><p>45</p></div>      <div class='stat-card'><h3>Pending</h3><p>9</p></div>    </div>    <div class='orders-wrapper'>      <aside class='filter-sidebar'>        <h3>Filter Requests</h3>        <label>Email/ID<input type='text'></label>        <label>Status<select><option>All</option><option>Pending</option><option>Approved</option></select></label>        <button class='primary-btn small'>Apply</button>      </aside>      <section class='orders-table'>        <table class='data-table'>          <thead><tr><th>ID</th><th>Email</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>          <tbody>            <tr><td>68bf7d7f4c890954742483dc</td><td>user@example.com</td><td><span class='badge success'>Requested</span></td><td>2025‑09‑09</td><td><button class='secondary-btn small'>Approve</button></td></tr>            <tr><td>fae7d7f4c8909547424abcde</td><td>another@example.com</td><td><span class='badge warning'>Pending</span></td><td>2025‑09‑09</td><td><button class='secondary-btn small'>Approve</button></td></tr>          </tbody>        </table>      </section>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

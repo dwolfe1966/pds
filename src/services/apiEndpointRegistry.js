@@ -17,8 +17,8 @@ export const API_ENDPOINTS = {
   'commerce-billing-sale': { newApi: true, mockApi: false },
   'commerce-billing-signup': { newApi: true, mockApi: false },
   'download-pdf-report': { newApi: true, mockApi: false },
-  'login': { newApi: true, mockApi: true },
-  'logout': { newApi: true, mockApi: true },
+  'login': { newApi: true, mockApi: false },
+  'logout': { newApi: true, mockApi: false },
   
   // BC handles user creation (billing.signup) + auto-login. mockApi kept for fallback awareness only.
   'signup': { newApi: true, mockApi: false },

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Customers</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Customers</h1>    <div class='filter-bar'>      <input type='text' placeholder='Search by email or name'>      <select><option>Brand</option><option>PrivateRecords</option><option>IDLookup</option></select>      <select><option>Status</option><option>Active</option><option>Failed</option></select>      <button class='primary-btn'>Filter</button>    </div>    <table class='data-table'>      <thead><tr><th>Select</th><th>Email</th><th>Name</th><th>Card Ending</th><th>Phone</th><th>Last Bill</th><th>Status</th><th>Actions</th></tr></thead>      <tbody>        <tr><td><input type='checkbox'></td><td>customer1@email.com</td><td>Fname Lname</td><td>****6850</td><td>2025‑09‑09</td><td>Active</td><td>Active</td><td><button class='secondary-btn small'>View</button></td></tr>        <tr><td><input type='checkbox'></td><td>customer2@email.com</td><td>Decline Lname</td><td>****2111</td><td>2025‑09‑09</td><td>Failed</td><td>Failed</td><td><button class='secondary-btn small'>View</button></td></tr>        <tr><td><input type='checkbox'></td><td>customer3@email.com</td><td>Fname Lname</td><td>****1111</td><td>2025‑09‑09</td><td>Active</td><td>Active</td><td><button class='secondary-btn small'>View</button></td></tr>      </tbody>    </table>    <button class='secondary-btn'>Load More</button>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

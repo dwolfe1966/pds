@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Payment Records</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Payment Records</h1>    <div class='payments-wrapper'>      <aside class='filter-sidebar'>        <h3>Filter Payments</h3>        <label>ID<input type='text'></label>        <label>Status<select><option>All</option><option>Fulfilled</option><option>Rejected</option></select></label>        <label>Type<select><option>All</option><option>Sale</option><option>Validate</option></select></label>        <button class='primary-btn small'>Apply</button>      </aside>      <section class='payments-table'>        <table class='data-table'>          <thead><tr><th>ID</th><th>Amount</th><th>Status</th><th>Sequence</th><th>Date</th><th>Order Status</th></tr></thead>          <tbody>            <tr><td>PAY123456</td><td>$1.50</td><td><span class='badge success'>Fulfilled</span></td><td>0</td><td>2025‑09‑08</td><td><span class='badge success'>Active</span></td></tr>            <tr><td>PAY123457</td><td>$14.95</td><td><span class='badge success'>Fulfilled</span></td><td>0</td><td>2025‑09‑08</td><td><span class='badge success'>Active</span></td></tr>            <tr><td>PAY123458</td><td>$0.00</td><td><span class='badge danger'>Rejected</span></td><td>1</td><td>2025‑09‑08</td><td><span class='badge danger'>Failed</span></td></tr>          </tbody>        </table>      </section>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Customer Details</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Customer Details</h1>    <div class='comm-wrapper'>      <aside class='customer-summary'>        <h2>Summary</h2>        <p><strong>Name:</strong> Fname Lname</p>        <p><strong>Email:</strong> customer@example.com</p>        <p><strong>Member Since:</strong> 2023‑05‑10</p>        <p><strong>Subscription:</strong> Active</p>        <button class='secondary-btn small'>Edit</button>      </aside>      <section class='customer-details'>        <div class='tabs'>          <button class='tab active'>Communications</button>          <button class='tab'>Transactions</button>          <button class='tab'>Actions</button>          <button class='tab'>Email</button>        </div>        <div class='tab-content active'>          <h3>Communications</h3>          <p>No communications yet.</p>          <button class='secondary-btn small'>Add Note</button>        </div>        <div class='tab-content'>          <h3>Transactions</h3>          <table class='data-table small'>            <thead><tr><th>Action</th><th>Offer Name</th><th>Status</th><th>Date</th><th>Amount</th></tr></thead>            <tbody>              <tr><td>Cancel</td><td>Monthly subscription</td><td>Active</td><td>2025‑09‑08</td><td>$14.95</td></tr>              <tr><td>Cancel</td><td>Background check</td><td>Active</td><td>2025‑09‑08</td><td>$1.50</td></tr>            </tbody>          </table>        </div>        <div class='tab-content'>          <h3>Action Recommender</h3>          <form class='actions-form'>            <div class='form-group'><label>Mood<select><option>Normal</option><option>Determined</option></select></label></div>            <div class='form-group'>              <label><input type='checkbox'> Missed callback</label>              <label><input type='checkbox'> Cancel Request</label>              <label><input type='checkbox'> Refund Request</label>    </div>          </form>        </div>        <div class='tab-content'>          <h3>Email Customer</h3>          <form class='email-form'>            <label>From<input type='email' value='support@idlookup.ai'></label>            <label>To<input type='email' value='customer@example.com'></label>            <label>Subject<input type='text' value='Regarding your subscription'></label>            <label>Message<textarea rows='6'>Hello,
+Thank you for contacting us...</textarea></label>            <button class='primary-btn small'>Send Email</button>          </form>        </div>      </section>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

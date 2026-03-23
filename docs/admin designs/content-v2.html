@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Content Management</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Content Management</h1>    <div class='tabs'>      <button class='tab active'>Items</button>      <button class='tab'>Editor</button>    </div>    <div class='tab-content active' id='items'>      <input type='text' placeholder='Search content'>      <table class='data-table'>        <thead><tr><th>Name</th><th>Description</th><th>Options</th></tr></thead>        <tbody>          <tr><td>inmate.state.al</td><td>Alabama prisons information</td><td><button class='secondary-btn small'>Edit</button></td></tr>          <tr><td>privacy.policy</td><td>Privacy policy details</td><td><button class='secondary-btn small'>Edit</button></td></tr>          <tr><td>terms.of.use</td><td>Terms of service</td><td><button class='secondary-btn small'>Edit</button></td></tr>        </tbody>      </table>      <button class='primary-btn'>Add Content</button>    </div>    <div class='tab-content' id='editor'>      <h2>New Content</h2>      <input type='text' placeholder='Name'>      <input type='text' placeholder='Description'>      <textarea class='content-area' rows='8' placeholder='Enter HTML or markdown'></textarea>      <button class='primary-btn'>Create</button>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

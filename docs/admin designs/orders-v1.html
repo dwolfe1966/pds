@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Orders</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Orders</h1>    <div class='stats-grid'>      <div class='stat-card'><h3>Total Orders</h3><p>123</p></div>      <div class='stat-card'><h3>Total Revenue</h3><p>$1,234.56</p></div>      <div class='stat-card'><h3>Failed Orders</h3><p>2</p></div>    </div>    <div class='filter-bar'>      <input type='text' placeholder='Search by Order ID'>      <select><option>Status</option><option>Active</option><option>Failed</option></select>      <select><option>Type</option><option>Sale</option><option>Validate</option></select>      <button class='primary-btn'>Apply</button>    </div>    <table class='data-table'>      <thead><tr><th>Brand</th><th>Order ID</th><th>Amount</th><th>Payer</th><th>Status</th><th>Date</th></tr></thead>      <tbody>        <tr><td>PrivateRecords</td><td>ORD123456</td><td>$14.95</td><td>ID0001</td><td><span class='badge success'>Active</span></td><td>2025‑09‑08</td></tr>        <tr><td>PrivateRecords</td><td>ORD123457</td><td>$1.50</td><td>ID0002</td><td><span class='badge success'>Active</span></td><td>2025‑09‑08</td></tr>        <tr><td>PrivateRecords</td><td>ORD123458</td><td>$0.00</td><td>ID0003</td><td><span class='badge danger'>Failed</span></td><td>2025‑09‑08</td></tr>      </tbody>    </table>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

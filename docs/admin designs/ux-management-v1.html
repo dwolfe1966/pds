@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>UX Management</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Info</a></li>        <li><a href='#'>Emails</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>OptOut</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>UX Management</h1>    <div class='tabs'>      <button class='tab active'>UX Configs</button>      <button class='tab'>UX Layouts</button>      <button class='tab'>UX Collections</button>      <button class='tab'>UX Components</button>    </div>    <div class='tab-content active'>      <h2>UX Configs</h2>      <form class='filter-bar'>        <input type='text' placeholder='Name'>        <input type='text' placeholder='Description'>        <input type='text' placeholder='UXL ID'>        <button class='primary-btn small'>Add</button>      </form>      <table class='data-table mini'>        <thead><tr><th>Name</th><th>Description</th><th>UXL ID</th><th>Status</th><th>Actions</th></tr></thead>        <tbody>          <tr><td>default-private</td><td>Default people search config</td><td>5e912345678901234567</td><td>Active</td><td><button class='secondary-btn small'>Edit</button></td></tr>          <tr><td>abtest-incentive</td><td>People search A/B incentive</td><td>5e8123abcdef012345678</td><td>Active</td><td><button class='secondary-btn small'>Edit</button></td></tr>        </tbody>      </table>    </div>    <div class='tab-content'>      <h2>UX Layouts</h2>      <p>View and edit layouts here.</p>      <table class='data-table mini'><thead><tr><th>Name</th><th>Desc</th><th>Status</th><th>Actions</th></tr></thead><tbody>        <tr><td>name-search-default</td><td>Default layout for people search</td><td>Active</td><td><button class='secondary-btn small'>Edit</button></td></tr>      </tbody></table>    </div>    <div class='tab-content'>      <h2>UX Collections</h2>      <p>Manage groupings of UX layouts and components.</p>    </div>    <div class='tab-content'>      <h2>UX Components</h2>      <p>Create or edit individual components.</p>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

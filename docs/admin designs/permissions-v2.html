@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Permissions Matrix</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Permissions Matrix</h1>    <p>Select modules each role can access.</p>    <div class='roles-grid'>      <div class='role-card'>        <h2>Admin</h2>        <ul class='module-list'>          <li><label><input type='checkbox' checked> Customers</label></li>          <li><label><input type='checkbox' checked> Orders</label></li>          <li><label><input type='checkbox' checked> Payments</label></li>          <li><label><input type='checkbox' checked> Content</label></li>        </ul>      </div>      <div class='role-card'>        <h2>Support</h2>        <ul class='module-list'>          <li><label><input type='checkbox'> Customers</label></li>          <li><label><input type='checkbox'> Orders</label></li>          <li><label><input type='checkbox' checked> Payments</label></li>          <li><label><input type='checkbox'> Content</label></li>        </ul>      </div>      <div class='role-card'>        <h2>Editor</h2>        <ul class='module-list'>          <li><label><input type='checkbox'> Customers</label></li>          <li><label><input type='checkbox'> Orders</label></li>          <li><label><input type='checkbox'> Payments</label></li>          <li><label><input type='checkbox' checked> Content</label></li>        </ul>      </div>    </div>    <button class='primary-btn'>Update Permissions</button>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>User Management</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Info</a></li>        <li><a href='#'>Emails</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>OptOut</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>User Management</h1>    <div class='filter-bar'>      <input type='text' placeholder='Email'>      <input type='text' placeholder='First name'>      <input type='text' placeholder='Last name'>      <select><option>Role</option><option>Admin</option><option>CSR</option><option>Verif</option></select>      <select><option>Permission</option><option>CSR Manager</option><option>Verif</option><option>PM</option></select>      <button class='primary-btn small'>Filter</button>      <button class='secondary-btn small'>Add User</button>    </div>    <table class='data-table small'>      <thead><tr><th>Email</th><th>First Name</th><th>Last Name</th><th>Role</th><th>Permission</th><th>Actions</th></tr></thead>      <tbody>        <tr><td>support1@idlookup.ai</td><td>Mark</td><td>Chin</td><td>Admin</td><td>CSR Manager</td><td><button class='secondary-btn small'>Edit</button></td></tr>        <tr><td>support2@idlookup.ai</td><td>Lisa</td><td>Perez</td><td>CSR</td><td>CSR</td><td><button class='secondary-btn small'>Edit</button></td></tr>        <tr><td>support3@idlookup.ai</td><td>Chris</td><td>Estomo</td><td>CSR</td><td>CSR</td><td><button class='secondary-btn small'>Edit</button></td></tr>      </tbody>    </table>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

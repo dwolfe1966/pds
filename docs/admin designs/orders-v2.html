@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Order Management</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Dashboard</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>Orders</a></li>        <li><a href='#'>Payments</a></li>        <li><a href='#'>Content</a></li>        <li><a href='#'>Permissions</a></li>        <li><a href='#'>Emails</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>Order Management</h1>    <div class='orders-wrapper'>      <aside class='filter-sidebar'>        <h3>Filter Orders</h3>        <label>Order ID<input type='text'></label>        <label>Status<select><option>All</option><option>Active</option><option>Failed</option></select></label>        <label>Type<select><option>All</option><option>Sale</option><option>Validate</option></select></label>        <button class='primary-btn small'>Filter</button>      </aside>      <section class='orders-table'>        <table class='data-table'>          <thead><tr><th>Order ID</th><th>Amount</th><th>Status</th><th>Type</th><th>Date</th><th>Actions</th></tr></thead>          <tbody>            <tr><td>ORD123456</td><td>$14.95</td><td><span class='badge success'>Active</span></td><td>Sale</td><td>2025‑09‑08</td><td><button class='secondary-btn small'>View</button></td></tr>            <tr><td>ORD123457</td><td>$1.50</td><td><span class='badge success'>Active</span></td><td>Sale</td><td>2025‑09‑08</td><td><button class='secondary-btn small'>View</button></td></tr>            <tr><td>ORD123458</td><td>$0.00</td><td><span class='badge danger'>Failed</span></td><td>Validate</td><td>2025‑09‑08</td><td><button class='secondary-btn small'>View</button></td></tr>          </tbody>        </table>      </section>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>

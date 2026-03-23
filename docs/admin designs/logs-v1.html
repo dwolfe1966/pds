@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>System Logs</title>
+  <link rel='stylesheet' href='style.css'>
+  
+</head>
+<body>
+<header>  <div class='container nav-container'>    <div class='logo'>IDLookup Admin</div>    <nav>      <ul class='nav-links'>        <li><a href='#'>Info</a></li>        <li><a href='#'>Emails</a></li>        <li><a href='#'>Customers</a></li>        <li><a href='#'>OptOut</a></li>      </ul>    </nav>  </div></header>
+<main class='admin-page'>  <div class='container'>    <h1>System Logs</h1>    <p>Review raw log entries for debugging.</p>    <div class='log-viewer'>2025‑09‑09 10:14:37 INFO User 68bf7d… called API /admin/csr/tracking-view<br>Request:{"user":"support","action":"view","resource":"tracking"}<br>Response:{"status":"ok","items":10}<br><br>2025‑09‑09 10:10:53 WARN Email service unreachable for user t1@gmail.com<br>Request:{"user":"support","action":"send","resource":"email","to":"t1@gmail.com"}<br>Response:{"status":"error","message":"timeout"}<br>    </div>  </div></main>
+<footer>  <div class='container footer-content'>    <p>IDLookup.ai © 2025. Internal use only.</p>  </div></footer>
+</body>
+</html>
