@@ -380,6 +380,48 @@ const api = {
   },
 
   /**
+   * Fetch all orders for the logged-in user from BC.
+   * Used to determine subscriber status: active subscriber has at least one order
+   * where status === 'active' and transient.canceled === false.
+   * POST /api/commerceBilling/getUserOrders
+   */
+  getUserOrders: async () => {
+    return await routeApiRequest('get-user-orders', {});
+  },
+
+  /**
+   * Count teaser searches performed by the logged-in user.
+   * GET /api/idLookup/statistic/userTeaserSearches
+   */
+  countUserTeaserSearches: async () => {
+    return await routeApiRequest('count-teaser-searches', {});
+  },
+
+  /**
+   * Count report creations performed by the logged-in user.
+   * GET /api/idLookup/statistic/userReportCreations
+   */
+  countUserReportCreations: async () => {
+    return await routeApiRequest('count-report-creations', {});
+  },
+
+  /**
+   * Count PDF downloads performed by the logged-in user.
+   * GET /api/idLookup/statistic/userPdfDownloads
+   */
+  countUserPdfDownloads: async () => {
+    return await routeApiRequest('count-pdf-downloads', {});
+  },
+
+  /**
+   * Get activated product types for the logged-in user.
+   * POST /api/commerceBilling/getActivatedProductTypes
+   */
+  getActivatedProductTypes: async () => {
+    return await routeApiRequest('get-activated-product-types', {});
+  },
+
+  /**
    * Register user in ByteCrtrs (pre-payment, no charge)
    * Must be called before billingSale so ByteCrtrs knows the user.
    */

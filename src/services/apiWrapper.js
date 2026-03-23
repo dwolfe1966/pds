@@ -504,6 +504,94 @@ class ApiWrapperService {
   }
 
   /**
+   * Get all orders for the logged-in user.
+   * POST /api/commerceBilling/getUserOrders
+   * Returns array of orders; active subscriber = status 'active' + transient.canceled false.
+   */
+  async getOrders() {
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.billing?.getOrders === 'function') {
+        return await wrapper.api.billing.getOrders();
+      }
+      throw new Error('getOrders not available in ApiWrapper');
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Get orders failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Count teaser searches performed by the logged-in user.
+   * GET /api/idLookup/statistic/userTeaserSearches
+   * Returns: { count: 5 }
+   */
+  async countUserTeaserSearches() {
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.idLookup.countUserTeaserSearches();
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Count teaser searches failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Count report creations performed by the logged-in user.
+   * GET /api/idLookup/statistic/userReportCreations
+   * Returns: { count: 2 }
+   */
+  async countUserReportCreations() {
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.idLookup.countUserReportCreations();
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Count report creations failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Count PDF downloads performed by the logged-in user.
+   * GET /api/idLookup/statistic/userPdfDownloads
+   * Returns: { count: 2 }
+   */
+  async countUserPdfDownloads() {
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.idLookup.countUserPdfDownloads();
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Count PDF downloads failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Get activated product types for the logged-in user.
+   * POST /api/commerceBilling/getActivatedProductTypes
+   * Returns: { productTypes: ["nameSearch", "phoneSearch", "pdf"] }
+   */
+  async getActivatedProductTypes() {
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.billing.getActivatedProductTypes();
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Get activated product types failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
    * Process payment/sale via ByteCrtrs billing
    * POST /commerceBilling/sale
    */

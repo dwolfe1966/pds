@@ -246,6 +246,14 @@ export async function routeApiRequest(endpoint, params = {}) {
     'download-pdf-report',
     // Auth & user creation — BC is the production user DB
     'login', 'logout', 'signup',
+    // Subscription status — must come from BC, not mock
+    'get-user-orders',
+    // User activity statistics — BC only
+    'count-teaser-searches',
+    'count-report-creations',
+    'count-pdf-downloads',
+    // Activated product types — BC only
+    'get-activated-product-types',
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
@@ -376,9 +384,15 @@ async function callNewAPI(endpoint, params) {
 
       const bcToken = d.accessToken || d.token || d.jwt || d.access_token || raw?.accessToken;
       const bcRefresh = d.refreshToken || d.refresh_token || raw?.refreshToken;
-      const bcUser = d.user || d.userData || d.profile || raw?.user || {
+      const rawUser = d.user || d.userData || d.profile || raw?.user || {
         email: loginBody.email || loginBody.username,
-        role: 'member',
+      };
+
+      // BC returns roles as an array; normalize to a single role string for ProtectedRoute.
+      // BC uses 'csr' (customer service rep) to denote admin-level users.
+      const bcUser = {
+        ...rawUser,
+        role: rawUser.role || (Array.isArray(rawUser.roles) && rawUser.roles.includes('csr') ? 'admin' : 'member'),
       };
 
       // 2. If BC returned a real JWT, use it directly.
@@ -416,17 +430,57 @@ async function callNewAPI(endpoint, params) {
       const firstName = body.firstName || nameParts[0] || '';
       const lastName = body.lastName || nameParts.slice(1).join(' ') || '';
 
-      // 1. Register the user in ByteCrtrs (production user DB).
+      // 1. Register the user in BC (no password at this stage — billing.signup doesn't accept one).
       await apiWrapper.billingSignup({
         userInfo: { email: body.email, firstName, lastName, optin: !!body.optin },
         ...(body.queryString && { queryString: body.queryString }),
       });
 
-      // 2. Auto-login to establish BC session cookie + synthetic token.
-      //    Returns { accessToken, refreshToken, user } — same shape as login.
-      return await callNewAPI('login', {
-        body: { email: body.email, password: body.password },
-      });
+      // 2. BC auto-establishes a session after billing.signup.
+      //    auth.login({}) with no credentials checks whether the server session is live.
+      let sessionUser = null;
+      try {
+        const raw = await apiWrapper.login({});
+        const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
+        const rawUser = d.user || d.userData || raw?.user || null;
+        if (rawUser) {
+          sessionUser = {
+            ...rawUser,
+            role: rawUser.role || (Array.isArray(rawUser.roles) && rawUser.roles.includes('csr') ? 'admin' : 'member'),
+          };
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[BC Signup] Session check after billing.signup failed:', err?.message);
+        }
+      }
+
+      // 3. If a session was established, set the user's chosen password so future logins work.
+      if (sessionUser && body.password) {
+        try {
+          const wrapper = await apiWrapper.getWrapper();
+          await wrapper.api.user.changePassword(body.password);
+        } catch (err) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[BC Signup] changePassword after signup failed:', err?.message);
+          }
+        }
+      }
+
+      // 4. Return synthetic token. If no BC session was established the user will need
+      //    to set their password via the reset-password email flow.
+      const bcUser = sessionUser || {
+        email: body.email,
+        firstName,
+        lastName,
+        role: 'member',
+      };
+
+      return {
+        accessToken: createBcSessionToken(bcUser),
+        refreshToken: null,
+        user: bcUser,
+      };
     }
     
     case 'teaser-search': {
@@ -534,6 +588,22 @@ async function callNewAPI(endpoint, params) {
 
     case 'commerce-billing-signup':
       return await apiWrapper.billingSignup(params.body || params);
+
+    case 'get-user-orders':
+      // Returns array of orders. Subscriber = at least one with status 'active' + transient.canceled false.
+      return await apiWrapper.getOrders();
+
+    case 'count-teaser-searches':
+      return await apiWrapper.countUserTeaserSearches();
+
+    case 'count-report-creations':
+      return await apiWrapper.countUserReportCreations();
+
+    case 'count-pdf-downloads':
+      return await apiWrapper.countUserPdfDownloads();
+
+    case 'get-activated-product-types':
+      return await apiWrapper.getActivatedProductTypes();
 
     case 'download-pdf-report':
       return await apiWrapper.downloadPdfReport(params.commerceContentId || params.id);

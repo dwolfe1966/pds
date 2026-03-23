@@ -21,14 +21,28 @@ export const AuthProvider = ({ children }) => {
     setLogoutHandler(logout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch subscription whenever token changes
+  // Fetch subscription status from BC getUserOrders whenever token changes.
+  // A subscriber = has at least one order with status 'active' and transient.canceled false.
   const refreshSubscription = useCallback(async (currentToken) => {
     const t = currentToken || token;
     if (!t) { setSubscription(null); return; }
     try {
-      const data = await api.getSubscription(t);
-      // Mock API returns { plan, status, renewalDate, ... } directly
-      setSubscription(data?.data ?? data ?? null);
+      const orders = await api.getUserOrders();
+      const activeOrders = Array.isArray(orders)
+        ? orders.filter(o => o.status === 'active' && o.transient?.canceled === false)
+        : [];
+      if (activeOrders.length > 0) {
+        const order = activeOrders[0];
+        setSubscription({
+          status: 'active',
+          plan: order.commerceOffers?.[0] || 'subscriber',
+          dueDate: order.dueTimestamp ? new Date(order.dueTimestamp).toISOString() : null,
+          orderId: order._id || order.id,
+          cancelable: order.transient?.cancelable ?? false,
+        });
+      } else {
+        setSubscription(null);
+      }
     } catch {
       setSubscription(null);
     }

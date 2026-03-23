@@ -17,6 +17,11 @@ export const API_ENDPOINTS = {
   'commerce-billing-sale': { newApi: true, mockApi: false },
   'commerce-billing-signup': { newApi: true, mockApi: false },
   'download-pdf-report': { newApi: true, mockApi: false },
+  'get-user-orders': { newApi: true, mockApi: false },
+  'count-teaser-searches': { newApi: true, mockApi: false },
+  'count-report-creations': { newApi: true, mockApi: false },
+  'count-pdf-downloads': { newApi: true, mockApi: false },
+  'get-activated-product-types': { newApi: true, mockApi: false },
   'login': { newApi: true, mockApi: false },
   'logout': { newApi: true, mockApi: false },
   
