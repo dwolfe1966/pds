@@ -6,12 +6,10 @@
   <title>IDLookup Admin</title>
   <link rel="icon" href="data:," />
 
-  <!--
-    csrWrapper IIFE — load once URL is available from ByteCrtrs.
-    Uncomment and replace src when URL is provided.
-
-    <script src="REPLACE_WITH_CSR_WRAPPER_URL"></script>
-  -->
+  <!-- axios (peer dependency required by CsrWrapper) -->
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+  <!-- ByteCrtrs CSR Admin Wrapper -->
+  <script src="https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js"></script>
 </head>
 <body>
   <div id="root"></div>

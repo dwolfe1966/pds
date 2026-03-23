@@ -52,7 +52,7 @@ try {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3010'],
   credentials: true, // CRITICAL: Allow cookies to be sent
   allowedHeaders: [
     'Content-Type', 
@@ -132,7 +132,7 @@ function getSessionKey(req) {
  */
 app.options('/api/proxy/*', (req, res) => {
   const origin = req.headers.origin;
-  if (origin && (origin.includes('localhost:3000') || origin.includes('localhost:3001'))) {
+  if (origin && (origin.includes('localhost:3000') || origin.includes('localhost:3001') || origin.includes('localhost:3010'))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   } else {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -923,7 +923,7 @@ app.all('/api/proxy/*', async (req, res) => {
     
     // Set CORS headers to allow the frontend to receive the response
     const origin = req.headers.origin;
-    if (origin && (origin.includes('localhost:3000') || origin.includes('localhost:3001'))) {
+    if (origin && (origin.includes('localhost:3000') || origin.includes('localhost:3001') || origin.includes('localhost:3010'))) {
       res.setHeader('Access-Control-Allow-Origin', origin);
     } else {
       res.setHeader('Access-Control-Allow-Origin', '*');

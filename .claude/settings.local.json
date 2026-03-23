@@ -14,7 +14,8 @@
       "Bash(__NEW_LINE_0aaaef1ab6610b41__ cat:*)",
       "Bash(__NEW_LINE_4d6d572d5fdd9a31__ cat:*)",
       "Bash(__NEW_LINE_18254bf442a62924__ cat:*)",
-      "Bash(__NEW_LINE_b09dfde68bfa07de__ cat:*)"
+      "Bash(__NEW_LINE_b09dfde68bfa07de__ cat:*)",
+      "Bash(curl -s \"https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js\")"
     ]
   }
 }

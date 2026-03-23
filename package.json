@@ -16,6 +16,8 @@
     "dev": "concurrently \"npm run server\" \"npm run tracking\" \"npm start\"",
     "install-server": "cd server && npm install",
     "install-tracking": "cd tracking-api && npm install",
+    "install-admin": "cd admin && npm install",
+    "admin": "cd admin && npm start",
     "predeploy": "npm run build",
     "test": "jest --testPathPattern=src/tests",
     "test:watch": "jest --testPathPattern=src/tests --watch",

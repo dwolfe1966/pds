@@ -44,7 +44,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Email</label>
-              <input type="email" value={username} onChange={e => setUsername(e.target.value)} required placeholder="admin@idlookup.ai" />
+              <input type="email" value={username} onChange={e => setUsername(e.target.value)} required placeholder="admin@admin.admin" />
             </div>
             <div className="form-group">
               <label>Password</label>
@@ -60,7 +60,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mini-text" style={{ marginTop: '1.5rem' }}>
-            Stub credentials: <code>admin@idlookup.ai</code> / <code>admin123</code>
+            Credentials: <code>admin@admin.admin</code>
           </p>
         </div>
 
