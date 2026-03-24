@@ -232,14 +232,25 @@ const PaymentPage = () => {
           thinMatchNoResults: false,
           thinMatchGeographic: false,
         },
-        ...(searchParams.toString() && { queryString: searchParams.toString() }),
+        // Strip internal UI params (upgrade, selected, redirect) before passing to BC.
+        // BC uses queryString for campaign attribution — our UI flags are not valid BC params.
+        ...((() => {
+          const bcParams = new URLSearchParams(searchParams);
+          ['upgrade', 'selected', 'redirect'].forEach(k => bcParams.delete(k));
+          const qs = bcParams.toString();
+          return qs ? { queryString: qs } : {};
+        })()),
       };
 
       let paymentSuccess = false;
       try {
         const saleResult = await api.billingSale(saleParams);
         const rawData = saleResult?.params?.response?.data ?? saleResult?.data ?? saleResult ?? {};
-        const explicitFail = rawData?.success === false;
+        // BC returns { status: 'rejected' } or { success: false } for declines
+        const explicitFail = rawData?.success === false
+          || rawData?.status === 'rejected'
+          || rawData?.status === 'declined'
+          || rawData?.status === 'error';
         if (!explicitFail) {
           paymentSuccess = true;
           if (rawData.accessToken) {
@@ -262,7 +273,7 @@ const PaymentPage = () => {
       }
 
       if (!paymentSuccess) {
-        throw new Error('Payment was not successful. Please check your card details and try again.');
+        throw new Error('Your card was declined. Please check your card details and try again, or use a different card.');
       }
 
       // billing.sale establishes an authenticated BC session.
