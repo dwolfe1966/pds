@@ -109,7 +109,9 @@ const DashboardHome = () => {
           }
         } catch (err) {
           // Alerts API may not be available yet or user not authenticated
-          console.error('Failed to fetch alerts:', err);
+          if (!err.isMockUnavailable) {
+            console.error('Failed to fetch alerts:', err);
+          }
           setMetrics(prev => ({ ...prev, alerts: 0 }));
           setRecentAlerts([]);
         }

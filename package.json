@@ -9,7 +9,7 @@
     "recharts": "^3.8.0"
   },
   "scripts": {
-    "start": "parcel public/index.html --port 3000",
+    "start": "parcel public/index.html --port 3000 --no-cache",
     "build": "parcel build public/index.html --dist-dir build",
     "server": "node server/index.js",
     "tracking": "node tracking-api/index.js",

@@ -140,8 +140,11 @@ const SignupPage = () => {
         navigate(normalizedRedirect);
       }, 2000);
     } catch (err) {
-      console.error('Signup error:', err);
-      setError(err.message || 'An error occurred during signup. Please try again.');
+      if (err.code === 'USER_ALREADY_EXISTS') {
+        setError('already_exists');
+      } else {
+        setError(err.message || 'An error occurred during signup. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -261,8 +264,11 @@ const SignupPage = () => {
               </label>
               {error && (
                 <div className={styles.errorMsg}>
-                  <p><strong>Error:</strong></p>
-                  <p>{error}</p>
+                  {error === 'already_exists' ? (
+                    <p>An account with this email already exists. <a href="/login" style={{ color: '#0d5d2f', fontWeight: 600 }}>Log in instead</a></p>
+                  ) : (
+                    <><p><strong>Error:</strong></p><p>{error}</p></>
+                  )}
                 </div>
               )}
               <button type="submit" disabled={loading} className={styles.submitBtn}>

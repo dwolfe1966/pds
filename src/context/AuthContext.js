@@ -28,8 +28,11 @@ export const AuthProvider = ({ children }) => {
     if (!t) { setSubscription(null); return; }
     try {
       const orders = await api.getUserOrders();
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AuthContext] getUserOrders result:', JSON.stringify(orders)?.substring(0, 600));
+      }
       const activeOrders = Array.isArray(orders)
-        ? orders.filter(o => o.status === 'active' && o.transient?.canceled === false)
+        ? orders.filter(o => o.status === 'active' && !o.transient?.canceled)
         : [];
       if (activeOrders.length > 0) {
         const order = activeOrders[0];

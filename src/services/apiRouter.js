@@ -424,10 +424,22 @@ async function callNewAPI(endpoint, params) {
 
       // 1. Register the user in BC (no password at this stage — billing.signup doesn't accept one).
       // queryString must always be present (BC requires the field even if empty).
-      await apiWrapper.billingSignup({
-        userInfo: { email: body.email, firstName, lastName, optin: !!body.optin },
-        queryString: body.queryString || '',
-      });
+      try {
+        await apiWrapper.billingSignup({
+          userInfo: { email: body.email, firstName, lastName, optin: !!body.optin },
+          queryString: body.queryString || '',
+        });
+      } catch (signupErr) {
+        // BC returns 400 "userAlreadyExists" for duplicate emails.
+        // Treat this as a login attempt — the user already has an account.
+        const msg = signupErr?.message || '';
+        if (msg.includes('userAlreadyExists') || msg.includes('already exists') || signupErr?.status === 400) {
+          const alreadyExistsError = new Error('An account with this email already exists. Please log in instead.');
+          alreadyExistsError.code = 'USER_ALREADY_EXISTS';
+          throw alreadyExistsError;
+        }
+        throw signupErr;
+      }
 
       // 2. BC auto-establishes a session after billing.signup.
       //    auth.login({}) with no credentials checks whether the server session is live.
@@ -582,9 +594,21 @@ async function callNewAPI(endpoint, params) {
     case 'commerce-billing-signup':
       return await apiWrapper.billingSignup(params.body || params);
 
-    case 'get-user-orders':
+    case 'get-user-orders': {
       // Returns array of orders. Subscriber = at least one with status 'active' + transient.canceled false.
-      return await apiWrapper.getOrders();
+      const raw = await apiWrapper.getOrders();
+      // BC wraps responses; unwrap to get the actual data payload.
+      const d = raw?.getData?.() ?? raw?.params?.response?.data ?? raw?.data ?? raw;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[BC getUserOrders] raw keys:', Object.keys(raw || {}));
+        console.log('[BC getUserOrders] unwrapped data:', JSON.stringify(d)?.substring(0, 600));
+      }
+      // BC may return the orders array directly, or under { orders: [...] } / { raws: [...] }
+      if (Array.isArray(d)) return d;
+      if (Array.isArray(d?.orders)) return d.orders;
+      if (Array.isArray(d?.raws)) return d.raws;
+      return [];
+    }
 
     case 'count-teaser-searches':
       return await apiWrapper.countUserTeaserSearches();

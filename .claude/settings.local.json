@@ -15,7 +15,10 @@
       "Bash(__NEW_LINE_4d6d572d5fdd9a31__ cat:*)",
       "Bash(__NEW_LINE_18254bf442a62924__ cat:*)",
       "Bash(__NEW_LINE_b09dfde68bfa07de__ cat:*)",
-      "Bash(curl -s \"https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js\")"
+      "Bash(curl -s \"https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /F /IM node.exe 2>/dev/null; echo \"Killed node processes\")",
+      "Bash(tasklist 2>/dev/null | grep -i node)"
     ]
   }
 }

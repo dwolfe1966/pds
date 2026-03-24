@@ -25,7 +25,10 @@ const AlertsPage = () => {
       const data = await api.get('/alerts', { token });
       setAlerts(data?.data || data || []);
     } catch (err) {
-      setError(err.message);
+      if (!err.isMockUnavailable) {
+        setError(err.message);
+      }
+      // isMockUnavailable = BC session user — show empty state, not an error
     } finally {
       setFetchLoading(false);
     }
@@ -49,7 +52,7 @@ const AlertsPage = () => {
       setNewAlert({ criteria: '', frequency: 'daily' });
       fetchAlerts();
     } catch (err) {
-      setError(err.message);
+      setError(err.isMockUnavailable ? 'Alerts are not yet available for your account type.' : err.message);
     } finally {
       setLoading(false);
     }
@@ -60,7 +63,9 @@ const AlertsPage = () => {
       await api.delete(`/alerts/${id}`, { token });
       setAlerts(alerts.filter((a) => a.id !== id));
     } catch (err) {
-      setError(err.message);
+      if (!err.isMockUnavailable) {
+        setError(err.message);
+      }
     }
   };
 
