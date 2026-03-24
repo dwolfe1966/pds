@@ -639,6 +639,27 @@ class ApiWrapperService {
   }
 
   /**
+   * Get account shape/configuration from ByteCrtrs.
+   * GET /shape/compiled
+   * Returns a ShapeCompiled object with getShComp(key) for reading config values.
+   * Useful for debugging — e.g. check what commerce offers are configured.
+   */
+  async getShapeCompiled() {
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.shape?.getShapeCompiled === 'function') {
+        return await wrapper.api.shape.getShapeCompiled();
+      }
+      throw new Error('getShapeCompiled not available in ApiWrapper');
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'getShapeCompiled failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
    * Process payment/sale via ByteCrtrs billing
    * POST /commerceBilling/sale
    */

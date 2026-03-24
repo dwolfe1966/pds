@@ -13,6 +13,7 @@
  */
 import React, { useState } from 'react';
 import api from '../api';
+import apiWrapper from '../services/apiWrapper';
 
 const TEST_CARD = {
   pan: '4111111111111111',
@@ -55,6 +56,15 @@ const DevBCSession = ({ user }) => {
         });
       } catch (signupErr) {
         console.warn('[DevBCSession] billingSignup failed (may already exist):', signupErr?.message);
+      }
+
+      // Step 1b: Inspect BC shape/config to debug commerce offer availability
+      try {
+        const shapeResult = await apiWrapper.getShapeCompiled();
+        console.log('[DevBCSession] shapeCompiled:', JSON.stringify(shapeResult, null, 2));
+        console.log('[DevBCSession] brand name:', shapeResult?.getShComp?.('comp.brand.name'));
+      } catch (shapeErr) {
+        console.warn('[DevBCSession] getShapeCompiled failed:', shapeErr?.message);
       }
 
       // Step 2: Process test payment → establishes BC authenticated session

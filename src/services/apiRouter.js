@@ -236,6 +236,7 @@ export async function routeApiRequest(endpoint, params = {}) {
     'create-report', 'get-report', 'report-list',
     'opt-out-search', 'commerce-billing-sale', 'commerce-billing-signup',
     'download-pdf-report',
+    'get-shape-compiled',
     // Auth & user creation — BC is the production user DB
     'login', 'logout', 'signup',
     // Subscription status — must come from BC, not mock
@@ -627,6 +628,9 @@ async function callNewAPI(endpoint, params) {
 
     case 'download-pdf-report':
       return await apiWrapper.downloadPdfReport(params.commerceContentId || params.id);
+
+    case 'get-shape-compiled':
+      return await apiWrapper.getShapeCompiled();
 
     default:
       throw new Error(`Endpoint ${endpoint} not implemented in new API router`);
