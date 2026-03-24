@@ -418,71 +418,24 @@ async function callNewAPI(endpoint, params) {
       }
 
     case 'signup': {
+      // BC's billing.sale creates the user AND processes payment in one step.
+      // Calling billing.signup here before billing.sale would register the user as a
+      // "member" in BC first, causing billing.sale to reject with { status: "rejected" }
+      // because the offer has nonMemberOnly: true.
+      // Solution: skip billing.signup entirely — just issue a synthetic app-level session
+      // token from the form data so the user can navigate to PaymentPage. The real BC
+      // user creation happens inside billing.sale on PaymentPage.
       const body = params.body || params;
       const nameParts = (body.fullName || '').trim().split(/\s+/);
       const firstName = body.firstName || nameParts[0] || '';
       const lastName = body.lastName || nameParts.slice(1).join(' ') || '';
 
-      // 1. Register the user in BC (no password at this stage — billing.signup doesn't accept one).
-      // queryString must always be present (BC requires the field even if empty).
-      try {
-        await apiWrapper.billingSignup({
-          userInfo: { email: body.email, firstName, lastName, optin: !!body.optin },
-          queryString: body.queryString || '',
-        });
-      } catch (signupErr) {
-        // BC returns 400 "userAlreadyExists" for duplicate emails.
-        // Treat this as a login attempt — the user already has an account.
-        const msg = signupErr?.message || '';
-        if (msg.includes('userAlreadyExists') || msg.includes('already exists') || signupErr?.status === 400) {
-          const alreadyExistsError = new Error('An account with this email already exists. Please log in instead.');
-          alreadyExistsError.code = 'USER_ALREADY_EXISTS';
-          throw alreadyExistsError;
-        }
-        throw signupErr;
-      }
-
-      // 2. BC auto-establishes a session after billing.signup.
-      //    auth.login({}) with no credentials checks whether the server session is live.
-      let sessionUser = null;
-      try {
-        const raw = await apiWrapper.login({});
-        const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
-        const rawUser = d.user || d.userData || raw?.user || null;
-        if (rawUser) {
-          sessionUser = {
-            ...rawUser,
-            role: rawUser.role || (Array.isArray(rawUser.roles) && rawUser.roles.includes('csr') ? 'admin' : 'member'),
-          };
-        }
-      } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[BC Signup] Session check after billing.signup failed:', err?.message);
-        }
-      }
-
-      // 3. If a session was established, set the user's chosen password so future logins work.
-      if (sessionUser && body.password) {
-        try {
-          const wrapper = await apiWrapper.getWrapper();
-          await wrapper.api.user.changePassword(body.password);
-        } catch (err) {
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[BC Signup] changePassword after signup failed:', err?.message);
-          }
-        }
-      }
-
-      // 4. Return synthetic token. If no BC session was established the user will need
-      //    to set their password via the reset-password email flow.
-      // BC's session user object often omits firstName/lastName — always backfill from form.
       const bcUser = {
-        ...(sessionUser || {}),
         email: body.email,
-        firstName: sessionUser?.firstName || firstName,
-        lastName:  sessionUser?.lastName  || lastName,
-        fullName:  sessionUser?.fullName  || `${firstName} ${lastName}`.trim(),
-        role: sessionUser?.role || (Array.isArray(sessionUser?.roles) && sessionUser.roles.includes('csr') ? 'admin' : 'member'),
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`.trim(),
+        role: 'member',
       };
 
       return {

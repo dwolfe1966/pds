@@ -32,7 +32,11 @@ export const AuthProvider = ({ children }) => {
         console.log('[AuthContext] getUserOrders result:', JSON.stringify(orders)?.substring(0, 600));
       }
       const activeOrders = Array.isArray(orders)
-        ? orders.filter(o => o.status === 'active' && !o.transient?.canceled)
+        ? orders.filter(o =>
+            o.status === 'active' &&
+            !o.transient?.canceled &&
+            o.subStatus !== 'canceled'
+          )
         : [];
       if (activeOrders.length > 0) {
         const order = activeOrders[0];
