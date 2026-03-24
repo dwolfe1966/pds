@@ -850,7 +850,13 @@ app.all('/api/proxy/*', async (req, res) => {
     // The captcha verification sets cookies that must be sent with subsequent requests
     // Since cookies can't be shared across origins (localhost:3000 vs localhost:3001),
     // we store them server-side and automatically include them in requests
-    if (response.headers['set-cookie']) {
+    //
+    // IMPORTANT: Skip storing cookies from auth failures (401/403).
+    // A failed login still returns a connect.sid for an anonymous session.
+    // If we store it, it overwrites the real authenticated session cookie and
+    // poisons all subsequent BC requests with a 403 Forbidden.
+    const isAuthFailure = response.status === 401 || response.status === 403;
+    if (response.headers['set-cookie'] && !isAuthFailure) {
       const cookies = Array.isArray(response.headers['set-cookie']) 
         ? response.headers['set-cookie'] 
         : [response.headers['set-cookie']];

@@ -79,6 +79,9 @@ const LoginPage = () => {
         <p className={styles.signupLink}>
           Don't have an account? <Link to="/signup">Sign up</Link>
         </p>
+        <p className={styles.signupLink}>
+          Forgot your password? <Link to="/forgot-password">Reset it</Link>
+        </p>
       </div>
     </main>
   );

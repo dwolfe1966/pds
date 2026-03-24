@@ -511,10 +511,15 @@ class ApiWrapperService {
   async getOrders() {
     try {
       const wrapper = await this.getWrapper();
-      if (typeof wrapper.api?.billing?.getOrders === 'function') {
-        return await wrapper.api.billing.getOrders();
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[BC Billing] Available billing methods:', Object.keys(wrapper.api?.billing || {}));
       }
-      throw new Error('getOrders not available in ApiWrapper');
+      // BC library may expose this as getUserOrders or getOrders
+      const fn = wrapper.api?.billing?.getUserOrders ?? wrapper.api?.billing?.getOrders;
+      if (typeof fn === 'function') {
+        return await fn.call(wrapper.api.billing);
+      }
+      throw new Error('getUserOrders/getOrders not available in ApiWrapper billing module');
     } catch (error) {
       const enhancedError = new Error(error.message || 'Get orders failed');
       enhancedError.originalError = error;

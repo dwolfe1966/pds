@@ -87,6 +87,12 @@ const SignupPage = () => {
       setError('Please enter your full name (first and last name).');
       return;
     }
+    // BC requires names to contain only letters, numbers, spaces, hyphens, apostrophes (2–50 chars)
+    const bcNameRegex = /^[a-zA-Z0-9 '-]{2,50}$/;
+    if (!bcNameRegex.test(nameParts[0]) || !bcNameRegex.test(nameParts.slice(1).join(' '))) {
+      setError('Name may only contain letters, numbers, hyphens, and apostrophes (2–50 characters per part). Please do not use your email address as your name.');
+      return;
+    }
     if (form.password.length < 8) {
       setError('Password must be at least 8 characters.');
       return;
@@ -121,6 +127,10 @@ const SignupPage = () => {
           localStorage.setItem('refreshToken', response.refreshToken);
         }
       }
+
+      // Stash password temporarily so PaymentPage can call changePassword after
+      // billing.sale establishes an authenticated BC session. Cleared immediately after use.
+      sessionStorage.setItem('_pendingPw', form.password);
 
       // Store selected person ID in sessionStorage for payment page
       const params = new URLSearchParams(location.search);

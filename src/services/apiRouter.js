@@ -474,11 +474,14 @@ async function callNewAPI(endpoint, params) {
 
       // 4. Return synthetic token. If no BC session was established the user will need
       //    to set their password via the reset-password email flow.
-      const bcUser = sessionUser || {
+      // BC's session user object often omits firstName/lastName — always backfill from form.
+      const bcUser = {
+        ...(sessionUser || {}),
         email: body.email,
-        firstName,
-        lastName,
-        role: 'member',
+        firstName: sessionUser?.firstName || firstName,
+        lastName:  sessionUser?.lastName  || lastName,
+        fullName:  sessionUser?.fullName  || `${firstName} ${lastName}`.trim(),
+        role: sessionUser?.role || (Array.isArray(sessionUser?.roles) && sessionUser.roles.includes('csr') ? 'admin' : 'member'),
       };
 
       return {

@@ -82,8 +82,8 @@ const PaymentPage = () => {
     cardNumber: '',
     expiry: '',
     cvv: '',
-    billingFirstName: _nameParts[0] || '',
-    billingLastName: _nameParts.slice(1).join(' ') || '',
+    billingFirstName: _nameParts[0] || user?.firstName || '',
+    billingLastName: _nameParts.slice(1).join(' ') || user?.lastName || '',
     street1: '',
     billingZip: '',
   });
@@ -131,21 +131,26 @@ const PaymentPage = () => {
 
   // Sync billing name from user on mount
   useEffect(() => {
-    if (user?.fullName) {
-      const parts = user.fullName.trim().split(/\s+/);
+    if (user) {
+      const parts = (user.fullName || '').trim().split(/\s+/);
+      const first = parts[0] || user.firstName || '';
+      const last  = parts.slice(1).join(' ') || user.lastName || '';
       setForm(prev => ({
         ...prev,
-        billingFirstName: prev.billingFirstName || parts[0] || '',
-        billingLastName: prev.billingLastName || parts.slice(1).join(' ') || '',
+        billingFirstName: prev.billingFirstName || first,
+        billingLastName:  prev.billingLastName  || last,
       }));
     }
   }, [user]);
 
+  // BC signup stores firstName/lastName directly; non-BC flow uses fullName.
+  const _derivedFirst = (user?.fullName || '').trim().split(/\s+/)[0] || '';
+  const _derivedLast  = (user?.fullName || '').trim().split(/\s+/).slice(1).join(' ') || '';
   const userInfo = user
     ? {
         email: user.email,
-        firstName: (user.fullName || '').trim().split(/\s+/)[0] || '',
-        lastName: (user.fullName || '').trim().split(/\s+/).slice(1).join(' ') || '',
+        firstName: _derivedFirst || user.firstName || '',
+        lastName:  _derivedLast  || user.lastName  || '',
         optin: user.optin !== false,
       }
     : null;
@@ -258,6 +263,27 @@ const PaymentPage = () => {
 
       if (!paymentSuccess) {
         throw new Error('Payment was not successful. Please check your card details and try again.');
+      }
+
+      // billing.sale establishes an authenticated BC session.
+      // Use that session to set the user's password so future logins work.
+      const pendingPw = sessionStorage.getItem('_pendingPw');
+      sessionStorage.removeItem('_pendingPw');
+      if (pendingPw) {
+        try {
+          const { default: apiWrapper } = await import('../../services/apiWrapper');
+          const w = await apiWrapper.getWrapper();
+          if (typeof w.api?.user?.changePassword === 'function') {
+            await w.api.user.changePassword(pendingPw);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[Payment] changePassword after sale succeeded');
+            }
+          }
+        } catch (pwErr) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[Payment] changePassword after sale failed (non-fatal):', pwErr?.message);
+          }
+        }
       }
 
       setSuccess(true);

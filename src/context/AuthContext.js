@@ -46,7 +46,10 @@ export const AuthProvider = ({ children }) => {
       } else {
         setSubscription(null);
       }
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[AuthContext] refreshSubscription failed:', err?.message);
+      }
       setSubscription(null);
     }
   }, [token]);

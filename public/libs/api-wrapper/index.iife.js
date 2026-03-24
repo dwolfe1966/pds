@@ -23,11 +23,11 @@ var ApiWrapper = (function (axios) {
     }
     class ApiResponseHelperSearchTeaser extends ApiResponseHelper {
         params;
-        options;
-        constructor(params, options) {
+        option;
+        constructor(params, option) {
             super(params);
             this.params = params;
-            this.options = options;
+            this.option = option;
         }
         currentPage = 1;
         async getMore() {
@@ -36,7 +36,7 @@ var ApiWrapper = (function (axios) {
                 if (!this.hasMore()) {
                     return null;
                 }
-                const response = (await this.options?.getMore?.(this.makeGetMoreParmas())) ?? [];
+                const response = (await this.option?.getMore?.(this.makeGetMoreParmas())) ?? [];
                 const transient = this.getTransientFromResponse(response);
                 this.pushIdentities(transient);
                 return transient?.identities?.length ? transient.identities : null;
@@ -107,198 +107,6 @@ var ApiWrapper = (function (axios) {
     }
     const stringHelper = {
         generateRandom,
-    };
-
-    function getValidQueryString(queryString, options) {
-        if (typeof queryString !== 'string' || queryString.trim().length === 0) {
-            return null;
-        }
-        try {
-            const cleanStr = queryString.startsWith('?') ? queryString.slice(1) : queryString;
-            decodeURIComponent(cleanStr);
-            const params = new URLSearchParams(queryString);
-            if (Array.isArray(options?.excludeKeys)) {
-                options.excludeKeys.forEach((key) => params.delete(key));
-            }
-            const result = params.toString();
-            return result.length > 0 ? `?${result}` : null;
-        }
-        catch (e) {
-            console.error(e);
-            return null;
-        }
-    }
-    class ApiWrapperApi {
-        constructor(params) {
-            this.request = params.request;
-        }
-        request;
-        login = async (params) => {
-            try {
-                const response = await this.request({
-                    url: '/auth/login',
-                    method: 'post',
-                    data: params,
-                });
-                return new ApiResponseHelperGeneral({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperGeneral({ response: null, error });
-            }
-        };
-        logout = async () => {
-            try {
-                const response = await this.request({
-                    url: '/auth/logout',
-                    method: 'post',
-                });
-                return new ApiResponseHelperGeneral({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperGeneral({ response: null, error });
-            }
-        };
-        searchTeaser = async (params) => {
-            try {
-                const response = await this.request({
-                    url: '/idLookup/teaser/search',
-                    method: 'post',
-                    data: params,
-                });
-                const getMore = async (getMoreParams) => {
-                    return await this.request({
-                        url: '/idLookup/teaser/search',
-                        method: 'post',
-                        data: getMoreParams,
-                    });
-                };
-                return new ApiResponseHelperSearchTeaser({ response }, { getMore });
-            }
-            catch (error) {
-                return new ApiResponseHelperSearchTeaser({ response: null, error });
-            }
-        };
-        createReport = async (params) => {
-            try {
-                const response = await this.request({
-                    url: '/idLookup/report/create',
-                    method: 'post',
-                    data: params,
-                });
-                return new ApiResponseHelperGeneral({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperGeneral({ response: null, error });
-            }
-        };
-        getReport = async (params) => {
-            try {
-                const response = await this.request({
-                    url: `/idLookup/report/detail/${params.commerceContentId}`,
-                    method: 'get',
-                });
-                return new ApiResponseHelperGeneral({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperGeneral({ response: null, error });
-            }
-        };
-        getReports = async (params) => {
-            try {
-                const response = await this.request({
-                    url: '/idLookup/report/list',
-                    method: 'get',
-                    params,
-                });
-                return new ApiResponseHelperGeneral({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperGeneral({ response: null, error });
-            }
-        };
-        searchOptOut = async (params) => {
-            try {
-                const response = await this.request({
-                    url: '/optOut/search',
-                    method: 'post',
-                    data: params,
-                });
-                return new ApiResponseHelperGeneral({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperGeneral({ response: null, error });
-            }
-        };
-        requestOptOut = async (params) => {
-            try {
-                const response = await this.request({
-                    url: '/optOut/request',
-                    method: 'post',
-                    data: params,
-                });
-                return new ApiResponseHelperGeneral({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperGeneral({ response: null, error });
-            }
-        };
-        confirmationOptOut = async (params) => {
-            try {
-                const response = await this.request({
-                    url: '/optOut/confirmation',
-                    method: 'get',
-                    params,
-                });
-                return new ApiResponseHelperDataSuccess({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperDataSuccess({ response: null, error });
-            }
-        };
-        sale = async (params) => {
-            try {
-                const queryString = getValidQueryString(params.queryString, { excludeKeys: ['clientId', 'apiId'] });
-                const response = await this.request({
-                    url: `/commerceBilling/sale${queryString ? queryString : ''}`,
-                    method: 'post',
-                    data: params,
-                    __requestCallback: (config) => {
-                        const { clientId, apiId } = config.params;
-                        const billingSeriesId = `sale|${clientId}|${apiId}|${new Date().getTime()}|${stringHelper.generateRandom(8)}`;
-                        config.data = {
-                            ...config.data,
-                            billingSeriesId,
-                        };
-                    },
-                });
-                return new ApiResponseHelperDataSuccess({ response });
-            }
-            catch (error) {
-                return new ApiResponseHelperDataSuccess({ response: null, error });
-            }
-        };
-        auth = {
-            login: this.login,
-            logout: this.logout,
-        };
-        idLookup = {
-            searchTeaser: this.searchTeaser,
-            createReport: this.createReport,
-            getReport: this.getReport,
-            getReports: this.getReports,
-        };
-        optOut = {
-            search: this.searchOptOut,
-            request: this.requestOptOut,
-            confirmation: this.confirmationOptOut,
-        };
-        billing = {
-            sale: this.sale,
-        };
-    }
-
-    const ApiWrapperError = {
-        ERROR_CLIENT_00: '[ERROR_CLIENT_00] Cannot initialize without config.',
     };
 
     const modalSettings = {
@@ -395,7 +203,7 @@ var ApiWrapper = (function (axios) {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
                     cleanup();
-                    reject(new Error('User cancelled the captcha.'));
+                    reject(new Error('User canceled the captcha.'));
                 }
             });
         });
@@ -523,6 +331,50 @@ var ApiWrapper = (function (axios) {
             document.body.appendChild(overlay);
         });
     }
+    function getLoadingModal(params) {
+        const overlay = document.createElement('div');
+        Object.assign(overlay.style, modalSettings.overlayStyle);
+        const modal = document.createElement('div');
+        Object.assign(modal.style, modalSettings.modalStyle);
+        modal.style.display = 'flex';
+        modal.style.flexDirection = 'column';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        const message = document.createElement('p');
+        message.textContent = params.message;
+        message.style.margin = '0 0 15px 0';
+        if (!document.getElementById('api-modal-wrapper-spinner-style')) {
+            const styleSheet = document.createElement('style');
+            styleSheet.id = 'api-modal-wrapper-spinner-style';
+            styleSheet.textContent = `
+      @keyframes api-modal-wrapper-spinner-style-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+            document.head.appendChild(styleSheet);
+        }
+        const spinner = document.createElement('div');
+        Object.assign(spinner.style, {
+            width: '30px',
+            height: '30px',
+            border: '3px solid #f3f3f3',
+            borderTop: '3px solid #007bff',
+            borderRadius: '50%',
+            animation: 'api-modal-wrapper-spinner-style-spin 0.8s linear infinite',
+        });
+        return {
+            open: () => {
+                modal.appendChild(message);
+                modal.appendChild(spinner);
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+            },
+            close: () => {
+                document.body.removeChild(overlay);
+            },
+        };
+    }
     function styleButton(btn, bg, color) {
         Object.assign(btn.style, {
             padding: '8px 16px',
@@ -539,6 +391,533 @@ var ApiWrapper = (function (axios) {
         promptModal,
         messageModal,
         confirmationModal,
+        getLoadingModal,
+    };
+
+    // http://krasimirtsonev.com/blog/article/Javascript-template-engine-in-just-20-line
+    /**
+     * shared ì—ì„œ ë³µì œí•˜ì—¬ ê°€ì ¸ì˜´.
+     */
+    function TemplateEngine(html, options, depth) {
+        if (!depth) {
+            depth = 1;
+        }
+        if (depth > 100) {
+            throw new Error('Not supporting depth more than:' + depth);
+        }
+        const re = /[$]{(.+?)}/g;
+        const reExp = /(^( )?(try|catch|if|for|else|switch|case|break|{|}))(.*)?/g;
+        const raw = 'RAW:';
+        const unsafe = 'UNSAFE:';
+        let code = 'var r=[];\n';
+        let cursor = 0;
+        let match;
+        let count = 0;
+        options['timestamp'] = new Date().getTime();
+        const add = function (line, js) {
+            if (js) {
+                if (line.match(reExp)) {
+                    code += line + '\n';
+                }
+                else {
+                    count++;
+                    if (line.startsWith('comp.')) {
+                        code += 'try{r.push(options["' + line + '"])}catch(e){};\n';
+                    }
+                    else if (line.startsWith(raw)) {
+                        code += 'try{' + line.substr(raw.length) + '}catch(e){};\n';
+                    }
+                    else if (line.startsWith(unsafe)) {
+                        code += line.substr(unsafe.length) + ';\n';
+                    }
+                    else {
+                        code += 'try{r.push(options.' + line + ')}catch(e){};\n';
+                    }
+                }
+            }
+            else {
+                if (line !== '') {
+                    code += 'r.push("' + line.replace(/"/g, '\\"') + '");\n';
+                }
+                else {
+                    code += '';
+                }
+            }
+            return add;
+        };
+        while ((match = re.exec(html))) {
+            add(html.slice(cursor, match.index))(match[1], true);
+            cursor = match.index + match[0].length;
+        }
+        add(html.substr(cursor, html.length - cursor));
+        code += 'return r.join("");';
+        let rendered = '';
+        try {
+            rendered = new Function('options', code.replace(/[\r\t\n]/g, ''))(options);
+        }
+        catch (e) {
+            console.error(e);
+            throw e;
+        }
+        return !count ? rendered : TemplateEngine(rendered, options, depth + 1);
+    }
+
+    /**
+     * shared ì—ì„œ ë³µì œí•˜ì—¬ ê°€ì ¸ì˜´.
+     */
+    class ShapeCompiled {
+        brandDomain;
+        brandId;
+        brandName;
+        shConId;
+        containerName;
+        containerDesc;
+        containerStatus;
+        shColId;
+        collectionName;
+        collectionDesc;
+        collectionStatus;
+        values = { code: {} };
+        types = {};
+        revisions = {};
+        ids = {};
+        keys = { comp: {} };
+        serverOnlyKeys = { comp: [] };
+        ip;
+        device;
+        requestZip;
+        requestCountry;
+        requestState;
+        requestCity;
+        timestamp;
+        cached = false;
+        static fromData(data) {
+            const shapeCompiled = new ShapeCompiled();
+            if (data) {
+                Object.assign(shapeCompiled, data);
+            }
+            return shapeCompiled;
+        }
+        setCode(key, value) {
+            let values = this.values.code;
+            const keyArray = key.split('.');
+            keyArray.forEach((key, index) => {
+                if (!values[key]) {
+                    values[key] = {};
+                }
+                if (index + 1 === keyArray.length) {
+                    values[key] = value;
+                }
+                else {
+                    values = values[key];
+                }
+            });
+        }
+        get(key) {
+            if (key) {
+                if (this.isShComp(key)) {
+                    return this.getShComp(key);
+                }
+                else {
+                    return this.traverseValues(key);
+                }
+            }
+        }
+        getShComp(key, throwFlag = false) {
+            let rendered = null;
+            if (this.values[key]) {
+                rendered = this.render(this.values[key]);
+            }
+            if (this.types[key] === 'json') {
+                try {
+                    rendered = JSON.parse(rendered);
+                }
+                catch (e) {
+                    console.error('ShapeCompiled Error', this.shConId, this.shColId, this.ids[key], key, rendered, e);
+                    if (throwFlag) {
+                        e.message =
+                            `ShapeCompiled error. shConId:${this.shConId} shColId:${this.shColId} ${key} ID:${this.ids[key]}. ` +
+                                e?.['message'] +
+                                ':' +
+                                rendered;
+                        throw e;
+                    }
+                    rendered = null;
+                }
+            }
+            else {
+                if (rendered === null || rendered === undefined) {
+                    rendered = '';
+                }
+            }
+            return rendered;
+        }
+        isShComp(key) {
+            return key && typeof key === 'string' && key.startsWith('comp.');
+        }
+        traverseKeys(key) {
+            try {
+                let keys = this.keys;
+                for (const k of key.split('.')) {
+                    if (keys) {
+                        keys = keys[k];
+                    }
+                    else {
+                        keys = null;
+                        break;
+                    }
+                }
+                return keys;
+            }
+            catch (e) {
+                console.log('ShapeCompiled.traverseKeys Error', e);
+                return null;
+            }
+        }
+        checkBrandId(brandId) {
+            if (!brandId) {
+                return false;
+            }
+            const checkBrandIdComp = this.getShComp('comp.brand.check.brandId');
+            if (!checkBrandIdComp) {
+                return false;
+            }
+            const regexp = new RegExp(checkBrandIdComp);
+            return regexp.test(brandId);
+        }
+        traverseValues(key) {
+            try {
+                let values = this.values;
+                for (const k of key.split('.')) {
+                    if (values) {
+                        values = values[k];
+                    }
+                    else {
+                        values = null;
+                        break;
+                    }
+                }
+                if (values && values['$value']) {
+                    return values['$value'];
+                }
+                else {
+                    return values;
+                }
+            }
+            catch (e) {
+                console.error(e, key);
+                return '';
+            }
+        }
+        render(content) {
+            return TemplateEngine(content, this.values);
+        }
+    }
+
+    function getValidQueryString(queryString, option) {
+        if (typeof queryString !== 'string' || queryString.trim().length === 0) {
+            return null;
+        }
+        try {
+            const cleanStr = queryString.startsWith('?') ? queryString.slice(1) : queryString;
+            decodeURIComponent(cleanStr);
+            const params = new URLSearchParams(queryString);
+            if (Array.isArray(option?.excludeKeys)) {
+                option.excludeKeys.forEach((key) => params.delete(key));
+            }
+            const result = params.toString();
+            return result.length > 0 ? `?${result}` : null;
+        }
+        catch (e) {
+            console.error(e);
+            return null;
+        }
+    }
+    function makeBillingSeriesId(params) {
+        return `${params.type}}|${params.clientId}|${params.apiId}|${new Date().getTime()}|${stringHelper.generateRandom(8)}`;
+    }
+    class ApiWrapperApi {
+        constructor(params) {
+            this.request = params.request;
+        }
+        request;
+        login = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/auth/login',
+                    method: 'post',
+                    data: params,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        logout = async () => {
+            try {
+                const response = await this.request({
+                    url: '/auth/logout',
+                    method: 'post',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        searchTeaser = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/idLookup/teaser/search',
+                    method: 'post',
+                    data: params,
+                });
+                const getMore = async (getMoreParams) => {
+                    return await this.request({
+                        url: '/idLookup/teaser/search',
+                        method: 'post',
+                        data: getMoreParams,
+                    });
+                };
+                return new ApiResponseHelperSearchTeaser({ response }, { getMore });
+            }
+            catch (error) {
+                return new ApiResponseHelperSearchTeaser({ response: null, error });
+            }
+        };
+        createReport = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/idLookup/report/create',
+                    method: 'post',
+                    data: params,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        downloadPdfReport = async (params) => {
+            const loadingModal = ApiWrapperModal.getLoadingModal({ message: 'Generating PDF. Please wait.' });
+            try {
+                const confirmation = await ApiWrapperModal.confirmationModal({ message: 'Would you like to download the PDF?' });
+                if (!confirmation) {
+                    return;
+                }
+                loadingModal.open();
+                const response = await this.request({
+                    url: `/idLookup/report/pdf/${params.commerceContentId}`,
+                    method: 'get',
+                    responseType: 'blob',
+                });
+                const blob = new Blob([response.data], { type: 'application/pdf' });
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                const fileName = response.headers['x-pdf-file-name'] ?? 'report';
+                link.href = blobUrl;
+                link.download = `${fileName}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+                loadingModal.close();
+                await ApiWrapperModal.messageModal({ message: 'Download is complete.' });
+            }
+            catch (error) {
+                console.error(error);
+                loadingModal.close();
+                await ApiWrapperModal.messageModal({ message: 'Download failed. Please try again later.' });
+            }
+        };
+        getReport = async (params) => {
+            try {
+                const response = await this.request({
+                    url: `/idLookup/report/detail/${params.commerceContentId}`,
+                    method: 'get',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        getReports = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/idLookup/report/list',
+                    method: 'get',
+                    params,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        searchOptOut = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/optOut/search',
+                    method: 'post',
+                    data: params,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        requestOptOut = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/optOut/request',
+                    method: 'post',
+                    data: params,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        confirmationOptOut = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/optOut/confirmation',
+                    method: 'get',
+                    params,
+                });
+                return new ApiResponseHelperDataSuccess({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperDataSuccess({ response: null, error });
+            }
+        };
+        sale = async (params) => {
+            try {
+                const queryString = getValidQueryString(params.queryString, { excludeKeys: ['clientId', 'apiId'] });
+                const response = await this.request({
+                    url: `/commerceBilling/sale${queryString ? queryString : ''}`,
+                    method: 'post',
+                    data: params,
+                    __requestCallback: (config) => {
+                        const { clientId, apiId } = config.params;
+                        const billingSeriesId = makeBillingSeriesId({ clientId, apiId, type: 'sale' });
+                        config.data = {
+                            ...config.data,
+                            billingSeriesId,
+                        };
+                    },
+                });
+                return new ApiResponseHelperDataSuccess({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperDataSuccess({ response: null, error });
+            }
+        };
+        tokenSale = async (params) => {
+            try {
+                const queryString = getValidQueryString(params.queryString, { excludeKeys: ['clientId', 'apiId'] });
+                const response = await this.request({
+                    url: `/commerceBilling/tokenSale${queryString ? queryString : ''}`,
+                    method: 'post',
+                    data: params,
+                    __requestCallback: (config) => {
+                        const { clientId, apiId } = config.params;
+                        const billingSeriesId = makeBillingSeriesId({ clientId, apiId, type: 'sale' });
+                        config.data = {
+                            ...config.data,
+                            billingSeriesId,
+                        };
+                    },
+                });
+                return new ApiResponseHelperDataSuccess({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperDataSuccess({ response: null, error });
+            }
+        };
+        billingSignup = async (params) => {
+            try {
+                const queryString = getValidQueryString(params.queryString, { excludeKeys: ['clientId', 'apiId'] });
+                const response = await this.request({
+                    url: `/commerceBilling/signup${queryString ? queryString : ''}`,
+                    method: 'post',
+                    data: params,
+                    __requestCallback: (config) => {
+                        const { clientId, apiId } = config.params;
+                        const billingSeriesId = makeBillingSeriesId({ clientId, apiId, type: 'signup' });
+                        config.data = {
+                            ...config.data,
+                            billingSeriesId,
+                        };
+                    },
+                });
+                return new ApiResponseHelperDataSuccess({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperDataSuccess({ response: null, error });
+            }
+        };
+        getShapeCompiled = async () => {
+            try {
+                const response = await this.request({
+                    url: '/shape/compiled',
+                    method: 'get',
+                });
+                return ShapeCompiled.fromData(response?.data);
+            }
+            catch (error) {
+                console.error(error);
+                throw error;
+            }
+        };
+        createContact = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/message/contact',
+                    method: 'post',
+                    data: params,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        auth = {
+            login: this.login,
+            logout: this.logout,
+        };
+        idLookup = {
+            searchTeaser: this.searchTeaser,
+            downloadPdfReport: this.downloadPdfReport,
+            createReport: this.createReport,
+            getReport: this.getReport,
+            getReports: this.getReports,
+        };
+        optOut = {
+            search: this.searchOptOut,
+            request: this.requestOptOut,
+            confirmation: this.confirmationOptOut,
+        };
+        billing = {
+            sale: this.sale,
+            tokenSale: this.tokenSale,
+            signup: this.billingSignup,
+        };
+        shape = {
+            getShapeCompiled: this.getShapeCompiled,
+        };
+        contact = {
+            create: this.createContact,
+        };
+    }
+
+    const ApiWrapperError = {
+        ERROR_CLIENT_00: '[ERROR_CLIENT_00] Cannot initialize without config.',
     };
 
     class ApiWrapperCaptcha {
@@ -649,7 +1028,7 @@ var ApiWrapper = (function (axios) {
         }
     }
 
-    const searchContextKey = {
+    const contextKey = {
         sale: {
             name: {
                 teaser: 'sale.name.teaser',
@@ -759,7 +1138,7 @@ var ApiWrapper = (function (axios) {
             maxRetries: 10,
         };
         static instance;
-        static searchContextKey = searchContextKey;
+        static contextKey = contextKey;
         static getInstance(config) {
             if (!ApiWrapper.instance) {
                 if (!config) {
@@ -768,6 +1147,23 @@ var ApiWrapper = (function (axios) {
                 ApiWrapper.instance = new ApiWrapper(config);
             }
             return ApiWrapper.instance;
+        }
+        goPage(page, option) {
+            const apiId = this.getRandomId();
+            let path = '';
+            if (page === 'optOut') {
+                path = `/api/optOut/view/search?clientId=${this.clientId}&apiId=${apiId}`;
+            }
+            if (!path) {
+                console.error(`Cannot navigate to an unspecified page. (page: ${page})`);
+                return;
+            }
+            if (option?.newPage) {
+                window.open(path, '_blank', 'noopener,noreferrer');
+            }
+            else {
+                window.location.href = path;
+            }
         }
         handleRequest(config) {
             config.params = {

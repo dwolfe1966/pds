@@ -22,6 +22,7 @@ import SearchDetailPreviewPage from './pages/sales/SearchDetailPreviewPage';
 import SignupPage from './pages/sales/SignupPage';
 import SignupPageStepped from './pages/sales/SignupPageStepped';
 import LoginPage from './pages/sales/LoginPage';
+import ForgotPasswordPage from './pages/sales/ForgotPasswordPage';
 import PaymentPage from './pages/sales/PaymentPage';
 import PhoneSearchLandingPage from './pages/sales/PhoneSearchLandingPage';
 import PhoneLandingPage from './pages/sales/PhoneLandingPage';
@@ -122,6 +123,7 @@ const App = () => {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/signup/v2" element={<SignupPageStepped />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/payment" element={<PaymentPage />} />
           {/* Phone search routes */}
           <Route path="/phone/landing" element={<PhoneLandingPage />} />
