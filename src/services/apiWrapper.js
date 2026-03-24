@@ -533,13 +533,41 @@ class ApiWrapperService {
       if (typeof fn === 'function') {
         return await fn.call(wrapper.api.billing);
       }
-      throw new Error('getUserOrders/getOrders not available in ApiWrapper billing module');
+      // IIFE is outdated and missing this method — fall back to direct proxy fetch.
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[BC Billing] getUserOrders/getOrders not found in IIFE; falling back to proxy fetch.');
+      }
+      return await this._getUserOrdersViaProxy();
     } catch (error) {
       const enhancedError = new Error(error.message || 'Get orders failed');
       enhancedError.originalError = error;
       enhancedError.isCorsError = this._isCorsError(error);
       throw enhancedError;
     }
+  }
+
+  /**
+   * Proxy fallback for getUserOrders (used when the IIFE billing module is missing the method).
+   * POST /api/commerceBilling/getUserOrders via the Express proxy at /api/proxy/*
+   * Returns the raw response body (array or wrapped object) for apiRouter to unwrap.
+   */
+  async _getUserOrdersViaProxy() {
+    const url = `${this.proxyUrl}/commerceBilling/getUserOrders`;
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+    }
+
+    return await response.json();
   }
 
   /**
