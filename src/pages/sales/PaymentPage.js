@@ -245,24 +245,22 @@ const PaymentPage = () => {
       let paymentSuccess = false;
       try {
         const saleResult = await api.billingSale(saleParams);
-        const rawData = saleResult?.params?.response?.data ?? saleResult?.data ?? saleResult ?? {};
-        // BC returns { status: 'rejected' } or { success: false } for declines
-        const explicitFail = rawData?.success === false
-          || rawData?.status === 'rejected'
-          || rawData?.status === 'declined'
-          || rawData?.status === 'error';
-        if (!explicitFail) {
-          paymentSuccess = true;
-          if (rawData.accessToken) {
-            setToken?.(rawData.accessToken);
-            setUser?.(rawData.user || user);
-            localStorage.setItem('accessToken', rawData.accessToken);
-            if (rawData.refreshToken) localStorage.setItem('refreshToken', rawData.refreshToken);
-          }
+        // apiWrapper.sale() now throws on IIFE error-state responses, so if we reach here
+        // the IIFE returned a success-state result. getData() gives BC's actual response body.
+        const rawData = saleResult?.getData?.() ?? saleResult?.params?.response?.data ?? saleResult?.data ?? {};
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Payment] billingSale rawData:', JSON.stringify(rawData)?.substring(0, 300));
+        }
+        paymentSuccess = true;
+        if (rawData?.accessToken) {
+          setToken?.(rawData.accessToken);
+          setUser?.(rawData.user || user);
+          localStorage.setItem('accessToken', rawData.accessToken);
+          if (rawData.refreshToken) localStorage.setItem('refreshToken', rawData.refreshToken);
         }
       } catch (saleErr) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[Payment] billingSale failed:', saleErr?.message, saleErr);
+          console.warn('[Payment] billingSale failed:', saleErr?.message, saleErr?.data);
         }
         if (!simulateParam) throw saleErr;
       }

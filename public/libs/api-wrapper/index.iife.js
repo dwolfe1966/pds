@@ -634,7 +634,7 @@ var ApiWrapper = (function (axios) {
         }
     }
     function makeBillingSeriesId(params) {
-        return `${params.type}}|${params.clientId}|${params.apiId}|${new Date().getTime()}|${stringHelper.generateRandom(8)}`;
+        return `${params.type}|${params.clientId}|${params.apiId}|${new Date().getTime()}|${stringHelper.generateRandom(8)}`;
     }
     class ApiWrapperApi {
         constructor(params) {

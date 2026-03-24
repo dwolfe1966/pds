@@ -492,12 +492,26 @@ class ApiWrapperService {
     try {
       const wrapper = await this.getWrapper();
       if (typeof wrapper.api?.billing?.signup === 'function') {
-        return await wrapper.api.billing.signup(params);
+        const result = await wrapper.api.billing.signup(params);
+        // IIFE catches HTTP errors internally — check explicitly.
+        const iifErr = result?.getError?.();
+        if (iifErr) {
+          const errData = iifErr?.response?.data;
+          const errStatus = iifErr?.response?.status ?? iifErr?.status;
+          const errMsg = errData?.message || errData?.error || iifErr?.message || 'Billing signup failed';
+          const enhanced = new Error(errMsg);
+          enhanced.status = errStatus;
+          enhanced.data = errData;
+          throw enhanced;
+        }
+        return result;
       }
       throw new Error('Billing signup not available in ApiWrapper');
     } catch (error) {
       const enhancedError = new Error(error.message || 'Billing signup failed');
       enhancedError.originalError = error;
+      enhancedError.status = error.status;
+      enhancedError.data = error.data;
       enhancedError.isCorsError = this._isCorsError(error);
       throw enhancedError;
     }
@@ -604,12 +618,27 @@ class ApiWrapperService {
     try {
       const wrapper = await this.getWrapper();
       if (typeof wrapper.api?.billing?.sale === 'function') {
-        return await wrapper.api.billing.sale(params);
+        const result = await wrapper.api.billing.sale(params);
+        // IIFE catches HTTP errors internally and returns them as error-state response objects
+        // (response: null, error: AxiosError). We must check explicitly.
+        const iifErr = result?.getError?.();
+        if (iifErr) {
+          const errData = iifErr?.response?.data;
+          const errStatus = iifErr?.response?.status ?? iifErr?.status;
+          const errMsg = errData?.message || errData?.error || iifErr?.message || 'Payment failed';
+          const enhanced = new Error(errMsg);
+          enhanced.status = errStatus;
+          enhanced.data = errData;
+          throw enhanced;
+        }
+        return result;
       }
       throw new Error('Billing sale not available in ApiWrapper');
     } catch (error) {
       const enhancedError = new Error(error.message || 'Payment failed');
       enhancedError.originalError = error;
+      enhancedError.status = error.status;
+      enhancedError.data = error.data;
       enhancedError.isCorsError = this._isCorsError(error);
       throw enhancedError;
     }
