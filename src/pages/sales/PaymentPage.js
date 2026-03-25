@@ -75,7 +75,7 @@ const PLAN_FEATURES = [
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, user, loading: authLoading, isPaid, setToken, setUser, refreshSubscription } = useAuth();
+  const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription, refreshSubscription } = useAuth();
 
   const _nameParts = (user?.fullName || '').trim().split(/\s+/);
   const [form, setForm] = useState({
@@ -108,16 +108,18 @@ const PaymentPage = () => {
     }
   }, [authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Require login; redirect existing subscribers away from the payment page
+  // Require login; redirect existing subscribers away from the payment page.
+  // Skip the isPaid redirect when success=true — payment just completed and we set
+  // subscription immediately, so the guard would fire before the success screen shows.
   useEffect(() => {
     if (!authLoading && !token) {
       const redirect = `/payment${window.location.search || ''}`;
       navigate(`/signup?redirect=${encodeURIComponent(redirect)}`, { replace: true });
     }
-    if (!authLoading && token && isPaid) {
+    if (!authLoading && token && isPaid && !success) {
       navigate('/dashboard', { replace: true });
     }
-  }, [token, authLoading, isPaid, navigate]);
+  }, [token, authLoading, isPaid, success, navigate]);
 
   // Load selected person from sessionStorage
   useEffect(() => {
@@ -143,14 +145,15 @@ const PaymentPage = () => {
     }
   }, [user]);
 
-  // BC signup stores firstName/lastName directly; non-BC flow uses fullName.
+  // Prefer billing form name fields (user-entered at payment time) over stored user object.
+  // Signup now collects email+password only — user.firstName/lastName are typically empty.
   const _derivedFirst = (user?.fullName || '').trim().split(/\s+/)[0] || '';
   const _derivedLast  = (user?.fullName || '').trim().split(/\s+/).slice(1).join(' ') || '';
   const userInfo = user
     ? {
         email: user.email,
-        firstName: _derivedFirst || user.firstName || '',
-        lastName:  _derivedLast  || user.lastName  || '',
+        firstName: form.billingFirstName || _derivedFirst || user.firstName || '',
+        lastName:  form.billingLastName  || _derivedLast  || user.lastName  || '',
         optin: user.optin !== false,
       }
     : null;
@@ -188,13 +191,22 @@ const PaymentPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userInfo) return;
+    if (!user) return;
+    if (!form.billingFirstName.trim()) { setError('Please enter your first name.'); return; }
+    if (!form.billingLastName.trim()) { setError('Please enter your last name.'); return; }
     setError('');
     setLoading(true);
     try {
       const { expMonth, expYear } = parseExpiry(form.expiry);
+      // Build userInfo here from current form state — avoids stale closure from render-time const.
+      const submitUserInfo = {
+        email: user.email,
+        firstName: form.billingFirstName.trim(),
+        lastName: form.billingLastName.trim(),
+        optin: user.optin !== false,
+      };
       const saleParams = {
-        userInfo,
+        userInfo: submitUserInfo,
         billings: [
           {
             billingType: 'creditCard',
@@ -205,8 +217,8 @@ const PaymentPage = () => {
               cvv: form.cvv || '123',
             },
             billingAddress: {
-              firstName: form.billingFirstName || userInfo.firstName,
-              lastName: form.billingLastName || userInfo.lastName,
+              firstName: submitUserInfo.firstName,
+              lastName: submitUserInfo.lastName,
               street1: form.street1 || '123 main',
               zip: form.billingZip || '10001',
               bogusFields: {
@@ -295,6 +307,10 @@ const PaymentPage = () => {
         }
       }
 
+      // Set subscription state immediately so isPaid becomes true without waiting for getUserOrders.
+      // refreshSubscription() will overwrite this with the real order data once getUserOrders succeeds.
+      setSubscription?.({ status: 'active', plan: 'comp.offer.signup.main' });
+
       setSuccess(true);
       track('payment_complete', { plan: 'pro' });
       try { await refreshSubscription?.(); } catch { /* non-fatal */ }
@@ -372,6 +388,38 @@ const PaymentPage = () => {
                 )}
 
                 <form onSubmit={handleSubmit} noValidate>
+                  {/* Cardholder name — always visible; used as userInfo.firstName/lastName for BC */}
+                  <div className={styles.fieldRow}>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.label} htmlFor="pay-bfirst">First Name *</label>
+                      <input
+                        id="pay-bfirst"
+                        type="text"
+                        name="billingFirstName"
+                        value={form.billingFirstName}
+                        onChange={handleChange}
+                        required
+                        placeholder="First"
+                        autoComplete="given-name"
+                        className={styles.input}
+                      />
+                    </div>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.label} htmlFor="pay-blast">Last Name *</label>
+                      <input
+                        id="pay-blast"
+                        type="text"
+                        name="billingLastName"
+                        value={form.billingLastName}
+                        onChange={handleChange}
+                        required
+                        placeholder="Last"
+                        autoComplete="family-name"
+                        className={styles.input}
+                      />
+                    </div>
+                  </div>
+
                   {/* Card number */}
                   <div className={styles.fieldGroup}>
                     <div className={styles.fieldLabelRow}>
@@ -498,34 +546,6 @@ const PaymentPage = () => {
                           autoComplete="billing street-address"
                           className={styles.input}
                         />
-                      </div>
-                      <div className={styles.fieldRow}>
-                        <div className={styles.fieldGroup}>
-                          <label className={styles.label} htmlFor="pay-bfirst">First Name</label>
-                          <input
-                            id="pay-bfirst"
-                            type="text"
-                            name="billingFirstName"
-                            value={form.billingFirstName}
-                            onChange={handleChange}
-                            placeholder="First"
-                            autoComplete="billing given-name"
-                            className={styles.input}
-                          />
-                        </div>
-                        <div className={styles.fieldGroup}>
-                          <label className={styles.label} htmlFor="pay-blast">Last Name</label>
-                          <input
-                            id="pay-blast"
-                            type="text"
-                            name="billingLastName"
-                            value={form.billingLastName}
-                            onChange={handleChange}
-                            placeholder="Last"
-                            autoComplete="billing family-name"
-                            className={styles.input}
-                          />
-                        </div>
                       </div>
                       <div className={styles.fieldGroup}>
                         <label className={styles.label} htmlFor="pay-zip">ZIP Code</label>

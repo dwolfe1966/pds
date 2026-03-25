@@ -552,7 +552,11 @@ class ApiWrapperService {
    * Returns the raw response body (array or wrapped object) for apiRouter to unwrap.
    */
   async _getUserOrdersViaProxy() {
-    const url = `${this.proxyUrl}/commerceBilling/getUserOrders`;
+    // BC requires clientId + apiId as URL query params on this endpoint.
+    // clientId is the stable random ID on the IIFE instance; apiId is per-request.
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const url = `${this.proxyUrl}/commerceBilling/getUserOrders?clientId=${clientId}&apiId=${apiId}`;
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
@@ -568,6 +572,14 @@ class ApiWrapperService {
     }
 
     return await response.json();
+  }
+
+  /** Generate a random 32-char alphanumeric string matching the IIFE's format. */
+  _generateRandomId() {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const arr = new Uint32Array(32);
+    crypto.getRandomValues(arr);
+    return Array.from(arr, v => charset[v % charset.length]).join('');
   }
 
   /**

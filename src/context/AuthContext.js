@@ -134,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     setUser,
     setToken,
     subscription,
+    setSubscription,
     isPaid,
     refreshSubscription,
   };

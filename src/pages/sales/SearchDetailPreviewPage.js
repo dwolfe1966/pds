@@ -17,10 +17,6 @@ const BENEFIT_STATEMENTS = [
   'One-time purchase or subscription options',
 ];
 
-/**
- * Simple deterministic hash from a string to an integer.
- * Used to seed per-person "found count" numbers so they don't change on re-render.
- */
 function simpleHash(str) {
   let h = 0;
   for (let i = 0; i < (str || '').length; i++) {
@@ -29,10 +25,6 @@ function simpleHash(str) {
   return Math.abs(h);
 }
 
-/**
- * Returns a number in [min, max] seeded by the person id + a salt string
- * so each data category gets a different-but-stable count.
- */
 function seededCount(id, salt, min, max) {
   const h = simpleHash((id || 'x') + salt);
   return min + (h % (max - min + 1));
@@ -41,11 +33,11 @@ function seededCount(id, salt, min, max) {
 /**
  * Preview page when a visitor clicks a search result.
  * Three variants: v1 (new high-conversion teaser layout), v2 (+ benefits rectangle), v3 (teaser + CTA only, no inline form).
- * If ?v=1|2|3 is set, that variant is used; otherwise a random variant is chosen on each page load.
  *
- * NOTE: This page intentionally renders its own minimal branded header inside <main> rather than
- * the full site navigation — this reduces distraction and keeps the visitor focused on the funnel.
- * Layout/nav suppression at the shell level is a separate concern (data-no-nav attribute is set on <main>).
+ * IMPORTANT: SignupFormCard JSX is inlined directly — do NOT extract it into a
+ * component defined inside this render function. A component defined inside render
+ * gets a new function reference on every state update, causing React to unmount/remount
+ * it and lose input focus after every keystroke.
  */
 const SearchDetailPreviewPage = () => {
   const { id } = useParams();
@@ -54,23 +46,22 @@ const SearchDetailPreviewPage = () => {
   const queryV = searchParams.get('v');
   const [randomVariant] = useState(() => String(Math.floor(Math.random() * 3) + 1));
   const variant = (queryV === '1' || queryV === '2' || queryV === '3') ? queryV : randomVariant;
-  const { token, setToken, setUser } = useAuth();
+  const { token, isPaid, setToken, setUser } = useAuth();
 
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reportCreated, setReportCreated] = useState(false);
   const [reportId, setReportId] = useState(null);
 
-  // Stable "viewers" count computed once per mount — range 3–10
   const [viewerCount] = useState(() => Math.floor(Math.random() * 8) + 3);
 
-  // Embedded signup form — email + password only (2-field, single step)
-  const [form, setForm] = useState({ fullName: '', zip: '', email: '', password: '' });
+  // Embedded signup form state
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState('');
   const [signupSuccess, setSignupSuccess] = useState(false);
 
-  // Ref for the signup form card so the sticky mobile CTA can scroll to it
   const signupFormRef = useRef(null);
 
   useEffect(() => {
@@ -82,7 +73,9 @@ const SearchDetailPreviewPage = () => {
           setPerson(personData);
           track('teaser_view', { personId: id });
 
-          if (token && personData.extId) {
+          // Only create report if user has an active paid subscription (BC session exists).
+          // Attempting this after signup-but-before-payment returns 403 Forbidden from BC.
+          if (isPaid && personData.extId) {
             try {
               const existingReportId = getExistingReportId(personData.extId);
               if (existingReportId) {
@@ -109,9 +102,8 @@ const SearchDetailPreviewPage = () => {
     };
 
     loadPersonAndCreateReport();
-  }, [id, token]);
+  }, [id, isPaid]); // isPaid (not just token) — BC session only exists after payment
 
-  /** Fallback: navigate to the dedicated signup page with person context */
   const handleSignupNav = () => {
     const params = new URLSearchParams({
       selected: id,
@@ -131,41 +123,38 @@ const SearchDetailPreviewPage = () => {
   };
 
   /**
-   * Embedded signup handler.
-   * Calls api.signup() and api.billingSignup() in parallel.
-   * billingSignup is non-fatal — failure is only logged in development.
+   * Embedded signup handler — email + password only.
+   * Does NOT call billingSignup — that would pre-register the user as a BC member,
+   * causing billing.sale to reject (offer has nonMemberOnly: true).
+   * Name is collected on the PaymentPage billing form.
    */
   const handleEmbeddedSignup = async (e) => {
     e.preventDefault();
     setSignupError('');
+    if (signupPassword.length < 8) {
+      setSignupError('Password must be at least 8 characters.');
+      return;
+    }
     setSignupLoading(true);
     try {
-      // Form only collects email + password — derive a display name from the email local part
-      const derivedName = form.fullName || (form.email || '').split('@')[0].replace(/[._+\-]/g, ' ').trim() || 'Member';
-      const nameParts = derivedName.split(/\s+/);
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      const signupPayload = { ...form, fullName: derivedName };
-      const [response] = await Promise.all([
-        api.signup(signupPayload),
-        api.billingSignup({
-          userInfo: { email: form.email, firstName, lastName, optin: true },
-        }).catch((err) => {
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[PreviewSignup] billingSignup failed (non-fatal):', err?.message);
-          }
-        }),
-      ]);
+      const response = await api.signup({
+        email: signupEmail,
+        password: signupPassword,
+        optin: true,
+      });
 
       if (response.accessToken) {
         setToken(response.accessToken);
-        const userData = response.user || { email: form.email, fullName: derivedName, role: 'member' };
+        const userData = response.user || { email: signupEmail, role: 'member' };
         setUser(userData);
         localStorage.setItem('accessToken', response.accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
+        if (response.refreshToken) localStorage.setItem('refreshToken', response.refreshToken);
       }
+
+      sessionStorage.setItem('_pendingPw', signupPassword);
       if (id) sessionStorage.setItem('selectedPersonId', id);
+
       setSignupSuccess(true);
       setTimeout(() => navigate('/payment'), 1500);
     } catch (err) {
@@ -211,7 +200,6 @@ const SearchDetailPreviewPage = () => {
   if (reportCreated && token) {
     return (
       <main className={styles.main} data-no-nav="true">
-        {/* Minimal branded header */}
         <div className={styles.miniHeader}>
           <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
           <span className={styles.miniHeaderBrand}>🔒 IDLookup.ai</span>
@@ -240,13 +228,8 @@ const SearchDetailPreviewPage = () => {
   const addressCount  = seededCount(pid, 'address', 3, 7);
   const relativeCount = seededCount(pid, 'rel',     3, 8);
 
-  // ─── Variant flags ────────────────────────────────────────────────────────────
-
-  const showBenefits  = variant === '2';
+  const showBenefits   = variant === '2';
   const showSignupForm = variant === '1' || variant === '2';
-  // variant 3: teaser layout but CTA button instead of inline form
-
-  // ─── Locked section placeholder rows ─────────────────────────────────────────
 
   const phonePlaceholders = Array.from({ length: phoneCount }, (_, i) =>
     i === 0 ? '(***) ***-1234' : i === 1 ? '(***) ***-5678' : '(***) ***-9012'
@@ -263,9 +246,11 @@ const SearchDetailPreviewPage = () => {
     return names[i] || '****  ****';
   });
 
-  // ─── Inline signup form (shared between v1/v2) ───────────────────────────────
+  // ─── Inline signup form JSX — inlined here, NOT a sub-component ──────────────
+  // Defining this as a component inside render causes React to remount inputs on
+  // every keystroke (new function reference = new component type = unmount+mount).
 
-  const SignupFormCard = () => (
+  const signupFormJsx = (
     <div className={styles.signupFormCard} ref={signupFormRef} id="signup-form">
       <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
       <h2 className={styles.signupFormTitle}>Create Your Free Account to Unlock</h2>
@@ -285,8 +270,8 @@ const SearchDetailPreviewPage = () => {
               id="preview-email"
               type="email"
               name="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })}
+              value={signupEmail}
+              onChange={(e) => setSignupEmail(e.target.value)}
               className={styles.signupFormInput}
               placeholder="you@email.com"
               required
@@ -299,8 +284,8 @@ const SearchDetailPreviewPage = () => {
               id="preview-password"
               type="password"
               name="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, [e.target.name]: e.target.value })}
+              value={signupPassword}
+              onChange={(e) => setSignupPassword(e.target.value)}
               className={styles.signupFormInput}
               placeholder="Min. 8 characters"
               required
@@ -324,7 +309,6 @@ const SearchDetailPreviewPage = () => {
         </form>
       )}
 
-      {/* Trust row */}
       <div className={styles.trustRow}>
         <span>🔒 SSL Encrypted</span>
         <span>✓ FCRA Compliant</span>
@@ -337,7 +321,6 @@ const SearchDetailPreviewPage = () => {
 
   return (
     <main className={styles.main} data-no-nav="true">
-      {/* Minimal branded header — replaces full site nav on this funnel page */}
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
         <span className={styles.miniHeaderBrand}>🔒 IDLookup.ai</span>
@@ -345,12 +328,10 @@ const SearchDetailPreviewPage = () => {
 
       {/* ── ABOVE THE FOLD ── */}
       <section className={styles.heroSection}>
-        {/* Urgency badge */}
         <div className={styles.urgencyBadge}>
           🔥 This report was just viewed by {viewerCount} other people
         </div>
 
-        {/* Person name + sub-line */}
         <h1 className={styles.personName}>{person.fullName}</h1>
         <p className={styles.recentlyViewed}>This profile has been viewed recently</p>
         {(person.ageRange || person.location) && (
@@ -361,13 +342,11 @@ const SearchDetailPreviewPage = () => {
           </p>
         )}
 
-        {/* One unlocked data row */}
         <div className={styles.unlockedRow}>
           <span className={styles.unlockedCheck}>✓</span>
           📍 {person.location || 'Location available'}
         </div>
 
-        {/* Progress checklist */}
         <div className={styles.progressStrip}>
           <div className={`${styles.progressRow} ${styles.progressUnlocked}`}>
             <span className={styles.progressIcon}>✅</span>
@@ -409,28 +388,18 @@ const SearchDetailPreviewPage = () => {
           <div className={styles.gradientOverlay} aria-hidden="true" />
         </div>
         <div className={styles.lockedSectionFooter}>
-          {showSignupForm ? (
-            <button
-              type="button"
-              className={styles.unlockBtn}
-              onClick={scrollToSignup}
-            >
-              🔓 Unlock Phone Numbers
-            </button>
-          ) : (
-            <button
-              type="button"
-              className={styles.unlockBtn}
-              onClick={handleSignupNav}
-            >
-              🔓 Unlock Phone Numbers
-            </button>
-          )}
+          <button
+            type="button"
+            className={styles.unlockBtn}
+            onClick={showSignupForm ? scrollToSignup : handleSignupNav}
+          >
+            🔓 Unlock Phone Numbers
+          </button>
         </div>
       </section>
 
-      {/* ── INLINE SIGNUP FORM — ~40% scroll depth, after first locked section ── */}
-      {showSignupForm && <SignupFormCard />}
+      {/* ── INLINE SIGNUP FORM — inlined JSX, not a sub-component ── */}
+      {showSignupForm && signupFormJsx}
 
       {/* ── LOCKED SECTION 2: Email Addresses ── */}
       <section className={styles.lockedSection}>
@@ -445,19 +414,13 @@ const SearchDetailPreviewPage = () => {
           <div className={styles.gradientOverlay} aria-hidden="true" />
         </div>
         <div className={styles.lockedSectionFooter}>
-          {showSignupForm ? (
-            <button type="button" className={styles.unlockBtn} onClick={scrollToSignup}>
-              🔓 Unlock Email Addresses
-            </button>
-          ) : (
-            <button type="button" className={styles.unlockBtn} onClick={handleSignupNav}>
-              🔓 Unlock Email Addresses
-            </button>
-          )}
+          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
+            🔓 Unlock Email Addresses
+          </button>
         </div>
       </section>
 
-      {/* ── MID-PAGE CTA (amber, between Email and Address sections) ── */}
+      {/* ── MID-PAGE CTA ── */}
       <div className={styles.midPageCta}>
         <h3 className={styles.midPageCtaHeadline}>Unlock {person.fullName}&rsquo;s Full Report</h3>
         <p className={styles.midPageCtaSub}>Create your free account to see all records instantly</p>
@@ -483,15 +446,9 @@ const SearchDetailPreviewPage = () => {
           <div className={styles.gradientOverlay} aria-hidden="true" />
         </div>
         <div className={styles.lockedSectionFooter}>
-          {showSignupForm ? (
-            <button type="button" className={styles.unlockBtn} onClick={scrollToSignup}>
-              🔓 Unlock Address History
-            </button>
-          ) : (
-            <button type="button" className={styles.unlockBtn} onClick={handleSignupNav}>
-              🔓 Unlock Address History
-            </button>
-          )}
+          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
+            🔓 Unlock Address History
+          </button>
         </div>
       </section>
 
@@ -507,15 +464,9 @@ const SearchDetailPreviewPage = () => {
           <div className={styles.gradientOverlay} aria-hidden="true" />
         </div>
         <div className={styles.lockedSectionFooter}>
-          {showSignupForm ? (
-            <button type="button" className={styles.unlockBtn} onClick={scrollToSignup}>
-              🔓 Unlock Criminal Records
-            </button>
-          ) : (
-            <button type="button" className={styles.unlockBtn} onClick={handleSignupNav}>
-              🔓 Unlock Criminal Records
-            </button>
-          )}
+          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
+            🔓 Unlock Criminal Records
+          </button>
         </div>
       </section>
 
@@ -532,15 +483,9 @@ const SearchDetailPreviewPage = () => {
           <div className={styles.gradientOverlay} aria-hidden="true" />
         </div>
         <div className={styles.lockedSectionFooter}>
-          {showSignupForm ? (
-            <button type="button" className={styles.unlockBtn} onClick={scrollToSignup}>
-              🔓 Unlock Relatives &amp; Associates
-            </button>
-          ) : (
-            <button type="button" className={styles.unlockBtn} onClick={handleSignupNav}>
-              🔓 Unlock Relatives &amp; Associates
-            </button>
-          )}
+          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
+            🔓 Unlock Relatives &amp; Associates
+          </button>
         </div>
       </section>
 
@@ -558,7 +503,7 @@ const SearchDetailPreviewPage = () => {
         </section>
       )}
 
-      {/* ── CTA ONLY (v3) — no inline form ── */}
+      {/* ── CTA ONLY (v3) ── */}
       {variant === '3' && (
         <section className={styles.section}>
           <div className={styles.ctaCard}>
