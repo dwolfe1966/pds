@@ -75,15 +75,14 @@ const PLAN_FEATURES = [
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription, refreshSubscription } = useAuth();
+  const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription } = useAuth();
 
-  const _nameParts = (user?.fullName || '').trim().split(/\s+/);
   const [form, setForm] = useState({
     cardNumber: '',
     expiry: '',
     cvv: '',
-    billingFirstName: _nameParts[0] || user?.firstName || '',
-    billingLastName: _nameParts.slice(1).join(' ') || user?.lastName || '',
+    billingFirstName: '',
+    billingLastName: '',
     street1: '',
     billingZip: '',
   });
@@ -131,32 +130,8 @@ const PaymentPage = () => {
     }
   }, []);
 
-  // Sync billing name from user on mount
-  useEffect(() => {
-    if (user) {
-      const parts = (user.fullName || '').trim().split(/\s+/);
-      const first = parts[0] || user.firstName || '';
-      const last  = parts.slice(1).join(' ') || user.lastName || '';
-      setForm(prev => ({
-        ...prev,
-        billingFirstName: prev.billingFirstName || first,
-        billingLastName:  prev.billingLastName  || last,
-      }));
-    }
-  }, [user]);
-
-  // Prefer billing form name fields (user-entered at payment time) over stored user object.
-  // Signup now collects email+password only — user.firstName/lastName are typically empty.
-  const _derivedFirst = (user?.fullName || '').trim().split(/\s+/)[0] || '';
-  const _derivedLast  = (user?.fullName || '').trim().split(/\s+/).slice(1).join(' ') || '';
-  const userInfo = user
-    ? {
-        email: user.email,
-        firstName: form.billingFirstName || _derivedFirst || user.firstName || '',
-        lastName:  form.billingLastName  || _derivedLast  || user.lastName  || '',
-        optin: user.optin !== false,
-      }
-    : null;
+  // userInfo is used for the JSX "Paying as" display — names shown from form at submit time.
+  const userInfo = user ? { email: user.email } : null;
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -307,13 +282,14 @@ const PaymentPage = () => {
         }
       }
 
-      // Set subscription state immediately so isPaid becomes true without waiting for getUserOrders.
-      // refreshSubscription() will overwrite this with the real order data once getUserOrders succeeds.
+      // Set subscription immediately so isPaid=true for the rest of this flow.
+      // Do NOT call refreshSubscription() here — getUserOrders returns 403 immediately
+      // after billing.sale (BC hasn't provisioned the account yet), which would clear
+      // this synthetic subscription and cause PaidRoute to redirect back to payment.
       setSubscription?.({ status: 'active', plan: 'comp.offer.signup.main' });
 
       setSuccess(true);
       track('payment_complete', { plan: 'pro' });
-      try { await refreshSubscription?.(); } catch { /* non-fatal */ }
 
       if (selectedPerson && selectedPerson.extId) {
         try {
@@ -323,13 +299,15 @@ const PaymentPage = () => {
             return;
           }
         } catch {
-          // fall through
+          // Report creation failed — fall through to dashboard.
+          // The user is subscribed; they can search and view reports from the dashboard.
         }
       }
 
-      setTimeout(() => {
-        navigate(selectedPersonId ? `/people/${selectedPersonId}` : '/dashboard');
-      }, 2000);
+      // Always fall back to /dashboard — never use the raw selectedPersonId as a report URL.
+      // Raw search IDs are not commerceContentIds and would hit PaidRoute, which would
+      // redirect to payment even though the user just subscribed.
+      setTimeout(() => navigate('/dashboard'), 2000);
     } catch (err) {
       const isUnauthorized = err?.status === 401;
       const message = isUnauthorized

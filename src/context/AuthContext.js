@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { setTokenGetter, setLogoutHandler } from '../api';
 
@@ -10,6 +10,10 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
+  const subscriptionRef = useRef(null);
+
+  // Keep ref in sync so token useEffect can read latest subscription without a dependency
+  useEffect(() => { subscriptionRef.current = subscription; }, [subscription]);
 
   // Set token getter for API client
   useEffect(() => {
@@ -54,13 +58,19 @@ export const AuthProvider = ({ children }) => {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[AuthContext] refreshSubscription failed:', err?.message);
       }
-      setSubscription(null);
+      // Don't clear an already-active subscription on API failure.
+      // BC getUserOrders returns 403 immediately after billing.sale.
+      setSubscription(prev => prev?.status === 'active' ? prev : null);
     }
   }, [token]);
 
   useEffect(() => {
     if (token) {
-      refreshSubscription(token);
+      // Skip if subscription is already active — avoids a getUserOrders 403
+      // immediately after billing.sale clears the subscription we just set.
+      if (subscriptionRef.current?.status !== 'active') {
+        refreshSubscription(token);
+      }
     } else {
       setSubscription(null);
     }
