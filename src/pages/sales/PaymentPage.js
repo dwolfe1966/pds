@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
@@ -97,6 +97,12 @@ const PaymentPage = () => {
   const simulateParam = searchParams.get('simulate');
   const cardType = detectCardType(form.cardNumber);
 
+  // Cancel pending navigation on unmount so stale navigate() calls don't fire.
+  const navTimeoutRef = useRef(null);
+  useEffect(() => {
+    return () => { if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current); };
+  }, []);
+
   // Track page entry (after auth resolves so we know if it's an upgrade)
   useEffect(() => {
     if (!authLoading) {
@@ -174,11 +180,14 @@ const PaymentPage = () => {
     try {
       const { expMonth, expYear } = parseExpiry(form.expiry);
       // Build userInfo here from current form state — avoids stale closure from render-time const.
+      // Read optin from sessionStorage: the synthetic BC token doesn't carry user.optin,
+      // so we stash the choice at signup and read it here to respect what the user selected.
+      const signupOptin = sessionStorage.getItem('_signupOptin');
       const submitUserInfo = {
         email: user.email,
         firstName: form.billingFirstName.trim(),
         lastName: form.billingLastName.trim(),
-        optin: user.optin !== false,
+        optin: signupOptin !== null ? signupOptin === '1' : (user.optin !== false),
       };
       const saleParams = {
         userInfo: submitUserInfo,
@@ -263,8 +272,16 @@ const PaymentPage = () => {
 
       // billing.sale establishes an authenticated BC session.
       // Use that session to set the user's password so future logins work.
-      const pendingPw = sessionStorage.getItem('_pendingPw');
+      // Password was stored base64-encoded by useSignup hook — decode before use.
+      const rawPendingPw = sessionStorage.getItem('_pendingPw');
       sessionStorage.removeItem('_pendingPw');
+      sessionStorage.removeItem('_signupOptin');
+      let pendingPw = null;
+      if (rawPendingPw) {
+        try { pendingPw = decodeURIComponent(escape(atob(rawPendingPw))); } catch {
+          pendingPw = rawPendingPw; // backward compat: unencoded legacy value
+        }
+      }
       if (pendingPw) {
         try {
           const { default: apiWrapper } = await import('../../services/apiWrapper');
@@ -291,11 +308,14 @@ const PaymentPage = () => {
       setSuccess(true);
       track('payment_complete', { plan: 'pro' });
 
+      // Clean up signup sessionStorage now that payment succeeded.
+      sessionStorage.removeItem('selectedPersonId');
+
       if (selectedPerson && selectedPerson.extId) {
         try {
           const reportResult = await createReportForIdentity(selectedPerson.extId, selectedPerson);
           if (reportResult.success && reportResult.commerceContentId) {
-            setTimeout(() => navigate(`/people/${reportResult.commerceContentId}`), 2000);
+            navTimeoutRef.current = setTimeout(() => navigate(`/people/${reportResult.commerceContentId}`), 2000);
             return;
           }
         } catch {
@@ -307,7 +327,7 @@ const PaymentPage = () => {
       // Always fall back to /dashboard — never use the raw selectedPersonId as a report URL.
       // Raw search IDs are not commerceContentIds and would hit PaidRoute, which would
       // redirect to payment even though the user just subscribed.
-      setTimeout(() => navigate('/dashboard'), 2000);
+      navTimeoutRef.current = setTimeout(() => navigate('/dashboard'), 2000);
     } catch (err) {
       const isUnauthorized = err?.status === 401;
       const message = isUnauthorized

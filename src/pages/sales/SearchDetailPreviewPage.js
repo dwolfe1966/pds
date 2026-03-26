@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext';
 import { createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext } from '../../services/searchContext';
-import api from '../../api';
+import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
 import styles from './SearchDetailPreviewPage.module.css';
 
@@ -46,7 +46,7 @@ const SearchDetailPreviewPage = () => {
   const queryV = searchParams.get('v');
   const [randomVariant] = useState(() => String(Math.floor(Math.random() * 3) + 1));
   const variant = (queryV === '1' || queryV === '2' || queryV === '3') ? queryV : randomVariant;
-  const { token, isPaid, setToken, setUser } = useAuth();
+  const { token, isPaid } = useAuth();
 
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,9 +58,7 @@ const SearchDetailPreviewPage = () => {
   // Embedded signup form state
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupLoading, setSignupLoading] = useState(false);
-  const [signupError, setSignupError] = useState('');
-  const [signupSuccess, setSignupSuccess] = useState(false);
+  const { submit: submitSignup, loading: signupLoading, error: signupError, setError: setSignupError, success: signupSuccess } = useSignup();
 
   const signupFormRef = useRef(null);
 
@@ -124,44 +122,18 @@ const SearchDetailPreviewPage = () => {
 
   /**
    * Embedded signup handler — email + password only.
-   * Does NOT call billingSignup — that would pre-register the user as a BC member,
-   * causing billing.sale to reject (offer has nonMemberOnly: true).
-   * Name is collected on the PaymentPage billing form.
+   * Delegates to useSignup hook which handles auth state, sessionStorage (_pendingPw,
+   * _signupOptin, selectedPersonId), safe navigation, and timeout cleanup on unmount.
+   * Does NOT call billingSignup — billing.sale creates the BC user atomically.
    */
-  const handleEmbeddedSignup = async (e) => {
+  const handleEmbeddedSignup = (e) => {
     e.preventDefault();
-    setSignupError('');
-    if (signupPassword.length < 8) {
-      setSignupError('Password must be at least 8 characters.');
-      return;
-    }
-    setSignupLoading(true);
-    try {
-      const response = await api.signup({
-        email: signupEmail,
-        password: signupPassword,
-        optin: true,
-      });
-
-      if (response.accessToken) {
-        setToken(response.accessToken);
-        const userData = response.user || { email: signupEmail, role: 'member' };
-        setUser(userData);
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        if (response.refreshToken) localStorage.setItem('refreshToken', response.refreshToken);
-      }
-
-      sessionStorage.setItem('_pendingPw', signupPassword);
-      if (id) sessionStorage.setItem('selectedPersonId', id);
-
-      setSignupSuccess(true);
-      setTimeout(() => navigate('/payment'), 1500);
-    } catch (err) {
-      setSignupError(err.message || 'Signup failed. Please try again.');
-    } finally {
-      setSignupLoading(false);
-    }
+    submitSignup({
+      email: signupEmail,
+      password: signupPassword,
+      optin: true,
+      selectedPersonId: id || null,
+    });
   };
 
   const scrollToSignup = (e) => {
@@ -293,7 +265,13 @@ const SearchDetailPreviewPage = () => {
               autoComplete="new-password"
             />
           </div>
-          {signupError && <div className={styles.formError}>{signupError}</div>}
+          {signupError && (
+            <div className={styles.formError}>
+              {signupError === 'already_exists' ? (
+                <>An account with this email already exists. <Link to="/login" className={styles.loginLink}>Log in instead</Link></>
+              ) : signupError}
+            </div>
+          )}
           <button
             type="submit"
             className={styles.signupSubmitBtn}

@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../api';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
 import '../../styles/contentContainer.css';
 import styles from './SignupPage.module.css';
@@ -9,24 +8,23 @@ import styles from './SignupPage.module.css';
 /**
  * Sign-up page — collects email + password only.
  * Name is collected on the payment page billing form and passed to BC via userInfo.
+ *
+ * Uses useSignup hook for shared signup logic (auth state, sessionStorage, navigation).
+ * Redirect target is validated against SAFE_REDIRECT_PREFIXES in the hook to prevent
+ * open-redirect abuse via crafted ?redirect= query params.
  */
-const SignupPage = () => {
-  const navigate = useNavigate();
+const SignupPage = ({ source = 'direct' }) => {
   const location = useLocation();
-  const { setToken, setUser } = useAuth();
+  const { submit, loading, error, success, redirectTo } = useSignup();
 
   const [form, setForm] = useState({ email: '', password: '', optin: false });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [successRedirectTo, setSuccessRedirectTo] = useState('/dashboard');
   const [selectedPerson, setSelectedPerson] = useState(null);
 
   // Track page entry
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     track('signup_start', {
-      source: params.get('selected') ? 'teaser' : 'direct',
+      source: params.get('selected') ? 'teaser' : source,
       has_selected: !!params.get('selected'),
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -51,70 +49,24 @@ const SignupPage = () => {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleChange = useCallback((e) => {
+  const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-  }, []);
+    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
 
-  const handleSubmit = useCallback(async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
-
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const params = new URLSearchParams(location.search);
-      const response = await api.signup({
-        email: form.email,
-        password: form.password,
-        optin: !!form.optin,
-        queryString: window.location.search.replace(/^\?/, '') || undefined,
-      });
-
-      if (response.accessToken) {
-        const userData = response.user || {
-          email: form.email,
-          role: 'member',
-          emailVerified: false,
-        };
-        setToken(response.accessToken);
-        setUser(userData);
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        if (response.refreshToken) {
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }
-      }
-
-      // Stash password so PaymentPage can call changePassword after billing.sale
-      sessionStorage.setItem('_pendingPw', form.password);
-
-      const selectedPersonId = params.get('selected');
-      if (selectedPersonId) {
-        sessionStorage.setItem('selectedPersonId', selectedPersonId);
-      }
-
-      const redirectTo = params.get('redirect') || (selectedPersonId ? '/payment' : '/dashboard');
-      const normalizedRedirect = redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`;
-      setSuccessRedirectTo(normalizedRedirect);
-      track('signup_complete', { source: 'signup_page' });
-      setSuccess(true);
-
-      setTimeout(() => navigate(normalizedRedirect), 2000);
-    } catch (err) {
-      if (err.code === 'USER_ALREADY_EXISTS') {
-        setError('already_exists');
-      } else {
-        setError(err.message || 'An error occurred during signup. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [form, location.search, navigate, setToken, setUser]);
+    // Use location.search (React Router) consistently — avoids mixing with window.location.search.
+    const params = new URLSearchParams(location.search);
+    submit({
+      email: form.email,
+      password: form.password,
+      optin: form.optin,
+      selectedPersonId: params.get('selected'),
+      queryString: location.search.replace(/^\?/, '') || undefined,
+      redirectParam: params.get('redirect'),
+    });
+  };
 
   return (
     <main className="pageBackground">
@@ -146,7 +98,7 @@ const SignupPage = () => {
             <div className={styles.successMsg}>
               <h2>Account Created!</h2>
               <p>
-                {successRedirectTo === '/dashboard'
+                {redirectTo === '/dashboard'
                   ? 'Redirecting to your dashboard…'
                   : 'Redirecting to complete your purchase…'}
               </p>

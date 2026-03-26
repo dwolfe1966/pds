@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../api';
+import { useLocation } from 'react-router-dom';
+import { useSignup } from '../../hooks/useSignup';
 import styles from './SignupPageStepped.module.css';
 
 /**
@@ -12,8 +11,10 @@ import styles from './SignupPageStepped.module.css';
  * Step 3 — Profile           (name + ZIP — personalization after commitment)
  * Step 4 — Consent + Submit  (marketing opt-in with trust copy)
  *
- * IMPORTANT: Calls api.billingSignup() on final submit to persist the user
- * in the ByteCrtrs system (required for payment/billing to work downstream).
+ * Uses useSignup hook for shared signup logic.
+ * Does NOT call api.billingSignup() — billing.sale creates the BC user atomically.
+ * Calling billingSignup here would pre-register the user as a BC member, causing
+ * billing.sale to reject with nonMemberOnly: true.
  */
 
 const TOTAL_STEPS = 4;
@@ -34,9 +35,8 @@ const TRUST_COPY = [
 ];
 
 const SignupPageStepped = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { setToken, setUser } = useAuth();
+  const { submit, loading, error, setError, success, redirectTo } = useSignup();
 
   // Multi-step form state
   const [step, setStep] = useState(1);
@@ -48,10 +48,6 @@ const SignupPageStepped = () => {
   const [zip, setZip] = useState('');
   const [optin, setOptin] = useState(true);
 
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [successRedirectTo, setSuccessRedirectTo] = useState('/dashboard');
   const [selectedPerson, setSelectedPerson] = useState(null);
 
   // Load selected person teaser from sessionStorage (same as SignupPage)
@@ -114,74 +110,23 @@ const SignupPageStepped = () => {
 
   // ── Final submit ─────────────────────────────────────────────────────────
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const nameParts = fullName.trim().split(/\s+/);
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      // Run mock signup (JWT) and ByteCrtrs billingSignup in parallel.
-      // billingSignup persists the user in ByteCrtrs so billing.sale works on the payment page.
-      const [response] = await Promise.all([
-        api.signup({
-          fullName: fullName.trim(),
-          zip: zip.trim(),
-          email: email.trim(),
-          password,
-          optin: !!optin,
-          intent,
-        }),
-        api.billingSignup({
-          userInfo: { email: email.trim(), firstName, lastName, optin: !!optin },
-          ...(window.location.search && { queryString: window.location.search.replace(/^\?/, '') }),
-        }).catch((err) => {
-          // Non-fatal — ByteCrtrs registration failure should not block signup
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[SignupStepped] billingSignup failed (non-fatal):', err?.message);
-          }
-        }),
-      ]);
-
-      if (response.accessToken) {
-        const userData = response.user || {
-          id: response.user?.id || response.user?._id || response.userId || null,
-          email: email.trim(),
-          fullName: fullName.trim(),
-          optin,
-          role: 'member',
-          emailVerified: false,
-        };
-        setToken(response.accessToken);
-        setUser(userData);
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        if (response.refreshToken) {
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }
-      }
-
-      // Store selected person ID in sessionStorage for payment page
-      const params = new URLSearchParams(location.search);
-      const selectedPersonId = params.get('selected');
-      if (selectedPersonId) sessionStorage.setItem('selectedPersonId', selectedPersonId);
-
-      // Determine redirect
-      const redirectTo = params.get('redirect') || (selectedPersonId ? '/payment' : '/dashboard');
-      const normalizedRedirect = redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`;
-      setSuccessRedirectTo(normalizedRedirect);
-      setSuccess(true);
-
-      setTimeout(() => navigate(normalizedRedirect), 2000);
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError(err.message || 'An error occurred during signup. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    const params = new URLSearchParams(location.search);
+    submit({
+      email: email.trim(),
+      password,
+      optin: !!optin,
+      selectedPersonId: params.get('selected'),
+      queryString: location.search.replace(/^\?/, '') || undefined,
+      redirectParam: params.get('redirect'),
+      // fullName, zip, intent are mock-server extras — ignored on BC path
+      extraPayload: {
+        fullName: fullName.trim(),
+        zip: zip.trim(),
+        intent,
+      },
+    });
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -211,7 +156,7 @@ const SignupPageStepped = () => {
               <h2 className={styles.successTitle}>You're in!</h2>
               <p className={styles.successText}>
                 Account created.{' '}
-                {successRedirectTo === '/dashboard'
+                {redirectTo === '/dashboard'
                   ? 'Taking you to your dashboard…'
                   : 'Taking you to complete your purchase…'}
               </p>

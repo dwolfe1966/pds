@@ -116,7 +116,7 @@ const App = () => {
           <Route path="/name/landing/v6" element={<NameSearchLandingV6Page />} />
           <Route path="/name/loader" element={<NameSearchLoaderPage />} />
           <Route path="/name/search-result" element={<SalesSearchResultsPage />} />
-          <Route path="/name/signup" element={<SignupPage />} />
+          <Route path="/name/signup" element={<SignupPage source="name-search" />} />
           {/* Legacy routes */}
           <Route path="/search-results" element={<SalesSearchResultsPage />} />
           <Route path="/search/:id" element={<SearchDetailPreviewPage />} />
