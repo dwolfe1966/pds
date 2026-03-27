@@ -247,6 +247,18 @@ export async function routeApiRequest(endpoint, params = {}) {
     'count-pdf-downloads',
     // Activated product types — BC only
     'get-activated-product-types',
+    // Admin (CSR) endpoints — BC only, no mock fallback
+    'admin-users',
+    'admin-user-detail',
+    'admin-suspend-user',
+    'admin-purchases',
+    'admin-purchase-detail',
+    'admin-refund',
+    'admin-data-removal',
+    'admin-cs-reps',
+    'admin-create-cs-rep',
+    'admin-update-cs-rep',
+    'admin-cancel-order',
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
@@ -382,18 +394,42 @@ async function callNewAPI(endpoint, params) {
       };
 
       // BC returns roles as an array; normalize to a single role string for ProtectedRoute.
-      // BC uses 'csr' (customer service rep) to denote admin-level users.
+      // BC uses 'csr' or 'admin' to denote admin-level users.
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[BC Login] rawUser:', JSON.stringify(rawUser));
+      }
+      const rolesArray = Array.isArray(rawUser.roles) ? rawUser.roles : [];
+      let isAdmin =
+        rawUser.role === 'csr' || rawUser.role === 'admin' ||
+        rolesArray.includes('csr') || rolesArray.includes('admin');
+
+      // 2. If BC didn't return role info, probe a CSR-only endpoint.
+      //    Only admin/csr users can call /database/search — a 200 means admin, 403 means member.
+      if (!isAdmin) {
+        try {
+          await apiWrapper.csrFindUsers({ page: 1, perPage: 1 });
+          isAdmin = true;
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[BC Login] CSR probe succeeded — user is admin');
+          }
+        } catch (probeErr) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[BC Login] CSR probe 403 — user is member:', probeErr?.message);
+          }
+        }
+      }
+
       const bcUser = {
         ...rawUser,
-        role: rawUser.role || (Array.isArray(rawUser.roles) && rawUser.roles.includes('csr') ? 'admin' : 'member'),
+        role: isAdmin ? 'admin' : (rawUser.role || 'member'),
       };
 
-      // 2. If BC returned a real JWT, use it directly.
+      // 3. If BC returned a real JWT, use it directly.
       if (bcToken) {
         return { accessToken: bcToken, refreshToken: bcRefresh, user: bcUser };
       }
 
-      // 3. BC uses cookie-based sessions — no JWT issued to client.
+      // 4. BC uses cookie-based sessions — no JWT issued to client.
       //    The BC session cookie is now set (reports/billing will work).
       //    Create a synthetic session token for app-level route protection only.
       if (process.env.NODE_ENV === 'development') {
@@ -584,6 +620,79 @@ async function callNewAPI(endpoint, params) {
 
     case 'get-shape-compiled':
       return await apiWrapper.getShapeCompiled();
+
+    // -------------------------------------------------------------------------
+    // Admin / CSR endpoints — BC csrWrapper API
+    // BC CSR responses typically wrap lists in { raws: [...] } and single items
+    // as the root object. We normalise to { data: [...] } or the raw object so
+    // admin pages can use a consistent shape.
+    // -------------------------------------------------------------------------
+    // csrWrapper.api.user.find → POST /database/search
+    case 'admin-users': {
+      const raw = await apiWrapper.csrFindUsers(params.queryParams || {});
+      const items = raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length };
+    }
+
+    // csrWrapper.api.user.getUserDetail → POST /user/management/detail
+    case 'admin-user-detail': {
+      return await apiWrapper.csrGetUserDetail(params.id);
+    }
+
+    // csrWrapper.api.user.update → POST /user/management/update
+    case 'admin-suspend-user': {
+      return await apiWrapper.csrUpdateUser(params.id, { status: 'suspended' });
+    }
+
+    // csrWrapper.api.user.findOrders → POST /commerceMgnt/userOrders → { orders: [...] }
+    case 'admin-purchases': {
+      const raw = await apiWrapper.csrFindUserOrders(params.queryParams || {});
+      const items = raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length };
+    }
+
+    // csrWrapper.api.user.getOrder → POST /commerceMgnt/getUserOrder → { orders: [order] }
+    case 'admin-purchase-detail': {
+      const raw = await apiWrapper.csrGetUserOrder({ userId: params.userId, orderId: params.id });
+      const order = raw?.orders?.[0] ?? raw?.order ?? raw;
+      return order;
+    }
+
+    // csrWrapper.api.user.refundVoidOrder → POST /commerceBilling/correct
+    // params must include: commercePaymentType, targetCommerceOrderId, targetCommerceOrderRevisionId,
+    //                      targetCommercePaymentId, targetCommercePaymentRevisionId, amount
+    case 'admin-refund': {
+      return await apiWrapper.csrRefundVoidOrder(params.body || params);
+    }
+
+    // csrWrapper.api.optOut.find → POST /database/search
+    case 'admin-data-removal': {
+      const raw = await apiWrapper.csrFindOptOuts(params.queryParams || {});
+      const items = raw?.raws ?? raw?.optOuts ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length };
+    }
+
+    // csrWrapper.api.user.findAdmin → POST /database/search (admin/csr role filter)
+    case 'admin-cs-reps': {
+      const raw = await apiWrapper.csrFindCsReps(params.queryParams || {});
+      const items = raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length };
+    }
+
+    // csrWrapper.api.user.create → POST /user/management/create
+    case 'admin-create-cs-rep': {
+      return await apiWrapper.csrCreateUser(params.body || params);
+    }
+
+    // csrWrapper.api.user.update → POST /user/management/update
+    case 'admin-update-cs-rep': {
+      return await apiWrapper.csrUpdateUser(params.id, params.body || {});
+    }
+
+    // csrWrapper.api.user.cancelUncancelOrder → POST /commerceMgnt/cancelUncancelOrder
+    case 'admin-cancel-order': {
+      return await apiWrapper.csrCancelUncancelOrder(params.orderId, params.flag);
+    }
 
     default:
       throw new Error(`Endpoint ${endpoint} not implemented in new API router`);

@@ -7,7 +7,7 @@ import styles from './LoginPage.module.css';
  * Login page for returning users.
  */
 const LoginPage = () => {
-  const { login, token, loading: authLoading } = useAuth();
+  const { login, token, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -17,9 +17,9 @@ const LoginPage = () => {
   // Redirect already-authenticated users away from the login page
   useEffect(() => {
     if (!authLoading && token) {
-      navigate('/dashboard', { replace: true });
+      navigate(user?.role === 'admin' ? '/admin/users' : '/dashboard', { replace: true });
     }
-  }, [token, authLoading, navigate]);
+  }, [token, user, authLoading, navigate]);
 
   if (authLoading) return null;
 
@@ -32,9 +32,10 @@ const LoginPage = () => {
     setError('');
     setLoading(true);
     try {
-      await login(form.email, form.password);
+      const loggedInUser = await login(form.email, form.password);
       const redirectTo = searchParams.get('redirect');
-      navigate(redirectTo ? decodeURIComponent(redirectTo) : '/dashboard');
+      const defaultDest = loggedInUser?.role === 'admin' ? '/admin/users' : '/dashboard';
+      navigate(redirectTo ? decodeURIComponent(redirectTo) : defaultDest);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,12 +51,12 @@ const LoginPage = () => {
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Email</label>
             <input
-              type="email"
+              type="text"
               name="email"
               value={form.email}
               onChange={handleChange}
               required
-              autoComplete="email"
+              autoComplete="username"
               className={styles.input}
             />
           </div>

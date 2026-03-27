@@ -11,9 +11,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
   const subscriptionRef = useRef(null);
+  const userRef = useRef(null);
 
-  // Keep ref in sync so token useEffect can read latest subscription without a dependency
+  // Keep refs in sync so token useEffect can read latest values without extra dependencies
   useEffect(() => { subscriptionRef.current = subscription; }, [subscription]);
+  useEffect(() => { userRef.current = user; }, [user]);
 
   // Set token getter for API client
   useEffect(() => {
@@ -66,6 +68,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
+      // Admin/CSR users have no member subscription — skip getUserOrders (would 403).
+      if (userRef.current?.role === 'admin') return;
       // Skip if subscription is already active — avoids a getUserOrders 403
       // immediately after billing.sale clears the subscription we just set.
       if (subscriptionRef.current?.status !== 'active') {
@@ -111,6 +115,7 @@ export const AuthProvider = ({ children }) => {
       if (data.refreshToken) {
         localStorage.setItem('refreshToken', data.refreshToken);
       }
+      return userData;
     } catch (err) {
       console.error('Login failed', err);
       throw err;

@@ -53,21 +53,24 @@ export const API_ENDPOINTS = {
   'enable-mfa': { newApi: false, mockApi: true },
   'disable-mfa': { newApi: false, mockApi: true },
   
-  // Admin endpoints (only in mock API)
-  'admin-users': { newApi: false, mockApi: true },
-  'admin-user-detail': { newApi: false, mockApi: true },
-  'admin-suspend-user': { newApi: false, mockApi: true },
-  'admin-sessions': { newApi: false, mockApi: true },
-  'admin-purchases': { newApi: false, mockApi: true },
-  'admin-purchase-detail': { newApi: false, mockApi: true },
-  'admin-refund': { newApi: false, mockApi: true },
-  'admin-data-removal': { newApi: false, mockApi: true },
-  'admin-approve-removal': { newApi: false, mockApi: true },
-  'admin-reject-removal': { newApi: false, mockApi: true },
+  // Admin endpoints — BC CSR API
+  'admin-users': { newApi: true, mockApi: false },
+  'admin-user-detail': { newApi: true, mockApi: false },
+  'admin-suspend-user': { newApi: true, mockApi: false },
+  'admin-sessions': { newApi: false, mockApi: false }, // No BC sessions endpoint
+  'admin-purchases': { newApi: true, mockApi: false },
+  'admin-purchase-detail': { newApi: true, mockApi: false },
+  'admin-refund': { newApi: true, mockApi: false },
+  'admin-data-removal': { newApi: true, mockApi: false },
+  'admin-approve-removal': { newApi: false, mockApi: false }, // No BC approve endpoint
+  'admin-reject-removal': { newApi: false, mockApi: false }, // No BC reject endpoint
   'admin-analytics': { newApi: false, mockApi: true },
-  'admin-cs-reps': { newApi: false, mockApi: true },
-  'admin-create-cs-rep': { newApi: false, mockApi: true },
-  'admin-update-cs-rep': { newApi: false, mockApi: true },
+  'admin-cs-reps': { newApi: true, mockApi: false },
+  'admin-create-cs-rep': { newApi: true, mockApi: false },
+  'admin-update-cs-rep': { newApi: true, mockApi: false },
+  'admin-cancel-order': { newApi: true, mockApi: false },
+  'admin-email-log': { newApi: false, mockApi: true },
+  'admin-email-broadcast': { newApi: false, mockApi: true },
 };
 
 /**

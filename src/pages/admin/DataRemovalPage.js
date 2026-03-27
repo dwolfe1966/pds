@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api';
-import { useAuth } from '../../context/AuthContext';
 
 /**
- * Admin page to manage data removal requests.
+ * Admin page to manage data removal / opt-out requests via BC CSR API.
+ * BC fields: _id, email, status, createdAt
  */
 const DataRemovalPage = () => {
-  const { token } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,67 +14,48 @@ const DataRemovalPage = () => {
     const fetchRequests = async () => {
       setLoading(true);
       try {
-        const data = await api.get('/admin/data-removal', { token });
-        setRequests(data?.data || data.results || data.requests || []);
+        const res = await api.adminListDataRemoval();
+        setRequests(res?.data || res?.raws || res?.optOuts || (Array.isArray(res) ? res : []));
       } catch (err) {
-        setError(err.message);
+        setError(err.message || 'Failed to load data removal requests');
       } finally {
         setLoading(false);
       }
     };
     fetchRequests();
-  }, [token]);
-
-  const handleApprove = async (id) => {
-    try {
-      await api.post(`/admin/data-removal/${id}/approve`, { token });
-      setRequests(requests.filter((r) => r.id !== id));
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleReject = async (id) => {
-    try {
-      await api.post(`/admin/data-removal/${id}/reject`, { body: { reason: 'Not eligible' }, token });
-      setRequests(requests.filter((r) => r.id !== id));
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  }, []);
 
   return (
     <main style={{ padding: '2rem' }}>
       <h1>Data Removal Requests</h1>
       {loading && <p>Loading…</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {requests.length > 0 ? (
+      {!loading && !error && requests.length === 0 && <p>No requests.</p>}
+      {requests.length > 0 && (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Request ID</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>User</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Date</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left' }}>Actions</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Request ID</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Email</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Status</th>
+              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Date</th>
             </tr>
           </thead>
           <tbody>
-            {requests.map((r) => (
-              <tr key={r.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td>{r.id}</td>
-                <td>{r.userId}</td>
-                <td>{r.requestedAt || r.date}</td>
-                <td>
-                  <button onClick={() => handleApprove(r.id)} style={{ marginRight: '0.5rem' }}>Approve</button>
-                  <button onClick={() => handleReject(r.id)}>Reject</button>
-                </td>
-              </tr>
-            ))}
+            {requests.map((r) => {
+              const rid = r._id || r.id;
+              return (
+                <tr key={rid} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '0.5rem' }}>{rid}</td>
+                  <td style={{ padding: '0.5rem' }}>{r.email || r.userId || '—'}</td>
+                  <td style={{ padding: '0.5rem' }}>{r.status || '—'}</td>
+                  <td style={{ padding: '0.5rem' }}>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : (r.requestedAt || r.date || '—')}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-      ) : !loading ? (
-        <p>No requests.</p>
-      ) : null}
+      )}
     </main>
   );
 };

@@ -574,6 +574,89 @@ class ApiWrapperService {
     return await response.json();
   }
 
+  // ---------------------------------------------------------------------------
+  // CSR (admin) API — calls BC csrWrapper endpoints directly via proxy or direct
+  // ---------------------------------------------------------------------------
+
+  /**
+   * POST to a csrWrapper endpoint. Respects useProxy/endpointUrl so it works
+   * in both dev (Express proxy) and production (direct BC with CORS).
+   */
+  async _csrPost(path, body = {}) {
+    const baseUrl = this.useProxy
+      ? `${this.proxyUrl}${path}`
+      : `${this.endpointUrl}${path}`;
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const url = `${baseUrl}?clientId=${clientId}&apiId=${apiId}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+    }
+    return await response.json();
+  }
+
+  // csrWrapper.api.user.find — POST /database/search
+  async csrFindUsers(params = {}) {
+    return await this._csrPost('/database/search', { brandId: 'idlookup', ...params });
+  }
+
+  // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)
+  async csrFindCsReps(params = {}) {
+    return await this._csrPost('/database/search', { brandId: 'idlookup', roles: ['admin', 'csr'], ...params });
+  }
+
+  // csrWrapper.api.user.getUserDetail — POST /user/management/detail
+  async csrGetUserDetail(userId) {
+    return await this._csrPost('/user/management/detail', { userId });
+  }
+
+  // csrWrapper.api.user.update — POST /user/management/update
+  async csrUpdateUser(userId, body = {}) {
+    return await this._csrPost('/user/management/update', { userId, ...body });
+  }
+
+  // csrWrapper.api.user.create — POST /user/management/create
+  async csrCreateUser(body = {}) {
+    return await this._csrPost('/user/management/create', body);
+  }
+
+  // csrWrapper.api.user.findOrders — POST /commerceMgnt/userOrders
+  // Returns { orders: [...], perPage: N }
+  async csrFindUserOrders(params = {}) {
+    return await this._csrPost('/commerceMgnt/userOrders', params);
+  }
+
+  // csrWrapper.api.user.getOrder — POST /commerceMgnt/getUserOrder
+  // params: { userId, orderId, lastPaymentId? }
+  async csrGetUserOrder(params = {}) {
+    return await this._csrPost('/commerceMgnt/getUserOrder', params);
+  }
+
+  // csrWrapper.api.user.cancelUncancelOrder — POST /commerceMgnt/cancelUncancelOrder
+  // flag: true = cancel, false = uncancel
+  async csrCancelUncancelOrder(orderId, flag) {
+    return await this._csrPost('/commerceMgnt/cancelUncancelOrder', { orderId, flag });
+  }
+
+  // csrWrapper.api.user.refundVoidOrder — POST /commerceBilling/correct
+  // params: { commercePaymentType, targetCommerceOrderId, targetCommerceOrderRevisionId,
+  //           targetCommercePaymentId, targetCommercePaymentRevisionId, amount }
+  async csrRefundVoidOrder(params = {}) {
+    return await this._csrPost('/commerceBilling/correct', params);
+  }
+
+  // csrWrapper.api.optOut.find — POST /database/search
+  async csrFindOptOuts(params = {}) {
+    return await this._csrPost('/database/search', { brandId: 'idlookup', ...params });
+  }
+
   /** Generate a random 32-char alphanumeric string matching the IIFE's format. */
   _generateRandomId() {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

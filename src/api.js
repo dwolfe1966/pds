@@ -502,6 +502,59 @@ const api = {
   },
 
   /**
+   * Admin (CSR) endpoints — BC csrWrapper API
+   */
+  adminListUsers: async (params = {}) => {
+    return await routeApiRequest('admin-users', { queryParams: params });
+  },
+
+  adminGetUser: async (id) => {
+    return await routeApiRequest('admin-user-detail', { id });
+  },
+
+  adminSuspendUser: async (id) => {
+    return await routeApiRequest('admin-suspend-user', { id });
+  },
+
+  adminListPurchases: async (params = {}) => {
+    return await routeApiRequest('admin-purchases', { queryParams: params });
+  },
+
+  adminGetPurchase: async (id, userId) => {
+    return await routeApiRequest('admin-purchase-detail', { id, userId });
+  },
+
+  // params: { commercePaymentType, targetCommerceOrderId, targetCommerceOrderRevisionId,
+  //           targetCommercePaymentId, targetCommercePaymentRevisionId, amount }
+  adminRefundPurchase: async (params) => {
+    return await routeApiRequest('admin-refund', { body: params });
+  },
+
+  adminGetPurchaseOrder: async (userId, orderId) => {
+    return await routeApiRequest('admin-purchase-detail', { userId, id: orderId });
+  },
+
+  adminCancelOrder: async (orderId, flag) => {
+    return await routeApiRequest('admin-cancel-order', { orderId, flag });
+  },
+
+  adminListDataRemoval: async (params = {}) => {
+    return await routeApiRequest('admin-data-removal', { queryParams: params });
+  },
+
+  adminListCsReps: async (params = {}) => {
+    return await routeApiRequest('admin-cs-reps', { queryParams: params });
+  },
+
+  adminCreateCsRep: async (body) => {
+    return await routeApiRequest('admin-create-cs-rep', { body });
+  },
+
+  adminUpdateCsRep: async (id, body) => {
+    return await routeApiRequest('admin-update-cs-rep', { id, body });
+  },
+
+  /**
    * Admin: fetch the outbound email log.
    */
   getEmailLog: async ({ token } = {}) => {
