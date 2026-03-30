@@ -12,7 +12,7 @@ const AdminNav = () => {
     <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div>
         <Link to="/admin/users" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
-          IDLookup.AI Admin
+          <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '28px', verticalAlign: 'middle', marginRight: '0.5rem' }} />Admin
         </Link>
       </div>
       <div style={{ display: 'flex', gap: '1rem' }}>

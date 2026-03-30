@@ -16,7 +16,10 @@ const WhoIsSearchingPage = () => {
         const data = await api.get('/searches/lookups-of-me', { token });
         setEvents(data?.data || []);
       } catch (err) {
-        setError(err?.message || 'Unable to load lookup data.');
+        // BC session users hit the mock server and get 401 — show empty state, not an error
+        if (!err.isMockUnavailable) {
+          setError(err?.message || 'Unable to load lookup data.');
+        }
       } finally {
         setLoading(false);
       }

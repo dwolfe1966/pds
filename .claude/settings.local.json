@@ -26,7 +26,12 @@
       "Bash(curl:*)",
       "Bash(python3 -c \":*)",
       "Bash(python3:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(sed -i \"s|style={{ height: ''36px'', display: ''block'' }}|style={{ height: ''36px'', display: ''block'', verticalAlign: ''middle'' }}|g\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/MemberNav.js\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/SalesNav.js\")",
+      "Bash(sed -i \"s|style={{ height: ''30px'', display: ''block'' }}|style={{ height: ''30px'', display: ''block'', verticalAlign: ''middle'' }}|g\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/MemberNav.js\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/SalesNav.js\")",
+      "Bash(sed -i \"s|import styles from ''''./MemberNav.module.css'''';|import styles from ''''./MemberNav.module.css'''';\\\\nimport logoSrc from ''''../assets/idlookup-green-logo-no-words.png'''';|\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/MemberNav.js\")",
+      "Bash(sed -i \"s|import styles from ''''./SalesNav.module.css'''';|import styles from ''''./SalesNav.module.css'''';\\\\nimport logoSrc from ''''../assets/idlookup-green-logo-no-words.png'''';|\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/SalesNav.js\")",
+      "Bash(sed -i \"s|import styles from ''''./Footer.module.css'''';|import styles from ''''./Footer.module.css'''';\\\\nimport logoSrc from ''''../assets/idlookup-green-logo-no-words.png'''';|\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/Footer.js\")"
     ]
   }
 }

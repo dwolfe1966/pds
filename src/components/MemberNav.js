@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from './MemberNav.module.css';
+import logoSrc from '../assets/idlookup-green-logo-no-words.png';
 
 /**
  * Navigation bar for authenticated member pages.
@@ -75,7 +76,7 @@ const MemberNav = () => {
         {/* Logo */}
         <div>
           <Link to="/dashboard" className={styles.logo}>
-            IDLookup.AI
+            <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '36px', display: 'inline-block', verticalAlign: 'middle' }} />
           </Link>
         </div>
 
@@ -136,7 +137,7 @@ const MemberNav = () => {
         >
           <div className={styles.mobileMenuHeader}>
             <Link to="/dashboard" className={styles.mobileLogo} onClick={() => setMobileMenuOpen(false)}>
-              IDLookup.AI
+              <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '30px', display: 'inline-block', verticalAlign: 'middle' }} />
             </Link>
             <button
               className={styles.mobileMenuClose}

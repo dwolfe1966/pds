@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from './SalesNav.module.css';
+import logoSrc from '../assets/idlookup-green-logo-no-words.png';
 
 /**
  * Navigation bar for unauthenticated (sales) pages.
@@ -66,7 +67,7 @@ const SalesNav = () => {
         {/* Logo */}
         <div>
           <Link to="/" className={styles.logo}>
-            IDLookup.AI
+            <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '36px', display: 'inline-block', verticalAlign: 'middle' }} />
           </Link>
         </div>
 
@@ -117,7 +118,7 @@ const SalesNav = () => {
         >
           <div className={styles.mobileMenuHeader}>
             <Link to="/" className={styles.mobileLogo} onClick={() => setMobileMenuOpen(false)}>
-              IDLookup.AI
+              <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '30px', display: 'inline-block', verticalAlign: 'middle' }} />
             </Link>
             <button
               className={styles.mobileMenuClose}
