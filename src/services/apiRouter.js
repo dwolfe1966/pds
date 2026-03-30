@@ -11,7 +11,7 @@ import { adaptTeaserResponse, adaptReportDetailResponse, adaptReportListResponse
 
 // Environment configuration
 const USE_NEW_API = process.env.REACT_APP_NEW_API_ENABLED === 'true';
-const USE_MOCK_API = process.env.REACT_APP_USE_MOCK_API !== 'false';
+const USE_MOCK_API = process.env.REACT_APP_USE_MOCK_API === 'true'; // Default to false (safe for production)
 const MOCK_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api/v1';
 
 // ---------------------------------------------------------------------------

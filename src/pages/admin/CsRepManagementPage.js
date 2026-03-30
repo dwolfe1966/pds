@@ -1,35 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import api from '../../api';
 
 /**
  * Admin page to manage CS representatives via BC CSR API.
- * BC fields: _id, firstName, lastName, email, roles, status
+ * Note: BC's /database/search does not support role-based filtering — the CS Rep
+ * list cannot be retrieved via this API. Creation is supported; viewing existing
+ * reps requires the ByteCrtrs admin panel.
  */
 const CsRepManagementPage = () => {
-  const [reps, setReps] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
   const [formMsg, setFormMsg] = useState('');
-
-  useEffect(() => {
-    fetchReps();
-  }, []);
-
-  const fetchReps = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.adminListCsReps();
-      setReps(res?.data || res?.raws || res?.users || (Array.isArray(res) ? res : []));
-    } catch (err) {
-      setError(err.message || 'Failed to load CS reps');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -37,10 +19,9 @@ const CsRepManagementPage = () => {
     setFormMsg('');
     try {
       await api.adminCreateCsRep({ ...form, roles: ['csr'] });
-      setFormMsg('CS rep created.');
+      setFormMsg('CS rep created successfully.');
       setForm({ firstName: '', lastName: '', email: '', password: '' });
       setShowForm(false);
-      await fetchReps();
     } catch (err) {
       setFormMsg(`Error: ${err.message}`);
     } finally {
@@ -75,33 +56,10 @@ const CsRepManagementPage = () => {
         </form>
       )}
 
-      {loading && <p>Loading…</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {!loading && !error && reps.length === 0 && <p>No representatives found.</p>}
-      {reps.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Name</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Email</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reps.map((r) => {
-              const rid = r._id || r.id;
-              const name = r.firstName ? `${r.firstName} ${r.lastName || ''}`.trim() : (r.name || rid);
-              return (
-                <tr key={rid} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '0.5rem' }}>{name}</td>
-                  <td style={{ padding: '0.5rem' }}>{r.email}</td>
-                  <td style={{ padding: '0.5rem' }}>{r.status || '—'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: 0 }}>
+        Existing CS Rep accounts are managed in the{' '}
+        <strong>ByteCrtrs admin panel</strong>. Use the form above to add a new CS Rep.
+      </p>
     </main>
   );
 };

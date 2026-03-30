@@ -10,9 +10,13 @@ class ApiWrapperService {
     this.wrapper = null;
     this.initialized = false;
     this.endpointUrl = process.env.REACT_APP_NEW_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
-    // Use proxy mode to bypass CORS - proxy requests through our Express server
-    this.useProxy = process.env.REACT_APP_USE_API_PROXY !== 'false'; // Default to true
     this.proxyUrl = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001/api/proxy';
+    // Proxy mode: explicit opt-in via env var, OR auto-enabled in development when proxyUrl
+    // points to localhost (handles cases where the env var isn't picked up after server restart).
+    const explicitProxy = process.env.REACT_APP_USE_API_PROXY === 'true';
+    const devProxy = process.env.NODE_ENV === 'development' &&
+      (this.proxyUrl.startsWith('http://localhost') || this.proxyUrl.startsWith('http://127.0.0.1'));
+    this.useProxy = explicitProxy || devProxy;
   }
 
   /**
@@ -70,6 +74,21 @@ class ApiWrapperService {
    * Auth endpoints
    */
   async login(body) {
+    // The IIFE singleton ignores our proxyUrl and always calls BC directly (CORS in dev).
+    // In proxy mode, bypass the IIFE and POST directly to the Express proxy.
+    if (this.useProxy) {
+      try {
+        // Initialize IIFE to capture its clientId (no network call on init)
+        await this.getWrapper().catch(() => {});
+        return await this._loginViaProxy(body);
+      } catch (error) {
+        const enhancedError = new Error(error.message || 'Login failed');
+        enhancedError.originalError = error;
+        enhancedError.status = error.status;
+        enhancedError.data = error.data;
+        throw enhancedError;
+      }
+    }
     try {
       const wrapper = await this.getWrapper();
       return await wrapper.api.auth.login(body);
@@ -79,6 +98,26 @@ class ApiWrapperService {
       enhancedError.isCorsError = this._isCorsError(error);
       throw enhancedError;
     }
+  }
+
+  async _loginViaProxy(body) {
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const url = `${this.proxyUrl}/auth/login?clientId=${clientId}&apiId=${apiId}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      const err = new Error(errorData.message || errorData.error?.message || `HTTP ${response.status}`);
+      err.status = response.status;
+      err.data = errorData;
+      throw err;
+    }
+    return await response.json();
   }
 
   async logout() {
@@ -273,9 +312,9 @@ class ApiWrapperService {
       if (clientId) queryParams.append('clientId', clientId);
       if (apiId) queryParams.append('apiId', apiId);
       
-      // Build the proxy URL
       const proxyPath = '/idLookup/teaser/search';
-      const url = `${this.proxyUrl}${proxyPath}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const baseUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
+      const url = `${baseUrl}${proxyPath}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
       
       // Prepare request body (exclude query params that go in URL)
       const body = { ...query };
@@ -319,6 +358,10 @@ class ApiWrapperService {
   }
 
   async getReportList(params) {
+    // In proxy mode, bypass IIFE (it calls BC directly, causing CORS + 403)
+    if (this.useProxy) {
+      return await this._getReportListViaProxy(params);
+    }
     try {
       const wrapper = await this.getWrapper();
       const idLookup = wrapper.api?.idLookup;
@@ -332,11 +375,6 @@ class ApiWrapperService {
 
       if (candidateMethods.length > 0) {
         return await candidateMethods[0](params);
-      }
-
-      // Fallback to direct proxy call if wrapper method is unavailable
-      if (this.useProxy) {
-        return await this._getReportListViaProxy(params);
       }
 
       throw new Error('Report list method not available in ApiWrapper');
@@ -396,7 +434,8 @@ class ApiWrapperService {
       if (params.lastId) queryParams.append('lastId', params.lastId);
 
       const proxyPath = '/idLookup/report/list';
-      const url = `${this.proxyUrl}${proxyPath}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const baseUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
+      const url = `${baseUrl}${proxyPath}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -556,7 +595,8 @@ class ApiWrapperService {
     // clientId is the stable random ID on the IIFE instance; apiId is per-request.
     const clientId = this.wrapper?.clientId || this._generateRandomId();
     const apiId = this._generateRandomId();
-    const url = `${this.proxyUrl}/commerceBilling/getUserOrders?clientId=${clientId}&apiId=${apiId}`;
+    const baseUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
+    const url = `${baseUrl}/commerceBilling/getUserOrders?clientId=${clientId}&apiId=${apiId}`;
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
@@ -759,6 +799,19 @@ class ApiWrapperService {
    * POST /commerceBilling/sale
    */
   async sale(params) {
+    // In proxy mode, bypass IIFE (it calls BC directly, causing CORS)
+    if (this.useProxy) {
+      try {
+        await this.getWrapper().catch(() => {});
+        return await this._saleViaProxy(params);
+      } catch (error) {
+        const enhancedError = new Error(error.message || 'Payment failed');
+        enhancedError.originalError = error;
+        enhancedError.status = error.status;
+        enhancedError.data = error.data;
+        throw enhancedError;
+      }
+    }
     try {
       const wrapper = await this.getWrapper();
       if (typeof wrapper.api?.billing?.sale === 'function') {
@@ -786,6 +839,35 @@ class ApiWrapperService {
       enhancedError.isCorsError = this._isCorsError(error);
       throw enhancedError;
     }
+  }
+
+  async _saleViaProxy(params) {
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const url = `${this.proxyUrl}/commerceBilling/sale?clientId=${clientId}&apiId=${apiId}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      const err = new Error(errorData.message || errorData.error?.message || `HTTP ${response.status}`);
+      err.status = response.status;
+      err.data = errorData;
+      throw err;
+    }
+    const data = await response.json();
+    // BC may return HTTP 200 with a rejected/error status in the body
+    if (data?.status === 'rejected' || (data?.error && !data?.user)) {
+      const errMsg = data?.message || data?.error?.message || data?.error || 'Payment declined';
+      const err = new Error(typeof errMsg === 'string' ? errMsg : 'Payment declined');
+      err.status = 402;
+      err.data = data;
+      throw err;
+    }
+    return data;
   }
 }
 

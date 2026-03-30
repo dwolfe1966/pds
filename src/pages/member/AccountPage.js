@@ -19,6 +19,7 @@ const AccountPage = () => {
   const [hasMoreReports, setHasMoreReports] = useState(false);
   const [error, setError] = useState('');
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [pdfDownloadingId, setPdfDownloadingId] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -89,6 +90,19 @@ const AccountPage = () => {
 
   const handleViewReport = (commerceContentId) => {
     navigate(`/people/${commerceContentId}`);
+  };
+
+  const handleDownloadPdf = async (e, commerceContentId) => {
+    e.stopPropagation();
+    if (pdfDownloadingId) return;
+    setPdfDownloadingId(commerceContentId);
+    try {
+      await api.downloadPdfReport(commerceContentId);
+    } catch (err) {
+      console.error('[AccountPage] PDF download failed:', err?.message);
+    } finally {
+      setPdfDownloadingId(null);
+    }
   };
 
   const handleCancelConfirm = async () => {
@@ -261,15 +275,26 @@ const AccountPage = () => {
                         })()}
                       </p>
                     </div>
-                    <button
-                      className={styles.viewBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleViewReport(reportInfo.id);
-                      }}
-                    >
-                      View Report
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <button
+                        className={styles.viewBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewReport(reportInfo.id);
+                        }}
+                      >
+                        View Report
+                      </button>
+                      <button
+                        className={styles.viewBtn}
+                        style={{ background: 'transparent', color: '#0d5d2f', border: '1px solid #0d5d2f' }}
+                        onClick={(e) => handleDownloadPdf(e, reportInfo.id)}
+                        disabled={pdfDownloadingId === reportInfo.id}
+                        title="Download PDF"
+                      >
+                        {pdfDownloadingId === reportInfo.id ? '…' : '↓ PDF'}
+                      </button>
+                    </div>
                   </li>
                 );
               })}

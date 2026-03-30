@@ -243,7 +243,8 @@ const PaymentPage = () => {
         const saleResult = await api.billingSale(saleParams);
         // apiWrapper.sale() now throws on IIFE error-state responses, so if we reach here
         // the IIFE returned a success-state result. getData() gives BC's actual response body.
-        const rawData = saleResult?.getData?.() ?? saleResult?.params?.response?.data ?? saleResult?.data ?? {};
+        // In proxy mode, saleResult is a plain JSON object (no IIFE wrapper methods).
+        const rawData = saleResult?.getData?.() ?? saleResult?.params?.response?.data ?? saleResult?.data ?? saleResult ?? {};
         if (process.env.NODE_ENV === 'development') {
           console.log('[Payment] billingSale rawData:', JSON.stringify(rawData)?.substring(0, 300));
         }

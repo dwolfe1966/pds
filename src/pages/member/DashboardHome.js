@@ -26,11 +26,25 @@ const DashboardHome = () => {
   const [recentSearches, setRecentSearches] = useState([]);
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [activityError, setActivityError] = useState('');
+  const [pdfDownloadingId, setPdfDownloadingId] = useState(null);
 
   const displayName = useMemo(() => {
     if (!user) return 'Member';
     return user.fullName || user.name || user.email || 'Member';
   }, [user]);
+
+  const handleDownloadPdf = async (e, commerceContentId) => {
+    e.stopPropagation();
+    if (!commerceContentId || pdfDownloadingId) return;
+    setPdfDownloadingId(commerceContentId);
+    try {
+      await api.downloadPdfReport(commerceContentId);
+    } catch (err) {
+      console.error('[Dashboard] PDF download failed:', err?.message);
+    } finally {
+      setPdfDownloadingId(null);
+    }
+  };
 
   const formatDate = (value) => {
     if (!value) return 'Recently';
@@ -357,7 +371,24 @@ const DashboardHome = () => {
                       <p className={styles.activityTitle}>{getReportTitle(report)}</p>
                       <p className={styles.mutedText}>Report generated</p>
                     </div>
-                    <span className={styles.activityMeta}>{formatDate(report.createdAt)}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                      {reportTarget && (
+                        <button
+                          onClick={(e) => handleDownloadPdf(e, reportTarget)}
+                          disabled={pdfDownloadingId === reportTarget}
+                          title="Download PDF"
+                          style={{
+                            background: 'transparent', border: '1px solid #0d5d2f', color: '#0d5d2f',
+                            borderRadius: '0.25rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem',
+                            cursor: pdfDownloadingId === reportTarget ? 'not-allowed' : 'pointer',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {pdfDownloadingId === reportTarget ? '…' : '↓ PDF'}
+                        </button>
+                      )}
+                      <span className={styles.activityMeta}>{formatDate(report.createdAt)}</span>
+                    </div>
                   </div>
                 );
               })}
