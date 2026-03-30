@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logoSrc from '../assets/idlookup-green-logo-no-words.png';
 
 /**
  * Navigation bar for administrator pages.
