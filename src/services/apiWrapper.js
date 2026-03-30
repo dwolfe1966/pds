@@ -121,6 +121,18 @@ class ApiWrapperService {
   }
 
   async logout() {
+    if (this.useProxy) {
+      try {
+        await this.getWrapper().catch(() => {});
+        const clientId = this.wrapper?.clientId || this._generateRandomId();
+        const apiId = this._generateRandomId();
+        const url = `${this.proxyUrl}/auth/logout?clientId=${clientId}&apiId=${apiId}`;
+        await fetch(url, { method: 'POST', credentials: 'include' });
+        return { success: true };
+      } catch {
+        return { success: true }; // logout failure should never block local teardown
+      }
+    }
     try {
       const wrapper = await this.getWrapper();
       return await wrapper.api.auth.logout();
@@ -413,35 +425,22 @@ class ApiWrapperService {
    */
   async _getReportListViaProxy(params = {}) {
     try {
-      let clientId = params.clientId || process.env.REACT_APP_CLIENT_ID;
-      let apiId = params.apiId || process.env.REACT_APP_API_ID;
+      // Ensure IIFE is initialized so we can read its clientId
+      await this.getWrapper().catch(() => {});
+      const clientId = this.wrapper?.clientId || this._generateRandomId();
+      const apiId = this._generateRandomId();
 
-      if (!clientId || !apiId) {
-        try {
-          const wrapper = await this.getWrapper();
-          if (wrapper && wrapper._config) {
-            clientId = clientId || wrapper._config.clientId;
-            apiId = apiId || wrapper._config.apiId;
-          }
-        } catch (e) {
-          // Wrapper not available, continue with params/env vars
-        }
-      }
-
-      const queryParams = new URLSearchParams();
-      if (clientId) queryParams.append('clientId', clientId);
-      if (apiId) queryParams.append('apiId', apiId);
+      const queryParams = new URLSearchParams({ clientId, apiId });
       if (params.lastId) queryParams.append('lastId', params.lastId);
 
       const proxyPath = '/idLookup/report/list';
       const baseUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
-      const url = `${baseUrl}${proxyPath}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const url = `${baseUrl}${proxyPath}?${queryParams.toString()}`;
 
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
@@ -841,15 +840,27 @@ class ApiWrapperService {
     }
   }
 
+  /**
+   * Replicate the IIFE's billingSeriesId generation:
+   * `${type}|${clientId}|${apiId}|${timestamp}|${random8}`
+   */
+  _makeBillingSeriesId(type, clientId, apiId) {
+    const timestamp = new Date().getTime();
+    const random8 = Array.from(crypto.getRandomValues(new Uint32Array(8)),
+      v => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[v % 62]).join('');
+    return `${type}|${clientId}|${apiId}|${timestamp}|${random8}`;
+  }
+
   async _saleViaProxy(params) {
     const clientId = this.wrapper?.clientId || this._generateRandomId();
     const apiId = this._generateRandomId();
+    const billingSeriesId = this._makeBillingSeriesId('sale', clientId, apiId);
     const url = `${this.proxyUrl}/commerceBilling/sale?clientId=${clientId}&apiId=${apiId}`;
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
+      body: JSON.stringify({ ...params, billingSeriesId }),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));

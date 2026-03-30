@@ -24,7 +24,9 @@
       "Bash(curl -s -X POST \"http://localhost:3001/api/proxy/auth/login?clientId=testClient123&apiId=testApi456\" -H \"Content-Type: application/json\" -H \"Origin: http://localhost:3000\" -d '{\"\"\"\"username\"\"\"\":\"\"\"\"admin@admin.admin\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"test123\"\"\"\"}' -v)",
       "Bash(curl -s -X POST \"http://localhost:3001/api/proxy/auth/login?clientId=testClient123&apiId=testApi456\" -H \"Content-Type: application/json\" -H \"Origin: http://localhost:3000\" -d '{\"\"\"\"username\"\"\"\":\"\"\"\"admin@admin.admin\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"bcEdgeApiPass123!@#\"\"\"\"}' -c /tmp/bc_cookies.txt -v)",
       "Bash(curl:*)",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(python3:*)",
+      "Bash(node:*)"
     ]
   }
 }
