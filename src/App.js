@@ -176,7 +176,7 @@ const App = () => {
             path="/profile"
             element={
               <ProtectedRoute>
-                <ProfilePage />
+                <Navigate to="/account" replace />
               </ProtectedRoute>
             }
           />
@@ -244,7 +244,7 @@ const App = () => {
             path="/settings"
             element={
               <ProtectedRoute>
-                <SettingsPage />
+                <Navigate to="/account" replace />
               </ProtectedRoute>
             }
           />

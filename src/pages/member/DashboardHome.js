@@ -21,6 +21,7 @@ const DashboardHome = () => {
     profileViews: null,
     reports: null
   });
+  const [metricsErrors, setMetricsErrors] = useState({ searches: false, alerts: false, profileViews: false, reports: false });
   const [loading, setLoading] = useState(true);
   const [recentReports, setRecentReports] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
@@ -111,6 +112,7 @@ const DashboardHome = () => {
           }
           
           setMetrics(prev => ({ ...prev, reports: 0 }));
+          setMetricsErrors(prev => ({ ...prev, reports: true }));
           setRecentReports([]);
         }
 
@@ -127,6 +129,7 @@ const DashboardHome = () => {
             console.error('Failed to fetch alerts:', err);
           }
           setMetrics(prev => ({ ...prev, alerts: 0 }));
+          setMetricsErrors(prev => ({ ...prev, alerts: true }));
           setRecentAlerts([]);
         }
 
@@ -142,6 +145,7 @@ const DashboardHome = () => {
           }
         } catch (err) {
           setMetrics(prev => ({ ...prev, searches: 0 }));
+          setMetricsErrors(prev => ({ ...prev, searches: true }));
           setRecentSearches([]);
         }
 
@@ -155,6 +159,7 @@ const DashboardHome = () => {
           }
         } catch (err) {
           setMetrics(prev => ({ ...prev, profileViews: 0 }));
+          setMetricsErrors(prev => ({ ...prev, profileViews: true }));
         }
       } catch (err) {
         console.error('Failed to fetch dashboard metrics:', err);
@@ -278,7 +283,7 @@ const DashboardHome = () => {
               <p>Searches This Month</p>
             </div>
             <p className={styles.metricValue}>
-              {metrics.searches !== null ? metrics.searches : '0'}
+              {metricsErrors.searches ? <span style={{ color: '#f59e0b' }}>—</span> : (metrics.searches !== null ? metrics.searches : '—')}
             </p>
           </div>
           <div className={styles.metricCard}>
@@ -286,7 +291,7 @@ const DashboardHome = () => {
               <p>Active Alerts</p>
             </div>
             <p className={styles.metricValue}>
-              {metrics.alerts !== null ? metrics.alerts : '0'}
+              {metricsErrors.alerts ? <span style={{ color: '#f59e0b' }}>—</span> : (metrics.alerts !== null ? metrics.alerts : '—')}
             </p>
           </div>
           <div className={styles.metricCard}>
@@ -294,7 +299,7 @@ const DashboardHome = () => {
               <p>Profile Views</p>
             </div>
             <p className={styles.metricValue}>
-              {metrics.profileViews !== null ? metrics.profileViews : '0'}
+              {metricsErrors.profileViews ? <span style={{ color: '#f59e0b' }}>—</span> : (metrics.profileViews !== null ? metrics.profileViews : '—')}
             </p>
           </div>
           <div className={styles.metricCard}>
@@ -302,9 +307,30 @@ const DashboardHome = () => {
               <p>Reports Generated</p>
             </div>
             <p className={styles.metricValue}>
-              {metrics.reports !== null ? metrics.reports : '0'}
+              {metricsErrors.reports ? <span style={{ color: '#f59e0b' }}>—</span> : (metrics.reports !== null ? metrics.reports : '—')}
             </p>
           </div>
+        </div>
+      )}
+
+      {!loading && Object.values(metricsErrors).some(Boolean) && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem',
+          padding: '0.6rem 1rem',
+          background: '#fffbeb', border: '1px solid #fde68a',
+          borderRadius: '0.5rem', marginBottom: '1.5rem',
+          fontSize: '0.875rem', color: '#92400e'
+        }}>
+          <span>⚠</span>
+          <span>
+            Some activity data could not be loaded.{' '}
+            <button
+              onClick={() => window.location.reload()}
+              style={{ background: 'none', border: 'none', color: '#0d5d2f', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 'inherit' }}
+            >
+              Refresh
+            </button>
+          </span>
         </div>
       )}
 

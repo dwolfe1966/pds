@@ -1272,9 +1272,50 @@ app.post('/api/v1/logout', authenticateToken, (req, res) => {
 
 // ==================== PUBLIC SEARCH ENDPOINTS ====================
 
+// GET /api/v1/search/by-address — search people by city, state, and/or ZIP
+app.get('/api/v1/search/by-address', (req, res) => {
+  const { city, state, zip, page = 1, limit = 20 } = req.query;
+
+  if (!city && !state && !zip) {
+    return res.status(400).json({
+      error: { code: 'VALIDATION_FAILED', message: 'Provide at least one of: city, state, or zip', details: [] }
+    });
+  }
+
+  const cityFilter = city && city.trim() ? city.trim().toLowerCase() : null;
+  const stateFilter = state && state.trim() ? state.trim().toUpperCase() : null;
+  const zipFilter = zip && zip.trim() ? zip.trim() : null;
+
+  let results = dataStore.people.filter(p => {
+    if (!p.addresses || p.addresses.length === 0) return false;
+    return p.addresses.some(a => {
+      const cityMatch = !cityFilter || (a.city || '').toLowerCase().includes(cityFilter);
+      const stateMatch = !stateFilter || a.state === stateFilter;
+      const zipMatch = !zipFilter || a.zip === zipFilter;
+      return cityMatch && stateMatch && zipMatch;
+    });
+  });
+
+  const pageNum = parseInt(page);
+  const limitNum = Math.min(parseInt(limit), 100);
+  const start = (pageNum - 1) * limitNum;
+  const end = start + limitNum;
+  const paginatedResults = results.slice(start, end);
+
+  res.json({
+    data: paginatedResults.map(p => ({
+      id: p.id,
+      fullName: p.fullName,
+      ageRange: p.ageRange,
+      location: p.location
+    })),
+    pagination: { limit: limitNum, page: pageNum, hasMore: end < results.length }
+  });
+});
+
 // GET /api/v1/search
 app.get('/api/v1/search', (req, res) => {
-  let { firstName, lastName, name, state, zip, page = 1, limit = 20 } = req.query;
+  let { firstName, lastName, name, state, city, zip, page = 1, limit = 20 } = req.query;
 
   // Support both formats: firstName/lastName or single "name" parameter
   if (name && !firstName && !lastName) {
@@ -1295,6 +1336,7 @@ app.get('/api/v1/search', (req, res) => {
 
   // Normalize filters - only use if they're non-empty strings
   const stateFilter = state && state.trim() ? state.trim().toUpperCase() : null;
+  const cityFilter = city && city.trim() ? city.trim().toLowerCase() : null;
   const zipFilter = zip && zip.trim() ? zip.trim() : null;
 
   // More flexible search - match if full name contains both first and last name
@@ -1303,18 +1345,17 @@ app.get('/api/v1/search', (req, res) => {
     const searchFirst = firstName.toLowerCase().trim();
     const searchLast = lastName.toLowerCase().trim();
     const searchFull = `${searchFirst} ${searchLast}`.toLowerCase();
-    
+
     // Match if full name contains the complete search string (first + last)
     // This ensures "John Smith" matches "John Smith" but not just "John" or "Smith"
     const nameMatch = fullNameLower.includes(searchFull);
-    
-    // Filter by state if provided (check addresses)
+
+    // Filter by state/city/zip if provided (check addresses)
     const stateMatch = !stateFilter || (p.addresses && p.addresses.some(a => a.state === stateFilter));
-    
-    // Filter by ZIP if provided (for backward compatibility, but state is preferred)
+    const cityMatch = !cityFilter || (p.addresses && p.addresses.some(a => (a.city || '').toLowerCase().includes(cityFilter)));
     const zipMatch = !zipFilter || (p.addresses && p.addresses.some(a => a.zip === zipFilter));
-    
-    return nameMatch && stateMatch && zipMatch;
+
+    return nameMatch && stateMatch && cityMatch && zipMatch;
   });
 
   const pageNum = parseInt(page);
@@ -1539,6 +1580,42 @@ app.get('/api/v1/searches/me', authenticateToken, (req, res) => {
       hasMore: searches.length > limitNum
     }
   });
+});
+
+// GET /api/v1/searches/lookups-of-me
+// Returns searches where the current user was the TARGET (someone searched for them)
+app.get('/api/v1/searches/lookups-of-me', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { limit = 20 } = req.query;
+  const limitNum = Math.min(parseInt(limit), 100);
+
+  const results = dataStore.searches
+    .filter(s => s.targetUserId === userId)
+    .slice(0, limitNum)
+    .map(s => ({
+      id: s.id,
+      timestamp: s.timestamp,
+      searcherLocation: s.searcherLocation || 'Unknown location',
+      searcherMembershipLevel: s.searcherMembershipLevel || 'member',
+      searcherId: 'anonymous'
+    }));
+
+  res.json({ data: results, total: results.length });
+});
+
+// DELETE /api/v1/searches/:id
+app.delete('/api/v1/searches/:id', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const index = dataStore.searches.findIndex(
+    s => s.id === req.params.id && s.userId === userId
+  );
+  if (index === -1) {
+    return res.status(404).json({
+      error: { code: 'NOT_FOUND', message: 'Search record not found', details: [] }
+    });
+  }
+  dataStore.searches.splice(index, 1);
+  res.status(204).send();
 });
 
 // POST /api/v1/profile-views (record profile view)
@@ -1870,6 +1947,18 @@ app.get('/api/v1/notifications', authenticateToken, (req, res) => {
   res.json({
     data: notifications
   });
+});
+
+// GET /api/v1/notifications/preferences
+app.get('/api/v1/notifications/preferences', authenticateToken, (req, res) => {
+  const user = dataStore.users.find(u => u.id === req.user.userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const prefs = user.notificationPreferences || {
+    emailAlerts: true,
+    weeklyDigest: false,
+    marketingEmails: false
+  };
+  res.json({ preferences: prefs });
 });
 
 // POST /api/v1/notifications (save notification preferences)

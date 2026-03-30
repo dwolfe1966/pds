@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 
 const SearchHistoryPage = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,6 +28,25 @@ const SearchHistoryPage = () => {
 
     fetchHistory();
   }, [token]);
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/searches/${id}`, { token });
+      setHistory(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      setError(err?.message || 'Failed to delete search record.');
+    }
+  };
+
+  const handleReRun = (item) => {
+    const params = new URLSearchParams();
+    if (item.query?.firstName) params.set('firstName', item.query.firstName);
+    if (item.query?.lastName) params.set('lastName', item.query.lastName);
+    if (item.query?.state) params.set('state', item.query.state);
+    if (item.query?.email) params.set('email', item.query.email);
+    if (item.query?.phone) params.set('phone', item.query.phone);
+    navigate(`/people-search?${params.toString()}`);
+  };
 
   const formatQuery = (query) => {
     if (!query) return 'Search';
@@ -72,18 +92,39 @@ const SearchHistoryPage = () => {
                 boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                 <div>
                   <p style={{ margin: 0, fontWeight: 600, color: '#111827' }}>
                     {formatQuery(item.query)} {item.query?.state ? `• ${item.query.state}` : ''}
                   </p>
                   <p style={{ margin: '0.35rem 0 0', color: '#6b7280', fontSize: '0.875rem' }}>
                     {item.type || 'name'} search • {item.resultCount || 0} results
+                    {item.timestamp ? ` • ${new Date(item.timestamp).toLocaleDateString()}` : ''}
                   </p>
                 </div>
-                <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                  {item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Recently'}
-                </span>
+                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                  <button
+                    onClick={() => handleReRun(item)}
+                    style={{
+                      padding: '0.35rem 0.75rem', borderRadius: '0.375rem',
+                      background: '#0d5d2f', color: '#fff', border: 'none',
+                      fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500
+                    }}
+                  >
+                    Search Again
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    style={{
+                      padding: '0.35rem 0.75rem', borderRadius: '0.375rem',
+                      background: 'transparent', color: '#6b7280',
+                      border: '1px solid #e5e7eb',
+                      fontSize: '0.8rem', cursor: 'pointer'
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}

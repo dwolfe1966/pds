@@ -37,7 +37,10 @@ function pathToEndpoint(path) {
     'me': 'get-profile',
     'dashboard': 'dashboard',
     'searches/me': 'my-searches',
+    'searches/lookups-of-me': 'lookups-of-me',
     'searches': 'create-search',
+    'search/by-address': 'search-by-address',
+    'notifications/preferences': 'notification-preferences',
     'profile-views': 'profile-views',
     'profile-views/me': 'profile-views-me',
     'alerts': 'alerts',
@@ -89,6 +92,9 @@ function pathToEndpoint(path) {
   }
   if (cleanPath.startsWith('admin/cs-reps/')) {
     return 'admin-update-cs-rep';
+  }
+  if (cleanPath.match(/^searches\/[^/]+$/)) {
+    return 'delete-search';
   }
   if (cleanPath.startsWith('alerts/')) {
     const id = cleanPath.split('/')[1];

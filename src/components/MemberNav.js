@@ -19,6 +19,7 @@ const MemberNav = () => {
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/people-search', label: 'Search' },
     { path: '/alerts', label: 'Alerts' },
+    { path: '/who-is-searching', label: "Who's Searching" },
     { path: '/account', label: 'Account' },
   ];
 
@@ -28,6 +29,9 @@ const MemberNav = () => {
     }
     if (path === '/people-search') {
       return location.pathname.startsWith('/people');
+    }
+    if (path === '/who-is-searching') {
+      return location.pathname === '/who-is-searching';
     }
     return location.pathname.startsWith(path);
   };
@@ -154,27 +158,6 @@ const MemberNav = () => {
                 {link.label}
               </Link>
             ))}
-            <Link
-              to="/profile"
-              className={`${styles.mobileNavLink} ${location.pathname === '/profile' ? styles.mobileNavLinkActive : ''}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Profile
-            </Link>
-            <Link
-              to="/who-is-searching"
-              className={`${styles.mobileNavLink} ${location.pathname === '/who-is-searching' ? styles.mobileNavLinkActive : ''}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Who&#39;s Searching
-            </Link>
-            <Link
-              to="/settings"
-              className={`${styles.mobileNavLink} ${location.pathname === '/settings' ? styles.mobileNavLinkActive : ''}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Settings
-            </Link>
           </div>
 
           <div className={styles.mobileAuthButtons}>

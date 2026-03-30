@@ -14,6 +14,7 @@ const AlertsPage = () => {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const fetchAlerts = async () => {
     if (!token) {
@@ -77,6 +78,36 @@ const AlertsPage = () => {
 
   return (
     <main className={styles.pageWrapper}>
+      {pendingDeleteId && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '0.75rem', padding: '2rem',
+            maxWidth: '400px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <h3 style={{ marginTop: 0, color: '#111827' }}>Delete Alert?</h3>
+            <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
+              This alert will stop monitoring. You can create a new one at any time.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => setPendingDeleteId(null)}
+                style={{ padding: '0.6rem 1.25rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', background: '#fff', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { handleDelete(pendingDeleteId); setPendingDeleteId(null); }}
+                style={{ padding: '0.6rem 1.25rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
+              >
+                Delete Alert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <h1 className={styles.pageTitle}>Search Alerts</h1>
 
       {/* Create alert */}
@@ -134,10 +165,15 @@ const AlertsPage = () => {
                     : alert.criteria || '(no criteria)'}
                 </strong>
                 <span className={frequencyClass(alert.frequency)}>{alert.frequency}</span>
+                <span style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.2rem', display: 'block' }}>
+                  {alert.lastTriggered
+                    ? `Last triggered: ${new Date(alert.lastTriggered).toLocaleDateString()}`
+                    : 'Not yet triggered'}
+                </span>
               </div>
               <button
                 className={styles.deleteBtn}
-                onClick={() => handleDelete(alert.id)}
+                onClick={() => setPendingDeleteId(alert.id)}
                 aria-label={`Delete alert for ${alert.criteria}`}
               >
                 ✕

@@ -22,6 +22,10 @@ const MemberSearchResultsPage = () => {
   const lastNameParam = params.get('lastName');
   const stateParam = params.get('state');
   const emailParam = params.get('email');
+  // Address search params
+  const searchTypeParam = params.get('searchType');
+  const cityParam = params.get('city');
+  const zipParam = params.get('zip') || zip;
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -174,6 +178,19 @@ const MemberSearchResultsPage = () => {
       setLoading(true);
       setError('');
       try {
+        // Address flow: searchType=address (from MemberGeneralSearchPage address tab)
+        if (searchTypeParam === 'address') {
+          const addrParams = {};
+          if (cityParam) addrParams.city = cityParam;
+          if (stateParam) addrParams.state = stateParam;
+          if (zipParam) addrParams.zip = zipParam;
+
+          const response = await api.get('/search/by-address', { params: addrParams, token });
+          setResults(response?.data || []);
+          setLoading(false);
+          return;
+        }
+
         // Email flow: email URL param (from MemberGeneralSearchPage email tab)
         if (emailParam) {
           const searchParams = {
@@ -257,11 +274,13 @@ const MemberSearchResultsPage = () => {
       }
     };
     fetchResults();
-  }, [firstNameParam, lastNameParam, stateParam, emailParam, query, zip]);
+  }, [firstNameParam, lastNameParam, stateParam, emailParam, query, zip, searchTypeParam, cityParam, zipParam]);
 
-  const queryLabel = firstNameParam
-    ? `${firstNameParam} ${lastNameParam}${stateParam ? `, ${stateParam}` : ''}`
-    : emailParam || query || '';
+  const queryLabel = searchTypeParam === 'address'
+    ? [cityParam, stateParam, zipParam].filter(Boolean).join(', ')
+    : firstNameParam
+      ? `${firstNameParam} ${lastNameParam}${stateParam ? `, ${stateParam}` : ''}`
+      : emailParam || query || '';
 
   return (
     <main className={styles.main}>

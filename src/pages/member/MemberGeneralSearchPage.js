@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createReportForPhone } from '../../services/reportService';
 import DevBCSession from '../../components/DevBCSession';
@@ -50,21 +50,61 @@ const SEARCH_TIPS = {
     'Searches public records and social registrations',
     'Works with known public email addresses only',
   ],
+  address: [
+    'Enter city and/or state to find residents in that area',
+    'Adding a ZIP code narrows results significantly',
+    'Combine with name search for more precise results',
+  ],
 };
 
 const MemberGeneralSearchPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('name');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showTips, setShowTips] = useState(false);
 
+  // Name search fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [state, setState] = useState('');
+
+  // Phone search
   const [phone, setPhone] = useState('');
+
+  // Email search
   const [email, setEmail] = useState('');
+
+  // Address search fields
+  const [city, setCity] = useState('');
+  const [addressState, setAddressState] = useState('');
+  const [zip, setZip] = useState('');
+
+  // Pre-populate form fields from URL params (e.g. from Search History "Search Again")
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const fn = params.get('firstName');
+    const ln = params.get('lastName');
+    const st = params.get('state');
+    const em = params.get('email');
+    const ph = params.get('phone');
+
+    if (fn || ln) {
+      setActiveTab('name');
+      if (fn) setFirstName(fn);
+      if (ln) setLastName(ln);
+      if (st) setState(st);
+    } else if (em) {
+      setActiveTab('email');
+      setEmail(em);
+    } else if (ph) {
+      setActiveTab('phone');
+      setPhone(ph.replace(/\D/g, '').slice(0, 10));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formatPhone = (digits) => {
     if (digits.length <= 3) return digits;
@@ -128,16 +168,33 @@ const MemberGeneralSearchPage = () => {
     navigate(`/people-results?email=${encodeURIComponent(email.trim())}`);
   };
 
+  const handleAddressSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    if (!city.trim() && !addressState && !zip.trim()) {
+      setError('Please enter at least a city, state, or ZIP code.');
+      return;
+    }
+    const params = new URLSearchParams();
+    if (city.trim()) params.set('city', city.trim());
+    if (addressState) params.set('state', addressState);
+    if (zip.trim()) params.set('zip', zip.trim());
+    params.set('searchType', 'address');
+    navigate(`/people-results?${params.toString()}`);
+  };
+
   const tabTitle = {
     name: 'Search by Name',
     phone: 'Reverse Phone Lookup',
     email: 'Search by Email Address',
+    address: 'Search by Address / Location',
   }[activeTab];
 
   const tabSubtitle = {
     name: 'Search our database of over 12 billion public records by full name.',
     phone: 'Enter a phone number to find the owner and see their full identity report.',
     email: 'Find information associated with any public email address.',
+    address: 'Find people who live or have lived in a specific city, state, or ZIP code.',
   }[activeTab];
 
   return (
@@ -152,14 +209,14 @@ const MemberGeneralSearchPage = () => {
       <div className={styles.formCard}>
         {/* Tabs */}
         <div className={styles.tabs}>
-          {['name', 'phone', 'email'].map((tab) => (
+          {['name', 'phone', 'email', 'address'].map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => handleTabChange(tab)}
               className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
             >
-              {tab === 'name' ? 'Name Search' : tab === 'phone' ? 'Phone Search' : 'Email Search'}
+              {tab === 'name' ? 'Name' : tab === 'phone' ? 'Phone' : tab === 'email' ? 'Email' : 'Address'}
             </button>
           ))}
         </div>
@@ -274,6 +331,69 @@ const MemberGeneralSearchPage = () => {
               className={styles.submitBtn}
             >
               {loading ? 'Searching…' : 'Search Records'}
+            </button>
+          </form>
+        )}
+
+        {/* Address form */}
+        {activeTab === 'address' && (
+          <form onSubmit={handleAddressSubmit}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label} htmlFor="gs-city">
+                City <span className={styles.labelOptional}>(optional)</span>
+              </label>
+              <input
+                id="gs-city"
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="e.g. Austin"
+                disabled={loading}
+                className={`${styles.input} ${city.trim() ? styles.inputValid : ''}`}
+              />
+            </div>
+            <div className={styles.nameGrid}>
+              <div className={styles.fieldGroup} style={{ marginBottom: 0 }}>
+                <label className={styles.label} htmlFor="gs-addr-state">
+                  State <span className={styles.labelOptional}>(optional)</span>
+                </label>
+                <select
+                  id="gs-addr-state"
+                  value={addressState}
+                  onChange={(e) => setAddressState(e.target.value)}
+                  disabled={loading}
+                  className={styles.select}
+                >
+                  {US_STATES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.fieldGroup} style={{ marginBottom: 0 }}>
+                <label className={styles.label} htmlFor="gs-zip">
+                  ZIP Code <span className={styles.labelOptional}>(optional)</span>
+                </label>
+                <input
+                  id="gs-zip"
+                  type="text"
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                  placeholder="e.g. 78701"
+                  inputMode="numeric"
+                  disabled={loading}
+                  className={`${styles.input} ${zip.length === 5 ? styles.inputValid : ''}`}
+                />
+              </div>
+            </div>
+            <p className={styles.hint} style={{ marginTop: '0.75rem' }}>
+              Enter at least one field. Combine city + state for best results.
+            </p>
+            <button
+              type="submit"
+              disabled={loading || (!city.trim() && !addressState && !zip.trim())}
+              className={styles.submitBtn}
+            >
+              {loading ? 'Searching…' : 'Search by Location'}
             </button>
           </form>
         )}
