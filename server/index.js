@@ -319,14 +319,29 @@ app.all('/api/proxy/*', async (req, res) => {
       });
     }
     
-    // Add stored cookies from API responses
-    storedCookies.forEach(cookie => {
-      // Extract cookie name=value from stored cookie string
-      const match = cookie.match(/^([^=]+)=([^;]+)/);
-      if (match) {
-        allCookies.push(`${match[1]}=${match[2]}`);
-      }
-    });
+    // Add stored cookies from API responses, replacing any browser cookie with the same name.
+    // This prevents duplicate session cookies (e.g. two connect.sid values) when the browser
+    // has cached an old cookie but the server has a fresher one from a more recent BC login.
+    //
+    // EXCEPTION: Do NOT forward stored session cookies on login requests.
+    // Sending an existing session cookie alongside new credentials confuses BC and causes 401.
+    // Login must always create a fresh BC session.
+    const isLoginRequest = proxyPath === '/auth/login';
+    if (!isLoginRequest) {
+      storedCookies.forEach(cookie => {
+        // Extract cookie name=value from stored cookie string
+        const match = cookie.match(/^([^=]+)=([^;]+)/);
+        if (match) {
+          const cookieName = match[1].trim();
+          // Remove any existing entry with the same name before adding the stored (authoritative) one
+          const existingIdx = allCookies.findIndex(c => c.split('=')[0].trim() === cookieName);
+          if (existingIdx !== -1) {
+            allCookies.splice(existingIdx, 1);
+          }
+          allCookies.push(`${match[1]}=${match[2]}`);
+        }
+      });
+    }
     
     if (allCookies.length > 0) {
       headers['Cookie'] = allCookies.join('; ');
@@ -803,6 +818,13 @@ app.all('/api/proxy/*', async (req, res) => {
       console.error('  - API expects request from specific domain');
       console.error('  - Missing X-Captcha-Pass header or incorrect value');
       console.error('='.repeat(80));
+    } else if (proxyPath === '/auth/login') {
+      // Always dump the full login response so we can see exactly what BC returns
+      console.log('[Proxy] ===== BC LOGIN RESPONSE DUMP =====');
+      console.log('[Proxy] Status:', response.status);
+      console.log('[Proxy] Response headers (set-cookie):', response.headers['set-cookie']);
+      console.log('[Proxy] Response body (full):', JSON.stringify(response.data, null, 2));
+      console.log('[Proxy] ===== END LOGIN RESPONSE =====');
     } else if (response.status >= 400) {
       const isReportCreate = req.path.includes('/idLookup/report/create');
       const isReportDetail = req.path.includes('/idLookup/report/detail');
@@ -864,9 +886,11 @@ app.all('/api/proxy/*', async (req, res) => {
       // Get stable session key (based on origin, not clientId/apiId which change)
       const sessionKey = getSessionKey(req);
       
-      // Store cookies server-side for this session
-      // Merge with existing cookies (don't overwrite, in case there are multiple)
-      const existingCookies = apiCookies.get(sessionKey) || [];
+      // Store cookies server-side for this session.
+      // For login, always start fresh — clear any stale session cookies so subsequent
+      // requests only carry the newly authenticated session, not old ones.
+      const isLoginPath = proxyPath === '/auth/login';
+      const existingCookies = isLoginPath ? [] : (apiCookies.get(sessionKey) || []);
       const allCookies = [...existingCookies];
       
       // Add new cookies, avoiding duplicates

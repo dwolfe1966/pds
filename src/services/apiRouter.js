@@ -380,6 +380,42 @@ async function callNewAPI(endpoint, params) {
 
       // 1. Login via ByteCrtrs — establishes session cookie needed for report endpoints.
       const raw = await apiWrapper.login(bcBody);
+
+      // ── FULL RAW RESPONSE DUMP (dev only) ────────────────────────────────────
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[BC Login] ===== RAW IIFE RESPONSE =====');
+        console.log('[BC Login] typeof raw:', typeof raw);
+        console.log('[BC Login] raw keys:', raw ? Object.keys(raw) : 'null/undefined');
+        try { console.log('[BC Login] JSON.stringify(raw):', JSON.stringify(raw)?.substring(0, 2000)); } catch(e) { console.log('[BC Login] raw not serialisable:', e.message); }
+        if (raw?.params) {
+          console.log('[BC Login] raw.params keys:', Object.keys(raw.params));
+          console.log('[BC Login] raw.params.response?.status:', raw.params.response?.status);
+          try { console.log('[BC Login] raw.params.response?.data:', JSON.stringify(raw.params.response?.data)?.substring(0, 2000)); } catch(e) {}
+          try { console.log('[BC Login] raw.params.error:', JSON.stringify(raw.params.error)?.substring(0, 500)); } catch(e) {}
+        }
+        if (typeof raw?.getData === 'function') {
+          try { console.log('[BC Login] raw.getData():', JSON.stringify(raw.getData())?.substring(0, 2000)); } catch(e) {}
+        }
+        if (typeof raw?.getError === 'function') {
+          try { console.log('[BC Login] raw.getError():', JSON.stringify(raw.getError())?.substring(0, 500)); } catch(e) {}
+        }
+        console.log('[BC Login] ===== END RAW RESPONSE =====');
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
+      // The IIFE swallows HTTP errors and returns them as wrapped objects instead of throwing.
+      // Detect this before trying to extract user data — otherwise a 401 silently falls through
+      // to createBcSessionToken and the app "logs in" with no real BC session.
+      const iifLoginErr = raw?.params?.error ?? raw?.getError?.();
+      if (iifLoginErr) {
+        const errData = iifLoginErr?.response?.data;
+        const errStatus = iifLoginErr?.response?.status ?? iifLoginErr?.status;
+        const errMsg = errData?.message || errData?.error || iifLoginErr?.message || 'Login failed';
+        const err = new Error(errMsg);
+        err.status = errStatus;
+        throw err;
+      }
+
       const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
 
       if (process.env.NODE_ENV === 'development') {
@@ -399,24 +435,22 @@ async function callNewAPI(endpoint, params) {
         console.log('[BC Login] rawUser:', JSON.stringify(rawUser));
       }
       const rolesArray = Array.isArray(rawUser.roles) ? rawUser.roles : [];
-      let isAdmin =
+      const loginEmail = (loginBody.email || loginBody.username || '').toLowerCase().trim();
+
+      // Check admin allowlist from env — covers cases where BC doesn't return role in login response.
+      const adminEmails = (process.env.REACT_APP_ADMIN_EMAILS || '')
+        .split(',')
+        .map(e => e.toLowerCase().trim())
+        .filter(Boolean);
+      const isInAllowlist = adminEmails.includes(loginEmail);
+
+      const isAdmin =
+        isInAllowlist ||
         rawUser.role === 'csr' || rawUser.role === 'admin' ||
         rolesArray.includes('csr') || rolesArray.includes('admin');
 
-      // 2. If BC didn't return role info, probe a CSR-only endpoint.
-      //    Only admin/csr users can call /database/search — a 200 means admin, 403 means member.
-      if (!isAdmin) {
-        try {
-          await apiWrapper.csrFindUsers({ page: 1, perPage: 1 });
-          isAdmin = true;
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[BC Login] CSR probe succeeded — user is admin');
-          }
-        } catch (probeErr) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('[BC Login] CSR probe 403 — user is member:', probeErr?.message);
-          }
-        }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[BC Login] isAdmin:', isAdmin, '(allowlist:', isInAllowlist, ', roles:', rolesArray, ')');
       }
 
       const bcUser = {
@@ -630,8 +664,8 @@ async function callNewAPI(endpoint, params) {
     // csrWrapper.api.user.find → POST /database/search
     case 'admin-users': {
       const raw = await apiWrapper.csrFindUsers(params.queryParams || {});
-      const items = raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      return { data: items, total: raw?.total ?? items.length };
+      const items = raw?.docs ?? raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
     }
 
     // csrWrapper.api.user.getUserDetail → POST /user/management/detail
@@ -668,15 +702,15 @@ async function callNewAPI(endpoint, params) {
     // csrWrapper.api.optOut.find → POST /database/search
     case 'admin-data-removal': {
       const raw = await apiWrapper.csrFindOptOuts(params.queryParams || {});
-      const items = raw?.raws ?? raw?.optOuts ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      return { data: items, total: raw?.total ?? items.length };
+      const items = raw?.docs ?? raw?.raws ?? raw?.optOuts ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
     }
 
     // csrWrapper.api.user.findAdmin → POST /database/search (admin/csr role filter)
     case 'admin-cs-reps': {
       const raw = await apiWrapper.csrFindCsReps(params.queryParams || {});
-      const items = raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      return { data: items, total: raw?.total ?? items.length };
+      const items = raw?.docs ?? raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
     }
 
     // csrWrapper.api.user.create → POST /user/management/create

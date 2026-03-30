@@ -604,12 +604,12 @@ class ApiWrapperService {
 
   // csrWrapper.api.user.find — POST /database/search
   async csrFindUsers(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', ...params });
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', ...params });
   }
 
   // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)
   async csrFindCsReps(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', roles: ['admin', 'csr'], ...params });
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', roles: ['admin', 'csr'], ...params });
   }
 
   // csrWrapper.api.user.getUserDetail — POST /user/management/detail
@@ -654,7 +654,7 @@ class ApiWrapperService {
 
   // csrWrapper.api.optOut.find — POST /database/search
   async csrFindOptOuts(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', ...params });
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });
   }
 
   /** Generate a random 32-char alphanumeric string matching the IIFE's format. */
