@@ -1,81 +1,349 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
+import styles from './PurchasesPage.module.css';
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+function formatDate(value) {
+  if (!value) return '—';
+  try {
+    return new Date(value).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return '—';
+  }
+}
 
 /**
- * Admin purchases page via BC CSR API.
- * BC's findOrders requires a userId. If ?userId= is in the URL we fetch that
- * user's orders; otherwise we show a prompt to search via the Users page.
+ * Resolve amount from a BC order object.
+ * Checks transient.amount.collected → amount → total in order.
  */
+function resolveAmount(order) {
+  const collected = order?.transient?.amount?.collected;
+  if (collected != null) return collected;
+  const amt = order?.amount;
+  if (amt != null) return typeof amt === 'object' ? amt.collected ?? null : amt;
+  const total = order?.total;
+  if (total != null) return total;
+  return null;
+}
+
+function formatAmount(order) {
+  const val = resolveAmount(order);
+  if (val == null) return '—';
+  return `$${Number(val).toFixed(2)}`;
+}
+
+function resolveOrderType(order) {
+  // Try top-level type, else dig into first commerce payment
+  return order?.type || order?.commercePaymentType || order?.commercePayments?.[0]?.type || '—';
+}
+
+function resolveStatus(order) {
+  if (order?.transient?.canceled) return 'canceled';
+  return (order?.status || '').toLowerCase() || 'unknown';
+}
+
+// ─── StatusBadge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ order }) {
+  const s = resolveStatus(order);
+  let cls = styles.badgeDefault;
+  let label = s.charAt(0).toUpperCase() + s.slice(1);
+
+  if (s === 'active') cls = styles.badgeActive;
+  else if (s === 'canceled' || s === 'cancelled') { cls = styles.badgeCanceled; label = 'Canceled'; }
+  else if (s === 'failed') { cls = styles.badgeFailed; label = 'Failed'; }
+  else if (s === 'pending') { cls = styles.badgePending; label = 'Pending'; }
+
+  return <span className={`${styles.badge} ${cls}`}>{label}</span>;
+}
+
+// ─── SkeletonRows ─────────────────────────────────────────────────────────────
+
+function SkeletonRows({ count = 5 }) {
+  const widths = ['60%', '40%', '50%', '35%', '55%'];
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <tr key={i} aria-hidden="true">
+          {[widths[i % widths.length], '35%', '45%', '30%', '45%', '50px'].map((w, j) => (
+            <td key={j} className={styles.skeletonCell}>
+              <div className={styles.skeletonLine} style={{ height: 14, width: w }} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 const PurchasesPage = () => {
   const [searchParams] = useSearchParams();
-  const userId = searchParams.get('userId');
+  const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
+  const { token } = useAuth();
 
-  const [purchases, setPurchases] = useState([]);
+  // URL-provided userId (Mode A)
+  const urlUserId = searchParams.get('userId');
+
+  // Mode B: search state
+  const [searchInput, setSearchInput] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
+  // Resolved userId (from URL or search)
+  const [resolvedUserId, setResolvedUserId] = useState(urlUserId || null);
+
+  // Orders data
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState('');
+
+  // Filters (client-side)
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  // Keep resolvedUserId in sync if URL param changes
+  useEffect(() => {
+    setResolvedUserId(urlUserId || null);
+  }, [urlUserId]);
+
+  // Fetch orders whenever resolvedUserId changes
+  const fetchOrders = useCallback(async (uid) => {
+    if (!uid) return;
+    setLoading(true);
+    setFetchError('');
+    setOrders([]);
+    try {
+      const res = await api.adminListPurchases({ userId: uid });
+      // BC may return { docs: [...] }, { orders: [...] }, or a plain array
+      const list = res?.docs || res?.orders || res?.data || (Array.isArray(res) ? res : []);
+      setOrders(list);
+    } catch (err) {
+      setFetchError(err.message || 'Failed to load orders.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!userId) return;
-    const fetchPurchases = async () => {
-      setLoading(true);
-      try {
-        const res = await api.adminListPurchases({ userId });
-        setPurchases(res?.data || res?.orders || (Array.isArray(res) ? res : []));
-      } catch (err) {
-        setError(err.message || 'Failed to load orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPurchases();
-  }, [userId]);
+    if (resolvedUserId) {
+      fetchOrders(resolvedUserId);
+    }
+  }, [resolvedUserId, fetchOrders]);
 
-  if (!userId) {
-    return (
-      <main style={{ padding: '2rem' }}>
-        <h1>Purchases</h1>
-        <p style={{ color: '#6b7280' }}>
-          The BC API requires a user ID to fetch orders. Find a user on the{' '}
-          <Link to="/admin/users">Users page</Link> and their orders will appear here.
-        </p>
-      </main>
-    );
-  }
+  // Mode B: handle search submit
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const input = searchInput.trim();
+    if (!input) return;
+
+    setSearchError('');
+    setSearching(true);
+
+    try {
+      let uid = input;
+
+      // If it looks like an email, resolve to a userId first
+      if (input.includes('@')) {
+        const res = await api.adminListUsers({ email: input });
+        const userList = res?.docs || res?.users || res?.data || (Array.isArray(res) ? res : []);
+        if (!userList.length) {
+          setSearchError(`No user found for email: ${input}`);
+          setSearching(false);
+          return;
+        }
+        uid = userList[0]._id || userList[0].id;
+      }
+
+      setResolvedUserId(uid);
+    } catch (err) {
+      setSearchError(err.message || 'Search failed.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Client-side filtered orders
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      const status = resolveStatus(o);
+      const type = (resolveOrderType(o) || '').toLowerCase();
+
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'canceled' && status !== 'canceled' && status !== 'cancelled') return false;
+        if (statusFilter !== 'canceled' && status !== statusFilter) return false;
+      }
+      if (typeFilter !== 'all' && type !== typeFilter) return false;
+      return true;
+    });
+  }, [orders, statusFilter, typeFilter]);
+
+  // ── Subtitle for Mode A
+  const subtitle = resolvedUserId && urlUserId
+    ? <>Orders for user <code style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}>{resolvedUserId}</code></>
+    : resolvedUserId
+    ? <>Orders for user <code style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}>{resolvedUserId}</code></>
+    : 'Search by email or user ID to view orders';
+
+  const showTable = resolvedUserId && (loading || fetchError || orders.length > 0);
+  const showEmpty = resolvedUserId && !loading && !fetchError && orders.length === 0;
+  const showFilteredEmpty = resolvedUserId && !loading && !fetchError && orders.length > 0 && filteredOrders.length === 0;
 
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Orders for user <code style={{ fontSize: '0.875rem' }}>{userId}</code></h1>
-      {loading && <p>Loading…</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {!loading && !error && purchases.length === 0 && <p>No orders found.</p>}
-      {purchases.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Order ID</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Status</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Collected</th>
-              <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchases.map((p) => {
-              const pid = p._id || p.id;
-              const collected = p.transient?.amount?.collected;
-              return (
-                <tr key={pid} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '0.5rem' }}>
-                    <Link to={`/admin/purchases/${pid}?userId=${userId}`}>{pid}</Link>
+    <main className={styles.page}>
+      {/* ── Header */}
+      <div className={styles.pageHeader}>
+        <div className={styles.titleBlock}>
+          <h1 className={styles.title}>Order Management</h1>
+          <p className={styles.subtitle}>{subtitle}</p>
+          {urlUserId && (
+            <Link to={`/admin/users/${urlUserId}`} className={styles.backLink}>
+              &larr; Back to user
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* ── Mode B: search form (hidden when userId is in URL) */}
+      {!urlUserId && (
+        <form className={styles.searchForm} onSubmit={handleSearch}>
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Search by email or user ID"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            disabled={searching}
+            aria-label="Email or user ID"
+          />
+          <button
+            type="submit"
+            className={styles.searchBtn}
+            disabled={searching || !searchInput.trim()}
+          >
+            {searching ? 'Searching…' : 'Search'}
+          </button>
+        </form>
+      )}
+
+      {/* ── Search error */}
+      {searchError && <div className={styles.errorBanner}>{searchError}</div>}
+
+      {/* ── Prompt when no search yet (Mode B) */}
+      {!urlUserId && !resolvedUserId && !searchError && (
+        <div className={styles.promptBox}>
+          <p>Enter a member email or user ID above to load their orders.</p>
+        </div>
+      )}
+
+      {/* ── Fetch error */}
+      {fetchError && <div className={styles.errorBanner}>{fetchError}</div>}
+
+      {/* ── Filter bar — shown once orders are loaded */}
+      {(showTable || showEmpty) && (
+        <div className={styles.filterBar}>
+          <span className={styles.filterLabel}>Filter:</span>
+          <select
+            className={styles.filterSelect}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Filter by status"
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="canceled">Canceled</option>
+            <option value="failed">Failed</option>
+            <option value="pending">Pending</option>
+          </select>
+          <select
+            className={styles.filterSelect}
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            aria-label="Filter by type"
+          >
+            <option value="all">All Types</option>
+            <option value="sale">Sale</option>
+            <option value="validate">Validate</option>
+            <option value="refund">Refund</option>
+          </select>
+        </div>
+      )}
+
+      {/* ── Orders table */}
+      {showTable && (
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th className={styles.amountCol}>Amount</th>
+                <th>Status</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <SkeletonRows count={5} />
+              ) : showFilteredEmpty ? (
+                <tr>
+                  <td colSpan={6}>
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#x26B2;</div>
+                      <p className={styles.emptyTitle}>No matching orders</p>
+                      <p className={styles.emptyText}>Try adjusting the filters above.</p>
+                    </div>
                   </td>
-                  <td style={{ padding: '0.5rem' }}>{p.status}{p.transient?.canceled ? ' (canceled)' : ''}</td>
-                  <td style={{ padding: '0.5rem' }}>{collected != null ? `$${collected.toFixed(2)}` : '—'}</td>
-                  <td style={{ padding: '0.5rem' }}>{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ) : (
+                filteredOrders.map((order) => {
+                  const pid = order._id || order.id;
+                  const truncId = pid
+                    ? pid.length > 12 ? pid.slice(0, 12) + '\u2026' : pid
+                    : '—';
+                  return (
+                    <tr key={pid}>
+                      <td>
+                        <span className={styles.orderId} title={pid}>{truncId}</span>
+                      </td>
+                      <td className={styles.amountCell}>{formatAmount(order)}</td>
+                      <td><StatusBadge order={order} /></td>
+                      <td>{resolveOrderType(order)}</td>
+                      <td>{formatDate(order.createdAt)}</td>
+                      <td>
+                        <Link
+                          to={`/admin/purchases/${pid}?userId=${resolvedUserId}`}
+                          className={styles.viewBtn}
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ── Empty state: user found but zero orders */}
+      {showEmpty && (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>&#x1F4C4;</div>
+          <p className={styles.emptyTitle}>No orders found for this user</p>
+          <p className={styles.emptyText}>This account has no order history.</p>
+        </div>
       )}
     </main>
   );

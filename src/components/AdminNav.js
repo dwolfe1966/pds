@@ -1,33 +1,73 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import styles from './AdminNav.module.css';
 const logoSrc = new URL('../assets/idlookup_icon_transparent.png', import.meta.url).href;
 
-/**
- * Navigation bar for administrator pages.
- * Provides quick links to admin features and logout.
- */
+const navLinks = [
+  { path: '/admin/users',        label: 'Customers' },
+  { path: '/admin/purchases',    label: 'Orders' },
+  { path: '/admin/data-removal', label: 'Opt-Outs' },
+  { path: '/admin/email-search', label: 'Email Search' },
+  { path: '/admin/cs-reps',      label: 'CS Reps' },
+  { path: '/admin/email',        label: 'Broadcast' },
+  { path: '/admin/analytics',    label: 'Analytics' },
+];
+
 const AdminNav = () => {
   const { logout } = useAuth();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const isActive = (path) => location.pathname.startsWith(path);
+
   return (
-    <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div>
-        <Link to="/admin/users" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
-          <img src={logoSrc} alt="IDLookup.AI" style={{ height: '28px', verticalAlign: 'middle', marginRight: '0.5rem' }} />Admin
-        </Link>
+    <nav className={styles.nav}>
+      <Link to="/admin/users" className={styles.logo}>
+        <img src={logoSrc} alt="IDLookup.AI" className={styles.logoImg} />
+        <span>Admin</span>
+      </Link>
+
+      {/* Desktop links */}
+      <div className={styles.links}>
+        {navLinks.map((l) => (
+          <Link
+            key={l.path}
+            to={l.path}
+            className={`${styles.link} ${isActive(l.path) ? styles.linkActive : ''}`}
+          >
+            {l.label}
+          </Link>
+        ))}
       </div>
-      <div style={{ display: 'flex', gap: '1rem' }}>
-        <Link to="/admin/users" style={{ color: '#fff' }}>Users</Link>
-        <Link to="/admin/sessions" style={{ color: '#fff' }}>Sessions</Link>
-        <Link to="/admin/purchases" style={{ color: '#fff' }}>Purchases</Link>
-        <Link to="/admin/data-removal" style={{ color: '#fff' }}>Data Removal</Link>
-        <Link to="/admin/analytics" style={{ color: '#fff' }}>Analytics</Link>
-        <Link to="/admin/cs-reps" style={{ color: '#fff' }}>CS Reps</Link>
-        <Link to="/admin/email" style={{ color: '#fff' }}>Email</Link>
-        <button onClick={logout} style={{ background: 'transparent', border: '1px solid #fff', color: '#fff', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
-          Logout
-        </button>
-      </div>
+
+      <button onClick={logout} className={styles.logoutBtn}>Sign out</button>
+
+      {/* Mobile hamburger */}
+      <button
+        className={styles.hamburger}
+        onClick={() => setMenuOpen(!menuOpen)}
+        aria-label="Toggle menu"
+      >
+        <span /><span /><span />
+      </button>
+
+      {/* Mobile dropdown */}
+      {menuOpen && (
+        <div className={styles.mobileMenu}>
+          {navLinks.map((l) => (
+            <Link
+              key={l.path}
+              to={l.path}
+              className={`${styles.mobileLink} ${isActive(l.path) ? styles.mobileLinkActive : ''}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              {l.label}
+            </Link>
+          ))}
+          <button onClick={logout} className={styles.mobileLogout}>Sign out</button>
+        </div>
+      )}
     </nav>
   );
 };
