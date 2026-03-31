@@ -76,6 +76,12 @@ export const API_ENDPOINTS = {
   'admin-cancel-order': { newApi: true, mockApi: false },
   'admin-email-log': { newApi: false, mockApi: true },
   'admin-email-broadcast': { newApi: false, mockApi: true },
+  // Unsubscribe — no BC endpoint yet, handled in callNewAPI with isMockUnavailable
+  'admin-unsubscribe': { newApi: true, mockApi: false },
+  'admin-unsubscribe-delete': { newApi: true, mockApi: false },
+  // Phone opt-outs — no BC endpoint yet, handled in callNewAPI with isMockUnavailable
+  'admin-phone-optout': { newApi: true, mockApi: false },
+  'admin-phone-optout-delete': { newApi: true, mockApi: false },
 };
 
 /**

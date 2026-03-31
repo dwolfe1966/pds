@@ -1,0 +1,233 @@
+/* ── Layout ──────────────────────────────────────────────── */
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.filterBar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 220px;
+  padding: 9px 13px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
+}
+
+.refreshBtn {
+  padding: 9px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #555;
+  white-space: nowrap;
+}
+
+.refreshBtn:hover:not(:disabled) { background: #f5f5f5; }
+.refreshBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Grid ────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+/* ── Mail Card ───────────────────────────────────────────── */
+.mailCard {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.mailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.mailId {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mailRow {
+  font-size: 0.88rem;
+  color: #444;
+  margin: 0;
+}
+
+.mailActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.unsubBtn {
+  padding: 6px 13px;
+  border: 1px solid #e65100;
+  border-radius: 6px;
+  background: #fff;
+  color: #e65100;
+  font-size: 0.83rem;
+  cursor: pointer;
+}
+
+.unsubBtn:hover:not(:disabled) { background: #fff3e0; }
+.unsubBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.confirmText { font-size: 0.83rem; color: #555; }
+
+.confirmYes {
+  padding: 5px 11px;
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.confirmYes:hover:not(:disabled) { background: #b71c1c; }
+.confirmYes:disabled { opacity: 0.5; }
+
+.confirmNo {
+  padding: 5px 11px;
+  background: #eee;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.confirmNo:hover { background: #ddd; }
+
+/* ── Status badges ───────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeActive { background: #e8f5e9; color: #2e7d32; }
+.badgeUnsub { background: #ffebee; color: #d32f2f; }
+.badgeDefault { background: #f5f5f5; color: #666; }
+
+/* ── Skeleton ────────────────────────────────────────────── */
+.skeletonCard {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeletonLine {
+  background: linear-gradient(90deg, #ebebeb 25%, #f5f5f5 50%, #ebebeb 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeletonTitle { height: 16px; width: 55%; }
+.skeletonShort { height: 13px; width: 75%; }
+.skeletonBtn { height: 28px; width: 40%; margin-top: 4px; border-radius: 6px; }
+
+/* ── Empty / Error ───────────────────────────────────────── */
+.emptyState {
+  text-align: center;
+  padding: 56px 16px;
+  color: #888;
+}
+
+.emptyIcon { font-size: 2.2rem; margin: 0 0 8px; }
+.emptyTitle { font-size: 1.05rem; font-weight: 600; color: #555; margin: 0 0 6px; }
+.emptySubtitle { font-size: 0.88rem; color: #999; margin: 0; }
+
+.errorBox {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-size: 0.9rem;
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #2e7d32;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

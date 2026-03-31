@@ -75,6 +75,11 @@ import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 import EmailBroadcastPage from './pages/admin/EmailBroadcastPage';
 import EmailSearchPage from './pages/admin/EmailSearchPage';
+import PhoneOptOutPage from './pages/admin/PhoneOptOutPage';
+import UnsubscribePage from './pages/admin/UnsubscribePage';
+import NotesPage from './pages/admin/NotesPage';
+import EmailTicketsPage from './pages/admin/EmailTicketsPage';
+import MailActivityPage from './pages/admin/MailActivityPage';
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
 import PaidRoute from './pages/PaidRoute';
@@ -308,6 +313,14 @@ const App = () => {
             }
           />
           <Route
+            path="/admin/unsubscribe"
+            element={
+              <ProtectedRoute role="admin">
+                <UnsubscribePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/analytics"
             element={
               <ProtectedRoute role="admin">
@@ -337,6 +350,39 @@ const App = () => {
             element={
               <ProtectedRoute role="admin">
                 <EmailSearchPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/phone-optout"
+            element={
+              <ProtectedRoute role="admin">
+                <PhoneOptOutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/notes"
+            element={
+              <ProtectedRoute role="admin">
+                <NotesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/tickets"
+            element={
+              <ProtectedRoute role="admin">
+                <EmailTicketsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/mail-log"
+            element={
+              <ProtectedRoute role="admin">
+                <MailActivityPage />
               </ProtectedRoute>
             }
           />

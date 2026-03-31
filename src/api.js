@@ -59,6 +59,8 @@ function pathToEndpoint(path) {
     'admin/cs-reps': 'admin-cs-reps',
     'admin/email-log': 'admin-email-log',
     'admin/email-broadcast': 'admin-email-broadcast',
+    'admin/unsubscribe': 'admin-unsubscribe',
+    'admin/phone-optout': 'admin-phone-optout',
   };
 
   // Check for exact match first
@@ -95,6 +97,12 @@ function pathToEndpoint(path) {
   }
   if (cleanPath.startsWith('admin/cs-reps/')) {
     return 'admin-update-cs-rep';
+  }
+  if (cleanPath.startsWith('admin/unsubscribe/')) {
+    return 'admin-unsubscribe-delete';
+  }
+  if (cleanPath.startsWith('admin/phone-optout/')) {
+    return 'admin-phone-optout-delete';
   }
   if (cleanPath.match(/^searches\/[^/]+$/)) {
     return 'delete-search';
@@ -549,6 +557,14 @@ const api = {
 
   adminListDataRemoval: async (params = {}) => {
     return await routeApiRequest('admin-data-removal', { queryParams: params });
+  },
+
+  adminListUnsubscribed: async (params = {}) => {
+    return await routeApiRequest('admin-unsubscribe', { queryParams: params });
+  },
+
+  adminRemoveUnsubscribed: async (id) => {
+    return await routeApiRequest('admin-unsubscribe-delete', { id });
   },
 
   adminListCsReps: async (params = {}) => {

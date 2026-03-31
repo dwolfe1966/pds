@@ -1,0 +1,434 @@
+/* ── Page shell ──────────────────────────────────────────────────── */
+.page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Page header ─────────────────────────────────────────────────── */
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ── Stats bar ───────────────────────────────────────────────────── */
+.statsBar {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.statCard {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.statNumber {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0d5d2f;
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+
+.statNumberActive {
+  color: #15803d;
+}
+
+.statNumberInactive {
+  color: #6b7280;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* ── Error banner ────────────────────────────────────────────────── */
+.errorBanner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Filter row ──────────────────────────────────────────────────── */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 280px;
+  padding: 8px 12px 8px 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #111827;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.searchInput::placeholder {
+  color: #9ca3af;
+}
+
+.searchInput:focus {
+  border-color: #0d5d2f;
+  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.12);
+}
+
+.filterSelect {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.filterSelect:focus {
+  border-color: #0d5d2f;
+  box-shadow: 0 0 0 3px rgba(13, 93, 47, 0.12);
+}
+
+/* ── Card list ───────────────────────────────────────────────────── */
+.cardList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.phoneCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  border-left-width: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.15s;
+}
+
+.phoneCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+}
+
+.phoneCardActive {
+  border-left-color: #16a34a;
+}
+
+.phoneCardInactive {
+  border-left-color: #d1d5db;
+}
+
+/* ── Card sections ───────────────────────────────────────────────── */
+.cardLeft {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.phoneNumber {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.dateAdded {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+}
+
+.cardCenter {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cardRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ── Status badges ───────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeActive {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badgeInactive {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+/* ── Remove button ───────────────────────────────────────────────── */
+.removeBtn {
+  padding: 0.25rem 0.75rem;
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #dc2626;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.removeBtn:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.removeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.inlineError {
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* ── No results ──────────────────────────────────────────────────── */
+.noResults {
+  padding: 2rem;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+/* ── Pagination bar ──────────────────────────────────────────────── */
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.countLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.loadMoreBtn {
+  padding: 9px 24px;
+  background: #fff;
+  color: #0d5d2f;
+  border: 1.5px solid #0d5d2f;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.loadMoreBtn:hover:not(:disabled) {
+  background: #f0fdf4;
+}
+
+.loadMoreBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.allLoadedLabel {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.emptyIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 0.375rem;
+}
+
+.emptyText {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ── Loading skeleton ────────────────────────────────────────────── */
+.loadingWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.skeletonCard {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #e5e7eb;
+  border-radius: 10px;
+  align-items: center;
+}
+
+.skeletonCell {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e9eaec 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  flex-shrink: 0;
+}
+
+.skeletonLong  { width: 180px; }
+.skeletonMed   { width: 120px; }
+.skeletonShort { width: 70px; }
+.skeletonXShort { width: 70px; }
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive tweaks ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .statsBar {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1rem;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+
+  .filterSelect {
+    width: 100%;
+  }
+
+  .phoneCard {
+    flex-wrap: wrap;
+  }
+
+  .cardRight {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

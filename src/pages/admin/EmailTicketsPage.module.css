@@ -1,0 +1,327 @@
+/* ── Layout ──────────────────────────────────────────────── */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.pageHeader {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+/* ── Filter bar ──────────────────────────────────────────── */
+.filterBar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 13px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
+}
+
+.select {
+  padding: 9px 13px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* ── Two-panel wrapper ───────────────────────────────────── */
+.wrapper {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 520px;
+}
+
+@media (max-width: 720px) {
+  .wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Ticket list panel ───────────────────────────────────── */
+.ticketList {
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+.ticketItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid #efefef;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ticketItem:hover { background: #f0f4f0; }
+.ticketItemActive { background: #e8f5e9 !important; border-left: 3px solid #2e7d32; }
+
+.ticketItemTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.ticketId {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ticketSubject {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticketMeta {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.emptyList {
+  padding: 32px 16px;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+/* ── Ticket detail panel ─────────────────────────────────── */
+.ticketDetail {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #fff;
+}
+
+.emptyDetail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #aaa;
+  font-size: 0.95rem;
+  padding: 40px;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.detailSubject {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 4px;
+}
+
+.detailMeta {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+.statusControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.closeTicketBtn {
+  padding: 6px 13px;
+  border: 1px solid #d32f2f;
+  border-radius: 6px;
+  background: #fff;
+  color: #d32f2f;
+  font-size: 0.83rem;
+  cursor: pointer;
+}
+
+.closeTicketBtn:hover { background: #ffebee; }
+
+.reopenBtn {
+  padding: 6px 13px;
+  border: 1px solid #2e7d32;
+  border-radius: 6px;
+  background: #fff;
+  color: #2e7d32;
+  font-size: 0.83rem;
+  cursor: pointer;
+}
+
+.reopenBtn:hover { background: #e8f5e9; }
+
+/* ── Thread ──────────────────────────────────────────────── */
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.message {
+  padding: 12px 16px;
+  border-radius: 10px;
+  max-width: 85%;
+}
+
+.messageCustomer {
+  background: #f5f5f5;
+  align-self: flex-start;
+}
+
+.messageAgent {
+  background: #e8f5e9;
+  align-self: flex-end;
+}
+
+.msgFrom {
+  font-size: 0.78rem;
+  color: #888;
+  margin-bottom: 5px;
+}
+
+.msgBody {
+  font-size: 0.9rem;
+  color: #222;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ── Reply form ──────────────────────────────────────────── */
+.replyForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+}
+
+.replyTextarea {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.replyTextarea:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
+}
+
+.replyActions { display: flex; justify-content: flex-end; }
+
+.replyBtn {
+  padding: 9px 20px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.replyBtn:hover:not(:disabled) { background: #1b5e20; }
+.replyBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.closedMsg {
+  font-size: 0.87rem;
+  color: #999;
+  text-align: center;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+/* ── Status badges ───────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeOpen { background: #e8f5e9; color: #2e7d32; }
+.badgePending { background: #fff3e0; color: #e65100; }
+.badgeClosed { background: #f5f5f5; color: #777; }
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #2e7d32;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

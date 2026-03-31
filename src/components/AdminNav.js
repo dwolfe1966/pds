@@ -8,6 +8,8 @@ const navLinks = [
   { path: '/admin/users',        label: 'Customers' },
   { path: '/admin/purchases',    label: 'Orders' },
   { path: '/admin/data-removal', label: 'Opt-Outs' },
+  { path: '/admin/phone-optout',  label: 'Phone Opt-Outs' },
+  { path: '/admin/unsubscribe',   label: 'Unsubscribed' },
   { path: '/admin/email-search', label: 'Email Search' },
   { path: '/admin/cs-reps',      label: 'CS Reps' },
   { path: '/admin/email',        label: 'Broadcast' },

@@ -259,6 +259,8 @@ export async function routeApiRequest(endpoint, params = {}) {
     'admin-create-cs-rep',
     'admin-update-cs-rep',
     'admin-cancel-order',
+    'admin-unsubscribe',
+    'admin-unsubscribe-delete',
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
@@ -733,6 +735,32 @@ async function callNewAPI(endpoint, params) {
       return await apiWrapper.csrCancelUncancelOrder(params.orderId, params.flag);
     }
 
+    // Unsubscribed users — no BC CSR endpoint yet; return empty so pages show empty state.
+    case 'admin-unsubscribe': {
+      const err = new Error('Unsubscribe endpoint not yet available.');
+      err.isMockUnavailable = true;
+      throw err;
+    }
+
+    case 'admin-unsubscribe-delete': {
+      const err = new Error('Unsubscribe delete endpoint not yet available.');
+      err.isMockUnavailable = true;
+      throw err;
+    }
+
+    // Phone opt-outs — no BC CSR endpoint yet; return empty so pages show empty state.
+    case 'admin-phone-optout': {
+      const err = new Error('Phone opt-out endpoint not yet available.');
+      err.isMockUnavailable = true;
+      throw err;
+    }
+
+    case 'admin-phone-optout-delete': {
+      const err = new Error('Phone opt-out delete endpoint not yet available.');
+      err.isMockUnavailable = true;
+      throw err;
+    }
+
     default:
       throw new Error(`Endpoint ${endpoint} not implemented in new API router`);
   }
@@ -789,6 +817,8 @@ export function getMockAPIPath(endpoint, params = {}) {
     'admin-cs-reps': '/admin/cs-reps',
     'admin-create-cs-rep': '/admin/cs-reps',
     'admin-update-cs-rep': `/admin/cs-reps/${params.id}`,
+    'admin-unsubscribe': '/admin/unsubscribe',
+    'admin-unsubscribe-delete': `/admin/unsubscribe/${params.id}`,
     // For search, use the existing mock API endpoint
     'teaser-search': '/search',
     // Report endpoints
