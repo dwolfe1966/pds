@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logoSrc from '../assets/idlookup-green-logo-no-words.png';
+const logoSrc = new URL('../assets/idlookup_icon_transparent.png', import.meta.url).href;
 
 /**
  * Navigation bar for administrator pages.
@@ -13,7 +13,7 @@ const AdminNav = () => {
     <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div>
         <Link to="/admin/users" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold' }}>
-          <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '28px', verticalAlign: 'middle', marginRight: '0.5rem' }} />Admin
+          <img src={logoSrc} alt="IDLookup.AI" style={{ height: '28px', verticalAlign: 'middle', marginRight: '0.5rem' }} />Admin
         </Link>
       </div>
       <div style={{ display: 'flex', gap: '1rem' }}>

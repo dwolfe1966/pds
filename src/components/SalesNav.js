@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styles from './SalesNav.module.css';
-import logoSrc from '../assets/idlookup-green-logo-no-words.png';
+const logoSrc = new URL('../assets/idlookup_icon_transparent.png', import.meta.url).href;
 
 /**
  * Navigation bar for unauthenticated (sales) pages.
@@ -67,7 +67,8 @@ const SalesNav = () => {
         {/* Logo */}
         <div>
           <Link to="/" className={styles.logo}>
-            <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '36px', display: 'inline-block', verticalAlign: 'middle' }} />
+            <img src={logoSrc} alt="IDLookup.AI" style={{ height: '36px', display: 'inline-block', verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            <span style={{ verticalAlign: 'middle' }}>IDLookup.AI</span>
           </Link>
         </div>
 
@@ -118,7 +119,8 @@ const SalesNav = () => {
         >
           <div className={styles.mobileMenuHeader}>
             <Link to="/" className={styles.mobileLogo} onClick={() => setMobileMenuOpen(false)}>
-              <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '30px', display: 'inline-block', verticalAlign: 'middle' }} />
+              <img src={logoSrc} alt="IDLookup.AI" style={{ height: '30px', display: 'inline-block', verticalAlign: 'middle', marginRight: '0.4rem' }} />
+              <span style={{ verticalAlign: 'middle' }}>IDLookup.AI</span>
             </Link>
             <button
               className={styles.mobileMenuClose}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from './MemberNav.module.css';
-import logoSrc from '../assets/idlookup-green-logo-no-words.png';
+const logoSrc = new URL('../assets/idlookup_icon_transparent.png', import.meta.url).href;
 
 /**
  * Navigation bar for authenticated member pages.
@@ -76,7 +76,8 @@ const MemberNav = () => {
         {/* Logo */}
         <div>
           <Link to="/dashboard" className={styles.logo}>
-            <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '36px', display: 'inline-block', verticalAlign: 'middle' }} />
+            <img src={logoSrc} alt="IDLookup.AI" style={{ height: '36px', display: 'inline-block', verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            <span style={{ verticalAlign: 'middle' }}>IDLookup.AI</span>
           </Link>
         </div>
 
@@ -137,7 +138,8 @@ const MemberNav = () => {
         >
           <div className={styles.mobileMenuHeader}>
             <Link to="/dashboard" className={styles.mobileLogo} onClick={() => setMobileMenuOpen(false)}>
-              <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '30px', display: 'inline-block', verticalAlign: 'middle' }} />
+              <img src={logoSrc} alt="IDLookup.AI" style={{ height: '30px', display: 'inline-block', verticalAlign: 'middle', marginRight: '0.4rem' }} />
+              <span style={{ verticalAlign: 'middle' }}>IDLookup.AI</span>
             </Link>
             <button
               className={styles.mobileMenuClose}

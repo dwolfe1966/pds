@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Footer.module.css';
-import logoSrc from '../assets/idlookup-green-logo-no-words.png';
+const logoSrc = new URL('../assets/idlookup_icon_transparent.png', import.meta.url).href;
 
 const Footer = () => (
   <footer className={styles.footer}>
@@ -9,7 +9,8 @@ const Footer = () => (
       <div className={styles.footerGrid}>
         {/* Brand Section */}
         <div className={styles.brandSection}>
-          <img src="/idlookup-green-logo-no-words.png" alt="IDLookup.AI" style={{ height: '32px', marginBottom: '0.75rem', display: 'block' }} />
+          <img src={logoSrc} alt="IDLookup.AI" style={{ height: '32px', marginBottom: '0.5rem', display: 'block' }} />
+          <h4>IDLookup.AI</h4>
           <p>
             Find people and monitor who searches for you. Access comprehensive public records and stay informed.
           </p>
