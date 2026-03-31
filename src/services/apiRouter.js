@@ -678,6 +678,11 @@ async function callNewAPI(endpoint, params) {
       return await apiWrapper.csrUpdateUser(params.id, { status: 'suspended' });
     }
 
+    // csrWrapper.api.user.update → POST /user/management/update (re-activate)
+    case 'admin-unsuspend-user': {
+      return await apiWrapper.csrUpdateUser(params.id, { status: 'active' });
+    }
+
     // csrWrapper.api.user.findOrders → POST /commerceMgnt/userOrders → { orders: [...] }
     case 'admin-purchases': {
       const raw = await apiWrapper.csrFindUserOrders(params.queryParams || {});

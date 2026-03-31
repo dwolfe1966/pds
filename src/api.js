@@ -74,6 +74,9 @@ function pathToEndpoint(path) {
     if (cleanPath.endsWith('/suspend')) {
       return 'admin-suspend-user';
     }
+    if (cleanPath.endsWith('/unsuspend')) {
+      return 'admin-unsuspend-user';
+    }
     return 'admin-user-detail';
   }
   if (cleanPath.startsWith('admin/purchases/')) {
