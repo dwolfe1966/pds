@@ -112,10 +112,11 @@ const PaymentsPage = () => {
   const [searchError, setSearchError] = useState('');
   const [resolvedUserId, setResolvedUserId] = useState(null);
   const [resolvedLabel, setResolvedLabel] = useState('');
+  const [isGlobalView, setIsGlobalView] = useState(true);
 
   // Orders / payments data
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
 
   // Pending sidebar filters
@@ -125,11 +126,31 @@ const PaymentsPage = () => {
   const [idFilter, setIdFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Load 10 most recent orders globally on mount
+  const fetchGlobalOrders = useCallback(async () => {
+    setLoading(true);
+    setFetchError('');
+    try {
+      const res = await api.adminListOrdersGlobal({ limit: 10 });
+      const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
+      setOrders(list);
+      setIsGlobalView(true);
+    } catch {
+      setOrders([]);
+      setIsGlobalView(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchGlobalOrders(); }, [fetchGlobalOrders]);
+
   const fetchOrders = useCallback(async (uid) => {
     if (!uid) return;
     setLoading(true);
     setFetchError('');
     setOrders([]);
+    setIsGlobalView(false);
     try {
       const res = await api.adminListPurchases({ userId: uid });
       const list = res?.data || res?.orders || res?.docs || (Array.isArray(res) ? res : []);
@@ -202,7 +223,9 @@ const PaymentsPage = () => {
         <p className={styles.subtitle}>
           {resolvedUserId
             ? `${allPayments.length} payment records for ${resolvedLabel} · ${filtered.length} shown`
-            : 'Search by customer email or user ID to view payment records'}
+            : isGlobalView && allPayments.length > 0
+            ? `Showing ${allPayments.length} most recent payment records`
+            : 'Search by customer email or user ID to filter payments'}
         </p>
       </div>
 
@@ -224,21 +247,25 @@ const PaymentsPage = () => {
           {searching ? 'Searching…' : 'Search'}
         </button>
         {resolvedUserId && (
-          <Link to={`/admin/users/${resolvedUserId}`} className={styles.profileLink}>
-            View Profile
-          </Link>
+          <>
+            <Link to={`/admin/users/${resolvedUserId}`} className={styles.profileLink}>
+              View Profile
+            </Link>
+            <button
+              type="button"
+              className={styles.clearSearchBtn}
+              onClick={() => { setResolvedUserId(null); setResolvedLabel(''); setSearchInput(''); fetchGlobalOrders(); }}
+            >
+              Clear
+            </button>
+          </>
         )}
       </form>
 
       {searchError && <div className={styles.errorBanner}>{searchError}</div>}
 
-      {!resolvedUserId && !searchError && (
-        <div className={styles.prompt}>
-          Enter a customer email or user ID above to load their payment records.
-        </div>
-      )}
-
-      {resolvedUserId && (
+      {/* Main area — always shown */}
+      {(true) && (
         <div className={styles.wrapper}>
           {/* Sidebar */}
           <aside className={styles.sidebar}>
@@ -278,13 +305,15 @@ const PaymentsPage = () => {
           <section className={styles.tableSection}>
             {fetchError && <div className={styles.errorBanner}>{fetchError}</div>}
 
-            {hasResults && allPayments.length === 0 && (
+            {!loading && !fetchError && allPayments.length === 0 && (
               <div className={styles.emptyState}>
-                <p className={styles.emptyTitle}>No payment records found for this customer.</p>
+                <p className={styles.emptyTitle}>
+                  {resolvedUserId ? 'No payment records found for this customer.' : 'No recent payment records available.'}
+                </p>
               </div>
             )}
 
-            {hasResults && allPayments.length > 0 && filtered.length === 0 && (
+            {!loading && allPayments.length > 0 && filtered.length === 0 && (
               <div className={styles.emptyState}>
                 <p className={styles.emptyTitle}>No payments match the current filters.</p>
                 <button className={styles.resetBtn} onClick={handleReset}>Clear filters</button>

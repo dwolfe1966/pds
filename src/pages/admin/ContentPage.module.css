@@ -1,0 +1,219 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.pageHeader { margin-bottom: 20px; }
+
+.title { font-size: 1.75rem; font-weight: 700; color: #111; margin: 0 0 4px; }
+.subtitle { font-size: 0.9rem; color: #666; margin: 0; }
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+
+.tab {
+  padding: 9px 18px;
+  border: none;
+  background: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab:hover { color: #333; }
+.tabActive { color: #2e7d32; border-bottom-color: #2e7d32; font-weight: 700; }
+
+/* ── Items panel ─────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 13px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46,125,50,0.12);
+}
+
+.addBtn {
+  padding: 9px 18px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.addBtn:hover { background: #1b5e20; }
+
+/* ── Table ───────────────────────────────────────────────── */
+.tableWrap { overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 12px; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+
+.th {
+  text-align: left;
+  padding: 11px 14px;
+  background: #f8f8f8;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tr:hover { background: #fafafa; }
+
+.td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  vertical-align: middle;
+}
+
+.tr:last-child .td { border-bottom: none; }
+
+.itemName { font-size: 0.83rem; color: #2e7d32; font-family: monospace; }
+
+.rowActions { display: flex; gap: 8px; }
+
+.editBtn {
+  padding: 5px 12px;
+  border: 1px solid #2e7d32;
+  border-radius: 6px;
+  background: #fff;
+  color: #2e7d32;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.editBtn:hover { background: #e8f5e9; }
+
+.deleteBtn {
+  padding: 5px 12px;
+  border: 1px solid #d32f2f;
+  border-radius: 6px;
+  background: #fff;
+  color: #d32f2f;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.deleteBtn:hover { background: #ffebee; }
+
+/* ── Editor panel ────────────────────────────────────────── */
+.editorPanel {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 14px;
+  padding: 28px;
+}
+
+.editorTitle { font-size: 1.1rem; font-weight: 700; color: #111; margin: 0 0 20px; }
+
+.field { margin-bottom: 16px; }
+
+.label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.input:focus { outline: none; border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(46,125,50,0.12); }
+
+.textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-family: monospace;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.textarea:focus { outline: none; border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(46,125,50,0.12); }
+
+.errorMsg { color: #d32f2f; font-size: 0.85rem; margin: 0 0 12px; }
+
+.editorActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+.cancelBtn {
+  padding: 9px 18px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #555;
+}
+
+.cancelBtn:hover { background: #f5f5f5; }
+
+.saveBtn {
+  padding: 9px 20px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saveBtn:hover { background: #1b5e20; }
+
+/* ── Empty ───────────────────────────────────────────────── */
+.emptyState { text-align: center; padding: 48px; color: #aaa; font-size: 0.95rem; }
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #2e7d32;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

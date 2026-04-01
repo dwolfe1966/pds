@@ -10,24 +10,24 @@ csrWrapper.api.auth.logout",/api/auth/logout,post,csrWrapper.api.auth.logout();,
 "Create User
 
 csrWrapper.api.user.create",/api/user/management/create,post,"csrWrapper.api.user.create({ 
-  email: 'user@email.com',
-  password: 'passWORD123!@#', 
-  firstName: 'tim', 
-  lastName: 'chin', 
-  roles: [], 
-  shConId: '', 
-  shColId: ''
+email: 'user@email.com',
+password: 'passWORD123!@#', 
+firstName: 'tim', 
+lastName: 'chin', 
+roles: [], 
+shConId: '', 
+shColId: ''
 });
 
 params
 - roles: ['admin'] or ['csr'] or []
 - shConId: (optional) 
-- shColId: (optional) ",,,
+- shColId: (optional)",,,
 "Update User
 
 csrWrapper.api.user.update",/api/user/management/update,post,"csrWrapper.api.user.update({ 
-  userId: '69aa174aba9d8bf27771b282',
-  firstName: 'kim',
+userId: '69aa174aba9d8bf27771b282',
+firstName: 'kim',
 });
 
 You can pass email, password, firstName, lastName, roles, shConId, and shColId that can be entered when creating a user. (optional)",,,
@@ -37,7 +37,7 @@ csrWrapper.api.user.getUserDetail",/api/user/management/detail,post,csrWrapper.a
 "Find Users
 
 csrWrapper.api.user.find",/api/database/search,post,"csrWrapper.api.user.find({ 
-  brandId: 'idlookup',
+brandId: 'idlookup',
 });
 
 The response value returns N Users. To obtain more than N response values, pass the _id of the User received in the response to lastId. The first page does not pass lastId.
@@ -49,7 +49,7 @@ params
 "Find Admin Users
 
 csrWrapper.api.user.findAdmin",/api/database/search,post,"csrWrapper.api.user.findAdmin({ 
-  brandId: 'idlookup',
+brandId: 'idlookup',
 });
 
 The response value returns N Users. To obtain more than N response values, pass the _id of the User received in the response to lastId. The first page does not pass lastId.
@@ -59,28 +59,290 @@ params
 - email: (optional)
 - lastId: (optional)",,,
 Create Admin User Note,/api/message/admin/user/note/create,post,"csrWrapper.api.user.createAdminNote({ 
-  userId: '69aa174aba9d8bf27771b282', 
-  message: 'Create a Memo in User that only administrators can see.'
-});",,,
-"Find Admin User Notes
+userId: '69aa174aba9d8bf27771b282', 
+message: 'Create a Memo in User that only administrators can see.'
+});
 
-csrWrapper.api.user.findAdminNotes",/api/database/search,post,"csrWrapper.api.user.findAdminNotes({ userId: '69aa174aba9d8bf27771b282' });
-
-The response value returns N Users. To obtain more than N response values, pass the _id of the User received in the response to lastId. The first page does not pass lastId.
-
-params
-- userId: 
-- lastId: (optional)",,,
+Added on 2026-03-31
+attachments: (optional) File[]
+- You can add attachments to the request value.",,,
 "Update Admin User Note
 
 csrWrapper.api.user.updateAdminNote",/api/message/admin/user/note/update,post,"csrWrapper.api.user.updateAdminNote({ 
-  messageId: '69af35499c5bb16194bfd741', 
-  message: 'Edit the message content.'
+messageId: '69af35499c5bb16194bfd741', 
+message: 'Edit the message content.' 
 });",,,
+"Create Csr Mail Added on 2026-03-27
+
+csrWrapper.api.user.createCsrMail",/api/message/admin/user/csrMail/create,post,"csrWrapper.api.user.createCsrMail({ targetUserId, subject, message });
+
+Sends an email to the user with targetUserId. The sent email can be viewed in [Find User Contact]. (type : userContactCsrMail)
+
+params
+- targetUserId
+- subject : This is the subject of the email.
+- message : This is the content of the email. (html or text)
+
+Added on 2026-03-31
+attachments: (optional) File[]
+- You can add attachments to the request value.",,"{
+""success"": true,
+""messageResult"": {
+""index"": [],
+""type"": ""userContactCsrMail"",
+""status"": ""fulfilled"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""targetUserId"": ""69bdf6af9d86cb973f1fa2ca"",
+""subject"": ""TEST CSR MAIL"",
+""message"": ""<h1>test csr mail<h1>""
+},
+""_id"": ""69c73c7ba3228d5e5a60a772"",
+""createdAt"": ""2026-03-28T02:27:07.466Z"",
+""updatedAt"": ""2026-03-28T02:27:07.472Z"",
+""createdTimestamp"": 1774664827466,
+""updatedTimestamp"": 1774664827466,
+""trackingIds"": {
+""trackingId"": ""69c73c7ba3228d5e5a60a76e"",
+""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
+""clientId"": ""WHDxfnzicsFm0nP7aZOHYUwKu1qdeypG"",
+""apiId"": ""JO6LD0lKD1sFU7owt5eeJ5kyRxtdoGM2""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1774582585438,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 1,
+""currentRevisionId"": ""69c73c7ba3228d5e5a60a774"",
+""owner"": {
+""_id"": ""6943179e90625d3dbeadf6f7"",
+""firstName"": ""BC"",
+""lastName"": ""Admin"",
+""id"": ""6943179e90625d3dbeadf6f7""
+},
+""id"": ""69c73c7ba3228d5e5a60a772""
+},
+""mailResult"": {
+""provider"": ""smtp01Mailer"",
+""success"": true,
+""response"": {
+""accepted"": [
+""dev@forserver.net""
+],
+""rejected"": [],
+""ehlo"": [
+""PIPELINING"",
+""SIZE 10240000"",
+""VRFY"",
+""ETRN"",
+""AUTH PLAIN LOGIN"",
+""AUTH=PLAIN LOGIN"",
+""ENHANCEDSTATUSCODES"",
+""8BITMIME"",
+""DSN"",
+""SMTPUTF8"",
+""CHUNKING""
+],
+""envelopeTime"": 220,
+""messageTime"": 217,
+""messageSize"": 268,
+""response"": ""250 2.0.0 Ok: queued as BF2E740067"",
+""envelope"": {
+""from"": """",
+""to"": [
+""dev@forserver.net""
+]
+},
+""messageId"": ""<9bd3c383-184a-350b-d773-87cd6ec70a3f@localhost>""
+}
+}
+}",
+"Find User Contact Edited on 2026-03-27
+
+csrWrapper.api.user.findUserContacts",/api/database/search,post,"csrWrapper.api.user.findUserContacts({ userId: '69aa174aba9d8bf27771b282' });
+
+The response value returns N UserContacts. To obtain more than N response values, pass the _id of the UserContacts received in the response to lastId. The first page does not pass lastId.
+
+params
+- userId: 
+- lastId: (optional)
+
+Return
+- type
+- userContact (Contacts created by the user, contacts created via the reply link in csrMail, etc.)
+- userContactCsrMail (Copy of the email sent from Csr to User)
+- userContactAdminNote (Memo written to the User in Csr)",,"{
+""docs"": [
+{
+""_id"": ""69c7145006f0f51b4cd69c49"",
+""index"": [],
+""type"": ""userContactAdminNote"",
+""status"": ""fulfilled"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""targetUserId"": ""69c31abacfe2243c3c1e4094"",
+""message"": ""<div>sdsdsdssdsds</div>""
+},
+""createdAt"": ""2026-03-27T23:35:44.593Z"",
+""updatedAt"": ""2026-03-27T23:35:44.600Z"",
+""createdTimestamp"": 1774654544593,
+""updatedTimestamp"": 1774654544593,
+""trackingIds"": {
+""trackingId"": ""69c7145006f0f51b4cd69c46"",
+""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
+""clientId"": ""9mZdhul63NWb3VVcX88FWGH58Te7vMqX"",
+""apiId"": ""FHdGFABEk1ufhQtPdC34jN0qnGOdO0iG""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1774582585438,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 1,
+""currentRevisionId"": ""69c7145006f0f51b4cd69c4b"",
+""owner"": {
+""_id"": ""6943179e90625d3dbeadf6f7"",
+""firstName"": ""BC"",
+""lastName"": ""Admin"",
+""id"": ""6943179e90625d3dbeadf6f7""
+},
+""id"": ""69c7145006f0f51b4cd69c49""
+},
+{
+""_id"": ""69c70ec714655a193cdf6ff7"",
+""index"": [],
+""type"": ""userContactAdminNote"",
+""status"": ""fulfilled"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""targetUserId"": ""69c31abacfe2243c3c1e4094"",
+""message"": ""<div>sdsdsdsdsdsdsssss</div>""
+},
+""createdAt"": ""2026-03-27T23:12:07.659Z"",
+""updatedAt"": ""2026-03-27T23:12:10.871Z"",
+""createdTimestamp"": 1774653127659,
+""updatedTimestamp"": 1774653127659,
+""trackingIds"": {
+""trackingId"": ""69c70ec714655a193cdf6ff4"",
+""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
+""clientId"": ""mBfLfgyWK1re4oCL7CB9Z8DlsBmPaUkC"",
+""apiId"": ""Hb4DomMzPYCjc3b5jtxSBVX63lrR5XBM""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1774582585438,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 3,
+""currentRevisionId"": ""69c70eca14655a193cdf701b"",
+""owner"": {
+""_id"": ""6943179e90625d3dbeadf6f7"",
+""firstName"": ""BC"",
+""lastName"": ""Admin"",
+""id"": ""6943179e90625d3dbeadf6f7""
+},
+""id"": ""69c70ec714655a193cdf6ff7""
+},
+{
+""_id"": ""69c70765f66f1de6b44e6355"",
+""index"": [],
+""type"": ""userContact"",
+""status"": ""requested"",
+""ownerId"": ""69c31abacfe2243c3c1e4094"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""message"": ""contact test message."",
+""targetUserId"": ""69c31abacfe2243c3c1e4094""
+},
+""createdAt"": ""2026-03-27T22:40:37.255Z"",
+""updatedAt"": ""2026-03-27T22:40:37.264Z"",
+""createdTimestamp"": 1774651237255,
+""updatedTimestamp"": 1774651237255,
+""trackingIds"": {
+""trackingId"": ""69c70765f66f1de6b44e6352"",
+""sessionId"": ""I-VIP3rKENG8vt5rYkHfaJR5CDA9OPjS"",
+""clientId"": ""ivEaPshVK5J6cURYQ2D1LzNZOINLWFB9"",
+""apiId"": ""Tvdb7bTz8weosUnWYyQ7EA6iSVneCMeU""
+},
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1774582391482,
+""updaterId"": ""69c31abacfe2243c3c1e4094"",
+""__v"": 1,
+""currentRevisionId"": ""69c70765f66f1de6b44e6357"",
+""owner"": {
+""_id"": ""69c31abacfe2243c3c1e4094"",
+""firstName"": ""TestFname"",
+""lastName"": ""TestLname"",
+""id"": ""69c31abacfe2243c3c1e4094""
+},
+""id"": ""69c70765f66f1de6b44e6355""
+},
+{
+""_id"": ""69c700b6e79949dbaf3b1cda"",
+""index"": [],
+""type"": ""userContactAdminNote"",
+""status"": ""fulfilled"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""targetUserId"": ""69c31abacfe2243c3c1e4094"",
+""message"": ""<div>test&nbsp;admin&nbsp;notes&nbsp;edit&nbsp;11112223331111fdsfsfsfdsfdsdfdsfsdsdfsdf</div>""
+},
+""createdAt"": ""2026-03-27T22:12:06.784Z"",
+""updatedAt"": ""2026-03-27T23:27:46.004Z"",
+""createdTimestamp"": 1774649526784,
+""updatedTimestamp"": 1774649526784,
+""trackingIds"": {
+""trackingId"": ""69c700b6e79949dbaf3b1cd7"",
+""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
+""clientId"": ""uGNrh3URjcjhUvURpGxw7AZ2eZzjZOlz"",
+""apiId"": ""d5Xmk4yEXlcsO8L7cu1ZvrwRuxUo3qc2""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1774582585438,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 19,
+""currentRevisionId"": ""69c7127106f0f51b4cd69ac0"",
+""owner"": {
+""_id"": ""6943179e90625d3dbeadf6f7"",
+""firstName"": ""BC"",
+""lastName"": ""Admin"",
+""id"": ""6943179e90625d3dbeadf6f7""
+},
+""id"": ""69c700b6e79949dbaf3b1cda""
+}
+],
+""noMoreDocs"": true,
+""displayFields"": [
+""_id"",
+""createdAt"",
+""brandId"",
+""type"",
+""content"",
+""owner"",
+""status""
+],
+""dateFields"": [
+""createdAt""
+]
+}",
 "Find User Orders
 
 csrWrapper.api.user.findOrders",/api/commerceMgnt/userOrders,post,"csrWrapper.api.user.findOrders({ 
-  userId: '69aa174aba9d8bf27771b282', 
+userId: '69aa174aba9d8bf27771b282', 
 });
 
 param
@@ -88,710 +350,873 @@ param
 
 response
 - schedule: This is the next payment schedule for this order. You can change the next schedule time with [Update Schedule DueTimestamp].",,"{
-    ""orders"": [
-        {
-            ""_id"": ""69aa174aba9d8bf27771b299"",
-            ""index"": [],
-            ""status"": ""inactive"",
-            ""referenceIds"": [],
-            ""permissionIds"": [],
-            ""shConId"": ""69431fc43a915bc1be68b520"",
-            ""shColId"": ""694e14fca3088d7e6b682a12"",
-            ""shTimestamp"": 1772654358275,
-            ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-            ""payerId"": ""69aa174aba9d8bf27771b282"",
-            ""commerceTokens"": [
-                ""69aa174aba9d8bf27771b292""
-            ],
-            ""commerceOffers"": [
-                ""6913e0e0a4b8675e90771be7""
-            ],
-            ""commerceOfferRevisions"": [
-                {
-                    ""_id"": ""69a105f42f81321b1bd998ff"",
-                    ""trackingIds"": {
-                        ""trackingId"": ""69a105f42f81321b1bd998fa"",
-                        ""sessionId"": ""xhSxJYAsiFgsXLvJT5rAP-wdHaCpHCUK"",
-                        ""clientId"": ""QeE97rWA8TMSZhIKYjdKVsOvfYlouJEs"",
-                        ""apiId"": ""IotngwFRoPIonbtrpsJ355L9e2oNrVKp""
-                    },
-                    ""createdTimestamp"": 1772160500336,
-                    ""referenceId"": ""6913e0e0a4b8675e90771be7"",
-                    ""referenceCollection"": ""commerceoffers"",
-                    ""reference"": {
-                        ""_id"": ""6913e0e0a4b8675e90771be7"",
-                        ""index"": [],
-                        ""status"": ""active"",
-                        ""referenceIds"": [],
-                        ""permissionIds"": [],
-                        ""name"": ""membership.offer.default.1"",
-                        ""description"": ""default offer"",
-                        ""extName"": ""DEFAULT OFFER 1"",
-                        ""commerceProductDetail"": [
-                            {
-                                ""commerceProduct"": ""6913e0c3a4b8675e90771bd6"",
-                                ""commerceStockDetail"": {
-                                    ""commerceStock"": ""6913e0aea4b8675e90771bcb"",
-                                    ""quantity"": 50,
-                                    ""period"": {
-                                        ""quantity"": 1,
-                                        ""unit"": ""y""
-                                    }
-                                }
-                            },
-                            {
-                                ""commerceProduct"": ""6913e12fa4b8675e90771bf2"",
-                                ""commerceStockDetail"": {
-                                    ""commerceStock"": ""6913e0aea4b8675e90771bcb"",
-                                    ""quantity"": 10,
-                                    ""period"": {
-                                        ""quantity"": 1,
-                                        ""unit"": ""d""
-                                    }
-                                }
-                            }
-                        ],
-                        ""commercePrice"": {
-                            ""prices"": [
-                                {
-                                    ""amount"": 1.99,
-                                    ""code"": """",
-                                    ""sequence"": ""v.s == 0"",
-                                    ""period"": {
-                                        ""quantity"": 7,
-                                        ""unit"": ""d""
-                                    },
-                                    ""options"": {
-                                        ""test"": 123
-                                    }
-                                },
-                                {
-                                    ""amount"": 39.99,
-                                    ""code"": """",
-                                    ""sequence"": ""v.s > 0"",
-                                    ""period"": {
-                                        ""quantity"": 1,
-                                        ""unit"": ""m""
-                                    }
-                                },
-                                {
-                                    ""amount"": 0,
-                                    ""code"": """",
-                                    ""sequence"": ""v.s > 0"",
-                                    ""period"": {
-                                        ""quantity"": 1,
-                                        ""unit"": ""m""
-                                    }
-                                }
-                            ]
-                        },
-                        ""provides"": [],
-                        ""__v"": 45,
-                        ""createdAt"": ""2025-11-12T01:20:32.953Z"",
-                        ""updatedAt"": ""2026-02-27T02:48:20.324Z"",
-                        ""currentRevisionId"": ""69a105f22f81321b1bd998ef"",
-                        ""commercePriceRules"": [
-                            {
-                                ""_DESC_"": ""S0"",
-                                ""priority"": 1,
-                                ""conditions"": [
-                                    {
-                                        ""sequence"": 0
-                                    }
-                                ],
-                                ""candidates"": [
-                                    {
-                                        ""id"": {
-                                            ""amount"": 1.01,
-                                            ""code"": ""usd"",
-                                            ""period"": {
-                                                ""quantity"": 7,
-                                                ""unit"": ""d""
-                                            }
-                                        },
-                                        ""weight"": 1
-                                    }
-                                ]
-                            },
-                            {
-                                ""_DESC_"": ""S1+"",
-                                ""priority"": 2,
-                                ""conditions"": [
-                                    {
-                                        ""sequence"": ""v > 0""
-                                    }
-                                ],
-                                ""candidates"": [
-                                    {
-                                        ""id"": {
-                                            ""amount"": 39.01,
-                                            ""code"": ""usd"",
-                                            ""period"": {
-                                                ""quantity"": 30,
-                                                ""unit"": ""d""
-                                            }
-                                        },
-                                        ""weight"": 1
-                                    }
-                                ]
-                            }
-                        ],
-                        ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-                        ""option"": {
-                            ""nonMemberOnly"": true
-                        },
-                        ""extDesc"": ""11""
-                    },
-                    ""createdAt"": ""2026-02-27T02:48:20.337Z"",
-                    ""updatedAt"": ""2026-02-27T02:48:20.337Z"",
-                    ""__v"": 0
-                }
-            ],
-            ""commerceOfferInfos"": [
-                {
-                    ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
-                    ""commerceOfferRevisionId"": ""69a105f42f81321b1bd998ff"",
-                    ""commerceProductInfos"": [
-                        {
-                            ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
-                            ""commerceProductRevisionId"": ""699fbbb626a1804895701525"",
-                            ""commerceStockInfo"": {
-                                ""commerceStockId"": ""69aa174aba9d8bf27771b297"",
-                                ""commerceStockRevisionId"": null,
-                                ""options"": null
-                            },
-                            ""options"": null
-                        },
-                        {
-                            ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
-                            ""commerceProductRevisionId"": ""699fbbbc26a1804895701530"",
-                            ""commerceStockInfo"": {
-                                ""commerceStockId"": ""69aa174aba9d8bf27771b298"",
-                                ""commerceStockRevisionId"": null,
-                                ""options"": null
-                            },
-                            ""options"": null
-                        }
-                    ],
-                    ""options"": null
-                }
-            ],
-            ""commercePriceRules"": [
-                {
-                    ""_DESC_"": ""S0"",
-                    ""priority"": 1,
-                    ""conditions"": [
-                        {
-                            ""sequence"": 0
-                        }
-                    ],
-                    ""candidates"": [
-                        {
-                            ""id"": {
-                                ""amount"": 1.01,
-                                ""code"": ""usd"",
-                                ""period"": {
-                                    ""quantity"": 7,
-                                    ""unit"": ""d""
-                                }
-                            },
-                            ""weight"": 1
-                        }
-                    ]
-                },
-                {
-                    ""_DESC_"": ""S1+"",
-                    ""priority"": 2,
-                    ""conditions"": [
-                        {
-                            ""sequence"": ""v > 0""
-                        }
-                    ],
-                    ""candidates"": [
-                        {
-                            ""id"": {
-                                ""amount"": 39.01,
-                                ""code"": ""usd"",
-                                ""period"": {
-                                    ""quantity"": 30,
-                                    ""unit"": ""d""
-                                }
-                            },
-                            ""weight"": 1
-                        }
-                    ]
-                }
-            ],
-            ""sequenceOption"": {
-                ""thinMatch"": false,
-                ""thinMatchDataProviderDown"": false,
-                ""thinMatchTooManyResults"": false,
-                ""thinMatchNoResults"": false,
-                ""thinMatchGeographic"": false
-            },
-            ""ipAddress"": ""110.47.168.218"",
-            ""refer"": {
-                ""partnerId"": ""p1"",
-                ""afid"": ""af1"",
-                ""abc"": ""bcd""
-            },
-            ""sessionDuration"": 100404478,
-            ""orderTimestamp"": 1772754762746,
-            ""nonMemberOnly"": true,
-            ""immediateRetry"": false,
-            ""immediateRetryCount"": 0,
-            ""createdAt"": ""2026-03-05T23:52:42.767Z"",
-            ""updatedAt"": ""2026-03-05T23:53:32.630Z"",
-            ""createdTimestamp"": 1772754762767,
-            ""updatedTimestamp"": 1772754762767,
-            ""trackingIds"": {
-                ""trackingId"": ""69aa174aba9d8bf27771b278"",
-                ""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
-                ""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
-                ""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
-            },
-            ""brandId"": ""idlookup"",
-            ""__v"": 7,
-            ""currentRevisionId"": ""69aa177cba9d8bf27771b3c6"",
-            ""statusReason"": ""correct|refund"",
-            ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-            ""subStatus"": ""expired"",
-            ""orderHistories"": [
-                {
-                    ""_id"": ""69aa177cba9d8bf27771b3c6"",
-                    ""status"": ""inactive"",
-                    ""subStatus"": ""expired"",
-                    ""statusReason"": ""correct|refund"",
-                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-                    ""createdAt"": ""2026-03-05T23:53:32.624Z"",
-                    ""updaterName"": ""BC Admin""
-                },
-                {
-                    ""_id"": ""69aa1772ba9d8bf27771b384"",
-                    ""status"": ""inactive"",
-                    ""subStatus"": ""expired"",
-                    ""statusReason"": ""correct|refund"",
-                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-                    ""createdAt"": ""2026-03-05T23:53:22.556Z"",
-                    ""updaterName"": ""BC Admin""
-                },
-                {
-                    ""_id"": ""69aa1766ba9d8bf27771b33e"",
-                    ""status"": ""inactive"",
-                    ""subStatus"": ""expired"",
-                    ""statusReason"": ""correct|refund"",
-                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-                    ""createdAt"": ""2026-03-05T23:53:10.860Z"",
-                    ""updaterName"": ""BC Admin""
-                },
-                {
-                    ""_id"": ""69aa174bba9d8bf27771b2c6"",
-                    ""status"": ""active"",
-                    ""statusReason"": ""SuccessfulTx"",
-                    ""updaterId"": ""69aa174aba9d8bf27771b282"",
-                    ""createdAt"": ""2026-03-05T23:52:43.152Z"",
-                    ""updaterName"": ""TestFname TestLnameaaa""
-                }
-            ],
-            ""commercePayments"": [
-                {
-                    ""_id"": ""69aa177cba9d8bf27771b3be"",
-                    ""index"": [],
-                    ""type"": ""refund"",
-                    ""status"": ""fulfilled"",
-                    ""parentId"": ""69aa174aba9d8bf27771b2a2"",
-                    ""referenceIds"": [],
-                    ""permissionIds"": [],
-                    ""brandId"": ""idlookup"",
-                    ""shConId"": ""69431fc43a915bc1be68b520"",
-                    ""shColId"": ""694e14fca3088d7e6b682a12"",
-                    ""shTimestamp"": 1772654358275,
-                    ""childrenTypes"": [],
-                    ""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8|1772754811392|W7zqFlgC"",
-                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-                    ""payerId"": ""69aa174aba9d8bf27771b282"",
-                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
-                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
-                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
-                    ""velocityOptionKeys"": [],
-                    ""paymentTimestamp"": 1772754812471,
-                    ""totalPrice"": {
-                        ""code"": ""usd"",
-                        ""amount"": 0.2
-                    },
-                    ""sequence"": 0,
-                    ""retry"": 0,
-                    ""sequenceOption"": {
-                        ""thinMatch"": false,
-                        ""thinMatchDataProviderDown"": false,
-                        ""thinMatchTooManyResults"": false,
-                        ""thinMatchNoResults"": false,
-                        ""thinMatchGeographic"": false
-                    },
-                    ""commerceBillingRouting"": {
-                        ""typeSticky"": ""commerceToken"",
-                        ""processorId"": ""pdsActive"",
-                        ""processorSticky"": ""soft"",
-                        ""gateway"": ""nmi""
-                    },
-                    ""transactionMeta"": {
-                        ""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8|1772754811392|W7zqFlgC"",
-                        ""saleLikeTxBlocker"": false,
-                        ""nonMemberOnly"": true,
-                        ""immediateRetry"": false,
-                        ""immediateRetryCount"": 0,
-                        ""quadZero"": false,
-                        ""dropCvv"": false,
-                        ""passthru"": false,
-                        ""cascade"": false
-                    },
-                    ""createdAt"": ""2026-03-05T23:53:32.473Z"",
-                    ""updatedAt"": ""2026-03-05T23:53:32.644Z"",
-                    ""createdTimestamp"": 1772754812473,
-                    ""updatedTimestamp"": 1772754812473,
-                    ""trackingIds"": {
-                        ""trackingId"": ""69aa177cba9d8bf27771b3ab"",
-                        ""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
-                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
-                        ""apiId"": ""Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8""
-                    },
-                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-                    ""__v"": 3,
-                    ""currentRevisionId"": ""69aa177cba9d8bf27771b3d0"",
-                    ""gatewayTransactionId"": ""69aa177c96fc315cf25a4275"",
-                    ""gatewayTransactionStatus"": ""fulfilled"",
-                    ""rawRequest"": {
-                        ""username"": ""test-bytecrtrs"",
-                        ""type"": ""refund"",
-                        ""amount"": 0.2,
-                        ""transactionid"": ""831398256""
-                    },
-                    ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=585184159&transactionid=357610345&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
-                    ""requestResult"": {
-                        ""httpStatusCode"": 200,
-                        ""authCode"": null,
-                        ""externalId"": ""357610345"",
-                        ""processorId"": ""emulator"",
-                        ""primaryCode"": ""100"",
-                        ""primaryCodeMessage"": ""100:EmulatorResponseText"",
-                        ""codes"": [
-                            ""success""
-                        ],
-                        ""codeMessages"": [
-                            ""EmulatorResponseText""
-                        ],
-                        ""results"": {
-                            ""response"": ""1"",
-                            ""responsetext"": ""EmulatorResponseText"",
-                            ""authcode"": ""585184159"",
-                            ""transactionid"": ""357610345"",
-                            ""avsresponse"": ""Y"",
-                            ""cvvresponse"": ""M"",
-                            ""orderid"": ""undefined"",
-                            ""type"": ""refund"",
-                            ""response_code"": ""100"",
-                            ""emulator"": ""true"",
-                            ""httpStatusCode"": ""200"",
-                            ""processor_id"": ""emulator""
-                        }
-                    },
-                    ""serverTrackingIds"": {
-                        ""trackingId"": ""69aa177ccacbb8c02671abc4"",
-                        ""sessionId"": ""sRUXkUOGcv8gIi1wkq9dbWKdz1Lvk6oj"",
-                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
-                        ""apiId"": ""Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8""
-                    },
-                    ""updaterName"": ""BC Admin"",
-                    ""transient"": {
-                        ""amount"": {
-                            ""authorized"": 0,
-                            ""collected"": 0,
-                            ""refunded"": 0.2
-                        }
-                    }
-                },
-                {
-                    ""_id"": ""69aa1772ba9d8bf27771b37c"",
-                    ""index"": [],
-                    ""type"": ""refund"",
-                    ""status"": ""fulfilled"",
-                    ""parentId"": ""69aa174aba9d8bf27771b2a2"",
-                    ""referenceIds"": [],
-                    ""permissionIds"": [],
-                    ""brandId"": ""idlookup"",
-                    ""shConId"": ""69431fc43a915bc1be68b520"",
-                    ""shColId"": ""694e14fca3088d7e6b682a12"",
-                    ""shTimestamp"": 1772654358275,
-                    ""childrenTypes"": [],
-                    ""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX|1772754801360|TlrZiwMG"",
-                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-                    ""payerId"": ""69aa174aba9d8bf27771b282"",
-                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
-                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
-                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
-                    ""velocityOptionKeys"": [],
-                    ""paymentTimestamp"": 1772754802395,
-                    ""totalPrice"": {
-                        ""code"": ""usd"",
-                        ""amount"": 0.1
-                    },
-                    ""sequence"": 0,
-                    ""retry"": 0,
-                    ""sequenceOption"": {
-                        ""thinMatch"": false,
-                        ""thinMatchDataProviderDown"": false,
-                        ""thinMatchTooManyResults"": false,
-                        ""thinMatchNoResults"": false,
-                        ""thinMatchGeographic"": false
-                    },
-                    ""commerceBillingRouting"": {
-                        ""typeSticky"": ""commerceToken"",
-                        ""processorId"": ""pdsActive"",
-                        ""processorSticky"": ""soft"",
-                        ""gateway"": ""nmi""
-                    },
-                    ""transactionMeta"": {
-                        ""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX|1772754801360|TlrZiwMG"",
-                        ""saleLikeTxBlocker"": false,
-                        ""nonMemberOnly"": true,
-                        ""immediateRetry"": false,
-                        ""immediateRetryCount"": 0,
-                        ""quadZero"": false,
-                        ""dropCvv"": false,
-                        ""passthru"": false,
-                        ""cascade"": false
-                    },
-                    ""createdAt"": ""2026-03-05T23:53:22.397Z"",
-                    ""updatedAt"": ""2026-03-05T23:53:22.571Z"",
-                    ""createdTimestamp"": 1772754802397,
-                    ""updatedTimestamp"": 1772754802397,
-                    ""trackingIds"": {
-                        ""trackingId"": ""69aa1772ba9d8bf27771b369"",
-                        ""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
-                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
-                        ""apiId"": ""TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX""
-                    },
-                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-                    ""__v"": 3,
-                    ""currentRevisionId"": ""69aa1772ba9d8bf27771b38e"",
-                    ""gatewayTransactionId"": ""69aa177296fc315cf25a4261"",
-                    ""gatewayTransactionStatus"": ""fulfilled"",
-                    ""rawRequest"": {
-                        ""username"": ""test-bytecrtrs"",
-                        ""type"": ""refund"",
-                        ""amount"": 0.1,
-                        ""transactionid"": ""831398256""
-                    },
-                    ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=829950966&transactionid=125542975&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
-                    ""requestResult"": {
-                        ""httpStatusCode"": 200,
-                        ""authCode"": null,
-                        ""externalId"": ""125542975"",
-                        ""processorId"": ""emulator"",
-                        ""primaryCode"": ""100"",
-                        ""primaryCodeMessage"": ""100:EmulatorResponseText"",
-                        ""codes"": [
-                            ""success""
-                        ],
-                        ""codeMessages"": [
-                            ""EmulatorResponseText""
-                        ],
-                        ""results"": {
-                            ""response"": ""1"",
-                            ""responsetext"": ""EmulatorResponseText"",
-                            ""authcode"": ""829950966"",
-                            ""transactionid"": ""125542975"",
-                            ""avsresponse"": ""Y"",
-                            ""cvvresponse"": ""M"",
-                            ""orderid"": ""undefined"",
-                            ""type"": ""refund"",
-                            ""response_code"": ""100"",
-                            ""emulator"": ""true"",
-                            ""httpStatusCode"": ""200"",
-                            ""processor_id"": ""emulator""
-                        }
-                    },
-                    ""serverTrackingIds"": {
-                        ""trackingId"": ""69aa1772cacbb8c02671abbd"",
-                        ""sessionId"": ""j6s2O05VFMN0wPOMYi6_P9IlAiGbzFsW"",
-                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
-                        ""apiId"": ""TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX""
-                    },
-                    ""updaterName"": ""BC Admin"",
-                    ""transient"": {
-                        ""amount"": {
-                            ""authorized"": 0,
-                            ""collected"": 0,
-                            ""refunded"": 0.1
-                        }
-                    }
-                },
-                {
-                    ""_id"": ""69aa1766ba9d8bf27771b336"",
-                    ""index"": [],
-                    ""type"": ""refund"",
-                    ""status"": ""fulfilled"",
-                    ""parentId"": ""69aa174aba9d8bf27771b2a2"",
-                    ""referenceIds"": [],
-                    ""permissionIds"": [],
-                    ""brandId"": ""idlookup"",
-                    ""shConId"": ""69431fc43a915bc1be68b520"",
-                    ""shColId"": ""694e14fca3088d7e6b682a12"",
-                    ""shTimestamp"": 1772654358275,
-                    ""childrenTypes"": [],
-                    ""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Gjdo80atRFlXauMdRQVa5qpfRb3urzmd|1772754789654|PJQHivzF"",
-                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-                    ""payerId"": ""69aa174aba9d8bf27771b282"",
-                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
-                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
-                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
-                    ""velocityOptionKeys"": [],
-                    ""paymentTimestamp"": 1772754790694,
-                    ""totalPrice"": {
-                        ""code"": ""usd"",
-                        ""amount"": 0.1
-                    },
-                    ""sequence"": 0,
-                    ""retry"": 0,
-                    ""sequenceOption"": {
-                        ""thinMatch"": false,
-                        ""thinMatchDataProviderDown"": false,
-                        ""thinMatchTooManyResults"": false,
-                        ""thinMatchNoResults"": false,
-                        ""thinMatchGeographic"": false
-                    },
-                    ""commerceBillingRouting"": {
-                        ""typeSticky"": ""commerceToken"",
-                        ""processorId"": ""pdsActive"",
-                        ""processorSticky"": ""soft"",
-                        ""gateway"": ""nmi""
-                    },
-                    ""transactionMeta"": {
-                        ""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Gjdo80atRFlXauMdRQVa5qpfRb3urzmd|1772754789654|PJQHivzF"",
-                        ""saleLikeTxBlocker"": false,
-                        ""nonMemberOnly"": true,
-                        ""immediateRetry"": false,
-                        ""immediateRetryCount"": 0,
-                        ""quadZero"": false,
-                        ""dropCvv"": false,
-                        ""passthru"": false,
-                        ""cascade"": false
-                    },
-                    ""createdAt"": ""2026-03-05T23:53:10.697Z"",
-                    ""updatedAt"": ""2026-03-05T23:53:10.880Z"",
-                    ""createdTimestamp"": 1772754790697,
-                    ""updatedTimestamp"": 1772754790697,
-                    ""trackingIds"": {
-                        ""trackingId"": ""69aa1766ba9d8bf27771b323"",
-                        ""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
-                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
-                        ""apiId"": ""Gjdo80atRFlXauMdRQVa5qpfRb3urzmd""
-                    },
-                    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-                    ""__v"": 3,
-                    ""currentRevisionId"": ""69aa1766ba9d8bf27771b349"",
-                    ""gatewayTransactionId"": ""69aa176696fc315cf25a4252"",
-                    ""gatewayTransactionStatus"": ""fulfilled"",
-                    ""rawRequest"": {
-                        ""username"": ""test-bytecrtrs"",
-                        ""type"": ""refund"",
-                        ""amount"": 0.1,
-                        ""transactionid"": ""831398256""
-                    },
-                    ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=741240092&transactionid=224346794&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
-                    ""requestResult"": {
-                        ""httpStatusCode"": 200,
-                        ""authCode"": null,
-                        ""externalId"": ""224346794"",
-                        ""processorId"": ""emulator"",
-                        ""primaryCode"": ""100"",
-                        ""primaryCodeMessage"": ""100:EmulatorResponseText"",
-                        ""codes"": [
-                            ""success""
-                        ],
-                        ""codeMessages"": [
-                            ""EmulatorResponseText""
-                        ],
-                        ""results"": {
-                            ""response"": ""1"",
-                            ""responsetext"": ""EmulatorResponseText"",
-                            ""authcode"": ""741240092"",
-                            ""transactionid"": ""224346794"",
-                            ""avsresponse"": ""Y"",
-                            ""cvvresponse"": ""M"",
-                            ""orderid"": ""undefined"",
-                            ""type"": ""refund"",
-                            ""response_code"": ""100"",
-                            ""emulator"": ""true"",
-                            ""httpStatusCode"": ""200"",
-                            ""processor_id"": ""emulator""
-                        }
-                    },
-                    ""serverTrackingIds"": {
-                        ""trackingId"": ""69aa1766cacbb8c02671abb6"",
-                        ""sessionId"": ""ZRb1OHchbB2PwLoudmu5Gbz4_0zFgR5r"",
-                        ""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
-                        ""apiId"": ""Gjdo80atRFlXauMdRQVa5qpfRb3urzmd""
-                    },
-                    ""updaterName"": ""BC Admin"",
-                    ""transient"": {
-                        ""amount"": {
-                            ""authorized"": 0,
-                            ""collected"": 0,
-                            ""refunded"": 0.1
-                        }
-                    }
-                },
-                {
-                    ""_id"": ""69aa174aba9d8bf27771b2a2"",
-                    ""index"": [],
-                    ""type"": ""sale"",
-                    ""status"": ""fulfilled"",
-                    ""referenceIds"": [],
-                    ""permissionIds"": [],
-                    ""shConId"": ""69431fc43a915bc1be68b520"",
-                    ""shColId"": ""694e14fca3088d7e6b682a12"",
-                    ""shTimestamp"": 1772654358275,
-                    ""childrenTypes"": [
-                        ""refund""
-                    ],
-                    ""billingId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
-                    ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-                    ""payerId"": ""69aa174aba9d8bf27771b282"",
-                    ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
-                    ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
-                    ""commerceToken"": ""69aa174aba9d8bf27771b292"",
-                    ""velocityOptionKeys"": [
-                        ""declineDisputeCcNumber"",
-                        ""declineTooManySignupAttempts"",
-                        ""declineDupSignup""
-                    ],
-                    ""ipAddress"": ""110.47.168.218"",
-                    ""device"": ""desktop"",
-                    ""paymentTimestamp"": 1772754762746,
-                    ""totalPrice"": {
-                        ""code"": ""usd"",
-                        ""amount"": 1.01
-                    },
-                    ""sequence"": 0,
-                    ""retry"": 0,
-                    ""sequenceOption"": {
-                        ""thinMatch"": false,
-                        ""thinMatchDataProviderDown"": false,
-                        ""thinMatchTooManyResults"": false,
-                        ""thinMatchNoResults"": false,
-                        ""thinMatchGeographic"": false
-                    },
-                    ""commerceBillingRouting"": {
-                        ""typeSticky"": ""commerceToken"",
-                        ""processorId"": ""pdsActive"",
-                        ""proce",
+""orders"": [
+{
+""_id"": ""69aa174aba9d8bf27771b299"",
+""index"": [],
+""status"": ""inactive"",
+""referenceIds"": [],
+""permissionIds"": [],
+""shConId"": ""69431fc43a915bc1be68b520"",
+""shColId"": ""694e14fca3088d7e6b682a12"",
+""shTimestamp"": 1772654358275,
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69aa174aba9d8bf27771b282"",
+""commerceTokens"": [
+""69aa174aba9d8bf27771b292""
+],
+""commerceOffers"": [
+""6913e0e0a4b8675e90771be7""
+],
+""commerceOfferRevisions"": [
+{
+""_id"": ""69a105f42f81321b1bd998ff"",
+""trackingIds"": {
+""trackingId"": ""69a105f42f81321b1bd998fa"",
+""sessionId"": ""xhSxJYAsiFgsXLvJT5rAP-wdHaCpHCUK"",
+""clientId"": ""QeE97rWA8TMSZhIKYjdKVsOvfYlouJEs"",
+""apiId"": ""IotngwFRoPIonbtrpsJ355L9e2oNrVKp""
+},
+""createdTimestamp"": 1772160500336,
+""referenceId"": ""6913e0e0a4b8675e90771be7"",
+""referenceCollection"": ""commerceoffers"",
+""reference"": {
+""_id"": ""6913e0e0a4b8675e90771be7"",
+""index"": [],
+""status"": ""active"",
+""referenceIds"": [],
+""permissionIds"": [],
+""name"": ""membership.offer.default.1"",
+""description"": ""default offer"",
+""extName"": ""DEFAULT OFFER 1"",
+""commerceProductDetail"": [
+{
+""commerceProduct"": ""6913e0c3a4b8675e90771bd6"",
+""commerceStockDetail"": {
+""commerceStock"": ""6913e0aea4b8675e90771bcb"",
+""quantity"": 50,
+""period"": {
+""quantity"": 1,
+""unit"": ""y""
+}
+}
+},
+{
+""commerceProduct"": ""6913e12fa4b8675e90771bf2"",
+""commerceStockDetail"": {
+""commerceStock"": ""6913e0aea4b8675e90771bcb"",
+""quantity"": 10,
+""period"": {
+""quantity"": 1,
+""unit"": ""d""
+}
+}
+}
+],
+""commercePrice"": {
+""prices"": [
+{
+""amount"": 1.99,
+""code"": """",
+""sequence"": ""v.s == 0"",
+""period"": {
+""quantity"": 7,
+""unit"": ""d""
+},
+""options"": {
+""test"": 123
+}
+},
+{
+""amount"": 39.99,
+""code"": """",
+""sequence"": ""v.s > 0"",
+""period"": {
+""quantity"": 1,
+""unit"": ""m""
+}
+},
+{
+""amount"": 0,
+""code"": """",
+""sequence"": ""v.s > 0"",
+""period"": {
+""quantity"": 1,
+""unit"": ""m""
+}
+}
+]
+},
+""provides"": [],
+""__v"": 45,
+""createdAt"": ""2025-11-12T01:20:32.953Z"",
+""updatedAt"": ""2026-02-27T02:48:20.324Z"",
+""currentRevisionId"": ""69a105f22f81321b1bd998ef"",
+""commercePriceRules"": [
+{
+""_DESC_"": ""S0"",
+""priority"": 1,
+""conditions"": [
+{
+""sequence"": 0
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 7,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S1+"",
+""priority"": 2,
+""conditions"": [
+{
+""sequence"": ""v > 0""
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 39.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+}
+],
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""option"": {
+""nonMemberOnly"": true
+},
+""extDesc"": ""11""
+},
+""createdAt"": ""2026-02-27T02:48:20.337Z"",
+""updatedAt"": ""2026-02-27T02:48:20.337Z"",
+""__v"": 0
+}
+],
+""commerceOfferInfos"": [
+{
+""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
+""commerceOfferRevisionId"": ""69a105f42f81321b1bd998ff"",
+""commerceProductInfos"": [
+{
+""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
+""commerceProductRevisionId"": ""699fbbb626a1804895701525"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69aa174aba9d8bf27771b297"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+},
+{
+""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
+""commerceProductRevisionId"": ""699fbbbc26a1804895701530"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69aa174aba9d8bf27771b298"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+}
+],
+""options"": null
+}
+],
+""commercePriceRules"": [
+{
+""_DESC_"": ""S0"",
+""priority"": 1,
+""conditions"": [
+{
+""sequence"": 0
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 7,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S1+"",
+""priority"": 2,
+""conditions"": [
+{
+""sequence"": ""v > 0""
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 39.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+}
+],
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""ipAddress"": ""110.47.168.218"",
+""refer"": {
+""partnerId"": ""p1"",
+""afid"": ""af1"",
+""abc"": ""bcd""
+},
+""sessionDuration"": 100404478,
+""orderTimestamp"": 1772754762746,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""createdAt"": ""2026-03-05T23:52:42.767Z"",
+""updatedAt"": ""2026-03-05T23:53:32.630Z"",
+""createdTimestamp"": 1772754762767,
+""updatedTimestamp"": 1772754762767,
+""trackingIds"": {
+""trackingId"": ""69aa174aba9d8bf27771b278"",
+""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
+""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+},
+""brandId"": ""idlookup"",
+""__v"": 7,
+""currentRevisionId"": ""69aa177cba9d8bf27771b3c6"",
+""statusReason"": ""correct|refund"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""subStatus"": ""expired"",
+""orderHistories"": [
+{
+""_id"": ""69aa177cba9d8bf27771b3c6"",
+""status"": ""inactive"",
+""subStatus"": ""expired"",
+""statusReason"": ""correct|refund"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""createdAt"": ""2026-03-05T23:53:32.624Z"",
+""updaterName"": ""BC Admin""
+},
+{
+""_id"": ""69aa1772ba9d8bf27771b384"",
+""status"": ""inactive"",
+""subStatus"": ""expired"",
+""statusReason"": ""correct|refund"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""createdAt"": ""2026-03-05T23:53:22.556Z"",
+""updaterName"": ""BC Admin""
+},
+{
+""_id"": ""69aa1766ba9d8bf27771b33e"",
+""status"": ""inactive"",
+""subStatus"": ""expired"",
+""statusReason"": ""correct|refund"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""createdAt"": ""2026-03-05T23:53:10.860Z"",
+""updaterName"": ""BC Admin""
+},
+{
+""_id"": ""69aa174bba9d8bf27771b2c6"",
+""status"": ""active"",
+""statusReason"": ""SuccessfulTx"",
+""updaterId"": ""69aa174aba9d8bf27771b282"",
+""createdAt"": ""2026-03-05T23:52:43.152Z"",
+""updaterName"": ""TestFname TestLnameaaa""
+}
+],
+""commercePayments"": [
+{
+""_id"": ""69aa177cba9d8bf27771b3be"",
+""index"": [],
+""type"": ""refund"",
+""status"": ""fulfilled"",
+""parentId"": ""69aa174aba9d8bf27771b2a2"",
+""referenceIds"": [],
+""permissionIds"": [],
+""brandId"": ""idlookup"",
+""shConId"": ""69431fc43a915bc1be68b520"",
+""shColId"": ""694e14fca3088d7e6b682a12"",
+""shTimestamp"": 1772654358275,
+""childrenTypes"": [],
+""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8|1772754811392|W7zqFlgC"",
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69aa174aba9d8bf27771b282"",
+""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+""commerceToken"": ""69aa174aba9d8bf27771b292"",
+""velocityOptionKeys"": [],
+""paymentTimestamp"": 1772754812471,
+""totalPrice"": {
+""code"": ""usd"",
+""amount"": 0.2
+},
+""sequence"": 0,
+""retry"": 0,
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""commerceBillingRouting"": {
+""typeSticky"": ""commerceToken"",
+""processorId"": ""pdsActive"",
+""processorSticky"": ""soft"",
+""gateway"": ""nmi""
+},
+""transactionMeta"": {
+""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8|1772754811392|W7zqFlgC"",
+""saleLikeTxBlocker"": false,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""quadZero"": false,
+""dropCvv"": false,
+""passthru"": false,
+""cascade"": false
+},
+""createdAt"": ""2026-03-05T23:53:32.473Z"",
+""updatedAt"": ""2026-03-05T23:53:32.644Z"",
+""createdTimestamp"": 1772754812473,
+""updatedTimestamp"": 1772754812473,
+""trackingIds"": {
+""trackingId"": ""69aa177cba9d8bf27771b3ab"",
+""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
+""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+""apiId"": ""Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8""
+},
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 3,
+""currentRevisionId"": ""69aa177cba9d8bf27771b3d0"",
+""gatewayTransactionId"": ""69aa177c96fc315cf25a4275"",
+""gatewayTransactionStatus"": ""fulfilled"",
+""rawRequest"": {
+""username"": ""test-bytecrtrs"",
+""type"": ""refund"",
+""amount"": 0.2,
+""transactionid"": ""831398256""
+},
+""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=585184159&transactionid=357610345&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
+""requestResult"": {
+""httpStatusCode"": 200,
+""authCode"": null,
+""externalId"": ""357610345"",
+""processorId"": ""emulator"",
+""primaryCode"": ""100"",
+""primaryCodeMessage"": ""100:EmulatorResponseText"",
+""codes"": [
+""success""
+],
+""codeMessages"": [
+""EmulatorResponseText""
+],
+""results"": {
+""response"": ""1"",
+""responsetext"": ""EmulatorResponseText"",
+""authcode"": ""585184159"",
+""transactionid"": ""357610345"",
+""avsresponse"": ""Y"",
+""cvvresponse"": ""M"",
+""orderid"": ""undefined"",
+""type"": ""refund"",
+""response_code"": ""100"",
+""emulator"": ""true"",
+""httpStatusCode"": ""200"",
+""processor_id"": ""emulator""
+}
+},
+""serverTrackingIds"": {
+""trackingId"": ""69aa177ccacbb8c02671abc4"",
+""sessionId"": ""sRUXkUOGcv8gIi1wkq9dbWKdz1Lvk6oj"",
+""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+""apiId"": ""Ljkz1Xbd8dDJo22oRkINp0gCj7zVcmt8""
+},
+""updaterName"": ""BC Admin"",
+""transient"": {
+""amount"": {
+""authorized"": 0,
+""collected"": 0,
+""refunded"": 0.2
+}
+}
+},
+{
+""_id"": ""69aa1772ba9d8bf27771b37c"",
+""index"": [],
+""type"": ""refund"",
+""status"": ""fulfilled"",
+""parentId"": ""69aa174aba9d8bf27771b2a2"",
+""referenceIds"": [],
+""permissionIds"": [],
+""brandId"": ""idlookup"",
+""shConId"": ""69431fc43a915bc1be68b520"",
+""shColId"": ""694e14fca3088d7e6b682a12"",
+""shTimestamp"": 1772654358275,
+""childrenTypes"": [],
+""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX|1772754801360|TlrZiwMG"",
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69aa174aba9d8bf27771b282"",
+""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+""commerceToken"": ""69aa174aba9d8bf27771b292"",
+""velocityOptionKeys"": [],
+""paymentTimestamp"": 1772754802395,
+""totalPrice"": {
+""code"": ""usd"",
+""amount"": 0.1
+},
+""sequence"": 0,
+""retry"": 0,
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""commerceBillingRouting"": {
+""typeSticky"": ""commerceToken"",
+""processorId"": ""pdsActive"",
+""processorSticky"": ""soft"",
+""gateway"": ""nmi""
+},
+""transactionMeta"": {
+""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX|1772754801360|TlrZiwMG"",
+""saleLikeTxBlocker"": false,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""quadZero"": false,
+""dropCvv"": false,
+""passthru"": false,
+""cascade"": false
+},
+""createdAt"": ""2026-03-05T23:53:22.397Z"",
+""updatedAt"": ""2026-03-05T23:53:22.571Z"",
+""createdTimestamp"": 1772754802397,
+""updatedTimestamp"": 1772754802397,
+""trackingIds"": {
+""trackingId"": ""69aa1772ba9d8bf27771b369"",
+""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
+""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+""apiId"": ""TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX""
+},
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 3,
+""currentRevisionId"": ""69aa1772ba9d8bf27771b38e"",
+""gatewayTransactionId"": ""69aa177296fc315cf25a4261"",
+""gatewayTransactionStatus"": ""fulfilled"",
+""rawRequest"": {
+""username"": ""test-bytecrtrs"",
+""type"": ""refund"",
+""amount"": 0.1,
+""transactionid"": ""831398256""
+},
+""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=829950966&transactionid=125542975&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
+""requestResult"": {
+""httpStatusCode"": 200,
+""authCode"": null,
+""externalId"": ""125542975"",
+""processorId"": ""emulator"",
+""primaryCode"": ""100"",
+""primaryCodeMessage"": ""100:EmulatorResponseText"",
+""codes"": [
+""success""
+],
+""codeMessages"": [
+""EmulatorResponseText""
+],
+""results"": {
+""response"": ""1"",
+""responsetext"": ""EmulatorResponseText"",
+""authcode"": ""829950966"",
+""transactionid"": ""125542975"",
+""avsresponse"": ""Y"",
+""cvvresponse"": ""M"",
+""orderid"": ""undefined"",
+""type"": ""refund"",
+""response_code"": ""100"",
+""emulator"": ""true"",
+""httpStatusCode"": ""200"",
+""processor_id"": ""emulator""
+}
+},
+""serverTrackingIds"": {
+""trackingId"": ""69aa1772cacbb8c02671abbd"",
+""sessionId"": ""j6s2O05VFMN0wPOMYi6_P9IlAiGbzFsW"",
+""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+""apiId"": ""TqfEbU1o82OF55LKSl4bZZ4NEGYJw2JX""
+},
+""updaterName"": ""BC Admin"",
+""transient"": {
+""amount"": {
+""authorized"": 0,
+""collected"": 0,
+""refunded"": 0.1
+}
+}
+},
+{
+""_id"": ""69aa1766ba9d8bf27771b336"",
+""index"": [],
+""type"": ""refund"",
+""status"": ""fulfilled"",
+""parentId"": ""69aa174aba9d8bf27771b2a2"",
+""referenceIds"": [],
+""permissionIds"": [],
+""brandId"": ""idlookup"",
+""shConId"": ""69431fc43a915bc1be68b520"",
+""shColId"": ""694e14fca3088d7e6b682a12"",
+""shTimestamp"": 1772654358275,
+""childrenTypes"": [],
+""billingId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Gjdo80atRFlXauMdRQVa5qpfRb3urzmd|1772754789654|PJQHivzF"",
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69aa174aba9d8bf27771b282"",
+""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+""commerceToken"": ""69aa174aba9d8bf27771b292"",
+""velocityOptionKeys"": [],
+""paymentTimestamp"": 1772754790694,
+""totalPrice"": {
+""code"": ""usd"",
+""amount"": 0.1
+},
+""sequence"": 0,
+""retry"": 0,
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""commerceBillingRouting"": {
+""typeSticky"": ""commerceToken"",
+""processorId"": ""pdsActive"",
+""processorSticky"": ""soft"",
+""gateway"": ""nmi""
+},
+""transactionMeta"": {
+""billingSeriesId"": ""correct|GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj|Gjdo80atRFlXauMdRQVa5qpfRb3urzmd|1772754789654|PJQHivzF"",
+""saleLikeTxBlocker"": false,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""quadZero"": false,
+""dropCvv"": false,
+""passthru"": false,
+""cascade"": false
+},
+""createdAt"": ""2026-03-05T23:53:10.697Z"",
+""updatedAt"": ""2026-03-05T23:53:10.880Z"",
+""createdTimestamp"": 1772754790697,
+""updatedTimestamp"": 1772754790697,
+""trackingIds"": {
+""trackingId"": ""69aa1766ba9d8bf27771b323"",
+""sessionId"": ""3UzHKvfDHxV32Y3_MygD2dpWqY7OVOlM"",
+""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+""apiId"": ""Gjdo80atRFlXauMdRQVa5qpfRb3urzmd""
+},
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 3,
+""currentRevisionId"": ""69aa1766ba9d8bf27771b349"",
+""gatewayTransactionId"": ""69aa176696fc315cf25a4252"",
+""gatewayTransactionStatus"": ""fulfilled"",
+""rawRequest"": {
+""username"": ""test-bytecrtrs"",
+""type"": ""refund"",
+""amount"": 0.1,
+""transactionid"": ""831398256""
+},
+""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=741240092&transactionid=224346794&avsresponse=Y&cvvresponse=M&orderid=undefined&type=refund&response_code=100&emulator=true&httpStatusCode=200&processor_id=emulator"",
+""requestResult"": {
+""httpStatusCode"": 200,
+""authCode"": null,
+""externalId"": ""224346794"",
+""processorId"": ""emulator"",
+""primaryCode"": ""100"",
+""primaryCodeMessage"": ""100:EmulatorResponseText"",
+""codes"": [
+""success""
+],
+""codeMessages"": [
+""EmulatorResponseText""
+],
+""results"": {
+""response"": ""1"",
+""responsetext"": ""EmulatorResponseText"",
+""authcode"": ""741240092"",
+""transactionid"": ""224346794"",
+""avsresponse"": ""Y"",
+""cvvresponse"": ""M"",
+""orderid"": ""undefined"",
+""type"": ""refund"",
+""response_code"": ""100"",
+""emulator"": ""true"",
+""httpStatusCode"": ""200"",
+""processor_id"": ""emulator""
+}
+},
+""serverTrackingIds"": {
+""trackingId"": ""69aa1766cacbb8c02671abb6"",
+""sessionId"": ""ZRb1OHchbB2PwLoudmu5Gbz4_0zFgR5r"",
+""clientId"": ""GLCBbc9y31S4nKvJRx2ghpvcrmCPqSAj"",
+""apiId"": ""Gjdo80atRFlXauMdRQVa5qpfRb3urzmd""
+},
+""updaterName"": ""BC Admin"",
+""transient"": {
+""amount"": {
+""authorized"": 0,
+""collected"": 0,
+""refunded"": 0.1
+}
+}
+},
+{
+""_id"": ""69aa174aba9d8bf27771b2a2"",
+""index"": [],
+""type"": ""sale"",
+""status"": ""fulfilled"",
+""referenceIds"": [],
+""permissionIds"": [],
+""shConId"": ""69431fc43a915bc1be68b520"",
+""shColId"": ""694e14fca3088d7e6b682a12"",
+""shTimestamp"": 1772654358275,
+""childrenTypes"": [
+""refund""
+],
+""billingId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69aa174aba9d8bf27771b282"",
+""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+""commerceToken"": ""69aa174aba9d8bf27771b292"",
+""velocityOptionKeys"": [
+""declineDisputeCcNumber"",
+""declineTooManySignupAttempts"",
+""declineDupSignup""
+],
+""ipAddress"": ""110.47.168.218"",
+""device"": ""desktop"",
+""paymentTimestamp"": 1772754762746,
+""totalPrice"": {
+""code"": ""usd"",
+""amount"": 1.01
+},
+""sequence"": 0,
+""retry"": 0,
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""commerceBillingRouting"": {
+""typeSticky"": ""commerceToken"",
+""processorId"": ""pdsActive"",
+""processorSticky"": ""soft"",
+""gateway"": ""nmi""
+},
+""storedCredentialOption"": {
+""resetStoredCredential"": true,
+""initiatedBy"": ""customer"",
+""storedCredentialIndicator"": ""stored""
+},
+""transactionMeta"": {
+""billingSeriesId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
+""saleLikeTxBlocker"": false,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""quadZero"": false,
+""dropCvv"": false,
+""passthru"": false,
+""cascade"": false
+},
+""createdAt"": ""2026-03-05T23:52:42.802Z"",
+""updatedAt"": ""2026-03-05T23:53:10.883Z"",
+""createdTimestamp"": 1772754762802,
+""updatedTimestamp"": 1772754762802,
+""trackingIds"": {
+""trackingId"": ""69aa174aba9d8bf27771b278"",
+""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
+""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+},
+""brandId"": ""idlookup"",
+""__v"": 5,
+""currentRevisionId"": ""69aa1766ba9d8bf27771b34b"",
+""gatewayTransactionId"": ""69aa174a96fc315cf25a4241"",
+""gatewayTransactionStatus"": ""fulfilled"",
+""passable"": true,
+""rawRequest"": {
+""username"": ""test-bytecrtrs"",
+""type"": ""sale"",
+""amount"": 1.01,
+""ccnumber"": ""411111******1111"",
+""ccexp"": ""1230"",
+""cvv"": ""***"",
+""firstname"": ""TestFname"",
+""lastname"": ""TestLname"",
+""zip"": ""10001"",
+""ipAddress"": ""110.47.168.218"",
+""orderid"": ""69aa174aba9d8bf27771b2a2"",
+""orderdescription"": ""|default offer|"",
+""initiated_by"": ""customer"",
+""stored_credential_indicator"": ""stored"",
+""processor_id"": ""pdsActive"",
+""email"": ""aaa1111@bc.dev.none"",
+""merchant_defined_field_1"": ""69431fc43a915bc1be68b520"",
+""merchant_defined_field_2"": ""0"",
+""merchant_defined_field_3"": ""idlookup"",
+""merchant_defined_field_4"": ""20260305"",
+""merchant_defined_field_5"": ""p1"",
+""merchant_defined_field_6"": ""0"",
+""merchant_defined_field_7"": ""6913e0c3a4b8675e90771bd6.6913e12fa4b8675e90771bf2"",
+""merchant_defined_field_8"": ""y"",
+""merchant_defined_field_9"": ""69aa174aba9d8bf27771b282|69aa174aba9d8bf27771b2a2|69aa174aba9d8bf27771b299|6913e0e0a4b8675e90771be7"",
+""merchant_defined_field_10"": ""desktop|i|1.01|39.01"",
+""merchant_defined_field_11"": ""694e14fca3088d7e6b682a12|af1|"",
+""merchant_defined_field_14"": ""@||payer_TestFname_TestLname"",
+""merchant_defined_field_15"": ""100404478|""
+},
+""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=975506587&transactionid=831398256&avsresponse=Y&cvvresponse=M&orderid=69aa174aba9d8bf27771b2a2&type=sale&response_code=100&emulator=true&httpStatusCode=200&processor_id=pdsActive"",
+""requestResult"": {
+""httpStatusCode"": 200,
+""authCode"": null,
+""externalId"": ""831398256"",
+""processorId"": ""pdsActive"",
+""primaryCode"": ""100"",
+""primaryCodeMessage"": ""100:EmulatorResponseText"",
+""codes"": [
+""success""
+],
+""codeMessages"": [
+""EmulatorResponseText""
+],
+""results"": {
+""response"": ""1"",
+""responsetext"": ""EmulatorResponseText"",
+""authcode"": ""975506587"",
+""transactionid"": ""831398256"",
+""avsresponse"": ""Y"",
+""cvvresponse"": ""M"",
+""orderid"": ""69aa174aba9d8bf27771b2a2"",
+""type"": ""sale"",
+""response_code"": ""100"",
+""emulator"": ""true"",
+""httpStatusCode"": ""200"",
+""processor_id"": ""pdsActive""
+}
+},
+""serverTrackingIds"": {
+""trackingId"": ""69aa174acacbb8c02671abaf"",
+""sessionId"": ""ZFsghTHq32zH7AGTqlHCZ58U5PClRxHF"",
+""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+},
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""updaterName"": ""BC Admin"",
+""transient"": {
+""amount"": {
+""authorized"": 0,
+""collected"": 1.01,
+""refunded"": 0
+}
+}
+}
+],
+""transient"": {
+""amount"": {
+""authorized"": 0,
+""collected"": 1.01,
+""refunded"": 0.4
+}
+},
+""schedule"": {
+""_id"": ""69aa174bba9d8bf27771b2b1"",
+""index"": [],
+""referenceIds"": [],
+""permissionIds"": [],
+""type"": ""commerceBillingRecur"",
+""status"": ""active"",
+""eventKey"": ""name:CommerceBillingRecurScheduleEvent|tags:commerce,billing,recur,schedule"",
+""dueTimestamp"": 1775284242746,
+""targetId"": ""69aa174aba9d8bf27771b299"",
+""targetCollection"": ""commerceorders"",
+""data"": {
+""totalPrice"": {
+""amount"": 39.01,
+""code"": ""usd""
+},
+""commerceTokenExpirationOverrides"": [],
+""previousCommercePaymentIds"": [
+""69aa174aba9d8bf27771b2a2""
+],
+""sequence"": 1,
+""retry"": 0
+},
+""shConId"": ""69431fc43a915bc1be68b520"",
+""shColId"": ""694e14fca3088d7e6b682a12"",
+""shTimestamp"": 1772654358275,
+""createdAt"": ""2026-03-05T23:52:43.048Z"",
+""updatedAt"": ""2026-03-05T23:52:43.048Z"",
+""createdTimestamp"": 1772754763048,
+""updatedTimestamp"": 1772754763048,
+""trackingIds"": {
+""trackingId"": ""69aa174aba9d8bf27771b278"",
+""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
+""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+},
+""brandId"": ""idlookup"",
+""updaterId"": ""69aa174aba9d8bf27771b282"",
+""__v"": 0,
+""updaterName"": ""TestFname TestLnameaaa""
+}
+}
+],
+""perPage"": 5
+}",
 "Get User Order
 
 csrWrapper.api.user.getOrder",/api/commerceMgnt/getUserOrder,post,"csrWrapper.api.user.getOrder({ 
-  userId: '69aa174aba9d8bf27771b282',
-  orderId: '69aa174aba9d8bf27771b299',
-  lastPaymentId: '69ab30d430ad87f2692196a7'
+userId: '69aa174aba9d8bf27771b282',
+orderId: '69aa174aba9d8bf27771b299',
+lastPaymentId: '69ab30d430ad87f2692196a7'
 });
 
 You can retrieve the same order results as [Find User Orders] by specifying one.
@@ -801,371 +1226,371 @@ params
 "Find Order Payments
 
 csrWrapper.api.user.findOrderPayments",/api/commerceMgnt/orderPayments,post,"csrWrapper.api.user.findOrderPayments({ 
-  orderId: '69aa174aba9d8bf27771b299', 
-  lastPaymentId: '69aa174aba9d8bf27771b2a2'
+orderId: '69aa174aba9d8bf27771b299', 
+lastPaymentId: '69aa174aba9d8bf27771b2a2'
 });
 
 The response from [Find User Orders] contains an array with a commercePayments field for each order. Only the first N items are returned. To retrieve additional commercePayments , pass the orderId and lastPaymentId .
 
 ",,"{
-    ""payments"": [
-        {
-            ""_id"": ""69aa174aba9d8bf27771b2a2"",
-            ""index"": [],
-            ""type"": ""sale"",
-            ""status"": ""fulfilled"",
-            ""referenceIds"": [],
-            ""permissionIds"": [],
-            ""shConId"": ""69431fc43a915bc1be68b520"",
-            ""shColId"": ""694e14fca3088d7e6b682a12"",
-            ""shTimestamp"": 1772654358275,
-            ""childrenTypes"": [
-                ""refund""
-            ],
-            ""billingId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
-            ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-            ""payerId"": ""69aa174aba9d8bf27771b282"",
-            ""commerceOrder"": ""69aa174aba9d8bf27771b299"",
-            ""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
-            ""commerceToken"": ""69aa174aba9d8bf27771b292"",
-            ""velocityOptionKeys"": [
-                ""declineDisputeCcNumber"",
-                ""declineTooManySignupAttempts"",
-                ""declineDupSignup""
-            ],
-            ""ipAddress"": ""110.47.168.218"",
-            ""device"": ""desktop"",
-            ""paymentTimestamp"": 1772754762746,
-            ""totalPrice"": {
-                ""code"": ""usd"",
-                ""amount"": 1.01
-            },
-            ""sequence"": 0,
-            ""retry"": 0,
-            ""sequenceOption"": {
-                ""thinMatch"": false,
-                ""thinMatchDataProviderDown"": false,
-                ""thinMatchTooManyResults"": false,
-                ""thinMatchNoResults"": false,
-                ""thinMatchGeographic"": false
-            },
-            ""commerceBillingRouting"": {
-                ""typeSticky"": ""commerceToken"",
-                ""processorId"": ""pdsActive"",
-                ""processorSticky"": ""soft"",
-                ""gateway"": ""nmi""
-            },
-            ""storedCredentialOption"": {
-                ""resetStoredCredential"": true,
-                ""initiatedBy"": ""customer"",
-                ""storedCredentialIndicator"": ""stored""
-            },
-            ""transactionMeta"": {
-                ""billingSeriesId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
-                ""saleLikeTxBlocker"": false,
-                ""nonMemberOnly"": true,
-                ""immediateRetry"": false,
-                ""immediateRetryCount"": 0,
-                ""quadZero"": false,
-                ""dropCvv"": false,
-                ""passthru"": false,
-                ""cascade"": false
-            },
-            ""createdAt"": ""2026-03-05T23:52:42.802Z"",
-            ""updatedAt"": ""2026-03-05T23:53:10.883Z"",
-            ""createdTimestamp"": 1772754762802,
-            ""updatedTimestamp"": 1772754762802,
-            ""trackingIds"": {
-                ""trackingId"": ""69aa174aba9d8bf27771b278"",
-                ""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
-                ""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
-                ""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
-            },
-            ""brandId"": ""idlookup"",
-            ""__v"": 5,
-            ""currentRevisionId"": ""69aa1766ba9d8bf27771b34b"",
-            ""gatewayTransactionId"": ""69aa174a96fc315cf25a4241"",
-            ""gatewayTransactionStatus"": ""fulfilled"",
-            ""passable"": true,
-            ""rawRequest"": {
-                ""username"": ""test-bytecrtrs"",
-                ""type"": ""sale"",
-                ""amount"": 1.01,
-                ""ccnumber"": ""411111******1111"",
-                ""ccexp"": ""1230"",
-                ""cvv"": ""***"",
-                ""firstname"": ""TestFname"",
-                ""lastname"": ""TestLname"",
-                ""zip"": ""10001"",
-                ""ipAddress"": ""110.47.168.218"",
-                ""orderid"": ""69aa174aba9d8bf27771b2a2"",
-                ""orderdescription"": ""|default offer|"",
-                ""initiated_by"": ""customer"",
-                ""stored_credential_indicator"": ""stored"",
-                ""processor_id"": ""pdsActive"",
-                ""email"": ""aaa1111@bc.dev.none"",
-                ""merchant_defined_field_1"": ""69431fc43a915bc1be68b520"",
-                ""merchant_defined_field_2"": ""0"",
-                ""merchant_defined_field_3"": ""idlookup"",
-                ""merchant_defined_field_4"": ""20260305"",
-                ""merchant_defined_field_5"": ""p1"",
-                ""merchant_defined_field_6"": ""0"",
-                ""merchant_defined_field_7"": ""6913e0c3a4b8675e90771bd6.6913e12fa4b8675e90771bf2"",
-                ""merchant_defined_field_8"": ""y"",
-                ""merchant_defined_field_9"": ""69aa174aba9d8bf27771b282|69aa174aba9d8bf27771b2a2|69aa174aba9d8bf27771b299|6913e0e0a4b8675e90771be7"",
-                ""merchant_defined_field_10"": ""desktop|i|1.01|39.01"",
-                ""merchant_defined_field_11"": ""694e14fca3088d7e6b682a12|af1|"",
-                ""merchant_defined_field_14"": ""@||payer_TestFname_TestLname"",
-                ""merchant_defined_field_15"": ""100404478|""
-            },
-            ""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=975506587&transactionid=831398256&avsresponse=Y&cvvresponse=M&orderid=69aa174aba9d8bf27771b2a2&type=sale&response_code=100&emulator=true&httpStatusCode=200&processor_id=pdsActive"",
-            ""requestResult"": {
-                ""httpStatusCode"": 200,
-                ""authCode"": null,
-                ""externalId"": ""831398256"",
-                ""processorId"": ""pdsActive"",
-                ""primaryCode"": ""100"",
-                ""primaryCodeMessage"": ""100:EmulatorResponseText"",
-                ""codes"": [
-                    ""success""
-                ],
-                ""codeMessages"": [
-                    ""EmulatorResponseText""
-                ],
-                ""results"": {
-                    ""response"": ""1"",
-                    ""responsetext"": ""EmulatorResponseText"",
-                    ""authcode"": ""975506587"",
-                    ""transactionid"": ""831398256"",
-                    ""avsresponse"": ""Y"",
-                    ""cvvresponse"": ""M"",
-                    ""orderid"": ""69aa174aba9d8bf27771b2a2"",
-                    ""type"": ""sale"",
-                    ""response_code"": ""100"",
-                    ""emulator"": ""true"",
-                    ""httpStatusCode"": ""200"",
-                    ""processor_id"": ""pdsActive""
-                }
-            },
-            ""serverTrackingIds"": {
-                ""trackingId"": ""69aa174acacbb8c02671abaf"",
-                ""sessionId"": ""ZFsghTHq32zH7AGTqlHCZ58U5PClRxHF"",
-                ""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
-                ""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
-            },
-            ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-            ""updaterName"": ""BC Admin"",
-            ""transient"": {
-                ""amount"": {
-                    ""authorized"": 0,
-                    ""collected"": 1.01,
-                    ""refunded"": 0
-                }
-            }
-        }
-    ],
-    ""perPage"": 5
+""payments"": [
+{
+""_id"": ""69aa174aba9d8bf27771b2a2"",
+""index"": [],
+""type"": ""sale"",
+""status"": ""fulfilled"",
+""referenceIds"": [],
+""permissionIds"": [],
+""shConId"": ""69431fc43a915bc1be68b520"",
+""shColId"": ""694e14fca3088d7e6b682a12"",
+""shTimestamp"": 1772654358275,
+""childrenTypes"": [
+""refund""
+],
+""billingId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69aa174aba9d8bf27771b282"",
+""commerceOrder"": ""69aa174aba9d8bf27771b299"",
+""commerceTransaction"": ""69aa174aba9d8bf27771b2a0"",
+""commerceToken"": ""69aa174aba9d8bf27771b292"",
+""velocityOptionKeys"": [
+""declineDisputeCcNumber"",
+""declineTooManySignupAttempts"",
+""declineDupSignup""
+],
+""ipAddress"": ""110.47.168.218"",
+""device"": ""desktop"",
+""paymentTimestamp"": 1772754762746,
+""totalPrice"": {
+""code"": ""usd"",
+""amount"": 1.01
+},
+""sequence"": 0,
+""retry"": 0,
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""commerceBillingRouting"": {
+""typeSticky"": ""commerceToken"",
+""processorId"": ""pdsActive"",
+""processorSticky"": ""soft"",
+""gateway"": ""nmi""
+},
+""storedCredentialOption"": {
+""resetStoredCredential"": true,
+""initiatedBy"": ""customer"",
+""storedCredentialIndicator"": ""stored""
+},
+""transactionMeta"": {
+""billingSeriesId"": ""sale|51snnjg9TmuzdRgWqkR2aYKAs8wkWB00|Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu|1772754761668|iZ7pSQWH"",
+""saleLikeTxBlocker"": false,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""quadZero"": false,
+""dropCvv"": false,
+""passthru"": false,
+""cascade"": false
+},
+""createdAt"": ""2026-03-05T23:52:42.802Z"",
+""updatedAt"": ""2026-03-05T23:53:10.883Z"",
+""createdTimestamp"": 1772754762802,
+""updatedTimestamp"": 1772754762802,
+""trackingIds"": {
+""trackingId"": ""69aa174aba9d8bf27771b278"",
+""sessionId"": ""xFG6e8TyZ_fhXVeNZp_YXIKcHAfoXD5G"",
+""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+},
+""brandId"": ""idlookup"",
+""__v"": 5,
+""currentRevisionId"": ""69aa1766ba9d8bf27771b34b"",
+""gatewayTransactionId"": ""69aa174a96fc315cf25a4241"",
+""gatewayTransactionStatus"": ""fulfilled"",
+""passable"": true,
+""rawRequest"": {
+""username"": ""test-bytecrtrs"",
+""type"": ""sale"",
+""amount"": 1.01,
+""ccnumber"": ""411111******1111"",
+""ccexp"": ""1230"",
+""cvv"": ""***"",
+""firstname"": ""TestFname"",
+""lastname"": ""TestLname"",
+""zip"": ""10001"",
+""ipAddress"": ""110.47.168.218"",
+""orderid"": ""69aa174aba9d8bf27771b2a2"",
+""orderdescription"": ""|default offer|"",
+""initiated_by"": ""customer"",
+""stored_credential_indicator"": ""stored"",
+""processor_id"": ""pdsActive"",
+""email"": ""aaa1111@bc.dev.none"",
+""merchant_defined_field_1"": ""69431fc43a915bc1be68b520"",
+""merchant_defined_field_2"": ""0"",
+""merchant_defined_field_3"": ""idlookup"",
+""merchant_defined_field_4"": ""20260305"",
+""merchant_defined_field_5"": ""p1"",
+""merchant_defined_field_6"": ""0"",
+""merchant_defined_field_7"": ""6913e0c3a4b8675e90771bd6.6913e12fa4b8675e90771bf2"",
+""merchant_defined_field_8"": ""y"",
+""merchant_defined_field_9"": ""69aa174aba9d8bf27771b282|69aa174aba9d8bf27771b2a2|69aa174aba9d8bf27771b299|6913e0e0a4b8675e90771be7"",
+""merchant_defined_field_10"": ""desktop|i|1.01|39.01"",
+""merchant_defined_field_11"": ""694e14fca3088d7e6b682a12|af1|"",
+""merchant_defined_field_14"": ""@||payer_TestFname_TestLname"",
+""merchant_defined_field_15"": ""100404478|""
+},
+""rawResponse"": ""response=1&responsetext=EmulatorResponseText&authcode=975506587&transactionid=831398256&avsresponse=Y&cvvresponse=M&orderid=69aa174aba9d8bf27771b2a2&type=sale&response_code=100&emulator=true&httpStatusCode=200&processor_id=pdsActive"",
+""requestResult"": {
+""httpStatusCode"": 200,
+""authCode"": null,
+""externalId"": ""831398256"",
+""processorId"": ""pdsActive"",
+""primaryCode"": ""100"",
+""primaryCodeMessage"": ""100:EmulatorResponseText"",
+""codes"": [
+""success""
+],
+""codeMessages"": [
+""EmulatorResponseText""
+],
+""results"": {
+""response"": ""1"",
+""responsetext"": ""EmulatorResponseText"",
+""authcode"": ""975506587"",
+""transactionid"": ""831398256"",
+""avsresponse"": ""Y"",
+""cvvresponse"": ""M"",
+""orderid"": ""69aa174aba9d8bf27771b2a2"",
+""type"": ""sale"",
+""response_code"": ""100"",
+""emulator"": ""true"",
+""httpStatusCode"": ""200"",
+""processor_id"": ""pdsActive""
+}
+},
+""serverTrackingIds"": {
+""trackingId"": ""69aa174acacbb8c02671abaf"",
+""sessionId"": ""ZFsghTHq32zH7AGTqlHCZ58U5PClRxHF"",
+""clientId"": ""51snnjg9TmuzdRgWqkR2aYKAs8wkWB00"",
+""apiId"": ""Mn20NFBgGaqCUpypYIiDxAmSlsqmPrZu""
+},
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""updaterName"": ""BC Admin"",
+""transient"": {
+""amount"": {
+""authorized"": 0,
+""collected"": 1.01,
+""refunded"": 0
+}
+}
+}
+],
+""perPage"": 5
 }",
 "Find Order Histories
 
 csrWrapper.api.user.findOrderHistories",/api/commerceMgnt/orderHistories,post,"csrWrapper.api.user.findOrderHistories({ 
-  orderId: '69aa174aba9d8bf27771b299',
-  lastRevisionId: '69aa1766ba9d8bf27771b33e',
+orderId: '69aa174aba9d8bf27771b299',
+lastRevisionId: '69aa1766ba9d8bf27771b33e',
 });
 
-The response from [Find User Orders] contains an orderHistories array field for each order. Initially, only N items are returned from this array. To receive the next N items, you must pass orderId and lastRevisionId . lastRevisionId is the _id of each orderHistories .",,"{
-    ""orderHistories"": [
-        {
-            ""_id"": ""69aa174bba9d8bf27771b2c6"",
-            ""status"": ""active"",
-            ""statusReason"": ""SuccessfulTx"",
-            ""updaterId"": ""69aa174aba9d8bf27771b282"",
-            ""createdAt"": ""2026-03-05T23:52:43.152Z"",
-            ""updaterName"": ""TestFname TestLnameaaa""
-        }
-    ],
-    ""perPage"": 5
+The response from [Find User Orders] contains an orderHistories array field for each order. Initially, only N items are returned from this array. To receive the next N items, you must pass orderId and lastRevisionId . lastRevisionId is the _id of each orderHistories .",,"{ 
+""orderHistories"": [ 
+{ 
+""_id"": ""69aa174bba9d8bf27771b2c6"", 
+""status"": ""active"", 
+""statusReason"": ""SuccessfulTx"", 
+""updaterId"": ""69aa174aba9d8bf27771b282"", 
+""createdAt"": ""2026-03-05T23:52:43.152Z"", 
+""updaterName"": ""TestFname TestLnameaaa"" 
+} 
+], 
+""perPage"": 5 
 }",
 "Cancel or Uncancel Order
 
 csrWrapper.api.user.cancelUncancelOrder",/api/commerceMgnt/cancelUncancelOrder,post,"csrWrapper.api.user.cancelUncancelOrder({ 
-  orderId: '69aa174aba9d8bf27771b299',
-  flag: true,
+orderId: '69aa174aba9d8bf27771b299',
+flag: true,
 });
 
 params
-- flag: true (cancels the order), false (reactivates the canceled order)",,"{
-    ""success"": true,
-    ""commerceOrder"": {
-        ""_id"": ""69ab30d430ad87f26921969e"",
-        ""index"": [],
-        ""status"": ""active"",
-        ""referenceIds"": [],
-        ""permissionIds"": [],
-        ""shConId"": ""69a2380b53ecf9b049d01fbb"",
-        ""shColId"": ""69aa41b648af3b202e7fb065"",
-        ""shTimestamp"": 1772765880560,
-        ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-        ""payerId"": ""69ab30d430ad87f269219687"",
-        ""commerceTokens"": [
-            ""69ab30d430ad87f269219697""
-        ],
-        ""commerceOffers"": [
-            ""6913e0e0a4b8675e90771be7""
-        ],
-        ""commerceOfferRevisions"": [
-            ""69a105f42f81321b1bd998ff""
-        ],
-        ""commerceOfferInfos"": [
-            {
-                ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
-                ""commerceOfferRevisionId"": ""69a105f42f81321b1bd998ff"",
-                ""commerceProductInfos"": [
-                    {
-                        ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
-                        ""commerceProductRevisionId"": ""699fbbb626a1804895701525"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69ab30d430ad87f26921969c"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    },
-                    {
-                        ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
-                        ""commerceProductRevisionId"": ""699fbbbc26a1804895701530"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69ab30d430ad87f26921969d"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    }
-                ],
-                ""options"": null
-            }
-        ],
-        ""commercePriceRules"": [
-            {
-                ""_DESC_"": ""S0"",
-                ""priority"": 1,
-                ""conditions"": [
-                    {
-                        ""sequence"": 0
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 1.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 7,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            },
-            {
-                ""_DESC_"": ""S1+"",
-                ""priority"": 2,
-                ""conditions"": [
-                    {
-                        ""sequence"": ""v > 0""
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 39.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 30,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            }
-        ],
-        ""sequenceOption"": {
-            ""thinMatch"": false,
-            ""thinMatchDataProviderDown"": false,
-            ""thinMatchTooManyResults"": false,
-            ""thinMatchNoResults"": false,
-            ""thinMatchGeographic"": false
-        },
-        ""ipAddress"": ""110.47.168.218"",
-        ""refer"": {
-            ""partnerId"": ""p1"",
-            ""afid"": ""af1"",
-            ""abc"": ""bcd""
-        },
-        ""sessionDuration"": 58956667,
-        ""orderTimestamp"": 1772826836716,
-        ""nonMemberOnly"": true,
-        ""immediateRetry"": false,
-        ""immediateRetryCount"": 0,
-        ""createdAt"": ""2026-03-06T19:53:56.737Z"",
-        ""updatedAt"": ""2026-03-10T00:51:43.972Z"",
-        ""createdTimestamp"": 1772826836737,
-        ""updatedTimestamp"": 1772826836737,
-        ""trackingIds"": {
-            ""trackingId"": ""69ab30d430ad87f26921967d"",
-            ""sessionId"": ""y_oORvCd6DXqr4yh2CQmXOKr8OfTWUaQ"",
-            ""clientId"": ""ucxaWwFknZgvchp85vsKffH7GRmoGgeh"",
-            ""apiId"": ""t1c2aM4g3gyq6QWX8r01CtKyQsTPTmbp""
-        },
-        ""brandId"": ""idlookup"",
-        ""updaterId"": ""6943179e90625d3dbeadf6f7"",
-        ""__v"": 7,
-        ""currentRevisionId"": ""69af6b1f9c5bb16194bfe00b"",
-        ""dueTimestamp"": 1775370656716,
-        ""statusReason"": ""SuccessfulTx"",
-        ""id"": ""69ab30d430ad87f26921969e""
-    }
+- flag: true (cancels the order), false (reactivates the canceled order)",,"{ 
+""success"": true, 
+""commerceOrder"": { 
+""_id"": ""69ab30d430ad87f26921969e"", 
+""index"": [], 
+""status"": ""active"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""shConId"": ""69a2380b53ecf9b049d01fbb"", 
+""shColId"": ""69aa41b648af3b202e7fb065"", 
+""shTimestamp"": 1772765880560, 
+""payeeId"": ""6943179e90625d3dbeadf6f7"", 
+""payerId"": ""69ab30d430ad87f269219687"", 
+""commerceTokens"": [ 
+""69ab30d430ad87f269219697"" 
+], 
+""commerceOffers"": [ 
+""6913e0e0a4b8675e90771be7"" 
+], 
+""commerceOfferRevisions"": [ 
+""69a105f42f81321b1bd998ff"" 
+], 
+""commerceOfferInfos"": [ 
+{ 
+""commerceOfferId"": ""6913e0e0a4b8675e90771be7"", 
+""commerceOfferRevisionId"": ""69a105f42f81321b1bd998ff"", 
+""commerceProductInfos"": [ 
+{ 
+""commerceProductId"": ""6913e0c3a4b8675e90771bd6"", 
+""commerceProductRevisionId"": ""699fbbb626a1804895701525"", 
+""commerceStockInfo"": { 
+""commerceStockId"": ""69ab30d430ad87f26921969c"", 
+""commerceStockRevisionId"": null, 
+""options"": null 
+}, 
+""options"": null 
+}, 
+{ 
+""commerceProductId"": ""6913e12fa4b8675e90771bf2"", 
+""commerceProductRevisionId"": ""699fbbbc26a1804895701530"", 
+""commerceStockInfo"": { 
+""commerceStockId"": ""69ab30d430ad87f26921969d"", 
+""commerceStockRevisionId"": null, 
+""options"": null 
+}, 
+""options"": null 
+} 
+], 
+""options"": null 
+} 
+], 
+""commercePriceRules"": [ 
+{ 
+""_DESC_"": ""S0"", 
+""priority"": 1, 
+""conditions"": [ 
+{ 
+""sequence"": 0 
+} 
+], 
+""candidates"": [ 
+{ 
+""id"": { 
+""amount"": 1.01, 
+""code"": ""usd"", 
+""period"": { 
+""quantity"": 7, 
+""unit"": ""d"" 
+} 
+}, 
+""weight"": 1 
+} 
+] 
+}, 
+{ 
+""_DESC_"": ""S1+"", 
+""priority"": 2, 
+""conditions"": [ 
+{ 
+""sequence"": ""v > 0"" 
+} 
+], 
+""candidates"": [ 
+{ 
+""id"": { 
+""amount"": 39.01, 
+""code"": ""usd"", 
+""period"": { 
+""quantity"": 30, 
+""unit"": ""d"" 
+} 
+}, 
+""weight"": 1 
+} 
+] 
+} 
+], 
+""sequenceOption"": { 
+""thinMatch"": false, 
+""thinMatchDataProviderDown"": false, 
+""thinMatchTooManyResults"": false, 
+""thinMatchNoResults"": false, 
+""thinMatchGeographic"": false 
+}, 
+""ipAddress"": ""110.47.168.218"", 
+""refer"": { 
+""partnerId"": ""p1"", 
+""afid"": ""af1"", 
+""abc"": ""bcd"" 
+}, 
+""sessionDuration"": 58956667, 
+""orderTimestamp"": 1772826836716, 
+""nonMemberOnly"": true, 
+""immediateRetry"": false, 
+""immediateRetryCount"": 0, 
+""createdAt"": ""2026-03-06T19:53:56.737Z"", 
+""updatedAt"": ""2026-03-10T00:51:43.972Z"", 
+""createdTimestamp"": 1772826836737, 
+""updatedTimestamp"": 1772826836737, 
+""trackingIds"": { 
+""trackingId"": ""69ab30d430ad87f26921967d"", 
+""sessionId"": ""y_oORvCd6DXqr4yh2CQmXOKr8OfTWUaQ"", 
+""clientId"": ""ucxaWwFknZgvchp85vsKffH7GRmoGgeh"", 
+""apiId"": ""t1c2aM4g3gyq6QWX8r01CtKyQsTPTmbp"" 
+}, 
+""brandId"": ""idlookup"", 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""__v"": 7, 
+""currentRevisionId"": ""69af6b1f9c5bb16194bfe00b"", 
+""dueTimestamp"": 1775370656716, 
+""statusReason"": ""SuccessfulTx"", 
+""id"": ""69ab30d430ad87f26921969e"" 
+} 
 }",
 "Refund or Void Order
 
 csrWrapper.api.user.refundVoidOrder",/api/commerceBilling/correct,post,"csrWrapper.api.user.refundVoidOrder({
-  commercePaymentType: 'refund',
-  targetCommerceOrderId: '69ab30d430ad87f26921969e',
-  targetCommerceOrderRevisionId: '69af6b1f9c5bb16194bfe00b',
-  targetCommercePaymentId: '69ab30d430ad87f2692196a7',
-  targetCommercePaymentRevisionId: '69ab30d530ad87f2692196c2',
-  amount: 0.1,
+commercePaymentType: 'refund',
+targetCommerceOrderId: '69ab30d430ad87f26921969e',
+targetCommerceOrderRevisionId: '69af6b1f9c5bb16194bfe00b',
+targetCommercePaymentId: '69ab30d430ad87f2692196a7',
+targetCommercePaymentRevisionId: '69ab30d530ad87f2692196c2',
+amount: 0.1,
 });
 
 params
-- commercePaymentType: refund (refund a portion of the amount), void (void the entire amount)
-- targetCommerceOrderId
-- targetCommerceOrderRevisionId: commerceOrder's currentRevisionId
-- targetCommercePaymentId
-- targetCommercePaymentRevisionId: commercePayment's currentRevisionId
-- amount: Amount to be refunded or voided",,"{
-    ""status"": ""fulfilled"",
-    ""payerId"": ""69ab30d430ad87f269219687"",
-    ""commerceOrderId"": ""69ab30d430ad87f26921969e""
+- commercePaymentType: refund (refund a portion of the amount), void (void the entire amount) 
+- targetCommerceOrderId 
+- targetCommerceOrderRevisionId: commerceOrder's currentRevisionId 
+- targetCommercePaymentId 
+- targetCommercePaymentRevisionId: commercePayment's currentRevisionId 
+- amount: Amount to be refunded or voided",,"{ 
+""status"": ""fulfilled"", 
+""payerId"": ""69ab30d430ad87f269219687"", 
+""commerceOrderId"": ""69ab30d430ad87f26921969e"" 
 }",
 "Update Schedule DueTimestamp
 
 csrWrapper.api.user.updateScheduleDueTimestamp",/api/commerceMgnt/updateScheduleDueTimestamp,post,"csrWrapper.api.user.updateScheduleDueTimestamp({ 
-  scheduleId: '69ab30d530ad87f2692196b3',
-  dueTimestamp: 1775371111111,
+scheduleId: '69ab30d530ad87f2692196b3',
+dueTimestamp: 1775371111111,
 });
 
 params
 - scheduleId: order.schedule._id
-- dueTimestamp: (number)",,"{
-    ""success"": true
+- dueTimestamp: (number)",,"{ 
+""success"": true 
 }",
 "Find OptOuts
 
 csrWrapper.api.optOut.find",/api/database/search,post,"csrWrapper.api.optOut.find({ 
-  status: 'requested',
+status: 'requested',
 });
 
 params
@@ -1178,7 +1603,7 @@ params
 "Find Contacts
 
 csrWrapper.api.contact.find",/api/database/search,post,"csrWrapper.api.contact.find({ 
-  status: 'requested',
+status: 'requested',
 });
 
 params
@@ -1186,8 +1611,112 @@ params
 - brandId: (optional)
 - email: (optional)
 - lastId: (optional) You can get the next optOut by passing the _id of the last contact.",,,
-,,,,,,
-,,,,,,
+"Find ManagedContacts Added on 2026-03-30
+
+csrWrapper.api.managedContact.find",/api/database/search,post,"csrWrapper.api.managedContact.find({ brandId, type, contactAddress, lastId });
+
+params
+- brandId: (optional)
+- type: 'email' or 'phone'
+- contactAddress: (optional) type(email: emaillAddress), type(phone: phone number)
+- lastId: (optional) You can get the next managedContact by passing the _id of the last managedContact.",,"{
+""docs"": [
+{
+""_id"": ""69cb10593c43753927d8c647"",
+""uniqueId"": ""phone|idlookup|5614484551"",
+""__v"": 2,
+""brandId"": ""idlookup"",
+""contactAddress"": ""5614484551"",
+""createdAt"": ""2026-03-31T00:07:53.275Z"",
+""data"": {
+""lastTeaserSearchNameInfo"": {
+""type"": ""name"",
+""contextKey"": ""sale.name.teaser"",
+""fName"": ""tim"",
+""lName"": ""chin"",
+""state"": ""fl"",
+""teaserCommerceContentId"": ""69cb10463c43753927d8c621""
+},
+""slickText"": {
+""contact_id"": 181631037,
+""opt_in_status"": ""subscribed""
+}
+},
+""hash"": ""9666a13c3c8a42886c0b72cc4cff8946"",
+""index"": [],
+""permissionIds"": [],
+""referenceIds"": [],
+""sessionId"": ""P7TX1a4Jc8oE-q4FDVEFr4ez8YV1vA4V"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""status"": ""active"",
+""trackingIds"": {
+""trackingId"": ""69cb10593c43753927d8c643"",
+""sessionId"": ""P7TX1a4Jc8oE-q4FDVEFr4ez8YV1vA4V"",
+""clientId"": ""bbN4eaglV0oZpw4YUsw8WsD5Sr0zvG7I"",
+""apiId"": ""JU0c7LAyW7bicE8LwiYB5ou8rk2fV1o7""
+},
+""type"": ""phone"",
+""updatedAt"": ""2026-03-31T02:20:04.379Z"",
+""subStatus"": ""unsubscribed"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""id"": ""69cb10593c43753927d8c647""
+}
+],
+""noMoreDocs"": true,
+""displayFields"": [
+""_id"",
+""createdAt"",
+""brandId"",
+""type"",
+""contactAddress"",
+""status"",
+""shConId"",
+""shColId"",
+""subStatus""
+],
+""dateFields"": [
+""createdAt""
+]
+}",
+"Unsubscribe ManagedContact Added on 2026-03-30
+
+csrWrapper.api.managedContact.unsubscribe",/api/managedContact/management/unsubscribe,post,"csrWrapper.api.managedContact.unsubscribe({ managedContactId });
+
+params
+- managedContactId: Find the _id (managedContactId) in the documentation of the ManagedContacts response.",,"{
+""success"": true,
+""managedContact"": {
+""_id"": ""69cb37217771101e1f0dd3fe"",
+""uniqueId"": ""email|idlookup|dfsf2f32452@bytecrtrs.com"",
+""__v"": 1,
+""brandId"": ""idlookup"",
+""contactAddress"": ""dfsf2f32452@bytecrtrs.com"",
+""createdAt"": ""2026-03-31T02:53:21.495Z"",
+""data"": {
+""lastTeaserSearchNameInfo"": null
+},
+""hash"": ""6c12bc9d5ce59a432aee8623b1596929"",
+""index"": [],
+""permissionIds"": [],
+""referenceIds"": [],
+""sessionId"": ""pqv3CKCVMIzpYRqwrKMiehZ7AZeFhAq4"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""status"": ""active"",
+""trackingIds"": {
+""trackingId"": ""69cb37217771101e1f0dd3fa"",
+""sessionId"": ""pqv3CKCVMIzpYRqwrKMiehZ7AZeFhAq4"",
+""clientId"": ""1"",
+""apiId"": ""2""
+},
+""type"": ""email"",
+""updatedAt"": ""2026-03-31T02:53:32.749Z"",
+""subStatus"": ""unsubscribed"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""id"": ""69cb37217771101e1f0dd3fe""
+}
+}",
 ,,,,,,
 ,,,,,,
 ,,,,,,

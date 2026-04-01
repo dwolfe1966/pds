@@ -82,6 +82,10 @@ import EmailTicketsPage from './pages/admin/EmailTicketsPage';
 import MailActivityPage from './pages/admin/MailActivityPage';
 import OrdersPage from './pages/admin/OrdersPage';
 import PaymentsPage from './pages/admin/PaymentsPage';
+import PermissionsPage from './pages/admin/PermissionsPage';
+import ContentPage from './pages/admin/ContentPage';
+import TimesheetsPage from './pages/admin/TimesheetsPage';
+
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
 import PaidRoute from './pages/PaidRoute';
@@ -401,6 +405,30 @@ const App = () => {
             element={
               <ProtectedRoute role="admin">
                 <MailActivityPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/timesheets"
+            element={
+              <ProtectedRoute role="admin">
+                <TimesheetsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/permissions"
+            element={
+              <ProtectedRoute role="admin">
+                <PermissionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/content"
+            element={
+              <ProtectedRoute role="admin">
+                <ContentPage />
               </ProtectedRoute>
             }
           />

@@ -12,29 +12,29 @@ apiWrapper.api.auth.logout",/api/auth/logout,post,apiWrapper.api.auth.logout();,
 apiWrapper.api.idLookup.searchTeaser",/api/idLookup/teaser/search,post,"1) name teaser search
 
 apiWrapper.api.idLookup.searchTeaser({
-  state: 'FL',
-  fName: 'tim',
-  lName: 'chin',
-  type: 'name',
-  contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
+state: 'FL',
+fName: 'tim',
+lName: 'chin',
+type: 'name',
+contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
 });
 
 
 2) phone teaser search
 
 apiWrapper.api.idLookup.searchTeaser({
-  phone: '8054320540',
-  type: 'phone',
-  contextKey: window.ApiWrapper.contextKey.sale.phone.teaser, // sale.phone.teaser
+phone: '8054320540',
+type: 'phone',
+contextKey: window.ApiWrapper.contextKey.sale.phone.teaser, // sale.phone.teaser
 });
 
 
 3) email teaser search
 
 apiWrapper.api.idLookup.searchTeaser({
-  email: 'chin19691@gmail.com',
-  type: 'email',
-  contextKey: window.ApiWrapper.contextKey.sale.email.teaser, // sale.email.teaser
+email: 'chin19691@gmail.com',
+type: 'email',
+contextKey: window.ApiWrapper.contextKey.sale.email.teaser, // sale.email.teaser
 });
 
 
@@ -43,17 +43,20 @@ LoadMore) pagination for name, phone and email teaser search
 You can retrieve the next page using hasMore() and getMore() in the searchTeaser response object.
 
 const response = await apiWrapper.api.idLookup.searchTeaser({
-  state: 'FL',
-  fName: 'tim',
-  lName: 'chin',
-  type: 'name',
-  contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
+state: 'FL',
+fName: 'tim',
+lName: 'chin',
+type: 'name',
+contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
 });
 
 const identitiesOfFirstPage = response.getIdentities();
 
 // Called when the user clicks a button like LoadMore.
 const identitiesOfNextPage = await response.getMore();
+
+Get Failed Code
+response.getFailedCode(); // TooManyMatches or null
 ","state
 
 Alabama : AL
@@ -114,10 +117,10 @@ raws.0.transient.perPage : Number of results per page",
 "Report search
 
 ApiWrapper.api.idLookup.createReport",/api/idLookup/report/create,post,"apiWrapper.api.idLookup.createReport({
-  type: 'extId',
-  extId: identity.extId,
-  contextKey: window.ApiWrapper.contextKey.sale.name.report, // sale.name.report
-  teaserInput: teaserResponse.getTeaserInput(),
+type: 'extId',
+extId: identity.extId,
+contextKey: window.ApiWrapper.contextKey.sale.name.report, // sale.name.report
+teaserInput: teaserResponse.getTeaserInput(),
 });
 
 extId can be passed by passing the extId property value of each element in the identities array received after searching for teaser.
@@ -132,11 +135,11 @@ email : window.ApiWrapper.contextKey.sale.email.report // sale.email.report
 The teaserInput value can be obtained by calling the getTeaserInput() method as a response object after searching for the teaser.
 
 const teaserResponse = await apiWrapper.api.idLookup.searchTeaser({
-  state: 'FL',
-  fName: 'tim',
-  lName: 'chin',
-  type: 'name',
-  contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
+state: 'FL',
+fName: 'tim',
+lName: 'chin',
+type: 'name',
+contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
 });
 
 teaserResponse.getTeaserInput();
@@ -170,11 +173,11 @@ response.commerceContents is an array of saved report information.
 
 commerceContent.data.teaserInput is the search information searched by the user.
 {
-  ""type"": ""name"",
-  ""contextKey"": ""sale.name.teaser"",
-  ""fName"": ""tim"",
-  ""lName"": ""chin"",
-  ""state"": ""FL""
+""type"": ""name"",
+""contextKey"": ""sale.name.teaser"",
+""fName"": ""tim"",
+""lName"": ""chin"",
+""state"": ""FL""
 }
 
 Passing the last ID of the first loaded report will retrieve the saved report for the next page.
@@ -191,7 +194,7 @@ data.teaserInput : Teaser information searched by users when generating reports"
 "Download PDF
 
 ApiWrapper.api.idLookup.downloadPdfReport",,,"apiWrapper.api.idLookup.downloadPdfReport({
-  commerceContentId: e._id,
+commerceContentId: e._id,
 });
 
 commerceContentId is only valid for detail reports already created with Report search, such as the results of Get Reports. (CommerceContentId searched with Teaser search cannot be downloaded as a PDF.)
@@ -200,84 +203,84 @@ When you call the downloadPdfReport method as above, a PDF download pop-up windo
 "Commerce billing
 
 ApiWrapper.api.billing.sale",/commerceBilling/sale,post,"apiWrapper.api.billing.sale({
-  userInfo: {
-    email: 'user@email.com',
-    firstName: 'firstName',
-    lastName: 'lastName',
-    optin: true,
-  },
-  billings: [
-    {
-      billingType: 'creditCard',
-      creditCard: {
-        pan: '4111111111111111',
-        expYear: '30',
-        expMonth: '12',
-        cvv: '123',
-      },
-      billingAddress: {
-        firstName: 'billingFirstName',
-        lastName: 'billingLastName',
-        street1: '123 main',
-        zip: '10001',
-        bogusFields: {
-          firstName: false,
-          lastName: false,
-          street1: true,
-          street2: true,
-          city: true,
-          state: true,
-          zip: false,
-          country: true,
-        },
-      },
-    },
-  ],
-  commerceOfferKeys: [
-    {
-      key: 'comp.offer.signup.main',
-      target: 'main',
-      options: {},
-    },
-  ],
-  sequenceOption: {
-    thinMatch: false,
-    thinMatchDataProviderDown: false,
-    thinMatchTooManyResults: false,
-    thinMatchNoResults: false,
-    thinMatchGeographic: false,
-  },
-  queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
+userInfo: {
+email: 'user@email.com',
+firstName: 'firstName',
+lastName: 'lastName',
+optin: true,
+},
+billings: [
+{
+billingType: 'creditCard',
+creditCard: {
+pan: '4111111111111111',
+expYear: '30',
+expMonth: '12',
+cvv: '123',
+},
+billingAddress: {
+firstName: 'billingFirstName',
+lastName: 'billingLastName',
+street1: '123 main',
+zip: '10001',
+bogusFields: {
+firstName: false,
+lastName: false,
+street1: true,
+street2: true,
+city: true,
+state: true,
+zip: false,
+country: true,
+},
+},
+},
+],
+commerceOfferKeys: [
+{
+key: 'comp.offer.signup.main',
+target: 'main',
+options: {},
+},
+],
+sequenceOption: {
+thinMatch: false,
+thinMatchDataProviderDown: false,
+thinMatchTooManyResults: false,
+thinMatchNoResults: false,
+thinMatchGeographic: false,
+},
+queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
 });","queryString is a query string value included in the url when a user accesses from an external link, in the format refer_partnerId=p1&refer_afid=af1&refer_abc=bcd.",,
 "Commerce billing
 
 apiWrapper.api.billing.tokenSale",/commerceBilling/tokenSale,post,"apiWrapper.api.billing.tokenSale({
-  commerceOfferKeys: [
-    {
-      key: 'comp.offer.updateCard.main',
-      target: 'main',
-      options: {},
-    },
-  ],
-  sequenceOption: {
-    thinMatch: false,
-    thinMatchDataProviderDown: false,
-    thinMatchTooManyResults: false,
-    thinMatchNoResults: false,
-    thinMatchGeographic: false,
-  },
-  queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
+commerceOfferKeys: [
+{
+key: 'comp.offer.updateCard.main',
+target: 'main',
+options: {},
+},
+],
+sequenceOption: {
+thinMatch: false,
+thinMatchDataProviderDown: false,
+thinMatchTooManyResults: false,
+thinMatchNoResults: false,
+thinMatchGeographic: false,
+},
+queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
 });","queryString is a query string value included in the url when a user accesses from an external link, in the format refer_partnerId=p1&refer_afid=af1&refer_abc=bcd.",,
 "Commerce billing
 
 apiWrapper.api.billing.signup",/commerceBilling/signup,post,"apiWrapper.api.billing.signup({
-  userInfo: {
-    email: billingEmail,
-    firstName: billingFirstName,
-    lastName: billingLastName,
-    optin: true,
-  },
-  queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
+userInfo: {
+email: billingEmail,
+firstName: billingFirstName,
+lastName: billingLastName,
+optin: true,
+},
+queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
 });","queryString is a query string value included in the url when a user accesses from an external link, in the format refer_partnerId=p1&refer_afid=af1&refer_abc=bcd.",,
 "Open OptOut Page
 
@@ -286,523 +289,566 @@ ApiWrapper.goPage('optOut', { newPage: true });",,,"ApiWrapper.goPage('optOut', 
 Calling it as above will open the optOut page in a new window. Calling newPage with false will redirect the current page to the optOut page.",,,
 "Create Contact
 
-apiWrapper.api.contact.create",/api/message/contact,post,"apiWrapper.api.contact.create({ 
-  firstName: 'tim',
-  lastName: 'chin',
-  email: 'user@email.com',
-  telephone: '1234567890',
-  message: 'testing contact message.',
-});",,,
-Count User Teaser Searches,/api/idLookup/statistic/userTeaserSearches,get,apiWrapper.api.idLookup.countUserTeaserSearches();,,"{
-    ""count"": 5
+apiWrapper.api.contact.create",/api/message/contact,post,"[Create Contact]
+Users compose contact messages regardless of login.
+
+apiWrapper.api.contact.create({ 
+firstName: 'tim',
+lastName: 'chin',
+email: 'user@email.com',
+telephone: '1234567890',
+message: 'testing contact message.',
+});
+
+Added on 2026-03-31
+attachments: (optional) File[]
+- You can add attachments to the request value.",,,
+"Create User Contact Added on 2026-03-27
+
+apiWrapper.api.user.createContact",/api/message/userContact,post,"[Create User Contact]
+A logged-in user composes a contact message. This applies to messages written via the Reply link within the email when the CSR sends an email to the User.
+
+apiWrapper.api.user.createContact({ message });
+
+Added on 2026-03-31
+attachments: (optional) File[]
+- You can add attachments to the request value.",,,
+Count User Teaser Searches,/api/idLookup/statistic/userTeaserSearches,get,apiWrapper.api.idLookup.countUserTeaserSearches();,,"{ 
+""count"": 5 
 }",
-Count User Report Creations,/api/idLookup/statistic/userReportCreations,get,apiWrapper.api.idLookup.countUserReportCreations();,,"{
-    ""count"": 2
+Count User Report Creations,/api/idLookup/statistic/userReportCreations,get,apiWrapper.api.idLookup.countUserReportCreations();,,"{ 
+""count"": 2 
 }",
-Count User Pdf Downloads,/api/idLookup/statistic/userPdfDownloads,get,apiWrapper.api.idLookup.countUserPdfDownloads();,,"{
-    ""count"": 2
+Count User Pdf Downloads,/api/idLookup/statistic/userPdfDownloads,get,apiWrapper.api.idLookup.countUserPdfDownloads();,,"{ 
+""count"": 2 
 }",
-Get Activated Product Types,/api/commerceBilling/getActivatedProductTypes,post,apiWrapper.api.billing.getActivatedProductTypes();,,"{
-    ""productTypes"": [
-        ""nameSearch"",
-        ""phoneSearch"",
-        ""pdf""
-    ]
+Get Activated Product Types,/api/commerceBilling/getActivatedProductTypes,post,apiWrapper.api.billing.getActivatedProductTypes();,,"{ 
+""productTypes"": [ 
+""nameSearch"", 
+""phoneSearch"", 
+""pdf"" 
+] 
 }",
 Get User Orders,/api/commerceBilling/getUserOrders,post,"apiWrapper.api.billing.getOrders();
 
 // For each order, you can check whether to cancel using the attribute below.
 ""transient"": {
-  ""canceled"": false,
-  ""cancelable"": true,
-  ""uncancelable"": false
- }",,"[
-    {
-        ""index"": [],
-        ""_id"": ""69bdb6a944e3208497ccce1c"",
-        ""status"": ""active"",
-        ""referenceIds"": [],
-        ""permissionIds"": [],
-        ""shConId"": ""69a2380b53ecf9b049d01fbb"",
-        ""shColId"": ""69aa41b648af3b202e7fb065"",
-        ""shTimestamp"": 1773690170207,
-        ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-        ""payerId"": ""69bdb6a944e3208497cccdfe"",
-        ""commerceTokens"": [
-            ""69bdb6a944e3208497ccce13""
-        ],
-        ""commerceOffers"": [
-            ""6913e0e0a4b8675e90771be7"",
-            ""697d50ef5806577558218df1""
-        ],
-        ""commerceOfferRevisions"": [
-            ""69bd9a507bf6bc90f9217a82"",
-            ""69bd9a3f7bf6bc90f9217a42""
-        ],
-        ""commerceOfferInfos"": [
-            {
-                ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
-                ""commerceOfferRevisionId"": ""69bd9a507bf6bc90f9217a82"",
-                ""commerceProductInfos"": [
-                    {
-                        ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
-                        ""commerceProductRevisionId"": ""69af70d89e31767f06cde687"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce18"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    },
-                    {
-                        ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
-                        ""commerceProductRevisionId"": ""69af70e89e31767f06cde6b1"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce19"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    },
-                    {
-                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
-                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce1a"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    }
-                ],
-                ""options"": null
-            },
-            {
-                ""commerceOfferId"": ""697d50ef5806577558218df1"",
-                ""commerceOfferRevisionId"": ""69bd9a3f7bf6bc90f9217a42"",
-                ""commerceProductInfos"": [
-                    {
-                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
-                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce1b"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    }
-                ],
-                ""options"": null
-            }
-        ],
-        ""commercePriceRules"": [
-            {
-                ""_DESC_"": ""S0"",
-                ""priority"": 1,
-                ""conditions"": [
-                    {
-                        ""sequence"": 0
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 1.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 7,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            },
-            {
-                ""_DESC_"": ""S1+"",
-                ""priority"": 2,
-                ""conditions"": [
-                    {
-                        ""sequence"": ""v > 0""
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 39.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 30,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            },
-            {
-                ""_DESC_"": ""S0"",
-                ""priority"": 1,
-                ""conditions"": [
-                    {
-                        ""sequence"": 0
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 1.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 30,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            },
-            {
-                ""_DESC_"": ""S1+"",
-                ""priority"": 2,
-                ""conditions"": [
-                    {
-                        ""sequence"": ""v > 0""
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 1.02,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 30,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            }
-        ],
-        ""sequenceOption"": {
-            ""thinMatch"": false,
-            ""thinMatchDataProviderDown"": false,
-            ""thinMatchTooManyResults"": false,
-            ""thinMatchNoResults"": false,
-            ""thinMatchGeographic"": false
-        },
-        ""ipAddress"": ""110.47.168.218"",
-        ""refer"": {
-            ""partnerId"": ""p1"",
-            ""afid"": ""af1"",
-            ""abc"": ""bcd""
-        },
-        ""sessionDuration"": 31695,
-        ""orderTimestamp"": 1774040745096,
-        ""nonMemberOnly"": true,
-        ""immediateRetry"": false,
-        ""immediateRetryCount"": 0,
-        ""createdAt"": ""2026-03-20T21:05:45.135Z"",
-        ""updatedAt"": ""2026-03-23T20:15:21.029Z"",
-        ""createdTimestamp"": 1774040745135,
-        ""updatedTimestamp"": 1774040745135,
-        ""brandId"": ""idlookup"",
-        ""__v"": 19,
-        ""currentRevisionId"": ""69c19f599a1871e047ab263b"",
-        ""dueTimestamp"": 1776580245096,
-        ""statusReason"": ""SuccessfulTx"",
-        ""updaterId"": ""69bdb6a944e3208497cccdfe"",
-        ""id"": ""69bdb6a944e3208497ccce1c"",
-        ""transient"": {
-            ""canceled"": false,
-            ""cancelable"": true,
-            ""uncancelable"": false
-        }
-    }
+""canceled"": false,
+""cancelable"": true,
+""uncancelable"": false
+}",,"[
+{
+""index"": [],
+""_id"": ""69bdb6a944e3208497ccce1c"",
+""status"": ""active"",
+""referenceIds"": [],
+""permissionIds"": [],
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1773690170207,
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69bdb6a944e3208497cccdfe"",
+""commerceTokens"": [
+""69bdb6a944e3208497ccce13""
+],
+""commerceOffers"": [
+""6913e0e0a4b8675e90771be7"",
+""697d50ef5806577558218df1""
+],
+""commerceOfferRevisions"": [
+""69bd9a507bf6bc90f9217a82"",
+""69bd9a3f7bf6bc90f9217a42""
+],
+""commerceOfferInfos"": [
+{
+""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
+""commerceOfferRevisionId"": ""69bd9a507bf6bc90f9217a82"",
+""commerceProductInfos"": [
+{
+""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
+""commerceProductRevisionId"": ""69af70d89e31767f06cde687"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce18"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+},
+{
+""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
+""commerceProductRevisionId"": ""69af70e89e31767f06cde6b1"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce19"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+},
+{
+""commerceProductId"": ""699fbb9f26a1804895701500"",
+""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce1a"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+}
+],
+""options"": null
+},
+{
+""commerceOfferId"": ""697d50ef5806577558218df1"",
+""commerceOfferRevisionId"": ""69bd9a3f7bf6bc90f9217a42"",
+""commerceProductInfos"": [
+{
+""commerceProductId"": ""699fbb9f26a1804895701500"",
+""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce1b"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+}
+],
+""options"": null
+}
+],
+""commercePriceRules"": [
+{
+""_DESC_"": ""S0"",
+""priority"": 1,
+""conditions"": [
+{
+""sequence"": 0
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 7,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S1+"",
+""priority"": 2,
+""conditions"": [
+{
+""sequence"": ""v > 0""
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 39.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S0"",
+""priority"": 1,
+""conditions"": [
+{
+""sequence"": 0
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S1+"",
+""priority"": 2,
+""conditions"": [
+{
+""sequence"": ""v > 0""
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.02,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+}
+],
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""ipAddress"": ""110.47.168.218"",
+""refer"": {
+""partnerId"": ""p1"",
+""afid"": ""af1"",
+""abc"": ""bcd""
+},
+""sessionDuration"": 31695,
+""orderTimestamp"": 1774040745096,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""createdAt"": ""2026-03-20T21:05:45.135Z"",
+""updatedAt"": ""2026-03-23T20:15:21.029Z"",
+""createdTimestamp"": 1774040745135,
+""updatedTimestamp"": 1774040745135,
+""brandId"": ""idlookup"",
+""__v"": 19,
+""currentRevisionId"": ""69c19f599a1871e047ab263b"",
+""dueTimestamp"": 1776580245096,
+""statusReason"": ""SuccessfulTx"",
+""updaterId"": ""69bdb6a944e3208497cccdfe"",
+""id"": ""69bdb6a944e3208497ccce1c"",
+""transient"": {
+""canceled"": false,
+""cancelable"": true,
+""uncancelable"": false
+}
+}
 ]",
 Update User,/api/user/update,post,"apiWrapper.api.user.update({ firstName, lastName, phone });
 
 firstName, lastName, and phone are optional.",,"{
-    ""_id"": ""69bdb6a944e3208497cccdfe"",
-    ""uniqueId"": ""idlookup|aaaa111111@bc.dev.none"",
-    ""index"": [
-        ""em:aaaa111111@bc.dev.none"",
-        ""fn:testfname"",
-        ""ln:testlname"",
-        ""l4:1111"",
-        ""bn:411111"",
-        ""ph:8054320541"",
-        ""fn:tim"",
-        ""ln:chin""
-    ],
-    ""status"": ""active"",
-    ""referenceIds"": [],
-    ""permissionIds"": [],
-    ""brandId"": ""idlookup"",
-    ""shConId"": ""69a2380b53ecf9b049d01fbb"",
-    ""shColId"": ""69aa41b648af3b202e7fb065"",
-    ""shTimestamp"": 1773690170207,
-    ""email"": ""aaaa111111@bc.dev.none"",
-    ""firstName"": ""tim"",
-    ""lastName"": ""chin"",
-    ""roles"": [],
-    ""prevShape"": [],
-    ""createdAt"": ""2026-03-20T21:05:45.013Z"",
-    ""updatedAt"": ""2026-03-23T21:27:02.266Z"",
-    ""createdTimestamp"": 1774040745013,
-    ""updatedTimestamp"": 1774040745013,
-    ""__v"": 103,
-    ""currentRevisionId"": ""69c1b0260c12c8fab0c39b1c"",
-    ""updaterId"": ""69bdb6a944e3208497cccdfe"",
-    ""phone"": ""8054320541"",
-    ""id"": ""69bdb6a944e3208497cccdfe""
+""_id"": ""69bdb6a944e3208497cccdfe"",
+""uniqueId"": ""idlookup|aaaa111111@bc.dev.none"",
+""index"": [
+""em:aaaa111111@bc.dev.none"",
+""fn:testfname"",
+""ln:testlname"",
+""l4:1111"",
+""bn:411111"",
+""ph:8054320541"",
+""fn:tim"",
+""ln:chin""
+],
+""status"": ""active"",
+""referenceIds"": [],
+""permissionIds"": [],
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1773690170207,
+""email"": ""aaaa111111@bc.dev.none"",
+""firstName"": ""tim"",
+""lastName"": ""chin"",
+""roles"": [],
+""prevShape"": [],
+""createdAt"": ""2026-03-20T21:05:45.013Z"",
+""updatedAt"": ""2026-03-23T21:27:02.266Z"",
+""createdTimestamp"": 1774040745013,
+""updatedTimestamp"": 1774040745013,
+""__v"": 103,
+""currentRevisionId"": ""69c1b0260c12c8fab0c39b1c"",
+""updaterId"": ""69bdb6a944e3208497cccdfe"",
+""phone"": ""8054320541"",
+""id"": ""69bdb6a944e3208497cccdfe""
 }",
 Change Password,/api/user/changePassword,post,apiWrapper.api.user.changePassword(password);,,"{
-    ""_id"": ""69bdb6a944e3208497cccdfe"",
-    ""uniqueId"": ""idlookup|aaaa111111@bc.dev.none"",
-    ""index"": [
-        ""em:aaaa111111@bc.dev.none"",
-        ""fn:testfname"",
-        ""ln:testlname"",
-        ""l4:1111"",
-        ""bn:411111"",
-        ""ph:8054320541"",
-        ""fn:tim"",
-        ""ln:chin""
-    ],
-    ""status"": ""active"",
-    ""referenceIds"": [],
-    ""permissionIds"": [],
-    ""brandId"": ""idlookup"",
-    ""shConId"": ""69a2380b53ecf9b049d01fbb"",
-    ""shColId"": ""69aa41b648af3b202e7fb065"",
-    ""shTimestamp"": 1773690170207,
-    ""email"": ""aaaa111111@bc.dev.none"",
-    ""firstName"": ""tim"",
-    ""lastName"": ""chin"",
-    ""roles"": [],
-    ""prevShape"": [],
-    ""createdAt"": ""2026-03-20T21:05:45.013Z"",
-    ""updatedAt"": ""2026-03-23T21:33:12.888Z"",
-    ""createdTimestamp"": 1774040745013,
-    ""updatedTimestamp"": 1774040745013,
-    ""__v"": 106,
-    ""currentRevisionId"": ""69c1b1980c12c8fab0c39c67"",
-    ""updaterId"": ""69bdb6a944e3208497cccdfe"",
-    ""phone"": ""8054320541"",
-    ""id"": ""69bdb6a944e3208497cccdfe""
+""_id"": ""69bdb6a944e3208497cccdfe"",
+""uniqueId"": ""idlookup|aaaa111111@bc.dev.none"",
+""index"": [
+""em:aaaa111111@bc.dev.none"",
+""fn:testfname"",
+""ln:testlname"",
+""l4:1111"",
+""bn:411111"",
+""ph:8054320541"",
+""fn:tim"",
+""ln:chin""
+],
+""status"": ""active"",
+""referenceIds"": [],
+""permissionIds"": [],
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1773690170207,
+""email"": ""aaaa111111@bc.dev.none"",
+""firstName"": ""tim"",
+""lastName"": ""chin"",
+""roles"": [],
+""prevShape"": [],
+""createdAt"": ""2026-03-20T21:05:45.013Z"",
+""updatedAt"": ""2026-03-23T21:33:12.888Z"",
+""createdTimestamp"": 1774040745013,
+""updatedTimestamp"": 1774040745013,
+""__v"": 106,
+""currentRevisionId"": ""69c1b1980c12c8fab0c39c67"",
+""updaterId"": ""69bdb6a944e3208497cccdfe"",
+""phone"": ""8054320541"",
+""id"": ""69bdb6a944e3208497cccdfe""
 }",
 Reset Password,/api/user/resetPassword,post,"apiWrapper.api.user.resetPassword(email);
 
-An email with a login link will be sent to your email address. You can change your password after logging in.",,"{
-    ""success"": true
+An email with a login link will be sent to your email address. You can change your password after logging in.",,"{ 
+""success"": true 
 }",
 Cancel Or Uncancel Order,/api/commerceBilling/cancelOrUncancelOrder,post,"apiWrapper.api.billing.cancelOrUncancelOrder(flag, orderId);
 
 flag: true(cancel) or false(uncancel)",,"{
-    ""success"": true,
-    ""commerceOrder"": {
-        ""_id"": ""69bdb6a944e3208497ccce1c"",
-        ""index"": [],
-        ""status"": ""active"",
-        ""referenceIds"": [],
-        ""permissionIds"": [],
-        ""shConId"": ""69a2380b53ecf9b049d01fbb"",
-        ""shColId"": ""69aa41b648af3b202e7fb065"",
-        ""shTimestamp"": 1773690170207,
-        ""payeeId"": ""6943179e90625d3dbeadf6f7"",
-        ""payerId"": ""69bdb6a944e3208497cccdfe"",
-        ""commerceTokens"": [
-            ""69bdb6a944e3208497ccce13""
-        ],
-        ""commerceOffers"": [
-            ""6913e0e0a4b8675e90771be7"",
-            ""697d50ef5806577558218df1""
-        ],
-        ""commerceOfferRevisions"": [
-            ""69bd9a507bf6bc90f9217a82"",
-            ""69bd9a3f7bf6bc90f9217a42""
-        ],
-        ""commerceOfferInfos"": [
-            {
-                ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
-                ""commerceOfferRevisionId"": ""69bd9a507bf6bc90f9217a82"",
-                ""commerceProductInfos"": [
-                    {
-                        ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
-                        ""commerceProductRevisionId"": ""69af70d89e31767f06cde687"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce18"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    },
-                    {
-                        ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
-                        ""commerceProductRevisionId"": ""69af70e89e31767f06cde6b1"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce19"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    },
-                    {
-                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
-                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce1a"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    }
-                ],
-                ""options"": null
-            },
-            {
-                ""commerceOfferId"": ""697d50ef5806577558218df1"",
-                ""commerceOfferRevisionId"": ""69bd9a3f7bf6bc90f9217a42"",
-                ""commerceProductInfos"": [
-                    {
-                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
-                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
-                        ""commerceStockInfo"": {
-                            ""commerceStockId"": ""69bdb6a944e3208497ccce1b"",
-                            ""commerceStockRevisionId"": null,
-                            ""options"": null
-                        },
-                        ""options"": null
-                    }
-                ],
-                ""options"": null
-            }
-        ],
-        ""commercePriceRules"": [
-            {
-                ""_DESC_"": ""S0"",
-                ""priority"": 1,
-                ""conditions"": [
-                    {
-                        ""sequence"": 0
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 1.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 7,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            },
-            {
-                ""_DESC_"": ""S1+"",
-                ""priority"": 2,
-                ""conditions"": [
-                    {
-                        ""sequence"": ""v > 0""
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 39.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 30,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            },
-            {
-                ""_DESC_"": ""S0"",
-                ""priority"": 1,
-                ""conditions"": [
-                    {
-                        ""sequence"": 0
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 1.01,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 30,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            },
-            {
-                ""_DESC_"": ""S1+"",
-                ""priority"": 2,
-                ""conditions"": [
-                    {
-                        ""sequence"": ""v > 0""
-                    }
-                ],
-                ""candidates"": [
-                    {
-                        ""id"": {
-                            ""amount"": 1.02,
-                            ""code"": ""usd"",
-                            ""period"": {
-                                ""quantity"": 30,
-                                ""unit"": ""d""
-                            }
-                        },
-                        ""weight"": 1
-                    }
-                ]
-            }
-        ],
-        ""sequenceOption"": {
-            ""thinMatch"": false,
-            ""thinMatchDataProviderDown"": false,
-            ""thinMatchTooManyResults"": false,
-            ""thinMatchNoResults"": false,
-            ""thinMatchGeographic"": false
-        },
-        ""ipAddress"": ""110.47.168.218"",
-        ""refer"": {
-            ""partnerId"": ""p1"",
-            ""afid"": ""af1"",
-            ""abc"": ""bcd""
-        },
-        ""sessionDuration"": 31695,
-        ""orderTimestamp"": 1774040745096,
-        ""nonMemberOnly"": true,
-        ""immediateRetry"": false,
-        ""immediateRetryCount"": 0,
-        ""createdAt"": ""2026-03-20T21:05:45.135Z"",
-        ""updatedAt"": ""2026-03-23T21:33:58.365Z"",
-        ""createdTimestamp"": 1774040745135,
-        ""updatedTimestamp"": 1774040745135,
-        ""brandId"": ""idlookup"",
-        ""__v"": 21,
-        ""currentRevisionId"": ""69c1b1c60c12c8fab0c39cd9"",
-        ""dueTimestamp"": 1776580245096,
-        ""statusReason"": ""SuccessfulTx"",
-        ""updaterId"": ""69bdb6a944e3208497cccdfe"",
-        ""subStatus"": ""canceled"",
-        ""id"": ""69bdb6a944e3208497ccce1c""
-    }
+""success"": true,
+""commerceOrder"": {
+""_id"": ""69bdb6a944e3208497ccce1c"",
+""index"": [],
+""status"": ""active"",
+""referenceIds"": [],
+""permissionIds"": [],
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1773690170207,
+""payeeId"": ""6943179e90625d3dbeadf6f7"",
+""payerId"": ""69bdb6a944e3208497cccdfe"",
+""commerceTokens"": [
+""69bdb6a944e3208497ccce13""
+],
+""commerceOffers"": [
+""6913e0e0a4b8675e90771be7"",
+""697d50ef5806577558218df1""
+],
+""commerceOfferRevisions"": [
+""69bd9a507bf6bc90f9217a82"",
+""69bd9a3f7bf6bc90f9217a42""
+],
+""commerceOfferInfos"": [
+{
+""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
+""commerceOfferRevisionId"": ""69bd9a507bf6bc90f9217a82"",
+""commerceProductInfos"": [
+{
+""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
+""commerceProductRevisionId"": ""69af70d89e31767f06cde687"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce18"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+},
+{
+""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
+""commerceProductRevisionId"": ""69af70e89e31767f06cde6b1"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce19"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+},
+{
+""commerceProductId"": ""699fbb9f26a1804895701500"",
+""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce1a"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+}
+],
+""options"": null
+},
+{
+""commerceOfferId"": ""697d50ef5806577558218df1"",
+""commerceOfferRevisionId"": ""69bd9a3f7bf6bc90f9217a42"",
+""commerceProductInfos"": [
+{
+""commerceProductId"": ""699fbb9f26a1804895701500"",
+""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+""commerceStockInfo"": {
+""commerceStockId"": ""69bdb6a944e3208497ccce1b"",
+""commerceStockRevisionId"": null,
+""options"": null
+},
+""options"": null
+}
+],
+""options"": null
+}
+],
+""commercePriceRules"": [
+{
+""_DESC_"": ""S0"",
+""priority"": 1,
+""conditions"": [
+{
+""sequence"": 0
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 7,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S1+"",
+""priority"": 2,
+""conditions"": [
+{
+""sequence"": ""v > 0""
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 39.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S0"",
+""priority"": 1,
+""conditions"": [
+{
+""sequence"": 0
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.01,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+},
+{
+""_DESC_"": ""S1+"",
+""priority"": 2,
+""conditions"": [
+{
+""sequence"": ""v > 0""
+}
+],
+""candidates"": [
+{
+""id"": {
+""amount"": 1.02,
+""code"": ""usd"",
+""period"": {
+""quantity"": 30,
+""unit"": ""d""
+}
+},
+""weight"": 1
+}
+]
+}
+],
+""sequenceOption"": {
+""thinMatch"": false,
+""thinMatchDataProviderDown"": false,
+""thinMatchTooManyResults"": false,
+""thinMatchNoResults"": false,
+""thinMatchGeographic"": false
+},
+""ipAddress"": ""110.47.168.218"",
+""refer"": {
+""partnerId"": ""p1"",
+""afid"": ""af1"",
+""abc"": ""bcd""
+},
+""sessionDuration"": 31695,
+""orderTimestamp"": 1774040745096,
+""nonMemberOnly"": true,
+""immediateRetry"": false,
+""immediateRetryCount"": 0,
+""createdAt"": ""2026-03-20T21:05:45.135Z"",
+""updatedAt"": ""2026-03-23T21:33:58.365Z"",
+""createdTimestamp"": 1774040745135,
+""updatedTimestamp"": 1774040745135,
+""brandId"": ""idlookup"",
+""__v"": 21,
+""currentRevisionId"": ""69c1b1c60c12c8fab0c39cd9"",
+""dueTimestamp"": 1776580245096,
+""statusReason"": ""SuccessfulTx"",
+""updaterId"": ""69bdb6a944e3208497cccdfe"",
+""subStatus"": ""canceled"",
+""id"": ""69bdb6a944e3208497ccce1c""
+}
 }",
-,,,,,,
+Create ManagedContact,/api/managedContact/create,post,"apiWrapper.api.managedContact.create({ type, contactAddress, campaignKey });
+
+type: 'email' or 'phone'
+contactAddress: emailAddress(contactType:email) or phoneNumber(contactType:phone)
+campaignKey: (optional) You can provide a campaign name (such as guest).
+
+Edited On 2026-03-30 
+- contactType > type",,"{ 
+""_id"": ""69c5ca2c2fd61fb4563532c6"", 
+""uniqueId"": ""phone|idlookup|8054320540"", 
+""__v"": 0, 
+""brandId"": ""idlookup"", 
+""contactAddress"": ""8054320540"", 
+""contactType"": ""phone"", 
+""createdAt"": ""2026-03-27T00:07:08.334Z"", 
+""hash"": ""bd557affe8a9e01bf83c86a32a596e98"", 
+""index"": [], 
+""permissionIds"": [], 
+""referenceIds"": [], 
+""sessionId"": ""ybVaualKEWgT8To0TrCwmzsTGzzH4d49"", 
+""shColId"": ""69aa41b648af3b202e7fb065"", 
+""shConId"": ""69a2380b53ecf9b049d01fbb"", 
+""status"": ""active"", 
+""updatedAt"": ""2026-03-27T00:07:08.334Z"", 
+""campaigns"": [], 
+""id"": ""69c5ca2c2fd61fb4563532c6"" 
+}",
 ,,,,,,
 ,,,,,,
 ,,,,,,

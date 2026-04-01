@@ -537,6 +537,10 @@ const api = {
     return await routeApiRequest('admin-purchases', { queryParams: params });
   },
 
+  adminListOrdersGlobal: async (params = {}) => {
+    return await routeApiRequest('admin-purchases-global', { queryParams: params });
+  },
+
   adminGetPurchase: async (id, userId) => {
     return await routeApiRequest('admin-purchase-detail', { id, userId });
   },

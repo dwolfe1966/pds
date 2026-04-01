@@ -72,6 +72,18 @@
 
 .profileLink:hover { background: #e8f5e9; }
 
+.clearSearchBtn {
+  padding: 9px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.clearSearchBtn:hover { background: #f5f5f5; }
+
 /* ── Prompt ───────────────────────────────────────────────── */
 .prompt {
   text-align: center;

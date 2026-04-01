@@ -18,6 +18,9 @@ const navLinks = [
   { path: '/admin/cs-reps',      label: 'CS Reps' },
   { path: '/admin/email',        label: 'Broadcast' },
   { path: '/admin/analytics',    label: 'Analytics' },
+  { path: '/admin/timesheets',   label: 'Timesheets' },
+  { path: '/admin/permissions',  label: 'Permissions' },
+  { path: '/admin/content',      label: 'Content' },
 ];
 
 const AdminNav = () => {

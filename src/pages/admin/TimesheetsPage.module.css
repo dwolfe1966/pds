@@ -1,0 +1,147 @@
+.page { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+
+.pageHeader { margin-bottom: 20px; }
+.title { font-size: 1.75rem; font-weight: 700; color: #111; margin: 0 0 4px; }
+.subtitle { font-size: 0.9rem; color: #666; margin: 0; }
+
+/* ── Week bar ────────────────────────────────────────────── */
+.weekBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.weekLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.weekInput {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.weekInput:focus { outline: none; border-color: #2e7d32; }
+
+.weekRange { font-size: 0.88rem; color: #888; }
+
+/* ── Stats bar ───────────────────────────────────────────── */
+.statsBar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.statPill {
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  font-size: 0.88rem;
+  color: #444;
+}
+
+.statPill strong { color: #2e7d32; }
+
+/* ── Grid ────────────────────────────────────────────────── */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+
+/* ── Card ────────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.cardHeader { display: flex; justify-content: space-between; align-items: center; }
+
+.repName { font-size: 1rem; font-weight: 700; color: #111; margin: 0; }
+.repEmail { font-size: 0.83rem; color: #888; margin: 0; }
+
+/* ── Stats ───────────────────────────────────────────────── */
+.stats { display: flex; gap: 12px; margin: 6px 0; }
+
+.stat { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.statLabel { font-size: 0.72rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.04em; }
+.statValue { font-size: 1.05rem; font-weight: 700; color: #333; }
+
+/* ── Edit form ───────────────────────────────────────────── */
+.editForm { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+
+.editRow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+.editLabel { font-size: 0.83rem; color: #555; font-weight: 600; flex: 1; }
+
+.editInput, .editSelect {
+  width: 90px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+
+.editInput:focus, .editSelect:focus { outline: none; border-color: #2e7d32; }
+
+.editActions { display: flex; gap: 8px; justify-content: flex-end; }
+
+.cancelEditBtn {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.83rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.saveEditBtn {
+  padding: 6px 14px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saveEditBtn:hover { background: #1b5e20; }
+
+/* ── Edit button ─────────────────────────────────────────── */
+.editBtn {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border: 1px solid #2e7d32;
+  border-radius: 6px;
+  background: #fff;
+  color: #2e7d32;
+  font-size: 0.83rem;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.editBtn:hover { background: #e8f5e9; }
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.badgeOnline  { background: #e8f5e9; color: #2e7d32; }
+.badgeBreak   { background: #fff3e0; color: #e65100; }
+.badgeOffline { background: #f5f5f5; color: #888; }
+
+/* ── States ──────────────────────────────────────────────── */
+.loadingMsg { text-align: center; padding: 48px; color: #aaa; }
+.emptyState { text-align: center; padding: 48px; color: #888; font-size: 0.95rem; }
+.errorBox { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; border-radius: 8px; padding: 14px 18px; font-size: 0.9rem; }

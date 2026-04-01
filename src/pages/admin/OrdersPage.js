@@ -85,8 +85,9 @@ const OrdersPage = () => {
 
   // Orders data
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // true on mount to show skeleton
   const [fetchError, setFetchError] = useState('');
+  const [isGlobalView, setIsGlobalView] = useState(!urlUserId); // true when showing default recent list
 
   // Pending sidebar filters
   const [pendingOrderId, setPendingOrderId] = useState('');
@@ -101,11 +102,36 @@ const OrdersPage = () => {
     setResolvedUserId(urlUserId || null);
   }, [urlUserId]);
 
+  // Load 10 most recent orders globally on mount
+  const fetchGlobalOrders = useCallback(async () => {
+    setLoading(true);
+    setFetchError('');
+    try {
+      const res = await api.adminListOrdersGlobal({ limit: 10 });
+      const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
+      setOrders(list);
+      setIsGlobalView(true);
+    } catch {
+      // BC may not support global order search — silently show empty default
+      setOrders([]);
+      setIsGlobalView(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!urlUserId) {
+      fetchGlobalOrders();
+    }
+  }, [urlUserId, fetchGlobalOrders]);
+
   const fetchOrders = useCallback(async (uid) => {
     if (!uid) return;
     setLoading(true);
     setFetchError('');
     setOrders([]);
+    setIsGlobalView(false);
     try {
       const res = await api.adminListPurchases({ userId: uid });
       const list = res?.data || res?.orders || res?.docs || (Array.isArray(res) ? res : []);
@@ -177,8 +203,6 @@ const OrdersPage = () => {
     });
   }, [orders, orderIdFilter, statusFilter, typeFilter]);
 
-  const hasResults = resolvedUserId && !loading && !fetchError;
-
   return (
     <main className={styles.page}>
       <div className={styles.pageHeader}>
@@ -186,7 +210,9 @@ const OrdersPage = () => {
         <p className={styles.subtitle}>
           {resolvedUserId
             ? `${orders.length} orders for ${resolvedEmail || resolvedUserId} · ${filtered.length} shown`
-            : 'Search by customer email or user ID to view orders'}
+            : isGlobalView && orders.length > 0
+            ? `Showing ${orders.length} most recent orders`
+            : 'Search by customer email or user ID to filter orders'}
         </p>
       </div>
 
@@ -208,22 +234,25 @@ const OrdersPage = () => {
           {searching ? 'Searching…' : 'Search'}
         </button>
         {resolvedUserId && (
-          <Link to={`/admin/users/${resolvedUserId}`} className={styles.profileLink}>
-            View Profile
-          </Link>
+          <>
+            <Link to={`/admin/users/${resolvedUserId}`} className={styles.profileLink}>
+              View Profile
+            </Link>
+            <button
+              type="button"
+              className={styles.clearSearchBtn}
+              onClick={() => { setResolvedUserId(null); setResolvedEmail(''); setSearchInput(''); fetchGlobalOrders(); }}
+            >
+              Clear
+            </button>
+          </>
         )}
       </form>
 
       {searchError && <div className={styles.errorBanner}>{searchError}</div>}
 
-      {!resolvedUserId && !searchError && (
-        <div className={styles.prompt}>
-          Enter a customer email or user ID above to load their orders.
-        </div>
-      )}
-
-      {/* Main area: sidebar + table */}
-      {resolvedUserId && (
+      {/* Main area: sidebar + table — always shown */}
+      {(true) && (
         <div className={styles.wrapper}>
           {/* Sidebar filters */}
           <aside className={styles.sidebar}>
@@ -277,13 +306,18 @@ const OrdersPage = () => {
           <section className={styles.tableSection}>
             {fetchError && <div className={styles.errorBanner}>{fetchError}</div>}
 
-            {hasResults && orders.length === 0 && (
+            {!loading && !fetchError && orders.length === 0 && (
               <div className={styles.emptyState}>
-                <p className={styles.emptyTitle}>No orders found for this customer.</p>
+                <p className={styles.emptyTitle}>
+                  {resolvedUserId ? 'No orders found for this customer.' : 'No recent orders available.'}
+                </p>
+                {isGlobalView && (
+                  <p style={{ fontSize: '0.85rem', color: '#aaa' }}>Search by email or user ID above to look up a specific customer.</p>
+                )}
               </div>
             )}
 
-            {hasResults && orders.length > 0 && filtered.length === 0 && (
+            {!loading && orders.length > 0 && filtered.length === 0 && (
               <div className={styles.emptyState}>
                 <p className={styles.emptyTitle}>No orders match the current filters.</p>
                 <button className={styles.resetBtn} onClick={handleResetFilters}>Clear filters</button>
