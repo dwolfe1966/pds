@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
   'admin-unsuspend-user': { newApi: true, mockApi: false },
   'admin-sessions': { newApi: false, mockApi: false }, // No BC sessions endpoint
   'admin-purchases': { newApi: true, mockApi: false },
+  'admin-purchases-global': { newApi: true, mockApi: false },
   'admin-purchase-detail': { newApi: true, mockApi: false },
   'admin-refund': { newApi: true, mockApi: false },
   'admin-data-removal': { newApi: true, mockApi: false },

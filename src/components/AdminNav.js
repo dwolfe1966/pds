@@ -6,11 +6,15 @@ const logoSrc = new URL('../assets/idlookup_icon_transparent.png', import.meta.u
 
 const navLinks = [
   { path: '/admin/users',        label: 'Customers' },
-  { path: '/admin/purchases',    label: 'Orders' },
+  { path: '/admin/orders',       label: 'Orders' },
+  { path: '/admin/payments',     label: 'Payments' },
   { path: '/admin/data-removal', label: 'Opt-Outs' },
   { path: '/admin/phone-optout',  label: 'Phone Opt-Outs' },
   { path: '/admin/unsubscribe',   label: 'Unsubscribed' },
   { path: '/admin/email-search', label: 'Email Search' },
+  { path: '/admin/notes',        label: 'Notes' },
+  { path: '/admin/tickets',      label: 'Tickets' },
+  { path: '/admin/mail-log',     label: 'Mail Log' },
   { path: '/admin/cs-reps',      label: 'CS Reps' },
   { path: '/admin/email',        label: 'Broadcast' },
   { path: '/admin/analytics',    label: 'Analytics' },

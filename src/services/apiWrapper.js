@@ -672,6 +672,11 @@ class ApiWrapperService {
     return await this._csrPost('/commerceMgnt/userOrders', params);
   }
 
+  // Global order search via /database/search — collectionName: 'commerceOrder'
+  async csrFindOrders(params = {}) {
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'commerceOrder', ...params });
+  }
+
   // csrWrapper.api.user.getOrder — POST /commerceMgnt/getUserOrder
   // params: { userId, orderId, lastPaymentId? }
   async csrGetUserOrder(params = {}) {

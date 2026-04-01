@@ -692,6 +692,13 @@ async function callNewAPI(endpoint, params) {
       return { data: items, total: raw?.total ?? items.length };
     }
 
+    // csrWrapper global order search → POST /database/search { collectionName: 'commerceOrder' }
+    case 'admin-purchases-global': {
+      const raw = await apiWrapper.csrFindOrders(params.queryParams || {});
+      const items = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
+    }
+
     // csrWrapper.api.user.getOrder → POST /commerceMgnt/getUserOrder → { orders: [order] }
     case 'admin-purchase-detail': {
       const raw = await apiWrapper.csrGetUserOrder({ userId: params.userId, orderId: params.id });

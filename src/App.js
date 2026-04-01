@@ -80,6 +80,8 @@ import UnsubscribePage from './pages/admin/UnsubscribePage';
 import NotesPage from './pages/admin/NotesPage';
 import EmailTicketsPage from './pages/admin/EmailTicketsPage';
 import MailActivityPage from './pages/admin/MailActivityPage';
+import OrdersPage from './pages/admin/OrdersPage';
+import PaymentsPage from './pages/admin/PaymentsPage';
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
 import PaidRoute from './pages/PaidRoute';
@@ -359,6 +361,22 @@ const App = () => {
             element={
               <ProtectedRoute role="admin">
                 <PhoneOptOutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <ProtectedRoute role="admin">
+                <OrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payments"
+            element={
+              <ProtectedRoute role="admin">
+                <PaymentsPage />
               </ProtectedRoute>
             }
           />

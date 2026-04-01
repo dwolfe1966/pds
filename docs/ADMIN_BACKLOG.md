@@ -7,12 +7,12 @@ Generated: 2026-03-30 | Source: Gap analysis between `/docs/admin designs/` spec
 
 | # | Feature | Gap | Source Spec |
 |---|---------|-----|-------------|
-| 1 | **Customer Directory** | Existing Users page is a plain table; spec shows card layout with status filter, email search, and masked card number | customers-v2.html |
-| 2 | **User Detail — Communications** | Current UserDetailPage is minimal; spec requires notes/history, recommended actions (refund/email/cancel checkboxes), and inline email compose | communications-v2.html |
-| 3 | **Email Search** | No dedicated CSR email lookup tool; spec is a simple email + brand search that returns subscription details | email-search-v2.html |
-| 4 | **Notes Management** | No notes system at all; spec shows create/search/edit notes linked to customer accounts | manage-notes-v2.html |
-| 5 | **Order Management (global)** | PurchasesPage only shows orders per-user; spec requires a standalone global order list with ID/status/type filter sidebar | orders-v2.html |
-| 6 | **Payment Records** | PurchaseDetailPage shows payments for one order only; spec requires a global payment list with filter by status/type/ID | payments-v2.html |
+| 1 | ~~**Customer Directory**~~ | ✅ Done — card grid layout, status badges, shimmer skeleton, cursor pagination | customers-v2.html |
+| 2 | ~~**User Detail — Communications**~~ | ✅ Done — two-column layout, Transactions/Notes/Actions tabs, Toast | communications-v2.html |
+| 3 | ~~**Email Search**~~ | ✅ Done — `/admin/email-search`, email lookup → customer card | email-search-v2.html |
+| 4 | ~~**Notes Management**~~ | ✅ Done — `/admin/notes`, localStorage CRUD, search/filter | manage-notes-v2.html |
+| 5 | ~~**Order Management (global)**~~ | ✅ Done — `/admin/orders`, filter sidebar, table with Load more pagination | orders-v2.html |
+| 6 | ~~**Payment Records**~~ | ✅ Done — `/admin/payments`, flattens commercePayments from orders, filter sidebar | payments-v2.html |
 
 ---
 
@@ -20,9 +20,9 @@ Generated: 2026-03-30 | Source: Gap analysis between `/docs/admin designs/` spec
 
 | # | Feature | Gap | Source Spec |
 |---|---------|-----|-------------|
-| 7 | **User Opt-Out Management** | DataRemovalPage exists but is a basic list; spec requires stats (Total/Approved/Pending), filter panel, and Approve action buttons | opt-user-v2.html |
-| 8 | **Unsubscribe List** | Completely missing; search by email or phone, view joined/left dates, Remove button | unsubscribe-v2.html |
-| 9 | **Phone Opt-Outs** | Completely missing; phone number list with Active/Inactive status and Remove button | opt-phone-v2.html |
+| 7 | ~~**User Opt-Out Management**~~ | ✅ Done — stats bar, filters, Approve action | opt-user-v2.html |
+| 8 | ~~**Unsubscribe List**~~ | ✅ Done — `/admin/unsubscribe`, email/phone search, Remove button | unsubscribe-v2.html |
+| 9 | ~~**Phone Opt-Outs**~~ | ✅ Done — `/admin/phone-optout`, phone search, status filter, Remove button | opt-phone-v2.html |
 
 ---
 
@@ -30,8 +30,8 @@ Generated: 2026-03-30 | Source: Gap analysis between `/docs/admin designs/` spec
 
 | # | Feature | Gap | Source Spec |
 |---|---------|-----|-------------|
-| 10 | **Email Tickets** | EmailBroadcastPage is one-way only; spec requires a full support ticket system with open/closed status, two-panel layout, and reply functionality | emails-v2.html |
-| 11 | **Mail Activity Log** | EmailBroadcastPage has a basic log table; spec requires per-email cards with Mail ID, recipient, status, and Unsubscribe action | mail-sent-v2.html |
+| 10 | ~~**Email Tickets**~~ | ✅ Done — `/admin/tickets`, two-panel layout, localStorage threads, reply + close/reopen | emails-v2.html |
+| 11 | ~~**Mail Activity Log**~~ | ✅ Done — `/admin/mail-log`, card layout, per-recipient Unsubscribe action | mail-sent-v2.html |
 | 12 | **Support Timesheets** | Completely missing; staff hours/status tracking with weekly view | timesheets-v2.html |
 
 ---
