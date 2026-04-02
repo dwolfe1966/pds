@@ -5,6 +5,8 @@ import { createReportForIdentity, getExistingReportId } from '../../services/rep
 import { getIdentityContext } from '../../services/searchContext';
 import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
+import SearchDetailPreviewVariantA from './SearchDetailPreviewVariantA';
+import SearchDetailPreviewVariantB from './SearchDetailPreviewVariantB';
 import styles from './SearchDetailPreviewPage.module.css';
 
 /** Service benefit statements for variant 2 */
@@ -44,8 +46,9 @@ const SearchDetailPreviewPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryV = searchParams.get('v');
-  const [randomVariant] = useState(() => String(Math.floor(Math.random() * 3) + 1));
-  const variant = (queryV === '1' || queryV === '2' || queryV === '3') ? queryV : randomVariant;
+  const ALL_VARIANTS = ['1', '2', '3', 'a', 'b'];
+  const [randomVariant] = useState(() => ALL_VARIANTS[Math.floor(Math.random() * ALL_VARIANTS.length)]);
+  const variant = ALL_VARIANTS.includes(queryV) ? queryV : randomVariant;
   const { token, isPaid } = useAuth();
 
   const [person, setPerson] = useState(null);
@@ -190,6 +193,16 @@ const SearchDetailPreviewPage = () => {
         </section>
       </main>
     );
+  }
+
+  // ─── Dispatch to standalone variant components ───────────────────────────────
+
+  if (variant === 'a') {
+    return <SearchDetailPreviewVariantA person={person} id={id} />;
+  }
+
+  if (variant === 'b') {
+    return <SearchDetailPreviewVariantB person={person} id={id} />;
   }
 
   // ─── Visitor: compute per-person seeded counts ───────────────────────────────

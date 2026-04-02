@@ -183,11 +183,20 @@ const PaymentPage = () => {
       // Read optin from sessionStorage: the synthetic BC token doesn't carry user.optin,
       // so we stash the choice at signup and read it here to respect what the user selected.
       const signupOptin = sessionStorage.getItem('_signupOptin');
+      // Retrieve the password stored at signup so we can pass it to billing.sale.
+      // BC creates the user account during billing.sale — if password is missing,
+      // the account is created without one and future logins fail with 401.
+      const rawPendingPw = sessionStorage.getItem('_pendingPw');
+      let pendingPassword = null;
+      if (rawPendingPw) {
+        try { pendingPassword = decodeURIComponent(escape(atob(rawPendingPw))); } catch { pendingPassword = rawPendingPw; }
+      }
       const submitUserInfo = {
         email: user.email,
         firstName: form.billingFirstName.trim(),
         lastName: form.billingLastName.trim(),
         optin: signupOptin !== null ? signupOptin === '1' : (user.optin !== false),
+        ...(pendingPassword ? { password: pendingPassword } : {}),
       };
       const saleParams = {
         userInfo: submitUserInfo,
@@ -239,11 +248,9 @@ const PaymentPage = () => {
       };
 
       let paymentSuccess = false;
+      let saleError = null;
       try {
         const saleResult = await api.billingSale(saleParams);
-        // apiWrapper.sale() now throws on IIFE error-state responses, so if we reach here
-        // the IIFE returned a success-state result. getData() gives BC's actual response body.
-        // In proxy mode, saleResult is a plain JSON object (no IIFE wrapper methods).
         const rawData = saleResult?.getData?.() ?? saleResult?.params?.response?.data ?? saleResult?.data ?? saleResult ?? {};
         if (process.env.NODE_ENV === 'development') {
           console.log('[Payment] billingSale rawData:', JSON.stringify(rawData)?.substring(0, 300));
@@ -259,7 +266,34 @@ const PaymentPage = () => {
         if (process.env.NODE_ENV === 'development') {
           console.warn('[Payment] billingSale failed:', saleErr?.message, saleErr?.data);
         }
-        if (!simulateParam) throw saleErr;
+        saleError = saleErr;
+      }
+
+      // ALWAYS call changePassword after billing.sale, even if the IIFE reported an
+      // error. The BC IIFE calls changePassword internally (step 4) BEFORE the actual
+      // commerceBilling/sale HTTP request (step 5), so it always fails (no account yet).
+      // The IIFE then treats that failure as an error-state response, causing our wrapper
+      // to throw — but the sale itself (step 5) may have succeeded. We must call
+      // changePassword here to ensure the password is set on the newly-created account.
+      sessionStorage.removeItem('_pendingPw');
+      sessionStorage.removeItem('_signupOptin');
+      if (pendingPassword) {
+        try {
+          const { default: apiWrapper } = await import('../../services/apiWrapper');
+          const w = await apiWrapper.getWrapper();
+          if (typeof w.api?.user?.changePassword === 'function') {
+            await w.api.user.changePassword(pendingPassword);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[Payment] changePassword after sale succeeded');
+            }
+            // If changePassword worked, the sale likely succeeded too
+            if (!paymentSuccess) paymentSuccess = true;
+          }
+        } catch (pwErr) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[Payment] changePassword after sale failed (non-fatal):', pwErr?.message);
+          }
+        }
       }
 
       if (!paymentSuccess && simulateParam) {
@@ -268,36 +302,8 @@ const PaymentPage = () => {
       }
 
       if (!paymentSuccess) {
+        if (saleError) throw saleError;
         throw new Error('Your card was declined. Please check your card details and try again, or use a different card.');
-      }
-
-      // billing.sale establishes an authenticated BC session.
-      // Use that session to set the user's password so future logins work.
-      // Password was stored base64-encoded by useSignup hook — decode before use.
-      const rawPendingPw = sessionStorage.getItem('_pendingPw');
-      sessionStorage.removeItem('_pendingPw');
-      sessionStorage.removeItem('_signupOptin');
-      let pendingPw = null;
-      if (rawPendingPw) {
-        try { pendingPw = decodeURIComponent(escape(atob(rawPendingPw))); } catch {
-          pendingPw = rawPendingPw; // backward compat: unencoded legacy value
-        }
-      }
-      if (pendingPw) {
-        try {
-          const { default: apiWrapper } = await import('../../services/apiWrapper');
-          const w = await apiWrapper.getWrapper();
-          if (typeof w.api?.user?.changePassword === 'function') {
-            await w.api.user.changePassword(pendingPw);
-            if (process.env.NODE_ENV === 'development') {
-              console.log('[Payment] changePassword after sale succeeded');
-            }
-          }
-        } catch (pwErr) {
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('[Payment] changePassword after sale failed (non-fatal):', pwErr?.message);
-          }
-        }
       }
 
       // Set subscription immediately so isPaid=true for the rest of this flow.

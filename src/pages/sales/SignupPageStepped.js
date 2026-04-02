@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useSignup } from '../../hooks/useSignup';
+import { useSignup, validatePassword } from '../../hooks/useSignup';
 import styles from './SignupPageStepped.module.css';
 
 /**
@@ -98,7 +98,8 @@ const SignupPageStepped = () => {
 
   const handleStep2 = (e) => {
     e.preventDefault();
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    const pwError = validatePassword(password);
+    if (pwError) { setError(pwError); return; }
     goNext();
   };
 
