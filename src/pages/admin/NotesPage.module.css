@@ -27,11 +27,11 @@
   margin: 0;
 }
 
-/* ── Toolbar ─────────────────────────────────────────────── */
-.filterBar {
+/* ── User search form ────────────────────────────────────── */
+.searchForm {
   display: flex;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
@@ -50,6 +50,21 @@
   box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
 }
 
+.searchBtn {
+  padding: 9px 18px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.searchBtn:hover { background: #1b5e20; }
+.searchBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .clearBtn {
   padding: 9px 14px;
   border: 1px solid #ddd;
@@ -61,6 +76,44 @@
 }
 
 .clearBtn:hover { background: #f5f5f5; }
+
+/* ── User banner ─────────────────────────────────────────── */
+.userBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.userEmail { margin-left: 8px; font-size: 0.85rem; color: #666; }
+
+.profileLink { font-size: 0.85rem; color: #2e7d32; text-decoration: none; white-space: nowrap; }
+.profileLink:hover { text-decoration: underline; }
+
+/* ── Note author ─────────────────────────────────────────── */
+.noteAuthor { font-size: 0.78rem; color: #999; white-space: nowrap; }
+
+/* ── Load more ───────────────────────────────────────────── */
+.loadMoreRow { text-align: center; margin-top: 20px; }
+.loadMoreBtn {
+  padding: 9px 24px;
+  background: #fff;
+  border: 1px solid #2e7d32;
+  color: #2e7d32;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.loadMoreBtn:hover { background: #e8f5e9; }
+.loadMoreBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.loadingMsg { text-align: center; padding: 32px; color: #aaa; font-size: 0.95rem; }
 
 .newBtn {
   padding: 10px 18px;

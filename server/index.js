@@ -107,7 +107,7 @@ app.use((req, res, next) => {
 // ==================== PROXY ENDPOINTS FOR CORS BYPASS ====================
 // These endpoints proxy requests to the external API to bypass CORS restrictions
 
-const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
+const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL || 'https://dev.www.idlookup.ai/api';
 
 // Store cookies from API responses so we can forward them with subsequent requests
 // Since clientId and apiId change between requests, we'll use origin + a stable identifier
@@ -160,7 +160,7 @@ app.options('/api/proxy/*', (req, res) => {
  * This bypasses CORS by making the request from the server instead of the browser
  * 
  * The JS library will make requests like: /api/proxy/idLookup/teaser/search
- * This endpoint forwards them to: https://dev1.dev.www.bytecrtrs.com/api/idLookup/teaser/search
+ * This endpoint forwards them to: https://dev.www.idlookup.ai/api/idLookup/teaser/search
  */
 app.all('/api/proxy/*', async (req, res) => {
   try {

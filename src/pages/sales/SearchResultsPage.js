@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SearchBar from '../../components/SearchBar';
+import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import styles from './SearchResultsPage.module.css';
@@ -248,15 +249,7 @@ const SalesSearchResultsPage = () => {
             )}
           </div>
         ) : !loading && !errorMessage ? (
-          <div className={styles.noResults}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-            <p className={styles.noResultsTitle}>
-              No results found
-            </p>
-            <p className={styles.noResultsText}>
-              Try adjusting your search terms or adding a state for more specific results.
-            </p>
-          </div>
+          <ZeroResultsPanel searchType="name" query={searchQuery} />
         ) : null}
       </div>
     </main>

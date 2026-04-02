@@ -9,10 +9,11 @@ class ApiWrapperService {
   constructor() {
     this.wrapper = null;
     this.initialized = false;
-    this.endpointUrl = process.env.REACT_APP_NEW_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
+    // BC API base URL — passed to getInstance() so the IIFE knows where to send requests.
+    // In dev proxy mode this is overridden with the local proxy URL.
+    this.endpointUrl = process.env.REACT_APP_NEW_API_URL || 'https://dev.www.bytecrtrs.com/api';
+    this.authUrl = process.env.REACT_APP_AUTH_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
     this.proxyUrl = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001/api/proxy';
-    // Proxy mode: explicit opt-in via env var, OR auto-enabled in development when proxyUrl
-    // points to localhost (handles cases where the env var isn't picked up after server restart).
     const explicitProxy = process.env.REACT_APP_USE_API_PROXY === 'true';
     const devProxy = process.env.NODE_ENV === 'development' &&
       (this.proxyUrl.startsWith('http://localhost') || this.proxyUrl.startsWith('http://127.0.0.1'));
@@ -36,15 +37,11 @@ class ApiWrapperService {
     }
 
     try {
-      // If using proxy mode, point the wrapper to our proxy URL instead of the external API
-      // This way the library makes requests to our server (no CORS), and our server forwards to the external API
-      // The library will construct URLs like: {endpointUrl}/idLookup/teaser/search
-      // So we set endpointUrl to our proxy base URL
+      // Always pass endpointUrl so the IIFE knows where to send requests.
+      // In dev proxy mode: point to the local Express proxy.
+      // In production: point directly to the BC API.
       const endpointUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
-      
-      this.wrapper = window.ApiWrapper.getInstance({
-        endpointUrl: endpointUrl
-      });
+      this.wrapper = window.ApiWrapper.getInstance({ endpointUrl });
       this.initialized = true;
       return this.wrapper;
     } catch (error) {
@@ -74,11 +71,8 @@ class ApiWrapperService {
    * Auth endpoints
    */
   async login(body) {
-    // The IIFE singleton ignores our proxyUrl and always calls BC directly (CORS in dev).
-    // In proxy mode, bypass the IIFE and POST directly to the Express proxy.
     if (this.useProxy) {
       try {
-        // Initialize IIFE to capture its clientId (no network call on init)
         await this.getWrapper().catch(() => {});
         return await this._loginViaProxy(body);
       } catch (error) {
@@ -120,6 +114,26 @@ class ApiWrapperService {
     return await response.json();
   }
 
+  async _loginDirectly(body) {
+    const clientId = this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const url = `${this.authUrl}/auth/login?clientId=${clientId}&apiId=${apiId}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      const err = new Error(errorData.message || errorData.error?.message || `HTTP ${response.status}`);
+      err.status = response.status;
+      err.data = errorData;
+      throw err;
+    }
+    return await response.json();
+  }
+
   async logout() {
     if (this.useProxy) {
       try {
@@ -130,17 +144,14 @@ class ApiWrapperService {
         await fetch(url, { method: 'POST', credentials: 'include' });
         return { success: true };
       } catch {
-        return { success: true }; // logout failure should never block local teardown
+        return { success: true };
       }
     }
     try {
       const wrapper = await this.getWrapper();
       return await wrapper.api.auth.logout();
-    } catch (error) {
-      const enhancedError = new Error(error.message || 'Logout failed');
-      enhancedError.originalError = error;
-      enhancedError.isCorsError = this._isCorsError(error);
-      throw enhancedError;
+    } catch {
+      return { success: true };
     }
   }
 
@@ -162,6 +173,11 @@ class ApiWrapperService {
    * ID Lookup (Teaser Search)
    */
   async searchTeaser(query) {
+    // The IIFE singleton ignores the endpointUrl we configure and always calls BC directly,
+    // causing CORS failures. Bypass it entirely and POST to the proxy directly.
+    if (this.useProxy) {
+      return await this._searchTeaserViaProxy(query);
+    }
     try {
       if (process.env.NODE_ENV === 'development') {
         console.log('[ByteCrtrs API] searchTeaser called with params:', JSON.stringify(query, null, 2));
@@ -295,69 +311,51 @@ class ApiWrapperService {
   }
 
   /**
-   * Search teaser via proxy (bypasses CORS)
+   * Teaser search via proxy — bypasses the IIFE (which ignores endpointUrl and calls BC directly).
    */
   async _searchTeaserViaProxy(query) {
-    try {
-      // Try to get clientId and apiId from the wrapper if it's initialized
-      // Otherwise, they should be in the query object or environment variables
-      let clientId = query.clientId || process.env.REACT_APP_CLIENT_ID;
-      let apiId = query.apiId || process.env.REACT_APP_API_ID;
-      
-      // If wrapper is initialized, try to extract credentials from it
-      if (!clientId || !apiId) {
-        try {
-          const wrapper = await this.getWrapper();
-          // The wrapper might have these stored internally
-          // Try to access them if the library exposes them
-          if (wrapper && wrapper._config) {
-            clientId = clientId || wrapper._config.clientId;
-            apiId = apiId || wrapper._config.apiId;
-          }
-        } catch (e) {
-          // Wrapper not available, continue with query/env vars
-        }
-      }
-      
-      // Extract query parameters for URL
-      const queryParams = new URLSearchParams();
-      if (clientId) queryParams.append('clientId', clientId);
-      if (apiId) queryParams.append('apiId', apiId);
-      
-      const proxyPath = '/idLookup/teaser/search';
-      const baseUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
-      const url = `${baseUrl}${proxyPath}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-      
-      // Prepare request body (exclude query params that go in URL)
-      const body = { ...query };
-      delete body.clientId;
-      delete body.apiId;
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      const enhancedError = new Error(error.message || 'Proxy search failed');
-      enhancedError.originalError = error;
-      throw enhancedError;
+    await this.getWrapper().catch(() => {});
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const url = `${this.proxyUrl}/idLookup/teaser/search?clientId=${clientId}&apiId=${apiId}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(query),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      err.status = response.status;
+      throw err;
     }
+    return await response.json();
   }
 
   /**
    * Report endpoints
    */
   async createReport(params) {
+    if (this.useProxy) {
+      await this.getWrapper().catch(() => {});
+      const clientId = this.wrapper?.clientId || this._generateRandomId();
+      const apiId = this._generateRandomId();
+      const url = `${this.proxyUrl}/idLookup/report/create?clientId=${clientId}&apiId=${apiId}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return await response.json();
+    }
     try {
       const wrapper = await this.getWrapper();
       return await wrapper.api.idLookup.createReport(params);
@@ -399,16 +397,33 @@ class ApiWrapperService {
   }
 
   async getReportDetail(id) {
-    try {
-      if (!id || id === 'undefined' || id === 'null') {
-        throw new Error('Report detail requires a valid commerceContentId');
+    if (!id || id === 'undefined' || id === 'null') {
+      throw new Error('Report detail requires a valid commerceContentId');
+    }
+    if (this.useProxy) {
+      await this.getWrapper().catch(() => {});
+      const clientId = this.wrapper?.clientId || this._generateRandomId();
+      const apiId = this._generateRandomId();
+      const url = `${this.proxyUrl}/idLookup/report/detail/${id}?clientId=${clientId}&apiId=${apiId}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+        err.status = response.status;
+        throw err;
       }
+      return await response.json();
+    }
+    try {
       const wrapper = await this.getWrapper();
       if (typeof wrapper.api?.idLookup?.getReportDetail === 'function') {
         return await wrapper.api.idLookup.getReportDetail(id);
       }
       if (typeof wrapper.api?.idLookup?.getReport === 'function') {
-        // Library expects { commerceContentId } object, not a bare string
         return await wrapper.api.idLookup.getReport({ commerceContentId: id });
       }
       throw new Error('Report detail method not available in ApiWrapper');
@@ -699,6 +714,42 @@ class ApiWrapperService {
   // csrWrapper.api.optOut.find — POST /database/search
   async csrFindOptOuts(params = {}) {
     return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });
+  }
+
+  // csrWrapper.api.user.findUserContacts — POST /database/search (collectionName: userContact)
+  // Returns notes, csr mails, and user contacts for a given userId.
+  async csrFindUserContacts(params = {}) {
+    return await this._csrPost('/database/search', { collectionName: 'userContact', ...params });
+  }
+
+  // csrWrapper.api.user.createAdminNote — POST /message/admin/user/note/create
+  // params: { userId, message }
+  async csrCreateAdminNote(params = {}) {
+    return await this._csrPost('/message/admin/user/note/create', params);
+  }
+
+  // csrWrapper.api.user.updateAdminNote — POST /message/admin/user/note/update
+  // params: { messageId, message }
+  async csrUpdateAdminNote(params = {}) {
+    return await this._csrPost('/message/admin/user/note/update', params);
+  }
+
+  // csrWrapper.api.user.createCsrMail — POST /message/admin/user/csrMail/create
+  // params: { targetUserId, subject, message }
+  async csrCreateCsrMail(params = {}) {
+    return await this._csrPost('/message/admin/user/csrMail/create', params);
+  }
+
+  // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)
+  // params: { type ('email'|'phone'), contactAddress?, lastId? }
+  async csrFindManagedContacts(params = {}) {
+    return await this._csrPost('/database/search', { collectionName: 'managedContact', ...params });
+  }
+
+  // csrWrapper.api.managedContact.unsubscribe — POST /managedContact/management/unsubscribe
+  // params: { managedContactId }
+  async csrUnsubscribeManagedContact(managedContactId) {
+    return await this._csrPost('/managedContact/management/unsubscribe', { managedContactId });
   }
 
   /** Generate a random 32-char alphanumeric string matching the IIFE's format. */

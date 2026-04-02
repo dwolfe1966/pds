@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
+import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import { setSearchContext } from '../../services/searchContext';
 
 /**
@@ -167,41 +168,7 @@ const EmailSearchResultsPage = () => {
 
         {/* No Results */}
         {!loading && !errorMessage && results.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '6rem 0' }}>
-            <p style={{
-              fontSize: '1.5rem',
-              color: '#111827',
-              marginBottom: '1rem'
-            }}>
-              No results found
-            </p>
-            <p style={{
-              color: '#6b7280',
-              marginBottom: '1.5rem',
-              lineHeight: 1.625
-            }}>
-              No results found for this email address. Try a different email.
-            </p>
-            <button
-              onClick={() => navigate('/email/landing')}
-              style={{
-                padding: '1rem 2rem',
-                backgroundColor: '#0d5d2f',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-                fontSize: '1.125rem',
-                fontWeight: 600,
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d8659'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0d5d2f'; }}
-            >
-              Try Another Search
-            </button>
-          </div>
+          <ZeroResultsPanel searchType="email" query={{ email }} />
         )}
       </div>
     </main>

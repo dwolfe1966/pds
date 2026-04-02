@@ -77,12 +77,17 @@ export const API_ENDPOINTS = {
   'admin-cancel-order': { newApi: true, mockApi: false },
   'admin-email-log': { newApi: false, mockApi: true },
   'admin-email-broadcast': { newApi: false, mockApi: true },
-  // Unsubscribe — no BC endpoint yet, handled in callNewAPI with isMockUnavailable
+  // Unsubscribe — managedContact.find({ type: 'email' }) + managedContact.unsubscribe
   'admin-unsubscribe': { newApi: true, mockApi: false },
   'admin-unsubscribe-delete': { newApi: true, mockApi: false },
-  // Phone opt-outs — no BC endpoint yet, handled in callNewAPI with isMockUnavailable
+  // Phone opt-outs — managedContact.find({ type: 'phone' }) + managedContact.unsubscribe
   'admin-phone-optout': { newApi: true, mockApi: false },
   'admin-phone-optout-delete': { newApi: true, mockApi: false },
+  // User contacts (notes + csr mail) — findUserContacts requires userId
+  'admin-user-contacts': { newApi: true, mockApi: false },
+  'admin-create-note': { newApi: true, mockApi: false },
+  'admin-update-note': { newApi: true, mockApi: false },
+  'admin-create-csr-mail': { newApi: true, mockApi: false },
 };
 
 /**

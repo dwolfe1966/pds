@@ -32,7 +32,7 @@ Generated: 2026-03-30 | Source: Gap analysis between `/docs/admin designs/` spec
 |---|---------|-----|-------------|
 | 10 | ~~**Email Tickets**~~ | ✅ Done — `/admin/tickets`, two-panel layout, localStorage threads, reply + close/reopen | emails-v2.html |
 | 11 | ~~**Mail Activity Log**~~ | ✅ Done — `/admin/mail-log`, card layout, per-recipient Unsubscribe action | mail-sent-v2.html |
-| 12 | **Support Timesheets** | Completely missing; staff hours/status tracking with weekly view | timesheets-v2.html |
+| 12 | ~~**Support Timesheets**~~ | ✅ Done — `/admin/timesheets`, BC CS reps + localStorage hours per week, week selector | timesheets-v2.html |
 
 ---
 
@@ -40,9 +40,9 @@ Generated: 2026-03-30 | Source: Gap analysis between `/docs/admin designs/` spec
 
 | # | Feature | Gap | Source Spec |
 |---|---------|-----|-------------|
-| 13 | **Permissions Matrix** | Completely missing; role (Admin/Support/Editor) × module (Customers/Orders/Payments/Content) permission assignment | permissions-v2.html |
-| 14 | **Content Management** | Completely missing; tabbed Items list + Editor for creating/editing content blocks | content-v2.html |
-| 15 | **Offers & Products** | Completely missing; stats, select-item browser, detail panel for stocks/products/offers | offers-products-v2.html |
+| 13 | ~~**Permissions Matrix**~~ | ✅ Done — `/admin/permissions`, role×module matrix, localStorage, reset to defaults | permissions-v2.html |
+| 14 | ~~**Content Management**~~ | ✅ Done — `/admin/content`, tabbed Items+Editor, localStorage CRUD, search, toast | content-v2.html |
+| 15 | ~~**Offers & Products**~~ | ✅ Done — `/admin/offers`, localStorage seeded, stats bar, item browser + detail panel, edit modal | offers-products-v2.html |
 
 ---
 
@@ -50,10 +50,10 @@ Generated: 2026-03-30 | Source: Gap analysis between `/docs/admin designs/` spec
 
 | # | Feature | Gap | Source Spec |
 |---|---------|-----|-------------|
-| 16 | **Activity/Session Tracking** | SessionsPage is a stub; spec requires session hash accordion with per-endpoint activity log | tracking-v2.html |
-| 17 | **Log Viewer** | Completely missing; collapsible API call log with request/response JSON | logs-v2.html |
-| 18 | **UX Management Dashboard** | Completely missing; manage UX configs, layouts, collections, components | ux-management-v2.html |
-| 19 | **UXC History** | Completely missing; stats + date accordion showing which UX configs were shown per session | uxc-history-v2.html |
+| 16 | ~~**Activity/Session Tracking**~~ | ✅ Done — `/admin/sessions`, tracking API events grouped by session, accordion, stats | tracking-v2.html |
+| 17 | ~~**Log Viewer**~~ | ✅ Done — `/admin/logs`, tracking API raw events, collapsible request/response JSON | logs-v2.html |
+| 18 | ~~**UX Management Dashboard**~~ | ✅ Done — `/admin/ux`, localStorage accordion CRUD (Configs/Layouts/Collections/Components) | ux-management-v2.html |
+| 19 | ~~**UXC History**~~ | ✅ Done — `/admin/uxc-history`, tracking API events by date accordion, stats, session filter | uxc-history-v2.html |
 
 ---
 

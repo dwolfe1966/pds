@@ -19,7 +19,7 @@ const BRAND_ID   = process.env.REACT_APP_BRAND_ID    || 'idlookup';
 // if BC whitelists your domain.
 const USE_PROXY  = process.env.REACT_APP_CSR_USE_PROXY !== 'false';
 const PROXY_URL  = process.env.REACT_APP_CSR_PROXY_URL  || 'http://localhost:3001/api/proxy';
-const DIRECT_URL = process.env.REACT_APP_CSR_DIRECT_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
+const DIRECT_URL = process.env.REACT_APP_CSR_DIRECT_URL || 'https://dev.www.bytecrtrs.com/api';
 const API_URL    = USE_PROXY ? PROXY_URL : DIRECT_URL;
 
 // ---------------------------------------------------------------------------

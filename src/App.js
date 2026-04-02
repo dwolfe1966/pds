@@ -85,6 +85,10 @@ import PaymentsPage from './pages/admin/PaymentsPage';
 import PermissionsPage from './pages/admin/PermissionsPage';
 import ContentPage from './pages/admin/ContentPage';
 import TimesheetsPage from './pages/admin/TimesheetsPage';
+import OffersProductsPage from './pages/admin/OffersProductsPage';
+import LogViewerPage from './pages/admin/LogViewerPage';
+import UxManagementPage from './pages/admin/UxManagementPage';
+import UxcHistoryPage from './pages/admin/UxcHistoryPage';
 
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
@@ -429,6 +433,38 @@ const App = () => {
             element={
               <ProtectedRoute role="admin">
                 <ContentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/offers"
+            element={
+              <ProtectedRoute role="admin">
+                <OffersProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/logs"
+            element={
+              <ProtectedRoute role="admin">
+                <LogViewerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/ux"
+            element={
+              <ProtectedRoute role="admin">
+                <UxManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/uxc-history"
+            element={
+              <ProtectedRoute role="admin">
+                <UxcHistoryPage />
               </ProtectedRoute>
             }
           />

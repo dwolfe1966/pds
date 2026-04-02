@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "parcel public/index.html --port 3000 --no-cache",
-    "build": "parcel build public/index.html --dist-dir build",
+    "build": "parcel build public/index.html --dist-dir build && node scripts/postbuild.js",
     "server": "node server/index.js",
     "tracking": "node tracking-api/index.js",
     "dev": "concurrently \"npm run server\" \"npm run tracking\" \"npm start\"",

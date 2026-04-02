@@ -12,7 +12,8 @@ import { adaptTeaserResponse, adaptReportDetailResponse, adaptReportListResponse
 // Environment configuration
 const USE_NEW_API = process.env.REACT_APP_NEW_API_ENABLED === 'true';
 const USE_MOCK_API = process.env.REACT_APP_USE_MOCK_API === 'true'; // Default to false (safe for production)
-const MOCK_API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api/v1';
+const MOCK_API_URL = process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api/v1' : '/api/v1');
 
 // ---------------------------------------------------------------------------
 // BC synthetic session helpers
@@ -96,14 +97,15 @@ async function callMockAPI(endpoint, params = {}) {
   
   const { method = 'GET', body, queryParams, token: providedToken } = params;
   
-  // Construct URL properly
-  // MOCK_API_URL is like 'http://localhost:3001/api/v1'
-  // path is like '/search' - we need to append it to the base URL
-  // Remove leading slash from path if present, then append
+  // Construct URL properly.
+  // MOCK_API_URL may be absolute ('http://localhost:3001/api/v1') in dev or
+  // relative ('/api/v1') in production. new URL() requires an absolute base,
+  // so supply window.location.origin as the fallback base for relative URLs.
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;
   const baseUrl = MOCK_API_URL.endsWith('/') ? MOCK_API_URL : `${MOCK_API_URL}/`;
   const fullUrl = `${baseUrl}${cleanPath}`;
-  const url = new URL(fullUrl);
+  const urlBase = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  const url = new URL(fullUrl, urlBase);
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -742,30 +744,50 @@ async function callNewAPI(endpoint, params) {
       return await apiWrapper.csrCancelUncancelOrder(params.orderId, params.flag);
     }
 
-    // Unsubscribed users — no BC CSR endpoint yet; return empty so pages show empty state.
+    // Unsubscribed email contacts — managedContact.find({ type: 'email' })
     case 'admin-unsubscribe': {
-      const err = new Error('Unsubscribe endpoint not yet available.');
-      err.isMockUnavailable = true;
-      throw err;
+      const raw = await apiWrapper.csrFindManagedContacts({ type: 'email', ...(params.queryParams || {}) });
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
     }
 
+    // Unsubscribe a managed contact — managedContact.unsubscribe
     case 'admin-unsubscribe-delete': {
-      const err = new Error('Unsubscribe delete endpoint not yet available.');
-      err.isMockUnavailable = true;
-      throw err;
+      return await apiWrapper.csrUnsubscribeManagedContact(params.id);
     }
 
-    // Phone opt-outs — no BC CSR endpoint yet; return empty so pages show empty state.
+    // Phone opt-out contacts — managedContact.find({ type: 'phone' })
     case 'admin-phone-optout': {
-      const err = new Error('Phone opt-out endpoint not yet available.');
-      err.isMockUnavailable = true;
-      throw err;
+      const raw = await apiWrapper.csrFindManagedContacts({ type: 'phone', ...(params.queryParams || {}) });
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
     }
 
+    // Unsubscribe a phone managed contact
     case 'admin-phone-optout-delete': {
-      const err = new Error('Phone opt-out delete endpoint not yet available.');
-      err.isMockUnavailable = true;
-      throw err;
+      return await apiWrapper.csrUnsubscribeManagedContact(params.id);
+    }
+
+    // User contacts (notes + csr mail) — findUserContacts({ userId, lastId? })
+    case 'admin-user-contacts': {
+      const raw = await apiWrapper.csrFindUserContacts(params.queryParams || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
+    }
+
+    // Create admin note on a user — createAdminNote({ userId, message })
+    case 'admin-create-note': {
+      return await apiWrapper.csrCreateAdminNote(params.body || {});
+    }
+
+    // Update admin note — updateAdminNote({ messageId, message })
+    case 'admin-update-note': {
+      return await apiWrapper.csrUpdateAdminNote(params.body || {});
+    }
+
+    // Send CSR mail to a user — createCsrMail({ targetUserId, subject, message })
+    case 'admin-create-csr-mail': {
+      return await apiWrapper.csrCreateCsrMail(params.body || {});
     }
 
     default:

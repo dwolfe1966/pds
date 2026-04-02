@@ -1,0 +1,43 @@
+.page { max-width: 1100px; margin: 0 auto; padding: 32px 24px 64px; }
+.pageHeader { margin-bottom: 20px; }
+.title { font-size: 1.75rem; font-weight: 700; color: #111; margin: 0 0 4px; }
+.subtitle { font-size: 0.9rem; color: #666; margin: 0; }
+
+.statsBar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.statCard { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px 20px; min-width: 110px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.statNumber { font-size: 1.5rem; font-weight: 700; color: #2e7d32; }
+.statLabel { font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.filterBar { display: flex; gap: 10px; margin-bottom: 20px; }
+.searchInput { flex: 1; max-width: 400px; padding: 9px 13px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; }
+.searchInput:focus { outline: none; border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(46,125,50,0.12); }
+
+.loadingMsg { text-align: center; padding: 48px; color: #aaa; }
+.emptyState { text-align: center; padding: 48px; color: #888; font-size: 0.95rem; }
+
+.infoBox { background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; padding: 14px 18px; font-size: 0.88rem; color: #555; margin-bottom: 20px; line-height: 1.5; }
+.infoBox code { background: #f5f5f5; padding: 1px 5px; border-radius: 4px; font-size: 0.85rem; }
+
+.accordion { display: flex; flex-direction: column; gap: 8px; }
+
+.sessionBlock { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; }
+
+.sessionHeader {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 18px;
+  background: none; border: none; cursor: pointer; text-align: left;
+}
+.sessionHeader:hover { background: #fafafa; }
+
+.sessionHash { font-family: monospace; font-size: 0.88rem; color: #333; font-weight: 600; flex: 1; }
+.sessionMeta { font-size: 0.8rem; color: #888; white-space: nowrap; }
+.sessionTime { font-size: 0.8rem; color: #aaa; white-space: nowrap; }
+.chevron { color: #aaa; font-size: 0.75rem; }
+
+.sessionBody { padding: 0 18px 18px; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 8px; }
+.th { text-align: left; padding: 8px 10px; background: #f8f8f8; border-bottom: 1px solid #e0e0e0; font-size: 0.75rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.04em; }
+.tr:hover { background: #fafafa; }
+.td { padding: 7px 10px; border-bottom: 1px solid #f5f5f5; color: #444; vertical-align: middle; }
+.tr:last-child .td { border-bottom: none; }
+.eventName { background: #f0f4ff; color: #3949ab; padding: 2px 6px; border-radius: 4px; font-size: 0.82rem; }

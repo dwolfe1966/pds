@@ -6,7 +6,7 @@ import {
   LineChart, Line, CartesianGrid, Cell,
 } from 'recharts';
 
-const TRACKING_API = process.env.REACT_APP_TRACKING_API_URL || 'http://localhost:3002';
+const TRACKING_API = process.env.REACT_APP_TRACKING_API_URL || null;
 const ADMIN_KEY = process.env.REACT_APP_TRACKING_ADMIN_KEY || 'dev-admin-key';
 
 const FUNNEL_COLORS = [

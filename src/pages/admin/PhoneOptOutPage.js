@@ -1,14 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import styles from './PhoneOptOutPage.module.css';
 
-/**
- * Admin page to manage phone opt-out entries.
- * Fields expected from API: _id, phone, status ('active'|'inactive'), createdAt
- */
-
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 function formatPhone(raw) {
   const digits = (raw || '').replace(/\D/g, '');
@@ -18,176 +13,152 @@ function formatPhone(raw) {
   return raw || '—';
 }
 
-function StatusBadge({ status }) {
-  const s = (status || '').toLowerCase();
-  if (s === 'active') {
-    return <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
-  }
-  return <span className={`${styles.badge} ${styles.badgeInactive}`}>Inactive</span>;
+function formatDate(value) {
+  if (!value) return '—';
+  try { return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
+  catch { return '—'; }
+}
+
+function resolveId(e) { return e._id || e.id || ''; }
+
+function isUnsubscribed(e) { return (e.subStatus || '').toLowerCase() === 'unsubscribed'; }
+
+function StatusBadge({ entry }) {
+  const unsub = isUnsubscribed(entry);
+  return unsub
+    ? <span className={`${styles.badge} ${styles.badgeInactive}`}>Opted Out</span>
+    : <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
 }
 
 const PhoneOptOutPage = () => {
   const { token } = useAuth();
 
-  const [allEntries, setAllEntries]     = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [loadingMore, setLoadingMore]   = useState(false);
-  const [error, setError]               = useState('');
-  const [isEmpty, setIsEmpty]           = useState(false);
-  const [noMoreDocs, setNoMoreDocs]     = useState(false);
-  const [lastId, setLastId]             = useState(null);
+  const [allEntries, setAllEntries]   = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError]             = useState('');
+  const [noMoreDocs, setNoMoreDocs]   = useState(false);
+  const [lastId, setLastId]           = useState(null);
+  const [view, setView]               = useState('list'); // 'list' | 'cards'
 
-  // Filter state
   const [search, setSearch]             = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-
-  // Per-row delete state: { [id]: 'loading' | 'error' }
   const [rowState, setRowState]         = useState({});
 
-  // ── fetch helpers ──────────────────────────────────────────────────
+  // ── fetch ──────────────────────────────────────────────────────────
 
   const fetchPage = useCallback(async (cursorId = null) => {
-    const params = cursorId
-      ? { lastId: cursorId, limit: PAGE_SIZE }
-      : { limit: PAGE_SIZE };
-    const res  = await api.get('/admin/phone-optout', { params, token });
+    const params = cursorId ? { lastId: cursorId } : {};
+    const res = await api.adminListPhoneOptOuts(params);
     const docs = res?.data ?? res?.docs ?? (Array.isArray(res) ? res : []);
-    const last = docs.length > 0 ? (docs[docs.length - 1]._id || docs[docs.length - 1].id) : null;
-    const done = res?.noMoreDocs ?? docs.length < PAGE_SIZE;
+    const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
+    const done = res?.noMoreDocs ?? docs.length === 0;
     return { docs, last, done };
   }, [token]);
 
-  // Initial load
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError('');
-
     fetchPage(null)
       .then(({ docs, last, done }) => {
         if (cancelled) return;
-        setAllEntries(docs);
-        setLastId(last);
-        setNoMoreDocs(done);
-        setIsEmpty(docs.length === 0);
+        setAllEntries(docs); setLastId(last); setNoMoreDocs(done);
       })
-      .catch((err) => {
-        if (cancelled) return;
-        if (err.isMockUnavailable) {
-          setIsEmpty(true);
-        } else {
-          setError(err.message || 'Failed to load phone opt-outs.');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
+      .catch((err) => { if (!cancelled) setError(err.message || 'Failed to load phone contacts.'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetchPage]);
 
-  // Load more
   const handleLoadMore = async () => {
     if (loadingMore || noMoreDocs) return;
     setLoadingMore(true);
     try {
       const { docs, last, done } = await fetchPage(lastId);
       setAllEntries((prev) => [...prev, ...docs]);
-      setLastId(last);
-      setNoMoreDocs(done);
+      setLastId(last); setNoMoreDocs(done);
     } catch (err) {
-      if (!err.isMockUnavailable) {
-        setError(err.message || 'Failed to load more entries.');
-      }
-    } finally {
-      setLoadingMore(false);
-    }
+      setError(err.message || 'Failed to load more.');
+    } finally { setLoadingMore(false); }
   };
 
-  // ── remove action ──────────────────────────────────────────────────
+  // ── opt-out action ─────────────────────────────────────────────────
 
-  const handleRemove = async (entry) => {
-    const id    = entry._id || entry.id;
-    const label = formatPhone(entry.phone);
-
-    if (!window.confirm(`Remove phone opt-out for ${label}?`)) return;
+  const handleOptOut = async (entry) => {
+    const id = resolveId(entry);
+    const label = formatPhone(entry.contactAddress);
+    if (!window.confirm(`Opt out ${label}?`)) return;
 
     setRowState((prev) => ({ ...prev, [id]: 'loading' }));
-
     try {
-      await api.delete(`/admin/phone-optout/${id}`, { token });
-      setAllEntries((prev) => prev.filter((e) => (e._id || e.id) !== id));
-      setRowState((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
+      await api.adminUnsubscribePhoneContact(id);
+      setAllEntries((prev) =>
+        prev.map((e) => resolveId(e) === id ? { ...e, subStatus: 'unsubscribed' } : e)
+      );
+      setRowState((prev) => { const n = { ...prev }; delete n[id]; return n; });
     } catch (err) {
       setRowState((prev) => ({ ...prev, [id]: 'error' }));
-      setTimeout(() => {
-        setRowState((prev) => {
-          const next = { ...prev };
-          delete next[id];
-          return next;
-        });
-      }, 4000);
+      setTimeout(() => setRowState((prev) => { const n = { ...prev }; delete n[id]; return n; }), 3000);
     }
   };
 
-  // ── derived stats ──────────────────────────────────────────────────
+  // ── stats + filter ─────────────────────────────────────────────────
 
-  const totalCount    = allEntries.length;
-  const activeCount   = allEntries.filter((e) => (e.status || '').toLowerCase() === 'active').length;
-  const inactiveCount = allEntries.filter((e) => (e.status || '').toLowerCase() !== 'active').length;
+  const totalCount  = allEntries.length;
+  const optOutCount = allEntries.filter(isUnsubscribed).length;
+  const activeCount = totalCount - optOutCount;
 
-  // ── client-side filtering ──────────────────────────────────────────
-
-  const filtered = allEntries.filter((e) => {
-    const q           = search.trim().toLowerCase();
-    const phoneRaw    = (e.phone || '').toLowerCase();
-    const phoneFormatted = formatPhone(e.phone).toLowerCase();
-    const matchSearch = !q || phoneRaw.includes(q) || phoneFormatted.includes(q);
-
-    const s = (e.status || '').toLowerCase();
-    let matchStatus = true;
-    if (statusFilter === 'active')   matchStatus = s === 'active';
-    if (statusFilter === 'inactive') matchStatus = s !== 'active';
-
-    return matchSearch && matchStatus;
-  });
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allEntries.filter((e) => {
+      const unsub = isUnsubscribed(e);
+      if (statusFilter === 'active' && unsub) return false;
+      if (statusFilter === 'optout' && !unsub) return false;
+      const addr = (e.contactAddress || '').toLowerCase();
+      const fmt = formatPhone(e.contactAddress).toLowerCase();
+      if (q && !addr.includes(q) && !fmt.includes(q)) return false;
+      return true;
+    });
+  }, [allEntries, search, statusFilter]);
 
   // ── render ─────────────────────────────────────────────────────────
 
+  const renderAction = (entry) => {
+    const id = resolveId(entry);
+    const rs = rowState[id];
+    if (isUnsubscribed(entry)) return null;
+    return (
+      <button
+        className={styles.removeBtn}
+        onClick={() => handleOptOut(entry)}
+        disabled={rs === 'loading'}
+      >
+        {rs === 'loading' ? 'Opting out…' : 'Opt Out'}
+      </button>
+    );
+  };
+
   return (
     <main className={styles.page}>
-      {/* Page header */}
       <div className={styles.pageHeader}>
         <div className={styles.titleBlock}>
-          <h1 className={styles.title}>Manage Phone Opt-Outs</h1>
-          <p className={styles.subtitle}>View and remove phone numbers from the opt-out registry</p>
+          <h1 className={styles.title}>Phone Contacts</h1>
+          <p className={styles.subtitle}>Manage phone opt-out status for all managed contacts</p>
+        </div>
+        <div className={styles.viewToggle}>
+          <button className={`${styles.viewBtn} ${view === 'list' ? styles.viewBtnActive : ''}`} onClick={() => setView('list')}>List</button>
+          <button className={`${styles.viewBtn} ${view === 'cards' ? styles.viewBtnActive : ''}`} onClick={() => setView('cards')}>Cards</button>
         </div>
       </div>
 
-      {/* Stats bar */}
       <div className={styles.statsBar}>
-        <div className={styles.statCard}>
-          <div className={styles.statNumber}>{totalCount}</div>
-          <div className={styles.statLabel}>Total Opt-Outs</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statNumber} ${styles.statNumberActive}`}>{activeCount}</div>
-          <div className={styles.statLabel}>Active</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statNumber} ${styles.statNumberInactive}`}>{inactiveCount}</div>
-          <div className={styles.statLabel}>Inactive</div>
-        </div>
+        <div className={styles.statCard}><div className={styles.statNumber}>{totalCount}</div><div className={styles.statLabel}>Total Contacts</div></div>
+        <div className={styles.statCard}><div className={`${styles.statNumber} ${styles.statNumberActive}`}>{activeCount}</div><div className={styles.statLabel}>Active</div></div>
+        <div className={styles.statCard}><div className={`${styles.statNumber} ${styles.statNumberInactive}`}>{optOutCount}</div><div className={styles.statLabel}>Opted Out</div></div>
       </div>
 
-      {/* Error banner */}
       {error && <div className={styles.errorBanner}>{error}</div>}
 
-      {/* Filter row */}
       <div className={styles.filterRow}>
         <div className={styles.searchWrap}>
           <span className={styles.searchIcon}>
@@ -196,26 +167,15 @@ const PhoneOptOutPage = () => {
               <path d="M14.5 14.5l3.5 3.5" stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
           </span>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Search phone number…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <input type="text" className={styles.searchInput} placeholder="Search phone number…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <select
-          className={styles.filterSelect}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
+        <select className={styles.filterSelect} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="optout">Opted Out</option>
         </select>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className={styles.loadingWrap}>
           {[...Array(5)].map((_, i) => (
@@ -223,81 +183,81 @@ const PhoneOptOutPage = () => {
               <div className={`${styles.skeletonCell} ${styles.skeletonLong}`} />
               <div className={`${styles.skeletonCell} ${styles.skeletonMed}`} />
               <div className={`${styles.skeletonCell} ${styles.skeletonShort}`} />
-              <div className={`${styles.skeletonCell} ${styles.skeletonXShort}`} />
             </div>
           ))}
         </div>
-      ) : isEmpty ? (
+      ) : allEntries.length === 0 ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>📵</div>
-          <p className={styles.emptyTitle}>No phone opt-outs found</p>
-          <p className={styles.emptyText}>Phone opt-out entries will appear here once submitted.</p>
+          <p className={styles.emptyTitle}>No phone contacts found</p>
+          <p className={styles.emptyText}>Phone contacts will appear here as users register.</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className={styles.noResults}>No entries match your filters.</div>
+      ) : view === 'cards' ? (
+        <ul className={styles.cardList}>
+          {filtered.map((entry) => {
+            const id = resolveId(entry);
+            const unsub = isUnsubscribed(entry);
+            const date = formatDate(entry.createdAt);
+            const rs = rowState[id];
+            return (
+              <li key={id} className={`${styles.phoneCard} ${unsub ? styles.phoneCardInactive : styles.phoneCardActive}`}>
+                <div className={styles.cardLeft}>
+                  <span className={styles.phoneNumber}>{formatPhone(entry.contactAddress)}</span>
+                  <span className={styles.dateAdded}>Added {date}</span>
+                </div>
+                <div className={styles.cardCenter}><StatusBadge entry={entry} /></div>
+                <div className={styles.cardRight}>
+                  {rs === 'error' && <span className={styles.inlineError}>Failed</span>}
+                  {!unsub && (
+                    <button className={styles.removeBtn} onClick={() => handleOptOut(entry)} disabled={rs === 'loading'}>
+                      {rs === 'loading' ? 'Opting out…' : 'Opt Out'}
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
-        <>
-          {/* Card list */}
-          <ul className={styles.cardList}>
-            {filtered.length === 0 ? (
-              <li className={styles.noResults}>No entries match your filters.</li>
-            ) : (
-              filtered.map((entry) => {
-                const id      = entry._id || entry.id;
-                const s       = (entry.status || '').toLowerCase();
-                const isActive = s === 'active';
-                const date    = entry.createdAt
-                  ? new Date(entry.createdAt).toLocaleDateString()
-                  : (entry.date || '—');
-                const rState  = rowState[id];
-
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead><tr>
+              <th className={styles.th}>Phone</th>
+              <th className={styles.th}>Status</th>
+              <th className={styles.th}>Brand</th>
+              <th className={styles.th}>Added</th>
+              <th className={styles.th}>Action</th>
+            </tr></thead>
+            <tbody>
+              {filtered.map((entry) => {
+                const id = resolveId(entry);
                 return (
-                  <li
-                    key={id}
-                    className={`${styles.phoneCard} ${isActive ? styles.phoneCardActive : styles.phoneCardInactive}`}
-                  >
-                    <div className={styles.cardLeft}>
-                      <span className={styles.phoneNumber}>{formatPhone(entry.phone)}</span>
-                      <span className={styles.dateAdded}>Added {date}</span>
-                    </div>
-                    <div className={styles.cardCenter}>
-                      <StatusBadge status={entry.status} />
-                    </div>
-                    <div className={styles.cardRight}>
-                      {rState === 'error' && (
-                        <span className={styles.inlineError}>Failed</span>
-                      )}
-                      <button
-                        className={styles.removeBtn}
-                        onClick={() => handleRemove(entry)}
-                        disabled={rState === 'loading'}
-                      >
-                        {rState === 'loading' ? 'Removing…' : 'Remove'}
-                      </button>
-                    </div>
-                  </li>
+                  <tr key={id} className={styles.tr}>
+                    <td className={styles.td}>{formatPhone(entry.contactAddress)}</td>
+                    <td className={styles.td}><StatusBadge entry={entry} /></td>
+                    <td className={styles.td}>{entry.brandId || '—'}</td>
+                    <td className={styles.td}>{formatDate(entry.createdAt)}</td>
+                    <td className={styles.td}>{renderAction(entry)}</td>
+                  </tr>
                 );
-              })
-            )}
-          </ul>
-
-          {/* Pagination */}
-          <div className={styles.paginationBar}>
-            <span className={styles.countLabel}>
-              Showing {filtered.length} of {totalCount} loaded
-            </span>
-            {!noMoreDocs ? (
-              <button
-                className={styles.loadMoreBtn}
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? 'Loading…' : 'Load More'}
-              </button>
-            ) : (
-              <span className={styles.allLoadedLabel}>All entries loaded</span>
-            )}
-          </div>
-        </>
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
+
+      <div className={styles.paginationBar}>
+        <span className={styles.countLabel}>Showing {filtered.length} of {totalCount} loaded</span>
+        {!noMoreDocs ? (
+          <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : 'Load More'}
+          </button>
+        ) : (
+          <span className={styles.allLoadedLabel}>All entries loaded</span>
+        )}
+      </div>
     </main>
   );
 };

@@ -15,6 +15,21 @@
   margin-bottom: 1.75rem;
 }
 
+/* ── View toggle ─────────────────────────────────────────────────── */
+.viewToggle { display: flex; gap: 4px; }
+.viewBtn { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; font-size: 0.83rem; cursor: pointer; color: #555; }
+.viewBtn:hover { background: #f5f5f5; }
+.viewBtnActive { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+.viewBtnActive:hover { background: #1b5e20; }
+
+/* ── Table ───────────────────────────────────────────────────────── */
+.tableWrap { overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 1rem; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.th { text-align: left; padding: 10px 14px; background: #f8f8f8; border-bottom: 1px solid #e0e0e0; font-size: 0.8rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.04em; }
+.tr:hover { background: #fafafa; }
+.td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
+.tr:last-child .td { border-bottom: none; }
+
 .titleBlock {
   display: flex;
   flex-direction: column;

@@ -14,26 +14,13 @@
   flex-wrap: wrap;
 }
 
-.title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #111;
-  margin: 0 0 4px;
-}
+.headerRight { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-.subtitle {
-  font-size: 0.9rem;
-  color: #666;
-  margin: 0;
-}
+.title { font-size: 1.75rem; font-weight: 700; color: #111; margin: 0 0 4px; }
+.subtitle { font-size: 0.9rem; color: #666; margin: 0; }
 
-/* ── Toolbar ─────────────────────────────────────────────── */
-.filterBar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
+/* ── User search form ────────────────────────────────────── */
+.searchForm { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 
 .searchInput {
   flex: 1;
@@ -44,32 +31,77 @@
   font-size: 0.95rem;
 }
 
-.searchInput:focus {
-  outline: none;
-  border-color: #2e7d32;
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
+.searchInput:focus { outline: none; border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(46,125,50,0.12); }
+
+.searchBtn {
+  padding: 9px 18px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.refreshBtn {
-  padding: 9px 16px;
+.searchBtn:hover { background: #1b5e20; }
+.searchBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.clearBtn {
+  padding: 9px 14px;
   border: 1px solid #ddd;
   border-radius: 8px;
   background: #fff;
   font-size: 0.9rem;
   cursor: pointer;
   color: #555;
+}
+
+.clearBtn:hover { background: #f5f5f5; }
+
+/* ── Compose button ──────────────────────────────────────── */
+.composeBtn {
+  padding: 8px 16px;
+  background: #1565c0;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
   white-space: nowrap;
 }
 
-.refreshBtn:hover:not(:disabled) { background: #f5f5f5; }
-.refreshBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+.composeBtn:hover { background: #0d47a1; }
+
+/* ── View toggle ─────────────────────────────────────────── */
+.viewToggle { display: flex; gap: 4px; }
+.viewBtn { padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; font-size: 0.83rem; cursor: pointer; color: #555; }
+.viewBtn:hover { background: #f5f5f5; }
+.viewBtnActive { background: #2e7d32; color: #fff; border-color: #2e7d32; }
+.viewBtnActive:hover { background: #1b5e20; }
+
+/* ── User banner ─────────────────────────────────────────── */
+.userBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.userEmail { margin-left: 8px; font-size: 0.85rem; color: #666; }
+.profileLink { font-size: 0.85rem; color: #2e7d32; text-decoration: none; white-space: nowrap; }
+.profileLink:hover { text-decoration: underline; }
 
 /* ── Grid ────────────────────────────────────────────────── */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 18px;
-}
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
 
 /* ── Mail Card ───────────────────────────────────────────── */
 .mailCard {
@@ -80,89 +112,27 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
-.mailHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
+.mailHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.mailDate { font-size: 0.78rem; color: #aaa; }
+.mailSubject { font-size: 0.9rem; font-weight: 600; color: #222; margin: 0; }
+.mailBody { font-size: 0.88rem; color: #555; margin: 0; line-height: 1.4; }
+.mailMeta { font-size: 0.83rem; color: #888; margin: 0; }
 
-.mailId {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
+/* ── Table ───────────────────────────────────────────────── */
+.tableWrap { overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 1rem; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.th { text-align: left; padding: 10px 14px; background: #f8f8f8; border-bottom: 1px solid #e0e0e0; font-size: 0.8rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.04em; }
+.tr:hover { background: #fafafa; }
+.td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; color: #333; vertical-align: middle; }
+.tr:last-child .td { border-bottom: none; }
 
-.mailRow {
-  font-size: 0.88rem;
-  color: #444;
-  margin: 0;
-}
-
-.mailActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.unsubBtn {
-  padding: 6px 13px;
-  border: 1px solid #e65100;
-  border-radius: 6px;
-  background: #fff;
-  color: #e65100;
-  font-size: 0.83rem;
-  cursor: pointer;
-}
-
-.unsubBtn:hover:not(:disabled) { background: #fff3e0; }
-.unsubBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.confirmText { font-size: 0.83rem; color: #555; }
-
-.confirmYes {
-  padding: 5px 11px;
-  background: #d32f2f;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-.confirmYes:hover:not(:disabled) { background: #b71c1c; }
-.confirmYes:disabled { opacity: 0.5; }
-
-.confirmNo {
-  padding: 5px 11px;
-  background: #eee;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-.confirmNo:hover { background: #ddd; }
-
-/* ── Status badges ───────────────────────────────────────── */
-.badge {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.badgeActive { background: #e8f5e9; color: #2e7d32; }
-.badgeUnsub { background: #ffebee; color: #d32f2f; }
+/* ── Badges ──────────────────────────────────────────────── */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.badgeMail { background: #e3f2fd; color: #1565c0; }
+.badgeContact { background: #f3e5f5; color: #6a1b9a; }
 .badgeDefault { background: #f5f5f5; color: #666; }
 
 /* ── Skeleton ────────────────────────────────────────────── */
@@ -190,44 +160,44 @@
 
 .skeletonTitle { height: 16px; width: 55%; }
 .skeletonShort { height: 13px; width: 75%; }
-.skeletonBtn { height: 28px; width: 40%; margin-top: 4px; border-radius: 6px; }
+
+/* ── Load more ───────────────────────────────────────────── */
+.loadMoreRow { text-align: center; margin-top: 20px; }
+.loadMoreBtn { padding: 9px 24px; background: #fff; border: 1px solid #2e7d32; color: #2e7d32; border-radius: 8px; font-size: 0.9rem; cursor: pointer; }
+.loadMoreBtn:hover { background: #e8f5e9; }
+.loadMoreBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Empty / Error ───────────────────────────────────────── */
-.emptyState {
-  text-align: center;
-  padding: 56px 16px;
-  color: #888;
-}
-
+.emptyState { text-align: center; padding: 56px 16px; color: #888; }
 .emptyIcon { font-size: 2.2rem; margin: 0 0 8px; }
 .emptyTitle { font-size: 1.05rem; font-weight: 600; color: #555; margin: 0 0 6px; }
-.emptySubtitle { font-size: 0.88rem; color: #999; margin: 0; }
+.errorBox { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; border-radius: 8px; padding: 14px 18px; font-size: 0.9rem; margin-bottom: 16px; }
 
-.errorBox {
-  background: #ffebee;
-  color: #c62828;
-  border: 1px solid #ffcdd2;
-  border-radius: 8px;
-  padding: 14px 18px;
-  font-size: 0.9rem;
-}
+/* ── Modal ───────────────────────────────────────────────── */
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+.modal { background: #fff; border-radius: 14px; padding: 28px; width: 100%; max-width: 500px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+.modalHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modalTitle { font-size: 1.2rem; font-weight: 700; color: #111; margin: 0; }
+.modalClose { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #888; padding: 4px 8px; }
+.modalClose:hover { color: #333; }
+.field { margin-bottom: 16px; }
+.label { display: block; font-size: 0.85rem; font-weight: 600; color: #444; margin-bottom: 6px; }
+.input { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 7px; font-size: 0.95rem; box-sizing: border-box; }
+.input:focus { outline: none; border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(46,125,50,0.12); }
+.textarea { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 7px; font-size: 0.9rem; font-family: inherit; resize: vertical; box-sizing: border-box; }
+.textarea:focus { outline: none; border-color: #2e7d32; box-shadow: 0 0 0 3px rgba(46,125,50,0.12); }
+.errorMsg { color: #d32f2f; font-size: 0.85rem; margin: 0 0 12px; }
+.modalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.cancelBtn { padding: 9px 18px; border: 1px solid #ddd; border-radius: 8px; background: #fff; font-size: 0.9rem; cursor: pointer; color: #555; }
+.cancelBtn:hover { background: #f5f5f5; }
+.sendBtn { padding: 9px 20px; background: #1565c0; color: #fff; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+.sendBtn:hover { background: #0d47a1; }
+.sendBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Toast ───────────────────────────────────────────────── */
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: #2e7d32;
-  color: #fff;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-  z-index: 2000;
-  animation: fadeIn 0.2s ease;
-}
+.toast { position: fixed; bottom: 24px; right: 24px; background: #2e7d32; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; box-shadow: 0 4px 14px rgba(0,0,0,0.2); z-index: 2000; animation: fadeIn 0.2s ease; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }

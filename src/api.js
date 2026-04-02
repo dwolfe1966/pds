@@ -567,8 +567,36 @@ const api = {
     return await routeApiRequest('admin-unsubscribe', { queryParams: params });
   },
 
+  adminUnsubscribeContact: async (id) => {
+    return await routeApiRequest('admin-unsubscribe-delete', { id });
+  },
+
   adminRemoveUnsubscribed: async (id) => {
     return await routeApiRequest('admin-unsubscribe-delete', { id });
+  },
+
+  adminListPhoneOptOuts: async (params = {}) => {
+    return await routeApiRequest('admin-phone-optout', { queryParams: params });
+  },
+
+  adminUnsubscribePhoneContact: async (id) => {
+    return await routeApiRequest('admin-phone-optout-delete', { id });
+  },
+
+  adminFindUserContacts: async (params = {}) => {
+    return await routeApiRequest('admin-user-contacts', { queryParams: params });
+  },
+
+  adminCreateNote: async (body = {}) => {
+    return await routeApiRequest('admin-create-note', { body });
+  },
+
+  adminUpdateNote: async (body = {}) => {
+    return await routeApiRequest('admin-update-note', { body });
+  },
+
+  adminCreateCsrMail: async (body = {}) => {
+    return await routeApiRequest('admin-create-csr-mail', { body });
   },
 
   adminListCsReps: async (params = {}) => {

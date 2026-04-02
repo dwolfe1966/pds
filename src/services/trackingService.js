@@ -7,11 +7,9 @@
 
 const SESSION_KEY = 'trackingSessionId';
 
-const TRACKING_URL =
-  (process.env.REACT_APP_TRACKING_API_URL
-    ? `${process.env.REACT_APP_TRACKING_API_URL}/track`
-    : null) ||
-  'http://localhost:3002/track';
+const TRACKING_URL = process.env.REACT_APP_TRACKING_API_URL
+  ? `${process.env.REACT_APP_TRACKING_API_URL}/track`
+  : (process.env.NODE_ENV === 'development' ? 'http://localhost:3002/track' : null);
 
 function getSessionId() {
   let id = sessionStorage.getItem(SESSION_KEY);
@@ -29,6 +27,7 @@ export function track(eventName, properties = {}) {
     sessionId: getSessionId(),
     properties,
   };
+  if (!TRACKING_URL) return;
   // Fire and forget — do not await, do not surface errors
   fetch(TRACKING_URL, {
     method: 'POST',

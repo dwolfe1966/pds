@@ -225,7 +225,7 @@ const ApiTestPage = () => {
               <div><strong>NEW_API_ENABLED:</strong> {process.env.REACT_APP_NEW_API_ENABLED || 'false'}</div>
               <div><strong>USE_MOCK_API:</strong> {process.env.REACT_APP_USE_MOCK_API || 'true'}</div>
               <div><strong>USE_NEW_API_SEARCH:</strong> {process.env.REACT_APP_USE_NEW_API_SEARCH || 'false'}</div>
-              <div><strong>NEW_API_URL:</strong> {process.env.REACT_APP_NEW_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api'}</div>
+              <div><strong>NEW_API_URL:</strong> {process.env.REACT_APP_NEW_API_URL || 'https://dev.www.bytecrtrs.com/api'}</div>
               <div><strong>MOCK_API_URL:</strong> {process.env.REACT_APP_API_URL || 'http://localhost:3001/api/v1'}</div>
             </div>
           </div>

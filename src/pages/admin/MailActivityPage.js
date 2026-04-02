@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { Link } from 'react-router-dom';
 import styles from './MailActivityPage.module.css';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -14,77 +15,92 @@ function formatDate(value) {
   } catch { return '—'; }
 }
 
-function resolveId(item) {
-  return item._id || item.id || item.mailId || '';
+function resolveId(item) { return item._id || item.id || ''; }
+
+function stripHtml(html) {
+  return (html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
-function resolveStatus(item) {
-  return (item.status || 'active').toLowerCase();
+// ─── TypeBadge ────────────────────────────────────────────────────────────────
+
+function TypeBadge({ type }) {
+  const t = (type || '').toLowerCase();
+  if (t === 'usercontactcsrmail') return <span className={`${styles.badge} ${styles.badgeMail}`}>CSR Mail</span>;
+  if (t === 'usercontact') return <span className={`${styles.badge} ${styles.badgeContact}`}>Contact</span>;
+  return <span className={`${styles.badge} ${styles.badgeDefault}`}>{type || '—'}</span>;
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── ComposeModal ─────────────────────────────────────────────────────────────
 
-function SkeletonCard() {
+function ComposeModal({ targetUserId, onSent, onClose }) {
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!subject.trim()) { setError('Subject is required.'); return; }
+    if (!message.trim()) { setError('Message is required.'); return; }
+    setSending(true);
+    setError('');
+    try {
+      await api.adminCreateCsrMail({ targetUserId, subject: subject.trim(), message: message.trim() });
+      onSent();
+    } catch (err) {
+      setError(err.message || 'Failed to send email.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
-    <div className={styles.skeletonCard} aria-hidden="true">
-      <div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} />
-      <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
-      <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
-      <div className={`${styles.skeletonLine} ${styles.skeletonBtn}`} />
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Send CSR Mail</h2>
+          <button className={styles.modalClose} onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSend}>
+          <div className={styles.field}>
+            <label className={styles.label}>Subject</label>
+            <input className={styles.input} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject…" />
+          </div>
+          <div className={styles.field}>
+            <label className={styles.label}>Message</label>
+            <textarea className={styles.textarea} rows={6} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Email body (HTML supported)…" />
+          </div>
+          {error && <p className={styles.errorMsg}>{error}</p>}
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.cancelBtn} onClick={onClose}>Cancel</button>
+            <button type="submit" className={styles.sendBtn} disabled={sending}>{sending ? 'Sending…' : 'Send'}</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
 
-// ─── StatusBadge ──────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }) {
-  const s = (status || '').toLowerCase();
-  if (s === 'active') return <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
-  if (s === 'unsubscribed') return <span className={`${styles.badge} ${styles.badgeUnsub}`}>Unsubscribed</span>;
-  return <span className={`${styles.badge} ${styles.badgeDefault}`}>{s || 'unknown'}</span>;
-}
-
 // ─── MailCard ─────────────────────────────────────────────────────────────────
 
-function MailCard({ item, onUnsubscribe, removing }) {
-  const id = resolveId(item);
-  const status = resolveStatus(item);
-  const [confirm, setConfirm] = useState(false);
+function MailCard({ item }) {
+  const subject = item.content?.subject || '';
+  const msg = stripHtml(item.content?.message || '');
 
   return (
     <div className={styles.mailCard}>
       <div className={styles.mailHeader}>
-        <span className={styles.mailId}>
-          {item.mailId || item.id || item._id || 'MAIL–'}
-        </span>
-        <StatusBadge status={status} />
+        <TypeBadge type={item.type} />
+        <span className={styles.mailDate}>{formatDate(item.createdAt)}</span>
       </div>
-      <p className={styles.mailRow}><strong>Email:</strong> {item.email || item.to || item.recipient || '—'}</p>
-      {item.subject && <p className={styles.mailRow}><strong>Subject:</strong> {item.subject}</p>}
-      {item.type && <p className={styles.mailRow}><strong>Type:</strong> {item.type}</p>}
-      <p className={styles.mailRow}><strong>Sent:</strong> {formatDate(item.sentAt || item.createdAt || item.date)}</p>
-
-      <div className={styles.mailActions}>
-        {status !== 'unsubscribed' && (
-          confirm ? (
-            <>
-              <span className={styles.confirmText}>Unsubscribe?</span>
-              <button
-                className={styles.confirmYes}
-                onClick={() => { setConfirm(false); onUnsubscribe(id, item); }}
-                disabled={removing}
-              >
-                Yes
-              </button>
-              <button className={styles.confirmNo} onClick={() => setConfirm(false)}>No</button>
-            </>
-          ) : (
-            <button className={styles.unsubBtn} onClick={() => setConfirm(true)} disabled={removing}>
-              Unsubscribe
-            </button>
-          )
-        )}
-      </div>
+      {subject && <p className={styles.mailSubject}>{subject}</p>}
+      {msg && <p className={styles.mailBody}>{msg.length > 200 ? msg.slice(0, 200) + '…' : msg}</p>}
+      <p className={styles.mailMeta}>Status: <strong>{item.status || '—'}</strong></p>
+      {item.owner && (
+        <p className={styles.mailMeta}>
+          By: {item.owner.firstName} {item.owner.lastName}
+        </p>
+      )}
     </div>
   );
 }
@@ -94,145 +110,227 @@ function MailCard({ item, onUnsubscribe, removing }) {
 const MailActivityPage = () => {
   const { token } = useAuth();
 
+  // User search
+  const [searchInput, setSearchInput] = useState('');
+  const [resolvedUser, setResolvedUser] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
+  // Contacts (mail + contact items)
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isMockUnavailable, setIsMockUnavailable] = useState(false);
-  const [search, setSearch] = useState('');
-  const [removing, setRemoving] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [noMoreDocs, setNoMoreDocs] = useState(false);
+  const [lastId, setLastId] = useState(null);
+  const [itemsError, setItemsError] = useState('');
+
+  // Compose
+  const [composing, setComposing] = useState(false);
   const [toast, setToast] = useState('');
+  const [view, setView] = useState('list'); // 'list' | 'cards'
 
   const showToast = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   }, []);
 
-  const fetchLog = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    setIsMockUnavailable(false);
+  // ── user search ────────────────────────────────────────────────────────────
+
+  const handleUserSearch = async (e) => {
+    e.preventDefault();
+    const q = searchInput.trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchError('');
+    setResolvedUser(null);
+    setItems([]);
     try {
-      const data = await api.getEmailLog({ token });
-      const list = data?.data || data?.docs || data?.emails || data || [];
-      setItems(Array.isArray(list) ? list : []);
+      const res = await api.adminListUsers({ email: q });
+      const users = res?.data?.docs ?? res?.docs ?? (Array.isArray(res?.data) ? res.data : []);
+      if (users.length === 0) { setSearchError(`No user found for "${q}".`); return; }
+      const user = users[0];
+      setResolvedUser(user);
+      fetchContacts(user._id || user.id, null);
     } catch (err) {
-      if (err.isMockUnavailable) {
-        setIsMockUnavailable(true);
-      } else {
-        setError(err.message || 'Failed to load mail activity log.');
-      }
+      setSearchError(err.message || 'Failed to find user.');
     } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => { fetchLog(); }, [fetchLog]);
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return items;
-    return items.filter((it) =>
-      (it.email || it.to || it.recipient || '').toLowerCase().includes(q) ||
-      (it.mailId || it.id || it._id || '').toLowerCase().includes(q) ||
-      (it.subject || '').toLowerCase().includes(q)
-    );
-  }, [items, search]);
-
-  const handleUnsubscribe = async (id, item) => {
-    setRemoving(true);
-    try {
-      // Mark item as unsubscribed optimistically
-      setItems((prev) =>
-        prev.map((it) =>
-          (it._id || it.id || it.mailId) === id
-            ? { ...it, status: 'unsubscribed' }
-            : it
-        )
-      );
-      showToast('Recipient unsubscribed.');
-    } catch (err) {
-      showToast('Failed to unsubscribe: ' + (err.message || 'Unknown error'));
-    } finally {
-      setRemoving(false);
+      setSearching(false);
     }
   };
+
+  // ── load contacts ──────────────────────────────────────────────────────────
+
+  const fetchContacts = async (userId, cursorId) => {
+    setLoadingItems(true);
+    setItemsError('');
+    try {
+      const params = { userId, ...(cursorId ? { lastId: cursorId } : {}) };
+      const res = await api.adminFindUserContacts(params);
+      const docs = res?.data ?? res?.docs ?? [];
+      const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
+      if (cursorId) {
+        setItems((prev) => [...prev, ...docs]);
+      } else {
+        setItems(docs);
+      }
+      setLastId(last);
+      setNoMoreDocs(res?.noMoreDocs ?? docs.length === 0);
+    } catch (err) {
+      setItemsError(err.message || 'Failed to load mail log.');
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (!resolvedUser || loadingItems || noMoreDocs) return;
+    fetchContacts(resolvedUser._id || resolvedUser.id, lastId);
+  };
+
+  const handleSent = () => {
+    setComposing(false);
+    showToast('Email sent.');
+    // Refetch to show the new mail
+    if (resolvedUser) fetchContacts(resolvedUser._id || resolvedUser.id, null);
+  };
+
+  const userName = resolvedUser
+    ? (`${resolvedUser.firstName || ''} ${resolvedUser.lastName || ''}`.trim() || resolvedUser.email || '')
+    : '';
 
   return (
     <main className={styles.page}>
       {toast && <div className={styles.toast}>{toast}</div>}
 
+      {composing && resolvedUser && (
+        <ComposeModal
+          targetUserId={resolvedUser._id || resolvedUser.id}
+          onSent={handleSent}
+          onClose={() => setComposing(false)}
+        />
+      )}
+
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.title}>Mail Activity Log</h1>
-          <p className={styles.subtitle}>All outbound email records with per-recipient status.</p>
+          <h1 className={styles.title}>Mail Activity</h1>
+          <p className={styles.subtitle}>CSR email history per customer.</p>
         </div>
-        <button
-          className={styles.refreshBtn}
-          onClick={fetchLog}
-          disabled={loading}
-        >
-          {loading ? 'Loading…' : 'Refresh'}
-        </button>
+        <div className={styles.headerRight}>
+          {resolvedUser && (
+            <button className={styles.composeBtn} onClick={() => setComposing(true)}>
+              + Send Email
+            </button>
+          )}
+          <div className={styles.viewToggle}>
+            <button className={`${styles.viewBtn} ${view === 'list' ? styles.viewBtnActive : ''}`} onClick={() => setView('list')}>List</button>
+            <button className={`${styles.viewBtn} ${view === 'cards' ? styles.viewBtnActive : ''}`} onClick={() => setView('cards')}>Cards</button>
+          </div>
+        </div>
       </div>
 
-      <div className={styles.filterBar}>
+      {/* User search */}
+      <form className={styles.searchForm} onSubmit={handleUserSearch}>
         <input
           className={styles.searchInput}
           type="text"
-          placeholder="Search by recipient, mail ID, or subject…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by customer email…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
-      </div>
+        <button className={styles.searchBtn} type="submit" disabled={searching}>
+          {searching ? 'Searching…' : 'Find Customer'}
+        </button>
+        {resolvedUser && (
+          <button type="button" className={styles.clearBtn} onClick={() => {
+            setResolvedUser(null); setItems([]); setSearchInput(''); setSearchError('');
+          }}>Clear</button>
+        )}
+      </form>
 
-      {/* Loading skeletons */}
-      {loading && (
+      {searchError && <div className={styles.errorBox}>{searchError}</div>}
+
+      {resolvedUser && (
+        <div className={styles.userBanner}>
+          <div>
+            <strong>{userName}</strong>
+            <span className={styles.userEmail}>{resolvedUser.email}</span>
+          </div>
+          <Link to={`/admin/users/${resolvedUser._id || resolvedUser.id}`} className={styles.profileLink}>
+            View Profile →
+          </Link>
+        </div>
+      )}
+
+      {!resolvedUser && !searchError && (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyIcon}>📬</p>
+          <p className={styles.emptyTitle}>Search for a customer to view their mail log</p>
+        </div>
+      )}
+
+      {loadingItems && (
         <div className={styles.grid}>
-          {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      )}
-
-      {/* Mock unavailable */}
-      {!loading && isMockUnavailable && (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyIcon}>📭</p>
-          <p className={styles.emptyTitle}>No mail log data available</p>
-          <p className={styles.emptySubtitle}>
-            Mail activity data will appear here once the production email service is connected.
-          </p>
-        </div>
-      )}
-
-      {/* Error */}
-      {!loading && error && (
-        <div className={styles.errorBox}>{error}</div>
-      )}
-
-      {/* Empty results */}
-      {!loading && !error && !isMockUnavailable && items.length === 0 && (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyTitle}>No mail activity yet.</p>
-        </div>
-      )}
-
-      {/* Filtered empty */}
-      {!loading && !error && items.length > 0 && filtered.length === 0 && (
-        <div className={styles.emptyState}>
-          <p>No results for "<strong>{search}</strong>".</p>
-        </div>
-      )}
-
-      {/* Cards */}
-      {!loading && filtered.length > 0 && (
-        <div className={styles.grid}>
-          {filtered.map((item, idx) => (
-            <MailCard
-              key={resolveId(item) || idx}
-              item={item}
-              onUnsubscribe={handleUnsubscribe}
-              removing={removing}
-            />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className={styles.skeletonCard}>
+              <div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} />
+              <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
+              <div className={`${styles.skeletonLine} ${styles.skeletonShort}`} />
+            </div>
           ))}
+        </div>
+      )}
+
+      {itemsError && <div className={styles.errorBox}>{itemsError}</div>}
+
+      {resolvedUser && !loadingItems && items.length === 0 && !itemsError && (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyTitle}>No mail activity for this customer.</p>
+        </div>
+      )}
+
+      {!loadingItems && items.length > 0 && (
+        view === 'cards' ? (
+          <div className={styles.grid}>
+            {items.map((item, idx) => <MailCard key={resolveId(item) || idx} item={item} />)}
+          </div>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead><tr>
+                <th className={styles.th}>Type</th>
+                <th className={styles.th}>Subject / Message</th>
+                <th className={styles.th}>Status</th>
+                <th className={styles.th}>Date</th>
+                <th className={styles.th}>By</th>
+              </tr></thead>
+              <tbody>
+                {items.map((item, idx) => {
+                  const subject = item.content?.subject || '';
+                  const msg = stripHtml(item.content?.message || '');
+                  const preview = subject || (msg.length > 80 ? msg.slice(0, 80) + '…' : msg);
+                  const ownerName = item.owner
+                    ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim()
+                    : '—';
+                  return (
+                    <tr key={resolveId(item) || idx} className={styles.tr}>
+                      <td className={styles.td}><TypeBadge type={item.type} /></td>
+                      <td className={styles.td}>{preview || '—'}</td>
+                      <td className={styles.td}>{item.status || '—'}</td>
+                      <td className={styles.td}>{formatDate(item.createdAt)}</td>
+                      <td className={styles.td}>{ownerName}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
+
+      {resolvedUser && !noMoreDocs && items.length > 0 && (
+        <div className={styles.loadMoreRow}>
+          <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loadingItems}>
+            {loadingItems ? 'Loading…' : 'Load More'}
+          </button>
         </div>
       )}
     </main>

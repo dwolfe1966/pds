@@ -21,6 +21,11 @@ const navLinks = [
   { path: '/admin/timesheets',   label: 'Timesheets' },
   { path: '/admin/permissions',  label: 'Permissions' },
   { path: '/admin/content',      label: 'Content' },
+  { path: '/admin/offers',       label: 'Offers' },
+  { path: '/admin/sessions',     label: 'Activity' },
+  { path: '/admin/logs',         label: 'Logs' },
+  { path: '/admin/ux',           label: 'UX Mgmt' },
+  { path: '/admin/uxc-history',  label: 'UXC History' },
 ];
 
 const AdminNav = () => {

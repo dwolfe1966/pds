@@ -89,7 +89,7 @@ function CustomerCard({ user }) {
         <span className={styles.fieldValue}>{formatDate(user.createdAt)}</span>
       </div>
 
-      <Link to={`/admin/users/${uid}`} className={styles.viewBtn}>
+      <Link to={`/admin/users/${uid}`} className={styles.cardViewBtn}>
         View Details
       </Link>
     </div>
@@ -108,9 +108,10 @@ const UsersPage = () => {
   const [lastId, setLastId]         = useState(null);
   const [noMoreDocs, setNoMoreDocs] = useState(false);
 
-  // filter state
+  // filter + view state
   const [searchText, setSearchText]   = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [view, setView]               = useState('list'); // 'list' | 'cards'
 
   // ── data fetching ──────────────────────────────────────────────────────────
 
@@ -224,32 +225,83 @@ const UsersPage = () => {
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
           </select>
+
+          <div className={styles.viewToggle}>
+            <button className={`${styles.viewBtn} ${view === 'list' ? styles.viewBtnActive : ''}`} onClick={() => setView('list')}>List</button>
+            <button className={`${styles.viewBtn} ${view === 'cards' ? styles.viewBtnActive : ''}`} onClick={() => setView('cards')}>Cards</button>
+          </div>
         </div>
       </div>
 
       {/* ── error ── */}
       {error && <div className={styles.errorBanner}>{error}</div>}
 
-      {/* ── card grid ── */}
-      <div className={styles.grid}>
-        {loading
-          ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <SkeletonCard key={i} />)
-          : filteredUsers.length === 0
-            ? (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>👥</div>
-                <p className={styles.emptyTitle}>No customers found</p>
-                <p className={styles.emptyText}>
-                  {allUsers.length === 0
-                    ? 'No customers have been loaded yet.'
-                    : 'Try adjusting your search or filter.'}
-                </p>
-              </div>
-            )
-            : filteredUsers.map((u) => (
-              <CustomerCard key={u._id || u.id} user={u} />
-            ))}
-      </div>
+      {/* ── content ── */}
+      {loading ? (
+        view === 'cards' ? (
+          <div className={styles.grid}>
+            {Array.from({ length: SKELETON_COUNT }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead><tr>
+                <th className={styles.th}>Name</th><th className={styles.th}>Email</th>
+                <th className={styles.th}>Status</th><th className={styles.th}>Tier</th>
+                <th className={styles.th}>Joined</th><th className={styles.th}></th>
+              </tr></thead>
+              <tbody>{Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+                <tr key={i}><td colSpan={6} className={styles.td}><div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} /></td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )
+      ) : filteredUsers.length === 0 ? (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>👥</div>
+          <p className={styles.emptyTitle}>No customers found</p>
+          <p className={styles.emptyText}>
+            {allUsers.length === 0 ? 'No customers have been loaded yet.' : 'Try adjusting your search or filter.'}
+          </p>
+        </div>
+      ) : view === 'cards' ? (
+        <div className={styles.grid}>
+          {filteredUsers.map((u) => <CustomerCard key={u._id || u.id} user={u} />)}
+        </div>
+      ) : (
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead><tr>
+              <th className={styles.th}>Name</th>
+              <th className={styles.th}>Email</th>
+              <th className={styles.th}>Status</th>
+              <th className={styles.th}>Tier</th>
+              <th className={styles.th}>Joined</th>
+              <th className={styles.th}></th>
+            </tr></thead>
+            <tbody>
+              {filteredUsers.map((u) => {
+                const uid = u._id || u.id;
+                const name = getDisplayName(u);
+                const status = resolveStatus(u);
+                const pro = isTierPro(u);
+                return (
+                  <tr key={uid} className={styles.tr}>
+                    <td className={styles.td}>{name}</td>
+                    <td className={styles.td}>{u.email || '—'}</td>
+                    <td className={styles.td}><StatusBadge status={status} /></td>
+                    <td className={styles.td}><TierBadge pro={pro} /></td>
+                    <td className={styles.td}>{formatDate(u.createdAt)}</td>
+                    <td className={styles.td}>
+                      <Link to={`/admin/users/${uid}`} className={styles.tableViewBtn}>Details</Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* ── pagination bar ── */}
       {!loading && allUsers.length > 0 && (

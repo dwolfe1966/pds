@@ -1,16 +1,56 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api';
+import styles from './PurchaseDetailPage.module.css';
 
-/**
- * Admin page showing details for a single order via BC CSR API.
- *
- * BC refund requires: commercePaymentType, targetCommerceOrderId,
- * targetCommerceOrderRevisionId, targetCommercePaymentId,
- * targetCommercePaymentRevisionId, amount
- *
- * URL: /admin/purchases/:id?userId=<userId>
- */
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+function fmt(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); }
+  catch { return '—'; }
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
+  catch { return '—'; }
+}
+
+function resolveStatus(order) {
+  if (order?.transient?.canceled) return 'canceled';
+  return (order?.status || '').toLowerCase() || 'unknown';
+}
+
+function StatusBadge({ order }) {
+  const s = resolveStatus(order);
+  const label = s.charAt(0).toUpperCase() + s.slice(1);
+  let cls = styles.badgeDefault;
+  if (s === 'active') cls = styles.badgeActive;
+  else if (s === 'canceled' || s === 'cancelled') cls = styles.badgeCanceled;
+  else if (s === 'failed') cls = styles.badgeFailed;
+  return <span className={`${styles.badge} ${cls}`}>{label}</span>;
+}
+
+function TypeChip({ type }) {
+  const t = (type || '').toLowerCase();
+  let cls = styles.typeDefault;
+  if (t === 'sale') cls = styles.typeSale;
+  else if (t === 'refund') cls = styles.typeRefund;
+  return <span className={`${styles.typeChip} ${cls}`}>{type || '—'}</span>;
+}
+
+function StatusChip({ status }) {
+  const s = (status || '').toLowerCase();
+  let cls = styles.statusDefault;
+  if (s === 'fulfilled') cls = styles.statusFulfilled;
+  else if (s === 'failed') cls = styles.statusFailed;
+  else if (s === 'pending') cls = styles.statusPending;
+  return <span className={`${styles.statusChip} ${cls}`}>{status || '—'}</span>;
+}
+
+// ─── PurchaseDetailPage ───────────────────────────────────────────────────────
+
 const PurchaseDetailPage = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -22,6 +62,7 @@ const PurchaseDetailPage = () => {
   const [refundAmount, setRefundAmount] = useState('');
   const [acting, setActing] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
+  const [actionSuccess, setActionSuccess] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -40,15 +81,18 @@ const PurchaseDetailPage = () => {
 
   const handleRefund = async () => {
     if (!order) return;
-    // Find the most recent sale payment to refund against
-    const salePayment = (order.commercePayments || []).find((p) => p.type === 'sale' && p.status === 'fulfilled');
+    const salePayment = (order.commercePayments || []).find(
+      (p) => p.type === 'sale' && p.status === 'fulfilled'
+    );
     if (!salePayment) {
-      setActionMsg('Error: No fulfilled sale payment found on this order.');
+      setActionSuccess(false);
+      setActionMsg('No fulfilled sale payment found on this order.');
       return;
     }
     const amount = parseFloat(refundAmount);
     if (!amount || amount <= 0) {
-      setActionMsg('Error: Enter a valid refund amount.');
+      setActionSuccess(false);
+      setActionMsg('Enter a valid refund amount.');
       return;
     }
     setActing(true);
@@ -62,9 +106,12 @@ const PurchaseDetailPage = () => {
         targetCommercePaymentRevisionId: salePayment.currentRevisionId,
         amount,
       });
+      setActionSuccess(true);
       setActionMsg('Refund initiated successfully.');
+      setRefundAmount('');
     } catch (err) {
-      setActionMsg(`Error: ${err.message}`);
+      setActionSuccess(false);
+      setActionMsg(err.message || 'Refund failed.');
     } finally {
       setActing(false);
     }
@@ -76,110 +123,173 @@ const PurchaseDetailPage = () => {
     setActionMsg('');
     try {
       await api.adminCancelOrder(order._id, flag);
+      setActionSuccess(true);
       setActionMsg(flag ? 'Order canceled.' : 'Order reactivated.');
       setOrder((o) => o ? { ...o, transient: { ...o.transient, canceled: flag } } : o);
     } catch (err) {
-      setActionMsg(`Error: ${err.message}`);
+      setActionSuccess(false);
+      setActionMsg(err.message || 'Action failed.');
     } finally {
       setActing(false);
     }
   };
 
   const collected = order?.transient?.amount?.collected;
-  const refunded = order?.transient?.amount?.refunded;
-  const canceled = order?.transient?.canceled;
+  const refunded  = order?.transient?.amount?.refunded;
+  const canceled  = order?.transient?.canceled;
+  const backHref  = userId ? `/admin/users/${userId}` : '/admin/orders';
 
   return (
-    <main style={{ padding: '2rem' }}>
-      <h1>Order Detail</h1>
-      {loading && <p>Loading…</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+    <main className={styles.page}>
+      {/* Back */}
+      <Link to={backHref} className={styles.backLink}>
+        ← {userId ? 'Back to customer' : 'Back to orders'}
+      </Link>
+
+      {loading && <div className={styles.loadingMsg}>Loading order…</div>}
+      {error   && <div className={styles.errorBanner}>{error}</div>}
+
       {order && (
-        <div>
-          <p><strong>Order ID:</strong> {order._id || order.id}</p>
-          <p><strong>Status:</strong> {order.status}</p>
-          {order.subStatus && <p><strong>Sub-status:</strong> {order.subStatus}</p>}
-          <p><strong>Created:</strong> {order.createdAt ? new Date(order.createdAt).toLocaleString() : '—'}</p>
-          {collected != null && <p><strong>Collected:</strong> ${collected.toFixed(2)}</p>}
-          {refunded != null && refunded > 0 && <p><strong>Refunded:</strong> ${refunded.toFixed(2)}</p>}
-          {canceled && <p style={{ color: '#dc2626' }}><strong>Canceled</strong></p>}
-
-          {order.schedule && (
-            <p><strong>Next billing:</strong> {new Date(order.schedule.dueTimestamp).toLocaleDateString()}</p>
-          )}
-
-          <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem' }}>Refund amount ($)</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={refundAmount}
-                  onChange={(e) => setRefundAmount(e.target.value)}
-                  style={{ width: '100px', padding: '0.4rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
-                  placeholder="0.00"
-                />
-                <button
-                  onClick={handleRefund}
-                  disabled={acting}
-                  style={{ padding: '0.4rem 0.75rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  {acting ? '…' : 'Refund'}
-                </button>
-              </div>
+        <>
+          {/* Page header */}
+          <div className={styles.pageHeader}>
+            <div className={styles.titleBlock}>
+              <h1 className={styles.title}>Order Detail</h1>
+              <div className={styles.orderId}>{order._id || order.id}</div>
             </div>
-
-            {!canceled ? (
-              <button
-                onClick={() => handleCancel(true)}
-                disabled={acting}
-                style={{ marginTop: '1.25rem', padding: '0.4rem 0.75rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                Cancel Order
-              </button>
-            ) : (
-              <button
-                onClick={() => handleCancel(false)}
-                disabled={acting}
-                style={{ marginTop: '1.25rem', padding: '0.4rem 0.75rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                Reactivate Order
-              </button>
-            )}
+            <div className={styles.headerBadge}>
+              <StatusBadge order={order} />
+            </div>
           </div>
 
-          {actionMsg && (
-            <p style={{ marginTop: '0.75rem', color: actionMsg.startsWith('Error') ? '#dc2626' : '#16a34a' }}>{actionMsg}</p>
-          )}
+          <div className={styles.layout}>
+            {/* ── Left column ── */}
+            <div>
+              {/* Financial summary */}
+              <div className={styles.card}>
+                <p className={styles.cardTitle}>Financials</p>
+                <div className={styles.amountRow}>
+                  <div className={styles.amountItem}>
+                    <div className={styles.amountValue}>
+                      {collected != null ? `$${Number(collected).toFixed(2)}` : '—'}
+                    </div>
+                    <div className={styles.amountLabel}>Collected</div>
+                  </div>
+                  {refunded != null && refunded > 0 && (
+                    <div className={styles.amountItem}>
+                      <div className={`${styles.amountValue} ${styles.refunded}`}>
+                        −${Number(refunded).toFixed(2)}
+                      </div>
+                      <div className={styles.amountLabel}>Refunded</div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          {(order.commercePayments || []).length > 0 && (
-            <div style={{ marginTop: '2rem' }}>
-              <h3>Payment History</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Type</th>
-                    <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Status</th>
-                    <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Amount</th>
-                    <th style={{ borderBottom: '1px solid #d1d5db', textAlign: 'left', padding: '0.5rem' }}>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.commercePayments.map((p) => (
-                    <tr key={p._id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '0.5rem' }}>{p.type}</td>
-                      <td style={{ padding: '0.5rem' }}>{p.status}</td>
-                      <td style={{ padding: '0.5rem' }}>${p.totalPrice?.amount?.toFixed(2) ?? '—'}</td>
-                      <td style={{ padding: '0.5rem' }}>{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* Order info */}
+              <div className={styles.card}>
+                <p className={styles.cardTitle}>Order Info</p>
+                <table className={styles.detailTable}>
+                  <tbody>
+                    <tr><td>Order ID</td><td style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>{order._id || order.id || '—'}</td></tr>
+                    <tr><td>Status</td><td><StatusBadge order={order} /></td></tr>
+                    {order.subStatus && <tr><td>Sub-status</td><td>{order.subStatus}</td></tr>}
+                    <tr><td>Type</td><td>{order.type || order.commercePayments?.[0]?.type || '—'}</td></tr>
+                    <tr><td>Created</td><td>{fmt(order.createdAt)}</td></tr>
+                    {order.schedule?.dueTimestamp && (
+                      <tr><td>Next billing</td><td>{fmtDate(order.schedule.dueTimestamp)}</td></tr>
+                    )}
+                    {order.currentRevisionId && (
+                      <tr><td>Revision ID</td><td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{order.currentRevisionId}</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Payment history */}
+              {(order.commercePayments || []).length > 0 && (
+                <div className={styles.card}>
+                  <p className={styles.cardTitle}>Payment History</p>
+                  <div className={styles.tableWrap}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.th}>Type</th>
+                          <th className={styles.th}>Status</th>
+                          <th className={styles.th}>Amount</th>
+                          <th className={styles.th}>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {order.commercePayments.map((p) => (
+                          <tr key={p._id} className={styles.tr}>
+                            <td className={styles.td}><TypeChip type={p.type} /></td>
+                            <td className={styles.td}><StatusChip status={p.status} /></td>
+                            <td className={styles.td}>
+                              {p.totalPrice?.amount != null
+                                ? `$${Number(p.totalPrice.amount).toFixed(2)}`
+                                : '—'}
+                            </td>
+                            <td className={styles.td}>{fmtDate(p.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* ── Right column — actions ── */}
+            <div>
+              <div className={styles.card}>
+                <p className={styles.cardTitle}>Actions</p>
+
+                {actionMsg && (
+                  <div className={`${styles.actionMsg} ${actionSuccess ? styles.actionMsgSuccess : styles.actionMsgError}`}>
+                    {actionMsg}
+                  </div>
+                )}
+
+                <p style={{ fontSize: '0.82rem', color: '#666', margin: '0 0 6px' }}>Refund amount ($)</p>
+                <div className={styles.refundForm}>
+                  <input
+                    className={styles.refundInput}
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    placeholder="0.00"
+                  />
+                  <button className={styles.refundBtn} onClick={handleRefund} disabled={acting}>
+                    {acting ? '…' : 'Refund'}
+                  </button>
+                </div>
+
+                <hr className={styles.divider} />
+
+                {!canceled ? (
+                  <button
+                    className={`${styles.actionBtn} ${styles.cancelBtn}`}
+                    onClick={() => handleCancel(true)}
+                    disabled={acting}
+                  >
+                    Cancel Order
+                  </button>
+                ) : (
+                  <button
+                    className={`${styles.actionBtn} ${styles.reactivateBtn}`}
+                    onClick={() => handleCancel(false)}
+                    disabled={acting}
+                  >
+                    Reactivate Order
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </main>
   );
