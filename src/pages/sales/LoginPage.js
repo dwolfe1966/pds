@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { track } from '../../services/trackingService';
+import { gtmEvent } from '../../services/gtm';
 import styles from './LoginPage.module.css';
 
 /**
@@ -33,10 +35,13 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const loggedInUser = await login(form.email, form.password);
+      track('login', { userRole: loggedInUser?.role || 'member' });
+      gtmEvent('login', { method: 'email' });
       const redirectTo = searchParams.get('redirect');
       const defaultDest = loggedInUser?.role === 'admin' ? '/admin/users' : '/dashboard';
       navigate(redirectTo ? decodeURIComponent(redirectTo) : defaultDest);
     } catch (err) {
+      track('login_error', { errorMessage: err.message });
       setError(err.message);
     } finally {
       setLoading(false);

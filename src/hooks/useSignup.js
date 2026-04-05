@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { track } from '../services/trackingService';
+import { gtmEvent } from '../services/gtm';
 
 /**
  * Allowed post-signup redirect targets.
@@ -125,10 +126,14 @@ export function useSignup() {
 
       setRedirectTo(target);
       track('signup_complete', { source: 'signup' });
+      gtmEvent('sign_up', { method: 'email' });
       setSuccess(true);
       timeoutRef.current = setTimeout(() => navigate(target), 2000);
       return true;
     } catch (err) {
+      const errorType = err.code === 'USER_ALREADY_EXISTS' ? 'already_exists' : 'signup_failed';
+      track('signup_error', { errorType, errorMessage: err.message });
+      gtmEvent('signup_error', { error_type: errorType });
       if (err.code === 'USER_ALREADY_EXISTS') {
         setError('already_exists');
       } else {

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
+import { gtmEvent } from '../../services/gtm';
 import styles from './PaymentPage.module.css';
 
 // Detect card type from PAN prefix
@@ -314,6 +315,7 @@ const PaymentPage = () => {
 
       setSuccess(true);
       track('payment_complete', { plan: 'pro' });
+      gtmEvent('purchase', { value: 29.99, currency: 'USD', items: [{ item_name: 'Basic Plan' }] });
 
       // Clean up signup sessionStorage now that payment succeeded.
       sessionStorage.removeItem('selectedPersonId');
@@ -337,6 +339,9 @@ const PaymentPage = () => {
       navTimeoutRef.current = setTimeout(() => navigate('/dashboard'), 2000);
     } catch (err) {
       const isUnauthorized = err?.status === 401;
+      const errorType = isUnauthorized ? 'unauthorized' : 'payment_failed';
+      track('payment_error', { errorType, errorMessage: err?.message });
+      gtmEvent('payment_error', { error_type: errorType });
       const message = isUnauthorized
         ? 'Please sign in or create an account first.'
         : (err?.data?.error?.message || err?.message || 'Payment failed. Please check your card details and try again.');

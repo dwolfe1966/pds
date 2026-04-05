@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { setIdentityContext, getSearchContext } from '../services/searchContext';
 import { createReportForIdentity } from '../services/reportService';
+import { track } from '../services/trackingService';
+import { gtmEvent } from '../services/gtm';
 import styles from './ResultCard.module.css';
 
 const ResultCard = ({ result, onClick, isMember = false }) => {
@@ -12,7 +14,10 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
 
   const handleViewDetails = async (e) => {
     e.stopPropagation(); // Prevent parent onClick if present
-    
+
+    track('result_click', { resultId: result.id, personName: result.fullName });
+    gtmEvent('select_content', { content_type: 'person', content_id: result.id });
+
     // If custom onClick handler provided, use it
     if (onClick) {
       onClick(result);

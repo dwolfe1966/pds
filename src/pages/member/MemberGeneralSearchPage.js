@@ -36,8 +36,9 @@ const US_STATES = [
 
 const SEARCH_TIPS = {
   name: [
-    'Include state to narrow results by location',
+    'Add city and state to narrow results by location',
     'Use full legal name for best accuracy',
+    'Select an age range to filter by approximate age',
     'Try alternate spellings if no results found',
   ],
   phone: [
@@ -70,6 +71,8 @@ const MemberGeneralSearchPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [state, setState] = useState('');
+  const [nameCity, setNameCity] = useState('');
+  const [ageRange, setAgeRange] = useState('');
 
   // Phone search
   const [phone, setPhone] = useState('');
@@ -132,6 +135,8 @@ const MemberGeneralSearchPage = () => {
     }
     const params = new URLSearchParams({ firstName: firstName.trim(), lastName: lastName.trim() });
     if (state.trim()) params.set('state', state.trim().toUpperCase());
+    if (nameCity.trim()) params.set('city', nameCity.trim());
+    if (ageRange) params.set('age', ageRange);
     navigate(`/people-results?${params.toString()}`);
   };
 
@@ -254,20 +259,57 @@ const MemberGeneralSearchPage = () => {
                 />
               </div>
             </div>
+            <div className={styles.nameGrid}>
+              <div className={styles.fieldGroup} style={{ marginBottom: 0 }}>
+                <label className={styles.label} htmlFor="gs-city">
+                  City <span className={styles.labelOptional}>(optional)</span>
+                </label>
+                <input
+                  id="gs-city"
+                  type="text"
+                  value={nameCity}
+                  onChange={(e) => setNameCity(e.target.value)}
+                  placeholder="e.g. Austin"
+                  disabled={loading}
+                  className={`${styles.input} ${nameCity.trim() ? styles.inputValid : ''}`}
+                />
+              </div>
+              <div className={styles.fieldGroup} style={{ marginBottom: 0 }}>
+                <label className={styles.label} htmlFor="gs-state">
+                  State <span className={styles.labelOptional}>(optional)</span>
+                </label>
+                <select
+                  id="gs-state"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  disabled={loading}
+                  className={styles.select}
+                >
+                  {US_STATES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div className={styles.fieldGroup}>
-              <label className={styles.label} htmlFor="gs-state">
-                State <span className={styles.labelOptional}>(optional)</span>
+              <label className={styles.label} htmlFor="gs-age">
+                Age Range <span className={styles.labelOptional}>(optional)</span>
               </label>
               <select
-                id="gs-state"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
+                id="gs-age"
+                value={ageRange}
+                onChange={(e) => setAgeRange(e.target.value)}
                 disabled={loading}
                 className={styles.select}
               >
-                {US_STATES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
+                <option value="">Any Age</option>
+                <option value="18-25">18-25</option>
+                <option value="26-35">26-35</option>
+                <option value="36-45">36-45</option>
+                <option value="46-55">46-55</option>
+                <option value="56-65">56-65</option>
+                <option value="66-75">66-75</option>
+                <option value="76+">76+</option>
               </select>
             </div>
             <button

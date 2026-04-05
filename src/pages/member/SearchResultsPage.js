@@ -26,6 +26,7 @@ const MemberSearchResultsPage = () => {
   const searchTypeParam = params.get('searchType');
   const cityParam = params.get('city');
   const zipParam = params.get('zip') || zip;
+  const ageParam = params.get('age');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -218,6 +219,12 @@ const MemberSearchResultsPage = () => {
           };
           if (stateParam) {
             searchParams.state = stateParam;
+          }
+          if (cityParam && searchTypeParam !== 'address') {
+            searchParams.city = cityParam;
+          }
+          if (ageParam) {
+            searchParams.age = ageParam;
           }
 
           const response = await api.searchPeople(searchParams);

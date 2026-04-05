@@ -62,6 +62,14 @@ const Footer = () => (
                 {link.label}
               </Link>
             ))}
+            <a href="mailto:support@idlookup.ai" className={styles.sectionLink}>
+              support@idlookup.ai
+            </a>
+          </div>
+          <div className={styles.csSupportNote}>
+            Our customer support team is available Monday&ndash;Friday, 9am&ndash;5pm EST.
+            For account issues, billing questions, or data removal requests,
+            please email us or visit our <Link to="/contact" className={styles.csSupportLink}>contact page</Link>.
           </div>
         </div>
       </div>

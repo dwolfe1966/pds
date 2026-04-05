@@ -71,3 +71,20 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+.csSupportNote {
+  margin-top: var(--spacing-md);
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+}
+
+.csSupportLink {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.csSupportLink:hover {
+  color: var(--color-text-inverse);
+}
+

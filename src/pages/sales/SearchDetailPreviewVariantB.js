@@ -5,6 +5,7 @@ import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import { validatePassword } from '../../hooks/useSignup';
+import { gtmEvent } from '../../services/gtm';
 import styles from './SearchDetailPreviewPage.module.css';
 
 // ── Card utilities ────────────────────────────────────────────────────────────
@@ -225,6 +226,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
 
       setSuccess(true);
       track('payment_complete', { plan: 'pro', source: 'variant_b' });
+      gtmEvent('purchase', { value: 29.99, currency: 'USD', items: [{ item_name: 'Basic Plan' }] });
       sessionStorage.removeItem('selectedPersonId');
 
       // Step 5: Create report and navigate

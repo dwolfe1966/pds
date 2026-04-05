@@ -7,6 +7,9 @@ import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
 import SearchDetailPreviewVariantA from './SearchDetailPreviewVariantA';
 import SearchDetailPreviewVariantB from './SearchDetailPreviewVariantB';
+import SearchDetailPreviewVariantC from './SearchDetailPreviewVariantC';
+import SearchDetailPreviewVariantD from './SearchDetailPreviewVariantD';
+import SearchDetailPreviewVariantE from './SearchDetailPreviewVariantE';
 import styles from './SearchDetailPreviewPage.module.css';
 
 /** Service benefit statements for variant 2 */
@@ -46,7 +49,7 @@ const SearchDetailPreviewPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryV = searchParams.get('v');
-  const ALL_VARIANTS = ['1', '2', '3', 'a', 'b'];
+  const ALL_VARIANTS = ['1', '2', '3', 'a', 'b', 'c', 'd', 'e'];
   const [randomVariant] = useState(() => ALL_VARIANTS[Math.floor(Math.random() * ALL_VARIANTS.length)]);
   const variant = ALL_VARIANTS.includes(queryV) ? queryV : randomVariant;
   const { token, isPaid } = useAuth();
@@ -203,6 +206,18 @@ const SearchDetailPreviewPage = () => {
 
   if (variant === 'b') {
     return <SearchDetailPreviewVariantB person={person} id={id} />;
+  }
+
+  if (variant === 'c') {
+    return <SearchDetailPreviewVariantC person={person} id={id} />;
+  }
+
+  if (variant === 'd') {
+    return <SearchDetailPreviewVariantD person={person} id={id} />;
+  }
+
+  if (variant === 'e') {
+    return <SearchDetailPreviewVariantE person={person} id={id} />;
   }
 
   // ─── Visitor: compute per-person seeded counts ───────────────────────────────

@@ -11,6 +11,9 @@
   "scripts": {
     "start": "parcel public/index.html --port 3000 --no-cache",
     "build": "parcel build public/index.html --dist-dir build && node scripts/postbuild.js",
+    "build:admin": "parcel build public/admin.html --dist-dir build-admin && node scripts/postbuild-admin.js",
+    "start:admin": "node scripts/admin-env.js && parcel public/admin.html --port 3003 --no-cache",
+    "dev:admin": "concurrently \"npm run server\" \"npm run tracking\" \"npm run start:admin\"",
     "server": "node server/index.js",
     "tracking": "node tracking-api/index.js",
     "dev": "concurrently \"npm run server\" \"npm run tracking\" \"npm start\"",
