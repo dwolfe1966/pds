@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from './AdminNav.module.css';
-const logoSrc = new URL('../assets/idlookup_icon_transparent.png', import.meta.url).href;
+// Use static import so Parcel bundles the image without import.meta (needed for classic script mode)
+import logoSrc from '../assets/idlookup_icon_transparent.png';
 
 const navLinks = [
   { path: '/users',        label: 'Customers' },

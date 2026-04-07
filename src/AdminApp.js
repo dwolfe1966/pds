@@ -67,7 +67,20 @@ const AdminApp = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <ScrollToTop />
-      {isAdmin && <AdminNav />}
+      {isAdmin && (
+        <header style={{
+          backgroundColor: 'rgba(13, 93, 47, 0.95)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          color: '#fff',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1000,
+        }}>
+          <AdminNav />
+        </header>
+      )}
       <div style={{ flex: 1 }}>
         <Routes>
           {/* Public routes */}

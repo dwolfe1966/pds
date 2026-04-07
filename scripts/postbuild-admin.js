@@ -47,10 +47,17 @@ if (fs.existsSync(indexHtml)) {
     /src=["']?https:\/\/dev\.www\.idlookup\.ai\/libs\/api-wrapper\/index\.iife\.js["']?/g,
     'src=/admin/libs/api-wrapper/index.iife.js'
   );
+  // Remove type="module" from script tags — BC server may serve .js with text/html MIME type
+  // which browsers reject for module scripts but accept for classic scripts
+  html = html.replace(/<script type=module /g, '<script ');
+
+  // Remove importmap script tag — not needed for classic scripts and can cause issues
+  html = html.replace(/<script type=importmap>.*?<\/script>/g, '');
+
   if (html !== before) {
     fs.writeFileSync(indexHtml, html);
-    console.log('postbuild-admin: updated index.html IIFE src → /libs/api-wrapper/index.iife.js');
+    console.log('postbuild-admin: patched index.html (IIFE src, removed type=module)');
   } else {
-    console.warn('postbuild-admin: IIFE src pattern not found in index.html — check manually');
+    console.warn('postbuild-admin: no patches applied to index.html — check manually');
   }
 }
