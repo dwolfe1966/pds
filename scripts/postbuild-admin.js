@@ -45,7 +45,7 @@ if (fs.existsSync(indexHtml)) {
   const before = html;
   html = html.replace(
     /src=["']?https:\/\/dev\.www\.idlookup\.ai\/libs\/api-wrapper\/index\.iife\.js["']?/g,
-    'src=/libs/api-wrapper/index.iife.js'
+    'src=/admin/libs/api-wrapper/index.iife.js'
   );
   if (html !== before) {
     fs.writeFileSync(indexHtml, html);

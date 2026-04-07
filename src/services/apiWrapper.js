@@ -173,8 +173,8 @@ class ApiWrapperService {
    * ID Lookup (Teaser Search)
    */
   async searchTeaser(query) {
-    // The IIFE singleton ignores the endpointUrl we configure and always calls BC directly,
-    // causing CORS failures. Bypass it entirely and POST to the proxy directly.
+    // In proxy mode, bypass the IIFE and POST directly to the proxy.
+    // The IIFE ignores our endpointUrl and calls BC directly, causing CORS.
     if (this.useProxy) {
       return await this._searchTeaserViaProxy(query);
     }
@@ -315,7 +315,9 @@ class ApiWrapperService {
    */
   async _searchTeaserViaProxy(query) {
     await this.getWrapper().catch(() => {});
-    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    // Always generate fresh IDs — reusing the IIFE's cached clientId can cause
+    // BC to reject requests if the ID was flagged from previous failed attempts.
+    const clientId = this._generateRandomId();
     const apiId = this._generateRandomId();
     const url = `${this.proxyUrl}/idLookup/teaser/search?clientId=${clientId}&apiId=${apiId}`;
     const response = await fetch(url, {

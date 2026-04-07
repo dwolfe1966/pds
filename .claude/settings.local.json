@@ -33,7 +33,10 @@
       "Bash(sed -i \"s|import styles from ''''./SalesNav.module.css'''';|import styles from ''''./SalesNav.module.css'''';\\\\nimport logoSrc from ''''../assets/idlookup-green-logo-no-words.png'''';|\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/SalesNav.js\")",
       "Bash(sed -i \"s|import styles from ''''./Footer.module.css'''';|import styles from ''''./Footer.module.css'''';\\\\nimport logoSrc from ''''../assets/idlookup-green-logo-no-words.png'''';|\" \"C:/Users/dwolf/Downloads/mvp/mvp/front-end/idlookup-app-updated/pds/src/components/Footer.js\")",
       "Bash(1 echo:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(cp:*)",
+      "Bash(sed -i \"s/'http:\\\\/\\\\/localhost:3010'/'http:\\\\/\\\\/localhost:3003', 'http:\\\\/\\\\/localhost:3010'/g\" server/index.js)",
+      "Bash(sed -i \"s/localhost:3010'\\)/localhost:3003'\\) || origin.includes\\('localhost:3010'\\)\\)/g\" server/index.js)"
     ]
   }
 }

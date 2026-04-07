@@ -1,11 +1,10 @@
 /**
  * Copies .env.admin.local → .env.local so Parcel picks up admin-specific
- * env vars (proxy-bc URL, bytecrtrs API domain) for the admin dev server.
+ * env vars for the admin dev server.
  *
- * Run before `parcel public/admin.html`.
- * The consumer app's `npm start` uses .env (not .env.local), so this
- * doesn't interfere — but if both run simultaneously you should start
- * the consumer app first (it won't read .env.local unless it exists at launch).
+ * IMPORTANT: .env.local overrides .env for ALL Parcel processes.
+ * This script registers a cleanup handler to delete .env.local on exit
+ * so the consumer app isn't affected.
  */
 const fs = require('fs');
 const path = require('path');
@@ -20,3 +19,18 @@ if (!fs.existsSync(src)) {
 
 fs.copyFileSync(src, dst);
 console.log('admin-env: copied .env.admin.local → .env.local');
+console.log('admin-env: NOTE — .env.local will be auto-deleted when the admin server stops.');
+console.log('admin-env: If it persists, delete it manually: rm .env.local');
+
+// Clean up on process exit so the consumer app isn't affected
+function cleanup() {
+  try {
+    if (fs.existsSync(dst)) {
+      fs.unlinkSync(dst);
+      console.log('\nadmin-env: cleaned up .env.local');
+    }
+  } catch { /* ignore */ }
+}
+process.on('exit', cleanup);
+process.on('SIGINT', () => { cleanup(); process.exit(0); });
+process.on('SIGTERM', () => { cleanup(); process.exit(0); });

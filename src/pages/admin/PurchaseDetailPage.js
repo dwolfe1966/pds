@@ -137,7 +137,7 @@ const PurchaseDetailPage = () => {
   const collected = order?.transient?.amount?.collected;
   const refunded  = order?.transient?.amount?.refunded;
   const canceled  = order?.transient?.canceled;
-  const backHref  = userId ? `/admin/users/${userId}` : '/admin/orders';
+  const backHref  = userId ? `/users/${userId}` : '/orders';
 
   return (
     <main className={styles.page}>

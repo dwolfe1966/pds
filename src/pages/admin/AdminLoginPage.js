@@ -23,7 +23,7 @@ const AdminLoginPage = () => {
         setLoading(false);
         return;
       }
-      const redirect = searchParams.get('redirect') || '/admin/users';
+      const redirect = searchParams.get('redirect') || '/users';
       navigate(redirect, { replace: true });
     } catch (err) {
       setError(err?.message || 'Login failed. Please check your credentials.');

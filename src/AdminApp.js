@@ -71,34 +71,34 @@ const AdminApp = () => {
       <div style={{ flex: 1 }}>
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={isAdmin ? <Navigate to="/admin/users" replace /> : <AdminLandingPage />} />
-          <Route path="/login" element={isAdmin ? <Navigate to="/admin/users" replace /> : <AdminLoginPage />} />
+          <Route path="/" element={isAdmin ? <Navigate to="/users" replace /> : <AdminLandingPage />} />
+          <Route path="/login" element={isAdmin ? <Navigate to="/users" replace /> : <AdminLoginPage />} />
 
           {/* Admin routes */}
-          <Route path="/admin/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
-          <Route path="/admin/users/:id" element={<AdminRoute><UserDetailPage /></AdminRoute>} />
-          <Route path="/admin/sessions" element={<AdminRoute><SessionsPage /></AdminRoute>} />
-          <Route path="/admin/purchases" element={<AdminRoute><PurchasesPage /></AdminRoute>} />
-          <Route path="/admin/purchases/:id" element={<AdminRoute><PurchaseDetailPage /></AdminRoute>} />
-          <Route path="/admin/data-removal" element={<AdminRoute><DataRemovalPage /></AdminRoute>} />
-          <Route path="/admin/unsubscribe" element={<AdminRoute><UnsubscribePage /></AdminRoute>} />
-          <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
-          <Route path="/admin/cs-reps" element={<AdminRoute><CsRepManagementPage /></AdminRoute>} />
-          <Route path="/admin/email" element={<AdminRoute><EmailBroadcastPage /></AdminRoute>} />
-          <Route path="/admin/email-search" element={<AdminRoute><EmailSearchPage /></AdminRoute>} />
-          <Route path="/admin/phone-optout" element={<AdminRoute><PhoneOptOutPage /></AdminRoute>} />
-          <Route path="/admin/orders" element={<AdminRoute><OrdersPage /></AdminRoute>} />
-          <Route path="/admin/payments" element={<AdminRoute><PaymentsPage /></AdminRoute>} />
-          <Route path="/admin/notes" element={<AdminRoute><NotesPage /></AdminRoute>} />
-          <Route path="/admin/tickets" element={<AdminRoute><EmailTicketsPage /></AdminRoute>} />
-          <Route path="/admin/mail-log" element={<AdminRoute><MailActivityPage /></AdminRoute>} />
-          <Route path="/admin/timesheets" element={<AdminRoute><TimesheetsPage /></AdminRoute>} />
-          <Route path="/admin/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
-          <Route path="/admin/content" element={<AdminRoute><ContentPage /></AdminRoute>} />
-          <Route path="/admin/offers" element={<AdminRoute><OffersProductsPage /></AdminRoute>} />
-          <Route path="/admin/logs" element={<AdminRoute><LogViewerPage /></AdminRoute>} />
-          <Route path="/admin/ux" element={<AdminRoute><UxManagementPage /></AdminRoute>} />
-          <Route path="/admin/uxc-history" element={<AdminRoute><UxcHistoryPage /></AdminRoute>} />
+          <Route path="/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
+          <Route path="/users/:id" element={<AdminRoute><UserDetailPage /></AdminRoute>} />
+          <Route path="/sessions" element={<AdminRoute><SessionsPage /></AdminRoute>} />
+          <Route path="/purchases" element={<AdminRoute><PurchasesPage /></AdminRoute>} />
+          <Route path="/purchases/:id" element={<AdminRoute><PurchaseDetailPage /></AdminRoute>} />
+          <Route path="/data-removal" element={<AdminRoute><DataRemovalPage /></AdminRoute>} />
+          <Route path="/unsubscribe" element={<AdminRoute><UnsubscribePage /></AdminRoute>} />
+          <Route path="/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
+          <Route path="/cs-reps" element={<AdminRoute><CsRepManagementPage /></AdminRoute>} />
+          <Route path="/email" element={<AdminRoute><EmailBroadcastPage /></AdminRoute>} />
+          <Route path="/email-search" element={<AdminRoute><EmailSearchPage /></AdminRoute>} />
+          <Route path="/phone-optout" element={<AdminRoute><PhoneOptOutPage /></AdminRoute>} />
+          <Route path="/orders" element={<AdminRoute><OrdersPage /></AdminRoute>} />
+          <Route path="/payments" element={<AdminRoute><PaymentsPage /></AdminRoute>} />
+          <Route path="/notes" element={<AdminRoute><NotesPage /></AdminRoute>} />
+          <Route path="/tickets" element={<AdminRoute><EmailTicketsPage /></AdminRoute>} />
+          <Route path="/mail-log" element={<AdminRoute><MailActivityPage /></AdminRoute>} />
+          <Route path="/timesheets" element={<AdminRoute><TimesheetsPage /></AdminRoute>} />
+          <Route path="/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
+          <Route path="/content" element={<AdminRoute><ContentPage /></AdminRoute>} />
+          <Route path="/offers" element={<AdminRoute><OffersProductsPage /></AdminRoute>} />
+          <Route path="/logs" element={<AdminRoute><LogViewerPage /></AdminRoute>} />
+          <Route path="/ux" element={<AdminRoute><UxManagementPage /></AdminRoute>} />
+          <Route path="/uxc-history" element={<AdminRoute><UxcHistoryPage /></AdminRoute>} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />

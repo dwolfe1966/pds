@@ -107,8 +107,7 @@ app.use((req, res, next) => {
 // ==================== PROXY ENDPOINTS FOR CORS BYPASS ====================
 // These endpoints proxy requests to the external API to bypass CORS restrictions
 
-const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL || 'https://dev.www.idlookup.ai/api';
-const BYTECRTRS_API_URL = process.env.BYTECRTRS_API_URL || 'https://dev.www.bytecrtrs.com/api';
+const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
 
 // Store cookies from API responses so we can forward them with subsequent requests
 // Since clientId and apiId change between requests, we'll use origin + a stable identifier
@@ -157,51 +156,18 @@ app.options('/api/proxy/*', (req, res) => {
 });
 
 /**
- * ByteCrtrs proxy — forwards to dev.www.bytecrtrs.com instead of idlookup.ai.
- * Used by the admin app in local development.
- */
-app.options('/api/proxy-bc/*', (req, res) => {
-  const origin = req.headers.origin;
-  if (origin && (origin.includes('localhost:3000') || origin.includes('localhost:3001') || origin.includes('localhost:3003') || origin.includes('localhost:3010'))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', [
-    'Content-Type', 'Authorization', 'Cookie',
-    'X-Captcha-Pass', 'x-captcha-id', 'X-Captcha-Id',
-    'x-captcha-token', 'X-Captcha-Token',
-    'x-requested-with', 'X-Requested-With',
-    'x-admin-key', 'X-Admin-Key',
-  ].join(', '));
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
-  res.status(204).send();
-});
-
-app.all('/api/proxy-bc/*', async (req, res) => {
-  // Rewrite to use the main proxy handler but target bytecrtrs.com
-  req.url = req.url.replace('/api/proxy-bc/', '/api/proxy/');
-  req.path_override_target = BYTECRTRS_API_URL;
-  // Fall through to the main proxy handler
-  req.app._router.handle(req, res, () => res.status(404).send('Not found'));
-});
-
-/**
  * Generic proxy endpoint that forwards requests to the external API
  * This bypasses CORS by making the request from the server instead of the browser
- *
+ * 
  * The JS library will make requests like: /api/proxy/idLookup/teaser/search
- * This endpoint forwards them to: https://dev.www.idlookup.ai/api/idLookup/teaser/search
+ * This endpoint forwards them to: https://dev1.dev.www.bytecrtrs.com/api/idLookup/teaser/search
  */
 app.all('/api/proxy/*', async (req, res) => {
   try {
     // Extract the path after /api/proxy/
     // e.g., /api/proxy/idLookup/teaser/search -> /idLookup/teaser/search
     const proxyPath = req.path.replace('/api/proxy', '');
-    const apiBase = req.path_override_target || EXTERNAL_API_URL;
-    const targetUrl = `${apiBase}${proxyPath}`;
+    const targetUrl = `${EXTERNAL_API_URL}${proxyPath}`;
     
     // Forward query parameters
     const url = new URL(targetUrl);
@@ -243,18 +209,6 @@ app.all('/api/proxy/*', async (req, res) => {
       }
     });
     
-    // Replace Origin/Referer with the BC domain so the API doesn't reject
-    // requests from localhost. Skip for /auth/login — BC validates Origin
-    // differently for login and spoofing it causes 401.
-    const isAuthLogin = proxyPath === '/auth/login';
-    if (!isAuthLogin) {
-      const bcOrigin = new URL(apiBase).origin;
-      if (headers['origin']) headers['origin'] = bcOrigin;
-      if (headers['Origin']) headers['Origin'] = bcOrigin;
-      if (headers['referer']) headers['referer'] = bcOrigin + '/';
-      if (headers['Referer']) headers['Referer'] = bcOrigin + '/';
-    }
-
     // Ensure Content-Type is set (critical for POST requests)
     if (!headers['Content-Type'] && !headers['content-type']) {
       headers['Content-Type'] = 'application/json';
@@ -307,7 +261,7 @@ app.all('/api/proxy/*', async (req, res) => {
       const apiId = req.query.apiId;
       if (clientId && apiId) {
         try {
-          const verifyUrl = new URL(`${apiBase}/captcha/verify`);
+          const verifyUrl = new URL(`${EXTERNAL_API_URL}/captcha/verify`);
           verifyUrl.searchParams.append('token', captchaPass);
           verifyUrl.searchParams.append('type', 'password.v0');
           verifyUrl.searchParams.append('step', '0-0');
@@ -373,16 +327,6 @@ app.all('/api/proxy/*', async (req, res) => {
     // Sending an existing session cookie alongside new credentials confuses BC and causes 401.
     // Login must always create a fresh BC session.
     const isLoginRequest = proxyPath === '/auth/login';
-    // For login: clear ALL cookies (browser + stored) to ensure a fresh BC session.
-    // A stale connect.sid from a previous session causes BC to return 401.
-    if (isLoginRequest) {
-      allCookies.length = 0;
-      // Also clear stored cookies for this session so they don't pollute future requests
-      if (apiCookies.has(sessionKey)) {
-        apiCookies.delete(sessionKey);
-        console.log('[Proxy] Cleared stored cookies for fresh login');
-      }
-    }
     if (!isLoginRequest) {
       storedCookies.forEach(cookie => {
         // Extract cookie name=value from stored cookie string
@@ -819,105 +763,8 @@ app.all('/api/proxy/*', async (req, res) => {
         contextKey: challengeBody.contextKey || existing.contextKey,
         challengeReceivedAt: new Date().toISOString()
       });
-
-      // ── Auto-verify captcha and retry the request ──────────────────────────
-      // When we get a 412 with a captchaId, automatically call captcha/verify
-      // with the dev password, then retry the original request with fresh cookies.
-      if (captchaId) {
-        const captchaPass = process.env.CAPTCHA_PASS || 'bcEdgeApiPass';
-        try {
-          console.log(`[Proxy] Auto-resolving 412: verifying captcha ${captchaId}`);
-          const verifyUrl = new URL(`${apiBase}/captcha/verify`);
-          verifyUrl.searchParams.append('token', captchaPass);
-          verifyUrl.searchParams.append('type', challengeBody.type || 'password.v0');
-          verifyUrl.searchParams.append('step', challengeBody.step || '0-0');
-          verifyUrl.searchParams.append('clientId', req.query.clientId || '');
-          verifyUrl.searchParams.append('apiId', req.query.apiId || '');
-          verifyUrl.searchParams.append('captchaId', captchaId);
-
-          const verifyHeaders = { ...headers };
-          const verifyResponse = await axios({
-            method: 'GET',
-            url: verifyUrl.toString(),
-            headers: verifyHeaders,
-            maxRedirects: 5,
-            validateStatus: () => true,
-          });
-
-          console.log(`[Proxy] Captcha verify response status: ${verifyResponse.status}`);
-
-          // Store any new cookies from captcha verify response
-          const verifyCookies = verifyResponse.headers['set-cookie'];
-          const existingCookies = apiCookies.get(sessionKey) || [];
-          const allRetryCookies = [...existingCookies];
-          if (verifyCookies) {
-            const cookies = Array.isArray(verifyCookies) ? verifyCookies : [verifyCookies];
-            cookies.forEach(newCookie => {
-              const newCookieName = newCookie.match(/^([^=]+)=/)?.[1];
-              if (newCookieName) {
-                const filtered = allRetryCookies.filter(c => {
-                  const oldName = c.match(/^([^=]+)=/)?.[1];
-                  return oldName !== newCookieName;
-                });
-                allRetryCookies.length = 0;
-                allRetryCookies.push(...filtered, newCookie);
-              } else {
-                allRetryCookies.push(newCookie);
-              }
-            });
-            apiCookies.set(sessionKey, allRetryCookies);
-            console.log(`[Proxy] Captcha verify stored ${cookies.length} new cookie(s)`);
-          } else {
-            console.log('[Proxy] Captcha verify returned no new cookies — session already established, proceeding with retry');
-          }
-
-          // Retry the original request — BC marks captcha as verified on the
-          // existing session (same connect.sid), so we can retry with the same cookies.
-          const retryHeaders = { ...headers };
-          if (allRetryCookies.length > 0) {
-            const retryCookieParts = allRetryCookies.map(c => {
-              const match = c.match(/^([^=]+)=([^;]+)/);
-              return match ? `${match[1]}=${match[2]}` : null;
-            }).filter(Boolean);
-            retryHeaders['Cookie'] = retryCookieParts.join('; ');
-            retryHeaders['cookie'] = retryCookieParts.join('; ');
-          }
-
-          console.log(`[Proxy] Retrying original ${req.method} ${req.path} after captcha verify`);
-          const retryConfig = {
-            ...config,
-            headers: retryHeaders,
-          };
-          const retryResponse = await axios(retryConfig);
-          console.log(`[Proxy] Retry response status: ${retryResponse.status}`);
-
-          // Store any new cookies from the retry response
-          const retryCookiesHeader = retryResponse.headers['set-cookie'];
-          if (retryCookiesHeader) {
-            const rc = Array.isArray(retryCookiesHeader) ? retryCookiesHeader : [retryCookiesHeader];
-            rc.forEach(c => {
-              const name = c.match(/^([^=]+)=/)?.[1];
-              if (name) {
-                const filtered = allRetryCookies.filter(old => old.match(/^([^=]+)=/)?.[1] !== name);
-                allRetryCookies.length = 0;
-                allRetryCookies.push(...filtered, c);
-              }
-            });
-            apiCookies.set(sessionKey, allRetryCookies);
-          }
-
-          // Forward the retry response instead of the 412
-          if (retryCookiesHeader) {
-            res.set('Set-Cookie', retryCookiesHeader);
-          }
-          return res.status(retryResponse.status).json(retryResponse.data);
-        } catch (retryErr) {
-          console.warn('[Proxy] Auto-retry after 412 failed:', retryErr.message);
-          // Fall through to return the original 412
-        }
-      }
     }
-
+    
     // Log response for search requests (success or failure)
     if (req.path.includes('/idLookup/teaser/search')) {
       console.log('='.repeat(80));

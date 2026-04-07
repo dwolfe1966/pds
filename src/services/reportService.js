@@ -135,6 +135,17 @@ export async function getReportDetail(commerceContentId) {
       throw new Error('Report ID is required');
     }
     const response = await api.getReportDetail(commerceContentId);
+
+    // Dump all transient keys from raws so we can discover what BC returns
+    const raws = response.raws || [];
+    if (process.env.NODE_ENV === 'development' && raws.length > 0) {
+      const transientKeys = raws
+        .map((r, i) => ({ index: i, keys: Object.keys(r.transient || {}) }))
+        .filter(r => r.keys.length > 0);
+      console.log('[Report Raw] All transient keys:', JSON.stringify(transientKeys, null, 2));
+      console.log('[Report Raw] Full raws dump:', JSON.stringify(raws, null, 2));
+    }
+
     return {
       success: true,
       commerceContentId: response.commerceContentId || commerceContentId,

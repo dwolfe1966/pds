@@ -258,7 +258,7 @@ const UserDetailPage = () => {
   if (userLoading) {
     return (
       <main className={styles.page}>
-        <Link to="/admin/users" className={styles.backLink}>← Back to Users</Link>
+        <Link to="/users" className={styles.backLink}>← Back to Users</Link>
         <div className={styles.loadingState}>Loading user…</div>
       </main>
     );
@@ -270,7 +270,7 @@ const UserDetailPage = () => {
         <div className={styles.fullError}>
           <h2>Unable to load user</h2>
           <p>{userError}</p>
-          <Link to="/admin/users" className={styles.fullErrorBack}>← Back to Users</Link>
+          <Link to="/users" className={styles.fullErrorBack}>← Back to Users</Link>
         </div>
       </main>
     );
@@ -287,7 +287,7 @@ const UserDetailPage = () => {
   // ── Render ────────────────────────────────────────────────
   return (
     <main className={styles.page}>
-      <Link to="/admin/users" className={styles.backLink}>← Back to Users</Link>
+      <Link to="/users" className={styles.backLink}>← Back to Users</Link>
       <h1 className={styles.pageTitle}>Customer Profile</h1>
 
       <div className={styles.layout}>
