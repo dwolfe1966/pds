@@ -89,7 +89,7 @@ function CustomerCard({ user }) {
         <span className={styles.fieldValue}>{formatDate(user.createdAt)}</span>
       </div>
 
-      <Link to={`/admin/users/${uid}`} className={styles.cardViewBtn}>
+      <Link to={`/users/${uid}`} className={styles.cardViewBtn}>
         View Details
       </Link>
     </div>
@@ -110,6 +110,8 @@ const UsersPage = () => {
 
   // filter + view state
   const [searchText, setSearchText]   = useState('');
+  const [zipCode, setZipCode]         = useState('');
+  const [last4cc, setLast4cc]         = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [view, setView]               = useState('list'); // 'list' | 'cards'
 
@@ -117,6 +119,8 @@ const UsersPage = () => {
 
   const fetchPage = useCallback(async (cursorId = null) => {
     const params = cursorId ? { lastId: cursorId } : {};
+    if (zipCode.trim()) params.zip = zipCode.trim();
+    if (last4cc.trim()) params.last4cc = last4cc.trim();
     const res = await api.adminListUsers(params);
     const docs = res?.data ?? [];
     const last = docs[docs.length - 1]?._id ?? docs[docs.length - 1]?.id ?? null;
@@ -293,7 +297,7 @@ const UsersPage = () => {
                     <td className={styles.td}><TierBadge pro={pro} /></td>
                     <td className={styles.td}>{formatDate(u.createdAt)}</td>
                     <td className={styles.td}>
-                      <Link to={`/admin/users/${uid}`} className={styles.tableViewBtn}>Details</Link>
+                      <Link to={`/users/${uid}`} className={styles.tableViewBtn}>Details</Link>
                     </td>
                   </tr>
                 );

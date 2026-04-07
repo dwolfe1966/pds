@@ -90,7 +90,7 @@ function ResultCard({ user }) {
         </div>
       </div>
 
-      <Link to={`/admin/users/${uid}`} className={styles.viewProfileBtn}>
+      <Link to={`/users/${uid}`} className={styles.viewProfileBtn}>
         View Full Profile →
       </Link>
     </div>

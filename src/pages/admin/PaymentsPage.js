@@ -248,7 +248,7 @@ const PaymentsPage = () => {
         </button>
         {resolvedUserId && (
           <>
-            <Link to={`/admin/users/${resolvedUserId}`} className={styles.profileLink}>
+            <Link to={`/users/${resolvedUserId}`} className={styles.profileLink}>
               View Profile
             </Link>
             <button

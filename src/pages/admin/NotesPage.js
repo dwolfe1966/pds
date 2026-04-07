@@ -262,7 +262,7 @@ const NotesPage = () => {
             <strong>{userName}</strong>
             <span className={styles.userEmail}>{resolvedUser.email}</span>
           </div>
-          <Link to={`/admin/users/${resolvedUser._id || resolvedUser.id}`} className={styles.profileLink}>
+          <Link to={`/users/${resolvedUser._id || resolvedUser.id}`} className={styles.profileLink}>
             View Profile →
           </Link>
         </div>

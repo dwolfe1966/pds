@@ -206,7 +206,7 @@ const PurchasesPage = () => {
           <h1 className={styles.title}>Order Management</h1>
           <p className={styles.subtitle}>{subtitle}</p>
           {urlUserId && (
-            <Link to={`/admin/users/${urlUserId}`} className={styles.backLink}>
+            <Link to={`/users/${urlUserId}`} className={styles.backLink}>
               &larr; Back to user
             </Link>
           )}
@@ -322,7 +322,7 @@ const PurchasesPage = () => {
                       <td>{formatDate(order.createdAt)}</td>
                       <td>
                         <Link
-                          to={`/admin/purchases/${pid}?userId=${resolvedUserId}`}
+                          to={`/purchases/${pid}?userId=${resolvedUserId}`}
                           className={styles.viewBtn}
                         >
                           View

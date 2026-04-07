@@ -235,7 +235,7 @@ const OrdersPage = () => {
         </button>
         {resolvedUserId && (
           <>
-            <Link to={`/admin/users/${resolvedUserId}`} className={styles.profileLink}>
+            <Link to={`/users/${resolvedUserId}`} className={styles.profileLink}>
               View Profile
             </Link>
             <button
@@ -356,7 +356,7 @@ const OrdersPage = () => {
                             <td className={styles.td}>{formatDate(order.createdAt)}</td>
                             <td className={styles.td}>
                               <Link
-                                to={`/admin/purchases/${pid}?userId=${resolvedUserId}`}
+                                to={`/purchases/${pid}?userId=${resolvedUserId}`}
                                 className={styles.viewBtn}
                               >
                                 View

@@ -247,11 +247,11 @@ const UserDetailPage = () => {
     }
     const latestOrder = orders[0];
     const oid = getOrderId(latestOrder);
-    navigate(`/admin/purchases/${oid}?userId=${id}`);
+    navigate(`/purchases/${oid}?userId=${id}`);
   };
 
   const handleViewAllOrders = () => {
-    navigate(`/admin/purchases?userId=${id}`);
+    navigate(`/purchases?userId=${id}`);
   };
 
   // ── Loading / error states ────────────────────────────────
@@ -283,6 +283,15 @@ const UserDetailPage = () => {
   const tier      = getTier(user);
   const joinDate  = formatDate(user?.createdAt);
   const isSuspended = status === 'suspended';
+
+  // New enriched fields
+  const fullUserId = user?._id || user?.id || id;
+  const shortUserId = fullUserId ? `#${fullUserId.slice(-8)}` : '—';
+  const allEmails = user?.emails?.length ? user.emails : (user?.email ? [user.email] : []);
+  const allPhones = user?.phones?.length ? user.phones : (user?.phone ? [user.phone] : []);
+  const deviceType = user?.deviceType || user?.transient?.deviceType || user?.deviceInfo || null;
+  const ipAddress = user?.ip || user?.transient?.ip || user?.registrationIp || null;
+  const lastActive = user?.lastLogin || user?.transient?.lastLogin || null;
 
   // ── Render ────────────────────────────────────────────────
   return (
@@ -384,7 +393,7 @@ const UserDetailPage = () => {
                             <tr key={oid} className={styles.tr}>
                               <td className={styles.td}>
                                 <Link
-                                  to={`/admin/purchases/${oid}?userId=${id}`}
+                                  to={`/purchases/${oid}?userId=${id}`}
                                   className={styles.orderLink}
                                 >
                                   {oid || '—'}
