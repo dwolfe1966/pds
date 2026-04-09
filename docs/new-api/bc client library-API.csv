@@ -298,21 +298,26 @@ lastName: 'chin',
 email: 'user@email.com',
 telephone: '1234567890',
 message: 'testing contact message.',
+contentType: 'text/html',
 });
 
-Added on 2026-03-31
+Added on 2026-03-31 (Removed)
 attachments: (optional) File[]
-- You can add attachments to the request value.",,,
+- You can add attachments to the request value.
+contentType
+- contentType: text/plain or text/html",,,
 "Create User Contact Added on 2026-03-27
 
 apiWrapper.api.user.createContact",/api/message/userContact,post,"[Create User Contact]
 A logged-in user composes a contact message. This applies to messages written via the Reply link within the email when the CSR sends an email to the User.
 
-apiWrapper.api.user.createContact({ message });
+apiWrapper.api.user.createContact({ message, contentType });
 
 Added on 2026-03-31
 attachments: (optional) File[]
-- You can add attachments to the request value.",,,
+- You can add attachments to the request value.
+contentType
+- contentType: text/plain or text/html",,,
 Count User Teaser Searches,/api/idLookup/statistic/userTeaserSearches,get,apiWrapper.api.idLookup.countUserTeaserSearches();,,"{ 
 ""count"": 5 
 }",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from './AdminNav.module.css';
 // Use static import so Parcel bundles the image without import.meta (needed for classic script mode)
@@ -8,33 +8,37 @@ import logoSrc from '../assets/idlookup_icon_transparent.png';
 const navLinks = [
   { path: '/users',        label: 'Customers' },
   { path: '/orders',       label: 'Orders' },
-  { path: '/payments',     label: 'Payments' },
   { path: '/data-removal', label: 'Opt-Outs' },
-  { path: '/phone-optout',  label: 'Phone Opt-Outs' },
-  { path: '/unsubscribe',   label: 'Unsubscribed' },
-  { path: '/email-search', label: 'Email Search' },
+  { path: '/unsubscribe',  label: 'Unsubscribed' },
   { path: '/notes',        label: 'Notes' },
   { path: '/tickets',      label: 'Tickets' },
   { path: '/mail-log',     label: 'Mail Log' },
   { path: '/cs-reps',      label: 'CS Reps' },
   { path: '/email',        label: 'Broadcast' },
   { path: '/analytics',    label: 'Analytics' },
-  { path: '/timesheets',   label: 'Timesheets' },
   { path: '/permissions',  label: 'Permissions' },
-  { path: '/content',      label: 'Content' },
+  { path: '/content',      label: 'Content & UX' },
   { path: '/offers',       label: 'Offers' },
-  { path: '/sessions',     label: 'Activity' },
-  { path: '/logs',         label: 'Logs' },
-  { path: '/ux',           label: 'UX Mgmt' },
-  { path: '/uxc-history',  label: 'UXC History' },
+  { path: '/sessions',     label: 'Activity & Logs' },
 ];
 
 const AdminNav = () => {
   const { logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    navigate(`/users?q=${encodeURIComponent(q)}`);
+    setSearchQuery('');
+    setMenuOpen(false);
+  };
 
   return (
     <nav className={styles.nav}>
@@ -42,6 +46,18 @@ const AdminNav = () => {
         <img src={logoSrc} alt="IDLookup.AI" className={styles.logoImg} />
         <span>Admin</span>
       </Link>
+
+      {/* Customer search */}
+      <form className={styles.navSearch} onSubmit={handleSearch}>
+        <input
+          type="text"
+          className={styles.navSearchInput}
+          placeholder="Search by ID, email…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          aria-label="Search customers"
+        />
+      </form>
 
       {/* Desktop links */}
       <div className={styles.links}>
@@ -70,6 +86,15 @@ const AdminNav = () => {
       {/* Mobile dropdown */}
       {menuOpen && (
         <div className={styles.mobileMenu}>
+          <form className={styles.mobileSearch} onSubmit={handleSearch}>
+            <input
+              type="text"
+              className={styles.navSearchInput}
+              placeholder="Search by ID, email…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
           {navLinks.map((l) => (
             <Link
               key={l.path}

@@ -713,6 +713,28 @@ class ApiWrapperService {
     return await this._csrPost('/commerceBilling/correct', params);
   }
 
+  // csrWrapper.api.user.findOrderPayments — POST /commerceMgnt/orderPayments
+  // params: { orderId, lastPaymentId? }
+  async csrFindOrderPayments(orderId, lastPaymentId) {
+    const body = { orderId };
+    if (lastPaymentId) body.lastPaymentId = lastPaymentId;
+    return await this._csrPost('/commerceMgnt/orderPayments', body);
+  }
+
+  // csrWrapper.api.user.findOrderHistories — POST /commerceMgnt/orderHistories
+  // params: { orderId, lastRevisionId? }
+  async csrFindOrderHistories(orderId, lastRevisionId) {
+    const body = { orderId };
+    if (lastRevisionId) body.lastRevisionId = lastRevisionId;
+    return await this._csrPost('/commerceMgnt/orderHistories', body);
+  }
+
+  // csrWrapper.api.user.updateScheduleDueTimestamp — POST /commerceMgnt/updateScheduleDueTimestamp
+  // params: { scheduleId, dueTimestamp }
+  async csrUpdateScheduleDueTimestamp(scheduleId, dueTimestamp) {
+    return await this._csrPost('/commerceMgnt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp });
+  }
+
   // csrWrapper.api.optOut.find — POST /database/search
   async csrFindOptOuts(params = {}) {
     return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });

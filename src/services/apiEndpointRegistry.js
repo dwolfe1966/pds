@@ -75,6 +75,10 @@ export const API_ENDPOINTS = {
   'admin-create-cs-rep': { newApi: true, mockApi: false },
   'admin-update-cs-rep': { newApi: true, mockApi: false },
   'admin-cancel-order': { newApi: true, mockApi: false },
+  'admin-order-payments': { newApi: true, mockApi: false },
+  'admin-order-histories': { newApi: true, mockApi: false },
+  'admin-order-detail': { newApi: true, mockApi: false },
+  'admin-update-schedule': { newApi: true, mockApi: false },
   'admin-email-log': { newApi: false, mockApi: true },
   'admin-email-broadcast': { newApi: false, mockApi: true },
   // Unsubscribe — managedContact.find({ type: 'email' }) + managedContact.unsubscribe

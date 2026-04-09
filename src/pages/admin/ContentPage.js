@@ -113,9 +113,12 @@ const ContentPage = () => {
     <main className={styles.page}>
       {toast && <div className={styles.toast}>{toast}</div>}
 
+      <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '6px', padding: '0.625rem 1rem', marginBottom: '1rem', fontSize: '0.8125rem', color: '#92400e' }}>
+        Local data only — changes are stored in your browser and will not persist across devices.
+      </div>
       <div className={styles.pageHeader}>
-        <h1 className={styles.title}>Content Management</h1>
-        <p className={styles.subtitle}>Manage content blocks used across the platform.</p>
+        <h1 className={styles.title}>Content & UX Management</h1>
+        <p className={styles.subtitle}>Manage content blocks and UX configuration across the platform.</p>
       </div>
 
       {/* Tabs */}

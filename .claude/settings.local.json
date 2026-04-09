@@ -36,7 +36,8 @@
       "Bash(npm run:*)",
       "Bash(cp:*)",
       "Bash(sed -i \"s/'http:\\\\/\\\\/localhost:3010'/'http:\\\\/\\\\/localhost:3003', 'http:\\\\/\\\\/localhost:3010'/g\" server/index.js)",
-      "Bash(sed -i \"s/localhost:3010'\\)/localhost:3003'\\) || origin.includes\\('localhost:3010'\\)\\)/g\" server/index.js)"
+      "Bash(sed -i \"s/localhost:3010'\\)/localhost:3003'\\) || origin.includes\\('localhost:3010'\\)\\)/g\" server/index.js)",
+      "Bash(npx -y acorn-jsx --ecma2020 src/pages/admin/UserDetailPage.js)"
     ]
   }
 }

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import styles from './UsersPage.module.css';
 
@@ -89,6 +89,20 @@ function CustomerCard({ user }) {
         <span className={styles.fieldValue}>{formatDate(user.createdAt)}</span>
       </div>
 
+      {user.zip && (
+        <div className={styles.cardField}>
+          <span className={styles.fieldLabel}>Zip</span>
+          <span className={styles.fieldValue}>{user.zip}</span>
+        </div>
+      )}
+
+      {user.last4cc && (
+        <div className={styles.cardField}>
+          <span className={styles.fieldLabel}>CC</span>
+          <span className={styles.fieldValue}>{`····${user.last4cc}`}</span>
+        </div>
+      )}
+
       <Link to={`/users/${uid}`} className={styles.cardViewBtn}>
         View Details
       </Link>
@@ -101,6 +115,7 @@ function CustomerCard({ user }) {
 const SKELETON_COUNT = 9;
 
 const UsersPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [allUsers, setAllUsers]     = useState([]);
   const [loading, setLoading]       = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -112,20 +127,44 @@ const UsersPage = () => {
   const [searchText, setSearchText]   = useState('');
   const [zipCode, setZipCode]         = useState('');
   const [last4cc, setLast4cc]         = useState('');
+  const [emailFilter, setEmailFilter] = useState(searchParams.get('q') || '');
+  const [phoneFilter, setPhoneFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [view, setView]               = useState('list'); // 'list' | 'cards'
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [fetchGeneration, setFetchGeneration] = useState(0);
+
+  // Handle nav search: ?q= param triggers email search on mount
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && q !== emailFilter) {
+      setEmailFilter(q);
+      setAllUsers([]);
+      setLastId(null);
+      setNoMoreDocs(false);
+      setFetchGeneration(g => g + 1);
+      // Clear the URL param so it doesn't persist on refresh
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── data fetching ──────────────────────────────────────────────────────────
 
   const fetchPage = useCallback(async (cursorId = null) => {
     const params = cursorId ? { lastId: cursorId } : {};
-    if (zipCode.trim()) params.zip = zipCode.trim();
-    if (last4cc.trim()) params.last4cc = last4cc.trim();
+    if (emailFilter.trim()) params.email = emailFilter.trim();
     const res = await api.adminListUsers(params);
     const docs = res?.data ?? [];
     const last = docs[docs.length - 1]?._id ?? docs[docs.length - 1]?.id ?? null;
     return { docs, last, noMoreDocs: res?.noMoreDocs ?? docs.length === 0 };
-  }, []);
+  }, [emailFilter]);
+
+  const handleServerSearch = () => {
+    setAllUsers([]);
+    setLastId(null);
+    setNoMoreDocs(false);
+    setFetchGeneration(g => g + 1);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -147,7 +186,7 @@ const UsersPage = () => {
     };
     load();
     return () => { cancelled = true; };
-  }, [fetchPage]);
+  }, [fetchPage, fetchGeneration]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
@@ -168,21 +207,39 @@ const UsersPage = () => {
 
   const filteredUsers = useMemo(() => {
     const q = searchText.trim().toLowerCase();
+    const phoneQ = phoneFilter.trim().replace(/\D/g, '');
+    const zipQ = zipCode.trim().toLowerCase();
+    const ccQ = last4cc.trim();
     return allUsers.filter((u) => {
       // status filter
       if (statusFilter !== 'all') {
         const s = resolveStatus(u);
         if (s !== statusFilter) return false;
       }
-      // text filter
+      // text filter (name / email)
       if (q) {
         const name = getDisplayName(u).toLowerCase();
         const email = (u.email || '').toLowerCase();
         if (!name.includes(q) && !email.includes(q)) return false;
       }
+      // phone filter (client-side, digits only comparison)
+      if (phoneQ) {
+        const userPhone = (u.phone || u.phoneNumber || '').replace(/\D/g, '');
+        if (!userPhone.includes(phoneQ)) return false;
+      }
+      // zip filter (client-side)
+      if (zipQ) {
+        const userZip = (u.zip || u.zipCode || '').toLowerCase();
+        if (!userZip.startsWith(zipQ)) return false;
+      }
+      // last 4 CC filter (client-side)
+      if (ccQ) {
+        const userCC = (u.last4cc || u.last4CC || '');
+        if (userCC !== ccQ) return false;
+      }
       return true;
     });
-  }, [allUsers, searchText, statusFilter]);
+  }, [allUsers, searchText, statusFilter, phoneFilter, zipCode, last4cc]);
 
   // ── render ─────────────────────────────────────────────────────────────────
 
@@ -212,12 +269,21 @@ const UsersPage = () => {
             <input
               type="text"
               className={styles.searchInput}
-              placeholder="Search by name or email…"
+              placeholder="Quick filter by name or email…"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              aria-label="Search customers"
+              aria-label="Quick filter customers"
             />
           </div>
+
+          <button
+            type="button"
+            className={styles.advancedToggleBtn}
+            onClick={() => setAdvancedOpen(o => !o)}
+            aria-expanded={advancedOpen}
+          >
+            Advanced Search {advancedOpen ? '\u25B2' : '\u25BC'}
+          </button>
 
           <select
             className={styles.filterSelect}
@@ -237,6 +303,71 @@ const UsersPage = () => {
         </div>
       </div>
 
+      {/* ── advanced search panel ── */}
+      {advancedOpen && (
+        <div className={styles.advancedPanel}>
+          {/* Server-side: Email (BC API supports this) */}
+          <div className={styles.advancedSection}>
+            <span className={styles.advancedSectionLabel}>Server search</span>
+            <div className={styles.advancedRow}>
+              <input
+                type="text"
+                className={styles.filterInput}
+                placeholder="Email (searches server)"
+                value={emailFilter}
+                onChange={(e) => setEmailFilter(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleServerSearch()}
+                aria-label="Search by email (server)"
+              />
+              <button
+                className={styles.serverSearchBtn}
+                onClick={handleServerSearch}
+                disabled={loading}
+                title="Re-fetch from server with email filter"
+              >
+                Search
+              </button>
+            </div>
+          </div>
+
+          {/* Client-side: instant filters on loaded data */}
+          <div className={styles.advancedSection}>
+            <span className={styles.advancedSectionLabel}>Instant filters (loaded data)</span>
+            <div className={styles.advancedGrid}>
+              <input
+                type="text"
+                className={styles.filterInput}
+                placeholder="Phone"
+                value={phoneFilter}
+                onChange={(e) => setPhoneFilter(e.target.value)}
+                aria-label="Filter by phone"
+              />
+              <input
+                type="text"
+                className={styles.filterInput}
+                placeholder="Zip Code"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                aria-label="Filter by zip code"
+                maxLength={10}
+              />
+              <input
+                type="text"
+                className={styles.filterInput}
+                placeholder="Last 4 CC"
+                value={last4cc}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setLast4cc(v);
+                }}
+                aria-label="Filter by last 4 digits of credit card"
+                maxLength={4}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── error ── */}
       {error && <div className={styles.errorBanner}>{error}</div>}
 
@@ -252,10 +383,11 @@ const UsersPage = () => {
               <thead><tr>
                 <th className={styles.th}>Name</th><th className={styles.th}>Email</th>
                 <th className={styles.th}>Status</th><th className={styles.th}>Tier</th>
+                <th className={styles.th}>Zip</th><th className={styles.th}>CC</th>
                 <th className={styles.th}>Joined</th><th className={styles.th}></th>
               </tr></thead>
               <tbody>{Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-                <tr key={i}><td colSpan={6} className={styles.td}><div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} /></td></tr>
+                <tr key={i}><td colSpan={8} className={styles.td}><div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} /></td></tr>
               ))}</tbody>
             </table>
           </div>
@@ -280,6 +412,8 @@ const UsersPage = () => {
               <th className={styles.th}>Email</th>
               <th className={styles.th}>Status</th>
               <th className={styles.th}>Tier</th>
+              <th className={styles.th}>Zip</th>
+              <th className={styles.th}>CC</th>
               <th className={styles.th}>Joined</th>
               <th className={styles.th}></th>
             </tr></thead>
@@ -295,6 +429,8 @@ const UsersPage = () => {
                     <td className={styles.td}>{u.email || '—'}</td>
                     <td className={styles.td}><StatusBadge status={status} /></td>
                     <td className={styles.td}><TierBadge pro={pro} /></td>
+                    <td className={styles.td}>{u.zip || '—'}</td>
+                    <td className={styles.td}>{u.last4cc ? `····${u.last4cc}` : '—'}</td>
                     <td className={styles.td}>{formatDate(u.createdAt)}</td>
                     <td className={styles.td}>
                       <Link to={`/users/${uid}`} className={styles.tableViewBtn}>Details</Link>

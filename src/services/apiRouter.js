@@ -261,8 +261,20 @@ export async function routeApiRequest(endpoint, params = {}) {
     'admin-create-cs-rep',
     'admin-update-cs-rep',
     'admin-cancel-order',
+    'admin-order-payments',
+    'admin-order-histories',
+    'admin-order-detail',
+    'admin-update-schedule',
     'admin-unsubscribe',
     'admin-unsubscribe-delete',
+    'admin-unsuspend-user',
+    'admin-purchases-global',
+    'admin-phone-optout',
+    'admin-phone-optout-delete',
+    'admin-user-contacts',
+    'admin-create-note',
+    'admin-update-note',
+    'admin-create-csr-mail',
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // Use new API if forced and available, otherwise require flags
@@ -788,6 +800,32 @@ async function callNewAPI(endpoint, params) {
     // Send CSR mail to a user — createCsrMail({ targetUserId, subject, message })
     case 'admin-create-csr-mail': {
       return await apiWrapper.csrCreateCsrMail(params.body || {});
+    }
+
+    // csrWrapper.api.user.findOrderPayments → POST /commerceMgnt/orderPayments
+    case 'admin-order-payments': {
+      const raw = await apiWrapper.csrFindOrderPayments(params.orderId, params.lastPaymentId);
+      const payments = raw?.payments ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: payments };
+    }
+
+    // csrWrapper.api.user.findOrderHistories → POST /commerceMgnt/orderHistories
+    case 'admin-order-histories': {
+      const raw = await apiWrapper.csrFindOrderHistories(params.orderId, params.lastRevisionId);
+      const histories = raw?.orderHistories ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return { data: histories, perPage: raw?.perPage ?? 5 };
+    }
+
+    // csrWrapper.api.user.getOrder → POST /commerceMgnt/getUserOrder (single order)
+    case 'admin-order-detail': {
+      const raw = await apiWrapper.csrGetUserOrder({ userId: params.userId, orderId: params.orderId, lastPaymentId: params.lastPaymentId });
+      const order = raw?.orders?.[0] ?? raw?.order ?? raw;
+      return order;
+    }
+
+    // csrWrapper.api.user.updateScheduleDueTimestamp → POST /commerceMgnt/updateScheduleDueTimestamp
+    case 'admin-update-schedule': {
+      return await apiWrapper.csrUpdateScheduleDueTimestamp(params.scheduleId, params.dueTimestamp);
     }
 
     default:

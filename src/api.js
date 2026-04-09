@@ -559,6 +559,22 @@ const api = {
     return await routeApiRequest('admin-cancel-order', { orderId, flag });
   },
 
+  adminFindOrderPayments: async (orderId, lastPaymentId) => {
+    return await routeApiRequest('admin-order-payments', { orderId, lastPaymentId });
+  },
+
+  adminFindOrderHistories: async (orderId, lastRevisionId) => {
+    return await routeApiRequest('admin-order-histories', { orderId, lastRevisionId });
+  },
+
+  adminGetOrderDetail: async (userId, orderId, lastPaymentId) => {
+    return await routeApiRequest('admin-order-detail', { userId, orderId, lastPaymentId });
+  },
+
+  adminUpdateScheduleDueTimestamp: async (scheduleId, dueTimestamp) => {
+    return await routeApiRequest('admin-update-schedule', { scheduleId, dueTimestamp });
+  },
+
   adminListDataRemoval: async (params = {}) => {
     return await routeApiRequest('admin-data-removal', { queryParams: params });
   },

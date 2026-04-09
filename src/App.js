@@ -75,7 +75,7 @@ import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 import EmailBroadcastPage from './pages/admin/EmailBroadcastPage';
 import EmailSearchPage from './pages/admin/EmailSearchPage';
-import PhoneOptOutPage from './pages/admin/PhoneOptOutPage';
+
 import UnsubscribePage from './pages/admin/UnsubscribePage';
 import NotesPage from './pages/admin/NotesPage';
 import EmailTicketsPage from './pages/admin/EmailTicketsPage';
@@ -366,11 +366,7 @@ const App = () => {
 
           <Route
             path="/admin/phone-optout"
-            element={
-              <ProtectedRoute role="admin">
-                <PhoneOptOutPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/admin/data-removal" replace />}
           />
           <Route
             path="/admin/orders"

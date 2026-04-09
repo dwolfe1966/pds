@@ -23,6 +23,41 @@
   height: 26px;
 }
 
+.navSearch {
+  flex-shrink: 0;
+}
+
+.navSearchInput {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.8125rem;
+  padding: 0.35rem 0.625rem;
+  width: 160px;
+  outline: none;
+  transition: background 0.15s, border-color 0.15s, width 0.2s;
+}
+
+.navSearchInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.navSearchInput:focus {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  width: 200px;
+}
+
+.mobileSearch {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobileSearch .navSearchInput {
+  width: 100%;
+}
+
 .links {
   display: flex;
   align-items: center;

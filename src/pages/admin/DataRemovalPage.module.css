@@ -34,6 +34,37 @@
   margin: 0;
 }
 
+/* ── Tab bar ─────────────────────────────────────────────────────── */
+.tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 1.5rem;
+}
+
+.tabBtn {
+  padding: 0.65rem 1.25rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tabBtn:hover {
+  color: #374151;
+}
+
+.tabBtnActive {
+  color: #111827;
+  font-weight: 700;
+  border-bottom-color: #0d5d2f;
+}
+
 /* ── Stats bar ───────────────────────────────────────────────────── */
 .statsBar {
   display: flex;
@@ -249,6 +280,18 @@
   border: 1px solid #e5e7eb;
 }
 
+.badgeActive {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badgeInactive {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
 /* ── Action controls ─────────────────────────────────────────────── */
 .approveBtn {
   padding: 0.25rem 0.75rem;
@@ -282,6 +325,34 @@
   font-size: 0.75rem;
   color: #dc2626;
   font-weight: 500;
+}
+
+.optOutBtn {
+  padding: 0.25rem 0.75rem;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.optOutBtn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.optOutBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.managedLabel {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
 }
 
 /* ── Pagination bar ──────────────────────────────────────────────── */

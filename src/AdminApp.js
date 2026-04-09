@@ -12,21 +12,14 @@ import DataRemovalPage from './pages/admin/DataRemovalPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 import EmailBroadcastPage from './pages/admin/EmailBroadcastPage';
-import EmailSearchPage from './pages/admin/EmailSearchPage';
-import PhoneOptOutPage from './pages/admin/PhoneOptOutPage';
 import UnsubscribePage from './pages/admin/UnsubscribePage';
 import NotesPage from './pages/admin/NotesPage';
 import EmailTicketsPage from './pages/admin/EmailTicketsPage';
 import MailActivityPage from './pages/admin/MailActivityPage';
 import OrdersPage from './pages/admin/OrdersPage';
-import PaymentsPage from './pages/admin/PaymentsPage';
 import PermissionsPage from './pages/admin/PermissionsPage';
 import ContentPage from './pages/admin/ContentPage';
-import TimesheetsPage from './pages/admin/TimesheetsPage';
 import OffersProductsPage from './pages/admin/OffersProductsPage';
-import LogViewerPage from './pages/admin/LogViewerPage';
-import UxManagementPage from './pages/admin/UxManagementPage';
-import UxcHistoryPage from './pages/admin/UxcHistoryPage';
 
 // Shared
 import AdminNav from './components/AdminNav';
@@ -90,28 +83,30 @@ const AdminApp = () => {
           {/* Admin routes */}
           <Route path="/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
           <Route path="/users/:id" element={<AdminRoute><UserDetailPage /></AdminRoute>} />
-          <Route path="/sessions" element={<AdminRoute><SessionsPage /></AdminRoute>} />
+          <Route path="/orders" element={<AdminRoute><OrdersPage /></AdminRoute>} />
           <Route path="/purchases" element={<AdminRoute><PurchasesPage /></AdminRoute>} />
           <Route path="/purchases/:id" element={<AdminRoute><PurchaseDetailPage /></AdminRoute>} />
           <Route path="/data-removal" element={<AdminRoute><DataRemovalPage /></AdminRoute>} />
           <Route path="/unsubscribe" element={<AdminRoute><UnsubscribePage /></AdminRoute>} />
-          <Route path="/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
-          <Route path="/cs-reps" element={<AdminRoute><CsRepManagementPage /></AdminRoute>} />
-          <Route path="/email" element={<AdminRoute><EmailBroadcastPage /></AdminRoute>} />
-          <Route path="/email-search" element={<AdminRoute><EmailSearchPage /></AdminRoute>} />
-          <Route path="/phone-optout" element={<AdminRoute><PhoneOptOutPage /></AdminRoute>} />
-          <Route path="/orders" element={<AdminRoute><OrdersPage /></AdminRoute>} />
-          <Route path="/payments" element={<AdminRoute><PaymentsPage /></AdminRoute>} />
           <Route path="/notes" element={<AdminRoute><NotesPage /></AdminRoute>} />
           <Route path="/tickets" element={<AdminRoute><EmailTicketsPage /></AdminRoute>} />
           <Route path="/mail-log" element={<AdminRoute><MailActivityPage /></AdminRoute>} />
-          <Route path="/timesheets" element={<AdminRoute><TimesheetsPage /></AdminRoute>} />
+          <Route path="/cs-reps" element={<AdminRoute><CsRepManagementPage /></AdminRoute>} />
+          <Route path="/email" element={<AdminRoute><EmailBroadcastPage /></AdminRoute>} />
+          <Route path="/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
           <Route path="/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
           <Route path="/content" element={<AdminRoute><ContentPage /></AdminRoute>} />
           <Route path="/offers" element={<AdminRoute><OffersProductsPage /></AdminRoute>} />
-          <Route path="/logs" element={<AdminRoute><LogViewerPage /></AdminRoute>} />
-          <Route path="/ux" element={<AdminRoute><UxManagementPage /></AdminRoute>} />
-          <Route path="/uxc-history" element={<AdminRoute><UxcHistoryPage /></AdminRoute>} />
+          <Route path="/sessions" element={<AdminRoute><SessionsPage /></AdminRoute>} />
+
+          {/* Redirects for removed/combined routes */}
+          <Route path="/payments" element={<Navigate to="/orders" replace />} />
+          <Route path="/phone-optout" element={<Navigate to="/data-removal" replace />} />
+          <Route path="/email-search" element={<Navigate to="/users" replace />} />
+          <Route path="/timesheets" element={<Navigate to="/analytics" replace />} />
+          <Route path="/logs" element={<Navigate to="/sessions" replace />} />
+          <Route path="/ux" element={<Navigate to="/content" replace />} />
+          <Route path="/uxc-history" element={<Navigate to="/content" replace />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -61,11 +61,14 @@ params
 Create Admin User Note,/api/message/admin/user/note/create,post,"csrWrapper.api.user.createAdminNote({ 
 userId: '69aa174aba9d8bf27771b282', 
 message: 'Create a Memo in User that only administrators can see.'
+contentType: 'text/html',
 });
 
 Added on 2026-03-31
 attachments: (optional) File[]
-- You can add attachments to the request value.",,,
+- You can add attachments to the request value.
+contentType
+- contentType: text/plain or text/html",,,
 "Update Admin User Note
 
 csrWrapper.api.user.updateAdminNote",/api/message/admin/user/note/update,post,"csrWrapper.api.user.updateAdminNote({ 
@@ -74,7 +77,7 @@ message: 'Edit the message content.'
 });",,,
 "Create Csr Mail Added on 2026-03-27
 
-csrWrapper.api.user.createCsrMail",/api/message/admin/user/csrMail/create,post,"csrWrapper.api.user.createCsrMail({ targetUserId, subject, message });
+csrWrapper.api.user.createCsrMail",/api/message/admin/user/csrMail/create,post,"csrWrapper.api.user.createCsrMail({ targetUserId, subject, message, contentType });
 
 Sends an email to the user with targetUserId. The sent email can be viewed in [Find User Contact]. (type : userContactCsrMail)
 
@@ -85,7 +88,9 @@ params
 
 Added on 2026-03-31
 attachments: (optional) File[]
-- You can add attachments to the request value.",,"{
+- You can add attachments to the request value.
+contentType
+- contentType: text/plain or text/html",,"{
 ""success"": true,
 ""messageResult"": {
 ""index"": [],
@@ -174,170 +179,94 @@ Return
 - type
 - userContact (Contacts created by the user, contacts created via the reply link in csrMail, etc.)
 - userContactCsrMail (Copy of the email sent from Csr to User)
-- userContactAdminNote (Memo written to the User in Csr)",,"{
-""docs"": [
-{
-""_id"": ""69c7145006f0f51b4cd69c49"",
-""index"": [],
-""type"": ""userContactAdminNote"",
-""status"": ""fulfilled"",
-""ownerId"": ""6943179e90625d3dbeadf6f7"",
-""referenceIds"": [],
-""permissionIds"": [],
-""content"": {
-""targetUserId"": ""69c31abacfe2243c3c1e4094"",
-""message"": ""<div>sdsdsdssdsds</div>""
-},
-""createdAt"": ""2026-03-27T23:35:44.593Z"",
-""updatedAt"": ""2026-03-27T23:35:44.600Z"",
-""createdTimestamp"": 1774654544593,
-""updatedTimestamp"": 1774654544593,
-""trackingIds"": {
-""trackingId"": ""69c7145006f0f51b4cd69c46"",
-""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
-""clientId"": ""9mZdhul63NWb3VVcX88FWGH58Te7vMqX"",
-""apiId"": ""FHdGFABEk1ufhQtPdC34jN0qnGOdO0iG""
-},
-""brandId"": ""bytecrtrs"",
-""shConId"": ""69129afbeee8fa241c86c9c2"",
-""shColId"": ""69431f043a915bc1be68b4bc"",
-""shTimestamp"": 1774582585438,
-""updaterId"": ""6943179e90625d3dbeadf6f7"",
-""__v"": 1,
-""currentRevisionId"": ""69c7145006f0f51b4cd69c4b"",
-""owner"": {
-""_id"": ""6943179e90625d3dbeadf6f7"",
-""firstName"": ""BC"",
-""lastName"": ""Admin"",
-""id"": ""6943179e90625d3dbeadf6f7""
-},
-""id"": ""69c7145006f0f51b4cd69c49""
-},
-{
-""_id"": ""69c70ec714655a193cdf6ff7"",
-""index"": [],
-""type"": ""userContactAdminNote"",
-""status"": ""fulfilled"",
-""ownerId"": ""6943179e90625d3dbeadf6f7"",
-""referenceIds"": [],
-""permissionIds"": [],
-""content"": {
-""targetUserId"": ""69c31abacfe2243c3c1e4094"",
-""message"": ""<div>sdsdsdsdsdsdsssss</div>""
-},
-""createdAt"": ""2026-03-27T23:12:07.659Z"",
-""updatedAt"": ""2026-03-27T23:12:10.871Z"",
-""createdTimestamp"": 1774653127659,
-""updatedTimestamp"": 1774653127659,
-""trackingIds"": {
-""trackingId"": ""69c70ec714655a193cdf6ff4"",
-""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
-""clientId"": ""mBfLfgyWK1re4oCL7CB9Z8DlsBmPaUkC"",
-""apiId"": ""Hb4DomMzPYCjc3b5jtxSBVX63lrR5XBM""
-},
-""brandId"": ""bytecrtrs"",
-""shConId"": ""69129afbeee8fa241c86c9c2"",
-""shColId"": ""69431f043a915bc1be68b4bc"",
-""shTimestamp"": 1774582585438,
-""updaterId"": ""6943179e90625d3dbeadf6f7"",
-""__v"": 3,
-""currentRevisionId"": ""69c70eca14655a193cdf701b"",
-""owner"": {
-""_id"": ""6943179e90625d3dbeadf6f7"",
-""firstName"": ""BC"",
-""lastName"": ""Admin"",
-""id"": ""6943179e90625d3dbeadf6f7""
-},
-""id"": ""69c70ec714655a193cdf6ff7""
-},
-{
-""_id"": ""69c70765f66f1de6b44e6355"",
-""index"": [],
-""type"": ""userContact"",
-""status"": ""requested"",
-""ownerId"": ""69c31abacfe2243c3c1e4094"",
-""referenceIds"": [],
-""permissionIds"": [],
-""content"": {
-""message"": ""contact test message."",
-""targetUserId"": ""69c31abacfe2243c3c1e4094""
-},
-""createdAt"": ""2026-03-27T22:40:37.255Z"",
-""updatedAt"": ""2026-03-27T22:40:37.264Z"",
-""createdTimestamp"": 1774651237255,
-""updatedTimestamp"": 1774651237255,
-""trackingIds"": {
-""trackingId"": ""69c70765f66f1de6b44e6352"",
-""sessionId"": ""I-VIP3rKENG8vt5rYkHfaJR5CDA9OPjS"",
-""clientId"": ""ivEaPshVK5J6cURYQ2D1LzNZOINLWFB9"",
-""apiId"": ""Tvdb7bTz8weosUnWYyQ7EA6iSVneCMeU""
-},
-""brandId"": ""idlookup"",
-""shConId"": ""69a2380b53ecf9b049d01fbb"",
-""shColId"": ""69aa41b648af3b202e7fb065"",
-""shTimestamp"": 1774582391482,
-""updaterId"": ""69c31abacfe2243c3c1e4094"",
-""__v"": 1,
-""currentRevisionId"": ""69c70765f66f1de6b44e6357"",
-""owner"": {
-""_id"": ""69c31abacfe2243c3c1e4094"",
-""firstName"": ""TestFname"",
-""lastName"": ""TestLname"",
-""id"": ""69c31abacfe2243c3c1e4094""
-},
-""id"": ""69c70765f66f1de6b44e6355""
-},
-{
-""_id"": ""69c700b6e79949dbaf3b1cda"",
-""index"": [],
-""type"": ""userContactAdminNote"",
-""status"": ""fulfilled"",
-""ownerId"": ""6943179e90625d3dbeadf6f7"",
-""referenceIds"": [],
-""permissionIds"": [],
-""content"": {
-""targetUserId"": ""69c31abacfe2243c3c1e4094"",
-""message"": ""<div>test&nbsp;admin&nbsp;notes&nbsp;edit&nbsp;11112223331111fdsfsfsfdsfdsdfdsfsdsdfsdf</div>""
-},
-""createdAt"": ""2026-03-27T22:12:06.784Z"",
-""updatedAt"": ""2026-03-27T23:27:46.004Z"",
-""createdTimestamp"": 1774649526784,
-""updatedTimestamp"": 1774649526784,
-""trackingIds"": {
-""trackingId"": ""69c700b6e79949dbaf3b1cd7"",
-""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
-""clientId"": ""uGNrh3URjcjhUvURpGxw7AZ2eZzjZOlz"",
-""apiId"": ""d5Xmk4yEXlcsO8L7cu1ZvrwRuxUo3qc2""
-},
-""brandId"": ""bytecrtrs"",
-""shConId"": ""69129afbeee8fa241c86c9c2"",
-""shColId"": ""69431f043a915bc1be68b4bc"",
-""shTimestamp"": 1774582585438,
-""updaterId"": ""6943179e90625d3dbeadf6f7"",
-""__v"": 19,
-""currentRevisionId"": ""69c7127106f0f51b4cd69ac0"",
-""owner"": {
-""_id"": ""6943179e90625d3dbeadf6f7"",
-""firstName"": ""BC"",
-""lastName"": ""Admin"",
-""id"": ""6943179e90625d3dbeadf6f7""
-},
-""id"": ""69c700b6e79949dbaf3b1cda""
-}
-],
-""noMoreDocs"": true,
-""displayFields"": [
-""_id"",
-""createdAt"",
-""brandId"",
-""type"",
-""content"",
-""owner"",
-""status""
-],
-""dateFields"": [
-""createdAt""
-]
+- userContactAdminNote (Memo written to the User in Csr)",,"{ 
+""docs"": [ 
+{ 
+""_id"": ""69cdd902c45e7334d99cfec5"", 
+""index"": [], 
+""type"": ""userContactAdminNote"", 
+""status"": ""fulfilled"", 
+""ownerId"": ""6943179e90625d3dbeadf6f7"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""content"": { 
+""targetUserId"": ""69bdf6af9d86cb973f1fa2ca"", 
+""message"": ""<div>Test&nbsp;Admin&nbsp;Note</div>"", 
+""contentType"": ""text/html"" 
+}, 
+""attachments"": [ 
+{ 
+""fieldname"": ""attachments"", 
+""originalname"": ""idiCORE_API_Spec2.2.5.pdf"", 
+""encoding"": ""7bit"", 
+""mimetype"": ""application/pdf"", 
+""id"": ""69cdd902c45e7334d99cfebc"", 
+""filename"": ""idiCORE_API_Spec2.2.5.pdf"", 
+""size"": 805588, 
+""bucketName"": ""attachments"", 
+""metadata"": { 
+""originalMimetype"": ""application/pdf"", 
+""originalName"": ""idiCORE_API_Spec2.2.5.pdf"", 
+""compressed"": ""zstd"", 
+""originalSize"": 882003 
+} 
+}, 
+{ 
+""fieldname"": ""attachments"", 
+""originalname"": ""idiCORE_API_Teaser_Indicator_Count_Search.pdf"", 
+""encoding"": ""7bit"", 
+""mimetype"": ""application/pdf"", 
+""id"": ""69cdd902c45e7334d99cfebf"", 
+""filename"": ""idiCORE_API_Teaser_Indicator_Count_Search.pdf"", 
+""size"": 232735, 
+""bucketName"": ""attachments"", 
+""metadata"": { 
+""originalMimetype"": ""application/pdf"", 
+""originalName"": ""idiCORE_API_Teaser_Indicator_Count_Search.pdf"", 
+""compressed"": ""zstd"", 
+""originalSize"": 240060 
+} 
+} 
+], 
+""createdAt"": ""2026-04-02T02:48:34.929Z"", 
+""updatedAt"": ""2026-04-02T02:48:34.935Z"", 
+""createdTimestamp"": 1775098114929, 
+""updatedTimestamp"": 1775098114929, 
+""trackingIds"": { 
+""trackingId"": ""69cdd902c45e7334d99cfeb9"", 
+""sessionId"": ""AQYoDlqZP8wMl3DrR4AZq9iTOGlzJ2W0"", 
+""clientId"": ""GFWBD0LwfRLNXZ9xTYO48h7KxSw07103"", 
+""apiId"": ""unwQcpuPFkZK8y3vUczYLSKiRbAXwNzy"" 
+}, 
+""brandId"": ""bytecrtrs"", 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1775010511038, 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""__v"": 1, 
+""currentRevisionId"": ""69cdd902c45e7334d99cfec7"", 
+""owner"": { 
+""_id"": ""6943179e90625d3dbeadf6f7"", 
+""firstName"": ""BC"", 
+""lastName"": ""Admin"", 
+""id"": ""6943179e90625d3dbeadf6f7"" 
+}, 
+""id"": ""69cdd902c45e7334d99cfec5"" 
+} 
+], 
+""noMoreDocs"": true, 
+""displayFields"": [ 
+""_id"", 
+""createdAt"", 
+""brandId"", 
+""type"", 
+""content"", 
+""owner"", 
+""status"" 
+], 
+""dateFields"": [ 
+""createdAt"" 
+] 
 }",
 "Find User Orders
 
@@ -1717,8 +1646,14 @@ params
 ""id"": ""69cb37217771101e1f0dd3fe""
 }
 }",
-,,,,,,
-,,,,,,
+"Download attachment Added on 2026-04-01
+
+",/api/attachment/download,get,"csrWrapper.api.attachment.download({ attachmentId });
+
+When creating [Create Admin User Note] or [Create Csr Mail], files attached via [Attachments] are returned to [Find User Contact] with an ID included in the [Attachments] of each element. This ID is the attachmentId used for downloading or deleting.",,,
+Remove attachment Added on 2026-04-01,/api/attachment/remove,post,"csrWrapper.api.attachment.remove({ attachmentId });
+
+When creating [Create Admin User Note] or [Create Csr Mail], files attached via [Attachments] are returned to [Find User Contact] with an ID included in the [Attachments] of each element. This ID is the attachmentId used for downloading or deleting.",,,
 ,,,,,,
 ,,,,,,
 ,,,,,,
