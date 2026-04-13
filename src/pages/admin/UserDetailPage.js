@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import styles from './UserDetailPage.module.css';
+import RefundEmailModal from './RefundEmailModal';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -196,6 +197,9 @@ const UserDetailPage = () => {
   // { paymentId, orderId, amount, type: 'refund'|'void' }
   const [refundForm, setRefundForm] = useState(null);
   const [refundProcessing, setRefundProcessing] = useState(false);
+
+  // Refund email modal
+  const [showRefundEmail, setShowRefundEmail] = useState(false);
 
   // Batch refund confirmation: { orderId, eligiblePayments: [...], totalAmount }
   const [batchRefundConfirm, setBatchRefundConfirm] = useState(null);
@@ -1124,6 +1128,14 @@ const UserDetailPage = () => {
 
                   <button
                     className={styles.actionBtnGreen}
+                    onClick={() => setShowRefundEmail(true)}
+                  >
+                    <span>✉</span>
+                    Request Billing Action
+                  </button>
+
+                  <button
+                    className={styles.actionBtnGreen}
                     onClick={handleViewAllOrders}
                   >
                     <span>☰</span>
@@ -1175,6 +1187,15 @@ const UserDetailPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Refund Email Modal */}
+      {showRefundEmail && (
+        <RefundEmailModal
+          userId={id}
+          userEmail={user?.email || ''}
+          onClose={() => setShowRefundEmail(false)}
+        />
       )}
 
       {/* Toast */}

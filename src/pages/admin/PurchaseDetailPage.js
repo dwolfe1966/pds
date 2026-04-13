@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import styles from './PurchaseDetailPage.module.css';
+import RefundEmailModal from './RefundEmailModal';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ const PurchaseDetailPage = () => {
   const [acting, setActing] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
   const [actionSuccess, setActionSuccess] = useState(false);
+  const [showRefundEmail, setShowRefundEmail] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -286,10 +288,31 @@ const PurchaseDetailPage = () => {
                     Reactivate Order
                   </button>
                 )}
+
+                <hr className={styles.divider} />
+
+                <button
+                  className={`${styles.actionBtn}`}
+                  style={{ background: '#f0fdf4', color: '#059669', border: '1px solid #a7f3d0' }}
+                  onClick={() => setShowRefundEmail(true)}
+                >
+                  Request Billing Action
+                </button>
               </div>
             </div>
           </div>
         </>
+      )}
+
+      {/* Refund Email Modal */}
+      {showRefundEmail && (
+        <RefundEmailModal
+          userId={userId}
+          userEmail=""
+          orderId={order?._id || order?.id || ''}
+          amount={collected != null ? Number(collected) : undefined}
+          onClose={() => setShowRefundEmail(false)}
+        />
       )}
     </main>
   );

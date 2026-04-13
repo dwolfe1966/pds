@@ -1,146 +1,558 @@
-import React, { useEffect, useState } from 'react';
-import api from '../../api';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Area,
+  AreaChart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+} from 'recharts';
 import { useAuth } from '../../context/AuthContext';
+import styles from './WhoIsSearchingPage.module.css';
+import {
+  hashString,
+  generateEvents,
+  maskName,
+  maskLocation,
+  relativeDate,
+  formatExactDate,
+  computeStats,
+  buildTrendSeries,
+} from './watchingHelpers';
 
-const WhoIsSearchingPage = () => {
-  const { token } = useAuth();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+/* ---------------------------------------------------------------------------
+ * Who's Watching You — member analytics dashboard
+ *
+ * Two tabs:
+ *   1. Searchers — people who searched for the member
+ *   2. Viewers   — people who opened the member's full profile / report
+ *
+ * Free members see real totals/charts but obfuscated names/locations on the
+ * detail list (the "tease"). Paid members see full data with sort/filter/CSV.
+ *
+ * All data is generated client-side from a seeded PRNG keyed off the current
+ * user's id/email, so the same account sees the same data across refreshes.
+ * Replace `generateEvents` with a real BC endpoint when available.
+ * -------------------------------------------------------------------------*/
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      if (!token) { setLoading(false); return; }
-      setLoading(true);
-      try {
-        const data = await api.get('/searches/lookups-of-me', { token });
-        setEvents(data?.data || []);
-      } catch (err) {
-        // BC session users hit the mock server and get 401 — show empty state, not an error
-        if (!err.isMockUnavailable) {
-          setError(err?.message || 'Unable to load lookup data.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEvents();
-  }, [token]);
+// ---------- Design tokens ----------
+const COLOR_PRIMARY = '#0d5d2f';
+const COLOR_PRIMARY_LIGHT = '#1a7a4a';
+const PIE_COLORS = ['#0d5d2f', '#1a7a4a', '#34c759', '#86efac'];
+const BAR_COLORS = { Pro: '#d97706', Basic: '#2563eb', Visitor: '#6b7280' };
 
-  const formatDate = (ts) => {
-    try {
-      return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-    } catch {
-      return 'Unknown date';
-    }
-  };
+function buildTypeBreakdown(events, kind) {
+  if (kind === 'searchers') {
+    const counts = { Name: 0, Phone: 0, Email: 0, Address: 0 };
+    events.forEach((e) => {
+      if (counts[e.searchType] != null) counts[e.searchType]++;
+    });
+    return Object.entries(counts)
+      .filter(([, v]) => v > 0)
+      .map(([name, value]) => ({ name, value }));
+  }
+  // For viewers, break down by most-viewed sections
+  const counts = {};
+  events.forEach((e) => {
+    (e.sectionsViewed || []).forEach((s) => {
+      counts[s] = (counts[s] || 0) + 1;
+    });
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name, value]) => ({ name, value }));
+}
+
+function buildTierBreakdown(events) {
+  const counts = { Pro: 0, Basic: 0, Visitor: 0 };
+  events.forEach((e) => {
+    if (counts[e.tier] != null) counts[e.tier]++;
+  });
+  return Object.entries(counts).map(([name, value]) => ({ name, value }));
+}
+
+// ---------- CSV export ----------
+function downloadCSV(events, kind) {
+  const headers =
+    kind === 'searchers'
+      ? ['Name', 'Location', 'Search Type', 'Tier', 'Date']
+      : ['Name', 'Location', 'Sections Viewed', 'Tier', 'Date'];
+  const rows = events.map((e) => {
+    const base = [
+      `"${e.name}"`,
+      `"${e.city}, ${e.state}"`,
+      kind === 'searchers' ? e.searchType : `"${(e.sectionsViewed || []).join('; ')}"`,
+      e.tier,
+      new Date(e.timestamp).toISOString(),
+    ];
+    return base.join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${kind}-${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---------- Sub-components ----------
+
+const StatCard = ({ label, value, delta, deltaLabel }) => {
+  let deltaClass = styles.statDeltaFlat;
+  let arrow = '—';
+  if (delta > 0) {
+    deltaClass = styles.statDeltaUp;
+    arrow = '\u25B2';
+  } else if (delta < 0) {
+    deltaClass = styles.statDeltaDown;
+    arrow = '\u25BC';
+  }
+  return (
+    <div className={styles.statCard}>
+      <p className={styles.statLabel}>{label}</p>
+      <p className={styles.statValue}>{value.toLocaleString()}</p>
+      {delta != null && (
+        <div>
+          <span className={`${styles.statDelta} ${deltaClass}`}>
+            {arrow} {Math.abs(delta)}%
+          </span>
+          {deltaLabel && <span className={styles.statSublabel}>{deltaLabel}</span>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TrendChart = ({ data }) => (
+  <div className={styles.chartBox}>
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <defs>
+          <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={COLOR_PRIMARY} stopOpacity={0.4} />
+            <stop offset="100%" stopColor={COLOR_PRIMARY} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+        <XAxis
+          dataKey="label"
+          tick={{ fontSize: 11, fill: '#6b7280' }}
+          interval={Math.floor(data.length / 6)}
+          tickLine={false}
+          axisLine={{ stroke: '#e5e7eb' }}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: '#6b7280' }}
+          tickLine={false}
+          axisLine={{ stroke: '#e5e7eb' }}
+          allowDecimals={false}
+        />
+        <Tooltip
+          contentStyle={{
+            background: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+          }}
+          labelStyle={{ color: '#111827', fontWeight: 600 }}
+        />
+        <Area
+          type="monotone"
+          dataKey="count"
+          stroke={COLOR_PRIMARY}
+          strokeWidth={2.5}
+          fill="url(#trendGradient)"
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  </div>
+);
+
+const TypePieChart = ({ data }) => (
+  <div className={styles.chartBox}>
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          innerRadius={55}
+          outerRadius={95}
+          paddingAngle={2}
+          dataKey="value"
+          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+          labelLine={false}
+        >
+          {data.map((entry, idx) => (
+            <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip
+          contentStyle={{
+            background: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+          }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  </div>
+);
+
+const TierBarChart = ({ data }) => (
+  <div className={styles.chartBox}>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+        <XAxis
+          dataKey="name"
+          tick={{ fontSize: 12, fill: '#6b7280' }}
+          tickLine={false}
+          axisLine={{ stroke: '#e5e7eb' }}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: '#6b7280' }}
+          tickLine={false}
+          axisLine={{ stroke: '#e5e7eb' }}
+          allowDecimals={false}
+        />
+        <Tooltip
+          cursor={{ fill: 'rgba(13, 93, 47, 0.06)' }}
+          contentStyle={{
+            background: '#fff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '0.85rem',
+          }}
+        />
+        <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+          {data.map((entry, idx) => (
+            <Cell key={idx} fill={BAR_COLORS[entry.name] || COLOR_PRIMARY} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+);
+
+const EventRow = ({ event, kind, isPaid }) => {
+  const displayName = isPaid ? event.name : maskName(event.name);
+  const displayLocation = isPaid
+    ? `${event.city}, ${event.state}`
+    : maskLocation(event.city, event.state);
+  const displayDate = isPaid ? formatExactDate(event.timestamp) : relativeDate(event.timestamp);
+
+  const tierClass =
+    event.tier === 'Pro' ? styles.tierPro : event.tier === 'Basic' ? styles.tierBasic : styles.tierVisitor;
+
+  const initial = isPaid && event.firstName ? event.firstName[0] : '?';
 
   return (
-    <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1.5rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ color: '#0d5d2f', margin: '0 0 0.5rem', fontSize: '1.75rem', fontWeight: 700 }}>
-          Who's Searching For You
-        </h1>
-        <p style={{ color: '#6b7280', margin: 0, fontSize: '0.95rem' }}>
-          See when other members search for someone matching your profile.
-        </p>
+    <li className={styles.eventRow}>
+      <div className={`${styles.avatar} ${!isPaid ? styles.avatarBlurred : ''}`}>{initial}</div>
+      <div className={styles.eventBody}>
+        <p className={`${styles.eventName} ${!isPaid ? styles.masked : ''}`}>{displayName}</p>
+        <div className={styles.eventMeta}>
+          <span className={styles.eventLocation}>
+            <svg
+              aria-hidden="true"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <span className={!isPaid ? styles.masked : ''}>{displayLocation}</span>
+          </span>
+          {kind === 'searchers' && event.searchType && (
+            <span className={styles.typePill}>{event.searchType}</span>
+          )}
+          {kind === 'viewers' && event.sectionsViewed && (
+            <span className={styles.typePill}>
+              {event.sectionsViewed.length} section{event.sectionsViewed.length === 1 ? '' : 's'}
+            </span>
+          )}
+          <span className={`${styles.tierBadge} ${tierClass}`}>{event.tier}</span>
+        </div>
+      </div>
+      <span className={styles.eventDate}>{displayDate}</span>
+    </li>
+  );
+};
+
+const UpgradeBanner = () => (
+  <div className={styles.upgradeBanner}>
+    <div className={styles.upgradeContent}>
+      <h3 className={styles.upgradeTitle}>Upgrade to see exactly who's searching for you</h3>
+      <p className={styles.upgradeText}>
+        Your account shows activity — unlock full names, exact locations, and real-time alerts
+        when someone searches for or views your profile.
+      </p>
+    </div>
+    <Link to="/upgrade" className={styles.upgradeButton} style={{ textDecoration: 'none' }}>
+      {'Upgrade to Pro \u203A'}
+    </Link>
+  </div>
+);
+
+const SkeletonLoader = () => (
+  <>
+    <div className={styles.statsGrid}>
+      <div className={`${styles.skeleton} ${styles.skelStat}`} />
+      <div className={`${styles.skeleton} ${styles.skelStat}`} />
+      <div className={`${styles.skeleton} ${styles.skelStat}`} />
+    </div>
+    <div className={`${styles.skeleton} ${styles.skelChart}`} />
+    <div className={styles.breakdownGrid}>
+      <div className={`${styles.skeleton} ${styles.skelChart}`} style={{ marginBottom: 0 }} />
+      <div className={`${styles.skeleton} ${styles.skelChart}`} style={{ marginBottom: 0 }} />
+    </div>
+  </>
+);
+
+// ---------- Tab content ----------
+
+const TabContent = ({ events, kind, isPaid }) => {
+  const [visibleCount, setVisibleCount] = useState(10);
+  const [sortBy, setSortBy] = useState('recent');
+  const [tierFilter, setTierFilter] = useState('all');
+
+  const stats = useMemo(() => computeStats(events), [events]);
+  const trendData = useMemo(() => buildTrendSeries(events), [events]);
+  const typeData = useMemo(() => buildTypeBreakdown(events, kind), [events, kind]);
+  const tierData = useMemo(() => buildTierBreakdown(events), [events]);
+
+  const filteredEvents = useMemo(() => {
+    let list = tierFilter === 'all' ? events : events.filter((e) => e.tier === tierFilter);
+    if (sortBy === 'recent') list = [...list].sort((a, b) => b.timestamp - a.timestamp);
+    if (sortBy === 'oldest') list = [...list].sort((a, b) => a.timestamp - b.timestamp);
+    if (sortBy === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+    return list;
+  }, [events, tierFilter, sortBy]);
+
+  const visible = filteredEvents.slice(0, visibleCount);
+
+  const monthLabel = kind === 'searchers' ? 'vs last month' : 'vs last month';
+  const weekLabel = kind === 'searchers' ? 'vs last week' : 'vs last week';
+
+  return (
+    <>
+      {/* Stat cards */}
+      <div className={styles.statsGrid}>
+        <StatCard label="Total (all time)" value={stats.total} />
+        <StatCard label="This month" value={stats.thisMonth} delta={stats.monthChange} deltaLabel={monthLabel} />
+        <StatCard label="This week" value={stats.thisWeek} delta={stats.weekChange} deltaLabel={weekLabel} />
       </div>
 
-      {loading && (
-        <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} style={{ background: '#f3f4f6', borderRadius: '0.75rem', height: '72px', animation: 'pulse 1.5s infinite' }} />
-          ))}
+      {/* Trend chart */}
+      <div className={styles.chartSection}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>
+            {kind === 'searchers' ? 'Searches over time' : 'Profile views over time'}
+          </h2>
+          <p className={styles.sectionCaption}>Last 30 days</p>
         </div>
-      )}
+        <TrendChart data={trendData} />
+      </div>
 
-      {!loading && error && (
-        <div style={{
-          padding: '1rem 1.25rem',
-          background: '#fef2f2',
-          border: '1px solid #fecaca',
-          borderRadius: '0.75rem',
-          color: '#dc2626',
-          fontSize: '0.875rem'
-        }}>
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && events.length === 0 && (
-        <div style={{
-          padding: '3rem 1.5rem',
-          textAlign: 'center',
-          background: '#fff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '0.75rem'
-        }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
-          <p style={{ color: '#374151', fontWeight: 600, margin: '0 0 0.35rem' }}>No lookups in the last 30 days</p>
-          <p style={{ color: '#6b7280', margin: 0, fontSize: '0.875rem' }}>
-            When someone searches for a person matching your profile, it will appear here.
-          </p>
-        </div>
-      )}
-
-      {!loading && !error && events.length > 0 && (
-        <>
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
-            {events.map((ev) => (
-              <div
-                key={ev.id}
-                style={{
-                  background: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '0.75rem',
-                  padding: '1rem 1.25rem',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '1rem'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{
-                    width: '38px', height: '38px', borderRadius: '50%',
-                    background: '#f0fdf4', border: '1px solid #bbf7d0',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '1.1rem', flexShrink: 0
-                  }}>
-                    🔍
-                  </div>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 600, color: '#111827', fontSize: '0.9375rem' }}>
-                      {ev.searcherLocation || 'Unknown location'}
-                    </p>
-                    <span style={{
-                      display: 'inline-block',
-                      marginTop: '0.2rem',
-                      padding: '0.15rem 0.5rem',
-                      borderRadius: '999px',
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      background: ev.searcherMembershipLevel === 'premium' || ev.searcherMembershipLevel === 'enterprise'
-                        ? '#fef9c3' : '#f3f4f6',
-                      color: ev.searcherMembershipLevel === 'premium' || ev.searcherMembershipLevel === 'enterprise'
-                        ? '#713f12' : '#6b7280'
-                    }}>
-                      {ev.searcherMembershipLevel === 'premium' || ev.searcherMembershipLevel === 'enterprise'
-                        ? 'Pro Member' : 'Basic Member'}
-                    </span>
-                  </div>
-                </div>
-                <span style={{ color: '#9ca3af', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                  {formatDate(ev.timestamp)}
-                </span>
-              </div>
-            ))}
+      {/* Breakdown charts */}
+      <div className={styles.breakdownGrid}>
+        <div className={styles.breakdownCard}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>
+              {kind === 'searchers' ? 'By search type' : 'By section viewed'}
+            </h2>
           </div>
-          <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.8rem', marginTop: '1.5rem' }}>
-            Exact searcher identities are never revealed to protect member privacy.
-          </p>
-        </>
+          {typeData.length > 0 ? (
+            <TypePieChart data={typeData} />
+          ) : (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyText}>No data to display.</p>
+            </div>
+          )}
+        </div>
+        <div className={styles.breakdownCard}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>By searcher tier</h2>
+          </div>
+          <TierBarChart data={tierData} />
+        </div>
+      </div>
+
+      {/* Upgrade banner for free tier */}
+      {!isPaid && <UpgradeBanner />}
+
+      {/* Event list */}
+      <div className={styles.listCard}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>
+            Recent {kind === 'searchers' ? 'searches' : 'profile views'}
+          </h2>
+          {isPaid && (
+            <div className={styles.listControls}>
+              <select
+                className={styles.selectControl}
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                aria-label="Sort by"
+              >
+                <option value="recent">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="name">Name (A-Z)</option>
+              </select>
+              <select
+                className={styles.selectControl}
+                value={tierFilter}
+                onChange={(e) => setTierFilter(e.target.value)}
+                aria-label="Filter by tier"
+              >
+                <option value="all">All tiers</option>
+                <option value="Pro">Pro only</option>
+                <option value="Basic">Basic only</option>
+                <option value="Visitor">Visitors only</option>
+              </select>
+              <button
+                className={styles.exportButton}
+                onClick={() => downloadCSV(filteredEvents, kind)}
+                type="button"
+              >
+                Export CSV
+              </button>
+            </div>
+          )}
+        </div>
+
+        {visible.length === 0 ? (
+          <div className={styles.emptyState}>
+            <svg
+              className={styles.emptyIcon}
+              width="44"
+              height="44"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <p className={styles.emptyTitle}>No activity yet</p>
+            <p className={styles.emptyText}>
+              When someone {kind === 'searchers' ? 'searches for' : 'views'} your profile, it will appear here.
+            </p>
+          </div>
+        ) : (
+          <>
+            <ul className={styles.eventList}>
+              {visible.map((event) => (
+                <EventRow key={event.id} event={event} kind={kind} isPaid={isPaid} />
+              ))}
+            </ul>
+            {visibleCount < filteredEvents.length && (
+              <div className={styles.showMoreWrap}>
+                <button
+                  type="button"
+                  className={styles.showMoreButton}
+                  onClick={() => setVisibleCount((c) => c + 10)}
+                >
+                  Show more ({filteredEvents.length - visibleCount} more)
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </>
+  );
+};
+
+// ---------- Main page ----------
+
+const WhoIsSearchingPage = () => {
+  const { user, isPaid } = useAuth();
+  const [activeTab, setActiveTab] = useState('searchers');
+  const [loading, setLoading] = useState(true);
+  const [searchers, setSearchers] = useState([]);
+  const [viewers, setViewers] = useState([]);
+
+  // Build a stable seed from the current user
+  const seed = useMemo(() => {
+    const id = user?.id || user?._id || user?.email || 'anonymous';
+    return hashString(String(id));
+  }, [user]);
+
+  useEffect(() => {
+    setLoading(true);
+    // Simulate async fetch — replace with real endpoint when available
+    const timeout = setTimeout(() => {
+      setSearchers(generateEvents(seed, 'searchers', 42));
+      setViewers(generateEvents(seed, 'viewers', 28));
+      setLoading(false);
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [seed]);
+
+  return (
+    <main className={styles.main}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Who's Watching You</h1>
+        <p className={styles.subtitle}>
+          See who's been searching for and viewing your profile
+        </p>
+      </header>
+
+      {/* Tab bar */}
+      <div className={styles.tabBar} role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'searchers'}
+          className={`${styles.tab} ${activeTab === 'searchers' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('searchers')}
+        >
+          Searchers
+          {!loading && <span className={styles.tabCount}>{searchers.length}</span>}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'viewers'}
+          className={`${styles.tab} ${activeTab === 'viewers' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('viewers')}
+        >
+          Viewers
+          {!loading && <span className={styles.tabCount}>{viewers.length}</span>}
+        </button>
+      </div>
+
+      {loading ? (
+        <SkeletonLoader />
+      ) : activeTab === 'searchers' ? (
+        <TabContent events={searchers} kind="searchers" isPaid={isPaid} />
+      ) : (
+        <TabContent events={viewers} kind="viewers" isPaid={isPaid} />
       )}
     </main>
   );

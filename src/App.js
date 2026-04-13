@@ -74,21 +74,15 @@ import DataRemovalPage from './pages/admin/DataRemovalPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 import EmailBroadcastPage from './pages/admin/EmailBroadcastPage';
-import EmailSearchPage from './pages/admin/EmailSearchPage';
 
 import UnsubscribePage from './pages/admin/UnsubscribePage';
 import NotesPage from './pages/admin/NotesPage';
 import EmailTicketsPage from './pages/admin/EmailTicketsPage';
 import MailActivityPage from './pages/admin/MailActivityPage';
 import OrdersPage from './pages/admin/OrdersPage';
-import PaymentsPage from './pages/admin/PaymentsPage';
 import PermissionsPage from './pages/admin/PermissionsPage';
 import ContentPage from './pages/admin/ContentPage';
-import TimesheetsPage from './pages/admin/TimesheetsPage';
 import OffersProductsPage from './pages/admin/OffersProductsPage';
-import LogViewerPage from './pages/admin/LogViewerPage';
-import UxManagementPage from './pages/admin/UxManagementPage';
-import UxcHistoryPage from './pages/admin/UxcHistoryPage';
 
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
@@ -357,13 +351,8 @@ const App = () => {
 
           <Route
             path="/admin/email-search"
-            element={
-              <ProtectedRoute role="admin">
-                <EmailSearchPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/admin/users" replace />}
           />
-
           <Route
             path="/admin/phone-optout"
             element={<Navigate to="/admin/data-removal" replace />}
@@ -378,11 +367,7 @@ const App = () => {
           />
           <Route
             path="/admin/payments"
-            element={
-              <ProtectedRoute role="admin">
-                <PaymentsPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/admin/orders" replace />}
           />
           <Route
             path="/admin/notes"
@@ -410,11 +395,7 @@ const App = () => {
           />
           <Route
             path="/admin/timesheets"
-            element={
-              <ProtectedRoute role="admin">
-                <TimesheetsPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/admin/analytics" replace />}
           />
           <Route
             path="/admin/permissions"
@@ -440,30 +421,9 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/admin/logs"
-            element={
-              <ProtectedRoute role="admin">
-                <LogViewerPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/ux"
-            element={
-              <ProtectedRoute role="admin">
-                <UxManagementPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/uxc-history"
-            element={
-              <ProtectedRoute role="admin">
-                <UxcHistoryPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/admin/logs" element={<Navigate to="/admin/sessions" replace />} />
+          <Route path="/admin/ux" element={<Navigate to="/admin/content" replace />} />
+          <Route path="/admin/uxc-history" element={<Navigate to="/admin/content" replace />} />
 
           {/* 404 catch-all */}
           <Route path="*" element={<NotFoundPage />} />

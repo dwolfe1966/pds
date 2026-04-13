@@ -45,7 +45,13 @@ The response value returns N Users. To obtain more than N response values, pass 
 params
 - brandId: (optional)
 - email: (optional)
-- lastId: (optional)",,,
+- phone: (optional)
+- zip: (optional)
+- panLast4: (optional)
+- lastId: (optional)
+
+Updated on 2026-04-07
+(phone, zip, panLast4)",,,
 "Find Admin Users
 
 csrWrapper.api.user.findAdmin",/api/database/search,post,"csrWrapper.api.user.findAdmin({ 
@@ -1654,7 +1660,84 @@ When creating [Create Admin User Note] or [Create Csr Mail], files attached via 
 Remove attachment Added on 2026-04-01,/api/attachment/remove,post,"csrWrapper.api.attachment.remove({ attachmentId });
 
 When creating [Create Admin User Note] or [Create Csr Mail], files attached via [Attachments] are returned to [Find User Contact] with an ID included in the [Attachments] of each element. This ID is the attachmentId used for downloading or deleting.",,,
-,,,,,,
+Tracking - Find User Tracking Added on 2026-04-07,/api/database/search,post,"csrWrapper.api.tracking.findUser({ type, lastId });
+
+The data of the object in the response array contains the necessary information.
+createdAt is the time the event was recorded. (e.g., login time)
+
+params
+- type: string 
+(You can pass one or more types together separated by |. e.g.) USER:nameSearchTeaser|USER:phoneSearchTeaser)
+- USER:nameSearchTeaser (teaser search)
+- USER:phoneSearchTeaser (teaser search)
+- USER:nameSearchTeaserOptOut (teaser optout search)
+- USER:phoneSearchTeaserOptOut (teaser optout search)
+- USER:nameSearch (create report)
+- USER:phoneSearch (create report)
+- lastId: (optional)",,"{ 
+""docs"": [ 
+{ 
+""_id"": ""69d5c58b0ad7570e7b4d1a92"", 
+""index"": [], 
+""trackingIds"": { 
+""trackingId"": ""69d5c58b0ad7570e7b4d1a76"", 
+""sessionId"": ""4IYjjDg-avIWp2IsK54Ba_VJCgjhaP3q"", 
+""clientId"": ""t1oAD3GIhnfushlkhUMooDACpbAv6pHE"", 
+""apiId"": ""hk5zH14WWKxFwHHSNJ9EcrbdcNOtH7Rr"" 
+}, 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""data"": { 
+""type"": ""USER:nameSearchTeaserOptOut"", 
+""status"": ""fulfilled"", 
+""teaserInput"": { 
+""fName"": ""tim"", 
+""lName"": ""chin"", 
+""city"": ""new york"", 
+""state"": ""ny"", 
+""type"": ""name"", 
+""contextKey"": ""sale.name.teaser-optOut"", 
+""teaserCommerceContentId"": ""69d5c58b0ad7570e7b4d1a80"" 
+}, 
+""cloned"": true, 
+""value"": { 
+""duration"": 214, 
+""hostname"": ""dev1002.dev.www.idlookup.ai"", 
+""brandId"": ""idlookup"", 
+""method"": ""POST"", 
+""url"": ""/api/optOut/search"", 
+""query"": ""clientId=t1oAD3GIhnfushlkhUMooDACpbAv6pHE&apiId=hk5zH14WWKxFwHHSNJ9EcrbdcNOtH7Rr"", 
+""ip"": ""110.47.168.218"", 
+""referer"": ""https://dev1002.dev.www.idlookup.ai/api/optOut/view/search?clientId=HOtv9jEwsAQBhGkQGQtzwaBlmpY2syvS&apiId=W6Evn9iZWcSq1SvA9pwwuY80egtACqyk"", 
+""device"": ""desktop"", 
+""userAgent"": ""Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"" 
+}, 
+""caller"": ""idLookup.service.ts:110:26|IdLookupService.searchOptOut"" 
+}, 
+""createdAt"": ""2026-04-08T03:03:40.024Z"", 
+""updatedAt"": ""2026-04-08T03:03:40.024Z"", 
+""createdTimestamp"": 1775617420025, 
+""updatedTimestamp"": 1775617420025, 
+""brandId"": ""idlookup"", 
+""shConId"": ""69a2380b53ecf9b049d01fbb"", 
+""shColId"": ""69aa41b648af3b202e7fb065"", 
+""shTimestamp"": 1775617265506, 
+""updaterId"": ""69d46c6554aa4f5ab22cbee6"", 
+""__v"": 0, 
+""id"": ""69d5c58b0ad7570e7b4d1a92"" 
+} 
+], 
+""noMoreDocs"": true, 
+""displayFields"": [ 
+""_id"", 
+""createdAt"", 
+""trackingIds"", 
+""data"" 
+], 
+""dateFields"": [ 
+""createdAt"" 
+] 
+}",
 ,,,,,,
 ,,,,,,
 ,,,,,,
