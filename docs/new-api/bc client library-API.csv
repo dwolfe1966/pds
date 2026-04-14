@@ -311,13 +311,140 @@ contentType
 apiWrapper.api.user.createContact",/api/message/userContact,post,"[Create User Contact]
 A logged-in user composes a contact message. This applies to messages written via the Reply link within the email when the CSR sends an email to the User.
 
-apiWrapper.api.user.createContact({ message, contentType });
+apiWrapper.api.user.createContact({ message, parentCsrMessageId, contentType });
 
 Added on 2026-03-31
 attachments: (optional) File[]
 - You can add attachments to the request value.
 contentType
-- contentType: text/plain or text/html",,,
+- contentType: text/plain or text/html
+
+Added on 2026-04-13
+parentCsrMessageId: If createCsrMail is created for the user in CSR, when the user clicks reply to the email, the page is accessed including the parentCsrMessageId value in the QueryString. This parentCsrMessageId must be passed.",,,
+"Get User Contacts Added on 2026-04-13
+
+apiWrapper.api.user.getContacts",/api/message/userContact/list,post,"apiWrapper.api.user.getContacts({ lastId })
+
+Ten [Create User Contact] entries created by the user or [Create Csr Mail] entries created by Csr to the user are returned. The next page can be retrieved by passing the lastId (_id).
+
+params
+- lastId: (optional)",,"{
+""messages"": [
+{
+""_id"": ""69dd75a590dfdabfe96c37f5"",
+""index"": [],
+""type"": ""userContact"",
+""status"": ""requested"",
+""ownerId"": ""69d9acbc7c4fc440d9ca5d1a"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""message"": ""contact test message."",
+""contentType"": ""text/html"",
+""parentCsrMessageId"": ""69dd757390dfdabfe96c3794"",
+""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-13T23:00:53.232Z"",
+""updatedAt"": ""2026-04-13T23:00:53.253Z"",
+""createdTimestamp"": 1776121253233,
+""updatedTimestamp"": 1776121253233,
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1776121203822,
+""updaterId"": ""69d9acbc7c4fc440d9ca5d1a"",
+""__v"": 1,
+""currentRevisionId"": ""69dd75a590dfdabfe96c37f8"",
+""id"": ""69dd75a590dfdabfe96c37f5""
+},
+{
+""_id"": ""69dd757390dfdabfe96c3794"",
+""index"": [],
+""type"": ""userContactCsrMail"",
+""status"": ""fulfilled"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a"",
+""subject"": ""test csr mail 2"",
+""message"": ""<div>dfsdfsdfdsfs</div>\n<p><a href=\""https://dev1002.dev.www.idlookup.ai/api/auth/loginLink?loginHash=69dd705abd97ce4d4cf385058f0972bb0216413dce1ede26bef73c90L3Rlc3QvZGV2ZWxvcG1lbnQuaHRtbD9wYXJlbnRDc3JNZXNzYWdlSWQ9NjlkZDc1NzM5MGRmZGFiZmU5NmMzNzk0&amp;clientId=dgDKgCwkVlndNexXtvUaNpZUiQLHWSzK&amp;apiId=AO6RMkGLzfcH2lAfzi18hPr49kXbuE4o\"">Reply</a></p>"",
+""contentType"": ""text/html""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-13T23:00:03.957Z"",
+""updatedAt"": ""2026-04-13T23:00:03.967Z"",
+""createdTimestamp"": 1776121203958,
+""updatedTimestamp"": 1776121203958,
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1776121203619,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 1,
+""currentRevisionId"": ""69dd757390dfdabfe96c37a7"",
+""id"": ""69dd757390dfdabfe96c3794""
+},
+{
+""_id"": ""69dd707dbd97ce4d4cf3856e"",
+""index"": [],
+""type"": ""userContact"",
+""status"": ""requested"",
+""ownerId"": ""69d9acbc7c4fc440d9ca5d1a"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""message"": ""contact test message."",
+""contentType"": ""text/html"",
+""parentCsrMessageId"": ""69dd705abd97ce4d4cf38504"",
+""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-13T22:38:53.011Z"",
+""updatedAt"": ""2026-04-13T22:38:53.020Z"",
+""createdTimestamp"": 1776119933011,
+""updatedTimestamp"": 1776119933011,
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1776119834020,
+""updaterId"": ""69d9acbc7c4fc440d9ca5d1a"",
+""__v"": 1,
+""currentRevisionId"": ""69dd707dbd97ce4d4cf38570"",
+""id"": ""69dd707dbd97ce4d4cf3856e""
+},
+{
+""_id"": ""69dd705abd97ce4d4cf38504"",
+""index"": [],
+""type"": ""userContactCsrMail"",
+""status"": ""fulfilled"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a"",
+""subject"": ""test csr mail"",
+""message"": ""<div>sdfsdfsdfsdfs</div>\n<p><a href=\""https://dev1002.dev.www.idlookup.ai/api/auth/loginLink?loginHash=69dd705abd97ce4d4cf385058f0972bb0216413dce1ede26bef73c90L3Rlc3QvZGV2ZWxvcG1lbnQuaHRtbD9wYXJlbnRDc3JNZXNzYWdlSWQ9NjlkZDcwNWFiZDk3Y2U0ZDRjZjM4NTA0&amp;clientId=CNcHUvxQgaYeNQG3wJEcz9vVDt0lfvLZ&amp;apiId=1SPvOqJlIiJ7OK7YztLvJpgchy0M4H0V\"">Reply</a></p>"",
+""contentType"": ""text/html""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-13T22:38:18.601Z"",
+""updatedAt"": ""2026-04-13T22:38:18.611Z"",
+""createdTimestamp"": 1776119898602,
+""updatedTimestamp"": 1776119898602,
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1776119833870,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 1,
+""currentRevisionId"": ""69dd705abd97ce4d4cf38509"",
+""id"": ""69dd705abd97ce4d4cf38504""
+}
+],
+""noMoreDocs"": true
+}",
 Count User Teaser Searches,/api/idLookup/statistic/userTeaserSearches,get,apiWrapper.api.idLookup.countUserTeaserSearches();,,"{ 
 ""count"": 5 
 }",

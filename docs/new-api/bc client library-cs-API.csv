@@ -1546,6 +1546,65 @@ params
 - brandId: (optional)
 - email: (optional)
 - lastId: (optional) You can get the next optOut by passing the _id of the last contact.",,,
+"Change Contact To UserContact Addon on 2026-04-10
+
+csrWrapper.api.contact.changeContactToUserContact",/api/message/admin/user/changeContactToUserContact,post,"csrWrapper.api.contact.changeContactToUserContact({ messageId, targetUserId });
+
+- Updates a ContactMessage created with contact.create(apiWrapper.api.contact.create) with a UserContact written by a specific User. In this case, the targetUserId can be changed again in the CSR for the updated UserContact.
+
+- You can update targetUserId if type is contact or userContact and data.originalType is contact.
+
+params
+- messageId:_id of contactMessage to change
+- targetUserId: The _id of the User to be specified",,"{
+""_id"": ""69d9918141043e0ecffa2636"",
+""index"": [],
+""type"": ""userContact"",
+""status"": ""requested"",
+""ownerHash"": ""WcwtgjTAF5jRTzn-w0Vwx1zR3aTCP6wK"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""contentType"": ""text/html"",
+""message"": ""contact test message."",
+""targetUserId"": ""69d46c6554aa4f5ab22cbee6""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-11T00:10:41.578Z"",
+""updatedAt"": ""2026-04-11T03:13:44.530Z"",
+""createdTimestamp"": 1775866241578,
+""updatedTimestamp"": 1775866241578,
+""trackingIds"": {
+""trackingId"": ""69d9918141043e0ecffa2632"",
+""sessionId"": ""WcwtgjTAF5jRTzn-w0Vwx1zR3aTCP6wK"",
+""clientId"": ""4prRHDx3nP5kHcjELjD8emMcBXAn2TxC"",
+""apiId"": ""9dwhh2wfjS927KsrmS3BC71DWMgwTJFL""
+},
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1775776358017,
+""__v"": 3,
+""currentRevisionId"": ""69d9bc68e4c8b5cd5fc73fa1"",
+""data"": {
+""originalType"": ""contact"",
+""originalContent"": {
+""firstName"": ""TestFname"",
+""lastName"": ""TestLname"",
+""email"": ""test123Q@bytecrtrs.com"",
+""telephone"": ""8054320540""
+}
+},
+""ownerId"": ""69d46c6554aa4f5ab22cbee6"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""owner"": {
+""_id"": ""69d46c6554aa4f5ab22cbee6"",
+""firstName"": ""TestFname"",
+""lastName"": ""TestLname"",
+""id"": ""69d46c6554aa4f5ab22cbee6""
+},
+""id"": ""69d9918141043e0ecffa2636""
+}",
 "Find ManagedContacts Added on 2026-03-30
 
 csrWrapper.api.managedContact.find",/api/database/search,post,"csrWrapper.api.managedContact.find({ brandId, type, contactAddress, lastId });
@@ -1674,69 +1733,70 @@ params
 - USER:phoneSearchTeaserOptOut (teaser optout search)
 - USER:nameSearch (create report)
 - USER:phoneSearch (create report)
-- lastId: (optional)",,"{ 
-""docs"": [ 
-{ 
-""_id"": ""69d5c58b0ad7570e7b4d1a92"", 
-""index"": [], 
-""trackingIds"": { 
-""trackingId"": ""69d5c58b0ad7570e7b4d1a76"", 
-""sessionId"": ""4IYjjDg-avIWp2IsK54Ba_VJCgjhaP3q"", 
-""clientId"": ""t1oAD3GIhnfushlkhUMooDACpbAv6pHE"", 
-""apiId"": ""hk5zH14WWKxFwHHSNJ9EcrbdcNOtH7Rr"" 
-}, 
-""referenceIds"": [], 
-""permissionIds"": [], 
-""data"": { 
-""type"": ""USER:nameSearchTeaserOptOut"", 
-""status"": ""fulfilled"", 
-""teaserInput"": { 
-""fName"": ""tim"", 
-""lName"": ""chin"", 
-""city"": ""new york"", 
-""state"": ""ny"", 
-""type"": ""name"", 
-""contextKey"": ""sale.name.teaser-optOut"", 
-""teaserCommerceContentId"": ""69d5c58b0ad7570e7b4d1a80"" 
-}, 
-""cloned"": true, 
-""value"": { 
-""duration"": 214, 
-""hostname"": ""dev1002.dev.www.idlookup.ai"", 
-""brandId"": ""idlookup"", 
-""method"": ""POST"", 
-""url"": ""/api/optOut/search"", 
-""query"": ""clientId=t1oAD3GIhnfushlkhUMooDACpbAv6pHE&apiId=hk5zH14WWKxFwHHSNJ9EcrbdcNOtH7Rr"", 
-""ip"": ""110.47.168.218"", 
-""referer"": ""https://dev1002.dev.www.idlookup.ai/api/optOut/view/search?clientId=HOtv9jEwsAQBhGkQGQtzwaBlmpY2syvS&apiId=W6Evn9iZWcSq1SvA9pwwuY80egtACqyk"", 
-""device"": ""desktop"", 
-""userAgent"": ""Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"" 
-}, 
-""caller"": ""idLookup.service.ts:110:26|IdLookupService.searchOptOut"" 
-}, 
-""createdAt"": ""2026-04-08T03:03:40.024Z"", 
-""updatedAt"": ""2026-04-08T03:03:40.024Z"", 
-""createdTimestamp"": 1775617420025, 
-""updatedTimestamp"": 1775617420025, 
-""brandId"": ""idlookup"", 
-""shConId"": ""69a2380b53ecf9b049d01fbb"", 
-""shColId"": ""69aa41b648af3b202e7fb065"", 
-""shTimestamp"": 1775617265506, 
-""updaterId"": ""69d46c6554aa4f5ab22cbee6"", 
-""__v"": 0, 
-""id"": ""69d5c58b0ad7570e7b4d1a92"" 
-} 
-], 
-""noMoreDocs"": true, 
-""displayFields"": [ 
-""_id"", 
-""createdAt"", 
-""trackingIds"", 
-""data"" 
-], 
-""dateFields"": [ 
-""createdAt"" 
-] 
+- USER:login (user login) Added on 2026-04-13
+- lastId: (optional)",,"{
+""docs"": [
+{
+""_id"": ""69d5c58b0ad7570e7b4d1a92"",
+""index"": [],
+""trackingIds"": {
+""trackingId"": ""69d5c58b0ad7570e7b4d1a76"",
+""sessionId"": ""4IYjjDg-avIWp2IsK54Ba_VJCgjhaP3q"",
+""clientId"": ""t1oAD3GIhnfushlkhUMooDACpbAv6pHE"",
+""apiId"": ""hk5zH14WWKxFwHHSNJ9EcrbdcNOtH7Rr""
+},
+""referenceIds"": [],
+""permissionIds"": [],
+""data"": {
+""type"": ""USER:nameSearchTeaserOptOut"",
+""status"": ""fulfilled"",
+""teaserInput"": {
+""fName"": ""tim"",
+""lName"": ""chin"",
+""city"": ""new york"",
+""state"": ""ny"",
+""type"": ""name"",
+""contextKey"": ""sale.name.teaser-optOut"",
+""teaserCommerceContentId"": ""69d5c58b0ad7570e7b4d1a80""
+},
+""cloned"": true,
+""value"": {
+""duration"": 214,
+""hostname"": ""dev1002.dev.www.idlookup.ai"",
+""brandId"": ""idlookup"",
+""method"": ""POST"",
+""url"": ""/api/optOut/search"",
+""query"": ""clientId=t1oAD3GIhnfushlkhUMooDACpbAv6pHE&apiId=hk5zH14WWKxFwHHSNJ9EcrbdcNOtH7Rr"",
+""ip"": ""110.47.168.218"",
+""referer"": ""https://dev1002.dev.www.idlookup.ai/api/optOut/view/search?clientId=HOtv9jEwsAQBhGkQGQtzwaBlmpY2syvS&apiId=W6Evn9iZWcSq1SvA9pwwuY80egtACqyk"",
+""device"": ""desktop"",
+""userAgent"": ""Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36""
+},
+""caller"": ""idLookup.service.ts:110:26|IdLookupService.searchOptOut""
+},
+""createdAt"": ""2026-04-08T03:03:40.024Z"",
+""updatedAt"": ""2026-04-08T03:03:40.024Z"",
+""createdTimestamp"": 1775617420025,
+""updatedTimestamp"": 1775617420025,
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1775617265506,
+""updaterId"": ""69d46c6554aa4f5ab22cbee6"",
+""__v"": 0,
+""id"": ""69d5c58b0ad7570e7b4d1a92""
+}
+],
+""noMoreDocs"": true,
+""displayFields"": [
+""_id"",
+""createdAt"",
+""trackingIds"",
+""data""
+],
+""dateFields"": [
+""createdAt""
+]
 }",
 ,,,,,,
 ,,,,,,

@@ -1,16 +1,26 @@
 /**
- * IDLookup Tracking API
- * Independently deployable event ingestion + analytics service.
+ * IDLookup Tracking + Fallback API
  *
- * Storage: newline-delimited JSON (NDJSON) — zero native dependencies,
- * works on any Node 18+ environment without Python/node-gyp.
- * Swap readEvents()/appendEvent() for a real DB driver when scaling up.
+ * Expanded from minimal event ingestion into a full standalone backend
+ * serving as the fallback API for consumer and admin apps.
+ *
+ * Storage: SQLite (better-sqlite3) with NDJSON backward compat for /track
  *
  * Endpoints:
- *   POST /track            — ingest an event (no auth, CORS open)
- *   GET  /health           — liveness check (no auth)
- *   GET  /events           — list raw events (requires x-admin-key)
- *   GET  /events/summary   — funnel + daily + KPI aggregation (requires x-admin-key)
+ *   POST /track                          — ingest an event (no auth, CORS open)
+ *   GET  /health                         — liveness check (no auth)
+ *   GET  /events                         — list raw events (requires x-admin-key)
+ *   GET  /events/summary                 — funnel + daily + KPI aggregation (x-admin-key)
+ *   GET  /api/v1/me/watchers/*           — WSFY/WVMP (JWT)
+ *   GET  /api/v1/me/broker-exposure/*    — data broker removal (JWT)
+ *   GET  /api/v1/me/exposure-score/*     — privacy score (JWT)
+ *   CRUD /api/v1/me/watchlist/*          — watchlist (JWT)
+ *   GET  /api/v1/me/searches             — search history (JWT)
+ *   GET  /api/v1/me/records-feed         — records feed (JWT)
+ *   POST /api/v1/profile-views           — write profile view (JWT)
+ *   POST /api/v1/profile-searches        — write profile search (JWT)
+ *   GET  /api/v1/admin/users/:id/*       — admin user data (x-admin-key)
+ *   POST /api/v1/contact                 — contact form (no auth)
  */
 
 require('dotenv').config({ path: '../.env' });
@@ -20,148 +30,130 @@ const cors    = require('cors');
 const fs      = require('fs');
 const path    = require('path');
 
-const app      = express();
-const PORT     = process.env.TRACKING_API_PORT || 3002;
-const ADMIN_KEY = process.env.TRACKING_ADMIN_KEY || 'dev-admin-key';
-const DATA_FILE = process.env.TRACKING_DATA_FILE || path.join(__dirname, 'events.ndjson');
+// Initialize DB (creates tables on first run)
+const db = require('./db');
 
-// ── Storage helpers ───────────────────────────────────────────────────────────
-
-function appendEvent(event) {
-  fs.appendFileSync(DATA_FILE, JSON.stringify(event) + '\n', 'utf8');
-}
-
-function readEvents() {
-  if (!fs.existsSync(DATA_FILE)) return [];
-  return fs.readFileSync(DATA_FILE, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map(line => { try { return JSON.parse(line); } catch { return null; } })
-    .filter(Boolean);
-}
+const app  = express();
+const PORT = process.env.TRACKING_API_PORT || 3002;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 
 app.use(cors({
   origin: process.env.TRACKING_ALLOWED_ORIGIN || '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'x-admin-key'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key', 'x-user-id'],
 }));
 app.use(express.json());
 
-function requireAdminKey(req, res, next) {
-  const key = req.headers['x-admin-key'];
-  if (!key || key !== ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
-  next();
+// ── NDJSON → SQLite migration (one-time) ─────────────────────────────────────
+
+function migrateNDJSON() {
+  const DATA_FILE = process.env.TRACKING_DATA_FILE || path.join(__dirname, 'events.ndjson');
+
+  // Check if already migrated
+  const migrated = db.prepare("SELECT * FROM migrations WHERE key = 'ndjson_to_sqlite'").get();
+  if (migrated) return;
+
+  if (!fs.existsSync(DATA_FILE)) {
+    // No NDJSON file, mark as done
+    db.prepare("INSERT INTO migrations (key, completed_at) VALUES ('ndjson_to_sqlite', ?)").run(new Date().toISOString());
+    return;
+  }
+
+  console.log('[migration] Migrating NDJSON events to SQLite...');
+  const lines = fs.readFileSync(DATA_FILE, 'utf8').split('\n').filter(Boolean);
+  let count = 0;
+
+  const insertStmt = db.prepare(`
+    INSERT OR IGNORE INTO events (id, event_name, session_id, user_id, properties, created_at)
+    VALUES (@id, @event_name, @session_id, @user_id, @properties, @created_at)
+  `);
+
+  const insertMany = db.transaction((events) => {
+    for (const line of events) {
+      try {
+        const e = JSON.parse(line);
+        insertStmt.run({
+          id: e.id || (Date.now() + Math.random().toString(36).slice(2, 6)),
+          event_name: e.event_name || e.event || '',
+          session_id: e.session_id || null,
+          user_id: e.user_id || null,
+          properties: typeof e.properties === 'string' ? e.properties : JSON.stringify(e.properties || {}),
+          created_at: e.created_at || new Date().toISOString(),
+        });
+        count++;
+      } catch (err) {
+        // Skip malformed lines
+      }
+    }
+  });
+
+  insertMany(lines);
+  db.prepare("INSERT INTO migrations (key, completed_at) VALUES ('ndjson_to_sqlite', ?)").run(new Date().toISOString());
+  console.log(`[migration] Migrated ${count} events from NDJSON to SQLite.`);
 }
 
-// ── Funnel definition (ordered) ───────────────────────────────────────────────
+try {
+  migrateNDJSON();
+} catch (err) {
+  console.warn('[migration] NDJSON migration failed (non-fatal):', err.message);
+}
 
-const FUNNEL_STEPS = [
-  'landing_view',
-  'search_submit',
-  'results_view',
-  'teaser_view',
-  'signup_start',
-  'signup_complete',
-  'payment_start',
-  'payment_complete',
-  'report_view',
-];
+// ── Import routers ───────────────────────────────────────────────────────────
 
-// ── Routes ────────────────────────────────────────────────────────────────────
+const trackRouter      = require('./routes/track');
+const healthRouter     = require('./routes/health');
+const eventsRouter     = require('./routes/events');
+const watchersRouter   = require('./routes/watchers');
+const brokersRouter    = require('./routes/brokers');
+const scoreRouter      = require('./routes/score');
+const watchlistRouter  = require('./routes/watchlist');
+const searchesRouter   = require('./routes/searches');
+const adminUsersRouter = require('./routes/adminUsers');
+const auth             = require('./middleware/auth');
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', ts: new Date().toISOString(), events: readEvents().length });
-});
+// ── Mount routes ─────────────────────────────────────────────────────────────
 
-// Ingest a single event
-app.post('/track', (req, res) => {
-  const { event, sessionId, userId, properties, timestamp } = req.body;
-  if (!event || typeof event !== 'string') {
-    return res.status(400).json({ error: 'event (string) is required' });
+// Existing endpoints (backward compat)
+app.use('/track', trackRouter);
+app.use('/health', healthRouter);
+app.use('/events', eventsRouter);
+
+// Consumer API — member routes (JWT required)
+app.use('/api/v1/me/watchers', watchersRouter);
+app.use('/api/v1/me/broker-exposure', brokersRouter);
+app.use('/api/v1/me/exposure-score', scoreRouter);
+app.use('/api/v1/me/watchlist', watchlistRouter);
+app.use('/api/v1/me', searchesRouter);
+
+// Write endpoints (JWT required)
+app.post('/api/v1/profile-views', auth, watchersRouter.postProfileView);
+app.post('/api/v1/profile-searches', auth, watchersRouter.postProfileSearch);
+
+// Admin routes (x-admin-key required)
+app.use('/api/v1/admin/users', adminUsersRouter);
+
+// Contact form (no auth)
+app.post('/api/v1/contact', (req, res) => {
+  const { name, email, subject, message } = req.body;
+  if (!email || !message) {
+    return res.status(400).json({ error: 'email and message are required' });
   }
-  appendEvent({
-    id: Date.now() + Math.random().toString(36).slice(2, 6),
-    event_name: event,
-    session_id: sessionId || null,
-    user_id:    userId    || null,
-    properties: properties || {},
-    created_at: timestamp || new Date().toISOString(),
-  });
-  res.status(201).json({ ok: true });
+  // Log to events table
+  const crypto = require('crypto');
+  db.prepare(`
+    INSERT INTO events (id, event_name, session_id, user_id, properties, created_at)
+    VALUES (?, 'contact_form', NULL, ?, ?, ?)
+  `).run(crypto.randomUUID(), email, JSON.stringify({ name, email, subject, message }), new Date().toISOString());
+
+  res.json({ ok: true, message: 'Contact form submitted successfully' });
 });
 
-// List raw events
-app.get('/events', requireAdminKey, (req, res) => {
-  const { event_name, limit = 100, offset = 0 } = req.query;
-  let events = readEvents();
-  if (event_name) events = events.filter(e => e.event_name === event_name);
-  events.sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const total = events.length;
-  const page  = events.slice(Number(offset), Number(offset) + Number(limit));
-  res.json({ events: page, count: page.length, total });
-});
+// ── Start ────────────────────────────────────────────────────────────────────
 
-// Aggregated summary — funnel, daily, KPIs, variants
-app.get('/events/summary', requireAdminKey, (req, res) => {
-  const events = readEvents();
-
-  const totalEvents    = events.length;
-  const uniqueSessions = new Set(events.map(e => e.session_id).filter(Boolean)).size;
-
-  // Funnel counts
-  const funnelMap = {};
-  FUNNEL_STEPS.forEach(s => { funnelMap[s] = 0; });
-  events.forEach(e => { if (funnelMap[e.event_name] !== undefined) funnelMap[e.event_name]++; });
-  const funnel = FUNNEL_STEPS.map(step => ({ step, count: funnelMap[step] }));
-
-  // Daily totals — last 14 days
-  const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const dailyMap = {};
-  events.forEach(e => {
-    const day = (e.created_at || '').slice(0, 10);
-    if (day >= cutoff) dailyMap[day] = (dailyMap[day] || 0) + 1;
-  });
-  const daily = Object.entries(dailyMap)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, total]) => ({ date, total }));
-
-  // KPIs
-  const get  = name => funnelMap[name] || 0;
-  const rate = (num, den) => (den > 0 ? Math.round((num / den) * 1000) / 1000 : null);
-  const kpis = {
-    searchToResults:   rate(get('results_view'),     get('search_submit')),
-    resultsToTeaser:   rate(get('teaser_view'),      get('results_view')),
-    teaserToSignup:    rate(get('signup_start'),     get('teaser_view')),
-    signupComplete:    rate(get('signup_complete'),  get('signup_start')),
-    signupToPayment:   rate(get('payment_complete'), get('signup_complete')),
-    overallConversion: rate(get('payment_complete'), get('landing_view')),
-  };
-
-  // Top events by volume
-  const eventCounts = {};
-  events.forEach(e => { eventCounts[e.event_name] = (eventCounts[e.event_name] || 0) + 1; });
-  const topEvents = Object.entries(eventCounts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 20)
-    .map(([event_name, count]) => ({ event_name, count }));
-
-  // Landing variant breakdown
-  const variantMap = {};
-  events
-    .filter(e => e.event_name === 'landing_view' && e.properties?.variant)
-    .forEach(e => {
-      const key = `${e.properties.variant}|${e.properties.search_type || ''}`;
-      if (!variantMap[key]) variantMap[key] = { variant: e.properties.variant, search_type: e.properties.search_type || null, views: 0 };
-      variantMap[key].views++;
-    });
-  const variants = Object.values(variantMap).sort((a, b) => b.views - a.views);
-
-  res.json({ totalEvents, uniqueSessions, funnel, daily, kpis, topEvents, variants });
-});
-
-// ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`[tracking-api] http://localhost:${PORT}  (data: ${DATA_FILE})`);
+  const eventCount = db.prepare('SELECT COUNT(*) as cnt FROM events').get().cnt;
+  console.log(`[tracking-api] http://localhost:${PORT}`);
+  console.log(`  SQLite: ${path.join(__dirname, 'data', 'tracking.db')}`);
+  console.log(`  Events in DB: ${eventCount}`);
 });
