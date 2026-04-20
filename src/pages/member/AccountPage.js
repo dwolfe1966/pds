@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getReportList } from '../../services/reportService';
@@ -7,14 +7,18 @@ import Skeleton from '../../components/Skeleton';
 import styles from './AccountPage.module.css';
 
 /**
- * Unified Account page combining Profile, Security & Privacy, and Subscription & Billing tabs.
+ * Unified Account page combining Profile, Security & Privacy, Subscription & Billing,
+ * and Messages tabs.
  */
 const AccountPage = () => {
   const navigate = useNavigate();
-  const { token, subscription, isPaid, refreshSubscription } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { token, user, subscription, isPaid, refreshSubscription } = useAuth();
 
-  // ─── Tab state ───────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState('profile');
+  // ─── Tab state (supports ?tab=messages deep-linking) ────────────────────────
+  const validTabs = ['profile', 'security', 'billing', 'messages'];
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'profile';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // ─── Profile tab state ───────────────────────────────────────────────────────
   const [profile, setProfile] = useState(null);
@@ -46,6 +50,22 @@ const AccountPage = () => {
   const [lastReportId, setLastReportId] = useState(null);
   const [hasMoreReports, setHasMoreReports] = useState(false);
   const [pdfDownloadingId, setPdfDownloadingId] = useState(null);
+
+  // ─── Messages tab state ─────────────────────────────────────────────────────
+  const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesError, setMessagesError] = useState('');
+  const [lastMessageId, setLastMessageId] = useState(null);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [messagesFetched, setMessagesFetched] = useState(false);
+
+  // ─── Compose message state ──────────────────────────────────────────────────
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeSubject, setComposeSubject] = useState('General inquiry');
+  const [composeMessage, setComposeMessage] = useState('');
+  const [composeSending, setComposeSending] = useState(false);
+  const [composeSuccess, setComposeSuccess] = useState(false);
+  const [composeError, setComposeError] = useState('');
 
   // ─── Fetch: profile ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -145,6 +165,108 @@ const AccountPage = () => {
       setReportsError(err?.message || err?.data?.error?.message || 'Failed to load reports');
     } finally {
       setReportsLoading(false);
+    }
+  };
+
+  // ─── Fetch: messages (lazy — only when tab is active) ─────────────────────
+  useEffect(() => {
+    if (!token || activeTab !== 'messages' || messagesFetched) return;
+    fetchMessages();
+  }, [token, activeTab, messagesFetched]);
+
+  const fetchMessages = async (lastId = null) => {
+    if (!token) return;
+    setMessagesLoading(true);
+    setMessagesError('');
+    try {
+      const result = await api.getUserContacts(lastId || undefined);
+      // BC response: { messages: [...], noMoreDocs: boolean }
+      // The wrapper may also return via getData() or raw shape
+      const data = result?.getData?.() ?? result?.data ?? result ?? {};
+      const msgs = data.messages || data.docs || (Array.isArray(data) ? data : []);
+      if (lastId) {
+        setMessages((prev) => [...prev, ...msgs]);
+      } else {
+        setMessages(msgs);
+      }
+      // Track pagination cursor: last message _id
+      const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+      setLastMessageId(lastMsg?._id || null);
+      setHasMoreMessages(data.noMoreDocs === false);
+      setMessagesFetched(true);
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[AccountPage] Failed to fetch messages:', err?.message);
+      }
+      // Gracefully handle case where user.getContacts is not available
+      setMessagesError('');
+      setMessages([]);
+      setMessagesFetched(true);
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const handleLoadMoreMessages = () => {
+    if (lastMessageId && !messagesLoading) {
+      fetchMessages(lastMessageId);
+    }
+  };
+
+  const handleComposeSubmit = async (e) => {
+    e.preventDefault();
+    if (!composeMessage.trim()) return;
+    setComposeSending(true);
+    setComposeError('');
+    setComposeSuccess(false);
+    try {
+      await api.submitContact({
+        subject: composeSubject,
+        message: composeMessage.trim(),
+        name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.name || 'Member',
+        email: user?.email,
+        userId: user?._id || user?.id,
+        source: 'account-messages',
+      });
+      setComposeSuccess(true);
+      setComposeMessage('');
+      setComposeSubject('General inquiry');
+      // Refresh message list
+      setMessagesFetched(false);
+      setTimeout(() => {
+        setShowCompose(false);
+        setComposeSuccess(false);
+      }, 2000);
+    } catch (err) {
+      setComposeError(err?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setComposeSending(false);
+    }
+  };
+
+  /**
+   * Strip BC-internal Reply link HTML (contains loginHash URLs).
+   * Returns sanitized HTML string safe for rendering.
+   */
+  const sanitizeMessageHtml = (html) => {
+    if (!html) return '';
+    // Remove <a> tags that contain loginHash parameter
+    return html.replace(/<a[^>]*loginHash[^>]*>.*?<\/a>/gi, '');
+  };
+
+  const formatMessageDate = (dateStr) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return 'Unknown date';
+      return date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return 'Unknown date';
     }
   };
 
@@ -333,6 +455,7 @@ const AccountPage = () => {
     { key: 'profile', label: 'Profile' },
     { key: 'security', label: 'Security & Privacy' },
     { key: 'billing', label: 'Subscription & Billing' },
+    { key: 'messages', label: 'Messages' },
   ];
 
   return (
@@ -966,6 +1089,285 @@ const AccountPage = () => {
             )}
           </div>
         </>
+      )}
+
+      {/* ── MESSAGES TAB ────────────────────────────────────────────────────── */}
+      {activeTab === 'messages' && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Support Messages</h2>
+          <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1.25rem' }}>
+            Your correspondence with our support team
+          </p>
+
+          {/* New Message button */}
+          {!showCompose && (
+            <button
+              onClick={() => { setShowCompose(true); setComposeError(''); setComposeSuccess(false); }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.6rem 1.25rem',
+                background: '#0d5d2f',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '0.375rem',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                marginBottom: '1.25rem',
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              New Message
+            </button>
+          )}
+
+          {/* Compose form */}
+          {showCompose && (
+            <form
+              onSubmit={handleComposeSubmit}
+              style={{
+                padding: '1.25rem',
+                marginBottom: '1.25rem',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', color: '#111827' }}>New Message</h3>
+                <button
+                  type="button"
+                  onClick={() => { setShowCompose(false); setComposeError(''); setComposeSuccess(false); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                    fontSize: '1.25rem',
+                    lineHeight: 1,
+                    padding: '0.25rem',
+                  }}
+                  aria-label="Close compose form"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Subject dropdown */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label
+                  htmlFor="composeSubject"
+                  style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
+                >
+                  Subject
+                </label>
+                <select
+                  id="composeSubject"
+                  value={composeSubject}
+                  onChange={(e) => setComposeSubject(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box',
+                    background: '#fff',
+                  }}
+                >
+                  <option value="Billing question">Billing question</option>
+                  <option value="Technical support">Technical support</option>
+                  <option value="Privacy">Privacy</option>
+                  <option value="Remove my information">Remove my information</option>
+                  <option value="General inquiry">General inquiry</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Message textarea */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label
+                  htmlFor="composeMessage"
+                  style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
+                >
+                  Message
+                </label>
+                <textarea
+                  id="composeMessage"
+                  value={composeMessage}
+                  onChange={(e) => { if (e.target.value.length <= 250) setComposeMessage(e.target.value); }}
+                  maxLength={250}
+                  rows={4}
+                  placeholder="Describe how we can help..."
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                <span style={{ display: 'block', textAlign: 'right', fontSize: '0.8rem', color: composeMessage.length >= 240 ? '#dc2626' : '#9ca3af', marginTop: '0.25rem' }}>
+                  {composeMessage.length}/250
+                </span>
+              </div>
+
+              {composeError && (
+                <p style={{ color: '#dc2626', background: '#fee2e2', padding: '0.6rem 0.9rem', borderRadius: '0.375rem', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                  {composeError}
+                </p>
+              )}
+
+              {composeSuccess && (
+                <p style={{ color: '#166534', background: '#dcfce7', padding: '0.6rem 0.9rem', borderRadius: '0.375rem', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                  Message sent successfully!
+                </p>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  type="submit"
+                  disabled={composeSending || !composeMessage.trim()}
+                  style={{
+                    padding: '0.6rem 1.25rem',
+                    background: composeSending || !composeMessage.trim() ? '#9ca3af' : '#0d5d2f',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    cursor: composeSending || !composeMessage.trim() ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {composeSending ? 'Sending...' : 'Send Message'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowCompose(false); setComposeError(''); setComposeSuccess(false); }}
+                  style={{
+                    padding: '0.6rem 1.25rem',
+                    background: '#fff',
+                    color: '#374151',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+
+          {messagesLoading && messages.length === 0 ? (
+            <div>
+              <Skeleton variant="card" height={80} style={{ marginBottom: '0.75rem' }} />
+              <Skeleton variant="card" height={80} style={{ marginBottom: '0.75rem' }} />
+              <Skeleton variant="card" height={80} />
+            </div>
+          ) : messagesError ? (
+            <p className={styles.errorText}>{messagesError}</p>
+          ) : messages.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p>No messages yet. Click <strong>New Message</strong> above to contact our support team.</p>
+            </div>
+          ) : (
+            <>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {messages.map((msg, idx) => {
+                  const isSupport = msg.type === 'userContactCsrMail';
+                  const subject = msg.content?.subject;
+                  const messageBody = msg.content?.message || '';
+                  const isHtml = msg.content?.contentType === 'text/html';
+                  return (
+                    <li
+                      key={msg._id || idx}
+                      style={{
+                        padding: '1rem',
+                        marginBottom: '0.75rem',
+                        background: isSupport ? '#f0fdf4' : '#f9fafb',
+                        borderLeft: `4px solid ${isSupport ? '#0d5d2f' : '#d1d5db'}`,
+                        borderRadius: '0.5rem',
+                      }}
+                    >
+                      {/* Header row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {/* Direction icon */}
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: '28px', height: '28px', borderRadius: '50%',
+                            background: isSupport ? '#0d5d2f' : '#6b7280', color: '#fff', fontSize: '0.75rem', flexShrink: 0,
+                          }}>
+                            {isSupport ? (
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2 4 5v6c0 5 3.5 9.3 8 11 4.5-1.7 8-6 8-11V5l-8-3Z" />
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
+                              </svg>
+                            )}
+                          </span>
+                          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: isSupport ? '#0d5d2f' : '#374151' }}>
+                            {isSupport ? 'Support Team' : 'You'}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                          {formatMessageDate(msg.createdAt)}
+                        </span>
+                      </div>
+
+                      {/* Subject */}
+                      {subject && (
+                        <p style={{ fontWeight: 600, color: '#111827', fontSize: '0.95rem', margin: '0 0 0.4rem' }}>
+                          {subject}
+                        </p>
+                      )}
+
+                      {/* Message body */}
+                      {isHtml ? (
+                        <div
+                          style={{ color: '#374151', fontSize: '0.9rem', lineHeight: '1.6', wordBreak: 'break-word' }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeMessageHtml(messageBody) }}
+                        />
+                      ) : (
+                        <p style={{ color: '#374151', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                          {messageBody}
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {hasMoreMessages ? (
+                <button
+                  className={styles.loadMoreBtn}
+                  onClick={handleLoadMoreMessages}
+                  disabled={messagesLoading}
+                >
+                  {messagesLoading ? 'Loading...' : 'Load More Messages'}
+                </button>
+              ) : (
+                messages.length > 0 && (
+                  <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.875rem', marginTop: '1rem' }}>
+                    All messages loaded
+                  </p>
+                )
+              )}
+            </>
+          )}
+        </div>
       )}
     </main>
   );

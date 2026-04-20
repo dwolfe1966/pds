@@ -272,14 +272,25 @@ export async function routeApiRequest(endpoint, params = {}) {
     'admin-phone-optout',
     'admin-phone-optout-delete',
     'admin-user-contacts',
+    'admin-create-order',
     'admin-create-note',
     'admin-update-note',
     'admin-create-csr-mail',
+    'admin-user-tracking',
+    // Consumer: user's own support messages
+    'get-user-contacts',
+    // Contact / messaging — BC endpoints
+    'create-contact',
+    'create-user-contact',
+    'admin-find-contacts',
+    'admin-change-contact-to-user',
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
+  // CSR (admin-*) endpoints use direct fetch, not the IIFE — check isCsrReady() instead
+  const isCsrEndpoint = endpoint.startsWith('admin-');
   // Use new API if forced and available, otherwise require flags
   const useNewAPI =
-    (forceNewApi && apiWrapper.isAvailable()) ||
+    (forceNewApi && (isCsrEndpoint ? apiWrapper.isCsrReady() : apiWrapper.isAvailable())) ||
     (USE_NEW_API && endpointConfig.newApi && featureFlagEnabled);
   // Avoid mock for forced endpoints
   const useMockAPI = USE_MOCK_API && endpointConfig.mockApi && !forceNewApi;
@@ -678,8 +689,50 @@ async function callNewAPI(endpoint, params) {
     // admin pages can use a consistent shape.
     // -------------------------------------------------------------------------
     // csrWrapper.api.user.find → POST /database/search
+    // When zip or panLast4 are provided, also search commerceOrder collection
+    // and resolve matching orders back to users.
     case 'admin-users': {
-      const raw = await apiWrapper.csrFindUsers(params.queryParams || {});
+      const qp = params.queryParams || {};
+      const hasOrderFilters = qp.zip || qp.panLast4 || qp.phone;
+
+      // If only order-based filters (no email), try order search first
+      if (hasOrderFilters && !qp.email) {
+        try {
+          const orderParams = {};
+          if (qp.zip) orderParams.zip = qp.zip;
+          if (qp.panLast4) orderParams.panLast4 = qp.panLast4;
+          if (qp.phone) orderParams.phone = qp.phone;
+          if (qp.lastId) orderParams.lastId = qp.lastId;
+          const orderRaw = await apiWrapper.csrFindOrders(orderParams);
+          const orderDocs = orderRaw?.docs ?? [];
+
+          if (orderDocs.length > 0) {
+            // Extract unique userIds from matching orders
+            const userIds = [...new Set(orderDocs.map(o => o.userId || o.updaterId).filter(Boolean))];
+            // Fetch user details for each matched userId
+            const userResults = await Promise.allSettled(
+              userIds.map(uid => apiWrapper.csrGetUserDetail(uid))
+            );
+            const users = userResults
+              .filter(r => r.status === 'fulfilled' && r.value)
+              .map(r => {
+                const u = r.value;
+                // Attach the search-matched fields for display in the table
+                const matchedOrder = orderDocs.find(o => (o.userId || o.updaterId) === (u._id || u.id));
+                if (matchedOrder && qp.zip) u.zip = qp.zip;
+                if (matchedOrder && qp.panLast4) u.last4cc = qp.panLast4;
+                return u;
+              });
+            return { data: users, total: users.length, noMoreDocs: orderRaw?.noMoreDocs ?? true };
+          }
+          // No order matches — fall through to users collection search
+        } catch (err) {
+          console.warn('[API Router] Order-based user search failed, falling back to users collection:', err.message);
+        }
+      }
+
+      // Standard users collection search (email, lastId, and speculatively zip/phone/panLast4)
+      const raw = await apiWrapper.csrFindUsers(qp);
       const items = raw?.docs ?? raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
       return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
     }
@@ -735,10 +788,16 @@ async function callNewAPI(endpoint, params) {
     }
 
     // csrWrapper.api.user.findAdmin → POST /database/search (admin/csr role filter)
+    // BC's findAdmin may use isAdmin flag or internal filtering.
+    // Client-side filter as safety net: only return users with admin/csr roles.
     case 'admin-cs-reps': {
       const raw = await apiWrapper.csrFindCsReps(params.queryParams || {});
-      const items = raw?.docs ?? raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
+      const allItems = raw?.docs ?? raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      const items = allItems.filter(u => {
+        const roles = Array.isArray(u.roles) ? u.roles : [];
+        return roles.includes('admin') || roles.includes('csr');
+      });
+      return { data: items, total: items.length, noMoreDocs: raw?.noMoreDocs };
     }
 
     // csrWrapper.api.user.create → POST /user/management/create
@@ -826,6 +885,47 @@ async function callNewAPI(endpoint, params) {
     // csrWrapper.api.user.updateScheduleDueTimestamp → POST /commerceMgnt/updateScheduleDueTimestamp
     case 'admin-update-schedule': {
       return await apiWrapper.csrUpdateScheduleDueTimestamp(params.scheduleId, params.dueTimestamp);
+    }
+
+    // Tracking — database/search on 'tracking' collection
+    // CSR-initiated billing sale (agent order on behalf of user)
+    case 'admin-create-order': {
+      return await apiWrapper.csrCreateOrder(params.body || {});
+    }
+
+    case 'admin-user-tracking': {
+      const raw = await apiWrapper.csrFindUserTracking(params);
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { docs, noMoreDocs: raw?.noMoreDocs ?? true };
+    }
+
+    // Consumer: user's own support messages — user.getContacts({ lastId? })
+    case 'get-user-contacts': {
+      return await apiWrapper.getUserContacts(params.lastId);
+    }
+
+    // Consumer: create contact message (visitor, no login required)
+    // apiWrapper.api.contact.create → POST /api/message/contact
+    case 'create-contact': {
+      return await apiWrapper.createContact(params.body || {});
+    }
+
+    // Consumer: create user contact (logged-in member)
+    // apiWrapper.api.user.createContact → POST /api/message/userContact
+    case 'create-user-contact': {
+      return await apiWrapper.createUserContact(params.body || {});
+    }
+
+    // CSR: find visitor contact messages
+    case 'admin-find-contacts': {
+      const raw = await apiWrapper.csrFindContacts(params.queryParams || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
+    }
+
+    // CSR: link visitor contact to a user account
+    case 'admin-change-contact-to-user': {
+      return await apiWrapper.csrChangeContactToUserContact(params.body || {});
     }
 
     default:

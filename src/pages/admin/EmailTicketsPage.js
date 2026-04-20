@@ -1,95 +1,75 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import api from '../../api';
 import styles from './EmailTicketsPage.module.css';
-
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-
-const STORAGE_KEY = 'adminTickets';
-
-const SEED_TICKETS = [
-  {
-    id: 'TKT-001',
-    from: 'customer@example.com',
-    subject: 'Unable to login',
-    status: 'open',
-    createdAt: '2025-09-08T10:22:00Z',
-    messages: [
-      { from: 'customer@example.com', body: 'I keep getting an invalid credentials error. My password is correct.', ts: '2025-09-08T10:22:00Z', isCustomer: true },
-    ],
-  },
-  {
-    id: 'TKT-002',
-    from: 'billing@example.com',
-    subject: 'Billing question about charge',
-    status: 'pending',
-    createdAt: '2025-09-07T14:05:00Z',
-    messages: [
-      { from: 'billing@example.com', body: 'I was charged twice this month. Please investigate.', ts: '2025-09-07T14:05:00Z', isCustomer: true },
-      { from: 'support@idlookup.ai', body: "We're looking into this. Can you provide your last 4 digits of the card?", ts: '2025-09-07T16:00:00Z', isCustomer: false },
-    ],
-  },
-  {
-    id: 'TKT-003',
-    from: 'jane.doe@email.com',
-    subject: 'Feature request: export data',
-    status: 'closed',
-    createdAt: '2025-09-06T09:00:00Z',
-    messages: [
-      { from: 'jane.doe@email.com', body: 'Would love to be able to export my search history as CSV.', ts: '2025-09-06T09:00:00Z', isCustomer: true },
-      { from: 'support@idlookup.ai', body: "Thanks for the suggestion! We've logged this as a feature request.", ts: '2025-09-06T11:30:00Z', isCustomer: false },
-    ],
-  },
-];
-
-function loadTickets() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [...SEED_TICKETS];
-  } catch {
-    return [...SEED_TICKETS];
-  }
-}
-
-function saveTickets(tickets) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
-}
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(iso) {
-  if (!iso) return '—';
+function formatDate(value) {
+  if (!value) return '—';
   try {
-    return new Date(iso).toLocaleString(undefined, {
+    return new Date(value).toLocaleString(undefined, {
       month: 'short', day: 'numeric', year: 'numeric',
       hour: '2-digit', minute: '2-digit',
     });
-  } catch { return iso; }
+  } catch { return '—'; }
 }
 
-function shortDate(iso) {
-  if (!iso) return '—';
+function shortDate(value) {
+  if (!value) return '—';
   try {
-    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  } catch { return iso; }
+    return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  } catch { return value; }
 }
 
-// ─── StatusBadge ──────────────────────────────────────────────────────────────
+function resolveId(item) { return item._id || item.id || ''; }
 
-function StatusBadge({ status }) {
-  const s = (status || '').toLowerCase();
-  if (s === 'open') return <span className={`${styles.badge} ${styles.badgeOpen}`}>Open</span>;
-  if (s === 'pending') return <span className={`${styles.badge} ${styles.badgePending}`}>Pending</span>;
-  return <span className={`${styles.badge} ${styles.badgeClosed}`}>Closed</span>;
+function stripHtml(html) {
+  return (html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+}
+
+function isCsrMail(type) { return (type || '').toLowerCase() === 'usercontactcsrmail'; }
+function isUserContact(type) { return (type || '').toLowerCase() === 'usercontact'; }
+function isMailThread(type) { return isCsrMail(type) || isUserContact(type); }
+
+// ─── DirectionBadge ──────────────────────────────────────────────────────────
+
+function DirectionBadge({ type }) {
+  if (isCsrMail(type)) {
+    return <span className={`${styles.badge} ${styles.badgeOutbound}`}>Outbound</span>;
+  }
+  if (isUserContact(type)) {
+    return <span className={`${styles.badge} ${styles.badgeInbound}`}>Inbound</span>;
+  }
+  return <span className={`${styles.badge} ${styles.badgeDefault}`}>{type || '—'}</span>;
 }
 
 // ─── EmailTicketsPage ─────────────────────────────────────────────────────────
 
 const EmailTicketsPage = () => {
-  const [tickets, setTickets] = useState(() => loadTickets());
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedId, setSelectedId] = useState(tickets[0]?.id || null);
-  const [reply, setReply] = useState('');
-  const [replying, setReplying] = useState(false);
+  // User search
+  const [searchInput, setSearchInput] = useState('');
+  const [resolvedUser, setResolvedUser] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
+  // Contacts
+  const [allItems, setAllItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [noMoreDocs, setNoMoreDocs] = useState(false);
+  const [lastId, setLastId] = useState(null);
+  const [itemsError, setItemsError] = useState('');
+
+  // Selection & compose
+  const [selectedId, setSelectedId] = useState(null);
+  const [replySubject, setReplySubject] = useState('');
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [composing, setComposing] = useState(false);
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeMessage, setComposeMessage] = useState('');
+
+  // UI
+  const [filterDir, setFilterDir] = useState('all');
   const [toast, setToast] = useState('');
 
   const showToast = useCallback((msg) => {
@@ -97,186 +77,378 @@ const EmailTicketsPage = () => {
     setTimeout(() => setToast(''), 3000);
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    return tickets.filter((t) => {
-      const matchSearch = !q ||
-        t.subject.toLowerCase().includes(q) ||
-        t.from.toLowerCase().includes(q) ||
-        t.id.toLowerCase().includes(q);
-      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-  }, [tickets, search, statusFilter]);
+  // Filter to mail-type items only
+  const mailItems = useMemo(() => {
+    const items = allItems.filter((item) => isMailThread(item.type));
+    if (filterDir === 'outbound') return items.filter((item) => isCsrMail(item.type));
+    if (filterDir === 'inbound') return items.filter((item) => isUserContact(item.type));
+    return items;
+  }, [allItems, filterDir]);
 
-  const selected = tickets.find((t) => t.id === selectedId) || null;
+  const selected = useMemo(() => {
+    if (!selectedId) return null;
+    return mailItems.find((item) => resolveId(item) === selectedId) || null;
+  }, [mailItems, selectedId]);
 
-  const updateTickets = (updated) => {
-    saveTickets(updated);
-    setTickets(updated);
-  };
+  // ── user search ────────────────────────────────────────────────────────────
 
-  const handleReply = (e) => {
+  const handleUserSearch = async (e) => {
     e.preventDefault();
-    if (!reply.trim() || !selected) return;
-    setReplying(true);
-    const newMsg = {
-      from: 'support@idlookup.ai',
-      body: reply.trim(),
-      ts: new Date().toISOString(),
-      isCustomer: false,
-    };
-    const updated = tickets.map((t) =>
-      t.id === selected.id
-        ? { ...t, status: 'pending', messages: [...(t.messages || []), newMsg] }
-        : t
-    );
-    updateTickets(updated);
-    setReply('');
-    setReplying(false);
-    showToast('Reply sent.');
+    const q = searchInput.trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchError('');
+    setResolvedUser(null);
+    setAllItems([]);
+    setSelectedId(null);
+    try {
+      const res = await api.adminListUsers({ email: q });
+      const users = res?.data?.docs ?? res?.docs ?? (Array.isArray(res?.data) ? res.data : []);
+      if (users.length === 0) { setSearchError(`No user found for "${q}".`); return; }
+      const user = users[0];
+      setResolvedUser(user);
+      await fetchContacts(user._id || user.id, null);
+    } catch (err) {
+      setSearchError(err.message || 'Failed to find user.');
+    } finally {
+      setSearching(false);
+    }
   };
 
-  const handleStatusChange = (ticketId, newStatus) => {
-    const updated = tickets.map((t) =>
-      t.id === ticketId ? { ...t, status: newStatus } : t
-    );
-    updateTickets(updated);
-    showToast(`Ticket marked as ${newStatus}.`);
+  // ── load contacts ──────────────────────────────────────────────────────────
+
+  const fetchContacts = async (userId, cursorId) => {
+    setLoadingItems(true);
+    setItemsError('');
+    try {
+      const params = { userId, ...(cursorId ? { lastId: cursorId } : {}) };
+      const res = await api.adminFindUserContacts(params);
+      const docs = res?.data ?? res?.docs ?? [];
+      const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
+      if (cursorId) {
+        setAllItems((prev) => [...prev, ...docs]);
+      } else {
+        setAllItems(docs);
+      }
+      setLastId(last);
+      setNoMoreDocs(res?.noMoreDocs ?? docs.length === 0);
+    } catch (err) {
+      setItemsError(err.message || 'Failed to load contacts.');
+    } finally {
+      setLoadingItems(false);
+    }
   };
+
+  const handleLoadMore = () => {
+    if (!resolvedUser || loadingItems || noMoreDocs) return;
+    fetchContacts(resolvedUser._id || resolvedUser.id, lastId);
+  };
+
+  // ── send CSR mail (reply) ──────────────────────────────────────────────────
+
+  const handleReply = async (e) => {
+    e.preventDefault();
+    if (!replyMessage.trim() || !resolvedUser) return;
+    setSending(true);
+    try {
+      const subject = replySubject.trim() || (selected?.content?.subject ? `Re: ${selected.content.subject}` : 'Follow-up');
+      await api.adminCreateCsrMail({
+        targetUserId: resolvedUser._id || resolvedUser.id,
+        subject,
+        message: replyMessage.trim(),
+        contentType: 'text',
+      });
+      setReplySubject('');
+      setReplyMessage('');
+      showToast('Reply sent.');
+      await fetchContacts(resolvedUser._id || resolvedUser.id, null);
+    } catch (err) {
+      showToast(err.message || 'Failed to send reply.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // ── compose new mail ───────────────────────────────────────────────────────
+
+  const handleCompose = async (e) => {
+    e.preventDefault();
+    if (!composeSubject.trim() || !composeMessage.trim() || !resolvedUser) return;
+    setSending(true);
+    try {
+      await api.adminCreateCsrMail({
+        targetUserId: resolvedUser._id || resolvedUser.id,
+        subject: composeSubject.trim(),
+        message: composeMessage.trim(),
+        contentType: 'text',
+      });
+      setComposeSubject('');
+      setComposeMessage('');
+      setComposing(false);
+      showToast('Email sent.');
+      await fetchContacts(resolvedUser._id || resolvedUser.id, null);
+    } catch (err) {
+      showToast(err.message || 'Failed to send email.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleClear = () => {
+    setResolvedUser(null);
+    setAllItems([]);
+    setSearchInput('');
+    setSearchError('');
+    setSelectedId(null);
+    setComposing(false);
+  };
+
+  const userName = resolvedUser
+    ? (`${resolvedUser.firstName || ''} ${resolvedUser.lastName || ''}`.trim() || resolvedUser.email || '')
+    : '';
 
   return (
     <main className={styles.page}>
       {toast && <div className={styles.toast}>{toast}</div>}
 
-      <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '6px', padding: '0.625rem 1rem', marginBottom: '1rem', fontSize: '0.8125rem', color: '#92400e' }}>
-        Local data only — changes are stored in your browser and will not persist across devices.
-      </div>
       <div className={styles.pageHeader}>
-        <h1 className={styles.title}>Email Tickets</h1>
-        <p className={styles.subtitle}>Support requests from customers.</p>
+        <div>
+          <h1 className={styles.title}>Email Tickets</h1>
+          <p className={styles.subtitle}>CSR mail threads and customer correspondence.</p>
+        </div>
+        {resolvedUser && (
+          <button className={styles.composeBtn} onClick={() => setComposing(!composing)}>
+            + New Email
+          </button>
+        )}
       </div>
 
-      {/* Filter bar */}
-      <div className={styles.filterBar}>
+      {/* User search */}
+      <form className={styles.searchForm} onSubmit={handleUserSearch}>
         <input
           className={styles.searchInput}
           type="text"
-          placeholder="Search tickets…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by customer email..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
-        <select
-          className={styles.select}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="all">All Statuses</option>
-          <option value="open">Open</option>
-          <option value="pending">Pending</option>
-          <option value="closed">Closed</option>
-        </select>
-      </div>
+        <button className={styles.searchBtn} type="submit" disabled={searching}>
+          {searching ? 'Searching...' : 'Find Customer'}
+        </button>
+        {resolvedUser && (
+          <button type="button" className={styles.clearBtn} onClick={handleClear}>Clear</button>
+        )}
+      </form>
+
+      {searchError && <div className={styles.errorBox}>{searchError}</div>}
+
+      {resolvedUser && (
+        <div className={styles.userBanner}>
+          <div>
+            <strong>{userName}</strong>
+            <span className={styles.userEmail}>{resolvedUser.email}</span>
+          </div>
+          <span className={styles.mailCount}>{mailItems.length} message{mailItems.length !== 1 ? 's' : ''}</span>
+        </div>
+      )}
+
+      {/* Compose form */}
+      {composing && resolvedUser && (
+        <form className={styles.composeForm} onSubmit={handleCompose}>
+          <h3 className={styles.composeTitle}>New Email to {userName || resolvedUser.email}</h3>
+          <input
+            className={styles.composeInput}
+            type="text"
+            placeholder="Subject..."
+            value={composeSubject}
+            onChange={(e) => setComposeSubject(e.target.value)}
+          />
+          <textarea
+            className={styles.replyTextarea}
+            rows={5}
+            placeholder="Message body..."
+            value={composeMessage}
+            onChange={(e) => setComposeMessage(e.target.value)}
+          />
+          <div className={styles.replyActions}>
+            <button type="button" className={styles.cancelBtn} onClick={() => setComposing(false)}>Cancel</button>
+            <button type="submit" className={styles.replyBtn} disabled={sending || !composeSubject.trim() || !composeMessage.trim()}>
+              {sending ? 'Sending...' : 'Send Email'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Empty state */}
+      {!resolvedUser && !searchError && (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyIcon}>Search for a customer by email to view their mail threads.</p>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loadingItems && allItems.length === 0 && (
+        <div className={styles.loadingState}>Loading mail threads...</div>
+      )}
+
+      {itemsError && <div className={styles.errorBox}>{itemsError}</div>}
+
+      {/* No mail found */}
+      {resolvedUser && !loadingItems && mailItems.length === 0 && allItems.length > 0 && !itemsError && (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyIcon}>No mail threads found for this customer. Only admin notes exist.</p>
+        </div>
+      )}
+
+      {resolvedUser && !loadingItems && allItems.length === 0 && !itemsError && !searching && (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyIcon}>No contacts found for this customer.</p>
+        </div>
+      )}
 
       {/* Two-panel layout */}
-      <div className={styles.wrapper}>
-        {/* Left: ticket list */}
-        <div className={styles.ticketList}>
-          {filtered.length === 0 && (
-            <div className={styles.emptyList}>No tickets match your filters.</div>
-          )}
-          {filtered.map((t) => (
-            <button
-              key={t.id}
-              className={`${styles.ticketItem} ${t.id === selectedId ? styles.ticketItemActive : ''}`}
-              onClick={() => setSelectedId(t.id)}
+      {mailItems.length > 0 && (
+        <>
+          {/* Direction filter */}
+          <div className={styles.filterBar}>
+            <select
+              className={styles.select}
+              value={filterDir}
+              onChange={(e) => setFilterDir(e.target.value)}
             >
-              <div className={styles.ticketItemTop}>
-                <span className={styles.ticketId}>{t.id}</span>
-                <StatusBadge status={t.status} />
-              </div>
-              <div className={styles.ticketSubject}>{t.subject}</div>
-              <div className={styles.ticketMeta}>{t.from} · {shortDate(t.createdAt)}</div>
-            </button>
-          ))}
-        </div>
+              <option value="all">All Messages</option>
+              <option value="outbound">Outbound (CSR Mail)</option>
+              <option value="inbound">Inbound (User Replies)</option>
+            </select>
+          </div>
 
-        {/* Right: detail + reply */}
-        <div className={styles.ticketDetail}>
-          {!selected ? (
-            <div className={styles.emptyDetail}>Select a ticket to view details.</div>
-          ) : (
-            <>
-              <div className={styles.detailHeader}>
-                <div>
-                  <h2 className={styles.detailSubject}>{selected.subject}</h2>
-                  <p className={styles.detailMeta}>
-                    <strong>From:</strong> {selected.from} &nbsp;·&nbsp;
-                    <strong>ID:</strong> {selected.id} &nbsp;·&nbsp;
-                    {formatDate(selected.createdAt)}
-                  </p>
-                </div>
-                <div className={styles.statusControls}>
-                  <StatusBadge status={selected.status} />
-                  {selected.status !== 'closed' && (
-                    <button
-                      className={styles.closeTicketBtn}
-                      onClick={() => handleStatusChange(selected.id, 'closed')}
-                    >
-                      Close Ticket
-                    </button>
-                  )}
-                  {selected.status === 'closed' && (
-                    <button
-                      className={styles.reopenBtn}
-                      onClick={() => handleStatusChange(selected.id, 'open')}
-                    >
-                      Reopen
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Message thread */}
-              <div className={styles.thread}>
-                {(selected.messages || []).map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`${styles.message} ${msg.isCustomer ? styles.messageCustomer : styles.messageAgent}`}
+          <div className={styles.wrapper}>
+            {/* Left: message list */}
+            <div className={styles.ticketList}>
+              {mailItems.length === 0 && (
+                <div className={styles.emptyList}>No messages match your filter.</div>
+              )}
+              {mailItems.map((item) => {
+                const id = resolveId(item);
+                const subject = item.content?.subject || '(No subject)';
+                const preview = stripHtml(item.content?.message || '');
+                const ownerName = item.owner
+                  ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim()
+                  : '';
+                return (
+                  <button
+                    key={id}
+                    className={`${styles.ticketItem} ${id === selectedId ? styles.ticketItemActive : ''}`}
+                    onClick={() => setSelectedId(id)}
                   >
-                    <div className={styles.msgFrom}>
-                      {msg.isCustomer ? msg.from : 'Support'} · {formatDate(msg.ts)}
+                    <div className={styles.ticketItemTop}>
+                      <DirectionBadge type={item.type} />
+                      <span className={styles.ticketDate}>{shortDate(item.createdAt)}</span>
                     </div>
-                    <div className={styles.msgBody}>{msg.body}</div>
-                  </div>
-                ))}
-              </div>
+                    <div className={styles.ticketSubject}>{subject}</div>
+                    <div className={styles.ticketMeta}>
+                      {isCsrMail(item.type) ? (ownerName || 'CSR') : (userName || 'Customer')}
+                      {preview ? ` — ${preview.length > 60 ? preview.slice(0, 60) + '...' : preview}` : ''}
+                    </div>
+                  </button>
+                );
+              })}
 
-              {/* Reply form */}
-              {selected.status !== 'closed' && (
-                <form className={styles.replyForm} onSubmit={handleReply}>
-                  <textarea
-                    className={styles.replyTextarea}
-                    rows={4}
-                    value={reply}
-                    onChange={(e) => setReply(e.target.value)}
-                    placeholder="Type your reply…"
-                    disabled={replying}
-                  />
-                  <div className={styles.replyActions}>
-                    <button type="submit" className={styles.replyBtn} disabled={replying || !reply.trim()}>
-                      {replying ? 'Sending…' : 'Send Reply'}
-                    </button>
+              {/* Load more inside the list */}
+              {!noMoreDocs && (
+                <div className={styles.loadMoreRow}>
+                  <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loadingItems}>
+                    {loadingItems ? 'Loading...' : 'Load More'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Right: detail + reply */}
+            <div className={styles.ticketDetail}>
+              {!selected ? (
+                <div className={styles.emptyDetail}>Select a message to view details.</div>
+              ) : (
+                <>
+                  <div className={styles.detailHeader}>
+                    <div>
+                      <h2 className={styles.detailSubject}>{selected.content?.subject || '(No subject)'}</h2>
+                      <p className={styles.detailMeta}>
+                        <DirectionBadge type={selected.type} />
+                        &nbsp;&nbsp;
+                        {isCsrMail(selected.type) ? 'Sent by: ' : 'From: '}
+                        <strong>
+                          {isCsrMail(selected.type)
+                            ? (selected.owner ? `${selected.owner.firstName || ''} ${selected.owner.lastName || ''}`.trim() : 'CSR')
+                            : (userName || 'Customer')}
+                        </strong>
+                        &nbsp;&middot;&nbsp;
+                        {formatDate(selected.createdAt)}
+                      </p>
+                    </div>
+                    <div className={styles.statusControls}>
+                      {selected.status && (
+                        <span className={`${styles.badge} ${styles.badgeStatus}`}>{selected.status}</span>
+                      )}
+                      {selected.content?.contentType && (
+                        <span className={styles.contentType}>{selected.content.contentType}</span>
+                      )}
+                    </div>
                   </div>
-                </form>
+
+                  {/* Message body */}
+                  <div className={styles.thread}>
+                    <div className={`${styles.message} ${isCsrMail(selected.type) ? styles.messageAgent : styles.messageCustomer}`}>
+                      <div className={styles.msgBody}>
+                        {selected.content?.contentType === 'html'
+                          ? <div dangerouslySetInnerHTML={{ __html: selected.content.message }} />
+                          : <p style={{ margin: 0 }}>{selected.content?.message || '(Empty message)'}</p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Attachments */}
+                  {selected.attachments && selected.attachments.length > 0 && (
+                    <div className={styles.attachments}>
+                      <p className={styles.attachmentsLabel}>Attachments ({selected.attachments.length}):</p>
+                      {selected.attachments.map((att, idx) => (
+                        <span key={idx} className={styles.attachmentItem}>
+                          {att.name || att.fileName || `Attachment ${idx + 1}`}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Reply form */}
+                  <form className={styles.replyForm} onSubmit={handleReply}>
+                    <input
+                      className={styles.composeInput}
+                      type="text"
+                      placeholder={`Re: ${selected.content?.subject || ''}`}
+                      value={replySubject}
+                      onChange={(e) => setReplySubject(e.target.value)}
+                    />
+                    <textarea
+                      className={styles.replyTextarea}
+                      rows={4}
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      placeholder="Type your reply..."
+                      disabled={sending}
+                    />
+                    <div className={styles.replyActions}>
+                      <button type="submit" className={styles.replyBtn} disabled={sending || !replyMessage.trim()}>
+                        {sending ? 'Sending...' : 'Send Reply'}
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
-              {selected.status === 'closed' && (
-                <p className={styles.closedMsg}>This ticket is closed. Reopen it to reply.</p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 };

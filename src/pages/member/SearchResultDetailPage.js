@@ -193,21 +193,6 @@ const SearchResultDetailPage = () => {
               {pdfLoading ? '⏳ Preparing PDF…' : '⬇ Download PDF'}
             </button>
           )}
-          <button onClick={() => {
-            const nameParts = (data.fullName || '').split(' ');
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
-            const state = data.addresses[0]?.state || '';
-            const zip = data.addresses[0]?.zip || '';
-            const params = new URLSearchParams();
-            if (firstName) params.set('firstName', firstName);
-            if (lastName) params.set('lastName', lastName);
-            if (state) params.set('state', state);
-            if (zip) params.set('zip', zip);
-            navigate(`/opt-out?${params.toString()}`);
-          }} style={styles.btnOptOut} title="Request removal of this person's data">
-            Opt-Out Request
-          </button>
           <button onClick={() => navigate('/people-search')} style={styles.btnSecondary}>
             New Search
           </button>
@@ -606,10 +591,6 @@ const styles = {
   btnSecondary: {
     padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#374151',
     border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem',
-  },
-  btnOptOut: {
-    padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#b45309',
-    border: '1px solid #d97706', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem',
   },
   pdfErrorBanner: {
     margin: '0 0 1rem', padding: '0.75rem 1rem',

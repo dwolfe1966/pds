@@ -61,10 +61,18 @@ class ApiWrapperService {
   }
 
   /**
-   * Check if the wrapper is available
+   * Check if the consumer IIFE wrapper is available
    */
   isAvailable() {
     return typeof window !== 'undefined' && window.ApiWrapper !== undefined;
+  }
+
+  /**
+   * Check if CSR (admin) API calls are possible.
+   * CSR methods use direct fetch to the proxy — they don't need the IIFE.
+   */
+  isCsrReady() {
+    return !!this.proxyUrl || !!this.endpointUrl;
   }
 
   /**
@@ -664,8 +672,10 @@ class ApiWrapperService {
   }
 
   // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)
+  // BC findAdmin is a separate IIFE method; via _csrPost we call /database/search
+  // with isAdmin flag. If BC ignores it, we filter client-side in apiRouter.
   async csrFindCsReps(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', roles: ['admin', 'csr'], ...params });
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', isAdmin: true, ...params });
   }
 
   // csrWrapper.api.user.getUserDetail — POST /user/management/detail
@@ -735,6 +745,13 @@ class ApiWrapperService {
     return await this._csrPost('/commerceMgnt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp });
   }
 
+  // CSR-initiated billing sale — POST /commerceBilling/sale
+  // Used by CS agents to create orders on behalf of users (retention, comp, downsell).
+  // Uses the admin session (connect.sid) so BC tags it as a CSR-initiated order.
+  async csrCreateOrder(params = {}) {
+    return await this._csrPost('/commerceBilling/sale', params);
+  }
+
   // csrWrapper.api.optOut.find — POST /database/search
   async csrFindOptOuts(params = {}) {
     return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });
@@ -742,14 +759,21 @@ class ApiWrapperService {
 
   // csrWrapper.api.user.findUserContacts — POST /database/search (collectionName: userContact)
   // Returns notes, csr mails, and user contacts for a given userId.
+  // BC filters by targetUserId on this collection.
   async csrFindUserContacts(params = {}) {
-    return await this._csrPost('/database/search', { collectionName: 'userContact', ...params });
+    const { userId, ...rest } = params;
+    const body = { collectionName: 'userContact', ...rest };
+    if (userId) body.targetUserId = userId;
+    return await this._csrPost('/database/search', body);
   }
 
   // csrWrapper.api.user.createAdminNote — POST /message/admin/user/note/create
-  // params: { userId, message }
+  // BC expects targetUserId (not userId)
   async csrCreateAdminNote(params = {}) {
-    return await this._csrPost('/message/admin/user/note/create', params);
+    const { userId, ...rest } = params;
+    const body = { ...rest };
+    if (userId) body.targetUserId = userId;
+    return await this._csrPost('/message/admin/user/note/create', body);
   }
 
   // csrWrapper.api.user.updateAdminNote — POST /message/admin/user/note/update
@@ -776,12 +800,106 @@ class ApiWrapperService {
     return await this._csrPost('/managedContact/management/unsubscribe', { managedContactId });
   }
 
+  // csrWrapper.api.contact.find — POST /database/search (collectionName: contact)
+  // Finds visitor contact messages. Params: { status?, brandId?, email?, lastId? }
+  async csrFindContacts(params = {}) {
+    return await this._csrPost('/database/search', { collectionName: 'contact', ...params });
+  }
+
+  // csrWrapper.api.contact.changeContactToUserContact — POST /message/admin/user/changeContactToUserContact
+  // Links a visitor contact message to a real user account.
+  // Params: { messageId, targetUserId }
+  async csrChangeContactToUserContact(params = {}) {
+    return await this._csrPost('/message/admin/user/changeContactToUserContact', params);
+  }
+
+  // csrWrapper.api.tracking.findUser — POST /database/search
+  // BC wraps this as csrWrapper.api.tracking.findUser({ type, lastId })
+  // Try multiple collection names to find the right one
+  async csrFindUserTracking(params = {}) {
+    const collectionNames = ['tracking', 'apiTracking', 'serverTracking', 'apiTrack'];
+    for (const collectionName of collectionNames) {
+      try {
+        const res = await this._csrPost('/database/search', { collectionName, brandId: 'idlookup', ...params });
+        console.log(`[Tracking] collectionName="${collectionName}" →`, res);
+        if (res?.docs && res.docs.length > 0) return res;
+        // Empty docs but no error — might be the right collection with no data, or wrong collection
+        // Continue trying other names
+      } catch (err) {
+        console.warn(`[Tracking] collectionName="${collectionName}" failed:`, err.message);
+        // Continue to next collection name
+      }
+    }
+    // None worked — return empty result
+    console.warn('[Tracking] No collection name returned data. Check with BC for correct collection name.');
+    return { docs: [], noMoreDocs: true };
+  }
+
   /** Generate a random 32-char alphanumeric string matching the IIFE's format. */
   _generateRandomId() {
     const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const arr = new Uint32Array(32);
     crypto.getRandomValues(arr);
     return Array.from(arr, v => charset[v % charset.length]).join('');
+  }
+
+  /**
+   * Get user's support messages (contacts/CSR mail).
+   * POST /api/message/userContact/list
+   * Returns: { messages: [...], noMoreDocs: boolean }
+   */
+  async getUserContacts(lastId) {
+    try {
+      const wrapper = await this.getWrapper();
+      const params = lastId ? { lastId } : {};
+      return await wrapper.api.user.getContacts(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Get user contacts failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Create a contact message (visitor — no login required).
+   * POST /api/message/contact
+   * apiWrapper.api.contact.create({ firstName, lastName, email, telephone, message, contentType })
+   */
+  async createContact(params) {
+    if (this.useProxy) {
+      return await this._csrPost('/message/contact', params);
+    }
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.contact.create(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Create contact failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Create a user contact message (logged-in users only).
+   * POST /api/message/userContact
+   * apiWrapper.api.user.createContact({ message, parentCsrMessageId?, contentType })
+   * Used for member-initiated messages and replies to CSR mail.
+   */
+  async createUserContact(params) {
+    if (this.useProxy) {
+      return await this._csrPost('/message/userContact', params);
+    }
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.user.createContact(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Create user contact failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
   }
 
   /**

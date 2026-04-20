@@ -51,6 +51,7 @@ import RefundPage from './pages/sales/RefundPage';
 import SuppressionListPage from './pages/sales/SuppressionListPage';
 import CPCCPage from './pages/sales/CPCCPage';
 import AddonPage from './pages/sales/AddonPage';
+import ContactThreadPage from './pages/sales/ContactThreadPage';
 // Member pages
 import DashboardHome from './pages/member/DashboardHome';
 import ProfilePage from './pages/member/ProfilePage';
@@ -114,6 +115,7 @@ const App = () => {
           <Route path="/" element={<HomePageRedirect />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/contact/thread/:threadId" element={<ContactThreadPage />} />
           <Route path="/search" element={<LandingPage />} />
           {/* General search page with tabs for name, phone, and email */}
           <Route path="/search/all" element={<GeneralSearchPage />} />

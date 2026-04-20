@@ -7,6 +7,10 @@ import { routeApiRequest, setTokenGetter as setRouterTokenGetter, setLogoutHandl
 import { setSearchContext } from './services/searchContext';
 import { adaptIdentity } from './services/apiAdapter';
 
+// Direct mock API base URL (used for endpoints that bypass the hybrid router)
+const MOCK_API_URL = process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api/v1' : '/api/v1');
+
 // Token getter function - will be set by AuthContext
 let getToken = () => null;
 
@@ -603,6 +607,10 @@ const api = {
     return await routeApiRequest('admin-user-contacts', { queryParams: params });
   },
 
+  adminCreateOrder: async (body = {}) => {
+    return await routeApiRequest('admin-create-order', { body });
+  },
+
   adminCreateNote: async (body = {}) => {
     return await routeApiRequest('admin-create-note', { body });
   },
@@ -613,6 +621,10 @@ const api = {
 
   adminCreateCsrMail: async (body = {}) => {
     return await routeApiRequest('admin-create-csr-mail', { body });
+  },
+
+  adminFindUserTracking: async (type, lastId, userId) => {
+    return await routeApiRequest('admin-user-tracking', { type, ...(lastId ? { lastId } : {}), ...(userId ? { updaterId: userId } : {}) });
   },
 
   adminListCsReps: async (params = {}) => {
@@ -653,6 +665,94 @@ const api = {
       body: { subject, html, audience },
       token: token || getToken(),
     });
+  },
+
+  /**
+   * Get the logged-in user's support messages (contacts + CSR mail).
+   * POST /api/message/userContact/list
+   * Paginated via lastId; returns { messages: [...], noMoreDocs: boolean }
+   */
+  getUserContacts: async (lastId) => {
+    return await routeApiRequest('get-user-contacts', { lastId });
+  },
+
+  // CSR: find visitor contact messages
+  adminFindContacts: async (params = {}) => {
+    return await routeApiRequest('admin-find-contacts', { queryParams: params });
+  },
+
+  // CSR: link visitor contact to a user account
+  adminChangeContactToUser: async (messageId, targetUserId) => {
+    return await routeApiRequest('admin-change-contact-to-user', { body: { messageId, targetUserId } });
+  },
+
+  /**
+   * Contact / Support endpoints
+   * Routes through BC API: contact.create (visitor) or user.createContact (member)
+   * Falls back to mock server thread endpoints for the visitor thread viewer.
+   */
+
+  /** Submit a contact form — routes to BC API */
+  submitContact: async (body) => {
+    const token = getToken();
+    const isAuthenticated = !!token;
+
+    if (isAuthenticated && body.userId) {
+      // Logged-in member → BC user.createContact
+      return await routeApiRequest('create-user-contact', {
+        body: {
+          message: body.message,
+          contentType: body.contentType || 'text/plain',
+          ...(body.parentCsrMessageId ? { parentCsrMessageId: body.parentCsrMessageId } : {}),
+        },
+      });
+    }
+
+    // Visitor (or member without userId) → BC contact.create
+    const contactBody = {
+      firstName: (body.name || '').split(' ')[0] || body.firstName || '',
+      lastName: (body.name || '').split(' ').slice(1).join(' ') || body.lastName || '',
+      email: body.email,
+      telephone: body.phone || '',
+      message: body.message,
+      contentType: body.contentType || 'text/plain',
+    };
+
+    const bcResult = await routeApiRequest('create-contact', { body: contactBody });
+
+    // Also store in mock server for thread viewer (visitor follow-up URL)
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const res = await fetch(`${MOCK_API_URL}/contact`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...body, bcMessageId: bcResult?._id }),
+      });
+      if (res.ok) {
+        const mockResult = await res.json();
+        return { ...bcResult, threadId: mockResult.threadId, threadUrl: mockResult.threadUrl };
+      }
+    } catch { /* mock unavailable — still return BC result */ }
+
+    return bcResult;
+  },
+
+  /** Get a contact thread by ID (mock server — visitor thread view) */
+  getContactThread: async (threadId) => {
+    const res = await fetch(`${MOCK_API_URL}/contact/thread/${threadId}`);
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Thread not found');
+    return res.json();
+  },
+
+  /** Reply to a contact thread (mock server — visitor follow-up) */
+  replyToContactThread: async (threadId, body) => {
+    const res = await fetch(`${MOCK_API_URL}/contact/thread/${threadId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to reply');
+    return res.json();
   },
 };
 

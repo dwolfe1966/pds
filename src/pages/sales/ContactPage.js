@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import styles from './ContactPage.module.css';
 
 /* ------------------------------------------------------------------ */
@@ -107,12 +108,14 @@ const INITIAL_EMAIL_FORM = {
   optIn: 'yes',
 };
 
-const EmailCustomerCareModal = ({ isOpen, onClose }) => {
+const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
   const [form, setForm] = useState(INITIAL_EMAIL_FORM);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [threadUrl, setThreadUrl] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // Reset when modal closes
   useEffect(() => {
@@ -124,11 +127,24 @@ const EmailCustomerCareModal = ({ isOpen, onClose }) => {
         setSubmitError('');
         setSuccess(false);
         setLoading(false);
+        setThreadUrl('');
+        setCopied(false);
       }, 200);
       return () => clearTimeout(t);
     }
     return undefined;
   }, [isOpen]);
+
+  // Pre-fill from authenticated user
+  useEffect(() => {
+    if (isOpen && user) {
+      setForm((prev) => ({
+        ...prev,
+        name: user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || prev.name,
+        email: user.email || prev.email,
+      }));
+    }
+  }, [isOpen, user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -155,7 +171,7 @@ const EmailCustomerCareModal = ({ isOpen, onClose }) => {
     if (!validate()) return;
     setLoading(true);
     try {
-      await api.post('/contact', {
+      const body = {
         subject: form.reason,
         reason: form.reason,
         name: form.name,
@@ -164,13 +180,25 @@ const EmailCustomerCareModal = ({ isOpen, onClose }) => {
         message: form.description,
         marketingOptIn: form.optIn === 'yes',
         source: 'email-customer-care',
-      });
+      };
+      if (user) body.userId = user.id || user._id;
+      const result = await api.submitContact(body);
       setSuccess(true);
+      if (result?.threadId) {
+        setThreadUrl(`${window.location.origin}/contact/thread/${result.threadId}`);
+      }
     } catch (err) {
       setSubmitError(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(threadUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
   };
 
   return (
@@ -181,13 +209,41 @@ const EmailCustomerCareModal = ({ isOpen, onClose }) => {
             <CheckIcon />
           </div>
           <h3 className={styles.successTitle}>Thank you!</h3>
-          <p className={styles.successMessage}>
-            We&apos;ll respond within 24 hours.
-          </p>
+          {token ? (
+            <>
+              <p className={styles.successMessage}>
+                Your message has been submitted. View your messages in{' '}
+                <Link to="/account?tab=messages">Account Settings</Link>.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className={styles.successMessage}>
+                Your request has been submitted. Use this link to check for responses:
+              </p>
+              {threadUrl && (
+                <div style={{ marginTop: '0.5rem', wordBreak: 'break-all' }}>
+                  <a href={threadUrl} style={{ color: '#4a90e2', fontSize: '0.875rem' }}>
+                    {threadUrl}
+                  </a>
+                  <br />
+                  <button
+                    type="button"
+                    className={styles.submitButton}
+                    style={{ marginTop: '0.5rem', fontSize: '0.875rem', padding: '0.375rem 1rem' }}
+                    onClick={handleCopyLink}
+                  >
+                    {copied ? 'Copied!' : 'Copy Link'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
           <button
             type="button"
             className={styles.submitButton}
             onClick={onClose}
+            style={{ marginTop: '1rem' }}
           >
             Close
           </button>
@@ -342,12 +398,14 @@ const INITIAL_BILLING_FORM = {
 
 const BILLING_DESC_MAX = 250;
 
-const BillingQuestionModal = ({ isOpen, onClose }) => {
+const BillingQuestionModal = ({ isOpen, onClose, user, token }) => {
   const [form, setForm] = useState(INITIAL_BILLING_FORM);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [threadUrl, setThreadUrl] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -357,11 +415,24 @@ const BillingQuestionModal = ({ isOpen, onClose }) => {
         setSubmitError('');
         setSuccess(false);
         setLoading(false);
+        setThreadUrl('');
+        setCopied(false);
       }, 200);
       return () => clearTimeout(t);
     }
     return undefined;
   }, [isOpen]);
+
+  // Pre-fill from authenticated user
+  useEffect(() => {
+    if (isOpen && user) {
+      setForm((prev) => ({
+        ...prev,
+        name: user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || prev.name,
+        email: user.email || prev.email,
+      }));
+    }
+  }, [isOpen, user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -388,7 +459,7 @@ const BillingQuestionModal = ({ isOpen, onClose }) => {
     if (!validate()) return;
     setLoading(true);
     try {
-      await api.post('/contact', {
+      const body = {
         subject: 'Billing Question',
         reason: 'Billing question',
         name: form.name,
@@ -396,13 +467,25 @@ const BillingQuestionModal = ({ isOpen, onClose }) => {
         orderReference: form.orderRef,
         message: form.description,
         source: 'billing-question',
-      });
+      };
+      if (user) body.userId = user.id || user._id;
+      const result = await api.submitContact(body);
       setSuccess(true);
+      if (result?.threadId) {
+        setThreadUrl(`${window.location.origin}/contact/thread/${result.threadId}`);
+      }
     } catch (err) {
       setSubmitError(err?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(threadUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
   };
 
   const charCount = form.description.length;
@@ -416,13 +499,42 @@ const BillingQuestionModal = ({ isOpen, onClose }) => {
             <CheckIcon />
           </div>
           <h3 className={styles.successTitle}>Message received</h3>
-          <p className={styles.successMessage}>
-            Our finance team typically responds within 1 business day.
-          </p>
+          {token ? (
+            <>
+              <p className={styles.successMessage}>
+                Your message has been submitted. View your messages in{' '}
+                <Link to="/account?tab=messages">Account Settings</Link>.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className={styles.successMessage}>
+                Our finance team typically responds within 1 business day.
+                Use this link to check for responses:
+              </p>
+              {threadUrl && (
+                <div style={{ marginTop: '0.5rem', wordBreak: 'break-all' }}>
+                  <a href={threadUrl} style={{ color: '#4a90e2', fontSize: '0.875rem' }}>
+                    {threadUrl}
+                  </a>
+                  <br />
+                  <button
+                    type="button"
+                    className={styles.submitButton}
+                    style={{ marginTop: '0.5rem', fontSize: '0.875rem', padding: '0.375rem 1rem' }}
+                    onClick={handleCopyLink}
+                  >
+                    {copied ? 'Copied!' : 'Copy Link'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
           <button
             type="button"
             className={styles.submitButton}
             onClick={onClose}
+            style={{ marginTop: '1rem' }}
           >
             Close
           </button>
@@ -536,6 +648,7 @@ const FAQ_ITEMS = [
 
 const ContactPage = () => {
   const navigate = useNavigate();
+  const { user, token } = useAuth();
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [billingModalOpen, setBillingModalOpen] = useState(false);
   const [helpTopic, setHelpTopic] = useState('');
@@ -676,8 +789,8 @@ const ContactPage = () => {
       </div>
 
       {/* Modals */}
-      <EmailCustomerCareModal isOpen={emailModalOpen} onClose={closeEmailModal} />
-      <BillingQuestionModal isOpen={billingModalOpen} onClose={closeBillingModal} />
+      <EmailCustomerCareModal isOpen={emailModalOpen} onClose={closeEmailModal} user={user} token={token} />
+      <BillingQuestionModal isOpen={billingModalOpen} onClose={closeBillingModal} user={user} token={token} />
     </main>
   );
 };

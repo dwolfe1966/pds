@@ -31,6 +31,10 @@ let dataStore = {
 // In-memory event log for analytics tracking
 let eventLog = [];
 
+// In-memory contact/support thread stores
+const contactThreads = new Map(); // threadId -> thread object
+const userThreads = new Map();    // userId -> Set of threadIds
+
 // Seed data on startup
 try {
   console.log('Loading seed data...');
@@ -2571,6 +2575,171 @@ app.post('/api/v1/admin/email-broadcast', authenticateToken, requireRole('admin'
   if (!res.headersSent) {
     res.json({ sent: results.length, results });
   }
+});
+
+// ==================== CONTACT / SUPPORT TICKET ENDPOINTS ====================
+
+// Helper: optionally extract userId from JWT (does NOT reject unauthenticated requests)
+function optionalAuth(req) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return null;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded.userId || null;
+  } catch {
+    return null;
+  }
+}
+
+// POST /api/v1/contact — create a new support ticket / thread
+app.post('/api/v1/contact', (req, res) => {
+  const { name, email, phone, subject, message, source, marketingOptIn } = req.body;
+
+  if (!name || !email || !subject || !message) {
+    return res.status(400).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'name, email, subject, and message are required',
+        details: []
+      }
+    });
+  }
+
+  const userId = optionalAuth(req);
+  const threadId = `thread_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const now = new Date().toISOString();
+
+  const thread = {
+    threadId,
+    userId: userId || null,
+    email,
+    name,
+    phone: phone || null,
+    subject,
+    source: source || 'general',
+    marketingOptIn: !!marketingOptIn,
+    createdAt: now,
+    messages: [{
+      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      sender: 'user',
+      name,
+      email,
+      message,
+      createdAt: now
+    }]
+  };
+
+  contactThreads.set(threadId, thread);
+
+  // Cross-reference by userId
+  if (userId) {
+    if (!userThreads.has(userId)) {
+      userThreads.set(userId, new Set());
+    }
+    userThreads.get(userId).add(threadId);
+  }
+
+  console.log(`[Contact] New thread ${threadId} from ${email} (userId: ${userId || 'visitor'})`);
+
+  res.status(201).json({
+    threadId,
+    threadUrl: `/contact/thread/${threadId}`
+  });
+});
+
+// GET /api/v1/contact/thread/:threadId — get all messages in a thread
+app.get('/api/v1/contact/thread/:threadId', (req, res) => {
+  const thread = contactThreads.get(req.params.threadId);
+  if (!thread) {
+    return res.status(404).json({
+      error: {
+        code: 'THREAD_NOT_FOUND',
+        message: 'Support thread not found',
+        details: []
+      }
+    });
+  }
+
+  res.json({
+    threadId: thread.threadId,
+    subject: thread.subject,
+    name: thread.name,
+    email: thread.email,
+    createdAt: thread.createdAt,
+    messages: thread.messages
+  });
+});
+
+// POST /api/v1/contact/thread/:threadId/reply — reply to a thread
+app.post('/api/v1/contact/thread/:threadId/reply', (req, res) => {
+  const thread = contactThreads.get(req.params.threadId);
+  if (!thread) {
+    return res.status(404).json({
+      error: {
+        code: 'THREAD_NOT_FOUND',
+        message: 'Support thread not found',
+        details: []
+      }
+    });
+  }
+
+  const { message, name, email } = req.body;
+  if (!message) {
+    return res.status(400).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'message is required',
+        details: []
+      }
+    });
+  }
+
+  const userId = optionalAuth(req);
+  const sender = userId ? 'support' : 'user';
+  const now = new Date().toISOString();
+
+  const newMessage = {
+    id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+    sender,
+    name: name || (sender === 'support' ? 'CS Agent' : thread.name),
+    email: email || (sender === 'support' ? undefined : thread.email),
+    message,
+    createdAt: now
+  };
+
+  thread.messages.push(newMessage);
+
+  console.log(`[Contact] Reply on ${thread.threadId} by ${sender}`);
+
+  res.status(201).json(newMessage);
+});
+
+// GET /api/v1/contact/threads — list threads for authenticated user
+app.get('/api/v1/contact/threads', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const threadIds = userThreads.get(userId);
+
+  if (!threadIds || threadIds.size === 0) {
+    return res.json({ threads: [] });
+  }
+
+  const threads = Array.from(threadIds)
+    .map(id => contactThreads.get(id))
+    .filter(Boolean)
+    .map(t => ({
+      threadId: t.threadId,
+      subject: t.subject,
+      name: t.name,
+      email: t.email,
+      source: t.source,
+      createdAt: t.createdAt,
+      lastMessage: t.messages[t.messages.length - 1],
+      messageCount: t.messages.length
+    }))
+    .sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
+
+  res.json({ threads });
 });
 
 // Error handling middleware (must be last, before app.listen)

@@ -169,7 +169,16 @@ function Toast({ message, type, onDone }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-const TABS = ['Orders & Payments', 'Logins', 'Activity', 'Notes', 'Actions'];
+const TABS = ['Orders & Payments', 'Logins', 'Activity', 'Notes & Messages', 'Actions'];
+
+const TRACKING_ACTIVITY_TYPES = [
+  'USER:nameSearchTeaser',
+  'USER:phoneSearchTeaser',
+  'USER:nameSearch',
+  'USER:phoneSearch',
+  'USER:nameSearchTeaserOptOut',
+  'USER:phoneSearchTeaserOptOut',
+].join('|');
 
 const UserDetailPage = () => {
   const { id } = useParams();
@@ -213,6 +222,29 @@ const UserDetailPage = () => {
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [noteText, setNoteText]         = useState('');
 
+  // Tracking: Logins tab
+  const [logins, setLogins]             = useState([]);
+  const [loginsLoading, setLoginsLoading] = useState(false);
+  const [loginsError, setLoginsError]   = useState('');
+  const [loginsLastId, setLoginsLastId] = useState(null);
+  const [loginsNoMore, setLoginsNoMore] = useState(false);
+  const [loginsFetched, setLoginsFetched] = useState(false);
+
+  // Tracking: Activity tab
+  const [activities, setActivities]     = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState('');
+  const [activityLastId, setActivityLastId] = useState(null);
+  const [activityNoMore, setActivityNoMore] = useState(false);
+  const [activityFetched, setActivityFetched] = useState(false);
+
+  // ── Agent Order modal ──────────────────────────────────────
+  const [showAgentOrder, setShowAgentOrder] = useState(false);
+  const [agentOrderOffer, setAgentOrderOffer] = useState('comp.offer.agent.retention');
+  const [agentOrderReason, setAgentOrderReason] = useState('');
+  const [agentOrderProcessing, setAgentOrderProcessing] = useState(false);
+  const [agentOrderError, setAgentOrderError] = useState('');
+
   // ── Fetch user ────────────────────────────────────────────
   const fetchUser = useCallback(async () => {
     setUserLoading(true);
@@ -254,24 +286,85 @@ const UserDetailPage = () => {
     }
   }, [id]);
 
-  // ── Fetch notes (BC user contacts filtered to adminNote type) ──
+  // ── Fetch notes & messages (all user contacts: notes, CSR mail, user replies) ──
   const fetchNotes = useCallback(async () => {
     try {
       const res = await api.adminFindUserContacts({ userId: id });
       const docs = res?.docs || res?.data || (Array.isArray(res) ? res : []);
-      // Filter to admin notes only, map to simple shape
-      const adminNotes = docs
-        .filter(d => d.type === 'userContactAdminNote')
-        .map(d => ({
+      const mapped = docs.map(d => {
+        const t = d.type || '';
+        let kind = 'note';
+        let direction = 'internal';
+        if (t === 'userContactCsrMail') { kind = 'csrMail'; direction = 'outbound'; }
+        else if (t === 'userContact') { kind = 'userReply'; direction = 'inbound'; }
+        return {
           id: d._id || d.id,
+          kind,
+          direction,
+          type: t,
+          subject: d.content?.subject || '',
           text: d.content?.message || '',
+          contentType: d.content?.contentType || 'text/plain',
           createdAt: d.createdAt,
           author: d.owner ? `${d.owner.firstName || ''} ${d.owner.lastName || ''}`.trim() : '',
-        }));
-      setNotes(adminNotes);
+          attachments: d.attachments || [],
+        };
+      });
+      // Sort newest first
+      mapped.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      setNotes(mapped);
     } catch {
-      // Silently fail — notes are non-critical
       setNotes([]);
+    }
+  }, [id]);
+
+  // ── Fetch login tracking ──────────────────────────────────
+  const fetchLogins = useCallback(async (lastId) => {
+    setLoginsLoading(true);
+    setLoginsError('');
+    try {
+      const res = await api.adminFindUserTracking('USER:login', lastId || undefined, id);
+      const docs = res?.docs || [];
+      // Filter to this user by updaterId (server-side filter may not be supported, so also filter client-side)
+      const userLogins = docs.filter(d => d.updaterId === id);
+      if (lastId) {
+        setLogins(prev => [...prev, ...userLogins]);
+      } else {
+        setLogins(userLogins);
+      }
+      const last = docs[docs.length - 1];
+      setLoginsLastId(last?._id || null);
+      setLoginsNoMore(res?.noMoreDocs === true || docs.length === 0);
+    } catch (err) {
+      setLoginsError(err?.message || 'Failed to load login history');
+    } finally {
+      setLoginsLoading(false);
+      setLoginsFetched(true);
+    }
+  }, [id]);
+
+  // ── Fetch activity tracking ─────────────────────────────
+  const fetchActivity = useCallback(async (lastId) => {
+    setActivityLoading(true);
+    setActivityError('');
+    try {
+      const res = await api.adminFindUserTracking(TRACKING_ACTIVITY_TYPES, lastId || undefined, id);
+      const docs = res?.docs || [];
+      // Filter to this user by updaterId (server-side filter may not be supported, so also filter client-side)
+      const userActivity = docs.filter(d => d.updaterId === id);
+      if (lastId) {
+        setActivities(prev => [...prev, ...userActivity]);
+      } else {
+        setActivities(userActivity);
+      }
+      const last = docs[docs.length - 1];
+      setActivityLastId(last?._id || null);
+      setActivityNoMore(res?.noMoreDocs === true || docs.length === 0);
+    } catch (err) {
+      setActivityError(err?.message || 'Failed to load activity');
+    } finally {
+      setActivityLoading(false);
+      setActivityFetched(true);
     }
   }, [id]);
 
@@ -281,6 +374,16 @@ const UserDetailPage = () => {
     fetchOrders();
     fetchNotes();
   }, [id, fetchUser, fetchOrders, fetchNotes]);
+
+  // Fetch tracking data on tab activation (lazy load)
+  useEffect(() => {
+    if (activeTab === 'Logins' && !loginsFetched && id) {
+      fetchLogins();
+    }
+    if (activeTab === 'Activity' && !activityFetched && id) {
+      fetchActivity();
+    }
+  }, [activeTab, loginsFetched, activityFetched, id, fetchLogins, fetchActivity]);
 
   // ── Suspend / Unsuspend ───────────────────────────────────
   const handleSuspend = async () => {
@@ -435,7 +538,7 @@ const UserDetailPage = () => {
     }
   };
 
-  // Open batch refund confirmation
+  // Open batch refund confirmation (single order)
   const openBatchRefund = (order) => {
     const eligible = getEligiblePayments(order);
     if (eligible.length === 0) {
@@ -451,24 +554,57 @@ const UserDetailPage = () => {
       orderRevisionId: order.currentRevisionId,
       eligiblePayments: eligible,
       totalAmount,
+      multiOrder: false,
     });
   };
 
-  // Process batch refund (all eligible payments)
+  // Open multi-order refund confirmation (all orders)
+  const openMultiOrderRefund = () => {
+    const allEligible = [];
+    for (const order of orders) {
+      const oid = getOrderId(order);
+      const eligible = getEligiblePayments(order);
+      eligible.forEach(p => {
+        allEligible.push({
+          ...p,
+          _orderId: oid,
+          _orderRevisionId: order.currentRevisionId,
+        });
+      });
+    }
+    if (allEligible.length === 0) {
+      showToast('No eligible payments to refund across any orders.', 'info');
+      return;
+    }
+    const totalAmount = allEligible.reduce((sum, p) => {
+      const amt = p?.totalPrice?.amount ?? p?.transient?.amount?.collected ?? 0;
+      return sum + Number(amt);
+    }, 0);
+    setBatchRefundConfirm({
+      eligiblePayments: allEligible,
+      totalAmount,
+      multiOrder: true,
+    });
+  };
+
+  // Process batch refund (single-order or multi-order)
   const handleBatchRefund = async () => {
     if (!batchRefundConfirm) return;
     setBatchRefundProcessing(true);
-    const { orderId, orderRevisionId, eligiblePayments } = batchRefundConfirm;
+    const { orderId, orderRevisionId, eligiblePayments, multiOrder } = batchRefundConfirm;
     let successCount = 0;
     let failCount = 0;
     for (const payment of eligiblePayments) {
       const amt = payment?.totalPrice?.amount ?? payment?.transient?.amount?.collected ?? 0;
       if (Number(amt) <= 0) continue;
+      // Multi-order: each payment carries its own order context
+      const pOrderId = multiOrder ? payment._orderId : orderId;
+      const pOrderRevisionId = multiOrder ? payment._orderRevisionId : orderRevisionId;
       try {
         await api.adminRefundPurchase({
           commercePaymentType: 'refund',
-          targetCommerceOrderId: orderId,
-          targetCommerceOrderRevisionId: orderRevisionId,
+          targetCommerceOrderId: pOrderId,
+          targetCommerceOrderRevisionId: pOrderRevisionId,
           targetCommercePaymentId: payment._id,
           targetCommercePaymentRevisionId: payment.currentRevisionId,
           amount: Number(amt),
@@ -562,12 +698,54 @@ const UserDetailPage = () => {
 
   // New enriched fields
   const fullUserId = user?._id || user?.id || id;
-  const shortUserId = fullUserId ? `#${fullUserId.slice(-8)}` : '—';
+  const shortUserId = fullUserId && fullUserId.length > 8
+    ? `${fullUserId.slice(0, 4)}...${fullUserId.slice(-4)}`
+    : (fullUserId || '—');
   const allEmails = user?.emails?.length ? user.emails : (user?.email ? [user.email] : []);
   const allPhones = user?.phones?.length ? user.phones : (user?.phone ? [user.phone] : []);
-  const deviceType = user?.deviceType || user?.transient?.deviceType || user?.deviceInfo || null;
-  const ipAddress = user?.ip || user?.transient?.ip || user?.registrationIp || null;
   const lastActive = user?.lastLogin || user?.transient?.lastLogin || null;
+
+  // Extract device & IP from most recent order's commercePayments
+  const latestPaymentInfo = (() => {
+    if (!orders || orders.length === 0) return { device: null, ip: null };
+    for (const order of orders) {
+      const cpArray = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
+      if (cpArray.length > 0) {
+        // Find the most recent payment with device/IP info
+        const sorted = [...cpArray].sort((a, b) =>
+          (b.paymentTimestamp || b.createdAt || '').localeCompare(a.paymentTimestamp || a.createdAt || '')
+        );
+        for (const p of sorted) {
+          if (p.device || p.ipAddress) {
+            return { device: p.device || null, ip: p.ipAddress || null };
+          }
+        }
+      }
+    }
+    return { device: null, ip: null };
+  })();
+
+  // Fallback chain: order payment data > user object fields
+  const deviceType = latestPaymentInfo.device || user?.deviceType || user?.transient?.deviceType || user?.deviceInfo || null;
+  const ipAddress = latestPaymentInfo.ip || user?.ip || user?.transient?.ip || user?.registrationIp || null;
+
+  // Account age
+  const accountAge = (() => {
+    if (!user?.createdAt) return null;
+    const created = new Date(user.createdAt);
+    const now = new Date();
+    const diffMs = now - created;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays < 1) return 'Less than a day';
+    if (diffDays === 1) return '1 day';
+    if (diffDays < 30) return `${diffDays} days`;
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) return `${diffMonths} month${diffMonths === 1 ? '' : 's'}`;
+    const diffYears = Math.floor(diffMonths / 12);
+    const remainMonths = diffMonths % 12;
+    if (remainMonths === 0) return `${diffYears} year${diffYears === 1 ? '' : 's'}`;
+    return `${diffYears} year${diffYears === 1 ? '' : 's'}, ${remainMonths} month${remainMonths === 1 ? '' : 's'}`;
+  })();
 
   // ── Render ────────────────────────────────────────────────
   return (
@@ -610,16 +788,22 @@ const UserDetailPage = () => {
               <span className={styles.metaLabel}>Joined</span>
               <span className={styles.metaValue}>{joinDate}</span>
             </div>
+            {accountAge && (
+              <div className={styles.metaRow}>
+                <span className={styles.metaLabel}>Member for</span>
+                <span className={styles.metaValue}>{accountAge}</span>
+              </div>
+            )}
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Last Active</span>
               <span className={styles.metaValue}>{lastActive ? formatDateTime(lastActive) : '—'}</span>
             </div>
             <div className={styles.metaRow}>
-              <span className={styles.metaLabel}>Device</span>
+              <span className={styles.metaLabel}>Last Known Device</span>
               <span className={styles.metaValue}>{deviceType || '—'}</span>
             </div>
             <div className={styles.metaRow}>
-              <span className={styles.metaLabel}>IP Address</span>
+              <span className={styles.metaLabel}>Last Known IP</span>
               <span className={`${styles.metaValue} ${styles.mono}`}>{ipAddress || '—'}</span>
             </div>
           </div>
@@ -682,6 +866,24 @@ const UserDetailPage = () => {
             {/* ── Tab: Orders & Payments ──────────────────── */}
             {activeTab === 'Orders & Payments' && (
               <>
+                {/* Multi-order refund button */}
+                {!ordersLoading && !ordersError && orders.length > 1 && (() => {
+                  const totalEligible = orders.reduce((sum, o) => sum + getEligiblePayments(o).length, 0);
+                  return totalEligible > 0 ? (
+                    <div className={styles.multiRefundBar}>
+                      <span className={styles.multiRefundLabel}>
+                        {orders.length} orders — {totalEligible} refundable payment{totalEligible !== 1 ? 's' : ''}
+                      </span>
+                      <button
+                        className={styles.refundAllBtn}
+                        onClick={openMultiOrderRefund}
+                        disabled={batchRefundProcessing}
+                      >
+                        Refund All Orders
+                      </button>
+                    </div>
+                  ) : null;
+                })()}
                 {ordersLoading && (
                   <div className={styles.loadingState}>Loading orders…</div>
                 )}
@@ -914,81 +1116,107 @@ const UserDetailPage = () => {
             )}
 
             {/* ── Tab: Logins ──────────────────────────────── */}
-            {activeTab === 'Logins' && (() => {
-              const loginHistory =
-                user?.loginHistory ||
-                user?.sessions ||
-                user?.transient?.loginHistory ||
-                user?.transient?.sessions ||
-                null;
-              const logins = Array.isArray(loginHistory) ? loginHistory : [];
-              return (
-                <>
-                  {logins.length === 0 && (
-                    <div className={styles.emptyState}>
-                      <div className={styles.emptyIcon}>--</div>
-                      <p>Login history not available from the API</p>
-                      <p className={styles.emptyHint}>
-                        This data may become available when session tracking is enabled in the backend.
-                      </p>
-                    </div>
-                  )}
-                  {logins.length > 0 && (
-                    <div className={styles.tableWrapper}>
-                      <table className={styles.table}>
-                        <thead>
-                          <tr>
-                            <th className={styles.th}>Date / Time</th>
-                            <th className={styles.th}>IP Address</th>
-                            <th className={styles.th}>Device / Browser</th>
-                            <th className={styles.th}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {logins.map((entry, idx) => {
-                            const ts = entry?.date || entry?.timestamp || entry?.createdAt || entry?.loginAt;
-                            const ip = entry?.ip || entry?.ipAddress || entry?.remoteAddress || '—';
-                            const device = entry?.device || entry?.browser || entry?.userAgent || entry?.deviceInfo || '—';
-                            const loginStatus = entry?.status || entry?.result || 'success';
-                            return (
-                              <tr key={idx} className={styles.tr}>
-                                <td className={styles.td}>{formatDateTime(ts)}</td>
-                                <td className={`${styles.td} ${styles.mono}`}>{ip}</td>
-                                <td className={styles.td}>{device}</td>
-                                <td className={styles.td}>
-                                  <span className={loginStatus === 'failed' ? styles.badgeSuspended : styles.badgeActive}>
-                                    {loginStatus}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
+            {activeTab === 'Logins' && (
+              <>
+                {loginsLoading && logins.length === 0 && (
+                  <div className={styles.loadingState}>Loading login history...</div>
+                )}
+                {loginsError && (
+                  <div className={styles.errorState}>{loginsError}</div>
+                )}
+                {!loginsLoading && !loginsError && logins.length === 0 && loginsFetched && (
+                  <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>--</div>
+                    <p>No login events found for this user.</p>
+                  </div>
+                )}
+                {logins.length > 0 && (
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th className={styles.th}>Date / Time</th>
+                          <th className={styles.th}>IP Address</th>
+                          <th className={styles.th}>Device</th>
+                          <th className={styles.th}>User Agent</th>
+                          <th className={styles.th}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {logins.map((doc, idx) => {
+                          const ts = doc?.createdAt;
+                          const val = doc?.data?.value || {};
+                          const ip = val.ip || '—';
+                          const device = val.device || '—';
+                          const ua = val.userAgent || '—';
+                          const st = doc?.data?.status || '—';
+                          return (
+                            <tr key={doc._id || idx} className={styles.tr}>
+                              <td className={styles.td}>{formatDateTime(ts)}</td>
+                              <td className={`${styles.td} ${styles.mono}`}>{ip}</td>
+                              <td className={styles.td}>{device}</td>
+                              <td className={styles.td} title={ua} style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {ua.length > 60 ? ua.substring(0, 60) + '...' : ua}
+                              </td>
+                              <td className={styles.td}>
+                                <span className={st === 'fulfilled' ? styles.badgeActive : styles.badgeSuspended}>
+                                  {st === 'fulfilled' ? 'success' : st}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {!loginsNoMore && loginsFetched && (
+                  <button
+                    className={styles.addNoteBtn}
+                    style={{ marginTop: '12px' }}
+                    disabled={loginsLoading}
+                    onClick={() => fetchLogins(loginsLastId)}
+                  >
+                    {loginsLoading ? 'Loading...' : 'Load More'}
+                  </button>
+                )}
+              </>
+            )}
 
             {/* ── Tab: Activity ─────────────────────────────── */}
             {activeTab === 'Activity' && (() => {
-              const activityData =
-                user?.activity ||
-                user?.transient?.activity ||
-                user?.searchHistory ||
-                user?.transient?.searchHistory ||
-                null;
-              const activities = Array.isArray(activityData) ? activityData : [];
+              const TYPE_LABELS = {
+                'USER:nameSearchTeaser': 'Name Search',
+                'USER:phoneSearchTeaser': 'Phone Search',
+                'USER:nameSearch': 'Report (Name)',
+                'USER:phoneSearch': 'Report (Phone)',
+                'USER:nameSearchTeaserOptOut': 'Opt-Out Name Search',
+                'USER:phoneSearchTeaserOptOut': 'Opt-Out Phone Search',
+              };
+
+              const formatTeaserInput = (input) => {
+                if (!input) return '—';
+                const parts = [];
+                if (input.fName) parts.push(input.fName);
+                if (input.lName) parts.push(input.lName);
+                if (input.phone) parts.push(input.phone);
+                if (input.state) parts.push(input.state.toUpperCase());
+                if (input.city) parts.push(input.city);
+                return parts.length > 0 ? parts.join(', ') : '—';
+              };
+
               return (
                 <>
-                  {activities.length === 0 && (
+                  {activityLoading && activities.length === 0 && (
+                    <div className={styles.loadingState}>Loading activity...</div>
+                  )}
+                  {activityError && (
+                    <div className={styles.errorState}>{activityError}</div>
+                  )}
+                  {!activityLoading && !activityError && activities.length === 0 && activityFetched && (
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>--</div>
-                      <p>Activity data not available from the API</p>
-                      <p className={styles.emptyHint}>
-                        User activity tracking (searches, report views, downloads) will appear here when available.
-                      </p>
+                      <p>No activity events found for this user.</p>
                     </div>
                   )}
                   {activities.length > 0 && (
@@ -997,24 +1225,31 @@ const UserDetailPage = () => {
                         <thead>
                           <tr>
                             <th className={styles.th}>Date / Time</th>
-                            <th className={styles.th}>Action</th>
+                            <th className={styles.th}>Action Type</th>
                             <th className={styles.th}>Details</th>
+                            <th className={styles.th}>Status</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {activities.map((act, idx) => {
-                            const ts = act?.date || act?.timestamp || act?.createdAt;
-                            const action = act?.type || act?.action || act?.eventType || '—';
-                            const details = act?.details || act?.description || act?.query || act?.meta || '—';
+                          {activities.map((doc, idx) => {
+                            const ts = doc?.createdAt;
+                            const rawType = doc?.data?.type || '—';
+                            const label = TYPE_LABELS[rawType] || rawType;
+                            const input = doc?.data?.teaserInput;
+                            const details = formatTeaserInput(input);
+                            const st = doc?.data?.status || '—';
                             return (
-                              <tr key={idx} className={styles.tr}>
+                              <tr key={doc._id || idx} className={styles.tr}>
                                 <td className={styles.td}>{formatDateTime(ts)}</td>
                                 <td className={styles.td}>
-                                  <span className={styles.activityAction}>{action}</span>
+                                  <span className={styles.activityAction}>{label}</span>
                                 </td>
                                 <td className={styles.td}>
-                                  <span className={styles.activityDetails}>
-                                    {typeof details === 'object' ? JSON.stringify(details) : details}
+                                  <span className={styles.activityDetails}>{details}</span>
+                                </td>
+                                <td className={styles.td}>
+                                  <span className={st === 'fulfilled' ? styles.badgeActive : styles.badgeSuspended}>
+                                    {st === 'fulfilled' ? 'success' : st}
                                   </span>
                                 </td>
                               </tr>
@@ -1024,15 +1259,25 @@ const UserDetailPage = () => {
                       </table>
                     </div>
                   )}
+                  {!activityNoMore && activityFetched && (
+                    <button
+                      className={styles.addNoteBtn}
+                      style={{ marginTop: '12px' }}
+                      disabled={activityLoading}
+                      onClick={() => fetchActivity(activityLastId)}
+                    >
+                      {activityLoading ? 'Loading...' : 'Load More'}
+                    </button>
+                  )}
                 </>
               );
             })()}
 
-            {/* ── Tab: Notes ─────────────────────────────── */}
-            {activeTab === 'Notes' && (
+            {/* ── Tab: Notes & Messages ──────────────────── */}
+            {activeTab === 'Notes & Messages' && (
               <>
                 <div className={styles.notesHeader}>
-                  <h3 className={styles.notesTitle}>Notes</h3>
+                  <h3 className={styles.notesTitle}>Notes & Messages</h3>
                   {!showNoteForm && (
                     <button
                       className={styles.addNoteBtn}
@@ -1047,7 +1292,7 @@ const UserDetailPage = () => {
                   <div className={styles.noteForm}>
                     <textarea
                       className={styles.noteTextarea}
-                      placeholder="Enter note…"
+                      placeholder="Enter internal note…"
                       value={noteText}
                       onChange={(e) => setNoteText(e.target.value)}
                       autoFocus
@@ -1071,14 +1316,49 @@ const UserDetailPage = () => {
                 )}
 
                 {notes.length === 0 && !showNoteForm && (
-                  <div className={styles.emptyState}>No notes yet.</div>
+                  <div className={styles.emptyState}>No notes or messages yet.</div>
                 )}
 
                 {notes.length > 0 && (
                   <div className={styles.notesList}>
                     {notes.map((n) => (
-                      <div key={n.id} className={styles.noteItem}>
-                        {n.text.startsWith('<')
+                      <div
+                        key={n.id}
+                        className={styles.noteItem}
+                        style={{
+                          borderLeft: `3px solid ${
+                            n.kind === 'csrMail' ? '#0d5d2f' :
+                            n.kind === 'userReply' ? '#3b82f6' :
+                            '#d1d5db'
+                          }`,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '9999px',
+                            background: n.kind === 'csrMail' ? '#dcfce7' :
+                                        n.kind === 'userReply' ? '#dbeafe' :
+                                        '#f3f4f6',
+                            color: n.kind === 'csrMail' ? '#166534' :
+                                   n.kind === 'userReply' ? '#1e40af' :
+                                   '#6b7280',
+                          }}>
+                            {n.kind === 'csrMail' ? 'CS → User' :
+                             n.kind === 'userReply' ? 'User → CS' :
+                             'Internal Note'}
+                          </span>
+                          {n.subject && (
+                            <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#374151' }}>
+                              {n.subject}
+                            </span>
+                          )}
+                        </div>
+                        {n.contentType === 'text/html' && n.text.includes('<')
                           ? <p className={styles.noteBody} dangerouslySetInnerHTML={{ __html: n.text }} />
                           : <p className={styles.noteBody}>{n.text}</p>
                         }
@@ -1141,6 +1421,19 @@ const UserDetailPage = () => {
                     <span>☰</span>
                     View All Orders
                   </button>
+
+                  <button
+                    className={styles.actionBtnGreen}
+                    onClick={() => {
+                      setAgentOrderOffer('comp.offer.agent.retention');
+                      setAgentOrderReason('');
+                      setAgentOrderError('');
+                      setShowAgentOrder(true);
+                    }}
+                  >
+                    <span>+</span>
+                    Create Order (Agent)
+                  </button>
                 </div>
               </>
             )}
@@ -1153,18 +1446,28 @@ const UserDetailPage = () => {
       {batchRefundConfirm && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
-            <h3 className={styles.modalTitle}>Confirm Refund All</h3>
+            <h3 className={styles.modalTitle}>
+              {batchRefundConfirm.multiOrder ? 'Confirm Multi-Order Refund' : 'Confirm Refund All'}
+            </h3>
             <p className={styles.modalText}>
               This will refund <strong>{batchRefundConfirm.eligiblePayments.length}</strong> eligible
-              payment{batchRefundConfirm.eligiblePayments.length > 1 ? 's' : ''} for a total of{' '}
+              payment{batchRefundConfirm.eligiblePayments.length > 1 ? 's' : ''}
+              {batchRefundConfirm.multiOrder && (() => {
+                const orderIds = new Set(batchRefundConfirm.eligiblePayments.map(p => p._orderId));
+                return <> across <strong>{orderIds.size}</strong> order{orderIds.size > 1 ? 's' : ''}</>;
+              })()}
+              {' '}for a total of{' '}
               <strong>${batchRefundConfirm.totalAmount.toFixed(2)}</strong>.
             </p>
             <ul className={styles.modalList}>
               {batchRefundConfirm.eligiblePayments.map((p, i) => {
                 const amt = p?.totalPrice?.amount ?? p?.transient?.amount?.collected ?? 0;
+                const orderLabel = batchRefundConfirm.multiOrder
+                  ? `Order ...${(p._orderId || '').slice(-6)} → `
+                  : '';
                 return (
                   <li key={p._id || i} className={styles.modalListItem}>
-                    Payment ...{(p._id || '').slice(-8)} — ${Number(amt).toFixed(2)}
+                    {orderLabel}Payment ...{(p._id || '').slice(-8)} — ${Number(amt).toFixed(2)}
                   </li>
                 );
               })}
@@ -1175,7 +1478,7 @@ const UserDetailPage = () => {
                 onClick={handleBatchRefund}
                 disabled={batchRefundProcessing}
               >
-                {batchRefundProcessing ? 'Processing...' : 'Confirm Refund All'}
+                {batchRefundProcessing ? 'Processing...' : `Confirm Refund${batchRefundConfirm.multiOrder ? ' All Orders' : ' All'}`}
               </button>
               <button
                 className={styles.refundCancelBtn}
@@ -1196,6 +1499,118 @@ const UserDetailPage = () => {
           userEmail={user?.email || ''}
           onClose={() => setShowRefundEmail(false)}
         />
+      )}
+
+      {/* ── Agent Order Modal ───────────────────────────────── */}
+      {showAgentOrder && user && (
+        <div className={styles.modalOverlay} onClick={() => !agentOrderProcessing && setShowAgentOrder(false)}>
+          <div className={styles.agentOrderModal} onClick={e => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Create Agent Order</h3>
+            <p className={styles.modalText}>
+              Create an order on behalf of <strong>{getFullName(user)}</strong> ({user.email}).
+              This will be logged as a CSR-initiated transaction.
+            </p>
+
+            {/* Offer selection */}
+            <label className={styles.agentOrderLabel}>Offer Plan</label>
+            <div className={styles.agentOrderOffers}>
+              {[
+                { key: 'comp.offer.signup.main', name: 'Basic Plan', price: '$29.99/mo', desc: 'Standard signup' },
+                { key: 'comp.offer.agent.retention', name: 'Retention Offer', price: '$14.99/mo', desc: '50% off downsell' },
+                { key: 'comp.offer.agent.comp', name: 'Comp / Free Access', price: '$0', desc: 'Complimentary' },
+              ].map(offer => (
+                <button
+                  key={offer.key}
+                  type="button"
+                  className={`${styles.agentOrderOfferBtn} ${agentOrderOffer === offer.key ? styles.agentOrderOfferBtnActive : ''}`}
+                  onClick={() => setAgentOrderOffer(offer.key)}
+                  disabled={agentOrderProcessing}
+                >
+                  <span className={styles.agentOrderOfferName}>{offer.name}</span>
+                  <span className={styles.agentOrderOfferPrice}>{offer.price}</span>
+                  <span className={styles.agentOrderOfferDesc}>{offer.desc}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Agent reason */}
+            <label className={styles.agentOrderLabel}>
+              Agent Reason <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <textarea
+              className={styles.agentOrderTextarea}
+              rows={3}
+              placeholder="Why is this order being created? (e.g., retention during cancellation call, comp for service issue)"
+              value={agentOrderReason}
+              onChange={e => setAgentOrderReason(e.target.value)}
+              disabled={agentOrderProcessing}
+            />
+
+            {/* Error display */}
+            {agentOrderError && (
+              <p className={styles.agentOrderError}>{agentOrderError}</p>
+            )}
+
+            {/* Actions */}
+            <div className={styles.modalActions}>
+              <button
+                className={styles.agentOrderCancelBtn}
+                onClick={() => setShowAgentOrder(false)}
+                disabled={agentOrderProcessing}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.agentOrderSubmitBtn}
+                disabled={agentOrderProcessing || !agentOrderReason.trim()}
+                onClick={async () => {
+                  setAgentOrderProcessing(true);
+                  setAgentOrderError('');
+                  const offerLabels = {
+                    'comp.offer.signup.main': 'Basic Plan ($29.99/mo)',
+                    'comp.offer.agent.retention': 'Retention Offer ($14.99/mo)',
+                    'comp.offer.agent.comp': 'Comp/Free Access ($0)',
+                  };
+                  try {
+                    const saleParams = {
+                      userInfo: {
+                        email: user.email,
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
+                        optin: true,
+                      },
+                      billings: [], // No billing — CSR order uses card on file or comp
+                      commerceOfferKeys: [{ key: agentOrderOffer, target: 'main', options: {} }],
+                      sequenceOption: { thinMatch: false },
+                    };
+                    await api.adminCreateOrder(saleParams);
+
+                    // Audit note
+                    try {
+                      await api.adminCreateNote({
+                        userId: user._id,
+                        message: `AGENT ORDER: ${offerLabels[agentOrderOffer] || agentOrderOffer} — Reason: ${agentOrderReason.trim()} — Agent: CS Agent`,
+                        contentType: 'text/plain',
+                      });
+                    } catch (noteErr) {
+                      console.warn('[AgentOrder] Audit note failed:', noteErr?.message);
+                    }
+
+                    showToast('Agent order created successfully.', 'success');
+                    setShowAgentOrder(false);
+                    fetchOrders(); // Refresh orders list
+                  } catch (err) {
+                    setAgentOrderError(err?.message || 'Failed to create order. Please try again.');
+                  } finally {
+                    setAgentOrderProcessing(false);
+                  }
+                }}
+              >
+                {agentOrderProcessing ? 'Creating...' : 'Create Order'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Toast */}

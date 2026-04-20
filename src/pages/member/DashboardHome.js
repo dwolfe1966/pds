@@ -630,6 +630,58 @@ const RecentSearchesPanel = ({ searches, navigate }) => (
   </div>
 );
 
+const RecentMessagesPanel = ({ messages, navigate }) => {
+  if (!messages || messages.length === 0) return null;
+  return (
+    <div className={styles.miniPanel}>
+      <div className={styles.miniPanelHeader}>
+        <h3 className={styles.miniPanelTitle}>
+          Messages{' '}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            background: '#0d5d2f', color: '#fff', fontSize: '0.7rem', fontWeight: 700,
+            borderRadius: '9999px', minWidth: '20px', height: '20px', padding: '0 5px',
+            marginLeft: '0.35rem', verticalAlign: 'middle',
+          }}>
+            {messages.length}
+          </span>
+        </h3>
+        <Link to="/account?tab=messages" className={styles.panelLink}>View all</Link>
+      </div>
+      <ul className={styles.miniList}>
+        {messages.slice(0, 3).map((msg) => {
+          const isSupport = msg.type === 'userContactCsrMail';
+          const subject = msg.content?.subject || (isSupport ? 'Support message' : 'Your message');
+          const body = msg.content?.message || '';
+          // Strip HTML tags for preview text
+          const plainText = body.replace(/<[^>]*>/g, '').trim();
+          const preview = plainText.length > 60 ? plainText.substring(0, 60) + '...' : plainText;
+          return (
+            <li key={msg._id} className={styles.miniRow}>
+              <div
+                className={styles.miniRowBody}
+                onClick={() => navigate('/account?tab=messages')}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+              >
+                <p className={styles.miniRowTitle}>
+                  <span style={{
+                    display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%',
+                    background: isSupport ? '#0d5d2f' : '#9ca3af', marginRight: '0.4rem', verticalAlign: 'middle',
+                  }} />
+                  {subject}
+                </p>
+                <p className={styles.miniRowSub}>{preview || 'No content'}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+};
+
 const WatchlistCard = ({ watchlist, isPaid, navigate }) => (
   <div className={styles.watchlistCard}>
     <div className={styles.panelHeader}>
@@ -682,6 +734,7 @@ const DashboardHome = () => {
   const [searchesUsed, setSearchesUsed] = useState(0);
   const [apiErrors, setApiErrors] = useState({});
   const [pdfDownloadingId, setPdfDownloadingId] = useState(null);
+  const [recentMessages, setRecentMessages] = useState([]);
 
   // Seeded mock state (exposure, watchers, brokers, watchlist, records feed)
   const seed = useMemo(() => {
@@ -766,6 +819,16 @@ const DashboardHome = () => {
         await api.get('/profile-views/me', { token });
       } catch (err) {
         errors.profileViews = true;
+      }
+
+      // Messages — best-effort, don't block dashboard if unavailable
+      try {
+        const msgResult = await api.getUserContacts();
+        const msgData = msgResult?.getData?.() ?? msgResult?.data ?? msgResult ?? {};
+        const msgs = msgData.messages || msgData.docs || (Array.isArray(msgData) ? msgData : []);
+        setRecentMessages(msgs.slice(0, 3));
+      } catch {
+        // Silently ignore — user.getContacts may not be available yet
       }
 
       setApiErrors(errors);
@@ -930,6 +993,7 @@ const DashboardHome = () => {
               navigate={navigate}
             />
             <RecentSearchesPanel searches={recentSearches} navigate={navigate} />
+            <RecentMessagesPanel messages={recentMessages} navigate={navigate} />
           </div>
         </div>
       )}

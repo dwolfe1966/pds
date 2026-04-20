@@ -92,6 +92,20 @@ export const API_ENDPOINTS = {
   'admin-create-note': { newApi: true, mockApi: false },
   'admin-update-note': { newApi: true, mockApi: false },
   'admin-create-csr-mail': { newApi: true, mockApi: false },
+  // CSR-initiated billing sale — commerceBilling/sale via admin session
+  'admin-create-order': { newApi: true, mockApi: false },
+  // Tracking — database/search on 'tracking' collection
+  'admin-user-tracking': { newApi: true, mockApi: false },
+  // Consumer: user's own support messages via user.getContacts
+  'get-user-contacts': { newApi: true, mockApi: false },
+  // Consumer: create contact message (visitor, no login) via contact.create
+  'create-contact': { newApi: true, mockApi: true },
+  // Consumer: create user contact (logged-in) via user.createContact
+  'create-user-contact': { newApi: true, mockApi: true },
+  // CSR: find visitor contact messages
+  'admin-find-contacts': { newApi: true, mockApi: false },
+  // CSR: link visitor contact to user account
+  'admin-change-contact-to-user': { newApi: true, mockApi: false },
 };
 
 /**
