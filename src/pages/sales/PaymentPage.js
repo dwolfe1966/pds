@@ -625,7 +625,6 @@ const PaymentPage = () => {
                 <span className={styles.trustItem}>🔒 256-bit SSL</span>
                 <span className={styles.trustItem}>✓ PCI Compliant</span>
                 <span className={styles.trustItem}>🔐 Encrypted</span>
-                <span className={styles.trustItem}>FCRA-Compliant</span>
               </div>
 
               <p className={styles.skipLink}>
@@ -667,7 +666,6 @@ const PaymentPage = () => {
 
             <div className={styles.summaryTrustCard}>
               <p className={styles.summaryTrustTitle}>Why people trust us</p>
-              <p className={styles.summaryTrustItem}>🛡️ FCRA-compliant searches</p>
               <p className={styles.summaryTrustItem}>🔒 Your data is never sold or shared</p>
               <p className={styles.summaryTrustItem}>⭐ Trusted by 3M+ members</p>
               <p className={styles.summaryTrustItem}>📞 Live support available</p>

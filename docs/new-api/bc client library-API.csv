@@ -289,24 +289,181 @@ ApiWrapper.goPage('optOut', { newPage: true });",,,"ApiWrapper.goPage('optOut', 
 Calling it as above will open the optOut page in a new window. Calling newPage with false will redirect the current page to the optOut page.",,,
 "Create Contact
 
-apiWrapper.api.contact.create",/api/message/contact,post,"[Create Contact]
-Users compose contact messages regardless of login.
+apiWrapper.api.contact.create
 
-apiWrapper.api.contact.create({ 
-firstName: 'tim',
-lastName: 'chin',
-email: 'user@email.com',
-telephone: '1234567890',
-message: 'testing contact message.',
-contentType: 'text/html',
-});
+Edited on 2026-04-17
+apiWrapper.api.message.contact.create",/api/contactMessage/create,post,"[Create Contact]
+
+Edited on 2026-04-17
+params:
+{
+category: 'billing';
+date: Date[];
+name: string;
+email: string;
+zip: string;
+last4: string;
+phone?: string;
+orderId?: string;
+}
+| 
+{
+category: 'general';
+topic: string;
+name: string;
+email: string;
+phone: string;
+description: string;
+orderId: string;
+zip?: string;
+last4?: string;
+}
+
+apiWrapper.api.message.contact.create(param);
 
 Added on 2026-03-31 (Removed)
 attachments: (optional) File[]
 - You can add attachments to the request value.
 contentType
-- contentType: text/plain or text/html",,,
-"Create User Contact Added on 2026-03-27
+- contentType: text/plain or text/html",,"{
+""success"": true,
+""messageResult"": {
+""index"": [],
+""type"": ""contact"",
+""ownerHash"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+""referenceIds"": [],
+""permissionIds"": [],
+""hash"": ""c3c54e5db1cfb633ce9a35728d175da5"",
+""content"": {
+""category"": ""billing"",
+""input"": {
+""date"": [
+""2026-04-17T21:16:29.466Z""
+],
+""name"": ""Tim Chin"",
+""email"": ""test123Q@bytecrtrs.com"",
+""zip"": ""90000"",
+""last4"": ""1111""
+}
+},
+""attachments"": [],
+""_id"": ""69e2a32d83d366d4bf6e2f69"",
+""createdAt"": ""2026-04-17T21:16:29.965Z"",
+""updatedAt"": ""2026-04-17T21:16:29.977Z"",
+""createdTimestamp"": 1776460589965,
+""updatedTimestamp"": 1776460589965,
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1776458031094,
+""__v"": 1,
+""currentRevisionId"": ""69e2a32d83d366d4bf6e2f6b"",
+""id"": ""69e2a32d83d366d4bf6e2f69""
+},
+""mailResult"": {
+""provider"": ""smtp01Mailer"",
+""success"": true,
+""response"": {
+""accepted"": [
+""dev@forserver.net""
+],
+""rejected"": [],
+""ehlo"": [
+""PIPELINING"",
+""SIZE 10240000"",
+""VRFY"",
+""ETRN"",
+""AUTH PLAIN LOGIN"",
+""AUTH=PLAIN LOGIN"",
+""ENHANCEDSTATUSCODES"",
+""8BITMIME"",
+""DSN"",
+""SMTPUTF8"",
+""CHUNKING""
+],
+""envelopeTime"": 230,
+""messageTime"": 228,
+""messageSize"": 581,
+""response"": ""250 2.0.0 Ok: queued as 89CE240425"",
+""envelope"": {
+""from"": """",
+""to"": [
+""dev@forserver.net""
+]
+},
+""messageId"": ""<d77693bd-b24b-eab9-858d-86e34f19d6ee@localhost>""
+}
+}
+}",
+"Reply ContactMessage Added on 2026-04-17
+
+apiWrapper.api.message.contact.reply",/api/contactMessage/userReply,post,"[Reply ContactMessage]
+After creating a Contact (Create Contact), if the CSR creates [Create Csr Reply], the user can create this Reply ContactMessage. 
+If the last thread of the Contact is [Create Csr Reply], this [Reply ContactMessage] can be created once for this response.
+
+apiWrapper.api.message.contact.reply({ contactMessageId, hash, message, contentType, attachments })
+
+params
+- contactMessageId: string; // You need to retrieve the value using the queryString of the reply link and pass it.
+- hash: string; // You need to retrieve the value using the queryString of the reply link and pass it.
+- message: string;
+- contentType: 'text/plain' | 'text/html';
+- attachments?: FileList | File[];
+
+Reply Link example)
+https://dev1002.dev.www.idlookup.ai/test/development.html?type=contact&hash=a7d4abd1daa761066bce6002af986449&contactMessageId=69e29eea70d9834df6aac8b8",,,
+"Get Contact Message Histories
+Addon on 2026-04-17
+
+apiWrapper.api.message.contact.histories",/api/contactMessage/histories,get,"apiWrapper.api.message.contact.histories({ contactMessageId, hash, lastId })
+
+params
+- contactMessageId : You need to retrieve the value using the queryString of the reply link and pass it.
+- hash : // You need to retrieve the value using the queryString of the reply link and pass it.
+- lastId : (optional) You can pass it to get the list on the next page.
+
+response
+- docs : The initially created contactMessage and reply(user, csr) records
+- anyFile : Whether to enforce the upload attachment file type.",,"{
+""docs"": [
+{
+""_id"": ""69e29eea70d9834df6aac8b8"",
+""index"": [],
+""type"": ""contact"",
+""ownerHash"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+""referenceIds"": [],
+""permissionIds"": [],
+""hash"": ""a7d4abd1daa761066bce6002af986449"",
+""content"": {
+""category"": ""general"",
+""input"": {
+""topic"": ""Test topic"",
+""name"": ""Tim Chin"",
+""email"": ""test123Q@gmail.com"",
+""phone"": ""8054320540"",
+""description"": ""description"",
+""orderId"": ""6927a03adc1ab27a35dd07d3""
+}
+},
+""attachments"": [],
+""createdAt"": ""2026-04-17T20:58:18.087Z"",
+""updatedAt"": ""2026-04-17T20:58:18.096Z"",
+""createdTimestamp"": 1776459498087,
+""updatedTimestamp"": 1776459498087,
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1776458031094,
+""__v"": 1,
+""currentRevisionId"": ""69e29eea70d9834df6aac8ba"",
+""id"": ""69e29eea70d9834df6aac8b8""
+}
+],
+""noMoreDocs"": true,
+""anyFile"": false
+}",
+"Removed on 2026-04-17
+Create User Contact Added on 2026-03-27
 
 apiWrapper.api.user.createContact",/api/message/userContact,post,"[Create User Contact]
 A logged-in user composes a contact message. This applies to messages written via the Reply link within the email when the CSR sends an email to the User.
@@ -321,7 +478,8 @@ contentType
 
 Added on 2026-04-13
 parentCsrMessageId: If createCsrMail is created for the user in CSR, when the user clicks reply to the email, the page is accessed including the parentCsrMessageId value in the QueryString. This parentCsrMessageId must be passed.",,,
-"Get User Contacts Added on 2026-04-13
+"Removed on 2026-04-17
+Get User Contacts Added on 2026-04-13
 
 apiWrapper.api.user.getContacts",/api/message/userContact/list,post,"apiWrapper.api.user.getContacts({ lastId })
 
@@ -981,7 +1139,18 @@ Edited On 2026-03-30
 ""campaigns"": [], 
 ""id"": ""69c5ca2c2fd61fb4563532c6"" 
 }",
-,,,,,,
+"Create Tracking Addon 2026-04-17
+
+apiWrapper.api.tracking.create",/api/tracking/create,post,"apiWrapper.api.tracking.create(data)
+
+data: Record<string, any>
+- You can pass data to be stored in tracking as an object.
+
+example)
+const data = {
+type: 'agreement',
+date: '2026-04-17'
+};",,,
 ,,,,,,
 ,,,,,,
 ,,,,,,

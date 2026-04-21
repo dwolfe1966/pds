@@ -21,7 +21,6 @@ const TRUST_BADGES = [
   { label: 'Business Records', icon: '🏢' },
   { label: 'Email Verification', icon: '✉️' },
   { label: '12B+ Records', icon: '📋' },
-  { label: 'FCRA Safe', icon: '✓' },
 ];
 
 const BENEFIT_BULLETS = [

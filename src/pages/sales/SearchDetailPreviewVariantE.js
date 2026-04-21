@@ -284,7 +284,6 @@ const SearchDetailPreviewVariantE = ({ person, id }) => {
       }}>
         {[
           { icon: '\uD83D\uDD12', label: '256-bit SSL\nEncrypted', bg: '#dcfce7', border: '#86efac', color: '#166534' },
-          { icon: '\u2713', label: 'FCRA\nCompliant', bg: '#dbeafe', border: '#93c5fd', color: '#1e40af' },
           { icon: '\u2605', label: 'A+ Rated\nService', bg: '#fef3c7', border: '#fde68a', color: '#92400e' },
         ].map(({ icon, label, bg, border, color }) => (
           <div key={label} style={{
@@ -471,7 +470,6 @@ const SearchDetailPreviewVariantE = ({ person, id }) => {
             flexWrap: 'wrap', fontSize: '0.72rem', color: '#8a8578', fontWeight: 500,
           }}>
             <span>\uD83D\uDD12 SSL Encrypted</span>
-            <span>\u2713 FCRA Compliant</span>
             <span>\u2605 A+ Rated</span>
           </div>
         </div>

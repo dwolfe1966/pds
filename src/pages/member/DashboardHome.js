@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { getReportList } from '../../services/reportService';
+import { track } from '../../services/trackingService';
 import DevBCSession from '../../components/DevBCSession';
 import styles from './DashboardHome.module.css';
 import {
@@ -838,6 +839,10 @@ const DashboardHome = () => {
     fetchAll();
   }, [token]);
 
+  useEffect(() => {
+    track('dashboard_view', { isPaid: !!isPaid });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const hasApiErrors = Object.keys(apiErrors).length > 0;
 
   return (
@@ -902,7 +907,10 @@ const DashboardHome = () => {
             <button
               type="button"
               className={styles.membershipCta}
-              onClick={() => navigate('/payment')}
+              onClick={() => {
+                track('dashboard_upgrade_click', { source: 'membership_banner' });
+                navigate('/payment');
+              }}
             >
               Upgrade to Pro — $29.99/mo
             </button>
@@ -939,25 +947,37 @@ const DashboardHome = () => {
           icon={Icon.Search}
           title="Run a New Search"
           desc="Look up anyone by name, phone, or email."
-          onClick={() => navigate('/people-search')}
+          onClick={() => {
+            track('dashboard_cta_click', { target: 'people_search' });
+            navigate('/people-search');
+          }}
         />
         <QuickActionTile
           icon={Icon.Shield}
           title="View Your Exposure"
           desc="See which records expose your identity."
-          onClick={() => document.getElementById('broker-tracker')?.scrollIntoView({ behavior: 'smooth' })}
+          onClick={() => {
+            track('dashboard_cta_click', { target: 'broker_tracker' });
+            document.getElementById('broker-tracker')?.scrollIntoView({ behavior: 'smooth' });
+          }}
         />
         <QuickActionTile
           icon={Icon.Eye}
           title="Check Who's Watching"
           desc="See who searched or viewed your profile."
-          onClick={() => navigate('/who-is-searching')}
+          onClick={() => {
+            track('dashboard_cta_click', { target: 'who_is_searching' });
+            navigate('/who-is-searching');
+          }}
         />
         <QuickActionTile
           icon={Icon.Bell}
           title="Manage Alerts"
           desc="Get notified the moment new records appear."
-          onClick={() => navigate('/alerts')}
+          onClick={() => {
+            track('dashboard_cta_click', { target: 'alerts' });
+            navigate('/alerts');
+          }}
         />
       </div>
 

@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
+import { track } from '../../services/trackingService';
 import styles from './WhoIsSearchingPage.module.css';
 import {
   hashString,
@@ -432,7 +433,10 @@ const TabContent = ({ events, kind, isPaid }) => {
               </select>
               <button
                 className={styles.exportButton}
-                onClick={() => downloadCSV(filteredEvents, kind)}
+                onClick={() => {
+                  track('watchers_csv_export', { kind, count: filteredEvents.length });
+                  downloadCSV(filteredEvents, kind);
+                }}
                 type="button"
               >
                 Export CSV
@@ -514,6 +518,10 @@ const WhoIsSearchingPage = () => {
     return () => clearTimeout(timeout);
   }, [seed]);
 
+  useEffect(() => {
+    track('watchers_view', { isPaid: !!isPaid });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <main className={styles.main}>
       <header className={styles.header}>
@@ -530,7 +538,10 @@ const WhoIsSearchingPage = () => {
           role="tab"
           aria-selected={activeTab === 'searchers'}
           className={`${styles.tab} ${activeTab === 'searchers' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('searchers')}
+          onClick={() => {
+            track('watchers_tab_change', { tab: 'searchers' });
+            setActiveTab('searchers');
+          }}
         >
           Searchers
           {!loading && <span className={styles.tabCount}>{searchers.length}</span>}
@@ -540,7 +551,10 @@ const WhoIsSearchingPage = () => {
           role="tab"
           aria-selected={activeTab === 'viewers'}
           className={`${styles.tab} ${activeTab === 'viewers' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('viewers')}
+          onClick={() => {
+            track('watchers_tab_change', { tab: 'viewers' });
+            setActiveTab('viewers');
+          }}
         >
           Viewers
           {!loading && <span className={styles.tabCount}>{viewers.length}</span>}

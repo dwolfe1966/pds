@@ -554,8 +554,9 @@ async function callNewAPI(endpoint, params) {
         query.lName = query.lastName;
         delete query.lastName;
       }
-      // NOTE: ByteCrtrs API may cap at 5; revert if results come back malformed
-      query.perPage = 10;
+      // BC teaser docs do not list perPage as an input; BC returns its default
+      // page size (~5) and additional results must be fetched via response.getMore().
+      delete query.perPage;
       delete query.per_page;
       delete query.pageSize;
       const isPaginationRequest = !!query.commerceContentId && query.page != null;

@@ -30,7 +30,6 @@ const INTENT_OPTIONS = [
 const TRUST_COPY = [
   '🔒 256-bit SSL encryption',
   '📋 12B+ public records',
-  '✓ FCRA compliant',
   '🚫 No spam, ever',
 ];
 

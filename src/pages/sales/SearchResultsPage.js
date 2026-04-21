@@ -27,6 +27,7 @@ const SalesSearchResultsPage = () => {
   const [searchQuery, setSearchQuery] = useState({ firstName: '', lastName: '', state: '' });
   const [rawResponse, setRawResponse] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [paginationExhausted, setPaginationExhausted] = useState(false);
 
   useEffect(() => {
     track('results_view', { search_type: 'name', query: query || '', state: state || '' });
@@ -211,7 +212,7 @@ const SalesSearchResultsPage = () => {
                 </div>
               ))}
             </div>
-            {rawResponse?.hasMore?.() && (
+            {rawResponse?.hasMore?.() && !paginationExhausted && (
               <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
                 <button
                   type="button"
@@ -222,9 +223,12 @@ const SalesSearchResultsPage = () => {
                       const more = await api.loadMoreSearchResults(rawResponse);
                       if (more?.data?.length) {
                         setResults(prev => [...prev, ...more.data]);
+                      } else {
+                        setPaginationExhausted(true);
                       }
                     } catch (err) {
                       console.error('Load more failed:', err);
+                      setPaginationExhausted(true);
                     } finally {
                       setLoadingMore(false);
                     }

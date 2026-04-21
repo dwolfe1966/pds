@@ -18,7 +18,6 @@ const BENEFIT_STATEMENTS = [
   '12B+ public records searched',
   'Address history and current location',
   'Relatives and family connections',
-  'Secure, FCRA-compliant reports',
   'One-time purchase or subscription options',
 ];
 
@@ -317,7 +316,6 @@ const SearchDetailPreviewPage = () => {
 
       <div className={styles.trustRow}>
         <span>🔒 SSL Encrypted</span>
-        <span>✓ FCRA Compliant</span>
         <span>🚫 No spam</span>
       </div>
     </div>

@@ -526,7 +526,6 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
           }}>
             <span>🔒 256-bit SSL</span>
             <span>✓ PCI Compliant</span>
-            <span>FCRA-Compliant</span>
           </div>
         </div>
       )}

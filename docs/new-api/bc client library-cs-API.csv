@@ -64,7 +64,8 @@ params
 - brandId: (optional)
 - email: (optional)
 - lastId: (optional)",,,
-Create Admin User Note,/api/message/admin/user/note/create,post,"csrWrapper.api.user.createAdminNote({ 
+"Removed on 2026-04-17
+Create Admin User Note",/api/message/admin/user/note/create,post,"csrWrapper.api.user.createAdminNote({ 
 userId: '69aa174aba9d8bf27771b282', 
 message: 'Create a Memo in User that only administrators can see.'
 contentType: 'text/html',
@@ -75,66 +76,343 @@ attachments: (optional) File[]
 - You can add attachments to the request value.
 contentType
 - contentType: text/plain or text/html",,,
-"Update Admin User Note
+"Removed on 2026-04-17
+Update Admin User Note
 
 csrWrapper.api.user.updateAdminNote",/api/message/admin/user/note/update,post,"csrWrapper.api.user.updateAdminNote({ 
 messageId: '69af35499c5bb16194bfd741', 
 message: 'Edit the message content.' 
 });",,,
-"Create Csr Mail Added on 2026-03-27
+"Create User Admin Note Added on 2026-04-17 Edited on 2026-04-20
 
-csrWrapper.api.user.createCsrMail",/api/message/admin/user/csrMail/create,post,"csrWrapper.api.user.createCsrMail({ targetUserId, subject, message, contentType });
+csrWrapper.api.message.note.createUserAdminNote",/api/message/admin/createNote,post,"csrWrapper.api.message.note.createUserAdminNote({ userId, message, contentType, attachments })
 
-Sends an email to the user with targetUserId. The sent email can be viewed in [Find User Contact]. (type : userContactCsrMail)
+Write a note in the user admin note message that only the admin can see.
+params
+- userId: _id of user
+- message
+- contentType : text/plain, text/html
+- attachments (optional)",,"{ 
+""index"": [], 
+""type"": ""adminNote"", 
+""ownerId"": ""6943179e90625d3dbeadf6f7"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""referenceId"": ""69d9ad287c4fc440d9ca5e73"", 
+""referenceCollection"": ""users"", 
+""content"": { 
+""message"": ""test admin note"", 
+""contentType"": ""text/html"" 
+}, 
+""attachments"": [], 
+""_id"": ""69e6a7f914689217f43b3611"", 
+""createdAt"": ""2026-04-20T22:26:01.382Z"", 
+""updatedAt"": ""2026-04-20T22:26:01.391Z"", 
+""createdTimestamp"": 1776723961382, 
+""updatedTimestamp"": 1776723961382, 
+""trackingIds"": { 
+""trackingId"": ""69e6a7f914689217f43b360c"", 
+""sessionId"": ""NEbl3N01stxvZT5sMDs_DN_TMhD9jMIa"", 
+""clientId"": ""fn20CoGeMf3LC27lAurmGd7VGnOt1F7E"", 
+""apiId"": ""Tz3sH5YjTuRdk61JfAORsxMDzdvWvTv7"" 
+}, 
+""brandId"": ""bytecrtrs"", 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1776722912711, 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""__v"": 1, 
+""currentRevisionId"": ""69e6a7f914689217f43b3613"", 
+""owner"": { 
+""_id"": ""6943179e90625d3dbeadf6f7"", 
+""firstName"": ""BC"", 
+""lastName"": ""Admin"", 
+""id"": ""6943179e90625d3dbeadf6f7"" 
+}, 
+""id"": ""69e6a7f914689217f43b3611"" 
+}",
+"Create Contact Admin Note Added on 2026-04-20
+
+csrWrapper.api.message.note.createContactAdminNote",/api/message/admin/createNote,post,"csrWrapper.api.message.note
+.createContactAdminNote({ contactMessageId, message, contentType, attachments })
+
+Write a note in the contact admin note message that only the admin can see.
 
 params
-- targetUserId
-- subject : This is the subject of the email.
-- message : This is the content of the email. (html or text)
+- contactMessageId: _id of contact message
+- message
+- contentType : text/plain, text/html
+- attachments (optional)",,"{ 
+""index"": [], 
+""type"": ""adminNote"", 
+""ownerId"": ""6943179e90625d3dbeadf6f7"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""referenceId"": ""69e6a41ee2bfe8bbe9d2484c"", 
+""referenceCollection"": ""messages"", 
+""content"": { 
+""message"": ""test contact admin note"", 
+""contentType"": ""text/html"" 
+}, 
+""attachments"": [], 
+""_id"": ""69e6a8b114689217f43b368e"", 
+""createdAt"": ""2026-04-20T22:29:05.643Z"", 
+""updatedAt"": ""2026-04-20T22:29:05.653Z"", 
+""createdTimestamp"": 1776724145643, 
+""updatedTimestamp"": 1776724145643, 
+""trackingIds"": { 
+""trackingId"": ""69e6a8b114689217f43b3689"", 
+""sessionId"": ""NEbl3N01stxvZT5sMDs_DN_TMhD9jMIa"", 
+""clientId"": ""fn20CoGeMf3LC27lAurmGd7VGnOt1F7E"", 
+""apiId"": ""QkCbufujSu4F3iXM5wYOgEjmnWoxU0yO"" 
+}, 
+""brandId"": ""bytecrtrs"", 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1776722912711, 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""__v"": 1, 
+""currentRevisionId"": ""69e6a8b114689217f43b3690"", 
+""owner"": { 
+""_id"": ""6943179e90625d3dbeadf6f7"", 
+""firstName"": ""BC"", 
+""lastName"": ""Admin"", 
+""id"": ""6943179e90625d3dbeadf6f7"" 
+}, 
+""id"": ""69e6a8b114689217f43b368e"" 
+}",
+"Update Admin Note Added on 2026-04-17
 
-Added on 2026-03-31
-attachments: (optional) File[]
-- You can add attachments to the request value.
-contentType
-- contentType: text/plain or text/html",,"{
-""success"": true,
-""messageResult"": {
+csrWrapper.api.message.note.updateAdminNote",/api/message/admin/updateNote,post,"csrWrapper.api.message.note.updateAdminNote({ messageId, message })
+
+params
+- messageId : _id of admin note message
+- message",,"{ 
+""_id"": ""69e6a8b114689217f43b368e"", 
+""index"": [], 
+""type"": ""adminNote"", 
+""ownerId"": ""6943179e90625d3dbeadf6f7"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""referenceId"": ""69e6a41ee2bfe8bbe9d2484c"", 
+""referenceCollection"": ""messages"", 
+""content"": { 
+""message"": ""test update admin note"", 
+""contentType"": ""text/html"" 
+}, 
+""attachments"": [], 
+""createdAt"": ""2026-04-20T22:29:05.643Z"", 
+""updatedAt"": ""2026-04-20T22:29:28.259Z"", 
+""createdTimestamp"": 1776724145643, 
+""updatedTimestamp"": 1776724145643, 
+""trackingIds"": { 
+""trackingId"": ""69e6a8b114689217f43b3689"", 
+""sessionId"": ""NEbl3N01stxvZT5sMDs_DN_TMhD9jMIa"", 
+""clientId"": ""fn20CoGeMf3LC27lAurmGd7VGnOt1F7E"", 
+""apiId"": ""QkCbufujSu4F3iXM5wYOgEjmnWoxU0yO"" 
+}, 
+""brandId"": ""bytecrtrs"", 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1776722912711, 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""__v"": 3, 
+""currentRevisionId"": ""69e6a8c814689217f43b36aa"", 
+""owner"": { 
+""_id"": ""6943179e90625d3dbeadf6f7"", 
+""firstName"": ""BC"", 
+""lastName"": ""Admin"", 
+""id"": ""6943179e90625d3dbeadf6f7"" 
+}, 
+""id"": ""69e6a8b114689217f43b368e"" 
+}",
+"Find User Admin Notes Added on 2026-04-20
+
+csrWrapper.api.user.findUserAdminNotes
+",/api/message/admin/findNotes,get,"csrWrapper.api.user.findUserAdminNotes({ userId, lastId });
+
+params
+- userId: _id of user
+- lastId: (optional)",,"{ 
+""docs"": [ 
+{ 
+""_id"": ""69e6a7f914689217f43b3611"", 
+""index"": [], 
+""type"": ""adminNote"", 
+""ownerId"": ""6943179e90625d3dbeadf6f7"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""referenceId"": ""69d9ad287c4fc440d9ca5e73"", 
+""referenceCollection"": ""users"", 
+""content"": { 
+""message"": ""test admin note"", 
+""contentType"": ""text/html"" 
+}, 
+""attachments"": [], 
+""createdAt"": ""2026-04-20T22:26:01.382Z"", 
+""updatedAt"": ""2026-04-20T22:26:01.391Z"", 
+""createdTimestamp"": 1776723961382, 
+""updatedTimestamp"": 1776723961382, 
+""trackingIds"": { 
+""trackingId"": ""69e6a7f914689217f43b360c"", 
+""sessionId"": ""NEbl3N01stxvZT5sMDs_DN_TMhD9jMIa"", 
+""clientId"": ""fn20CoGeMf3LC27lAurmGd7VGnOt1F7E"", 
+""apiId"": ""Tz3sH5YjTuRdk61JfAORsxMDzdvWvTv7"" 
+}, 
+""brandId"": ""bytecrtrs"", 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1776722912711, 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""__v"": 1, 
+""currentRevisionId"": ""69e6a7f914689217f43b3613"", 
+""id"": ""69e6a7f914689217f43b3611"" 
+}, 
+{ 
+""_id"": ""69e6a7d814689217f43b35e2"", 
+""index"": [], 
+""type"": ""adminNote"", 
+""ownerId"": ""6943179e90625d3dbeadf6f7"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""referenceId"": ""69d9ad287c4fc440d9ca5e73"", 
+""referenceCollection"": ""users"", 
+""content"": { 
+""message"": ""test admin note"", 
+""contentType"": ""text/html"" 
+}, 
+""attachments"": [], 
+""createdAt"": ""2026-04-20T22:25:28.620Z"", 
+""updatedAt"": ""2026-04-20T22:25:28.627Z"", 
+""createdTimestamp"": 1776723928620, 
+""updatedTimestamp"": 1776723928620, 
+""trackingIds"": { 
+""trackingId"": ""69e6a7d814689217f43b35dd"", 
+""sessionId"": ""NEbl3N01stxvZT5sMDs_DN_TMhD9jMIa"", 
+""clientId"": ""fn20CoGeMf3LC27lAurmGd7VGnOt1F7E"", 
+""apiId"": ""GwbTJEC6VgdShxGOIka4PjiJfrEeqUkS"" 
+}, 
+""brandId"": ""bytecrtrs"", 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1776722912711, 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""__v"": 1, 
+""currentRevisionId"": ""69e6a7d814689217f43b35e4"", 
+""id"": ""69e6a7d814689217f43b35e2"" 
+} 
+], 
+""noMoreDocs"": true 
+}",
+"Find User Contacts added on 2026-04-17
+
+csrWrapper.api.user.findUserContacts",/contactMessage/admin/find/:targetUserId,post,"csrWrapper.api.user.findUserContacts({ userId, lastId })
+
+Get the contact message assigned by [Set Target User To Contact Message].
+
+params
+- userId : 
+- lastId (optional)",,"{
+""docs"": [
+{
+""_id"": ""69e2ad3983d366d4bf6e3854"",
 ""index"": [],
-""type"": ""userContactCsrMail"",
-""status"": ""fulfilled"",
+""type"": ""contact"",
 ""ownerId"": ""6943179e90625d3dbeadf6f7"",
 ""referenceIds"": [],
 ""permissionIds"": [],
+""hash"": ""17a9a09c8ffc49dd37a0e3cc8a77bfcf"",
 ""content"": {
-""targetUserId"": ""69bdf6af9d86cb973f1fa2ca"",
-""subject"": ""TEST CSR MAIL"",
-""message"": ""<h1>test csr mail<h1>""
+""category"": ""general"",
+""input"": {
+""topic"": ""Test topic"",
+""name"": ""Tim Chin"",
+""email"": ""test123Q@bytecrtrs.com"",
+""phone"": ""8054320540"",
+""description"": ""description"",
+""orderId"": ""698e181e2537a200cd94646c""
 },
-""_id"": ""69c73c7ba3228d5e5a60a772"",
-""createdAt"": ""2026-03-28T02:27:07.466Z"",
-""updatedAt"": ""2026-03-28T02:27:07.472Z"",
-""createdTimestamp"": 1774664827466,
-""updatedTimestamp"": 1774664827466,
+""targetUserId"": ""6943179e90625d3dbeadf6f7""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-17T21:59:21.106Z"",
+""updatedAt"": ""2026-04-17T22:43:12.496Z"",
+""createdTimestamp"": 1776463161106,
+""updatedTimestamp"": 1776463161106,
 ""trackingIds"": {
-""trackingId"": ""69c73c7ba3228d5e5a60a76e"",
-""sessionId"": ""skoPU9YnTlya0JU4lD-w_pHuyN3Gf_6V"",
-""clientId"": ""WHDxfnzicsFm0nP7aZOHYUwKu1qdeypG"",
-""apiId"": ""JO6LD0lKD1sFU7owt5eeJ5kyRxtdoGM2""
+""trackingId"": ""69e2ad3983d366d4bf6e3850"",
+""sessionId"": ""eF1FWlXWPp6iA8dv9BbSXE3aErXDE7jt"",
+""clientId"": ""q0C7yvVel6oo2VqueV0txkFfRsZWLEg4"",
+""apiId"": ""XGMBUDn3tqnZbybmTs0yiFcYpmR6TNog""
 },
 ""brandId"": ""bytecrtrs"",
 ""shConId"": ""69129afbeee8fa241c86c9c2"",
 ""shColId"": ""69431f043a915bc1be68b4bc"",
-""shTimestamp"": 1774582585438,
+""shTimestamp"": 1776462758866,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 2,
+""currentRevisionId"": ""69e2b78083d366d4bf6e3d6e"",
+""latestReply"": null
+}
+],
+""noMoreDocs"": true
+}",
+"Create Contact Addon on 2026-04-17
+
+csrWrapper.api.message.contact.create",/api/contactMessage/admin/create,post,"csrWrapper.api.message.contact.create(param);
+
+This API is used to allow the CSR to compose a contact message when the request is received through a different channel, similar to when the user composes the contact message directly.
+
+params
+- topic
+- name
+- email
+- phone
+- description
+- orderId
+- zip (optional)
+- last4 (optional)
+- actorId (optional) : user._id of csr (Can be assigned later via [Set Actor To Contact Message])
+- attachments (optional)",,"{
+""success"": true,
+""messageResult"": {
+""index"": [],
+""type"": ""contact"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""hash"": ""17a9a09c8ffc49dd37a0e3cc8a77bfcf"",
+""content"": {
+""category"": ""general"",
+""input"": {
+""topic"": ""Test topic"",
+""name"": ""Tim Chin"",
+""email"": ""test123Q@bytecrtrs.com"",
+""phone"": ""8054320540"",
+""description"": ""description"",
+""orderId"": ""698e181e2537a200cd94646c""
+}
+},
+""attachments"": [],
+""_id"": ""69e2ad3983d366d4bf6e3854"",
+""createdAt"": ""2026-04-17T21:59:21.106Z"",
+""updatedAt"": ""2026-04-17T21:59:21.113Z"",
+""createdTimestamp"": 1776463161106,
+""updatedTimestamp"": 1776463161106,
+""trackingIds"": {
+""trackingId"": ""69e2ad3983d366d4bf6e3850"",
+""sessionId"": ""eF1FWlXWPp6iA8dv9BbSXE3aErXDE7jt"",
+""clientId"": ""q0C7yvVel6oo2VqueV0txkFfRsZWLEg4"",
+""apiId"": ""XGMBUDn3tqnZbybmTs0yiFcYpmR6TNog""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1776462758866,
 ""updaterId"": ""6943179e90625d3dbeadf6f7"",
 ""__v"": 1,
-""currentRevisionId"": ""69c73c7ba3228d5e5a60a774"",
-""owner"": {
-""_id"": ""6943179e90625d3dbeadf6f7"",
-""firstName"": ""BC"",
-""lastName"": ""Admin"",
-""id"": ""6943179e90625d3dbeadf6f7""
-},
-""id"": ""69c73c7ba3228d5e5a60a772""
+""currentRevisionId"": ""69e2ad3983d366d4bf6e3856"",
+""id"": ""69e2ad3983d366d4bf6e3854""
 },
 ""mailResult"": {
 ""provider"": ""smtp01Mailer"",
@@ -157,122 +435,356 @@ contentType
 ""SMTPUTF8"",
 ""CHUNKING""
 ],
-""envelopeTime"": 220,
-""messageTime"": 217,
-""messageSize"": 268,
-""response"": ""250 2.0.0 Ok: queued as BF2E740067"",
+""envelopeTime"": 245,
+""messageTime"": 236,
+""messageSize"": 583,
+""response"": ""250 2.0.0 Ok: queued as B04C3407BA"",
 ""envelope"": {
 ""from"": """",
 ""to"": [
 ""dev@forserver.net""
 ]
 },
-""messageId"": ""<9bd3c383-184a-350b-d773-87cd6ec70a3f@localhost>""
+""messageId"": ""<d3c22c49-b52c-1bd5-ea0c-c27ae5cb8af2@localhost>""
 }
 }
 }",
-"Find User Contact Edited on 2026-03-27
+"Create Csr Reply Edited on 2026-04-17
+Create Csr Mail Added on 2026-03-27
 
-csrWrapper.api.user.findUserContacts",/api/database/search,post,"csrWrapper.api.user.findUserContacts({ userId: '69aa174aba9d8bf27771b282' });
+csrWrapper.api.user.createCsrMail",/api/message/admin/user/csrMail/create,post,"Edited on 2026-04-17 
+csrWrapper.api.message.contact
+.createCsrReply({ contactMessageId, subject, message, contentType, attachments })
 
-The response value returns N UserContacts. To obtain more than N response values, pass the _id of the UserContacts received in the response to lastId. The first page does not pass lastId.
+A CSR can write a Reply to a contactMessage retrieved from [Find Contact Messages].
 
 params
-- userId: 
+- contactMessageId : _id of the record retrieved from [Find Contact Messages]
+- subject : This is the subject of the email.
+- message : This is the content of the email. (html or text)
+- contentType : text/plain, text/html
+- attachments: (optional)
+
+Added on 2026-03-31
+attachments: (optional) File[]
+- You can add attachments to the request value.
+contentType
+- contentType: text/plain or text/html",,"{
+""success"": true,
+""messageResult"": {
+""index"": [],
+""type"": ""contactCsrReply"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""parentId"": ""69e2a32d83d366d4bf6e2f69"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""subject"": ""test csr reply"",
+""message"": ""test csr reply\n<p><a href=\""https://dev1002.dev.www.idlookup.ai/test/development.html?type=contactCsrReply&amp;hash=c3c54e5db1cfb633ce9a35728d175da5&amp;contactMessageId=69e2a32d83d366d4bf6e2f69\"">Reply</a></p>"",
+""contentType"": ""text/html""
+},
+""attachments"": [],
+""_id"": ""69e2abd483d366d4bf6e370f"",
+""createdAt"": ""2026-04-17T21:53:24.515Z"",
+""updatedAt"": ""2026-04-17T21:53:24.523Z"",
+""createdTimestamp"": 1776462804515,
+""updatedTimestamp"": 1776462804515,
+""trackingIds"": {
+""trackingId"": ""69e2abd483d366d4bf6e370a"",
+""sessionId"": ""eF1FWlXWPp6iA8dv9BbSXE3aErXDE7jt"",
+""clientId"": ""4p6Q9kL2ABUzGwAsG3y3D3xvPj7PZEsh"",
+""apiId"": ""rAVsz8ZOfcT2iZYMwjM3tdeXoIftZz7y""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1776462758866,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 1,
+""currentRevisionId"": ""69e2abd483d366d4bf6e3711"",
+""id"": ""69e2abd483d366d4bf6e370f""
+},
+""mailResult"": {
+""provider"": ""smtp01Mailer"",
+""success"": false,
+""error"": [
+{
+""target"": {
+""subject"": ""test csr reply"",
+""html"": ""test csr reply\n<p><a href='https://dev1002.dev.www.idlookup.ai/test/development.html?type=contactCsrReply&hash=c3c54e5db1cfb633ce9a35728d175da5&contactMessageId=69e2a32d83d366d4bf6e2f69'>Reply</a></p>"",
+""attachments"": []
+},
+""property"": ""to"",
+""children"": [],
+""constraints"": {
+""isEmail"": ""to must be an email"",
+""isNotEmpty"": ""to should not be empty""
+}
+}
+]
+}
+}",
+"Find Contact Messages Edited on 2026-04-17
+Edited on 2026-03-27
+
+csrWrapper.api.message.contact.find",/api/contactMessage/admin/find,get,"csrWrapper.api.message.contact.find({ lastId })
+
+Retrieves contact messages.
+(The records are sorted by the date of the last reply if there is one, and by the date of the contact if there is no reply.)
+
+params
 - lastId: (optional)
 
-Return
-- type
-- userContact (Contacts created by the user, contacts created via the reply link in csrMail, etc.)
-- userContactCsrMail (Copy of the email sent from Csr to User)
-- userContactAdminNote (Memo written to the User in Csr)",,"{ 
-""docs"": [ 
-{ 
-""_id"": ""69cdd902c45e7334d99cfec5"", 
-""index"": [], 
-""type"": ""userContactAdminNote"", 
-""status"": ""fulfilled"", 
-""ownerId"": ""6943179e90625d3dbeadf6f7"", 
+response
+- Each record can have a latestReply field.
+- latestReply is the last reply for the contact. (userReply, csrReply)
+
+",,"{
+""docs"": [
+{
+""_id"": ""69e2ad3983d366d4bf6e3854"",
+""index"": [],
+""type"": ""contact"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""referenceIds"": [],
+""permissionIds"": [],
+""hash"": ""17a9a09c8ffc49dd37a0e3cc8a77bfcf"",
+""content"": {
+""category"": ""general"",
+""input"": {
+""topic"": ""Test topic"",
+""name"": ""Tim Chin"",
+""email"": ""test123Q@bytecrtrs.com"",
+""phone"": ""8054320540"",
+""description"": ""description"",
+""orderId"": ""698e181e2537a200cd94646c""
+}
+},
+""attachments"": [],
+""createdAt"": ""2026-04-17T21:59:21.106Z"",
+""updatedAt"": ""2026-04-17T21:59:21.113Z"",
+""createdTimestamp"": 1776463161106,
+""updatedTimestamp"": 1776463161106,
+""trackingIds"": {
+""trackingId"": ""69e2ad3983d366d4bf6e3850"",
+""sessionId"": ""eF1FWlXWPp6iA8dv9BbSXE3aErXDE7jt"",
+""clientId"": ""q0C7yvVel6oo2VqueV0txkFfRsZWLEg4"",
+""apiId"": ""XGMBUDn3tqnZbybmTs0yiFcYpmR6TNog""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1776462758866,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 1,
+""currentRevisionId"": ""69e2ad3983d366d4bf6e3856"",
+""latestReply"": null
+},
+{
+""_id"": ""69e2a32d83d366d4bf6e2f69"",
+""index"": [],
+""type"": ""contact"",
+""ownerHash"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+""referenceIds"": [],
+""permissionIds"": [],
+""hash"": ""c3c54e5db1cfb633ce9a35728d175da5"",
+""content"": {
+""category"": ""billing"",
+""input"": {
+""date"": [
+""2026-04-17T21:16:29.466Z""
+],
+""name"": ""Tim Chin"",
+""email"": ""test123Q@bytecrtrs.com"",
+""zip"": ""90000"",
+""last4"": ""1111""
+}
+},
+""attachments"": [],
+""createdAt"": ""2026-04-17T21:16:29.965Z"",
+""updatedAt"": ""2026-04-17T21:16:29.977Z"",
+""createdTimestamp"": 1776460589965,
+""updatedTimestamp"": 1776460589965,
+""trackingIds"": {
+""trackingId"": ""69e2a32d83d366d4bf6e2f66"",
+""sessionId"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+""clientId"": ""akPWcVoOvOfBSAJNaY0JpHK4bOPt4zZ7"",
+""apiId"": ""mUsZ38I2jDK4L47ris1yc7cU98uVZI4L""
+},
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1776458031094,
+""__v"": 1,
+""currentRevisionId"": ""69e2a32d83d366d4bf6e2f6b"",
+""latestReply"": {
+""_id"": ""69e2abd483d366d4bf6e370f"",
+""index"": [],
+""type"": ""contactCsrReply"",
+""ownerId"": ""6943179e90625d3dbeadf6f7"",
+""parentId"": ""69e2a32d83d366d4bf6e2f69"",
+""referenceIds"": [],
+""permissionIds"": [],
+""content"": {
+""subject"": ""test csr reply"",
+""message"": ""test csr reply\n<p><a href=\""https://dev1002.dev.www.idlookup.ai/test/development.html?type=contactCsrReply&amp;hash=c3c54e5db1cfb633ce9a35728d175da5&amp;contactMessageId=69e2a32d83d366d4bf6e2f69\"">Reply</a></p>"",
+""contentType"": ""text/html""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-17T21:53:24.515Z"",
+""updatedAt"": ""2026-04-17T21:53:24.523Z"",
+""createdTimestamp"": 1776462804515,
+""updatedTimestamp"": 1776462804515,
+""trackingIds"": {
+""trackingId"": ""69e2abd483d366d4bf6e370a"",
+""sessionId"": ""eF1FWlXWPp6iA8dv9BbSXE3aErXDE7jt"",
+""clientId"": ""4p6Q9kL2ABUzGwAsG3y3D3xvPj7PZEsh"",
+""apiId"": ""rAVsz8ZOfcT2iZYMwjM3tdeXoIftZz7y""
+},
+""brandId"": ""bytecrtrs"",
+""shConId"": ""69129afbeee8fa241c86c9c2"",
+""shColId"": ""69431f043a915bc1be68b4bc"",
+""shTimestamp"": 1776462758866,
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""__v"": 1,
+""currentRevisionId"": ""69e2abd483d366d4bf6e3711""
+}
+}
+],
+""noMoreDocs"": false
+}",
+"Find Contact Histories Added on 2026-04-17
+
+csrWrapper.api.message.contact.histories",/api/contactMessage/admin/histories,get,"csrWrapper.api.message.contact.histories({ contactMessageId, lastId })
+
+You can view the entire thread for the contact message (contact, userReply, csrReply).
+
+params
+- contactMessageId : _id of [Find Contact Messages] 
+- lastId (optional)",,,
+"Get Contact Message Reply Link Url Added on 2026-04-17
+
+csrWrapper.api.message.contact.replyLinkUrl",/api/contactMessage/admin/replyUrl,get,"csrWrapper.api.message.contact.replyLinkUrl({ messageId });
+
+Get the reply link address for contactMessage.
+
+param
+- messageId : _id(contact, userReply, csrReply)",,"{ 
+""replyLinkUrl"": ""https://dev1002.dev.www.idlookup.ai/test/development.html?type=contact&hash=c3c54e5db1cfb633ce9a35728d175da5&contactMessageId=69e2a32d83d366d4bf6e2f69"" 
+}",
+"Set Actor To Contact Message Addon on 2026-04-17
+
+csrWrapper.api.message.contact.setActor",/api/contactMessage/admin/setActor,post,"csrWrapper.api.message.contact.setActor({ contactMessageId, currentRevisionId, actorId })
+
+Assigns an admin or CSR user (_id) to the contact message.
+Once the actorId is assigned, the value is stored in the contact message's content.actorId.
+
+params
+- contactMessageId : _id of contact message
+- currentRevisionId : currentRevisionId of contact message
+- actorId (optional) : admin or csr user._id (if no value is passed, it is assigned to the _id of the currently logged-in admin or csr)",,"{
+""_id"": ""69e2a32d83d366d4bf6e2f69"",
+""index"": [],
+""type"": ""contact"",
+""ownerHash"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+""referenceIds"": [],
+""permissionIds"": [],
+""hash"": ""c3c54e5db1cfb633ce9a35728d175da5"",
+""content"": {
+""category"": ""billing"",
+""input"": {
+""date"": [
+""2026-04-17T21:16:29.466Z""
+],
+""name"": ""Tim Chin"",
+""email"": ""test123Q@bytecrtrs.com"",
+""zip"": ""90000"",
+""last4"": ""1111""
+},
+""actorId"": ""6943179e90625d3dbeadf6f7""
+},
+""attachments"": [],
+""createdAt"": ""2026-04-17T21:16:29.965Z"",
+""updatedAt"": ""2026-04-17T22:31:00.983Z"",
+""createdTimestamp"": 1776460589965,
+""updatedTimestamp"": 1776460589965,
+""trackingIds"": {
+""trackingId"": ""69e2a32d83d366d4bf6e2f66"",
+""sessionId"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+""clientId"": ""akPWcVoOvOfBSAJNaY0JpHK4bOPt4zZ7"",
+""apiId"": ""mUsZ38I2jDK4L47ris1yc7cU98uVZI4L""
+},
+""brandId"": ""idlookup"",
+""shConId"": ""69a2380b53ecf9b049d01fbb"",
+""shColId"": ""69aa41b648af3b202e7fb065"",
+""shTimestamp"": 1776458031094,
+""__v"": 2,
+""currentRevisionId"": ""69e2b4a483d366d4bf6e3be6"",
+""updaterId"": ""6943179e90625d3dbeadf6f7"",
+""id"": ""69e2a32d83d366d4bf6e2f69""
+}",
+"Set Target User To Contact Message Added on 2026-04-17
+
+csrWrapper.api.message.contact.setTargetUser",/api/contactMessage/admin/setTargetUserId,post,"csrWrapper.api.message.contact.setTargetUser({ contactMessageId, currentRevisionId, targetUserId })
+
+Assigns a contact message to a specific user ID.
+(You can group and view multiple created contacts by assigning them to a specific user. [Find User Contacts])
+
+params
+- contactMessageId : _id of contact message 
+- currentRevisionId : currentRevisionId of contact message
+- targetUserId : user._id",,,
+"Set Tags To Contact Message Added on 2026-04-17
+
+csrWrapper.api.message.contact.setTags",/api/contactMessage/admin/setTags,post,"csrWrapper.api.message.contact.setTags({ contactMessageId, tags })
+
+The saved tags are stored in message.index.
+
+params
+- contactMessageId : _id of contact message 
+- tags : string[] (Replace the existing tags with new ones.)",,"{ 
+""_id"": ""69e2a32d83d366d4bf6e2f69"", 
+""index"": [ 
+""anyfile"", 
+""custom"" 
+], 
+""type"": ""contact"", 
+""ownerHash"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"", 
 ""referenceIds"": [], 
 ""permissionIds"": [], 
+""hash"": ""c3c54e5db1cfb633ce9a35728d175da5"", 
 ""content"": { 
-""targetUserId"": ""69bdf6af9d86cb973f1fa2ca"", 
-""message"": ""<div>Test&nbsp;Admin&nbsp;Note</div>"", 
-""contentType"": ""text/html"" 
-}, 
-""attachments"": [ 
-{ 
-""fieldname"": ""attachments"", 
-""originalname"": ""idiCORE_API_Spec2.2.5.pdf"", 
-""encoding"": ""7bit"", 
-""mimetype"": ""application/pdf"", 
-""id"": ""69cdd902c45e7334d99cfebc"", 
-""filename"": ""idiCORE_API_Spec2.2.5.pdf"", 
-""size"": 805588, 
-""bucketName"": ""attachments"", 
-""metadata"": { 
-""originalMimetype"": ""application/pdf"", 
-""originalName"": ""idiCORE_API_Spec2.2.5.pdf"", 
-""compressed"": ""zstd"", 
-""originalSize"": 882003 
-} 
-}, 
-{ 
-""fieldname"": ""attachments"", 
-""originalname"": ""idiCORE_API_Teaser_Indicator_Count_Search.pdf"", 
-""encoding"": ""7bit"", 
-""mimetype"": ""application/pdf"", 
-""id"": ""69cdd902c45e7334d99cfebf"", 
-""filename"": ""idiCORE_API_Teaser_Indicator_Count_Search.pdf"", 
-""size"": 232735, 
-""bucketName"": ""attachments"", 
-""metadata"": { 
-""originalMimetype"": ""application/pdf"", 
-""originalName"": ""idiCORE_API_Teaser_Indicator_Count_Search.pdf"", 
-""compressed"": ""zstd"", 
-""originalSize"": 240060 
-} 
-} 
+""category"": ""billing"", 
+""input"": { 
+""date"": [ 
+""2026-04-17T21:16:29.466Z"" 
 ], 
-""createdAt"": ""2026-04-02T02:48:34.929Z"", 
-""updatedAt"": ""2026-04-02T02:48:34.935Z"", 
-""createdTimestamp"": 1775098114929, 
-""updatedTimestamp"": 1775098114929, 
+""name"": ""Tim Chin"", 
+""email"": ""test123Q@bytecrtrs.com"", 
+""zip"": ""90000"", 
+""last4"": ""1111"" 
+}, 
+""actorId"": ""6943179e90625d3dbeadf6f7"" 
+}, 
+""attachments"": [], 
+""createdAt"": ""2026-04-17T21:16:29.965Z"", 
+""updatedAt"": ""2026-04-17T22:39:10.548Z"", 
+""createdTimestamp"": 1776460589965, 
+""updatedTimestamp"": 1776460589965, 
 ""trackingIds"": { 
-""trackingId"": ""69cdd902c45e7334d99cfeb9"", 
-""sessionId"": ""AQYoDlqZP8wMl3DrR4AZq9iTOGlzJ2W0"", 
-""clientId"": ""GFWBD0LwfRLNXZ9xTYO48h7KxSw07103"", 
-""apiId"": ""unwQcpuPFkZK8y3vUczYLSKiRbAXwNzy"" 
+""trackingId"": ""69e2a32d83d366d4bf6e2f66"", 
+""sessionId"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"", 
+""clientId"": ""akPWcVoOvOfBSAJNaY0JpHK4bOPt4zZ7"", 
+""apiId"": ""mUsZ38I2jDK4L47ris1yc7cU98uVZI4L"" 
 }, 
-""brandId"": ""bytecrtrs"", 
-""shConId"": ""69129afbeee8fa241c86c9c2"", 
-""shColId"": ""69431f043a915bc1be68b4bc"", 
-""shTimestamp"": 1775010511038, 
+""brandId"": ""idlookup"", 
+""shConId"": ""69a2380b53ecf9b049d01fbb"", 
+""shColId"": ""69aa41b648af3b202e7fb065"", 
+""shTimestamp"": 1776458031094, 
+""__v"": 4, 
+""currentRevisionId"": ""69e2b68e83d366d4bf6e3cd8"", 
 ""updaterId"": ""6943179e90625d3dbeadf6f7"", 
-""__v"": 1, 
-""currentRevisionId"": ""69cdd902c45e7334d99cfec7"", 
-""owner"": { 
-""_id"": ""6943179e90625d3dbeadf6f7"", 
-""firstName"": ""BC"", 
-""lastName"": ""Admin"", 
-""id"": ""6943179e90625d3dbeadf6f7"" 
-}, 
-""id"": ""69cdd902c45e7334d99cfec5"" 
-} 
-], 
-""noMoreDocs"": true, 
-""displayFields"": [ 
-""_id"", 
-""createdAt"", 
-""brandId"", 
-""type"", 
-""content"", 
-""owner"", 
-""status"" 
-], 
-""dateFields"": [ 
-""createdAt"" 
-] 
+""id"": ""69e2a32d83d366d4bf6e2f69"" 
 }",
 "Find User Orders
 

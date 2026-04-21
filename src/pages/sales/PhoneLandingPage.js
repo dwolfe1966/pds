@@ -11,6 +11,7 @@ const PhoneLandingPage = () => {
   useLandingTrack('phone', 'v1');
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
+  const [error, setError] = useState('');
 
   // Normalize phone number (remove non-digits)
   const normalizePhone = (value) => {
@@ -31,15 +32,22 @@ const PhoneLandingPage = () => {
     // Limit to 10 digits
     if (digits.length <= 10) {
       setPhone(digits);
+      if (error) setError('');
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!phone || phone.length < 10) {
+    if (!phone) {
+      setError('Please enter a phone number.');
       return;
     }
-    
+    if (phone.length < 10) {
+      setError('Enter a full 10-digit phone number.');
+      return;
+    }
+    setError('');
+
     // Navigate to loader page which will perform the search
     const params = new URLSearchParams();
     params.set('phone', phone);
@@ -90,6 +98,16 @@ const PhoneLandingPage = () => {
               }}>
                 Enter a 10-digit phone number (digits only or formatted)
               </p>
+              {error && (
+                <p role="alert" style={{
+                  marginTop: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: '#b91c1c',
+                  fontWeight: 500,
+                }}>
+                  {error}
+                </p>
+              )}
             </div>
 
             {/* Blurred phone result preview */}
@@ -111,7 +129,6 @@ const PhoneLandingPage = () => {
             <button
               type="submit"
               className={styles.submitButton}
-              disabled={!phone || phone.length < 10}
             >
               Search Now
             </button>
@@ -128,8 +145,6 @@ const PhoneLandingPage = () => {
       <div className={styles.trustBar}>
         <div className={styles.trustBarInner}>
           <span className={styles.trustItem}>🔒 SSL Encrypted</span>
-          <span className={styles.trustDivider}>|</span>
-          <span className={styles.trustItem}>✓ FCRA Compliant</span>
           <span className={styles.trustDivider}>|</span>
           <span className={styles.trustItem}>★★★★★ 50,000+ Members</span>
           <span className={styles.trustDivider}>|</span>

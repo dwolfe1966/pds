@@ -21,7 +21,6 @@ const TRUST_BADGES = [
   { label: 'People Finder', icon: '👥' },
   { label: 'Phone Records', icon: '📞' },
   { label: '12B+ Records', icon: '📋' },
-  { label: 'FCRA Safe', icon: '✓' },
 ];
 
 const BENEFIT_BULLETS = [

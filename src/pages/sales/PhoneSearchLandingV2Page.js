@@ -21,7 +21,6 @@ const TRUST_BADGES = [
   { label: 'Reverse Lookup', icon: '📞' },
   { label: '12B+ Records', icon: '📋' },
   { label: 'Secure Search', icon: '🔒' },
-  { label: 'FCRA Compliant', icon: '✓' },
 ];
 
 const BENEFIT_BULLETS = [

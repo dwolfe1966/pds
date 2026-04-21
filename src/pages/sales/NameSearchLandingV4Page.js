@@ -21,7 +21,6 @@ const TRUST_BADGES = [
   { label: 'Family Records', icon: '👨‍👩‍👧' },
   { label: '12B+ Records', icon: '📋' },
   { label: 'Address History', icon: '🏠' },
-  { label: 'FCRA Safe', icon: '✓' },
 ];
 
 const BENEFIT_BULLETS = [

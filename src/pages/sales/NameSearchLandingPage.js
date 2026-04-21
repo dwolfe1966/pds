@@ -220,8 +220,6 @@ const NameSearchLandingPage = () => {
         <div className={styles.trustBarInner}>
           <span className={styles.trustItem}>🔒 SSL Encrypted</span>
           <span className={styles.trustDivider}>|</span>
-          <span className={styles.trustItem}>✓ FCRA Compliant</span>
-          <span className={styles.trustDivider}>|</span>
           <span className={styles.trustItem}>★★★★★ 50,000+ Members</span>
           <span className={styles.trustDivider}>|</span>
           <span className={styles.trustItem}>Trusted by millions</span>

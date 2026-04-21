@@ -357,7 +357,6 @@ const SearchDetailPreviewVariantC = ({ person, id }) => {
 
         <div className={styles.trustRow}>
           <span>256-bit SSL</span>
-          <span>FCRA Compliant</span>
           <span>No spam</span>
         </div>
       </div>

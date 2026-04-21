@@ -75,3 +75,26 @@
 {"id":"177549106206838ge","event_name":"results_view","session_id":"68tn2wte5ixmnm1u9zj","user_id":null,"properties":{"search_type":"name","query":"","state":""},"created_at":"2026-04-06T15:57:42.064Z"}
 {"id":"1775491062069ehu4","event_name":"results_view","session_id":"68tn2wte5ixmnm1u9zj","user_id":null,"properties":{"search_type":"name","query":"","state":""},"created_at":"2026-04-06T15:57:42.064Z"}
 {"id":"71916e9c-3120-4583-985d-1c27d728ee10","event_name":"test_event","session_id":"test-sess","user_id":null,"properties":{},"created_at":"2026-04-14T16:04:31.102Z"}
+{"id":"647ccffa-beda-400a-929a-42fdb2a2ff30","event_name":"signup_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"source":"direct","has_selected":false},"created_at":"2026-04-20T23:40:15.076Z"}
+{"id":"8cc77ede-00d2-44d8-907d-d2def9db9db1","event_name":"signup_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"source":"direct","has_selected":false},"created_at":"2026-04-20T23:40:15.077Z"}
+{"id":"093de38c-6868-4b8e-9ea7-3fe7b41ca1fb","event_name":"signup_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"source":"direct","has_selected":false},"created_at":"2026-04-20T23:40:25.867Z"}
+{"id":"d163f40d-f202-417f-b060-163ad0ead261","event_name":"signup_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"source":"direct","has_selected":false},"created_at":"2026-04-20T23:40:25.867Z"}
+{"id":"cabfe29f-f609-4293-9cec-4ec9dd0d3021","event_name":"signup_complete","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"source":"signup"},"created_at":"2026-04-20T23:40:53.485Z"}
+{"id":"909b9132-b6b4-4112-8a5d-8f9db2d3c14b","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:40:55.508Z"}
+{"id":"9e6c60dd-53b5-4db4-a5d2-641355dff873","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:40:55.509Z"}
+{"id":"18f62f78-08bb-4680-946f-ad563ad971d8","event_name":"watchers_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:41:20.704Z"}
+{"id":"ae05158c-7209-4f49-95c7-05d10d474e8c","event_name":"watchers_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:41:20.704Z"}
+{"id":"12e6840f-76b3-4d69-bc04-cc5e84acc213","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:41:24.756Z"}
+{"id":"20dfb9ea-2313-4a88-b4d9-930db8eb2dd1","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:41:24.757Z"}
+{"id":"4cf307aa-d8bc-4e34-9af1-1a8035a050c0","event_name":"dashboard_upgrade_click","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"source":"membership_banner"},"created_at":"2026-04-20T23:41:35.898Z"}
+{"id":"7bdc1d68-c242-4b85-95b6-e17a830d2054","event_name":"payment_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"upgrade":false,"has_selected":false},"created_at":"2026-04-20T23:41:35.907Z"}
+{"id":"8904b403-d9e8-4d82-ae0e-dd944c23a4ed","event_name":"payment_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"upgrade":false,"has_selected":false},"created_at":"2026-04-20T23:41:35.908Z"}
+{"id":"444e8879-5d7e-4bb0-af01-db12e09de2ad","event_name":"result_click","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"resultId":"person-1776728397984-3409nyodf","personName":"David Wolfe"},"created_at":"2026-04-20T23:41:50.748Z"}
+{"id":"35ac6f11-cd68-4ffe-9460-1ede065c7009","event_name":"payment_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"upgrade":false,"has_selected":false},"created_at":"2026-04-20T23:41:50.752Z"}
+{"id":"aaff440b-b387-4206-8248-2c3d795da27b","event_name":"payment_start","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"upgrade":false,"has_selected":false},"created_at":"2026-04-20T23:41:50.753Z"}
+{"id":"ff423ba6-27cd-4377-95ab-0c65c6648b3a","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:43:34.415Z"}
+{"id":"515d7fa1-2e0d-42d2-9c41-444c6550f366","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-20T23:43:34.416Z"}
+{"id":"af78fb75-b5d7-4cea-8627-15b1e62d1ebb","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-21T14:50:24.676Z"}
+{"id":"9c3a1b39-115c-49de-9460-918201d8bddd","event_name":"dashboard_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-21T14:50:24.677Z"}
+{"id":"f55e1d2b-0e83-42e9-a778-61dc27828146","event_name":"watchers_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-21T14:51:09.993Z"}
+{"id":"501db285-f5d8-4826-a689-2c190b4465b2","event_name":"watchers_view","session_id":"0toisi7jn3fcmo7u831g","user_id":null,"properties":{"isPaid":false},"created_at":"2026-04-21T14:51:09.994Z"}
