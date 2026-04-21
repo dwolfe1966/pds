@@ -802,7 +802,8 @@ const DashboardHome = () => {
         errors.alerts = true;
       }
 
-      // Searches
+      // Searches — prefer BC's server-side counter when available so the quota ring
+      // reflects real usage across devices/sessions, not just this browser's history.
       try {
         const searchesData = await api.get('/searches/me', { token });
         if (searchesData?.data) {
@@ -814,6 +815,11 @@ const DashboardHome = () => {
         errors.searches = true;
         setSearchesUsed(0);
       }
+      try {
+        const teaserCount = await api.countUserTeaserSearches();
+        const n = teaserCount?.count ?? teaserCount?.data?.count;
+        if (typeof n === 'number') setSearchesUsed(n);
+      } catch { /* BC counter optional — fall back to local list */ }
 
       // Profile views — still fetched to keep API warm but no longer shown directly
       try {
@@ -822,14 +828,16 @@ const DashboardHome = () => {
         errors.profileViews = true;
       }
 
-      // Messages — best-effort, don't block dashboard if unavailable
+      // Messages — best-effort. user.getContacts was removed by BC 2026-04-17;
+      // apiWrapper.getUserContacts returns empty gracefully until a replacement
+      // aggregate endpoint is available.
       try {
         const msgResult = await api.getUserContacts();
         const msgData = msgResult?.getData?.() ?? msgResult?.data ?? msgResult ?? {};
         const msgs = msgData.messages || msgData.docs || (Array.isArray(msgData) ? msgData : []);
         setRecentMessages(msgs.slice(0, 3));
       } catch {
-        // Silently ignore — user.getContacts may not be available yet
+        // Silently ignore — the stubbed getUserContacts should never throw, but guard anyway.
       }
 
       setApiErrors(errors);
@@ -925,6 +933,26 @@ const DashboardHome = () => {
             Some activity data could not be loaded.{' '}
             <button type="button" onClick={() => window.location.reload()}>Refresh</button>
           </span>
+        </div>
+      )}
+
+      {/* Preview-data disclosure — exposure score, watchers, brokers, and watchlist
+          are seeded sample data until BC exposes target-user tracking. Keeps the UX
+          while being honest with paying members during MVP launch. */}
+      {!loading && (
+        <div
+          role="note"
+          style={{
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            color: '#92400e',
+            borderRadius: '0.5rem',
+            padding: '0.5rem 0.875rem',
+            fontSize: '0.8rem',
+            margin: '0 0 1rem',
+          }}
+        >
+          Exposure score, watchers, broker statuses and watchlist are preview data during launch. Reports, searches, alerts, and usage counts are live.
         </div>
       )}
 

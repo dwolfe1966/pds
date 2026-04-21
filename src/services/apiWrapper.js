@@ -767,19 +767,30 @@ class ApiWrapperService {
     return await this._csrPost('/database/search', body);
   }
 
-  // csrWrapper.api.user.createAdminNote — POST /message/admin/user/note/create
-  // BC expects targetUserId (not userId)
+  // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
+  // params: { userId, message, contentType, attachments }
+  // Migrated 2026-04-21 from old /message/admin/user/note/create path (BC deprecated).
   async csrCreateAdminNote(params = {}) {
-    const { userId, ...rest } = params;
-    const body = { ...rest };
-    if (userId) body.targetUserId = userId;
-    return await this._csrPost('/message/admin/user/note/create', body);
+    const { userId, message, contentType = 'text/plain', attachments } = params;
+    const body = { userId, message, contentType };
+    if (attachments) body.attachments = attachments;
+    return await this._csrPost('/message/admin/createNote', body);
   }
 
-  // csrWrapper.api.user.updateAdminNote — POST /message/admin/user/note/update
+  // csrWrapper.api.message.note.createContactAdminNote — POST /message/admin/createNote
+  // params: { contactMessageId, message, contentType, attachments }
+  async csrCreateContactAdminNote(params = {}) {
+    const { contactMessageId, message, contentType = 'text/plain', attachments } = params;
+    const body = { contactMessageId, message, contentType };
+    if (attachments) body.attachments = attachments;
+    return await this._csrPost('/message/admin/createNote', body);
+  }
+
+  // csrWrapper.api.message.note.updateAdminNote — POST /message/admin/updateNote
   // params: { messageId, message }
+  // Migrated 2026-04-21 from old /message/admin/user/note/update path.
   async csrUpdateAdminNote(params = {}) {
-    return await this._csrPost('/message/admin/user/note/update', params);
+    return await this._csrPost('/message/admin/updateNote', params);
   }
 
   // csrWrapper.api.user.createCsrMail — POST /message/admin/user/csrMail/create
@@ -814,25 +825,14 @@ class ApiWrapperService {
   }
 
   // csrWrapper.api.tracking.findUser — POST /database/search
-  // BC wraps this as csrWrapper.api.tracking.findUser({ type, lastId })
-  // Try multiple collection names to find the right one
+  // BC spec (added 2026-04-07): params { type, lastId, updaterId? }
+  // type supports pipe-separated values, e.g. 'USER:nameSearchTeaser|USER:phoneSearchTeaser'.
+  // Supported types: USER:nameSearchTeaser, USER:phoneSearchTeaser,
+  // USER:nameSearchTeaserOptOut, USER:phoneSearchTeaserOptOut,
+  // USER:nameSearch, USER:phoneSearch, USER:login (2026-04-13).
   async csrFindUserTracking(params = {}) {
-    const collectionNames = ['tracking', 'apiTracking', 'serverTracking', 'apiTrack'];
-    for (const collectionName of collectionNames) {
-      try {
-        const res = await this._csrPost('/database/search', { collectionName, brandId: 'idlookup', ...params });
-        console.log(`[Tracking] collectionName="${collectionName}" →`, res);
-        if (res?.docs && res.docs.length > 0) return res;
-        // Empty docs but no error — might be the right collection with no data, or wrong collection
-        // Continue trying other names
-      } catch (err) {
-        console.warn(`[Tracking] collectionName="${collectionName}" failed:`, err.message);
-        // Continue to next collection name
-      }
-    }
-    // None worked — return empty result
-    console.warn('[Tracking] No collection name returned data. Check with BC for correct collection name.');
-    return { docs: [], noMoreDocs: true };
+    const body = { collectionName: 'tracking', brandId: 'idlookup', ...params };
+    return await this._csrPost('/database/search', body);
   }
 
   /** Generate a random 32-char alphanumeric string matching the IIFE's format. */
@@ -845,19 +845,33 @@ class ApiWrapperService {
 
   /**
    * Get user's support messages (contacts/CSR mail).
-   * POST /api/message/userContact/list
-   * Returns: { messages: [...], noMoreDocs: boolean }
+   * REMOVED by BC on 2026-04-17. The new message.contact.* flow uses per-thread
+   * reply links (contactMessageId + hash) instead of a user-scoped inbox.
+   * Returns a synthetic empty payload so callers (DashboardHome, AccountPage)
+   * degrade gracefully until a replacement aggregate endpoint is available.
    */
-  async getUserContacts(lastId) {
+  async getUserContacts(_lastId) {
+    return { messages: [], docs: [], noMoreDocs: true };
+  }
+
+  /**
+   * Record a tracking event (compliance agreements, T&C acceptance, etc.).
+   * POST /api/tracking/create
+   * apiWrapper.api.tracking.create(data) — data is an arbitrary object.
+   */
+  async createTracking(data) {
+    if (this.useProxy) {
+      return await this._csrPost('/tracking/create', data || {});
+    }
     try {
       const wrapper = await this.getWrapper();
-      const params = lastId ? { lastId } : {};
-      return await wrapper.api.user.getContacts(params);
+      return await wrapper.api.tracking.create(data || {});
     } catch (error) {
-      const enhancedError = new Error(error.message || 'Get user contacts failed');
-      enhancedError.originalError = error;
-      enhancedError.isCorsError = this._isCorsError(error);
-      throw enhancedError;
+      // Non-fatal — compliance tracking should never break the user's flow.
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Tracking] createTracking failed:', error?.message);
+      }
+      return null;
     }
   }
 
@@ -865,6 +879,7 @@ class ApiWrapperService {
    * Create a contact message (visitor — no login required).
    * POST /api/message/contact
    * apiWrapper.api.contact.create({ firstName, lastName, email, telephone, message, contentType })
+   * LEGACY — kept for backwards compatibility; prefer createContactMessage.
    */
   async createContact(params) {
     if (this.useProxy) {
@@ -875,6 +890,89 @@ class ApiWrapperService {
       return await wrapper.api.contact.create(params);
     } catch (error) {
       const enhancedError = new Error(error.message || 'Create contact failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Create a contact message — NEW BC spec (edited 2026-04-17).
+   * POST /api/contactMessage/create
+   * apiWrapper.api.message.contact.create(param)
+   *
+   * billing category params:
+   *   { category: 'billing', date: Date[], name, email, zip, last4, phone?, orderId? }
+   * general category params:
+   *   { category: 'general', topic, name, email, phone, description, orderId, zip?, last4? }
+   */
+  async createContactMessage(params) {
+    if (this.useProxy) {
+      return await this._csrPost('/contactMessage/create', params);
+    }
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.message.contact.create(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Create contact message failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Reply to a contact message thread — user side.
+   * POST /api/contactMessage/userReply
+   * apiWrapper.api.message.contact.reply({ contactMessageId, hash, message, contentType, attachments })
+   */
+  async replyContactMessage(params) {
+    const { contentType = 'text/plain', ...rest } = params;
+    const body = { contentType, ...rest };
+    if (this.useProxy) {
+      return await this._csrPost('/contactMessage/userReply', body);
+    }
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.message.contact.reply(body);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Reply to contact message failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Fetch a contact message thread history.
+   * GET /api/contactMessage/histories
+   * apiWrapper.api.message.contact.histories({ contactMessageId, hash, lastId? })
+   */
+  async getContactHistories(params) {
+    if (this.useProxy) {
+      const qs = new URLSearchParams();
+      if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
+      if (params.hash) qs.set('hash', params.hash);
+      if (params.lastId) qs.set('lastId', params.lastId);
+      const url = `${this.proxyUrl}/contactMessage/histories?${qs.toString()}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+        err.status = response.status;
+        throw err;
+      }
+      return await response.json();
+    }
+    try {
+      const wrapper = await this.getWrapper();
+      return await wrapper.api.message.contact.histories(params);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Get contact histories failed');
       enhancedError.originalError = error;
       enhancedError.isCorsError = this._isCorsError(error);
       throw enhancedError;

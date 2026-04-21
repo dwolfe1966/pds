@@ -529,6 +529,23 @@ const WhoIsSearchingPage = () => {
         <p className={styles.subtitle}>
           See who's been searching for and viewing your profile
         </p>
+        {/* Sample data disclosure — BC does not yet expose target-user tracking
+            (queries like "who searched for me"). Events shown here are seeded
+            demo data until we ship a server-side reverse index. */}
+        <p
+          role="note"
+          style={{
+            marginTop: '0.75rem',
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            color: '#92400e',
+            borderRadius: '0.5rem',
+            padding: '0.5rem 0.875rem',
+            fontSize: '0.8rem',
+          }}
+        >
+          Showing preview data — real alerts will appear here once live tracking is enabled on your profile.
+        </p>
       </header>
 
       {/* Tab bar */}

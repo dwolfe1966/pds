@@ -316,6 +316,13 @@ const PaymentPage = () => {
       setSuccess(true);
       track('payment_complete', { plan: 'pro' });
       gtmEvent('purchase', { value: 29.99, currency: 'USD', items: [{ item_name: 'Basic Plan' }] });
+      // BC compliance tracking — record subscription agreement timestamp on BC side.
+      api.createTracking({
+        type: 'agreement',
+        event: 'payment_tos',
+        date: new Date().toISOString(),
+        plan: 'comp.offer.signup.main',
+      });
 
       // Clean up signup sessionStorage now that payment succeeded.
       sessionStorage.removeItem('selectedPersonId');

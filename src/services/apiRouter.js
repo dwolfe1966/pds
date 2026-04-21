@@ -274,6 +274,7 @@ export async function routeApiRequest(endpoint, params = {}) {
     'admin-user-contacts',
     'admin-create-order',
     'admin-create-note',
+    'admin-create-contact-note',
     'admin-update-note',
     'admin-create-csr-mail',
     'admin-user-tracking',
@@ -282,6 +283,10 @@ export async function routeApiRequest(endpoint, params = {}) {
     // Contact / messaging — BC endpoints
     'create-contact',
     'create-user-contact',
+    'create-contact-message',
+    'reply-contact-message',
+    'contact-histories',
+    'tracking-create',
     'admin-find-contacts',
     'admin-change-contact-to-user',
   ]);
@@ -690,49 +695,10 @@ async function callNewAPI(endpoint, params) {
     // admin pages can use a consistent shape.
     // -------------------------------------------------------------------------
     // csrWrapper.api.user.find → POST /database/search
-    // When zip or panLast4 are provided, also search commerceOrder collection
-    // and resolve matching orders back to users.
+    // Native support for email/phone/zip/panLast4/lastId as of BC update 2026-04-07.
+    // The prior commerceOrder-collection fallback is no longer needed.
     case 'admin-users': {
       const qp = params.queryParams || {};
-      const hasOrderFilters = qp.zip || qp.panLast4 || qp.phone;
-
-      // If only order-based filters (no email), try order search first
-      if (hasOrderFilters && !qp.email) {
-        try {
-          const orderParams = {};
-          if (qp.zip) orderParams.zip = qp.zip;
-          if (qp.panLast4) orderParams.panLast4 = qp.panLast4;
-          if (qp.phone) orderParams.phone = qp.phone;
-          if (qp.lastId) orderParams.lastId = qp.lastId;
-          const orderRaw = await apiWrapper.csrFindOrders(orderParams);
-          const orderDocs = orderRaw?.docs ?? [];
-
-          if (orderDocs.length > 0) {
-            // Extract unique userIds from matching orders
-            const userIds = [...new Set(orderDocs.map(o => o.userId || o.updaterId).filter(Boolean))];
-            // Fetch user details for each matched userId
-            const userResults = await Promise.allSettled(
-              userIds.map(uid => apiWrapper.csrGetUserDetail(uid))
-            );
-            const users = userResults
-              .filter(r => r.status === 'fulfilled' && r.value)
-              .map(r => {
-                const u = r.value;
-                // Attach the search-matched fields for display in the table
-                const matchedOrder = orderDocs.find(o => (o.userId || o.updaterId) === (u._id || u.id));
-                if (matchedOrder && qp.zip) u.zip = qp.zip;
-                if (matchedOrder && qp.panLast4) u.last4cc = qp.panLast4;
-                return u;
-              });
-            return { data: users, total: users.length, noMoreDocs: orderRaw?.noMoreDocs ?? true };
-          }
-          // No order matches — fall through to users collection search
-        } catch (err) {
-          console.warn('[API Router] Order-based user search failed, falling back to users collection:', err.message);
-        }
-      }
-
-      // Standard users collection search (email, lastId, and speculatively zip/phone/panLast4)
       const raw = await apiWrapper.csrFindUsers(qp);
       const items = raw?.docs ?? raw?.raws ?? raw?.users ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
       return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
@@ -847,12 +813,17 @@ async function callNewAPI(endpoint, params) {
       return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
     }
 
-    // Create admin note on a user — createAdminNote({ userId, message })
+    // Create admin note on a user — message.note.createUserAdminNote({ userId, message, contentType, attachments })
     case 'admin-create-note': {
       return await apiWrapper.csrCreateAdminNote(params.body || {});
     }
 
-    // Update admin note — updateAdminNote({ messageId, message })
+    // Create admin note on a contact message — message.note.createContactAdminNote({ contactMessageId, message, contentType, attachments })
+    case 'admin-create-contact-note': {
+      return await apiWrapper.csrCreateContactAdminNote(params.body || {});
+    }
+
+    // Update admin note — message.note.updateAdminNote({ messageId, message })
     case 'admin-update-note': {
       return await apiWrapper.csrUpdateAdminNote(params.body || {});
     }
@@ -915,6 +886,30 @@ async function callNewAPI(endpoint, params) {
     // apiWrapper.api.user.createContact → POST /api/message/userContact
     case 'create-user-contact': {
       return await apiWrapper.createUserContact(params.body || {});
+    }
+
+    // Consumer: create contact message — new BC spec (2026-04-17)
+    // apiWrapper.api.message.contact.create → POST /api/contactMessage/create
+    case 'create-contact-message': {
+      return await apiWrapper.createContactMessage(params.body || {});
+    }
+
+    // Consumer: reply to contact message thread
+    // apiWrapper.api.message.contact.reply → POST /api/contactMessage/userReply
+    case 'reply-contact-message': {
+      return await apiWrapper.replyContactMessage(params.body || {});
+    }
+
+    // Consumer: fetch contact message thread history
+    // apiWrapper.api.message.contact.histories → GET /api/contactMessage/histories
+    case 'contact-histories': {
+      return await apiWrapper.getContactHistories(params.queryParams || params.body || {});
+    }
+
+    // Consumer: record a tracking event (agreement timestamps, compliance).
+    // apiWrapper.api.tracking.create → POST /api/tracking/create
+    case 'tracking-create': {
+      return await apiWrapper.createTracking(params.body || {});
     }
 
     // CSR: find visitor contact messages

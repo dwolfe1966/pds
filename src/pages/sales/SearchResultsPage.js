@@ -28,6 +28,7 @@ const SalesSearchResultsPage = () => {
   const [rawResponse, setRawResponse] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [paginationExhausted, setPaginationExhausted] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     track('results_view', { search_type: 'name', query: query || '', state: state || '' });
@@ -42,6 +43,7 @@ const SalesSearchResultsPage = () => {
           const data = JSON.parse(storedResults);
           setResults(data.results || []);
           setSearchQuery(data.query || {});
+          setTotalCount(data.pagination?.total || 0);
           if (data.searchContext) {
             setSearchContext(data.searchContext);
           }
@@ -86,11 +88,12 @@ const SalesSearchResultsPage = () => {
         }
         
         const response = await api.searchPeople(searchParams);
-        
+
         // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...}, rawResponse? }
         setResults(response.data || []);
         setRawResponse(response.rawResponse || null);
-        
+        setTotalCount(response.pagination?.total || 0);
+
         // Store search context for report creation and opt-out
         if (response.searchContext) {
           setSearchContext(response.searchContext);
@@ -104,6 +107,15 @@ const SalesSearchResultsPage = () => {
     fetchResults();
   }, [query, state, error]);
 
+  // Partner feedback (bug 5): show exact count when BC knows ≤30 total,
+  // collapse to "more than 30" otherwise so the UI pushes users to refine.
+  const displayCount = totalCount || results.length;
+  const countLabel = !displayCount
+    ? null
+    : displayCount > 30
+    ? 'More than 30 results — refine your search to narrow down'
+    : `${displayCount} result${displayCount !== 1 ? 's' : ''}`;
+
   const handleResultClick = (result) => {
     // Store result in sessionStorage for preview page
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify(result));
@@ -116,8 +128,8 @@ const SalesSearchResultsPage = () => {
         {/* Header Section */}
         <div className={styles.header}>
           <h1 className={styles.title}>
-            {results.length > 0
-              ? `We found ${results.length} result${results.length !== 1 ? 's' : ''} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`
+            {results.length > 0 && countLabel
+              ? `We found ${countLabel} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`
               : 'Search Results'}
           </h1>
           {(searchQuery.firstName || query) && (
@@ -165,7 +177,11 @@ const SalesSearchResultsPage = () => {
         {!loading && !errorMessage && results && results.length > 0 ? (
           <div>
             <div className={styles.resultsCount}>
-              Found <strong>{results.length}</strong> {results.length === 1 ? 'result' : 'results'} — select a name to view the full report
+              {totalCount > 30 ? (
+                <>Showing <strong>{results.length}</strong> of <strong>30+</strong> matches — refine your search below for a narrower list</>
+              ) : (
+                <>Found <strong>{displayCount}</strong> {displayCount === 1 ? 'result' : 'results'} — select a name to view the full report</>
+              )}
             </div>
             <p style={{ fontSize: '0.825rem', color: '#6b7280', margin: '0 0 1rem', padding: 0 }}>
               All data sourced from publicly available records.

@@ -90,6 +90,7 @@ export const API_ENDPOINTS = {
   // User contacts (notes + csr mail) — findUserContacts requires userId
   'admin-user-contacts': { newApi: true, mockApi: false },
   'admin-create-note': { newApi: true, mockApi: false },
+  'admin-create-contact-note': { newApi: true, mockApi: false },
   'admin-update-note': { newApi: true, mockApi: false },
   'admin-create-csr-mail': { newApi: true, mockApi: false },
   // CSR-initiated billing sale — commerceBilling/sale via admin session
@@ -102,6 +103,12 @@ export const API_ENDPOINTS = {
   'create-contact': { newApi: true, mockApi: true },
   // Consumer: create user contact (logged-in) via user.createContact
   'create-user-contact': { newApi: true, mockApi: true },
+  // Consumer: new BC message.contact.* endpoints
+  'create-contact-message': { newApi: true, mockApi: false },
+  'reply-contact-message': { newApi: true, mockApi: false },
+  'contact-histories': { newApi: true, mockApi: false },
+  // Consumer: tracking events (agreement timestamps, compliance)
+  'tracking-create': { newApi: true, mockApi: false },
   // CSR: find visitor contact messages
   'admin-find-contacts': { newApi: true, mockApi: false },
   // CSR: link visitor contact to user account

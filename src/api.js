@@ -615,6 +615,10 @@ const api = {
     return await routeApiRequest('admin-create-note', { body });
   },
 
+  adminCreateContactNote: async (body = {}) => {
+    return await routeApiRequest('admin-create-contact-note', { body });
+  },
+
   adminUpdateNote: async (body = {}) => {
     return await routeApiRequest('admin-update-note', { body });
   },
@@ -692,41 +696,54 @@ const api = {
    * Falls back to mock server thread endpoints for the visitor thread viewer.
    */
 
-  /** Submit a contact form — routes to BC API */
+  /**
+   * Submit a contact form — routes to BC message.contact.create (new spec 2026-04-17).
+   *
+   * Accepts the legacy form shape { name, email, phone, message, reason, orderId?, zip?, last4? }
+   * and maps to BC's disjoint category payloads:
+   *   billing  → { category, date, name, email, zip, last4, phone?, orderId? }
+   *   general  → { category, topic, name, email, phone, description, orderId, zip?, last4? }
+   *
+   * Caller passes `category` when known; defaults to 'general' for UI topic-based flow.
+   */
   submitContact: async (body) => {
-    const token = getToken();
-    const isAuthenticated = !!token;
-
-    if (isAuthenticated && body.userId) {
-      // Logged-in member → BC user.createContact
-      return await routeApiRequest('create-user-contact', {
-        body: {
-          message: body.message,
-          contentType: body.contentType || 'text/plain',
-          ...(body.parentCsrMessageId ? { parentCsrMessageId: body.parentCsrMessageId } : {}),
-        },
-      });
+    const category = body.category || 'general';
+    let contactBody;
+    if (category === 'billing') {
+      contactBody = {
+        category: 'billing',
+        date: body.date || [new Date().toISOString()],
+        name: body.name || '',
+        email: body.email || '',
+        zip: body.zip || '',
+        last4: body.last4 || '',
+        ...(body.phone ? { phone: body.phone } : {}),
+        ...(body.orderId ? { orderId: body.orderId } : {}),
+      };
+    } else {
+      contactBody = {
+        category: 'general',
+        topic: body.topic || body.reason || body.subject || 'General inquiry',
+        name: body.name || '',
+        email: body.email || '',
+        phone: body.phone || '',
+        description: body.description || body.message || '',
+        orderId: body.orderId || '',
+        ...(body.zip ? { zip: body.zip } : {}),
+        ...(body.last4 ? { last4: body.last4 } : {}),
+      };
     }
 
-    // Visitor (or member without userId) → BC contact.create
-    const contactBody = {
-      firstName: (body.name || '').split(' ')[0] || body.firstName || '',
-      lastName: (body.name || '').split(' ').slice(1).join(' ') || body.lastName || '',
-      email: body.email,
-      telephone: body.phone || '',
-      message: body.message,
-      contentType: body.contentType || 'text/plain',
-    };
+    const bcResult = await routeApiRequest('create-contact-message', { body: contactBody });
 
-    const bcResult = await routeApiRequest('create-contact', { body: contactBody });
-
-    // Also store in mock server for thread viewer (visitor follow-up URL)
+    // Mirror into mock server so the legacy /contact/thread/:threadId viewer still works
+    // for visitor follow-up links. This is best-effort — BC thread viewing goes through
+    // contactHistories via the reply-link query string (contactMessageId + hash).
     try {
-      const headers = { 'Content-Type': 'application/json' };
       const res = await fetch(`${MOCK_API_URL}/contact`, {
         method: 'POST',
-        headers,
-        body: JSON.stringify({ ...body, bcMessageId: bcResult?._id }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...body, bcMessageId: bcResult?._id || bcResult?.messageResult?._id }),
       });
       if (res.ok) {
         const mockResult = await res.json();
@@ -735,6 +752,29 @@ const api = {
     } catch { /* mock unavailable — still return BC result */ }
 
     return bcResult;
+  },
+
+  /** Reply to a contact message thread via BC — requires contactMessageId + hash from reply link. */
+  replyContactMessage: async (body) => {
+    return await routeApiRequest('reply-contact-message', { body });
+  },
+
+  /** Get contact message thread history via BC — requires contactMessageId + hash. */
+  getContactHistories: async (params) => {
+    return await routeApiRequest('contact-histories', { queryParams: params });
+  },
+
+  /**
+   * Record a tracking event on BC — for compliance agreements, T&C acceptance,
+   * and other arbitrary user events the business wants auditable.
+   * Fire-and-forget; never throws.
+   */
+  createTracking: async (data) => {
+    try {
+      return await routeApiRequest('tracking-create', { body: data || {} });
+    } catch (err) {
+      return null;
+    }
   },
 
   /** Get a contact thread by ID (mock server — visitor thread view) */

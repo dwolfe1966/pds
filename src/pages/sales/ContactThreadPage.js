@@ -1,7 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
 import { colors, typography, spacing, borderRadius, shadows } from '../../styles/designSystem';
+
+/**
+ * Adapt BC contactMessage/histories docs → { subject, name, email, createdAt, messages[] }.
+ * BC docs[0].type === 'contact' holds the original; docs[n].type in {'csrReply','userReply'}.
+ */
+function adaptBcHistories(docs) {
+  if (!Array.isArray(docs) || docs.length === 0) return null;
+  const initial = docs.find((d) => d.type === 'contact') || docs[0];
+  const input = initial?.content?.input || {};
+  return {
+    subject: input.topic || input.description || 'Support Thread',
+    name: input.name || '',
+    email: input.email || '',
+    createdAt: initial?.createdAt,
+    messages: docs.map((d) => {
+      const isCsr = d.type === 'csrReply';
+      const isUserReply = d.type === 'userReply';
+      const body = isCsr || isUserReply
+        ? d.content?.message || ''
+        : d.content?.input?.description || '';
+      return {
+        _id: d._id || d.id,
+        sender: isCsr ? 'support' : 'user',
+        message: body,
+        createdAt: d.createdAt,
+      };
+    }),
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /* Styles                                                              */
@@ -150,6 +179,12 @@ const s = {
 
 const ContactThreadPage = () => {
   const { threadId } = useParams();
+  const [searchParams] = useSearchParams();
+  // BC reply-link format: ?contactMessageId=X&hash=Y (type=contact ignored)
+  const bcContactMessageId = searchParams.get('contactMessageId');
+  const bcHash = searchParams.get('hash');
+  const useBc = !!(bcContactMessageId && bcHash);
+
   const [thread, setThread] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -164,8 +199,14 @@ const ContactThreadPage = () => {
       setLoading(true);
       setError('');
       try {
-        const data = await api.getContactThread(threadId);
-        if (!cancelled) setThread(data);
+        if (useBc) {
+          const res = await api.getContactHistories({ contactMessageId: bcContactMessageId, hash: bcHash });
+          const adapted = adaptBcHistories(res?.docs || []);
+          if (!cancelled) setThread(adapted || { messages: [] });
+        } else {
+          const data = await api.getContactThread(threadId);
+          if (!cancelled) setThread(data);
+        }
       } catch (err) {
         if (!cancelled) setError(err?.message || 'Could not load this support thread.');
       } finally {
@@ -174,7 +215,7 @@ const ContactThreadPage = () => {
     };
     fetchThread();
     return () => { cancelled = true; };
-  }, [threadId]);
+  }, [threadId, bcContactMessageId, bcHash, useBc]);
 
   useEffect(() => {
     if (bottomRef.current) {
@@ -188,8 +229,20 @@ const ContactThreadPage = () => {
     setSending(true);
     setReplyError('');
     try {
-      const updated = await api.replyToContactThread(threadId, { message: reply.trim() });
-      setThread(updated);
+      if (useBc) {
+        await api.replyContactMessage({
+          contactMessageId: bcContactMessageId,
+          hash: bcHash,
+          message: reply.trim(),
+          contentType: 'text/plain',
+        });
+        // Re-fetch the updated history
+        const res = await api.getContactHistories({ contactMessageId: bcContactMessageId, hash: bcHash });
+        setThread(adaptBcHistories(res?.docs || []) || { messages: [] });
+      } else {
+        const updated = await api.replyToContactThread(threadId, { message: reply.trim() });
+        setThread(updated);
+      }
       setReply('');
     } catch (err) {
       setReplyError(err?.message || 'Failed to send reply. Please try again.');

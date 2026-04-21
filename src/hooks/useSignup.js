@@ -127,6 +127,13 @@ export function useSignup() {
       setRedirectTo(target);
       track('signup_complete', { source: 'signup' });
       gtmEvent('sign_up', { method: 'email' });
+      // BC compliance tracking — record T&C/FCRA agreement timestamp on BC side.
+      api.createTracking({
+        type: 'agreement',
+        event: 'signup_tos',
+        date: new Date().toISOString(),
+        email,
+      });
       setSuccess(true);
       timeoutRef.current = setTimeout(() => navigate(target), 2000);
       return true;
