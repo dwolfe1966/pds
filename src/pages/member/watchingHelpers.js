@@ -378,6 +378,151 @@ export function generateRecordsFeed(seed, count = 12) {
   return results;
 }
 
+// ---------- Real-data adapters (no PRNG) ----------
+// These are used by DashboardHome when live data is available; they return
+// the same shape the mock generators produce so widgets don't need to change.
+
+function extractReportName(report) {
+  if (!report) return null;
+  // Try every shape BC is known to use, then fall back to a stub so the
+  // report still lands in the watchlist even if we can't parse the name.
+  const name =
+    report.fullName ||
+    report.name ||
+    report.title ||
+    report.targetName ||
+    report.data?.fullName ||
+    report.data?.teaserInput?.fullName ||
+    (report.data?.teaserInput?.fName && report.data?.teaserInput?.lName
+      ? `${report.data.teaserInput.fName} ${report.data.teaserInput.lName}`
+      : null);
+  if (name) return name;
+  const id = report.commerceContentId || report.id || report.reportId;
+  return id ? `Report ${String(id).slice(0, 8)}` : null;
+}
+
+function extractReportLocation(report) {
+  if (!report) return { city: '', state: '' };
+  const raw =
+    report.location ||
+    report.data?.teaserInput?.location ||
+    report.data?.location ||
+    '';
+  if (typeof raw === 'string' && raw.includes(',')) {
+    const [city, state] = raw.split(',').map((s) => s.trim());
+    return { city: city || '', state: state || '' };
+  }
+  return {
+    city: report.city || report.data?.teaserInput?.city || '',
+    state: report.state || report.data?.teaserInput?.state || '',
+  };
+}
+
+// Turn real BC reports the user has pulled into a "People you're watching" list.
+// Reports the user creates are the people they're actively monitoring.
+export function buildWatchlistFromReports(reports, limit = 5) {
+  if (!Array.isArray(reports)) return [];
+  const now = Date.now();
+  const seen = new Set();
+  const items = [];
+  for (const r of reports) {
+    const name = extractReportName(r);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue; // dedupe if user pulled same person twice
+    seen.add(key);
+    const { city, state } = extractReportLocation(r);
+    const createdMs = r.createdAt ? new Date(r.createdAt).getTime() : now;
+    const nameParts = name.trim().split(/\s+/);
+    items.push({
+      id: r.commerceContentId || r.id || r.reportId || `watch-${key}`,
+      name,
+      firstName: nameParts[0] || name,
+      lastName: nameParts.slice(1).join(' ') || '',
+      city,
+      state,
+      lastUpdated: createdMs,
+      // hasChanges/newRecords come from alerts tied to this person; see
+      // mergeAlertsIntoWatchlist below. Default to false here.
+      hasChanges: false,
+      newRecords: 0,
+      commerceContentId: r.commerceContentId || r.id || r.reportId,
+    });
+    if (items.length >= limit) break;
+  }
+  return items;
+}
+
+// Turn real BC alerts into records-feed rows the feed widget already understands.
+// alert shape varies; we pull title/createdAt and surface it as a 'record' entry.
+export function buildRecordsFeedFromAlerts(alerts, limit = 12) {
+  if (!Array.isArray(alerts)) return [];
+  return alerts.slice(0, limit).map((a, i) => {
+    const title =
+      a.title ||
+      a.subject ||
+      a.message ||
+      a.body ||
+      a.data?.title ||
+      'New activity on your profile';
+    const ts = a.createdAt ? new Date(a.createdAt).getTime() : Date.now() - i * 60 * 1000;
+    const kind = String(a.type || a.category || '').toLowerCase();
+    const feedType = kind.includes('removal')
+      ? 'removal'
+      : kind.includes('alert')
+      ? 'alert'
+      : 'record';
+    return {
+      id: a._id || a.id || `alert-${i}`,
+      type: feedType,
+      recordKind: a.recordKind || 'record',
+      title,
+      source: a.source || a.sourceName || 'IDLookup',
+      sourceCode: a.sourceCode || '',
+      timestamp: ts,
+    };
+  });
+}
+
+// Exposure score derived from real BC data. Counts populated fields across the
+// user's reports — more data found in public records = lower score.
+// Returns null when we have no signal (no reports yet); caller should show the
+// "Run a search for yourself" prompt instead.
+export function computeExposureFromReports(reports) {
+  if (!Array.isArray(reports) || reports.length === 0) return null;
+  // Aggregate field counts across all reports the user has pulled.
+  let addresses = 0;
+  let phones = 0;
+  let emails = 0;
+  let relatives = 0;
+  let sources = 0;
+  for (const r of reports) {
+    const identity = r.data?.identities?.[0] || r.identity || r;
+    const contact = r.data?.fullContact || r.fullContact || {};
+    if (Array.isArray(identity?.addressList)) addresses += identity.addressList.length;
+    if (Array.isArray(contact?.phones)) phones += contact.phones.length;
+    if (Array.isArray(contact?.emails)) emails += contact.emails.length;
+    if (Array.isArray(contact?.relatives)) relatives += contact.relatives.length;
+    sources += 1; // one source per pulled report
+  }
+  // If all aggregates are 0 we still have no real signal.
+  const total = addresses + phones + emails + relatives;
+  if (total === 0) return null;
+
+  const raw = 100 - addresses * 3 - phones * 4 - emails * 2 - relatives * 1;
+  const score = Math.max(35, Math.min(95, raw));
+  return {
+    score,
+    lastMonth: score, // no history yet — held flat
+    delta: 0,
+    letter: score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 60 ? 'C' : score >= 50 ? 'D' : 'F',
+    factors: { addresses, phones, emails, relatives },
+    totalRecords: total,
+    sources,
+    isReal: true,
+  };
+}
+
 // ---------- Privacy exposure score ----------
 // Produces a deterministic mock score 40-78, plus factor breakdown. Real
 // implementation would derive from records.length / sources.length.

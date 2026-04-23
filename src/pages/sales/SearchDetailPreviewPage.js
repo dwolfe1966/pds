@@ -44,17 +44,16 @@ const SearchDetailPreviewPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryV = searchParams.get('v');
-  const ALL_VARIANTS = ['1', '2', '3', 'a', 'b', 'c', 'd', 'e'];
-  const [randomVariant] = useState(() => ALL_VARIANTS[Math.floor(Math.random() * ALL_VARIANTS.length)]);
-  const variant = ALL_VARIANTS.includes(queryV) ? queryV : randomVariant;
+  // Default is the new simple v1 layout. Marketing-test variants A–E still
+  // reachable via explicit ?v=a|b|c|d|e URL — kept for ongoing split tests.
+  const MARKETING_VARIANTS = ['a', 'b', 'c', 'd', 'e'];
+  const variant = MARKETING_VARIANTS.includes(queryV) ? queryV : '1';
   const { token, isPaid } = useAuth();
 
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reportCreated, setReportCreated] = useState(false);
   const [reportId, setReportId] = useState(null);
-
-  const [viewerCount] = useState(() => Math.floor(Math.random() * 8) + 3);
 
   // Embedded signup form state
   const [signupEmail, setSignupEmail] = useState('');
@@ -215,32 +214,6 @@ const SearchDetailPreviewPage = () => {
     return <SearchDetailPreviewVariantE person={person} id={id} />;
   }
 
-  // ─── Visitor: compute per-person seeded counts ───────────────────────────────
-
-  const pid = String(person.id || id || 'x');
-  const phoneCount    = seededCount(pid, 'phone',   2, 4);
-  const emailCount    = seededCount(pid, 'email',   1, 3);
-  const addressCount  = seededCount(pid, 'address', 3, 7);
-  const relativeCount = seededCount(pid, 'rel',     3, 8);
-
-  const showBenefits   = variant === '2';
-  const showSignupForm = variant === '1' || variant === '2';
-
-  const phonePlaceholders = Array.from({ length: phoneCount }, (_, i) =>
-    i === 0 ? '(***) ***-1234' : i === 1 ? '(***) ***-5678' : '(***) ***-9012'
-  );
-  const emailPlaceholders = Array.from({ length: emailCount }, (_, i) =>
-    i === 0 ? 'j***@gmail.com' : 'j***@yahoo.com'
-  );
-  const addressPlaceholders = Array.from({ length: Math.min(addressCount, 4) }, (_, i) => {
-    const streets = ['*** Oak St, Los Angeles, CA', '**** Maple Ave, Phoenix, AZ', '** Pine Rd, Houston, TX', '**** Elm Dr, Chicago, IL'];
-    return streets[i] || '*** Main St, ****, **';
-  });
-  const relativePlaceholders = Array.from({ length: Math.min(relativeCount, 5) }, (_, i) => {
-    const names = ['J*** S****', 'M*** S****', 'R*** S****', 'T*** S****', 'A*** S****'];
-    return names[i] || '****  ****';
-  });
-
   // ─── Inline signup form JSX — inlined here, NOT a sub-component ──────────────
   // Defining this as a component inside render causes React to remount inputs on
   // every keystroke (new function reference = new component type = unmount+mount).
@@ -326,14 +299,9 @@ const SearchDetailPreviewPage = () => {
         <span className={styles.miniHeaderBrand}>🔒 IDLookup.ai</span>
       </div>
 
-      {/* ── ABOVE THE FOLD ── */}
+      {/* ── Hero: just the real fields we actually have ── */}
       <section className={styles.heroSection}>
-        <div className={styles.urgencyBadge}>
-          🔥 This report was just viewed by {viewerCount} other people
-        </div>
-
         <h1 className={styles.personName}>{person.fullName}</h1>
-        <p className={styles.recentlyViewed}>This profile has been viewed recently</p>
         {(person.ageRange || person.location) && (
           <p className={styles.personMeta}>
             {person.ageRange ? `Age ${person.ageRange}` : ''}
@@ -341,203 +309,72 @@ const SearchDetailPreviewPage = () => {
             {person.location || ''}
           </p>
         )}
-
-        <div className={styles.unlockedRow}>
-          <span className={styles.unlockedCheck}>✓</span>
-          📍 {person.location || 'Location available'}
-        </div>
-
-        <div className={styles.progressStrip}>
-          <div className={`${styles.progressRow} ${styles.progressUnlocked}`}>
-            <span className={styles.progressIcon}>✅</span>
-            <span>Name: <strong>{person.fullName}</strong></span>
-          </div>
-          <div className={`${styles.progressRow} ${styles.progressLocked}`}>
-            <span className={styles.progressIcon}>🔒</span>
-            <span>Phone Numbers <span className={styles.progressCount}>({phoneCount} found)</span></span>
-          </div>
-          <div className={`${styles.progressRow} ${styles.progressLocked}`}>
-            <span className={styles.progressIcon}>🔒</span>
-            <span>Email Addresses <span className={styles.progressCount}>({emailCount} found)</span></span>
-          </div>
-          <div className={`${styles.progressRow} ${styles.progressLocked}`}>
-            <span className={styles.progressIcon}>🔒</span>
-            <span>Current &amp; Past Addresses <span className={styles.progressCount}>({addressCount} found)</span></span>
-          </div>
-          <div className={`${styles.progressRow} ${styles.progressLocked}`}>
-            <span className={styles.progressIcon}>🔒</span>
-            <span>Criminal &amp; Arrest Records</span>
-          </div>
-          <div className={`${styles.progressRow} ${styles.progressLocked}`}>
-            <span className={styles.progressIcon}>🔒</span>
-            <span>Relatives &amp; Associates <span className={styles.progressCount}>({relativeCount} found)</span></span>
-          </div>
-        </div>
       </section>
 
-      {/* ── LOCKED SECTION 1: Phone Numbers ── */}
-      <section className={styles.lockedSection}>
-        <div className={styles.lockedSectionHeader}>
-          <span className={styles.lockedSectionTitle}>📞 Phone Numbers</span>
-          <span className={styles.lockedBadge}>🔒 Locked</span>
-        </div>
-        <div className={styles.lockedSectionBody}>
-          {phonePlaceholders.map((ph, i) => (
-            <div key={i} className={styles.blurredRow}>{ph}</div>
+      {/* ── What's included: honest list, no fake counts or masked rows ── */}
+      <section
+        style={{
+          margin: '0.5rem 1rem 1rem',
+          padding: '1.25rem',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '0.75rem',
+        }}
+      >
+        <h2 style={{
+          margin: '0 0 0.5rem',
+          color: '#0d5d2f',
+          fontSize: '1.05rem',
+          fontWeight: 700,
+        }}>
+          What's in the full report
+        </h2>
+        <p style={{ margin: '0 0 1rem', color: '#4b5563', fontSize: '0.9rem', lineHeight: 1.5 }}>
+          Sign up and subscribe to unlock the full report for <strong>{person.fullName}</strong>.
+          We pull from 12B+ public records and only show what we actually find — no filler.
+        </p>
+        <ul style={{
+          listStyle: 'none', padding: 0, margin: 0,
+          display: 'grid', gap: '0.5rem',
+        }}>
+          {FULL_REPORT_ITEMS.map((item) => (
+            <li
+              key={item.label}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.625rem',
+                padding: '0.6rem 0.75rem',
+                background: '#f9fafb',
+                border: '1px solid #f3f4f6',
+                borderRadius: '0.5rem',
+                fontSize: '0.9rem',
+                color: '#374151',
+              }}
+            >
+              <span aria-hidden="true" style={{ fontSize: '1rem' }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </li>
           ))}
-          <div className={styles.gradientOverlay} aria-hidden="true" />
-        </div>
-        <div className={styles.lockedSectionFooter}>
-          <button
-            type="button"
-            className={styles.unlockBtn}
-            onClick={showSignupForm ? scrollToSignup : handleSignupNav}
-          >
-            🔓 Unlock Phone Numbers
-          </button>
-        </div>
+        </ul>
       </section>
 
-      {/* ── INLINE SIGNUP FORM — inlined JSX, not a sub-component ── */}
-      {showSignupForm && signupFormJsx}
+      {/* ── Inline signup form ── */}
+      {signupFormJsx}
 
-      {/* ── LOCKED SECTION 2: Email Addresses ── */}
-      <section className={styles.lockedSection}>
-        <div className={styles.lockedSectionHeader}>
-          <span className={styles.lockedSectionTitle}>✉️ Email Addresses</span>
-          <span className={styles.lockedBadge}>🔒 Locked</span>
-        </div>
-        <div className={styles.lockedSectionBody}>
-          {emailPlaceholders.map((ph, i) => (
-            <div key={i} className={styles.blurredRow}>{ph}</div>
-          ))}
-          <div className={styles.gradientOverlay} aria-hidden="true" />
-        </div>
-        <div className={styles.lockedSectionFooter}>
-          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
-            🔓 Unlock Email Addresses
-          </button>
-        </div>
-      </section>
-
-      {/* ── MID-PAGE CTA ── */}
-      <div className={styles.midPageCta}>
-        <h3 className={styles.midPageCtaHeadline}>Unlock {person.fullName}&rsquo;s Full Report</h3>
-        <p className={styles.midPageCtaSub}>Create your free account to see all records instantly</p>
-        <button
-          type="button"
-          className={styles.midPageCtaBtn}
-          onClick={showSignupForm ? scrollToSignup : handleSignupNav}
-        >
-          Create Free Account &rarr;
-        </button>
+      {/* ── Trust row ── */}
+      <div style={{
+        display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap',
+        margin: '1.5rem 1rem 0', fontSize: '0.8rem', color: '#6b7280',
+      }}>
+        <span>🔒 SSL Encrypted</span>
+        <span>🚫 No spam</span>
+        <span>Cancel anytime</span>
       </div>
 
-      {/* ── LOCKED SECTION 3: Address History ── */}
-      <section className={styles.lockedSection}>
-        <div className={styles.lockedSectionHeader}>
-          <span className={styles.lockedSectionTitle}>🏠 Address History</span>
-          <span className={styles.lockedBadge}>🔒 Locked</span>
-        </div>
-        <div className={styles.lockedSectionBody}>
-          {addressPlaceholders.map((ph, i) => (
-            <div key={i} className={styles.blurredRow}>{ph}</div>
-          ))}
-          <div className={styles.gradientOverlay} aria-hidden="true" />
-        </div>
-        <div className={styles.lockedSectionFooter}>
-          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
-            🔓 Unlock Address History
-          </button>
-        </div>
-      </section>
-
-      {/* ── LOCKED SECTION 4: Criminal Records ── */}
-      <section className={styles.lockedSection}>
-        <div className={styles.lockedSectionHeader}>
-          <span className={styles.lockedSectionTitle}>⚠️ Criminal &amp; Arrest Records</span>
-          <span className={styles.lockedBadge}>🔒 Locked</span>
-        </div>
-        <div className={styles.lockedSectionBody}>
-          <div className={styles.blurredRow}>**** County — Misdemeanor — 20**</div>
-          <div className={styles.blurredRow}>**** District Court — Case #****</div>
-          <div className={styles.gradientOverlay} aria-hidden="true" />
-        </div>
-        <div className={styles.lockedSectionFooter}>
-          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
-            🔓 Unlock Criminal Records
-          </button>
-        </div>
-      </section>
-
-      {/* ── LOCKED SECTION 5: Relatives & Associates ── */}
-      <section className={styles.lockedSection}>
-        <div className={styles.lockedSectionHeader}>
-          <span className={styles.lockedSectionTitle}>👥 Relatives &amp; Associates</span>
-          <span className={styles.lockedBadge}>🔒 Locked</span>
-        </div>
-        <div className={styles.lockedSectionBody}>
-          {relativePlaceholders.map((ph, i) => (
-            <div key={i} className={styles.blurredRow}>{ph}</div>
-          ))}
-          <div className={styles.gradientOverlay} aria-hidden="true" />
-        </div>
-        <div className={styles.lockedSectionFooter}>
-          <button type="button" className={styles.unlockBtn} onClick={showSignupForm ? scrollToSignup : handleSignupNav}>
-            🔓 Unlock Relatives &amp; Associates
-          </button>
-        </div>
-      </section>
-
-      {/* ── BENEFITS RECTANGLE (v2 only) ── */}
-      {showBenefits && (
-        <section className={styles.section}>
-          <div className={styles.benefitsCard}>
-            <h3 className={styles.benefitsTitle}>Why use IDLookup.ai?</h3>
-            <ul className={styles.benefitsList}>
-              {BENEFIT_STATEMENTS.map((text, i) => (
-                <li key={i}>{text}</li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      {/* ── CTA ONLY (v3) ── */}
-      {variant === '3' && (
-        <section className={styles.section}>
-          <div className={styles.ctaCard}>
-            <h3 className={styles.ctaTitle}>Unlock the Full Report</h3>
-            <p className={styles.ctaText}>
-              Sign up or log in to view all records for <strong>{person.fullName}</strong>.
-            </p>
-            <div className={styles.ctaButtons}>
-              <button type="button" className={styles.btnWhite} onClick={handleSignupNav}>
-                Create Free Account →
-              </button>
-              <Link to="/login" className={styles.btnOutline}>
-                Already have an account? Sign in
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── STICKY MOBILE CTA BAR ── */}
+      {/* ── Sticky mobile CTA scrolls to inline signup ── */}
       <div className={styles.stickyMobileCta}>
-        {showSignupForm ? (
-          <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={scrollToSignup}>
-            🔓 Unlock Full Report — Create Free Account →
-          </a>
-        ) : (
-          <button
-            type="button"
-            className={styles.stickyMobileCtaLink}
-            onClick={handleSignupNav}
-          >
-            🔓 Unlock Full Report — Create Free Account →
-          </button>
-        )}
+        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={scrollToSignup}>
+          🔓 Unlock Full Report — Create Free Account →
+        </a>
       </div>
     </main>
   );

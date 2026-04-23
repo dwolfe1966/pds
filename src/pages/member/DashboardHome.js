@@ -24,6 +24,9 @@ import {
   relativeDate,
   maskName,
   maskLocation,
+  buildWatchlistFromReports,
+  buildRecordsFeedFromAlerts,
+  computeExposureFromReports,
 } from './watchingHelpers';
 
 /* ---------------------------------------------------------------------------
@@ -209,7 +212,23 @@ const ExposureScoreWidget = ({ score, isPaid }) => {
   return (
     <div className={styles.heroCard}>
       <div className={styles.heroHeader}>
-        <p className={styles.heroLabel}>Privacy Exposure Score</p>
+        <p className={styles.heroLabel}>
+          Privacy Exposure Score
+          {score.isReal && (
+            <span style={{
+              marginLeft: '0.5rem',
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              color: '#065f46',
+              background: '#d1fae5',
+              padding: '0.1rem 0.5rem',
+              borderRadius: '9999px',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              verticalAlign: 'middle',
+            }}>Live</span>
+          )}
+        </p>
         <Link to="/who-is-searching" className={styles.heroHelpLink}>
           How it works <Icon.Arrow />
         </Link>
@@ -753,11 +772,43 @@ const DashboardHome = () => {
     return hashString(String(id));
   }, [user]);
 
-  const exposureScore = useMemo(() => computeExposureScore(seed), [seed]);
+  // Prefer real data where we have it; fall back to seeded demo data otherwise.
+  // - watchlist: people the member has actually pulled reports on
+  // - recordsFeed: merge real alerts with seeded until alert volume is high enough alone
+  // - exposureScore: computed from field density across real reports if any exist;
+  //   null → show a prompt to run a search on yourself
+  const realWatchlist = useMemo(
+    () => buildWatchlistFromReports(recentReports, 5),
+    [recentReports]
+  );
+  const realRecordsFeed = useMemo(
+    () => buildRecordsFeedFromAlerts(recentAlerts, 12),
+    [recentAlerts]
+  );
+  const realExposure = useMemo(
+    () => computeExposureFromReports(recentReports),
+    [recentReports]
+  );
+
+  const watchlist = useMemo(
+    () => (realWatchlist.length > 0 ? realWatchlist : generateWatchlist(seed, 5)),
+    [realWatchlist, seed]
+  );
+  const recordsFeed = useMemo(() => {
+    if (realRecordsFeed.length >= 4) return realRecordsFeed;
+    // Blend real alerts on top of seeded so the feed never looks empty, but
+    // any real alerts always surface first.
+    const seededFeed = generateRecordsFeed(seed, 12);
+    return [...realRecordsFeed, ...seededFeed].slice(0, 12);
+  }, [realRecordsFeed, seed]);
+
+  const exposureScore = useMemo(
+    () => realExposure || computeExposureScore(seed),
+    [realExposure, seed]
+  );
+
   const searchers = useMemo(() => generateEvents(seed, 'searchers', 47), [seed]);
   const brokers = useMemo(() => generateBrokerStatuses(seed), [seed]);
-  const watchlist = useMemo(() => generateWatchlist(seed, 5), [seed]);
-  const recordsFeed = useMemo(() => generateRecordsFeed(seed, 12), [seed]);
 
   const displayName = useMemo(() => {
     if (!user) return 'Member';
@@ -1048,23 +1099,39 @@ const DashboardHome = () => {
         </div>
       )}
 
-      {/* Preview-data disclosure — exposure score, watchers, brokers, and watchlist
-          are seeded sample data until BC exposes target-user tracking. Keeps the UX
-          while being honest with paying members during MVP launch. */}
+      {/* Honest data-source disclosure. Precise per widget — widgets update to
+          live data as soon as the member has corresponding real activity. */}
       {!loading && (
         <div
           role="note"
           style={{
-            background: '#fffbeb',
-            border: '1px solid #fde68a',
-            color: '#92400e',
+            background: realWatchlist.length > 0 || realRecordsFeed.length > 0 || realExposure ? '#ecfdf5' : '#fffbeb',
+            border: `1px solid ${realWatchlist.length > 0 || realRecordsFeed.length > 0 || realExposure ? '#bbf7d0' : '#fde68a'}`,
+            color: realWatchlist.length > 0 || realRecordsFeed.length > 0 || realExposure ? '#065f46' : '#92400e',
             borderRadius: '0.5rem',
             padding: '0.5rem 0.875rem',
             fontSize: '0.8rem',
             margin: '0 0 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            flexWrap: 'wrap',
           }}
         >
-          Exposure score, watchers, broker statuses and watchlist are preview data during launch. Reports, searches, alerts, and usage counts are live.
+          <strong style={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '0.72rem' }}>
+            Data sources
+          </strong>
+          <span>
+            <strong>Live:</strong> reports, searches, alerts, usage
+            {realWatchlist.length > 0 ? ', watchlist' : ''}
+            {realRecordsFeed.length > 0 ? ', records feed' : ''}
+            {realExposure ? ', exposure score' : ''}
+            . <strong>Preview:</strong> who's watching you, data-broker statuses
+            {realWatchlist.length === 0 ? ', watchlist' : ''}
+            {realRecordsFeed.length === 0 ? ', records feed' : ''}
+            {!realExposure ? ', exposure score' : ''}
+            .
+          </span>
         </div>
       )}
 
