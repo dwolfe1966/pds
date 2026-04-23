@@ -5,6 +5,10 @@ import styles from './AdminNav.module.css';
 // Use static import so Parcel bundles the image without import.meta (needed for classic script mode)
 import logoSrc from '../assets/idlookup_icon_transparent.png';
 
+// Permissions / Content & UX / Offers are hidden from v1 nav — they're
+// localStorage-only today (no BC endpoints exist). Routes still resolve if
+// a URL is typed directly so in-progress work there is preserved. Re-add the
+// entries here once the BC surface for each lands.
 const navLinks = [
   { path: '/users',        label: 'Customers' },
   { path: '/orders',       label: 'Orders' },
@@ -16,9 +20,6 @@ const navLinks = [
   { path: '/cs-reps',      label: 'CS Reps' },
   { path: '/email',        label: 'Broadcast' },
   { path: '/analytics',    label: 'Analytics' },
-  { path: '/permissions',  label: 'Permissions' },
-  { path: '/content',      label: 'Content & UX' },
-  { path: '/offers',       label: 'Offers' },
   { path: '/sessions',     label: 'Activity & Logs' },
 ];
 

@@ -438,7 +438,7 @@ const recordIcon = (kind) => {
   }
 };
 
-const RecordsFeed = ({ records }) => {
+const RecordsFeed = ({ records, isLive }) => {
   const [tab, setTab] = useState('all');
 
   const filtered = useMemo(() => {
@@ -469,7 +469,10 @@ const RecordsFeed = ({ records }) => {
   return (
     <section className={styles.panel}>
       <div className={styles.panelHeader}>
-        <h2 className={styles.panelTitle}>Recent Activity</h2>
+        <h2 className={styles.panelTitle}>
+          Recent Activity
+          {isLive && <LivePill />}
+        </h2>
         <Link to="/search-history" className={styles.panelLink}>View all</Link>
       </div>
 
@@ -702,12 +705,34 @@ const RecentMessagesPanel = ({ messages, navigate }) => {
   );
 };
 
-const WatchlistCard = ({ watchlist, isPaid, navigate }) => (
+const LivePill = () => (
+  <span style={{
+    marginLeft: '0.5rem',
+    fontSize: '0.65rem',
+    fontWeight: 700,
+    color: '#065f46',
+    background: '#d1fae5',
+    padding: '0.1rem 0.5rem',
+    borderRadius: '9999px',
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    verticalAlign: 'middle',
+  }}>Live</span>
+);
+
+const WatchlistCard = ({ watchlist, isPaid, navigate, isLive }) => (
   <div className={styles.watchlistCard}>
     <div className={styles.panelHeader}>
       <div>
-        <h2 className={styles.panelTitle}>People You're Watching</h2>
-        <p className={styles.brokerCaption}>Get notified when new records are found about someone you care about.</p>
+        <h2 className={styles.panelTitle}>
+          People You're Watching
+          {isLive && <LivePill />}
+        </h2>
+        <p className={styles.brokerCaption}>
+          {isLive
+            ? "People you've pulled reports on. We'll flag new records when they appear."
+            : 'Get notified when new records are found about someone you care about.'}
+        </p>
       </div>
       <Link to="/alerts" className={styles.panelLink}>Manage</Link>
     </div>
@@ -1205,7 +1230,7 @@ const DashboardHome = () => {
         </div>
       ) : (
         <div className={styles.activityGrid}>
-          <RecordsFeed records={recordsFeed} />
+          <RecordsFeed records={recordsFeed} isLive={realRecordsFeed.length > 0} />
           <div className={styles.sidebarStack}>
             <QuotaRing
               used={searchesUsed}
@@ -1227,7 +1252,7 @@ const DashboardHome = () => {
 
       {/* Row 5 — Watchlist */}
       {!loading && (
-        <WatchlistCard watchlist={watchlist} isPaid={isPaid} navigate={navigate} />
+        <WatchlistCard watchlist={watchlist} isPaid={isPaid} navigate={navigate} isLive={realWatchlist.length > 0} />
       )}
 
       {/* Row 6 — Alerts preview */}
