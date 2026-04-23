@@ -105,7 +105,7 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
       className={styles.card}
       onClick={!onClick ? handleViewDetails : undefined}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+      <div className={styles.cardRow}>
         {/* Avatar placeholder */}
         <div style={{
           width: '48px',
@@ -163,7 +163,6 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           onClick={handleViewDetails}
           className={styles.cardButton}
           disabled={loading}
-          style={{ alignSelf: 'center', whiteSpace: 'nowrap' }}
         >
           {loading ? 'Loading...' : 'View Full Report →'}
         </button>

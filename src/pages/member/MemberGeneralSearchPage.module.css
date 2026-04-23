@@ -235,3 +235,14 @@
     font-size: 0.9rem;
   }
 }
+
+/* Partner bug 23a: Galaxy S5 showed unwanted horizontal/vertical scroll on
+   member search. Tighten padding and ensure no element is forced wider than
+   the viewport. */
+@media (max-width: 400px) {
+  .main { padding: 1rem 0.75rem; overflow-x: hidden; }
+  .formCard { padding: 1rem; }
+  .input, .select { min-width: 0; max-width: 100%; }
+  .tab { padding: 0.5rem 0.75rem; font-size: 0.85rem; }
+  .label { font-size: 0.9rem; }
+}

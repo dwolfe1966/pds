@@ -12,36 +12,32 @@ import SearchDetailPreviewVariantD from './SearchDetailPreviewVariantD';
 import SearchDetailPreviewVariantE from './SearchDetailPreviewVariantE';
 import styles from './SearchDetailPreviewPage.module.css';
 
-/** Service benefit statements for variant 2 */
-const BENEFIT_STATEMENTS = [
-  'Instant access to full contact information',
-  '12B+ public records searched',
-  'Address history and current location',
-  'Relatives and family connections',
-  'One-time purchase or subscription options',
+/**
+ * Items included in the paid full report. Kept honest: no fake counts, no
+ * masked placeholder rows. If BC doesn't return one of these for a given
+ * person, the detail report simply renders that section empty — no false
+ * expectations set on the preview.
+ */
+const FULL_REPORT_ITEMS = [
+  { icon: '📞', label: 'Phone numbers' },
+  { icon: '✉️', label: 'Email addresses' },
+  { icon: '🏠', label: 'Address history' },
+  { icon: '👥', label: 'Relatives & associates' },
+  { icon: '⚠️', label: 'Criminal & court records (where available)' },
+  { icon: '📋', label: 'Other public-record details' },
 ];
-
-function simpleHash(str) {
-  let h = 0;
-  for (let i = 0; i < (str || '').length; i++) {
-    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
-
-function seededCount(id, salt, min, max) {
-  const h = simpleHash((id || 'x') + salt);
-  return min + (h % (max - min + 1));
-}
 
 /**
  * Preview page when a visitor clicks a search result.
- * Three variants: v1 (new high-conversion teaser layout), v2 (+ benefits rectangle), v3 (teaser + CTA only, no inline form).
  *
- * IMPORTANT: SignupFormCard JSX is inlined directly — do NOT extract it into a
- * component defined inside this render function. A component defined inside render
- * gets a new function reference on every state update, causing React to unmount/remount
- * it and lose input focus after every keystroke.
+ * Default is a deliberately simple layout: name + age/location + honest list
+ * of what the full report includes + signup form. No seeded fake data.
+ * Marketing-test variants A–E remain available via `?v=a|b|c|d|e`.
+ *
+ * IMPORTANT: signup form JSX is inlined directly — do NOT extract it into a
+ * component defined inside this render function. A component defined inside
+ * render gets a new function reference on every state update, causing React
+ * to unmount/remount it and lose input focus after every keystroke.
  */
 const SearchDetailPreviewPage = () => {
   const { id } = useParams();

@@ -54,6 +54,17 @@ const SignupPage = ({ source = 'direct' }) => {
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  // Live password requirement checks (partner bug 16: show pre-reqs as user types).
+  // Mirrors the server-side rules enforced in hooks/useSignup.js `validatePassword`.
+  const passwordChecks = [
+    { label: 'At least 8 characters',     ok: form.password.length >= 8 },
+    { label: 'One uppercase letter',      ok: /[A-Z]/.test(form.password) },
+    { label: 'One lowercase letter',      ok: /[a-z]/.test(form.password) },
+    { label: 'One number',                ok: /[0-9]/.test(form.password) },
+    { label: 'One special character',     ok: /[^A-Za-z0-9]/.test(form.password) },
+  ];
+  const passwordTouched = form.password.length > 0;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // Use location.search (React Router) consistently — avoids mixing with window.location.search.
@@ -118,6 +129,10 @@ const SignupPage = ({ source = 'direct' }) => {
                   placeholder="you@example.com"
                   className={styles.input}
                 />
+                <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.45 }}>
+                  We'll only use your email for login, receipts, and account alerts.
+                  Never sold, shared, or used for marketing without your consent.
+                </p>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="password">Password *</label>
@@ -132,6 +147,25 @@ const SignupPage = ({ source = 'direct' }) => {
                   placeholder="At least 8 characters"
                   className={styles.input}
                 />
+                <ul style={{
+                  listStyle: 'none', padding: 0, margin: '0.4rem 0 0',
+                  fontSize: '0.78rem', lineHeight: 1.6,
+                }}>
+                  {passwordChecks.map((c) => (
+                    <li
+                      key={c.label}
+                      style={{
+                        color: c.ok ? '#047857' : (passwordTouched ? '#b91c1c' : '#6b7280'),
+                        display: 'flex', alignItems: 'center', gap: '0.4rem',
+                      }}
+                    >
+                      <span aria-hidden="true" style={{
+                        display: 'inline-block', width: '0.9em', textAlign: 'center',
+                      }}>{c.ok ? '✓' : '○'}</span>
+                      {c.label}
+                    </li>
+                  ))}
+                </ul>
               </div>
               <label className={styles.optinRow}>
                 <input

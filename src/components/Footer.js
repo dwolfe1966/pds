@@ -16,15 +16,14 @@ const Footer = () => (
           </p>
         </div>
 
-        {/* Legal Section */}
+        {/* Legal Section — Refund policy folded into Terms; California Privacy
+            folded into Privacy Policy (partner bug 25). */}
         <div>
           <h5 className={styles.sectionTitle}>Legal</h5>
           <div className={styles.sectionLinks}>
             {[
               { to: '/privacy', label: 'Privacy Policy' },
               { to: '/terms', label: 'Terms of Service' },
-              { to: '/refund', label: 'Refund Policy' },
-              { to: '/cpcc', label: 'California Privacy' },
             ].map((link) => (
               <Link key={link.to} to={link.to} className={styles.sectionLink}>
                 {link.label}

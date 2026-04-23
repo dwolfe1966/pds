@@ -150,8 +150,11 @@ const NotesPage = () => {
     try {
       const params = { userId, ...(cursorId ? { lastId: cursorId } : {}) };
       const res = await api.adminFindUserContacts(params);
-      const docs = (res?.data ?? res?.docs ?? [])
-        .filter((d) => d.type === 'userContactAdminNote');
+      const all = (res?.data ?? res?.docs ?? [])
+        .filter((d) => d.type === 'userContactAdminNote')
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      // Default view on first page: 10 most-recent notes. Follow-up pages append.
+      const docs = cursorId ? all : all.slice(0, 10);
       const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
       if (cursorId) {
         setNotes((prev) => [...prev, ...docs]);

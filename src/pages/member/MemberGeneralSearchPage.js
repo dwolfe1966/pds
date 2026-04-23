@@ -5,8 +5,29 @@ import { createReportForPhone } from '../../services/reportService';
 import DevBCSession from '../../components/DevBCSession';
 import styles from './MemberGeneralSearchPage.module.css';
 
+// Top US cities by population — used for City field typeahead (partner bug 23c).
+// Kept intentionally short; the datalist is a suggestion source, not a
+// restricted picker — users can still type any city name freely.
+const COMMON_US_CITIES = [
+  'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX', 'Phoenix, AZ',
+  'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA', 'Dallas, TX', 'San Jose, CA',
+  'Austin, TX', 'Jacksonville, FL', 'Fort Worth, TX', 'Columbus, OH', 'Charlotte, NC',
+  'Indianapolis, IN', 'San Francisco, CA', 'Seattle, WA', 'Denver, CO', 'Washington, DC',
+  'Boston, MA', 'Nashville, TN', 'Baltimore, MD', 'Oklahoma City, OK', 'Portland, OR',
+  'Las Vegas, NV', 'Memphis, TN', 'Louisville, KY', 'Detroit, MI', 'El Paso, TX',
+  'Milwaukee, WI', 'Albuquerque, NM', 'Tucson, AZ', 'Fresno, CA', 'Sacramento, CA',
+  'Kansas City, MO', 'Atlanta, GA', 'Miami, FL', 'Raleigh, NC', 'Omaha, NE',
+  'Long Beach, CA', 'Virginia Beach, VA', 'Oakland, CA', 'Minneapolis, MN', 'Tulsa, OK',
+  'Arlington, TX', 'Tampa, FL', 'New Orleans, LA', 'Cleveland, OH', 'Honolulu, HI',
+  'Anaheim, CA', 'Orlando, FL', 'Saint Paul, MN', 'Pittsburgh, PA', 'Cincinnati, OH',
+  'Anchorage, AK', 'Buffalo, NY', 'Plano, TX', 'Lincoln, NE', 'Henderson, NV',
+  'Fort Wayne, IN', 'Jersey City, NJ', 'Saint Louis, MO', 'Chula Vista, CA', 'Orlando, FL',
+  'Newark, NJ', 'Norfolk, VA', 'Chandler, AZ', 'Lexington, KY', 'Madison, WI',
+  'Scottsdale, AZ', 'Fort Lauderdale, FL', 'Salt Lake City, UT', 'Spokane, WA', 'Tacoma, WA',
+];
+
 const US_STATES = [
-  { value: '', label: 'Select State (Optional)' },
+  { value: '', label: 'Select State' },
   { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
   { value: 'AZ', label: 'Arizona' }, { value: 'AR', label: 'Arkansas' },
   { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
@@ -129,12 +150,18 @@ const MemberGeneralSearchPage = () => {
   const handleNameSubmit = (e) => {
     e.preventDefault();
     setError('');
+    // Partner bug 23b: state is required on member name search (parity with
+    // sales flow). City stays optional — sufficient state narrows results.
     if (!firstName.trim() || !lastName.trim()) {
       setError('Please enter both first and last name.');
       return;
     }
+    if (!state.trim()) {
+      setError('Please select a state.');
+      return;
+    }
     const params = new URLSearchParams({ firstName: firstName.trim(), lastName: lastName.trim() });
-    if (state.trim()) params.set('state', state.trim().toUpperCase());
+    params.set('state', state.trim().toUpperCase());
     if (nameCity.trim()) params.set('city', nameCity.trim());
     if (ageRange) params.set('age', ageRange);
     navigate(`/people-results?${params.toString()}`);
@@ -271,18 +298,26 @@ const MemberGeneralSearchPage = () => {
                   onChange={(e) => setNameCity(e.target.value)}
                   placeholder="e.g. Austin"
                   disabled={loading}
+                  list="gs-city-suggestions"
+                  autoComplete="off"
                   className={`${styles.input} ${nameCity.trim() ? styles.inputValid : ''}`}
                 />
+                <datalist id="gs-city-suggestions">
+                  {COMMON_US_CITIES.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
               <div className={styles.fieldGroup} style={{ marginBottom: 0 }}>
                 <label className={styles.label} htmlFor="gs-state">
-                  State <span className={styles.labelOptional}>(optional)</span>
+                  State *
                 </label>
                 <select
                   id="gs-state"
                   value={state}
                   onChange={(e) => setState(e.target.value)}
                   disabled={loading}
+                  required
                   className={styles.select}
                 >
                   {US_STATES.map((s) => (

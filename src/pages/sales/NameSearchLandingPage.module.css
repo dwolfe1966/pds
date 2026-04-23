@@ -477,4 +477,24 @@
   .heroTitleTwoCol {
     font-size: var(--font-size-3xl);
   }
+
+  /* Partner bug 14: phone/email landing search box sits too low on Galaxy S5.
+     Trim hero + form-section padding so the search form is reachable without
+     scrolling on a 360px viewport. */
+  .hero {
+    padding: 1.25rem 1rem;
+  }
+
+  .heroSubtitle {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .searchFormSection {
+    padding: 1rem;
+  }
+
+  .searchFormContainer .searchForm {
+    padding: 1.25rem;
+  }
 }

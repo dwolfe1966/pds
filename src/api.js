@@ -264,6 +264,16 @@ const api = {
         // Ensure state is uppercase two-letter abbreviation (API expects this format)
         query.state = state.trim().toUpperCase();
       }
+      // Partner bug 10: city/middleName/age were destructured but never sent.
+      // BC docs only list fName/lName/state/contextKey as inputs, so these are
+      // speculative — BC should ignore unknowns gracefully. We ALSO filter
+      // client-side in SearchResultsPage so the user sees the refinement.
+      if (middleName && middleName.trim()) query.mName = middleName.trim();
+      if (city && city.trim()) query.city = city.trim();
+      if (age && String(age).trim()) {
+        const n = parseInt(String(age).trim(), 10);
+        if (!Number.isNaN(n)) query.age = n;
+      }
     } else if (type === 'phone') {
       query.phone = phone;
     } else if (type === 'email') {
@@ -389,6 +399,16 @@ const api = {
    */
   searchOptOut: async (params) => {
     return await routeApiRequest('opt-out-search', { body: params });
+  },
+
+  /**
+   * Open BC's authoritative hosted opt-out page via ApiWrapper.goPage.
+   * newPage=true opens in a new tab; newPage=false redirects the current tab.
+   * Falls back to our in-app /opt-out route if the BC library is unavailable.
+   */
+  openBcOptOutPage: async ({ newPage = true } = {}) => {
+    const { default: apiWrapper } = await import('./services/apiWrapper');
+    return await apiWrapper.goToOptOutPage({ newPage });
   },
 
   /**

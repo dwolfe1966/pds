@@ -223,13 +223,13 @@ const NameSearchLandingV4Page = () => {
                 <label className={styles.label} htmlFor="v4-firstName">First Name</label>
                 <input id="v4-firstName" type="text" className={styles.input}
                   value={firstName} onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First name" required />
+                  placeholder="First (ex. John)" required />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v4-lastName">Last Name</label>
                 <input id="v4-lastName" type="text" className={styles.input}
                   value={lastName} onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last name" required />
+                  placeholder="Last (ex. Smith)" required />
               </div>
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v4-middleName">Middle Name (optional)</label>

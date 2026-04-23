@@ -76,7 +76,7 @@ const PLAN_FEATURES = [
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription } = useAuth();
+  const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription, refreshSubscription } = useAuth();
 
   const [form, setForm] = useState({
     cardNumber: '',
@@ -88,20 +88,31 @@ const PaymentPage = () => {
     billingZip: '',
   });
   const [touched, setTouched] = useState({});
-  const [billingOpen, setBillingOpen] = useState(false);
+  // Billing address is expanded by default (partner bug 17 — the "uses address
+  // on file" hint was misleading since we never collected one). ZIP is required;
+  // Street is still optional.
+  const [billingOpen, setBillingOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
+  // Populated on the happy path so the confirmation screen can link straight to
+  // the report the user was trying to reach before the paywall (partner bug 22).
+  const [confirmedReportId, setConfirmedReportId] = useState(null);
+  const [reportProvisioning, setReportProvisioning] = useState(false);
 
   const simulateParam = searchParams.get('simulate');
   const cardType = detectCardType(form.cardNumber);
 
-  // Cancel pending navigation on unmount so stale navigate() calls don't fire.
-  const navTimeoutRef = useRef(null);
+  // Reconcile swaps the synthetic subscription for BC's real order shortly
+  // after payment. Cancel on unmount so a stale refresh doesn't fire after
+  // the user navigates away.
+  const reconcileTimeoutRef = useRef(null);
   useEffect(() => {
-    return () => { if (navTimeoutRef.current) clearTimeout(navTimeoutRef.current); };
+    return () => {
+      if (reconcileTimeoutRef.current) clearTimeout(reconcileTimeoutRef.current);
+    };
   }, []);
 
   // Track page entry (after auth resolves so we know if it's an upgrade)
@@ -165,9 +176,26 @@ const PaymentPage = () => {
   // Field validation
   const cardDigits = form.cardNumber.replace(/\s/g, '');
   const expectedLen = cardType === 'amex' ? 15 : 16;
+
+  // Partner bug 17: the old check only tested MM/YY shape, so 11/01 (in the past)
+  // passed. Now we additionally verify MM is 01–12 and the YY/YY+MM combined
+  // date is not earlier than the current month.
+  const expiryValid = (() => {
+    const match = /^(\d{2})\/(\d{2})$/.exec(form.expiry);
+    if (!match) return false;
+    const mm = parseInt(match[1], 10);
+    const yy = parseInt(match[2], 10);
+    if (mm < 1 || mm > 12) return false;
+    const fullYear = 2000 + yy;
+    const now = new Date();
+    const exp = new Date(fullYear, mm, 0); // last day of exp month
+    exp.setHours(23, 59, 59, 999);
+    return exp >= now;
+  })();
+
   const validation = {
     cardNumber: cardDigits.length === expectedLen && luhnCheck(form.cardNumber),
-    expiry: /^\d{2}\/\d{2}$/.test(form.expiry),
+    expiry: expiryValid,
     cvv: cardType === 'amex' ? form.cvv.length === 4 : form.cvv.length === 3,
   };
 
@@ -176,6 +204,12 @@ const PaymentPage = () => {
     if (!user) return;
     if (!form.billingFirstName.trim()) { setError('Please enter your first name.'); return; }
     if (!form.billingLastName.trim()) { setError('Please enter your last name.'); return; }
+    if (!validation.cardNumber) { setError('Please enter a valid card number.'); setTouched(t => ({ ...t, cardNumber: true })); return; }
+    if (!validation.expiry) { setError('Please enter a valid expiration date (MM/YY, not in the past).'); setTouched(t => ({ ...t, expiry: true })); return; }
+    if (!validation.cvv) { setError('Please enter a valid CVV.'); setTouched(t => ({ ...t, cvv: true })); return; }
+    // Partner bug 17: copy previously said "we use your billing address on file"
+    // even though it wasn't collected. ZIP is now explicitly required.
+    if (!form.billingZip.trim()) { setError('Please enter your billing ZIP code.'); setBillingOpen(true); return; }
     setError('');
     setLoading(true);
     try {
@@ -214,7 +248,7 @@ const PaymentPage = () => {
               firstName: submitUserInfo.firstName,
               lastName: submitUserInfo.lastName,
               street1: form.street1 || '123 main',
-              zip: form.billingZip || '10001',
+              zip: form.billingZip,
               bogusFields: {
                 firstName: false,
                 lastName: false,
@@ -308,10 +342,24 @@ const PaymentPage = () => {
       }
 
       // Set subscription immediately so isPaid=true for the rest of this flow.
-      // Do NOT call refreshSubscription() here — getUserOrders returns 403 immediately
-      // after billing.sale (BC hasn't provisioned the account yet), which would clear
-      // this synthetic subscription and cause PaidRoute to redirect back to payment.
-      setSubscription?.({ status: 'active', plan: 'comp.offer.signup.main' });
+      // Tag with syntheticAt so AuthContext.refreshSubscription can preserve it
+      // during BC's provisioning grace window (getUserOrders 403s for ~seconds
+      // after billing.sale). AuthContext also persists this to localStorage, so
+      // a mid-flow page refresh keeps the user on the paid side.
+      setSubscription?.({
+        status: 'active',
+        plan: 'comp.offer.signup.main',
+        syntheticAt: Date.now(),
+      });
+
+      // Schedule a delayed reconcile — by then BC should have provisioned the
+      // account and getUserOrders will return a real order, swapping the
+      // synthetic sub for BC's authoritative data (orderId, dueDate, cancelable).
+      // 15s was chosen empirically; well within the 2-min grace window.
+      if (reconcileTimeoutRef.current) clearTimeout(reconcileTimeoutRef.current);
+      reconcileTimeoutRef.current = setTimeout(() => {
+        refreshSubscription?.();
+      }, 15000);
 
       setSuccess(true);
       track('payment_complete', { plan: 'pro' });
@@ -324,26 +372,44 @@ const PaymentPage = () => {
         plan: 'comp.offer.signup.main',
       });
 
-      // Clean up signup sessionStorage now that payment succeeded.
-      sessionStorage.removeItem('selectedPersonId');
-
+      // Attempt report creation so the confirmation screen (bug 22) can show a
+      // direct link to the report the user was trying to reach before the paywall.
+      // On failure we stash a pendingReport for DashboardHome to retry later.
       if (selectedPerson && selectedPerson.extId) {
         try {
           const reportResult = await createReportForIdentity(selectedPerson.extId, selectedPerson);
           if (reportResult.success && reportResult.commerceContentId) {
-            navTimeoutRef.current = setTimeout(() => navigate(`/people/${reportResult.commerceContentId}`), 2000);
-            return;
+            sessionStorage.removeItem('selectedPersonId');
+            sessionStorage.removeItem('pendingReport');
+            setConfirmedReportId(reportResult.commerceContentId);
+          } else {
+            setReportProvisioning(true);
+            try {
+              sessionStorage.setItem('pendingReport', JSON.stringify({
+                extId: selectedPerson.extId,
+                fullName: selectedPerson.fullName,
+                location: selectedPerson.location,
+                createdAt: Date.now(),
+              }));
+            } catch { /* storage may be unavailable — non-fatal */ }
           }
         } catch {
-          // Report creation failed — fall through to dashboard.
-          // The user is subscribed; they can search and view reports from the dashboard.
+          setReportProvisioning(true);
+          try {
+            sessionStorage.setItem('pendingReport', JSON.stringify({
+              extId: selectedPerson.extId,
+              fullName: selectedPerson.fullName,
+              location: selectedPerson.location,
+              createdAt: Date.now(),
+            }));
+          } catch { /* non-fatal */ }
         }
       }
-
-      // Always fall back to /dashboard — never use the raw selectedPersonId as a report URL.
-      // Raw search IDs are not commerceContentIds and would hit PaidRoute, which would
-      // redirect to payment even though the user just subscribed.
-      navTimeoutRef.current = setTimeout(() => navigate('/dashboard'), 2000);
+      // Clear the raw selected-person id now that we've either resolved or stashed it.
+      sessionStorage.removeItem('selectedPersonId');
+      // NOTE: no auto-redirect from the confirmation screen. Partner bug 22 —
+      // the user should see the confirmation, read it, and choose to view their
+      // report or head to the dashboard on their own.
     } catch (err) {
       const isUnauthorized = err?.status === 401;
       const errorType = isUnauthorized ? 'unauthorized' : 'payment_failed';
@@ -386,10 +452,74 @@ const PaymentPage = () => {
           {success ? (
             <div className={styles.successBox}>
               <div className={styles.successIcon}>✓</div>
-              <h2 className={styles.successTitle}>Payment Successful!</h2>
+              <h2 className={styles.successTitle}>You're in!</h2>
               <p className={styles.successText}>
-                Your membership is now active.{' '}
-                {selectedPerson ? `Preparing your report for ${selectedPerson.fullName}…` : 'Redirecting to your dashboard…'}
+                Your IDlookup Basic membership is now active. A receipt is on its way to <strong>{user?.email}</strong>.
+              </p>
+
+              {/* Primary CTA varies by whether report creation succeeded.
+                  confirmedReportId → direct jump to the report they wanted.
+                  reportProvisioning → report is being prepared; DashboardHome
+                  auto-retries on arrival.
+                  else → generic "Go to dashboard". */}
+              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {confirmedReportId && selectedPerson ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/people/${confirmedReportId}`)}
+                    style={{
+                      background: '#0d5d2f', color: '#fff', border: 'none',
+                      padding: '0.9rem 1.25rem', borderRadius: '0.5rem',
+                      fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(13,93,47,0.2)',
+                    }}
+                  >
+                    View {selectedPerson.fullName}'s report →
+                  </button>
+                ) : reportProvisioning && selectedPerson ? (
+                  <div
+                    role="note"
+                    style={{
+                      background: '#fffbeb', border: '1px solid #fde68a',
+                      color: '#92400e', borderRadius: '0.5rem',
+                      padding: '0.75rem 1rem', fontSize: '0.9rem',
+                    }}
+                  >
+                    We're finishing up <strong>{selectedPerson.fullName}</strong>'s report.
+                    It'll appear on your dashboard in a moment — we'll try again automatically.
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  style={{
+                    background: '#fff', color: '#0d5d2f',
+                    border: '2px solid #0d5d2f',
+                    padding: '0.9rem 1.25rem', borderRadius: '0.5rem',
+                    fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  Go to my dashboard
+                </button>
+              </div>
+
+              {/* Upsell placeholder — partner bug 22 noted the confirmation
+                  surface is a good spot for future upsells; reserve slot. */}
+              <p style={{
+                marginTop: '1.5rem', fontSize: '0.85rem', color: '#6b7280',
+                lineHeight: 1.6,
+              }}>
+                Manage your plan or cancel anytime from{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/account')}
+                  style={{
+                    background: 'none', border: 'none', padding: 0,
+                    color: '#0d5d2f', fontWeight: 600, cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >Account Settings</button>.
               </p>
             </div>
           ) : (
@@ -501,7 +631,11 @@ const PaymentPage = () => {
                         )}
                       </div>
                       {touched.expiry && !validation.expiry && (
-                        <p className={styles.fieldErrMsg}>Enter MM/YY</p>
+                        <p className={styles.fieldErrMsg}>
+                          {form.expiry && /^\d{2}\/\d{2}$/.test(form.expiry)
+                            ? 'This date is in the past'
+                            : 'Enter MM/YY'}
+                        </p>
                       )}
                     </div>
                     <div className={styles.fieldGroup}>
@@ -535,7 +669,7 @@ const PaymentPage = () => {
                     </div>
                   </div>
 
-                  {/* Billing address — collapsible */}
+                  {/* Billing address — open by default; ZIP required */}
                   <div className={styles.billingToggleRow}>
                     <button
                       type="button"
@@ -545,14 +679,11 @@ const PaymentPage = () => {
                       <span>Billing Address</span>
                       <span className={styles.billingToggleChevron}>{billingOpen ? '▲' : '▼'}</span>
                     </button>
-                    {!billingOpen && (
-                      <span className={styles.billingToggleHint}>Optional — uses address on file</span>
-                    )}
                   </div>
                   {billingOpen && (
                     <div className={styles.billingFields}>
                       <div className={styles.fieldGroup}>
-                        <label className={styles.label} htmlFor="pay-street">Street Address</label>
+                        <label className={styles.label} htmlFor="pay-street">Street Address (optional)</label>
                         <input
                           id="pay-street"
                           type="text"
@@ -565,13 +696,14 @@ const PaymentPage = () => {
                         />
                       </div>
                       <div className={styles.fieldGroup}>
-                        <label className={styles.label} htmlFor="pay-zip">ZIP Code</label>
+                        <label className={styles.label} htmlFor="pay-zip">ZIP Code *</label>
                         <input
                           id="pay-zip"
                           type="text"
                           name="billingZip"
                           value={form.billingZip}
                           onChange={handleChange}
+                          required
                           placeholder="12345"
                           inputMode="numeric"
                           autoComplete="billing postal-code"

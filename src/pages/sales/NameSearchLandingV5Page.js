@@ -52,6 +52,7 @@ const NameSearchLandingV5Page = () => {
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
   const [agreeError, setAgreeError] = useState('');
+  const [locationError, setLocationError] = useState('');
   const [finalStatus, setFinalStatus] = useState('Searching our database...');
   const [finalProgress, setFinalProgress] = useState(0);
 
@@ -174,7 +175,12 @@ const NameSearchLandingV5Page = () => {
     setStep('searching-one');
   };
 
-  const continueFromLocation = () => setStep('searching-two');
+  const continueFromLocation = () => {
+    // Partner feedback (bug 12): state required on V5 before proceeding.
+    if (!state.trim()) { setLocationError('Please select a state before continuing.'); return; }
+    setLocationError('');
+    setStep('searching-two');
+  };
   const continueFromDetails = () => setStep('confirm');
 
   const handleConfirm = () => {
@@ -277,17 +283,20 @@ const NameSearchLandingV5Page = () => {
                   value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v5-state">State (optional)</label>
+                <label className={styles.label} htmlFor="v5-state">State *</label>
                 <select id="v5-state" className={styles.select}
-                  value={state} onChange={(e) => setState(e.target.value)}>
+                  value={state}
+                  onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}
+                  aria-invalid={!!locationError}
+                  style={locationError ? { borderColor: '#b91c1c' } : undefined}>
                   {usStates.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
+                {locationError && <p className={styles.errorText}>{locationError}</p>}
               </div>
               <div className={styles.actions}>
                 <button type="button" className={styles.buttonPrimary} onClick={continueFromLocation}>Continue</button>
-                <button type="button" className={styles.buttonSecondary} onClick={continueFromLocation}>Skip</button>
               </div>
             </div>
           )}

@@ -95,7 +95,11 @@ const UnsubscribePage = () => {
   const fetchPage = useCallback(async (cursorId = null) => {
     const params = cursorId ? { lastId: cursorId } : {};
     const res = await api.adminListUnsubscribed(params);
-    const docs = res?.data ?? res?.docs ?? (Array.isArray(res) ? res : []);
+    const rawDocs = res?.data ?? res?.docs ?? (Array.isArray(res) ? res : []);
+    // Default view: 10 most-recent items sorted desc by createdAt.
+    // On initial load (no cursor) cap at 10 for the default experience.
+    const sorted = [...rawDocs].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const docs = cursorId ? sorted : sorted.slice(0, 10);
     const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
     const done = res?.noMoreDocs ?? docs.length === 0;
     return { docs, last, done };

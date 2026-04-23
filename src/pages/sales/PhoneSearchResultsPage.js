@@ -1,9 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
-import ResultCard from '../../components/ResultCard';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
-import { setSearchContext } from '../../services/searchContext';
+import { setSearchContext, setIdentityContext, getSearchContext } from '../../services/searchContext';
+import { track } from '../../services/trackingService';
+
+// Partner bugs 15a/15b: phone SRP previously rendered unobscured owner details
+// via ResultCard and clicks led to a generic "signup free" preview. Phone
+// searches are pure sales funnel — obscure everything, route clicks straight
+// to the paid signup flow.
+function maskName(name = '') {
+  const parts = String(name).trim().split(/\s+/);
+  return parts
+    .map((p) => (p.length <= 1 ? p : `${p[0]}${'•'.repeat(Math.max(2, p.length - 1))}`))
+    .join(' ');
+}
+function maskLocation(loc = '') {
+  if (!loc) return '••••••, ••';
+  // Keep state-only portion visible: "Los Angeles, CA" -> "••••••••, CA"
+  const parts = String(loc).split(',').map((s) => s.trim()).filter(Boolean);
+  if (parts.length >= 2) return `${'•'.repeat(Math.max(6, parts[0].length))}, ${parts[parts.length - 1]}`;
+  return '•'.repeat(Math.max(6, parts[0]?.length || 6));
+}
 
 /**
  * Displays phone search results for public searches.
@@ -137,7 +155,7 @@ const PhoneSearchResultsPage = () => {
           </div>
         )}
 
-        {/* Results */}
+        {/* Results — obscured by design (bug 15a). Click routes to signup (15b). */}
         {!loading && !error && results.length > 0 && (
           <div>
             <div style={{
@@ -148,11 +166,57 @@ const PhoneSearchResultsPage = () => {
               fontSize: '1rem',
               marginBottom: '1rem'
             }}>
-              Found <strong style={{ color: '#0d5d2f' }}>{results.length}</strong> {results.length === 1 ? 'result' : 'results'}
+              Found <strong style={{ color: '#0d5d2f' }}>{results.length}</strong> possible {results.length === 1 ? 'match' : 'matches'} — sign up to see owner details
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {results.map((result) => (
-                <ResultCard key={result.id} result={result} />
+                <button
+                  key={result.id}
+                  type="button"
+                  onClick={() => {
+                    track('result_click', { resultId: result.id, personName: 'masked', source: 'phone_srp' });
+                    const extId = result.extId || result.id;
+                    const ctx = getSearchContext();
+                    if (extId && ctx) setIdentityContext({ ...result, extId }, ctx);
+                    sessionStorage.setItem(`result_${result.id}`, JSON.stringify({
+                      id: result.id, extId, fullName: result.fullName, location: result.location,
+                      ageRange: result.ageRange, provider: result.provider, ...result,
+                    }));
+                    sessionStorage.setItem('selectedPersonId', result.id);
+                    navigate(`/signup?selected=${encodeURIComponent(result.id)}&source=phone`);
+                  }}
+                  style={{
+                    width: '100%', textAlign: 'left', cursor: 'pointer',
+                    background: '#fff', border: '1px solid #e5e7eb',
+                    borderRadius: '0.625rem', padding: '1rem 1.25rem',
+                    display: 'flex', alignItems: 'center', gap: '1rem',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d5d2f'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  <span style={{
+                    width: 42, height: 42, borderRadius: '50%',
+                    background: '#e5e7eb', color: '#6b7280',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.1rem', fontWeight: 600, flexShrink: 0,
+                  }}>?</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontWeight: 600, color: '#111827', filter: 'blur(3px)', userSelect: 'none' }}>
+                      {maskName(result.fullName)}
+                    </span>
+                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#6b7280', marginTop: '0.2rem' }}>
+                      {maskLocation(result.location)}
+                      {result.ageRange ? ` · Age ${result.ageRange}` : ''}
+                    </span>
+                  </span>
+                  <span style={{
+                    flexShrink: 0, fontSize: '0.75rem', fontWeight: 700,
+                    background: '#0d5d2f', color: '#fff',
+                    padding: '0.4rem 0.8rem', borderRadius: '9999px',
+                    textTransform: 'uppercase', letterSpacing: '0.04em',
+                  }}>🔒 Sign up to unlock</span>
+                </button>
               ))}
             </div>
           </div>

@@ -107,7 +107,8 @@ function DataRemovalTab() {
   const fetchPage = useCallback(async (cursorId = null) => {
     const params = cursorId ? { lastId: cursorId, limit: PAGE_SIZE } : { limit: PAGE_SIZE };
     const res = await api.adminListDataRemoval(params);
-    const docs  = res?.data ?? (Array.isArray(res) ? res : []);
+    const rawDocs = res?.data ?? (Array.isArray(res) ? res : []);
+    const docs = [...rawDocs].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     const last  = docs.length > 0 ? docs[docs.length - 1]._id || docs[docs.length - 1].id : null;
     const done  = res?.noMoreDocs ?? docs.length < PAGE_SIZE;
     return { docs, last, done };

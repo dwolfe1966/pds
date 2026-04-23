@@ -173,9 +173,41 @@ const OptOutLandingPage = () => {
   return (
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
       <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Opt Out of Public Records</h1>
-      <p style={{ marginBottom: '2rem', color: '#6b7280', lineHeight: '1.6' }}>
+      <p style={{ marginBottom: '1.25rem', color: '#6b7280', lineHeight: '1.6' }}>
         Search for your record to begin the opt-out process.
       </p>
+
+      {/* Partner bug 24: link to BC's hosted opt-out page per new API docs
+          (ApiWrapper.goPage('optOut', { newPage: true })). Our built-in form
+          below still works for users who prefer an in-app flow. */}
+      <div style={{
+        marginBottom: '2rem',
+        padding: '1rem 1.25rem',
+        background: '#ecfdf5',
+        border: '1px solid #bbf7d0',
+        borderRadius: '0.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: '0.9rem', color: '#065f46', lineHeight: 1.5 }}>
+          Already submitted an opt-out or want the full management page?
+        </span>
+        <button
+          type="button"
+          onClick={() => api.openBcOptOutPage({ newPage: true })}
+          style={{
+            background: '#0d5d2f', color: '#fff', border: 'none',
+            padding: '0.55rem 1rem', borderRadius: '0.375rem',
+            fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Open opt-out portal →
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '1.5rem' }}>

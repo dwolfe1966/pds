@@ -21,6 +21,7 @@ const NameSearchLandingV2Page = () => {
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
   const [agreeError, setAgreeError] = useState('');
+  const [locationError, setLocationError] = useState('');
   const [finalStatus, setFinalStatus] = useState('Searching our database...');
   const [finalProgress, setFinalProgress] = useState(0);
 
@@ -192,6 +193,12 @@ const NameSearchLandingV2Page = () => {
   };
 
   const continueFromLocation = () => {
+    // Partner feedback (bug 12): state is required on every name variant.
+    if (!state.trim()) {
+      setLocationError('Please select a state before continuing.');
+      return;
+    }
+    setLocationError('');
     setStep('searching-two');
   };
 
@@ -249,7 +256,7 @@ const NameSearchLandingV2Page = () => {
                     className={styles.input}
                     value={firstName}
                     onChange={(event) => setFirstName(event.target.value)}
-                    placeholder="First name"
+                    placeholder="First (ex. John)"
                     required
                   />
                 </div>
@@ -263,7 +270,7 @@ const NameSearchLandingV2Page = () => {
                     className={styles.input}
                     value={lastName}
                     onChange={(event) => setLastName(event.target.value)}
-                    placeholder="Last name"
+                    placeholder="Last (ex. Smith)"
                     required
                   />
                 </div>
@@ -327,13 +334,15 @@ const NameSearchLandingV2Page = () => {
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label} htmlFor="state">
-                    State
+                    State *
                   </label>
                   <select
                     id="state"
                     className={styles.select}
                     value={state}
-                    onChange={(event) => setState(event.target.value)}
+                    onChange={(event) => { setState(event.target.value); if (locationError) setLocationError(''); }}
+                    aria-invalid={!!locationError}
+                    style={locationError ? { borderColor: '#b91c1c' } : undefined}
                   >
                     {usStates.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -341,15 +350,16 @@ const NameSearchLandingV2Page = () => {
                       </option>
                     ))}
                   </select>
+                  {locationError && (
+                    <p role="alert" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#b91c1c' }}>{locationError}</p>
+                  )}
                 </div>
               </div>
               <div className={styles.actions}>
                 <button type="button" className={styles.buttonPrimary} onClick={continueFromLocation}>
                   Continue
                 </button>
-                <button type="button" className={styles.buttonSecondary} onClick={continueFromLocation}>
-                  Skip This Step
-                </button>
+                {/* "Skip This Step" cannot be offered for a required field — partner feedback bug 12 */}
               </div>
             </div>
           )}
@@ -387,19 +397,6 @@ const NameSearchLandingV2Page = () => {
                     onChange={(event) => setAge(event.target.value)}
                     placeholder="Age"
                     inputMode="numeric"
-                  />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label} htmlFor="middleNameConfirm">
-                    Middle Name (Optional)
-                  </label>
-                  <input
-                    id="middleNameConfirm"
-                    type="text"
-                    className={styles.input}
-                    value={middleName}
-                    onChange={(event) => setMiddleName(event.target.value)}
-                    placeholder="Middle name"
                   />
                 </div>
               </div>

@@ -4,14 +4,38 @@ import api, { setTokenGetter, setLogoutHandler } from '../api';
 
 const AuthContext = createContext();
 
+// Synthetic subscriptions set immediately after billing.sale get a timestamp so
+// refreshSubscription can preserve them for a grace window while BC provisions
+// the account (getUserOrders returns 403/empty during that window).
+const SUBSCRIPTION_KEY = 'subscription';
+const PROVISIONING_GRACE_MS = 2 * 60 * 1000;
+
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState(null);
+  const [subscription, setSubscriptionState] = useState(null);
   const subscriptionRef = useRef(null);
   const userRef = useRef(null);
+
+  // Wrap setSubscription so every state write (from inside AuthContext OR from
+  // callers like PaymentPage/AccountPage) also syncs localStorage. Supports
+  // functional updates so refreshSubscription's `setSubscription(prev => ...)`
+  // pattern keeps working.
+  const setSubscription = useCallback((next) => {
+    setSubscriptionState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next;
+      try {
+        if (resolved && resolved.status === 'active') {
+          localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(resolved));
+        } else {
+          localStorage.removeItem(SUBSCRIPTION_KEY);
+        }
+      } catch { /* localStorage may be unavailable in private mode — non-fatal */ }
+      return resolved;
+    });
+  }, []);
 
   // Keep refs in sync so token useEffect can read latest values without extra dependencies
   useEffect(() => { subscriptionRef.current = subscription; }, [subscription]);
@@ -54,17 +78,27 @@ export const AuthProvider = ({ children }) => {
           cancelable: order.transient?.cancelable ?? false,
         });
       } else {
-        setSubscription(null);
+        // Empty activeOrders — BC may simply not have provisioned the account yet.
+        // Preserve a recently-set synthetic subscription for up to PROVISIONING_GRACE_MS
+        // so paid users don't get bounced to "Free Account" during the race.
+        setSubscription(prev => {
+          if (prev?.syntheticAt && Date.now() - prev.syntheticAt < PROVISIONING_GRACE_MS) return prev;
+          return null;
+        });
       }
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[AuthContext] refreshSubscription failed:', err?.message);
       }
-      // Don't clear an already-active subscription on API failure.
-      // BC getUserOrders returns 403 immediately after billing.sale.
-      setSubscription(prev => prev?.status === 'active' ? prev : null);
+      // Don't clear an already-active subscription on API failure (403 immediately
+      // after billing.sale, flaky network, etc.).
+      setSubscription(prev => {
+        if (prev?.status === 'active') return prev;
+        if (prev?.syntheticAt && Date.now() - prev.syntheticAt < PROVISIONING_GRACE_MS) return prev;
+        return null;
+      });
     }
-  }, [token]);
+  }, [token, setSubscription]);
 
   useEffect(() => {
     if (token) {
@@ -84,6 +118,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedToken = localStorage.getItem('accessToken');
     const storedUser = localStorage.getItem('user');
+    const storedSubscription = localStorage.getItem(SUBSCRIPTION_KEY);
 
     if (storedToken && storedUser) {
       try {
@@ -93,6 +128,14 @@ export const AuthProvider = ({ children }) => {
         console.error('Error parsing stored user:', err);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
+      }
+    }
+    if (storedSubscription) {
+      try {
+        // Restore directly into state (skip the persist wrapper — we just read from storage).
+        setSubscriptionState(JSON.parse(storedSubscription));
+      } catch (err) {
+        localStorage.removeItem(SUBSCRIPTION_KEY);
       }
     }
     setLoading(false);
@@ -129,6 +172,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem(SUBSCRIPTION_KEY);
     try {
       await api.logout(); // Call API logout
     } catch (err) {

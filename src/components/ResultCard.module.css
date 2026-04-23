@@ -12,6 +12,22 @@
   cursor: pointer;
 }
 
+.cardRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+/* Partner bug 4: on narrow viewports the "View Full Report →" button
+   (nowrap) was overlapping the card body. Stack button below content on
+   mobile so nothing collides. */
+@media (max-width: 520px) {
+  .cardRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .card:hover {
   box-shadow: var(--shadow-lg);
   border-color: var(--color-primary);

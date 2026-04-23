@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
@@ -29,6 +29,7 @@ const SalesSearchResultsPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [paginationExhausted, setPaginationExhausted] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [sortBy, setSortBy] = useState('relevance');
 
   useEffect(() => {
     track('results_view', { search_type: 'name', query: query || '', state: state || '' });
@@ -116,6 +117,53 @@ const SalesSearchResultsPage = () => {
     ? 'More than 30 results — refine your search to narrow down'
     : `${displayCount} result${displayCount !== 1 ? 's' : ''}`;
 
+  // Sorted view (bug 11). BC returns results in its own relevance order; we
+  // respect that by default and only re-sort client-side when the user picks
+  // a different option. ageRange is a free-form string like "35-40" or "35" —
+  // parse the leading integer for numeric sort; rows missing an age sink.
+  const parseAge = (raw) => {
+    const match = /\d+/.exec(raw || '');
+    return match ? parseInt(match[0], 10) : null;
+  };
+
+  // Client-side narrowing for optional filters (bug 10). BC doesn't document
+  // city/age as teaser inputs, so we apply them here against the full result
+  // set. If narrowing would eliminate everything we fall back to the raw list
+  // so the user isn't left staring at an empty page.
+  const narrowedResults = useMemo(() => {
+    const cityQ = (searchQuery.city || '').trim().toLowerCase();
+    const ageQ = parseAge(searchQuery.age);
+    if (!cityQ && ageQ == null) return results;
+    const filtered = results.filter((r) => {
+      if (cityQ && !(r.location || '').toLowerCase().includes(cityQ)) return false;
+      if (ageQ != null) {
+        const rAge = parseAge(r.ageRange);
+        if (rAge == null) return false;
+        if (Math.abs(rAge - ageQ) > 5) return false;
+      }
+      return true;
+    });
+    return filtered.length > 0 ? filtered : results;
+  }, [results, searchQuery.city, searchQuery.age]);
+
+  const sortedResults = useMemo(() => {
+    if (sortBy === 'relevance') return narrowedResults;
+    const copy = [...narrowedResults];
+    if (sortBy === 'age-asc' || sortBy === 'age-desc') {
+      copy.sort((a, b) => {
+        const av = parseAge(a.ageRange);
+        const bv = parseAge(b.ageRange);
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return sortBy === 'age-asc' ? av - bv : bv - av;
+      });
+    } else if (sortBy === 'name') {
+      copy.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
+    }
+    return copy;
+  }, [narrowedResults, sortBy]);
+
   const handleResultClick = (result) => {
     // Store result in sessionStorage for preview page
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify(result));
@@ -183,11 +231,35 @@ const SalesSearchResultsPage = () => {
                 <>Found <strong>{displayCount}</strong> {displayCount === 1 ? 'result' : 'results'} — select a name to view the full report</>
               )}
             </div>
-            <p style={{ fontSize: '0.825rem', color: '#6b7280', margin: '0 0 1rem', padding: 0 }}>
-              All data sourced from publicly available records.
-            </p>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: '0.5rem', margin: '0 0 1rem', padding: 0,
+            }}>
+              <p style={{ fontSize: '0.825rem', color: '#6b7280', margin: 0 }}>
+                All data sourced from publicly available records.
+              </p>
+              {results.length > 1 && (
+                <label style={{ fontSize: '0.825rem', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                  Sort:
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    style={{
+                      fontSize: '0.825rem', padding: '0.3rem 0.5rem',
+                      borderRadius: '0.375rem', border: '1px solid #d1d5db',
+                      background: '#fff', color: '#111827',
+                    }}
+                  >
+                    <option value="relevance">Most relevant</option>
+                    <option value="age-asc">Age (youngest first)</option>
+                    <option value="age-desc">Age (oldest first)</option>
+                    <option value="name">Name (A-Z)</option>
+                  </select>
+                </label>
+              )}
+            </div>
             <div className={styles.resultsList}>
-              {results.map((result, index) => (
+              {sortedResults.map((result, index) => (
                 <div key={result.id}>
                   <div
                     onClick={() => handleResultClick(result)}
@@ -195,7 +267,7 @@ const SalesSearchResultsPage = () => {
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    {index === 0 && (
+                    {index === 0 && sortBy === 'relevance' && (
                       <div style={{
                         position: 'absolute', top: '-10px', left: '1rem', zIndex: 1,
                         background: '#d97706', color: '#fff',
@@ -208,7 +280,7 @@ const SalesSearchResultsPage = () => {
                     )}
                     <ResultCard result={result} />
                   </div>
-                  {index === 2 && results.length > 3 && (
+                  {index === 2 && sortedResults.length > 3 && (
                     <div style={{
                       margin: '0.5rem 0',
                       padding: '0.75rem 1.25rem',

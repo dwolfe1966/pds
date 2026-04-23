@@ -661,7 +661,10 @@ class ApiWrapperService {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      err.status = response.status;
+      err.data = errorData;
+      throw err;
     }
     return await response.json();
   }
@@ -769,12 +772,26 @@ class ApiWrapperService {
 
   // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
   // params: { userId, message, contentType, attachments }
-  // Migrated 2026-04-21 from old /message/admin/user/note/create path (BC deprecated).
+  // BC documented the new path on 2026-04-17; fall back to the old path if BC's
+  // dev backend hasn't deployed the new one yet (404/405). Targeted attempts only —
+  // any other error re-throws immediately so real failures surface to the user.
   async csrCreateAdminNote(params = {}) {
     const { userId, message, contentType = 'text/plain', attachments } = params;
     const body = { userId, message, contentType };
     if (attachments) body.attachments = attachments;
-    return await this._csrPost('/message/admin/createNote', body);
+    try {
+      return await this._csrPost('/message/admin/createNote', body);
+    } catch (err) {
+      if (err?.status === 404 || err?.status === 405) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[csrCreateAdminNote] new path not live; falling back to legacy /message/admin/user/note/create');
+        }
+        const legacyBody = { targetUserId: userId, message, contentType };
+        if (attachments) legacyBody.attachments = attachments;
+        return await this._csrPost('/message/admin/user/note/create', legacyBody);
+      }
+      throw err;
+    }
   }
 
   // csrWrapper.api.message.note.createContactAdminNote — POST /message/admin/createNote
@@ -788,9 +805,19 @@ class ApiWrapperService {
 
   // csrWrapper.api.message.note.updateAdminNote — POST /message/admin/updateNote
   // params: { messageId, message }
-  // Migrated 2026-04-21 from old /message/admin/user/note/update path.
+  // Dual-stack: try new path, fall back to legacy if BC hasn't deployed yet.
   async csrUpdateAdminNote(params = {}) {
-    return await this._csrPost('/message/admin/updateNote', params);
+    try {
+      return await this._csrPost('/message/admin/updateNote', params);
+    } catch (err) {
+      if (err?.status === 404 || err?.status === 405) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[csrUpdateAdminNote] new path not live; falling back to legacy /message/admin/user/note/update');
+        }
+        return await this._csrPost('/message/admin/user/note/update', params);
+      }
+      throw err;
+    }
   }
 
   // csrWrapper.api.user.createCsrMail — POST /message/admin/user/csrMail/create
@@ -852,6 +879,35 @@ class ApiWrapperService {
    */
   async getUserContacts(_lastId) {
     return { messages: [], docs: [], noMoreDocs: true };
+  }
+
+  /**
+   * Navigate the user to BC's hosted opt-out page.
+   * Per BC docs: ApiWrapper.goPage('optOut', { newPage: true | false })
+   *   newPage=true  → opens in a new tab
+   *   newPage=false → redirects current tab
+   * The IIFE must be loaded for this to work; if it isn't, fall back to the
+   * built-in /opt-out route so the user still gets a functional destination.
+   */
+  async goToOptOutPage({ newPage = true } = {}) {
+    try {
+      await this.getWrapper();
+      if (typeof window !== 'undefined' && window.ApiWrapper && typeof window.ApiWrapper.goPage === 'function') {
+        window.ApiWrapper.goPage('optOut', { newPage });
+        return { success: true };
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[ApiWrapper] goToOptOutPage failed via IIFE:', err?.message);
+      }
+    }
+    // Fallback — library not available. Partner still needs a working opt-out
+    // destination, so route to our in-app custom flow instead.
+    if (typeof window !== 'undefined') {
+      if (newPage) window.open('/opt-out', '_blank');
+      else window.location.assign('/opt-out');
+    }
+    return { success: true, fallback: true };
   }
 
   /**

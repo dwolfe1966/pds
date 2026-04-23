@@ -8,7 +8,7 @@ import {
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
-import { getReportList } from '../../services/reportService';
+import { getReportList, createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import DevBCSession from '../../components/DevBCSession';
 import styles from './DashboardHome.module.css';
@@ -736,6 +736,16 @@ const DashboardHome = () => {
   const [apiErrors, setApiErrors] = useState({});
   const [pdfDownloadingId, setPdfDownloadingId] = useState(null);
   const [recentMessages, setRecentMessages] = useState([]);
+  // A pendingReport is stashed by PaymentPage when createReport failed or the
+  // response came back without a commerceContentId. We retry here once on mount
+  // and, on failure, surface a small banner so the member can resume the flow.
+  const [pendingReport, setPendingReport] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('pendingReport');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  const [pendingReportStatus, setPendingReportStatus] = useState(null);
 
   // Seeded mock state (exposure, watchers, brokers, watchlist, records feed)
   const seed = useMemo(() => {
@@ -851,6 +861,56 @@ const DashboardHome = () => {
     track('dashboard_view', { isPaid: !!isPaid });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // One-shot retry for a pending report stashed by PaymentPage. On success we
+  // navigate the member straight to their report; on failure we keep the
+  // hint visible so the banner below offers a manual resume.
+  useEffect(() => {
+    if (!pendingReport?.extId || !token) return;
+    let cancelled = false;
+    setPendingReportStatus('retrying');
+    (async () => {
+      try {
+        const res = await createReportForIdentity(pendingReport.extId, pendingReport);
+        if (cancelled) return;
+        if (res?.success && res.commerceContentId) {
+          sessionStorage.removeItem('pendingReport');
+          setPendingReport(null);
+          setPendingReportStatus(null);
+          navigate(`/people/${res.commerceContentId}`);
+          return;
+        }
+        setPendingReportStatus('failed');
+      } catch {
+        if (!cancelled) setPendingReportStatus('failed');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pendingReport?.extId, token, navigate]);
+
+  const handleResumePendingReport = async () => {
+    if (!pendingReport?.extId) return;
+    setPendingReportStatus('retrying');
+    try {
+      const res = await createReportForIdentity(pendingReport.extId, pendingReport);
+      if (res?.success && res.commerceContentId) {
+        sessionStorage.removeItem('pendingReport');
+        setPendingReport(null);
+        setPendingReportStatus(null);
+        navigate(`/people/${res.commerceContentId}`);
+        return;
+      }
+      setPendingReportStatus('failed');
+    } catch {
+      setPendingReportStatus('failed');
+    }
+  };
+
+  const handleDismissPendingReport = () => {
+    sessionStorage.removeItem('pendingReport');
+    setPendingReport(null);
+    setPendingReportStatus(null);
+  };
+
   const hasApiErrors = Object.keys(apiErrors).length > 0;
 
   return (
@@ -868,6 +928,58 @@ const DashboardHome = () => {
           <Link to="/account" className={styles.secondaryLink}>Account Settings</Link>
         </div>
       </div>
+
+      {/* Pending-report resume banner — shown when PaymentPage stashed a selected
+          person but createReport failed. Lets the member retry without losing
+          who they originally picked. */}
+      {pendingReport && pendingReportStatus === 'failed' && (
+        <div
+          role="alert"
+          style={{
+            background: '#fef3c7',
+            border: '1px solid #fde68a',
+            color: '#92400e',
+            borderRadius: '0.5rem',
+            padding: '0.75rem 1rem',
+            margin: '0 0 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span>
+            Your report for <strong>{pendingReport.fullName || 'your selected person'}</strong>
+            {pendingReport.location ? ` (${pendingReport.location})` : ''} isn't ready yet.
+          </span>
+          <span style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              onClick={handleResumePendingReport}
+              style={{
+                background: '#92400e', color: '#fff', border: 'none',
+                padding: '0.4rem 0.9rem', borderRadius: '0.375rem',
+                fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              Retry now
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissPendingReport}
+              style={{
+                background: 'transparent', color: '#92400e',
+                border: '1px solid #92400e',
+                padding: '0.4rem 0.9rem', borderRadius: '0.375rem',
+                fontSize: '0.85rem', cursor: 'pointer',
+              }}
+            >
+              Dismiss
+            </button>
+          </span>
+        </div>
+      )}
 
       {/* Complete profile banner */}
       {!loading && user && (!user.zip || !user.fullName) && (

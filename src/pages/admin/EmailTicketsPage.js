@@ -123,7 +123,10 @@ const EmailTicketsPage = () => {
     try {
       const params = { userId, ...(cursorId ? { lastId: cursorId } : {}) };
       const res = await api.adminFindUserContacts(params);
-      const docs = res?.data ?? res?.docs ?? [];
+      const all = (res?.data ?? res?.docs ?? [])
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      // Default view on first page: 10 most-recent tickets. Follow-up pages append.
+      const docs = cursorId ? all : all.slice(0, 10);
       const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
       if (cursorId) {
         setAllItems((prev) => [...prev, ...docs]);

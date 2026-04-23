@@ -1182,3 +1182,19 @@
   .watchNumber { font-size: 2.6rem; }
   .brokerBigNumber { font-size: var(--font-size-2xl); }
 }
+
+/* Partner bug 19 + 23a: Recent Activity and related panels overflow on Galaxy S5
+   (~360px). Shrink padding, let text wrap, and disable any lingering horizontal
+   scroll on non-carousel containers. Carousels that intentionally scroll
+   (.watchlistScroll, .feedTabs) are left alone. */
+@media (max-width: 400px) {
+  .main { padding: var(--spacing-md) var(--spacing-sm); }
+  .panel, .watchlistCard, .alertsPreview { padding: var(--spacing-md); }
+  .title { font-size: var(--font-size-2xl); }
+  .subtitle { font-size: var(--font-size-sm); }
+  .headerActions { width: 100%; justify-content: flex-start; }
+  .primaryLink, .secondaryLink { font-size: var(--font-size-sm); padding: 0.45rem 0.8rem; }
+  .panelHeader { flex-wrap: wrap; gap: var(--spacing-sm); }
+  .miniRowTitle, .miniRowMeta { white-space: normal; }
+  .quickRow { grid-template-columns: 1fr; gap: var(--spacing-md); }
+}

@@ -16,9 +16,10 @@ const NameSearchLandingPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [state, setState] = useState('');
+  const [errors, setErrors] = useState({});
 
   const usStates = [
-    { value: '', label: 'Select State (Optional)' },
+    { value: '', label: 'Select State' },
     { value: 'AL', label: 'Alabama' },
     { value: 'AK', label: 'Alaska' },
     { value: 'AZ', label: 'Arizona' },
@@ -73,17 +74,20 @@ const NameSearchLandingPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!firstName.trim() || !lastName.trim()) {
-      return;
-    }
-    
-    // Navigate to loader page which will perform the search
+    // Partner feedback (bugs 1, 2): block submission with inline errors so users
+    // don't silently land on a bad SRP. State is required — first+last alone
+    // returns unreliable matches from BC.
+    const next = {};
+    if (!firstName.trim()) next.firstName = 'Please enter a first name.';
+    if (!lastName.trim()) next.lastName = 'Please enter a last name.';
+    if (!state.trim()) next.state = 'Please select a state.';
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
+
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
     params.set('lastName', lastName.trim());
-    if (state.trim()) {
-      params.set('state', state.trim());
-    }
+    params.set('state', state.trim());
     navigate(`/name/loader?${params.toString()}`);
   };
 
@@ -116,12 +120,16 @@ const NameSearchLandingPage = () => {
                       <input
                         type="text"
                         value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="First Name"
-                        required
+                        onChange={(e) => { setFirstName(e.target.value); if (errors.firstName) setErrors((p) => ({ ...p, firstName: undefined })); }}
+                        placeholder="First (ex. John)"
+                        aria-invalid={!!errors.firstName}
                         className={styles.inputWithIcon}
+                        style={errors.firstName ? { borderColor: '#b91c1c' } : undefined}
                       />
                     </div>
+                    {errors.firstName && (
+                      <p role="alert" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#b91c1c' }}>{errors.firstName}</p>
+                    )}
                   </div>
                   <div className={styles.fieldGroup}>
                     <label className={styles.label}>
@@ -130,22 +138,28 @@ const NameSearchLandingPage = () => {
                     <input
                       type="text"
                       value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Last Name"
-                      required
+                      onChange={(e) => { setLastName(e.target.value); if (errors.lastName) setErrors((p) => ({ ...p, lastName: undefined })); }}
+                      placeholder="Last (ex. Smith)"
+                      aria-invalid={!!errors.lastName}
                       className={styles.input}
+                      style={errors.lastName ? { borderColor: '#b91c1c' } : undefined}
                     />
+                    {errors.lastName && (
+                      <p role="alert" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#b91c1c' }}>{errors.lastName}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>
-                    State (Optional)
+                    State *
                   </label>
                   <select
                     value={state}
-                    onChange={(e) => setState(e.target.value)}
+                    onChange={(e) => { setState(e.target.value); if (errors.state) setErrors((p) => ({ ...p, state: undefined })); }}
+                    aria-invalid={!!errors.state}
                     className={styles.select}
+                    style={errors.state ? { borderColor: '#b91c1c' } : undefined}
                   >
                     {usStates.map((stateOption) => (
                       <option key={stateOption.value} value={stateOption.value}>
@@ -153,6 +167,9 @@ const NameSearchLandingPage = () => {
                       </option>
                     ))}
                   </select>
+                  {errors.state && (
+                    <p role="alert" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#b91c1c' }}>{errors.state}</p>
+                  )}
                 </div>
 
                 <button type="submit" className={styles.submitButton}>

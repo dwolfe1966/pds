@@ -109,7 +109,8 @@ const OrdersPage = () => {
     try {
       const res = await api.adminListOrdersGlobal({ limit: 10 });
       const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
-      setOrders(list);
+      const sorted = [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setOrders(sorted.slice(0, 10));
       setIsGlobalView(true);
     } catch {
       // BC may not support global order search — silently show empty default
