@@ -1002,6 +1002,17 @@ const DashboardHome = () => {
         <div className={styles.headerActions}>
           <Link to="/people-search" className={styles.primaryLink}>Start a Search</Link>
           <Link to="/account" className={styles.secondaryLink}>Account Settings</Link>
+          <Link
+            to="/dashboard2"
+            style={{
+              fontSize: '0.78rem', fontWeight: 600,
+              color: '#1a56db', textDecoration: 'underline',
+              alignSelf: 'center', marginLeft: '0.25rem',
+            }}
+            title="Research-workbench prototype using only real BC data"
+          >
+            Try the new dashboard ↗
+          </Link>
         </div>
       </div>
 

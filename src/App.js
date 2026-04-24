@@ -54,6 +54,7 @@ import AddonPage from './pages/sales/AddonPage';
 import ContactThreadPage from './pages/sales/ContactThreadPage';
 // Member pages
 import DashboardHome from './pages/member/DashboardHome';
+import Dashboard2 from './pages/member/Dashboard2';
 import ProfilePage from './pages/member/ProfilePage';
 import SearchPage from './pages/member/SearchPage';
 import MemberGeneralSearchPage from './pages/member/MemberGeneralSearchPage';
@@ -181,6 +182,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <DashboardHome />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard2"
+            element={
+              <ProtectedRoute>
+                <Dashboard2 />
               </ProtectedRoute>
             }
           />
