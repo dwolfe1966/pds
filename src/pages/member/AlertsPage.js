@@ -15,6 +15,7 @@ const AlertsPage = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [error, setError] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [alertsUnavailable, setAlertsUnavailable] = useState(false);
 
   const fetchAlerts = async () => {
     if (!token) {
@@ -25,11 +26,14 @@ const AlertsPage = () => {
     try {
       const data = await api.get('/alerts', { token });
       setAlerts(data?.data || data || []);
+      setAlertsUnavailable(false);
     } catch (err) {
-      if (!err.isMockUnavailable) {
+      if (err.isMockUnavailable) {
+        // BC session user — alerts endpoint is not yet implemented on BC.
+        setAlertsUnavailable(true);
+      } else {
         setError(err.message);
       }
-      // isMockUnavailable = BC session user — show empty state, not an error
     } finally {
       setFetchLoading(false);
     }
@@ -110,6 +114,22 @@ const AlertsPage = () => {
       )}
       <h1 className={styles.pageTitle}>Search Alerts</h1>
 
+      {alertsUnavailable && (
+        <div style={{
+          background: '#fef3c7',
+          border: '1px solid #f59e0b',
+          borderRadius: '0.5rem',
+          padding: '1rem 1.25rem',
+          marginBottom: '1.5rem',
+          color: '#78350f',
+        }}>
+          <strong>Alerts are coming soon.</strong>
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.9rem' }}>
+            We're finishing work on scheduled monitoring. When it's ready, you'll be able to create alerts from this page and receive notifications when new records match your criteria.
+          </p>
+        </div>
+      )}
+
       {/* Create alert */}
       <div className={styles.createSection}>
         <h2 className={styles.sectionTitle}>Create New Alert</h2>
@@ -122,19 +142,21 @@ const AlertsPage = () => {
               value={newAlert.criteria}
               onChange={handleChange}
               required
+              disabled={alertsUnavailable}
               className={styles.input}
             />
             <select
               name="frequency"
               value={newAlert.frequency}
               onChange={handleChange}
+              disabled={alertsUnavailable}
               className={styles.select}
             >
               <option value="instant">Instant</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
             </select>
-            <button type="submit" disabled={loading} className={styles.addBtn}>
+            <button type="submit" disabled={loading || alertsUnavailable} className={styles.addBtn}>
               {loading ? 'Adding…' : 'Add Alert'}
             </button>
           </div>
@@ -152,7 +174,11 @@ const AlertsPage = () => {
           <Skeleton variant="card" height={64} style={{ marginBottom: '0.5rem' }} />
         </div>
       ) : alerts.length === 0 ? (
-        <p className={styles.emptyState}>You have no alerts set up yet. Create one above to get started.</p>
+        <p className={styles.emptyState}>
+          {alertsUnavailable
+            ? 'No alerts yet — we\'ll enable this feature soon.'
+            : 'You have no alerts set up yet. Create one above to get started.'}
+        </p>
       ) : (
         <div className={styles.alertsList}>
           {alerts.map((alert) => (

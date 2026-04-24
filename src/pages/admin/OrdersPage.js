@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import styles from './OrdersPage.module.css';
@@ -72,6 +72,7 @@ function SkeletonRows({ count = 6 }) {
 
 const OrdersPage = () => {
   const [urlParams] = useSearchParams();
+  const navigate = useNavigate();
   const { token } = useAuth();
 
   const urlUserId = urlParams.get('userId');
@@ -88,6 +89,7 @@ const OrdersPage = () => {
   const [loading, setLoading] = useState(true); // true on mount to show skeleton
   const [fetchError, setFetchError] = useState('');
   const [isGlobalView, setIsGlobalView] = useState(!urlUserId); // true when showing default recent list
+  const [globalListUnavailable, setGlobalListUnavailable] = useState(false);
 
   // Pending sidebar filters
   const [pendingOrderId, setPendingOrderId] = useState('');
@@ -106,16 +108,22 @@ const OrdersPage = () => {
   const fetchGlobalOrders = useCallback(async () => {
     setLoading(true);
     setFetchError('');
+    setGlobalListUnavailable(false);
     try {
       const res = await api.adminListOrdersGlobal({ limit: 10 });
       const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
       const sorted = [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       setOrders(sorted.slice(0, 10));
       setIsGlobalView(true);
-    } catch {
-      // BC may not support global order search — silently show empty default
+    } catch (err) {
+      // BC may not support global commerceOrder search without a filter param.
+      // Surface a clear message so CSR knows the call failed rather than assuming zero orders.
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[OrdersPage] global orders fetch failed:', err?.message);
+      }
       setOrders([]);
       setIsGlobalView(true);
+      setGlobalListUnavailable(true);
     } finally {
       setLoading(false);
     }
@@ -264,10 +272,29 @@ const OrdersPage = () => {
                 <input
                   className={styles.filterInput}
                   type="text"
-                  placeholder="Partial match…"
+                  placeholder="Partial match or full ID…"
                   value={pendingOrderId}
                   onChange={(e) => setPendingOrderId(e.target.value)}
                 />
+                {pendingOrderId.trim().length >= 12 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/admin/purchases/${encodeURIComponent(pendingOrderId.trim())}`)}
+                    style={{
+                      marginTop: '0.35rem',
+                      padding: '0.4rem 0.7rem',
+                      fontSize: '0.8125rem',
+                      border: '1px solid #1a56db',
+                      borderRadius: 4,
+                      background: '#1a56db',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      width: '100%',
+                    }}
+                  >
+                    Open order ID →
+                  </button>
+                )}
               </div>
               <div className={styles.filterField}>
                 <label className={styles.filterLabel}>Status</label>
@@ -310,9 +337,18 @@ const OrdersPage = () => {
             {!loading && !fetchError && orders.length === 0 && (
               <div className={styles.emptyState}>
                 <p className={styles.emptyTitle}>
-                  {resolvedUserId ? 'No orders found for this customer.' : 'No recent orders available.'}
+                  {resolvedUserId
+                    ? 'No orders found for this customer.'
+                    : globalListUnavailable
+                    ? 'Unable to load the global order list.'
+                    : 'No recent orders available.'}
                 </p>
-                {isGlobalView && (
+                {isGlobalView && globalListUnavailable && (
+                  <p style={{ fontSize: '0.85rem', color: '#aaa' }}>
+                    The global recent-orders lookup is not available — search by email or user ID above to view orders for a specific customer.
+                  </p>
+                )}
+                {isGlobalView && !globalListUnavailable && (
                   <p style={{ fontSize: '0.85rem', color: '#aaa' }}>Search by email or user ID above to look up a specific customer.</p>
                 )}
               </div>

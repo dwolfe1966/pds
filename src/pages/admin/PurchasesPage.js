@@ -182,6 +182,19 @@ const PurchasesPage = () => {
           return;
         }
         uid = userList[0]._id || userList[0].id;
+      } else if (/^[0-9a-f]{24}$/i.test(input)) {
+        // Looks like a BC ObjectID — could be a user OR an order. Check orders first
+        // so CSR can paste an order ID directly to jump to the order-detail view.
+        try {
+          const checkRes = await api.adminListOrdersGlobal({ _id: input, limit: 1 });
+          const hit = (checkRes?.data || checkRes?.docs || checkRes?.orders || (Array.isArray(checkRes) ? checkRes : []))[0];
+          if (hit) {
+            navigate(`/admin/purchases/${encodeURIComponent(input)}`);
+            return;
+          }
+        } catch {
+          // Fall through — treat as userId.
+        }
       }
 
       setResolvedUserId(uid);

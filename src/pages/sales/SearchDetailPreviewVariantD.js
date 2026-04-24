@@ -139,6 +139,21 @@ const SearchDetailPreviewVariantD = ({ person, id }) => {
         </span>
       </div>
 
+      {/* Preview-only notice — VariantD shows illustrative counts/labels, not the
+          underlying real record. Keeps visitors from interpreting seeded data as fact. */}
+      <div style={{
+        margin: '0.875rem 0.875rem 0',
+        padding: '0.5rem 0.75rem',
+        fontSize: '0.72rem',
+        color: '#78350f',
+        background: '#fef3c7',
+        border: '1px solid #f59e0b',
+        borderRadius: '0.5rem',
+        lineHeight: 1.35,
+      }}>
+        Preview — counts and initials shown below illustrate the shape of the full report. Sign up to view the actual records for this person.
+      </div>
+
       {/* Person header card */}
       <div style={{
         background: '#ffffff', border: '1px solid #e4e4e7', borderRadius: '0.75rem',

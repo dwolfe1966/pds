@@ -514,8 +514,6 @@ const PaymentPage = () => {
                 </button>
               </div>
 
-              {/* Upsell placeholder — partner bug 22 noted the confirmation
-                  surface is a good spot for future upsells; reserve slot. */}
               <p style={{
                 marginTop: '1.5rem', fontSize: '0.85rem', color: '#6b7280',
                 lineHeight: 1.6,

@@ -113,6 +113,18 @@ const SignupPageStepped = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const params = new URLSearchParams(location.search);
+
+    // Persist zip + intent locally — BC signup doesn't accept them but both are
+    // useful for later profile enrichment and funnel analytics. fullName is
+    // used by the signup router to seed firstName/lastName on the session user.
+    try {
+      sessionStorage.setItem('signupProfile', JSON.stringify({
+        zip: zip.trim() || null,
+        intent: intent || null,
+        capturedAt: Date.now(),
+      }));
+    } catch {}
+
     submit({
       email: email.trim(),
       password,
@@ -120,11 +132,8 @@ const SignupPageStepped = () => {
       selectedPersonId: params.get('selected'),
       queryString: location.search.replace(/^\?/, '') || undefined,
       redirectParam: params.get('redirect'),
-      // fullName, zip, intent are mock-server extras — ignored on BC path
       extraPayload: {
         fullName: fullName.trim(),
-        zip: zip.trim(),
-        intent,
       },
     });
   };
