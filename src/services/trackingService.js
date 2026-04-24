@@ -1,13 +1,20 @@
-// Tracking service — fire-and-forget event logging
+// Tracking service — fire-and-forget consumer event logging.
 // Never throws; errors are silently swallowed so tracking never breaks the app.
 //
-// Target: REACT_APP_TRACKING_API_URL (standalone tracking-api service, port 3002).
-// Falls back to the legacy mock-server endpoint so existing dev flows keep working
-// if the tracking API is not running.
+// Primary target: BC `apiWrapper.api.tracking.create({ type, ...data })`
+// via api.createTracking. Events are namespaced `CLIENT:<eventName>` so they
+// are distinct from BC's server-recorded `USER:*` events and can be queried
+// in admin via csrWrapper.api.tracking.findUser.
+//
+// Dev-only mirror: if REACT_APP_TRACKING_API_URL is set (or NODE_ENV=development
+// and port 3002 is running), also posts to the local NDJSON service for
+// inspection via the admin analytics pages.
+
+import api from '../api';
 
 const SESSION_KEY = 'trackingSessionId';
 
-const TRACKING_URL = process.env.REACT_APP_TRACKING_API_URL
+const LOCAL_TRACKING_URL = process.env.REACT_APP_TRACKING_API_URL
   ? `${process.env.REACT_APP_TRACKING_API_URL}/track`
   : (process.env.NODE_ENV === 'development' ? 'http://localhost:3002/track' : null);
 
@@ -21,19 +28,31 @@ function getSessionId() {
 }
 
 export function track(eventName, properties = {}) {
-  const payload = {
-    event: eventName,
-    timestamp: new Date().toISOString(),
-    sessionId: getSessionId(),
-    properties,
-  };
-  if (!TRACKING_URL) return;
-  // Fire and forget — do not await, do not surface errors
-  fetch(TRACKING_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).catch(() => {});
+  const sessionId = getSessionId();
+  const timestamp = new Date().toISOString();
+
+  // BC tracking — primary. type prefix keeps client events distinct from
+  // BC's auto-recorded USER:* events.
+  try {
+    api.createTracking({
+      type: `CLIENT:${eventName}`,
+      sessionId,
+      timestamp,
+      ...properties,
+    });
+  } catch (_) {}
+
+  // Local NDJSON mirror — dev-only. Shape unchanged for backwards compat with
+  // the existing admin analytics page that reads this log.
+  if (LOCAL_TRACKING_URL) {
+    try {
+      fetch(LOCAL_TRACKING_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: eventName, timestamp, sessionId, properties }),
+      }).catch(() => {});
+    } catch (_) {}
+  }
 }
 
 export default { track };

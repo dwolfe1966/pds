@@ -652,12 +652,39 @@ class ApiWrapperService {
       : `${this.endpointUrl}${path}`;
     const clientId = this.wrapper?.clientId || this._generateRandomId();
     const apiId = this._generateRandomId();
-    const url = `${baseUrl}?clientId=${clientId}&apiId=${apiId}`;
+    const sep = path.includes('?') ? '&' : '?';
+    const url = `${baseUrl}${sep}clientId=${clientId}&apiId=${apiId}`;
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      err.status = response.status;
+      err.data = errorData;
+      throw err;
+    }
+    return await response.json();
+  }
+
+  /**
+   * GET to a csrWrapper endpoint. Mirrors _csrPost for GET-only BC routes.
+   */
+  async _csrGet(path) {
+    const baseUrl = this.useProxy
+      ? `${this.proxyUrl}${path}`
+      : `${this.endpointUrl}${path}`;
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const sep = path.includes('?') ? '&' : '?';
+    const url = `${baseUrl}${sep}clientId=${clientId}&apiId=${apiId}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -824,6 +851,59 @@ class ApiWrapperService {
   // params: { targetUserId, subject, message }
   async csrCreateCsrMail(params = {}) {
     return await this._csrPost('/message/admin/user/csrMail/create', params);
+  }
+
+  // csrWrapper.api.message.contact.find — GET /api/contactMessage/admin/find
+  // Lists all contactMessages (member-linked and non-member) sorted by latest reply
+  // or by contact date if no reply exists. Each record may include a latestReply.
+  async csrFindContactMessages(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.lastId) qs.set('lastId', params.lastId);
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return await this._csrGet(`/contactMessage/admin/find${suffix}`);
+  }
+
+  // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
+  // Returns the full thread (contact + user/csr replies) for a contact message.
+  async csrFindContactHistories(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
+    if (params.lastId) qs.set('lastId', params.lastId);
+    return await this._csrGet(`/contactMessage/admin/histories?${qs.toString()}`);
+  }
+
+  // csrWrapper.api.message.contact.createCsrReply — POST /message/admin/user/csrMail/create
+  // Edited 2026-04-17: a CSR can reply to any contactMessage retrieved via Find Contact Messages.
+  // params: { contactMessageId, subject, message, contentType, attachments? }
+  async csrCreateCsrReply(params = {}) {
+    const { contentType = 'text/html', ...rest } = params;
+    return await this._csrPost('/message/admin/user/csrMail/create', { contentType, ...rest });
+  }
+
+  // csrWrapper.api.message.contact.setActor — POST /contactMessage/admin/setActor
+  // Assigns an admin/CSR user to the contact message. actorId defaults to the caller.
+  async csrSetContactActor(params = {}) {
+    return await this._csrPost('/contactMessage/admin/setActor', params);
+  }
+
+  // csrWrapper.api.message.contact.setTargetUser — POST /contactMessage/admin/setTargetUserId
+  // Links a contactMessage to a specific user so it appears in findUserContacts.
+  async csrSetContactTargetUser(params = {}) {
+    return await this._csrPost('/contactMessage/admin/setTargetUserId', params);
+  }
+
+  // csrWrapper.api.message.contact.setTags — POST /contactMessage/admin/setTags
+  // Replaces all tags (stored in message.index) with the provided array.
+  async csrSetContactTags(params = {}) {
+    return await this._csrPost('/contactMessage/admin/setTags', params);
+  }
+
+  // csrWrapper.api.message.contact.replyLinkUrl — GET /contactMessage/admin/replyUrl
+  // Returns the reply link URL that the user would receive via email.
+  async csrGetContactReplyLinkUrl(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.messageId) qs.set('messageId', params.messageId);
+    return await this._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`);
   }
 
   // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)

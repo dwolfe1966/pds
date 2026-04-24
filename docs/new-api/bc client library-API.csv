@@ -282,6 +282,191 @@ optin: true,
 },
 queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
 });","queryString is a query string value included in the url when a user accesses from an external link, in the format refer_partnerId=p1&refer_afid=af1&refer_abc=bcd.",,
+"Find Offer By Shm Name Added on 2026-04-21
+
+apiWrapper.api.offer.findByShmName",/commerce/offer/findByShmName,post,"apiWrapper.api.offer.findByShmName({ shmName, key });
+
+params
+- shmName: The name of shComp starting with comp.
+- key: (optional) : The key of the shComp. e.g.) main (if no value is found, main is the default)
+
+return
+- commerceProducts : You can get the name of the product included in the offer 
+- transient : You can obtain the priceInfo value containing the s0, s1 price and s1 period. 
+",,"{ 
+""_id"": ""6913e0e0a4b8675e90771be7"", 
+""index"": [], 
+""status"": ""active"", 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""name"": ""membership.offer.default.1"", 
+""description"": ""default offer"", 
+""extName"": ""DEFAULT OFFER 1"", 
+""commerceProductDetail"": [ 
+{ 
+""commerceProduct"": ""6913e0c3a4b8675e90771bd6"", 
+""commerceStockDetail"": { 
+""commerceStock"": ""6913e0aea4b8675e90771bcb"", 
+""quantity"": 50, 
+""period"": { 
+""quantity"": 1, 
+""unit"": ""y"" 
+} 
+} 
+}, 
+{ 
+""commerceProduct"": ""6913e12fa4b8675e90771bf2"", 
+""commerceStockDetail"": { 
+""commerceStock"": ""6913e0aea4b8675e90771bcb"", 
+""quantity"": 10, 
+""period"": { 
+""quantity"": 1, 
+""unit"": ""d"" 
+} 
+} 
+}, 
+{ 
+""commerceProduct"": ""699fbb9f26a1804895701500"", 
+""commerceStockDetail"": { 
+""commerceStock"": ""6913e0aea4b8675e90771bcb"", 
+""quantity"": 100, 
+""period"": { 
+""quantity"": 1, 
+""unit"": ""d"" 
+} 
+} 
+} 
+], 
+""commercePrice"": { 
+""prices"": [ 
+{ 
+""amount"": 1.99, 
+""code"": """", 
+""sequence"": ""v.s == 0"", 
+""period"": { 
+""quantity"": 7, 
+""unit"": ""d"" 
+}, 
+""options"": { 
+""test"": 123 
+} 
+}, 
+{ 
+""amount"": 39.99, 
+""code"": """", 
+""sequence"": ""v.s > 0"", 
+""period"": { 
+""quantity"": 1, 
+""unit"": ""m"" 
+} 
+}, 
+{ 
+""amount"": 0, 
+""code"": """", 
+""sequence"": ""v.s > 0"", 
+""period"": { 
+""quantity"": 1, 
+""unit"": ""m"" 
+} 
+} 
+] 
+}, 
+""provides"": [], 
+""__v"": 54, 
+""createdAt"": ""2025-11-12T01:20:32.953Z"", 
+""updatedAt"": ""2026-04-21T21:08:47.850Z"", 
+""currentRevisionId"": ""69e7e75f35dae3f537607a90"", 
+""commercePriceRules"": [ 
+{ 
+""_DESC_"": ""S0"", 
+""priority"": 1, 
+""conditions"": [ 
+{ 
+""sequence"": 0 
+} 
+], 
+""candidates"": [ 
+{ 
+""id"": { 
+""amount"": 1.01, 
+""code"": ""usd"", 
+""period"": { 
+""quantity"": 7, 
+""unit"": ""d"" 
+} 
+}, 
+""weight"": 1 
+} 
+] 
+}, 
+{ 
+""_DESC_"": ""S1+"", 
+""priority"": 2, 
+""conditions"": [ 
+{ 
+""sequence"": ""v > 0"" 
+} 
+], 
+""candidates"": [ 
+{ 
+""id"": { 
+""amount"": 39.01, 
+""code"": ""usd"", 
+""period"": { 
+""quantity"": 30, 
+""unit"": ""d"" 
+} 
+}, 
+""weight"": 1 
+} 
+] 
+} 
+], 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""option"": { 
+""nonMemberOnly"": true 
+}, 
+""extDesc"": ""11"", 
+""optionString"": ""{\n \""nonMemberOnly\"": true\n}"", 
+""commerceProducts"": [ 
+{ 
+""_id"": ""6913e0c3a4b8675e90771bd6"", 
+""name"": ""nameSearch"", 
+""id"": ""6913e0c3a4b8675e90771bd6"" 
+}, 
+{ 
+""_id"": ""6913e12fa4b8675e90771bf2"", 
+""name"": ""phoneSearch"", 
+""id"": ""6913e12fa4b8675e90771bf2"" 
+}, 
+{ 
+""_id"": ""699fbb9f26a1804895701500"", 
+""name"": ""pdf"", 
+""id"": ""699fbb9f26a1804895701500"" 
+} 
+], 
+""id"": ""6913e0e0a4b8675e90771be7"", 
+""transient"": { 
+""priceInfo"": { 
+""s0"": { 
+""amount"": 1.01, 
+""code"": ""usd"" 
+}, 
+""s1"": { 
+""amount"": 39.01, 
+""code"": ""usd"" 
+}, 
+""s1Period"": { 
+""amount"": 39.01, 
+""code"": ""usd"", 
+""period"": { 
+""quantity"": 30, 
+""unit"": ""d"" 
+} 
+} 
+} 
+} 
+}",
 "Open OptOut Page
 
 ApiWrapper.goPage('optOut', { newPage: true });",,,"ApiWrapper.goPage('optOut', { newPage: true });

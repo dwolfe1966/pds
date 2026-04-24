@@ -710,6 +710,37 @@ const api = {
     return await routeApiRequest('admin-change-contact-to-user', { body: { messageId, targetUserId } });
   },
 
+  // CSR: list all contact messages (member + non-member), newest first.
+  adminFindContactMessages: async (params = {}) => {
+    return await routeApiRequest('admin-find-contact-messages', { queryParams: params });
+  },
+
+  // CSR: full thread history for a contact message.
+  adminContactHistories: async (params = {}) => {
+    return await routeApiRequest('admin-contact-histories', { queryParams: params });
+  },
+
+  // CSR: reply to a contact message thread.
+  // params: { contactMessageId, subject, message, contentType?, attachments? }
+  adminCreateCsrReply: async (body = {}) => {
+    return await routeApiRequest('admin-create-csr-reply', { body });
+  },
+
+  // CSR: assign a contact message to an agent (defaults to self).
+  adminSetContactActor: async (body = {}) => {
+    return await routeApiRequest('admin-set-contact-actor', { body });
+  },
+
+  // CSR: link a contact message to a specific user.
+  adminSetContactTargetUser: async (body = {}) => {
+    return await routeApiRequest('admin-set-contact-target-user', { body });
+  },
+
+  // CSR: replace tags on a contact message.
+  adminSetContactTags: async (body = {}) => {
+    return await routeApiRequest('admin-set-contact-tags', { body });
+  },
+
   /**
    * Contact / Support endpoints
    * Routes through BC API: contact.create (visitor) or user.createContact (member)

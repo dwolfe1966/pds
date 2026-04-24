@@ -1277,7 +1277,10 @@ const AccountPage = () => {
             <p className={styles.errorText}>{messagesError}</p>
           ) : messages.length === 0 ? (
             <div className={styles.emptyState}>
-              <p>No messages yet. Click <strong>New Message</strong> above to contact our support team.</p>
+              <p><strong>Contact our support team below.</strong></p>
+              <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
+                Replies from our team are sent to your account email. Use the <strong>New Message</strong> button above to start a conversation.
+              </p>
             </div>
           ) : (
             <>

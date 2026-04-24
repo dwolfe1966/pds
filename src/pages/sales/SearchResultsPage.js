@@ -4,8 +4,10 @@ import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SearchBar from '../../components/SearchBar';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
+import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
+import { readThinMatch, isThinMatch } from '../../services/thinMatch';
 import styles from './SearchResultsPage.module.css';
 
 /**
@@ -341,7 +343,12 @@ const SalesSearchResultsPage = () => {
             )}
           </div>
         ) : !loading && !errorMessage ? (
-          <ZeroResultsPanel searchType="name" query={searchQuery} />
+          (() => {
+            const flags = readThinMatch();
+            return isThinMatch(flags)
+              ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} />
+              : <ZeroResultsPanel searchType="name" query={searchQuery} />;
+          })()
         ) : null}
       </div>
     </main>

@@ -5,7 +5,11 @@ import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import { validatePassword } from '../../hooks/useSignup';
-import { gtmEvent } from '../../services/gtm';
+import { gtmPurchase } from '../../services/gtm';
+import { readThinMatch } from '../../services/thinMatch';
+
+const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
+const SIGNUP_OFFER_S0_USD = 1.01;
 import styles from './SearchDetailPreviewPage.module.css';
 
 // ── Card utilities ────────────────────────────────────────────────────────────
@@ -186,10 +190,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
           },
         }],
         commerceOfferKeys: [{ key: 'comp.offer.signup.main', target: 'main', options: {} }],
-        sequenceOption: {
-          thinMatch: false, thinMatchDataProviderDown: false,
-          thinMatchTooManyResults: false, thinMatchNoResults: false, thinMatchGeographic: false,
-        },
+        sequenceOption: readThinMatch(),
       };
 
       const saleResult = await api.billingSale(saleParams);
@@ -226,7 +227,12 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
 
       setSuccess(true);
       track('payment_complete', { plan: 'pro', source: 'variant_b' });
-      gtmEvent('purchase', { value: 29.99, currency: 'USD', items: [{ item_name: 'Basic Plan' }] });
+      gtmPurchase({
+        value: SIGNUP_OFFER_S0_USD,
+        currency: 'USD',
+        offer_key: SIGNUP_OFFER_KEY,
+        item_name: 'IDLookup Signup (S0 — 7-day access)',
+      });
       sessionStorage.removeItem('selectedPersonId');
 
       // Step 5: Create report and navigate

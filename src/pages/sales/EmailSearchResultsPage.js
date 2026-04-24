@@ -3,7 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
+import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext } from '../../services/searchContext';
+import { readThinMatch, isThinMatch } from '../../services/thinMatch';
 
 /**
  * Displays email search results for public searches.
@@ -168,7 +170,12 @@ const EmailSearchResultsPage = () => {
 
         {/* No Results */}
         {!loading && !errorMessage && results.length === 0 && (
-          <ZeroResultsPanel searchType="email" query={{ email }} />
+          (() => {
+            const flags = readThinMatch();
+            return isThinMatch(flags)
+              ? <ThinMatchPreview searchType="email" query={{ email }} flags={flags} />
+              : <ZeroResultsPanel searchType="email" query={{ email }} />;
+          })()
         )}
       </div>
     </main>

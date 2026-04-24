@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import api from '../../api';
 import styles from './EmailTicketsPage.module.css';
 
@@ -29,15 +29,46 @@ function stripHtml(html) {
 
 function isCsrMail(type) { return (type || '').toLowerCase() === 'usercontactcsrmail'; }
 function isUserContact(type) { return (type || '').toLowerCase() === 'usercontact'; }
+function isContactMessage(type) { return (type || '').toLowerCase() === 'contact'; }
+function isCsrReply(type) { return (type || '').toLowerCase() === 'contactcsrreply'; }
+function isUserReply(type) { return (type || '').toLowerCase() === 'contactuserreply'; }
 function isMailThread(type) { return isCsrMail(type) || isUserContact(type); }
+
+function contactMessageSubject(item) {
+  const input = item?.content?.input || {};
+  if (input.topic) return input.topic;
+  if (input.category === 'billing') return 'Billing inquiry';
+  if (item?.content?.subject) return item.content.subject;
+  return '(No subject)';
+}
+
+function contactMessagePreview(item) {
+  const input = item?.content?.input || {};
+  if (input.description) return stripHtml(input.description);
+  if (input.message) return stripHtml(input.message);
+  if (item?.content?.message) return stripHtml(item.content.message);
+  return '';
+}
+
+function contactMessageSenderName(item) {
+  return item?.content?.input?.name || item?.content?.name || 'Anonymous';
+}
+
+function contactMessageSenderEmail(item) {
+  return item?.content?.input?.email || item?.content?.email || '';
+}
+
+function isMemberLinked(item) {
+  return Boolean(item?.content?.targetUserId || item?.targetUserId);
+}
 
 // ─── DirectionBadge ──────────────────────────────────────────────────────────
 
 function DirectionBadge({ type }) {
-  if (isCsrMail(type)) {
+  if (isCsrMail(type) || isCsrReply(type)) {
     return <span className={`${styles.badge} ${styles.badgeOutbound}`}>Outbound</span>;
   }
-  if (isUserContact(type)) {
+  if (isUserContact(type) || isContactMessage(type) || isUserReply(type)) {
     return <span className={`${styles.badge} ${styles.badgeInbound}`}>Inbound</span>;
   }
   return <span className={`${styles.badge} ${styles.badgeDefault}`}>{type || '—'}</span>;
@@ -46,18 +77,25 @@ function DirectionBadge({ type }) {
 // ─── EmailTicketsPage ─────────────────────────────────────────────────────────
 
 const EmailTicketsPage = () => {
-  // User search
+  // Mode: 'inbox' (all contactMessages) or 'user' (per-user search view)
+  const [mode, setMode] = useState('inbox');
+
+  // User search (used in 'user' mode)
   const [searchInput, setSearchInput] = useState('');
   const [resolvedUser, setResolvedUser] = useState(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
 
-  // Contacts
+  // Contacts list — semantics depend on mode
   const [allItems, setAllItems] = useState([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [noMoreDocs, setNoMoreDocs] = useState(false);
   const [lastId, setLastId] = useState(null);
   const [itemsError, setItemsError] = useState('');
+
+  // Thread history for a selected contactMessage (inbox mode)
+  const [threadItems, setThreadItems] = useState([]);
+  const [loadingThread, setLoadingThread] = useState(false);
 
   // Selection & compose
   const [selectedId, setSelectedId] = useState(null);
@@ -77,25 +115,88 @@ const EmailTicketsPage = () => {
     setTimeout(() => setToast(''), 3000);
   }, []);
 
-  // Filter to mail-type items only
-  const mailItems = useMemo(() => {
-    const items = allItems.filter((item) => isMailThread(item.type));
-    if (filterDir === 'outbound') return items.filter((item) => isCsrMail(item.type));
-    if (filterDir === 'inbound') return items.filter((item) => isUserContact(item.type));
-    return items;
-  }, [allItems, filterDir]);
+  // ── inbox load (mount) ─────────────────────────────────────────────────────
+
+  const fetchInbox = useCallback(async (cursorId) => {
+    setLoadingItems(true);
+    setItemsError('');
+    try {
+      const params = cursorId ? { lastId: cursorId } : {};
+      const res = await api.adminFindContactMessages(params);
+      const docs = res?.data ?? res?.docs ?? (Array.isArray(res) ? res : []);
+      const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
+      if (cursorId) {
+        setAllItems((prev) => [...prev, ...docs]);
+      } else {
+        // Cap to 10 on the initial page so the default view stays focused.
+        setAllItems(docs.slice(0, 10));
+      }
+      setLastId(last);
+      setNoMoreDocs(res?.noMoreDocs ?? docs.length === 0);
+    } catch (err) {
+      setItemsError(err.message || 'Failed to load inbox.');
+    } finally {
+      setLoadingItems(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mode === 'inbox') {
+      fetchInbox(null);
+    }
+  }, [mode, fetchInbox]);
+
+  // ── filtered list ─────────────────────────────────────────────────────────
+
+  const listItems = useMemo(() => {
+    if (mode === 'user') {
+      const items = allItems.filter((item) => isMailThread(item.type));
+      if (filterDir === 'outbound') return items.filter((item) => isCsrMail(item.type));
+      if (filterDir === 'inbound') return items.filter((item) => isUserContact(item.type));
+      return items;
+    }
+    // inbox: contactMessages can be linked (member) or unlinked (non-member)
+    if (filterDir === 'member') return allItems.filter(isMemberLinked);
+    if (filterDir === 'nonmember') return allItems.filter((i) => !isMemberLinked(i));
+    return allItems;
+  }, [allItems, filterDir, mode]);
 
   const selected = useMemo(() => {
     if (!selectedId) return null;
-    return mailItems.find((item) => resolveId(item) === selectedId) || null;
-  }, [mailItems, selectedId]);
+    return listItems.find((item) => resolveId(item) === selectedId) || null;
+  }, [listItems, selectedId]);
 
-  // ── user search ────────────────────────────────────────────────────────────
+  // ── thread history for a selected contactMessage ──────────────────────────
+
+  useEffect(() => {
+    if (mode !== 'inbox' || !selected || !isContactMessage(selected.type)) {
+      setThreadItems([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setLoadingThread(true);
+      try {
+        const res = await api.adminContactHistories({ contactMessageId: resolveId(selected) });
+        if (cancelled) return;
+        const docs = res?.data ?? res?.docs ?? [];
+        setThreadItems(docs.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)));
+      } catch (err) {
+        if (!cancelled) showToast(err.message || 'Failed to load thread history.');
+      } finally {
+        if (!cancelled) setLoadingThread(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selected, mode, showToast]);
+
+  // ── user search (user mode) ────────────────────────────────────────────────
 
   const handleUserSearch = async (e) => {
     e.preventDefault();
     const q = searchInput.trim();
     if (!q) return;
+    setMode('user');
     setSearching(true);
     setSearchError('');
     setResolvedUser(null);
@@ -107,7 +208,7 @@ const EmailTicketsPage = () => {
       if (users.length === 0) { setSearchError(`No user found for "${q}".`); return; }
       const user = users[0];
       setResolvedUser(user);
-      await fetchContacts(user._id || user.id, null);
+      await fetchUserContacts(user._id || user.id, null);
     } catch (err) {
       setSearchError(err.message || 'Failed to find user.');
     } finally {
@@ -115,9 +216,7 @@ const EmailTicketsPage = () => {
     }
   };
 
-  // ── load contacts ──────────────────────────────────────────────────────────
-
-  const fetchContacts = async (userId, cursorId) => {
+  const fetchUserContacts = async (userId, cursorId) => {
     setLoadingItems(true);
     setItemsError('');
     try {
@@ -125,7 +224,6 @@ const EmailTicketsPage = () => {
       const res = await api.adminFindUserContacts(params);
       const all = (res?.data ?? res?.docs ?? [])
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      // Default view on first page: 10 most-recent tickets. Follow-up pages append.
       const docs = cursorId ? all : all.slice(0, 10);
       const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
       if (cursorId) {
@@ -143,28 +241,58 @@ const EmailTicketsPage = () => {
   };
 
   const handleLoadMore = () => {
-    if (!resolvedUser || loadingItems || noMoreDocs) return;
-    fetchContacts(resolvedUser._id || resolvedUser.id, lastId);
+    if (loadingItems || noMoreDocs) return;
+    if (mode === 'inbox') {
+      fetchInbox(lastId);
+    } else if (resolvedUser) {
+      fetchUserContacts(resolvedUser._id || resolvedUser.id, lastId);
+    }
   };
 
-  // ── send CSR mail (reply) ──────────────────────────────────────────────────
+  // ── reply ─────────────────────────────────────────────────────────────────
 
   const handleReply = async (e) => {
     e.preventDefault();
-    if (!replyMessage.trim() || !resolvedUser) return;
+    if (!replyMessage.trim() || !selected) return;
     setSending(true);
     try {
-      const subject = replySubject.trim() || (selected?.content?.subject ? `Re: ${selected.content.subject}` : 'Follow-up');
-      await api.adminCreateCsrMail({
-        targetUserId: resolvedUser._id || resolvedUser.id,
-        subject,
-        message: replyMessage.trim(),
-        contentType: 'text',
-      });
+      const isThreadContactMessage = isContactMessage(selected.type);
+      const defaultSubject = isThreadContactMessage
+        ? `Re: ${contactMessageSubject(selected)}`
+        : (selected?.content?.subject ? `Re: ${selected.content.subject}` : 'Follow-up');
+      const subject = replySubject.trim() || defaultSubject;
+
+      if (isThreadContactMessage) {
+        await api.adminCreateCsrReply({
+          contactMessageId: resolveId(selected),
+          subject,
+          message: replyMessage.trim(),
+          contentType: 'text/html',
+        });
+      } else if (resolvedUser) {
+        await api.adminCreateCsrMail({
+          targetUserId: resolvedUser._id || resolvedUser.id,
+          subject,
+          message: replyMessage.trim(),
+          contentType: 'text',
+        });
+      }
+
       setReplySubject('');
       setReplyMessage('');
       showToast('Reply sent.');
-      await fetchContacts(resolvedUser._id || resolvedUser.id, null);
+
+      if (mode === 'inbox') {
+        await fetchInbox(null);
+        // refresh thread
+        if (isThreadContactMessage) {
+          const res = await api.adminContactHistories({ contactMessageId: resolveId(selected) });
+          const docs = res?.data ?? res?.docs ?? [];
+          setThreadItems(docs.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)));
+        }
+      } else if (resolvedUser) {
+        await fetchUserContacts(resolvedUser._id || resolvedUser.id, null);
+      }
     } catch (err) {
       showToast(err.message || 'Failed to send reply.');
     } finally {
@@ -172,7 +300,7 @@ const EmailTicketsPage = () => {
     }
   };
 
-  // ── compose new mail ───────────────────────────────────────────────────────
+  // ── CSR-initiated compose (user mode only) ────────────────────────────────
 
   const handleCompose = async (e) => {
     e.preventDefault();
@@ -189,7 +317,7 @@ const EmailTicketsPage = () => {
       setComposeMessage('');
       setComposing(false);
       showToast('Email sent.');
-      await fetchContacts(resolvedUser._id || resolvedUser.id, null);
+      await fetchUserContacts(resolvedUser._id || resolvedUser.id, null);
     } catch (err) {
       showToast(err.message || 'Failed to send email.');
     } finally {
@@ -197,18 +325,46 @@ const EmailTicketsPage = () => {
     }
   };
 
-  const handleClear = () => {
+  const handleClearUser = () => {
+    setMode('inbox');
     setResolvedUser(null);
     setAllItems([]);
     setSearchInput('');
     setSearchError('');
     setSelectedId(null);
     setComposing(false);
+    setFilterDir('all');
+  };
+
+  const handleAssignToMe = async () => {
+    if (!selected || !isContactMessage(selected.type)) return;
+    try {
+      await api.adminSetContactActor({
+        contactMessageId: resolveId(selected),
+        currentRevisionId: selected.currentRevisionId,
+      });
+      showToast('Assigned to you.');
+      await fetchInbox(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to assign.');
+    }
   };
 
   const userName = resolvedUser
     ? (`${resolvedUser.firstName || ''} ${resolvedUser.lastName || ''}`.trim() || resolvedUser.email || '')
     : '';
+
+  const filterOptions = mode === 'inbox'
+    ? [
+        { value: 'all', label: 'All Messages' },
+        { value: 'member', label: 'Members only' },
+        { value: 'nonmember', label: 'Non-members only' },
+      ]
+    : [
+        { value: 'all', label: 'All Messages' },
+        { value: 'outbound', label: 'Outbound (CSR Mail)' },
+        { value: 'inbound', label: 'Inbound (User Replies)' },
+      ];
 
   return (
     <main className={styles.page}>
@@ -217,46 +373,50 @@ const EmailTicketsPage = () => {
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Email Tickets</h1>
-          <p className={styles.subtitle}>CSR mail threads and customer correspondence.</p>
+          <p className={styles.subtitle}>
+            {mode === 'inbox'
+              ? 'All contact messages — members and non-members, newest first.'
+              : 'CSR mail threads and customer correspondence.'}
+          </p>
         </div>
-        {resolvedUser && (
+        {mode === 'user' && resolvedUser && (
           <button className={styles.composeBtn} onClick={() => setComposing(!composing)}>
             + New Email
           </button>
         )}
       </div>
 
-      {/* User search */}
+      {/* User search — always visible; submitting switches to user mode */}
       <form className={styles.searchForm} onSubmit={handleUserSearch}>
         <input
           className={styles.searchInput}
           type="text"
-          placeholder="Search by customer email..."
+          placeholder="Search a customer by email to view their threads..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
         <button className={styles.searchBtn} type="submit" disabled={searching}>
           {searching ? 'Searching...' : 'Find Customer'}
         </button>
-        {resolvedUser && (
-          <button type="button" className={styles.clearBtn} onClick={handleClear}>Clear</button>
+        {mode === 'user' && (
+          <button type="button" className={styles.clearBtn} onClick={handleClearUser}>Back to Inbox</button>
         )}
       </form>
 
       {searchError && <div className={styles.errorBox}>{searchError}</div>}
 
-      {resolvedUser && (
+      {mode === 'user' && resolvedUser && (
         <div className={styles.userBanner}>
           <div>
             <strong>{userName}</strong>
             <span className={styles.userEmail}>{resolvedUser.email}</span>
           </div>
-          <span className={styles.mailCount}>{mailItems.length} message{mailItems.length !== 1 ? 's' : ''}</span>
+          <span className={styles.mailCount}>{listItems.length} message{listItems.length !== 1 ? 's' : ''}</span>
         </div>
       )}
 
-      {/* Compose form */}
-      {composing && resolvedUser && (
+      {/* Compose form (user mode) */}
+      {composing && mode === 'user' && resolvedUser && (
         <form className={styles.composeForm} onSubmit={handleCompose}>
           <h3 className={styles.composeTitle}>New Email to {userName || resolvedUser.email}</h3>
           <input
@@ -282,62 +442,61 @@ const EmailTicketsPage = () => {
         </form>
       )}
 
-      {/* Empty state */}
-      {!resolvedUser && !searchError && (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyIcon}>Search for a customer by email to view their mail threads.</p>
-        </div>
-      )}
-
-      {/* Loading skeleton */}
+      {/* Loading */}
       {loadingItems && allItems.length === 0 && (
-        <div className={styles.loadingState}>Loading mail threads...</div>
+        <div className={styles.loadingState}>Loading messages...</div>
       )}
 
       {itemsError && <div className={styles.errorBox}>{itemsError}</div>}
 
-      {/* No mail found */}
-      {resolvedUser && !loadingItems && mailItems.length === 0 && allItems.length > 0 && !itemsError && (
+      {/* Empty states */}
+      {mode === 'user' && resolvedUser && !loadingItems && listItems.length === 0 && allItems.length > 0 && !itemsError && (
         <div className={styles.emptyState}>
           <p className={styles.emptyIcon}>No mail threads found for this customer. Only admin notes exist.</p>
         </div>
       )}
-
-      {resolvedUser && !loadingItems && allItems.length === 0 && !itemsError && !searching && (
+      {mode === 'user' && resolvedUser && !loadingItems && allItems.length === 0 && !itemsError && !searching && (
         <div className={styles.emptyState}>
           <p className={styles.emptyIcon}>No contacts found for this customer.</p>
         </div>
       )}
+      {mode === 'inbox' && !loadingItems && allItems.length === 0 && !itemsError && (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyIcon}>Inbox is empty — no contact messages yet.</p>
+        </div>
+      )}
 
       {/* Two-panel layout */}
-      {mailItems.length > 0 && (
+      {listItems.length > 0 && (
         <>
-          {/* Direction filter */}
           <div className={styles.filterBar}>
             <select
               className={styles.select}
               value={filterDir}
               onChange={(e) => setFilterDir(e.target.value)}
             >
-              <option value="all">All Messages</option>
-              <option value="outbound">Outbound (CSR Mail)</option>
-              <option value="inbound">Inbound (User Replies)</option>
+              {filterOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
 
           <div className={styles.wrapper}>
             {/* Left: message list */}
             <div className={styles.ticketList}>
-              {mailItems.length === 0 && (
+              {listItems.length === 0 && (
                 <div className={styles.emptyList}>No messages match your filter.</div>
               )}
-              {mailItems.map((item) => {
+              {listItems.map((item) => {
                 const id = resolveId(item);
-                const subject = item.content?.subject || '(No subject)';
-                const preview = stripHtml(item.content?.message || '');
-                const ownerName = item.owner
-                  ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim()
-                  : '';
+                const isCM = isContactMessage(item.type);
+                const subject = isCM ? contactMessageSubject(item) : (item.content?.subject || '(No subject)');
+                const preview = isCM ? contactMessagePreview(item) : stripHtml(item.content?.message || '');
+                const senderLabel = isCM
+                  ? `${contactMessageSenderName(item)}${isMemberLinked(item) ? ' · Member' : ' · Non-member'}`
+                  : (isCsrMail(item.type)
+                      ? (item.owner ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim() : 'CSR')
+                      : (userName || 'Customer'));
                 return (
                   <button
                     key={id}
@@ -350,14 +509,13 @@ const EmailTicketsPage = () => {
                     </div>
                     <div className={styles.ticketSubject}>{subject}</div>
                     <div className={styles.ticketMeta}>
-                      {isCsrMail(item.type) ? (ownerName || 'CSR') : (userName || 'Customer')}
+                      {senderLabel}
                       {preview ? ` — ${preview.length > 60 ? preview.slice(0, 60) + '...' : preview}` : ''}
                     </div>
                   </button>
                 );
               })}
 
-              {/* Load more inside the list */}
               {!noMoreDocs && (
                 <div className={styles.loadMoreRow}>
                   <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loadingItems}>
@@ -375,43 +533,77 @@ const EmailTicketsPage = () => {
                 <>
                   <div className={styles.detailHeader}>
                     <div>
-                      <h2 className={styles.detailSubject}>{selected.content?.subject || '(No subject)'}</h2>
+                      <h2 className={styles.detailSubject}>
+                        {isContactMessage(selected.type)
+                          ? contactMessageSubject(selected)
+                          : (selected.content?.subject || '(No subject)')}
+                      </h2>
                       <p className={styles.detailMeta}>
                         <DirectionBadge type={selected.type} />
                         &nbsp;&nbsp;
-                        {isCsrMail(selected.type) ? 'Sent by: ' : 'From: '}
+                        {isContactMessage(selected.type) ? 'From: ' : (isCsrMail(selected.type) ? 'Sent by: ' : 'From: ')}
                         <strong>
-                          {isCsrMail(selected.type)
-                            ? (selected.owner ? `${selected.owner.firstName || ''} ${selected.owner.lastName || ''}`.trim() : 'CSR')
-                            : (userName || 'Customer')}
+                          {isContactMessage(selected.type)
+                            ? `${contactMessageSenderName(selected)}${contactMessageSenderEmail(selected) ? ` <${contactMessageSenderEmail(selected)}>` : ''}`
+                            : (isCsrMail(selected.type)
+                                ? (selected.owner ? `${selected.owner.firstName || ''} ${selected.owner.lastName || ''}`.trim() : 'CSR')
+                                : (userName || 'Customer'))}
                         </strong>
                         &nbsp;&middot;&nbsp;
                         {formatDate(selected.createdAt)}
                       </p>
                     </div>
                     <div className={styles.statusControls}>
-                      {selected.status && (
-                        <span className={`${styles.badge} ${styles.badgeStatus}`}>{selected.status}</span>
+                      {selected.content?.category && (
+                        <span className={`${styles.badge} ${styles.badgeStatus}`}>{selected.content.category}</span>
                       )}
-                      {selected.content?.contentType && (
-                        <span className={styles.contentType}>{selected.content.contentType}</span>
+                      {isContactMessage(selected.type) && !selected.content?.actorId && (
+                        <button type="button" className={styles.clearBtn} onClick={handleAssignToMe}>
+                          Assign to me
+                        </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Message body */}
+                  {/* Thread or single message body */}
                   <div className={styles.thread}>
-                    <div className={`${styles.message} ${isCsrMail(selected.type) ? styles.messageAgent : styles.messageCustomer}`}>
-                      <div className={styles.msgBody}>
-                        {selected.content?.contentType === 'html'
-                          ? <div dangerouslySetInnerHTML={{ __html: selected.content.message }} />
-                          : <p style={{ margin: 0 }}>{selected.content?.message || '(Empty message)'}</p>
-                        }
+                    {isContactMessage(selected.type) && loadingThread && (
+                      <div className={styles.loadingState}>Loading thread...</div>
+                    )}
+                    {isContactMessage(selected.type) && !loadingThread && threadItems.length > 0 ? (
+                      threadItems.map((msg) => {
+                        const msgId = resolveId(msg);
+                        const agent = isCsrMail(msg.type) || isCsrReply(msg.type);
+                        const body = agent
+                          ? (msg.content?.message || '')
+                          : (msg.content?.input?.description || msg.content?.input?.message || msg.content?.message || JSON.stringify(msg.content?.input || {}, null, 2));
+                        const contentType = msg.content?.contentType;
+                        return (
+                          <div key={msgId} className={`${styles.message} ${agent ? styles.messageAgent : styles.messageCustomer}`}>
+                            <div className={styles.msgHeader}>
+                              <DirectionBadge type={msg.type} />
+                              <span style={{ marginLeft: 8 }}>{formatDate(msg.createdAt)}</span>
+                            </div>
+                            <div className={styles.msgBody}>
+                              {contentType === 'text/html'
+                                ? <div dangerouslySetInnerHTML={{ __html: body }} />
+                                : <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{body}</pre>}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : !isContactMessage(selected.type) ? (
+                      <div className={`${styles.message} ${isCsrMail(selected.type) ? styles.messageAgent : styles.messageCustomer}`}>
+                        <div className={styles.msgBody}>
+                          {selected.content?.contentType === 'html' || selected.content?.contentType === 'text/html'
+                            ? <div dangerouslySetInnerHTML={{ __html: selected.content.message }} />
+                            : <p style={{ margin: 0 }}>{selected.content?.message || '(Empty message)'}</p>
+                          }
+                        </div>
                       </div>
-                    </div>
+                    ) : null}
                   </div>
 
-                  {/* Attachments */}
                   {selected.attachments && selected.attachments.length > 0 && (
                     <div className={styles.attachments}>
                       <p className={styles.attachmentsLabel}>Attachments ({selected.attachments.length}):</p>
@@ -423,29 +615,31 @@ const EmailTicketsPage = () => {
                     </div>
                   )}
 
-                  {/* Reply form */}
-                  <form className={styles.replyForm} onSubmit={handleReply}>
-                    <input
-                      className={styles.composeInput}
-                      type="text"
-                      placeholder={`Re: ${selected.content?.subject || ''}`}
-                      value={replySubject}
-                      onChange={(e) => setReplySubject(e.target.value)}
-                    />
-                    <textarea
-                      className={styles.replyTextarea}
-                      rows={4}
-                      value={replyMessage}
-                      onChange={(e) => setReplyMessage(e.target.value)}
-                      placeholder="Type your reply..."
-                      disabled={sending}
-                    />
-                    <div className={styles.replyActions}>
-                      <button type="submit" className={styles.replyBtn} disabled={sending || !replyMessage.trim()}>
-                        {sending ? 'Sending...' : 'Send Reply'}
-                      </button>
-                    </div>
-                  </form>
+                  {/* Reply form — works for both contactMessage (inbox) and userContact (user mode) */}
+                  {(isContactMessage(selected.type) || (mode === 'user' && resolvedUser)) && (
+                    <form className={styles.replyForm} onSubmit={handleReply}>
+                      <input
+                        className={styles.composeInput}
+                        type="text"
+                        placeholder={`Re: ${isContactMessage(selected.type) ? contactMessageSubject(selected) : (selected.content?.subject || '')}`}
+                        value={replySubject}
+                        onChange={(e) => setReplySubject(e.target.value)}
+                      />
+                      <textarea
+                        className={styles.replyTextarea}
+                        rows={4}
+                        value={replyMessage}
+                        onChange={(e) => setReplyMessage(e.target.value)}
+                        placeholder="Type your reply..."
+                        disabled={sending}
+                      />
+                      <div className={styles.replyActions}>
+                        <button type="submit" className={styles.replyBtn} disabled={sending || !replyMessage.trim()}>
+                          {sending ? 'Sending...' : 'Send Reply'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </>
               )}
             </div>

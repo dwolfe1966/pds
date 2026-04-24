@@ -4,7 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
-import { gtmEvent } from '../../services/gtm';
+import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
+import { readThinMatch } from '../../services/thinMatch';
+
+// BC offer charged at signup. s0 (1.01) is the initial charge; s1+ (39.01) is the monthly rebill.
+// See docs/new-api/bc client library-API.csv "Find Offer By Shm Name" for the full price structure.
+const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
+const SIGNUP_OFFER_S0_USD = 1.01;
 import styles from './PaymentPage.module.css';
 
 // Detect card type from PAN prefix
@@ -121,7 +127,9 @@ const PaymentPage = () => {
       track('payment_start', {
         upgrade: searchParams.get('upgrade') === '1',
         has_selected: !!searchParams.get('selected'),
+        offer_key: SIGNUP_OFFER_KEY,
       });
+      gtmPaymentStart({ offer_key: SIGNUP_OFFER_KEY, plan: 'signup' });
     }
   }, [authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -265,13 +273,10 @@ const PaymentPage = () => {
         commerceOfferKeys: [
           { key: 'comp.offer.signup.main', target: 'main', options: {} },
         ],
-        sequenceOption: {
-          thinMatch: false,
-          thinMatchDataProviderDown: false,
-          thinMatchTooManyResults: false,
-          thinMatchNoResults: false,
-          thinMatchGeographic: false,
-        },
+        // Reflect BC's teaser-time thin-match signal on the billing order so
+        // the order history records the true match state. Flags default to
+        // `false` when no teaser search preceded this purchase.
+        sequenceOption: readThinMatch(),
         // Strip internal UI params (upgrade, selected, redirect) before passing to BC.
         // BC uses queryString for campaign attribution — our UI flags are not valid BC params.
         ...((() => {
@@ -362,8 +367,13 @@ const PaymentPage = () => {
       }, 15000);
 
       setSuccess(true);
-      track('payment_complete', { plan: 'pro' });
-      gtmEvent('purchase', { value: 29.99, currency: 'USD', items: [{ item_name: 'Basic Plan' }] });
+      track('payment_complete', { plan: 'pro', offer_key: SIGNUP_OFFER_KEY });
+      gtmPurchase({
+        value: SIGNUP_OFFER_S0_USD,
+        currency: 'USD',
+        offer_key: SIGNUP_OFFER_KEY,
+        item_name: 'IDLookup Signup (S0 — 7-day access)',
+      });
       // BC compliance tracking — record subscription agreement timestamp on BC side.
       api.createTracking({
         type: 'agreement',

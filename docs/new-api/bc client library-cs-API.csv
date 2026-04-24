@@ -3,7 +3,96 @@
 
 csrWrapper.api.auth.login",/api/auth/login,post,"csrWrapper.api.auth.login({ username: 'admin@email.com', password: 'password' });
 
-Calling login without username or password will check if the user's session is already logged in on the server.",,,
+Calling login without username or password will check if the user's session is already logged in on the server.
+
+return
+- roles: (array) may include admin, csr, csrManager.
+(It can be used to restrict specific functions based on the values ​​included in roles.)",,"{ 
+""_id"": ""6943179e90625d3dbeadf6f7"", 
+""uniqueId"": ""bytecrtrs|admin@admin.admin"", 
+""index"": [], 
+""referenceIds"": [], 
+""permissionIds"": [], 
+""brandId"": ""bytecrtrs"", 
+""email"": ""admin@admin.admin"", 
+""roles"": [ 
+""admin"" 
+], 
+""createdAt"": ""2025-12-17T20:48:24.293Z"", 
+""updatedAt"": ""2026-04-21T19:41:25.973Z"", 
+""__v"": 8834, 
+""currentRevisionId"": ""69e7d2e56395de31ba98636a"", 
+""firstName"": ""BC"", 
+""lastName"": ""Admin"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""prevShape"": [ 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770958524936, 
+""timestamp"": 1771015332547 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770958141135, 
+""timestamp"": 1770958774334 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770935899472, 
+""timestamp"": 1770958186535 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770936144579, 
+""timestamp"": 1770936159357 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770935899472, 
+""timestamp"": 1770936144738 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770935556360, 
+""timestamp"": 1770935899741 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770935463742, 
+""timestamp"": 1770935618708 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770935556360, 
+""timestamp"": 1770935598030 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770934396215, 
+""timestamp"": 1770935559208 
+}, 
+{ 
+""shConId"": ""69129afbeee8fa241c86c9c2"", 
+""shColId"": ""69431f043a915bc1be68b4bc"", 
+""shTimestamp"": 1770935463742, 
+""timestamp"": 1770935509462 
+} 
+], 
+""shTimestamp"": 1771015332335, 
+""updaterId"": ""6943179e90625d3dbeadf6f7"", 
+""status"": ""active"", 
+""id"": ""6943179e90625d3dbeadf6f7"" 
+}",
 "Logout
 
 csrWrapper.api.auth.logout",/api/auth/logout,post,csrWrapper.api.auth.logout();,,{ success: true },
@@ -20,7 +109,7 @@ shColId: ''
 });
 
 params
-- roles: ['admin'] or ['csr'] or []
+- roles: ['admin'] or ['csr'] or ['csrManager']
 - shConId: (optional) 
 - shColId: (optional)",,,
 "Update User

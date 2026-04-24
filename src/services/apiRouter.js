@@ -289,6 +289,12 @@ export async function routeApiRequest(endpoint, params = {}) {
     'tracking-create',
     'admin-find-contacts',
     'admin-change-contact-to-user',
+    'admin-find-contact-messages',
+    'admin-contact-histories',
+    'admin-create-csr-reply',
+    'admin-set-contact-actor',
+    'admin-set-contact-target-user',
+    'admin-set-contact-tags',
   ]);
   const forceNewApi = FORCE_NEW_API_ENDPOINTS.has(endpoint);
   // CSR (admin-*) endpoints use direct fetch, not the IIFE — check isCsrReady() instead
@@ -922,6 +928,43 @@ async function callNewAPI(endpoint, params) {
     // CSR: link visitor contact to a user account
     case 'admin-change-contact-to-user': {
       return await apiWrapper.csrChangeContactToUserContact(params.body || {});
+    }
+
+    // CSR: find all contact messages (member + non-member)
+    // csrWrapper.api.message.contact.find → GET /contactMessage/admin/find
+    case 'admin-find-contact-messages': {
+      const raw = await apiWrapper.csrFindContactMessages(params.queryParams || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? (docs.length === 0) };
+    }
+
+    // CSR: get full history of a single contact message thread
+    // csrWrapper.api.message.contact.histories → GET /contactMessage/admin/histories
+    case 'admin-contact-histories': {
+      const raw = await apiWrapper.csrFindContactHistories(params.queryParams || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? (docs.length === 0) };
+    }
+
+    // CSR: reply to a contact message thread
+    // csrWrapper.api.message.contact.createCsrReply → POST /message/admin/user/csrMail/create
+    case 'admin-create-csr-reply': {
+      return await apiWrapper.csrCreateCsrReply(params.body || {});
+    }
+
+    // CSR: assign contact message to self / another CSR
+    case 'admin-set-contact-actor': {
+      return await apiWrapper.csrSetContactActor(params.body || {});
+    }
+
+    // CSR: link contact message to a user
+    case 'admin-set-contact-target-user': {
+      return await apiWrapper.csrSetContactTargetUser(params.body || {});
+    }
+
+    // CSR: replace tags on a contact message
+    case 'admin-set-contact-tags': {
+      return await apiWrapper.csrSetContactTags(params.body || {});
     }
 
     default:

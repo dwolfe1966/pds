@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { track } from '../../services/trackingService';
+import { gtmSearchSubmit } from '../../services/gtm';
+import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import styles from './LoaderPage.module.css';
 
 const SCAN_PHASES = [
@@ -58,6 +61,14 @@ const EmailLoaderPage = () => {
         clearInterval(progressInterval);
         setProgress(100);
         setStatus('Search complete!');
+
+        const identityCount = (response.data || []).length;
+        track('search_submit', { type: 'email', resultCount: identityCount });
+        gtmSearchSubmit({ search_type: 'email', result_count: identityCount });
+
+        // Capture BC's thin-match signal so SRP + PaymentPage can react.
+        const flags = deriveThinMatchFlags(response.rawResponse || response, { identityCount });
+        persistThinMatch(flags);
 
         // Store search context
         if (response.searchContext) {

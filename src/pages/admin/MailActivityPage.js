@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -21,12 +21,35 @@ function stripHtml(html) {
   return (html || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 }
 
+/**
+ * Normalize subject + message preview across the three mail shapes that show
+ * up in this page: userContact (member), userContactCsrMail (outbound),
+ * and the new contact (contactMessage) shape where content lives under `input`.
+ */
+function resolveSubject(item) {
+  if (item?.content?.subject) return item.content.subject;
+  const input = item?.content?.input;
+  if (input?.topic) return input.topic;
+  if (input?.category === 'billing') return 'Billing inquiry';
+  if (input?.category === 'general') return 'General inquiry';
+  return '';
+}
+function resolveMessagePreview(item) {
+  const direct = stripHtml(item?.content?.message || '');
+  if (direct) return direct;
+  const input = item?.content?.input;
+  if (input?.description) return stripHtml(input.description);
+  if (input?.message) return stripHtml(input.message);
+  return '';
+}
+
 // ─── TypeBadge ────────────────────────────────────────────────────────────────
 
 function TypeBadge({ type }) {
   const t = (type || '').toLowerCase();
-  if (t === 'usercontactcsrmail') return <span className={`${styles.badge} ${styles.badgeMail}`}>CSR Mail</span>;
-  if (t === 'usercontact') return <span className={`${styles.badge} ${styles.badgeContact}`}>Contact</span>;
+  if (t === 'usercontactcsrmail' || t === 'contactcsrreply') return <span className={`${styles.badge} ${styles.badgeMail}`}>CSR Mail</span>;
+  if (t === 'usercontact' || t === 'contactuserreply') return <span className={`${styles.badge} ${styles.badgeContact}`}>Contact</span>;
+  if (t === 'contact') return <span className={`${styles.badge} ${styles.badgeContact}`}>Inbound</span>;
   return <span className={`${styles.badge} ${styles.badgeDefault}`}>{type || '—'}</span>;
 }
 
@@ -84,8 +107,8 @@ function ComposeModal({ targetUserId, onSent, onClose }) {
 // ─── MailCard ─────────────────────────────────────────────────────────────────
 
 function MailCard({ item }) {
-  const subject = item.content?.subject || '';
-  const msg = stripHtml(item.content?.message || '');
+  const subject = resolveSubject(item);
+  const msg = resolveMessagePreview(item);
 
   return (
     <div className={styles.mailCard}>
@@ -184,9 +207,42 @@ const MailActivityPage = () => {
     }
   };
 
+  // Default view: 10 most-recent contact messages across all users.
+  const fetchInbox = useCallback(async (cursorId) => {
+    setLoadingItems(true);
+    setItemsError('');
+    try {
+      const res = await api.adminFindContactMessages(cursorId ? { lastId: cursorId } : {});
+      const docs = res?.data ?? res?.docs ?? (Array.isArray(res) ? res : []);
+      const list = cursorId ? docs : docs.slice(0, 10);
+      const last = list.length > 0 ? resolveId(list[list.length - 1]) : null;
+      if (cursorId) {
+        setItems((prev) => [...prev, ...list]);
+      } else {
+        setItems(list);
+      }
+      setLastId(last);
+      setNoMoreDocs(res?.noMoreDocs ?? list.length === 0);
+    } catch (err) {
+      setItemsError(err.message || 'Failed to load mail activity.');
+    } finally {
+      setLoadingItems(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!resolvedUser) {
+      fetchInbox(null);
+    }
+  }, [resolvedUser, fetchInbox]);
+
   const handleLoadMore = () => {
-    if (!resolvedUser || loadingItems || noMoreDocs) return;
-    fetchContacts(resolvedUser._id || resolvedUser.id, lastId);
+    if (loadingItems || noMoreDocs) return;
+    if (resolvedUser) {
+      fetchContacts(resolvedUser._id || resolvedUser.id, lastId);
+    } else {
+      fetchInbox(lastId);
+    }
   };
 
   const handleSent = () => {
@@ -215,7 +271,11 @@ const MailActivityPage = () => {
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.title}>Mail Activity</h1>
-          <p className={styles.subtitle}>CSR email history per customer.</p>
+          <p className={styles.subtitle}>
+            {resolvedUser
+              ? 'CSR email history for the selected customer.'
+              : '10 most-recent contact messages across all users — search by email to narrow.'}
+          </p>
         </div>
         <div className={styles.headerRight}>
           {resolvedUser && (
@@ -263,12 +323,6 @@ const MailActivityPage = () => {
         </div>
       )}
 
-      {!resolvedUser && !searchError && (
-        <div className={styles.emptyState}>
-          <p className={styles.emptyIcon}>📬</p>
-          <p className={styles.emptyTitle}>Search for a customer to view their mail log</p>
-        </div>
-      )}
 
       {loadingItems && (
         <div className={styles.grid}>
@@ -284,9 +338,11 @@ const MailActivityPage = () => {
 
       {itemsError && <div className={styles.errorBox}>{itemsError}</div>}
 
-      {resolvedUser && !loadingItems && items.length === 0 && !itemsError && (
+      {!loadingItems && items.length === 0 && !itemsError && (
         <div className={styles.emptyState}>
-          <p className={styles.emptyTitle}>No mail activity for this customer.</p>
+          <p className={styles.emptyTitle}>
+            {resolvedUser ? 'No mail activity for this customer.' : 'Inbox is empty — no contact messages yet.'}
+          </p>
         </div>
       )}
 
@@ -307,19 +363,19 @@ const MailActivityPage = () => {
               </tr></thead>
               <tbody>
                 {items.map((item, idx) => {
-                  const subject = item.content?.subject || '';
-                  const msg = stripHtml(item.content?.message || '');
+                  const subject = resolveSubject(item);
+                  const msg = resolveMessagePreview(item);
                   const preview = subject || (msg.length > 80 ? msg.slice(0, 80) + '…' : msg);
-                  const ownerName = item.owner
+                  const senderName = item.owner
                     ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim()
-                    : '—';
+                    : (item.content?.input?.name || '—');
                   return (
                     <tr key={resolveId(item) || idx} className={styles.tr}>
                       <td className={styles.td}><TypeBadge type={item.type} /></td>
                       <td className={styles.td}>{preview || '—'}</td>
                       <td className={styles.td}>{item.status || '—'}</td>
                       <td className={styles.td}>{formatDate(item.createdAt)}</td>
-                      <td className={styles.td}>{ownerName}</td>
+                      <td className={styles.td}>{senderName}</td>
                     </tr>
                   );
                 })}
@@ -329,7 +385,7 @@ const MailActivityPage = () => {
         )
       )}
 
-      {resolvedUser && !noMoreDocs && items.length > 0 && (
+      {!noMoreDocs && items.length > 0 && (
         <div className={styles.loadMoreRow}>
           <button className={styles.loadMoreBtn} onClick={handleLoadMore} disabled={loadingItems}>
             {loadingItems ? 'Loading…' : 'Load More'}

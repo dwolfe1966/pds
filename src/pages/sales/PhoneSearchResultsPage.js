@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
+import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext, setIdentityContext, getSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
+import { readThinMatch, isThinMatch } from '../../services/thinMatch';
 
 // Partner bugs 15a/15b: phone SRP previously rendered unobscured owner details
 // via ResultCard and clicks led to a generic "signup free" preview. Phone
@@ -224,7 +226,12 @@ const PhoneSearchResultsPage = () => {
 
         {/* No Results */}
         {!loading && !error && results.length === 0 && (
-          <ZeroResultsPanel searchType="phone" query={{ phone }} />
+          (() => {
+            const flags = readThinMatch();
+            return isThinMatch(flags)
+              ? <ThinMatchPreview searchType="phone" query={{ phone }} flags={flags} />
+              : <ZeroResultsPanel searchType="phone" query={{ phone }} />;
+          })()
         )}
       </div>
     </main>

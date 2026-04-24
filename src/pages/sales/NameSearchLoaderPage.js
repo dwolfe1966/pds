@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
+import { gtmSearchSubmit } from '../../services/gtm';
+import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import styles from './LoaderPage.module.css';
 
 const SCAN_PHASES = [
@@ -78,7 +80,13 @@ const NameSearchLoaderPage = () => {
 
         // Perform the search using ByteCreators ApiWrapper via our helper
         const response = await api.searchPeople(searchParams);
-        track('search_submit', { type: 'name', resultCount: (response.data || []).length });
+        const identityCount = (response.data || []).length;
+        track('search_submit', { type: 'name', resultCount: identityCount });
+        gtmSearchSubmit({ search_type: 'name', result_count: identityCount, state: state || undefined });
+
+        // Capture BC's thin-match signal so SRP + PaymentPage can react.
+        const flags = deriveThinMatchFlags(response.rawResponse || response, { identityCount });
+        persistThinMatch(flags);
 
         clearInterval(progressInterval);
         setProgress(100);

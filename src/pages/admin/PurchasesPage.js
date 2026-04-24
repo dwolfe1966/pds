@@ -134,11 +134,31 @@ const PurchasesPage = () => {
     }
   }, []);
 
+  // Default view: 10 most-recent orders across all users. Matches OrdersPage.
+  const fetchGlobalRecent = useCallback(async () => {
+    setLoading(true);
+    setFetchError('');
+    try {
+      const res = await api.adminListOrdersGlobal({ limit: 10 });
+      const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
+      const sorted = [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setOrders(sorted.slice(0, 10));
+    } catch (err) {
+      // BC may not support global commerceOrder search without filters — keep list empty.
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (resolvedUserId) {
       fetchOrders(resolvedUserId);
+    } else if (!urlUserId) {
+      // No URL-provided user and no search yet — show recent global orders by default.
+      fetchGlobalRecent();
     }
-  }, [resolvedUserId, fetchOrders]);
+  }, [resolvedUserId, urlUserId, fetchOrders, fetchGlobalRecent]);
 
   // Mode B: handle search submit
   const handleSearch = async (e) => {
@@ -188,15 +208,13 @@ const PurchasesPage = () => {
   }, [orders, statusFilter, typeFilter]);
 
   // ── Subtitle for Mode A
-  const subtitle = resolvedUserId && urlUserId
+  const subtitle = resolvedUserId
     ? <>Orders for user <code style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}>{resolvedUserId}</code></>
-    : resolvedUserId
-    ? <>Orders for user <code style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}>{resolvedUserId}</code></>
-    : 'Search by email or user ID to view orders';
+    : '10 most-recent orders across all users — or search by email / user ID to scope to one customer.';
 
-  const showTable = resolvedUserId && (loading || fetchError || orders.length > 0);
-  const showEmpty = resolvedUserId && !loading && !fetchError && orders.length === 0;
-  const showFilteredEmpty = resolvedUserId && !loading && !fetchError && orders.length > 0 && filteredOrders.length === 0;
+  const showTable = loading || fetchError || orders.length > 0;
+  const showEmpty = !loading && !fetchError && orders.length === 0;
+  const showFilteredEmpty = !loading && !fetchError && orders.length > 0 && filteredOrders.length === 0;
 
   return (
     <main className={styles.page}>
@@ -238,12 +256,6 @@ const PurchasesPage = () => {
       {/* ── Search error */}
       {searchError && <div className={styles.errorBanner}>{searchError}</div>}
 
-      {/* ── Prompt when no search yet (Mode B) */}
-      {!urlUserId && !resolvedUserId && !searchError && (
-        <div className={styles.promptBox}>
-          <p>Enter a member email or user ID above to load their orders.</p>
-        </div>
-      )}
 
       {/* ── Fetch error */}
       {fetchError && <div className={styles.errorBanner}>{fetchError}</div>}

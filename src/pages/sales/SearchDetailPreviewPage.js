@@ -5,6 +5,7 @@ import { createReportForIdentity, getExistingReportId } from '../../services/rep
 import { getIdentityContext } from '../../services/searchContext';
 import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
+import { gtmTeaserView } from '../../services/gtm';
 import SearchDetailPreviewVariantA from './SearchDetailPreviewVariantA';
 import SearchDetailPreviewVariantB from './SearchDetailPreviewVariantB';
 import SearchDetailPreviewVariantC from './SearchDetailPreviewVariantC';
@@ -70,6 +71,7 @@ const SearchDetailPreviewPage = () => {
           const personData = JSON.parse(storedPerson);
           setPerson(personData);
           track('teaser_view', { personId: id });
+          gtmTeaserView({ identity_id: id, search_type: personData?.searchType || undefined });
 
           // Only create report if user has an active paid subscription (BC session exists).
           // Attempting this after signup-but-before-payment returns 403 Forbidden from BC.

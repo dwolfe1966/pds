@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
@@ -109,6 +109,11 @@ const NotesPage = () => {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
 
+  // Default view: recent users (BC has no global notes-listing endpoint, so
+  // we surface recent users as a starting point instead of a blank prompt).
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
+
   const showToast = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
@@ -173,6 +178,34 @@ const NotesPage = () => {
   const handleLoadMore = () => {
     if (!resolvedUser || loadingNotes || noMoreDocs) return;
     fetchNotes(resolvedUser._id || resolvedUser.id, lastId);
+  };
+
+  // ── recent users default view ──────────────────────────────────────────────
+
+  useEffect(() => {
+    if (resolvedUser) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingRecent(true);
+      try {
+        const res = await api.adminListUsers({});
+        const list = res?.data?.docs ?? res?.docs ?? (Array.isArray(res?.data) ? res.data : []);
+        if (!cancelled) {
+          const sorted = [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          setRecentUsers(sorted.slice(0, 10));
+        }
+      } catch {
+        if (!cancelled) setRecentUsers([]);
+      } finally {
+        if (!cancelled) setLoadingRecent(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [resolvedUser]);
+
+  const pickRecentUser = (user) => {
+    setResolvedUser(user);
+    fetchNotes(user._id || user.id, null);
   };
 
   // ── create / edit note ─────────────────────────────────────────────────────
@@ -271,10 +304,37 @@ const NotesPage = () => {
         </div>
       )}
 
-      {/* Notes list */}
+      {/* Recent users — default view when no customer selected */}
       {!resolvedUser && !searchError && (
         <div className={styles.emptyState}>
-          <p>Search for a customer above to view and add notes.</p>
+          <p style={{ marginTop: 0, marginBottom: '0.75rem' }}>
+            <strong>Recent customers</strong> — pick one to view and manage their notes, or use the search box above.
+          </p>
+          {loadingRecent && <p>Loading recent customers…</p>}
+          {!loadingRecent && recentUsers.length === 0 && (
+            <p>No customers available. Try searching by email above.</p>
+          )}
+          {recentUsers.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
+              {recentUsers.map((u) => {
+                const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || '(no name)';
+                return (
+                  <button
+                    key={u._id || u.id}
+                    type="button"
+                    onClick={() => pickRecentUser(u)}
+                    style={{
+                      textAlign: 'left', padding: '0.625rem 0.75rem',
+                      border: '1px solid #e0e0e0', borderRadius: 6, background: '#fff', cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>{name}</div>
+                    <div style={{ fontSize: '0.8125rem', color: '#666' }}>{u.email || '—'}</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
