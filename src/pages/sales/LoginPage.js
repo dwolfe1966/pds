@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { track } from '../../services/trackingService';
 import { gtmLogin } from '../../services/gtm';
+import { recordLogin } from '../../services/loginHistory';
 import styles from './LoginPage.module.css';
 
 /**
@@ -37,6 +38,7 @@ const LoginPage = () => {
       const loggedInUser = await login(form.email, form.password);
       track('login', { userRole: loggedInUser?.role || 'member' });
       gtmLogin({ method: 'email' });
+      recordLogin({ method: 'password', source: 'login_page', email: form.email });
       const redirectTo = searchParams.get('redirect');
       const defaultDest = loggedInUser?.role === 'admin' ? '/admin/users' : '/dashboard';
       navigate(redirectTo ? decodeURIComponent(redirectTo) : defaultDest);

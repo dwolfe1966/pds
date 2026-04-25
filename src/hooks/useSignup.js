@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { track } from '../services/trackingService';
 import { gtmEvent, gtmSignUp } from '../services/gtm';
+import { recordLogin } from '../services/loginHistory';
 
 /**
  * Allowed post-signup redirect targets.
@@ -127,6 +128,7 @@ export function useSignup() {
       setRedirectTo(target);
       track('signup_complete', { source: 'signup' });
       gtmSignUp({ method: 'email' });
+      recordLogin({ method: 'signup', source: 'signup_flow', email });
       // BC compliance tracking — record T&C/FCRA agreement timestamp on BC side.
       api.createTracking({
         type: 'agreement',

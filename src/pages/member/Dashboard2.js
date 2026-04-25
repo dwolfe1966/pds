@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { getReportList } from '../../services/reportService';
 import { track } from '../../services/trackingService';
+import { readLoginHistory } from '../../services/loginHistory';
 
 /**
  * Dashboard2 — research-workbench prototype.
@@ -319,6 +320,12 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
 // ─── Activity timeline ─────────────────────────────────────────────────────
 
 function ActivityTimeline({ items, loading }) {
+  const KIND_STYLE = {
+    report: { bg: PAGE.brandSoft,  fg: PAGE.brand,  letter: 'R' },
+    search: { bg: PAGE.accentSoft, fg: PAGE.accent, letter: 'S' },
+    login:  { bg: '#f3e8ff',       fg: '#6b21a8',   letter: 'L' },
+  };
+
   return (
     <section style={{
       background: PAGE.card,
@@ -332,7 +339,7 @@ function ActivityTimeline({ items, loading }) {
       }}>
         <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: PAGE.text }}>Recent Activity</h2>
         <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: PAGE.textMuted }}>
-          Searches you've run and reports you've pulled, newest first.
+          Sign-ins, searches, and reports — newest first.
         </p>
       </header>
 
@@ -354,19 +361,21 @@ function ActivityTimeline({ items, loading }) {
 
       {!loading && items.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: '0.5rem 0' }}>
-          {items.map((item, idx) => (
+          {items.map((item, idx) => {
+            const ks = KIND_STYLE[item.kind] || KIND_STYLE.search;
+            return (
             <li key={`${item.kind}-${item.id || idx}`} style={{
               display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
               padding: '0.5rem 1.25rem',
             }}>
               <div style={{
                 width: 28, height: 28, borderRadius: 6, flexShrink: 0,
-                background: item.kind === 'report' ? PAGE.brandSoft : PAGE.accentSoft,
-                color: item.kind === 'report' ? PAGE.brand : PAGE.accent,
+                background: ks.bg,
+                color: ks.fg,
                 fontSize: '0.72rem', fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {item.kind === 'report' ? 'R' : 'S'}
+                {ks.letter}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '0.875rem', color: PAGE.text }}>{item.label}</div>
@@ -375,7 +384,8 @@ function ActivityTimeline({ items, loading }) {
                 </div>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>
@@ -396,9 +406,15 @@ const Dashboard2 = () => {
   const [pdfCount, setPdfCount] = useState(null);
   const [orders, setOrders] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [logins, setLogins] = useState([]);
 
   const intent = useMemo(() => readSignupIntent(), []);
   const intentCopy = intent ? INTENT_COPY[intent] || INTENT_COPY.other : INTENT_COPY.other;
+
+  // Login history is a localStorage ring buffer maintained by loginHistory.js.
+  useEffect(() => {
+    setLogins(readLoginHistory());
+  }, []);
 
   useEffect(() => {
     track('dashboard2_view', { has_token: !!token });
@@ -453,7 +469,7 @@ const Dashboard2 = () => {
     try { api.downloadPdfReport?.(commerceContentId); } catch {}
   };
 
-  // Merge reports + searches into a single timeline.
+  // Merge reports + searches + logins into a single timeline.
   const activity = useMemo(() => {
     const reportItems = (reports || []).slice(0, 20).map((r) => ({
       kind: 'report',
@@ -473,11 +489,20 @@ const Dashboard2 = () => {
         timestamp: s.createdAt || s.timestamp,
       };
     });
-    return [...reportItems, ...searchItems]
+    const loginItems = (logins || []).slice(0, 20).map((l, i) => {
+      const verb = l.method === 'signup' ? 'Created account' : 'Signed in';
+      return {
+        kind: 'login',
+        id: `login-${i}-${l.timestamp}`,
+        label: `${verb}${l.email ? ` · ${l.email}` : ''}`,
+        timestamp: l.timestamp,
+      };
+    });
+    return [...reportItems, ...searchItems, ...loginItems]
       .filter((x) => x.timestamp)
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 12);
-  }, [reports, searches]);
+      .slice(0, 15);
+  }, [reports, searches, logins]);
 
   const greetingName = user?.firstName || (user?.fullName || '').split(/\s+/)[0] || (user?.email || '').split('@')[0] || 'there';
 
@@ -508,6 +533,56 @@ const Dashboard2 = () => {
             {(reports?.length || 0) === 0 ? intentCopy : `You have ${reports.length} report${reports.length === 1 ? '' : 's'} in your library. Open any one to revisit, or pull a new one below.`}
           </p>
         </header>
+
+        {/* Marketing strip — "we watch the world" framing pinned to what BC
+            actually delivers: continuous data partner refresh + broad coverage. */}
+        <section style={{
+          background: `linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)`,
+          color: '#fff',
+          borderRadius: '0.75rem',
+          padding: '1.1rem 1.25rem',
+          marginBottom: '1rem',
+          display: 'flex',
+          gap: '1.25rem',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{
+              fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: '#bbf7d0',
+            }}>
+              We watch the world's records
+            </div>
+            <h2 style={{
+              margin: '0.2rem 0 0', fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.01em',
+            }}>
+              12B+ public records, refreshed continuously by our data partners.
+            </h2>
+            <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#dcfce7', maxWidth: 580 }}>
+              When you search, you get the latest snapshot of names, phones, addresses, relatives, and arrest records — pulled fresh on demand. Run a search anytime; we keep the data current so you don't have to.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            {[
+              { v: '12B+', l: 'public records' },
+              { v: '50K+', l: 'data sources' },
+              { v: '24/7', l: 'refreshed' },
+            ].map((s) => (
+              <div key={s.l} style={{
+                background: 'rgba(255,255,255,0.12)',
+                borderRadius: '0.5rem',
+                padding: '0.5rem 0.75rem',
+                minWidth: 96, textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, lineHeight: 1.1 }}>{s.v}</div>
+                <div style={{ fontSize: '0.7rem', color: '#bbf7d0', marginTop: '0.1rem', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* Subscription strip */}
         <div style={{ marginBottom: '1rem' }}>
