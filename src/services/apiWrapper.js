@@ -748,7 +748,7 @@ class ApiWrapperService {
       ];
       if (lastOrderId) strategies.forEach((s) => { s.body.lastId = lastOrderId; });
 
-      console.log(`[csrFindUserOrders] /commerceMgnt/userOrders → 404 for userId=${userId}; trying ${strategies.length} /database/search variants`);
+      console.log(`[csrFindUserOrders] /commerceMgnt/userOrders → 404 for userId=${userId}; trying ${strategies.length + 1} /database/search variants`);
 
       for (const strat of strategies) {
         try {
@@ -766,6 +766,37 @@ class ApiWrapperService {
         } catch (sErr) {
           console.log(`[csrFindUserOrders] strategy "${strat.name}" failed: ${sErr?.message}`);
         }
+      }
+
+      // Final brute-force: query commerceOrder unfiltered (BC accepts that —
+      // it's how the OrdersPage global view works) and filter client-side by
+      // payerId. Capped to a few pages so we don't pull the whole dataset.
+      try {
+        const aggregated = [];
+        let cursor = null;
+        const MAX_PAGES = 5; // BC default ~10-50/page → up to ~250 records scanned
+        for (let i = 0; i < MAX_PAGES; i++) {
+          const body = { ...baseBody, ...(cursor ? { lastId: cursor } : {}) };
+          const raw = await this._csrPost('/database/search', body);
+          const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+          if (docs.length === 0) break;
+          aggregated.push(...docs);
+          cursor = docs[docs.length - 1]?._id;
+          if (raw?.noMoreDocs || !cursor) break;
+        }
+        const matched = aggregated.filter((o) => o?.payerId === userId);
+        console.log(`[csrFindUserOrders] strategy "unfiltered+client-filter": ${matched.length} match(es) of ${aggregated.length} scanned`);
+        if (matched.length > 0) {
+          return {
+            orders: matched,
+            perPage: matched.length,
+            noMoreDocs: true,
+            _fallback: 'database-search:unfiltered-client-filter',
+            _scannedCount: aggregated.length,
+          };
+        }
+      } catch (sErr) {
+        console.log(`[csrFindUserOrders] unfiltered+client-filter failed: ${sErr?.message}`);
       }
 
       console.log(`[csrFindUserOrders] all fallback strategies returned empty for userId=${userId}`);
