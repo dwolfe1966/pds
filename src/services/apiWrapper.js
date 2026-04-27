@@ -775,6 +775,13 @@ class ApiWrapperService {
     return await this._csrPost('/commerceMgnt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp });
   }
 
+  // POST /commerce/offer/findByShmName — added 2026-04-21
+  // Returns the offer with transient.priceInfo.s0/s1 and extName.
+  // params: { shmName, key? } — key defaults to 'main' on BC if omitted.
+  async csrFindOfferByShmName(params = {}) {
+    return await this._csrPost('/commerce/offer/findByShmName', params);
+  }
+
   // CSR-initiated billing sale — POST /commerceBilling/sale
   // Used by CS agents to create orders on behalf of users (retention, comp, downsell).
   // Uses the admin session (connect.sid) so BC tags it as a CSR-initiated order.

@@ -260,6 +260,10 @@ export async function routeApiRequest(endpoint, params = {}) {
     'admin-cs-reps',
     'admin-create-cs-rep',
     'admin-update-cs-rep',
+    'admin-update-user',
+    'admin-find-managed-contact',
+    'admin-unsubscribe-managed-contact',
+    'admin-find-offer',
     'admin-cancel-order',
     'admin-order-payments',
     'admin-order-histories',
@@ -781,6 +785,30 @@ async function callNewAPI(endpoint, params) {
     // csrWrapper.api.user.update → POST /user/management/update
     case 'admin-update-cs-rep': {
       return await apiWrapper.csrUpdateUser(params.id, params.body || {});
+    }
+
+    // csrWrapper.api.user.update → POST /user/management/update
+    // Same endpoint as admin-update-cs-rep, but reserved for editing customer
+    // (member) accounts so callers can be wired without semantic confusion.
+    case 'admin-update-user': {
+      return await apiWrapper.csrUpdateUser(params.id, params.body || {});
+    }
+
+    // CSR: locate a user's managedContact record by type + contactAddress.
+    case 'admin-find-managed-contact': {
+      const raw = await apiWrapper.csrFindManagedContacts(params.queryParams || params.body || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
+    }
+
+    // CSR: unsubscribe a managedContact record by _id.
+    case 'admin-unsubscribe-managed-contact': {
+      return await apiWrapper.csrUnsubscribeManagedContact(params.id || params.body?.managedContactId);
+    }
+
+    // CSR: look up an offer by shm name (real plan name + price).
+    case 'admin-find-offer': {
+      return await apiWrapper.csrFindOfferByShmName(params.body || params.queryParams || {});
     }
 
     // csrWrapper.api.user.cancelUncancelOrder → POST /commerceMgnt/cancelUncancelOrder

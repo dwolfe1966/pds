@@ -663,6 +663,28 @@ const api = {
     return await routeApiRequest('admin-update-cs-rep', { id, body });
   },
 
+  // CSR: edit a customer's profile fields (firstName, lastName, email, phone).
+  // Hits the same BC endpoint as adminUpdateCsRep but reserved for member edits.
+  adminUpdateUser: async (id, body) => {
+    return await routeApiRequest('admin-update-user', { id, body });
+  },
+
+  // CSR: locate a managedContact record (email/phone subscription) by type + address.
+  adminFindManagedContact: async (params = {}) => {
+    return await routeApiRequest('admin-find-managed-contact', { queryParams: params });
+  },
+
+  // CSR: unsubscribe a managedContact by _id.
+  adminUnsubscribeManagedContact: async (managedContactId) => {
+    return await routeApiRequest('admin-unsubscribe-managed-contact', { id: managedContactId, body: { managedContactId } });
+  },
+
+  // CSR: look up an offer (plan name + s0/s1 price) by shm name.
+  // Returns the BC offer document; transient.priceInfo holds s0/s1 amounts.
+  adminFindOffer: async ({ shmName, key }) => {
+    return await routeApiRequest('admin-find-offer', { body: { shmName, ...(key ? { key } : {}) } });
+  },
+
   /**
    * Admin: fetch the outbound email log.
    */

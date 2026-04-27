@@ -244,6 +244,26 @@ const UserDetailPage = () => {
   const [agentOrderReason, setAgentOrderReason] = useState('');
   const [agentOrderProcessing, setAgentOrderProcessing] = useState(false);
   const [agentOrderError, setAgentOrderError] = useState('');
+  const [offerCatalog, setOfferCatalog] = useState(null); // null = not loaded yet
+  const [offerCatalogLoading, setOfferCatalogLoading] = useState(false);
+
+  // ── Activity sub-tab ───────────────────────────────────────
+  // 'all' | 'searches' | 'reports' | 'optout'
+  const [activitySubTab, setActivitySubTab] = useState('all');
+
+  // ── Edit user modal ────────────────────────────────────────
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName]   = useState('');
+  const [editEmail, setEditEmail]         = useState('');
+  const [editPhone, setEditPhone]         = useState('');
+  const [editSaving, setEditSaving]       = useState(false);
+  const [editError, setEditError]         = useState('');
+
+  // ── Opt-out actions ────────────────────────────────────────
+  const [optOutBusy, setOptOutBusy] = useState(null); // 'email' | 'phone' | 'data' | null
+  const [showDataRemoval, setShowDataRemoval] = useState(false);
+  const [dataRemovalReason, setDataRemovalReason] = useState('');
 
   // ── Fetch user ────────────────────────────────────────────
   const fetchUser = useCallback(async () => {
@@ -515,12 +535,23 @@ const UserDetailPage = () => {
     }
     setRefundProcessing(true);
     try {
+      // Refresh order so we send the latest revisionIds. Falls back to the
+      // form's stored revision IDs if the refetch fails.
+      let orderRevisionId = refundForm.orderRevisionId;
+      let paymentRevisionId = refundForm.paymentRevisionId;
+      try {
+        const fresh = await api.adminGetOrderDetail(id, refundForm.orderId);
+        if (fresh?.currentRevisionId) orderRevisionId = fresh.currentRevisionId;
+        const freshPayment = (fresh?.commercePayments || []).find((p) => p._id === refundForm.paymentId);
+        if (freshPayment?.currentRevisionId) paymentRevisionId = freshPayment.currentRevisionId;
+      } catch {}
+
       await api.adminRefundPurchase({
         commercePaymentType: refundForm.type,
         targetCommerceOrderId: refundForm.orderId,
-        targetCommerceOrderRevisionId: refundForm.orderRevisionId,
+        targetCommerceOrderRevisionId: orderRevisionId,
         targetCommercePaymentId: refundForm.paymentId,
-        targetCommercePaymentRevisionId: refundForm.paymentRevisionId,
+        targetCommercePaymentRevisionId: paymentRevisionId,
         amount,
       });
       showToast(
@@ -588,25 +619,49 @@ const UserDetailPage = () => {
   };
 
   // Process batch refund (single-order or multi-order)
+  // Re-fetches each affected order before refunding so we use the
+  // current revisionIds — in-memory orders may be stale, and BC rejects
+  // refund calls with mismatched revision IDs.
   const handleBatchRefund = async () => {
     if (!batchRefundConfirm) return;
     setBatchRefundProcessing(true);
-    const { orderId, orderRevisionId, eligiblePayments, multiOrder } = batchRefundConfirm;
+    const { orderId, eligiblePayments, multiOrder } = batchRefundConfirm;
+
+    // Build a unique set of order IDs we need to refresh.
+    const orderIds = multiOrder
+      ? Array.from(new Set(eligiblePayments.map((p) => p._orderId).filter(Boolean)))
+      : [orderId];
+
+    // Refetch each order — capture fresh order revision + per-payment revisions.
+    const freshByOrderId = {};
+    for (const oid of orderIds) {
+      try {
+        const fresh = await api.adminGetOrderDetail(id, oid);
+        freshByOrderId[oid] = fresh;
+      } catch {
+        freshByOrderId[oid] = null;
+      }
+    }
+
     let successCount = 0;
     let failCount = 0;
     for (const payment of eligiblePayments) {
       const amt = payment?.totalPrice?.amount ?? payment?.transient?.amount?.collected ?? 0;
       if (Number(amt) <= 0) continue;
-      // Multi-order: each payment carries its own order context
       const pOrderId = multiOrder ? payment._orderId : orderId;
-      const pOrderRevisionId = multiOrder ? payment._orderRevisionId : orderRevisionId;
+      const fresh = freshByOrderId[pOrderId];
+      // Prefer fresh revision IDs; fall back to in-memory copies if refetch failed.
+      const freshOrderRev = fresh?.currentRevisionId
+        || (multiOrder ? payment._orderRevisionId : orders.find((o) => getOrderId(o) === pOrderId)?.currentRevisionId);
+      const freshPayment = (fresh?.commercePayments || []).find((p) => p._id === payment._id);
+      const freshPaymentRev = freshPayment?.currentRevisionId || payment.currentRevisionId;
       try {
         await api.adminRefundPurchase({
           commercePaymentType: 'refund',
           targetCommerceOrderId: pOrderId,
-          targetCommerceOrderRevisionId: pOrderRevisionId,
+          targetCommerceOrderRevisionId: freshOrderRev,
           targetCommercePaymentId: payment._id,
-          targetCommercePaymentRevisionId: payment.currentRevisionId,
+          targetCommercePaymentRevisionId: freshPaymentRev,
           amount: Number(amt),
         });
         successCount++;
@@ -664,6 +719,199 @@ const UserDetailPage = () => {
 
   const handleViewAllOrders = () => {
     navigate(`/purchases?userId=${id}`);
+  };
+
+  // Three offer keys CS uses — pull real names + prices from BC.
+  // Fallback copy is shown if the lookup fails so the modal is never empty.
+  const AGENT_OFFER_KEYS = [
+    { key: 'comp.offer.signup.main',      desc: 'Standard signup',     fallbackName: 'Standard Plan',     fallbackPrice: '$29.99/mo' },
+    { key: 'comp.offer.agent.retention',  desc: '50% off downsell',     fallbackName: 'Retention Offer',   fallbackPrice: '$14.99/mo' },
+    { key: 'comp.offer.agent.comp',       desc: 'Complimentary',        fallbackName: 'Comp / Free',       fallbackPrice: '$0' },
+  ];
+
+  const formatOfferPrice = (offer) => {
+    const s0 = offer?.transient?.priceInfo?.s0;
+    const s1 = offer?.transient?.priceInfo?.s1;
+    if (s0?.amount === 0) return 'Free';
+    if (s0?.amount && s1?.amount) {
+      return `$${Number(s0.amount).toFixed(2)} → $${Number(s1.amount).toFixed(2)}/mo`;
+    }
+    if (s0?.amount) return `$${Number(s0.amount).toFixed(2)}`;
+    if (s1?.amount) return `$${Number(s1.amount).toFixed(2)}/mo`;
+    return null;
+  };
+
+  const fetchOfferCatalog = useCallback(async () => {
+    setOfferCatalogLoading(true);
+    try {
+      const fetched = await Promise.all(
+        AGENT_OFFER_KEYS.map(async (entry) => {
+          try {
+            const offer = await api.adminFindOffer({ shmName: entry.key });
+            return {
+              key: entry.key,
+              name: offer?.extName || offer?.name || entry.fallbackName,
+              price: formatOfferPrice(offer) || entry.fallbackPrice,
+              desc: entry.desc,
+              live: Boolean(offer?._id),
+            };
+          } catch {
+            return { key: entry.key, name: entry.fallbackName, price: entry.fallbackPrice, desc: entry.desc, live: false };
+          }
+        })
+      );
+      setOfferCatalog(fetched);
+    } finally {
+      setOfferCatalogLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Lazy-load the catalog the first time the modal opens.
+  useEffect(() => {
+    if (showAgentOrder && offerCatalog == null && !offerCatalogLoading) {
+      fetchOfferCatalog();
+    }
+  }, [showAgentOrder, offerCatalog, offerCatalogLoading, fetchOfferCatalog]);
+
+  // ── Edit user ──────────────────────────────────────────────
+  const openEditUser = () => {
+    setEditFirstName(user?.firstName || '');
+    setEditLastName(user?.lastName || '');
+    setEditEmail(user?.email || '');
+    setEditPhone(user?.phone || '');
+    setEditError('');
+    setShowEditUser(true);
+  };
+
+  const handleSaveUserEdit = async (e) => {
+    e?.preventDefault?.();
+    setEditError('');
+    const payload = {};
+    if ((editFirstName || '') !== (user?.firstName || '')) payload.firstName = editFirstName.trim();
+    if ((editLastName  || '') !== (user?.lastName  || '')) payload.lastName  = editLastName.trim();
+    if ((editEmail     || '') !== (user?.email     || '')) payload.email     = editEmail.trim();
+    if ((editPhone     || '') !== (user?.phone     || '')) payload.phone     = editPhone.trim();
+    if (Object.keys(payload).length === 0) {
+      setShowEditUser(false);
+      return;
+    }
+    setEditSaving(true);
+    try {
+      await api.adminUpdateUser(id, payload);
+      // Best-effort audit note so the change is traceable in the user's history.
+      try {
+        const summary = Object.entries(payload).map(([k, v]) => `${k}: "${user?.[k] || ''}" → "${v}"`).join('; ');
+        await api.adminCreateNote({
+          userId: id,
+          message: `CSR EDIT: ${summary}`,
+          contentType: 'text/plain',
+        });
+      } catch {}
+      showToast('User profile updated', 'success');
+      setShowEditUser(false);
+      await fetchUser();
+    } catch (err) {
+      setEditError(err?.message || 'Failed to update user.');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  // ── Opt-out actions ────────────────────────────────────────
+  // Looks up the user's managedContact for the given type+address, then
+  // unsubscribes it. Returns a short status string for the toast.
+  const optOutManagedContact = async (type, address) => {
+    if (!address) return `No ${type} on file — nothing to opt out.`;
+    const res = await api.adminFindManagedContact({
+      type,
+      contactAddress: address,
+      brandId: 'idlookup',
+    });
+    const docs = res?.data ?? res?.docs ?? [];
+    const active = docs.find((d) => d.subStatus !== 'unsubscribed') || docs[0];
+    if (!active) return `No ${type} subscription on file — nothing to opt out.`;
+    if (active.subStatus === 'unsubscribed') return `Already unsubscribed from ${type}.`;
+    await api.adminUnsubscribeManagedContact(active._id || active.id);
+    return `Unsubscribed ${type} (${address}).`;
+  };
+
+  const handleOptOutEmail = async () => {
+    if (!user?.email) { showToast('User has no email on file.', 'info'); return; }
+    if (!window.confirm(`Unsubscribe ${user.email} from marketing email?`)) return;
+    setOptOutBusy('email');
+    try {
+      const msg = await optOutManagedContact('email', user.email);
+      try {
+        await api.adminCreateNote({
+          userId: id,
+          message: `CSR OPT-OUT (email): ${user.email}`,
+          contentType: 'text/plain',
+        });
+      } catch {}
+      showToast(msg, 'success');
+    } catch (err) {
+      showToast(err?.message || 'Email opt-out failed.', 'error');
+    } finally {
+      setOptOutBusy(null);
+    }
+  };
+
+  const handleOptOutPhone = async () => {
+    if (!user?.phone) { showToast('User has no phone on file.', 'info'); return; }
+    if (!window.confirm(`Unsubscribe ${user.phone} from SMS marketing?`)) return;
+    setOptOutBusy('phone');
+    try {
+      const msg = await optOutManagedContact('phone', user.phone);
+      try {
+        await api.adminCreateNote({
+          userId: id,
+          message: `CSR OPT-OUT (phone): ${user.phone}`,
+          contentType: 'text/plain',
+        });
+      } catch {}
+      showToast(msg, 'success');
+    } catch (err) {
+      showToast(err?.message || 'Phone opt-out failed.', 'error');
+    } finally {
+      setOptOutBusy(null);
+    }
+  };
+
+  // BC has no CSR-side endpoint to file an optOutRequest on behalf of a user.
+  // The fallback is a CSR mail to ops + an internal note so the request is
+  // tracked and actionable. Real removal happens off-platform via the partner.
+  const handleRequestDataRemoval = async (e) => {
+    e?.preventDefault?.();
+    if (!dataRemovalReason.trim()) return;
+    setOptOutBusy('data');
+    try {
+      const reason = dataRemovalReason.trim();
+      // Audit note on the user record
+      try {
+        await api.adminCreateNote({
+          userId: id,
+          message: `CSR DATA-REMOVAL REQUEST: ${reason}`,
+          contentType: 'text/plain',
+        });
+      } catch {}
+      // Email summary to ops/finance via the same channel as RefundEmailModal.
+      try {
+        await api.adminCreateCsrMail({
+          targetUserId: id,
+          subject: `Data removal request — ${user?.email || id}`,
+          message: `<p><strong>User:</strong> ${user?.firstName || ''} ${user?.lastName || ''} (${user?.email || ''})</p><p><strong>User ID:</strong> ${id}</p><p><strong>Reason:</strong> ${reason}</p><p>Please process per data-removal SOP.</p>`,
+          contentType: 'text/html',
+        });
+      } catch {}
+      showToast('Data-removal request filed.', 'success');
+      setDataRemovalReason('');
+      setShowDataRemoval(false);
+    } catch (err) {
+      showToast(err?.message || 'Failed to file removal request.', 'error');
+    } finally {
+      setOptOutBusy(null);
+    }
   };
 
   // ── Loading / error states ────────────────────────────────
@@ -1194,6 +1442,25 @@ const UserDetailPage = () => {
                 'USER:phoneSearchTeaserOptOut': 'Opt-Out Phone Search',
               };
 
+              const SEARCH_TYPES = new Set(['USER:nameSearchTeaser', 'USER:phoneSearchTeaser']);
+              const REPORT_TYPES = new Set(['USER:nameSearch', 'USER:phoneSearch']);
+              const OPTOUT_TYPES = new Set(['USER:nameSearchTeaserOptOut', 'USER:phoneSearchTeaserOptOut']);
+
+              const filterFor = (rawType) => {
+                if (activitySubTab === 'searches') return SEARCH_TYPES.has(rawType);
+                if (activitySubTab === 'reports')  return REPORT_TYPES.has(rawType);
+                if (activitySubTab === 'optout')   return OPTOUT_TYPES.has(rawType);
+                return true;
+              };
+
+              const filtered = activities.filter((d) => filterFor(d?.data?.type));
+              const counts = {
+                all: activities.length,
+                searches: activities.filter((d) => SEARCH_TYPES.has(d?.data?.type)).length,
+                reports:  activities.filter((d) => REPORT_TYPES.has(d?.data?.type)).length,
+                optout:   activities.filter((d) => OPTOUT_TYPES.has(d?.data?.type)).length,
+              };
+
               const formatTeaserInput = (input) => {
                 if (!input) return '—';
                 const parts = [];
@@ -1205,8 +1472,38 @@ const UserDetailPage = () => {
                 return parts.length > 0 ? parts.join(', ') : '—';
               };
 
+              const SubTabBtn = ({ value, label }) => (
+                <button
+                  type="button"
+                  onClick={() => setActivitySubTab(value)}
+                  style={{
+                    padding: '0.4rem 0.75rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    borderRadius: 6,
+                    border: '1px solid',
+                    borderColor: activitySubTab === value ? '#0d5d2f' : '#d1d5db',
+                    background: activitySubTab === value ? '#dcfce7' : '#fff',
+                    color: activitySubTab === value ? '#0d5d2f' : '#374151',
+                    cursor: 'pointer',
+                    marginRight: '0.4rem',
+                  }}
+                >
+                  {label} <span style={{ marginLeft: 4, opacity: 0.7 }}>({counts[value]})</span>
+                </button>
+              );
+
               return (
                 <>
+                  {activities.length > 0 && (
+                    <div style={{ marginBottom: '0.875rem', display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                      <SubTabBtn value="all"      label="All" />
+                      <SubTabBtn value="searches" label="Searches" />
+                      <SubTabBtn value="reports"  label="Reports" />
+                      <SubTabBtn value="optout"   label="Opt-out searches" />
+                    </div>
+                  )}
+
                   {activityLoading && activities.length === 0 && (
                     <div className={styles.loadingState}>Loading activity...</div>
                   )}
@@ -1219,7 +1516,12 @@ const UserDetailPage = () => {
                       <p>No activity events found for this user.</p>
                     </div>
                   )}
-                  {activities.length > 0 && (
+                  {!activityLoading && activities.length > 0 && filtered.length === 0 && (
+                    <div className={styles.emptyState}>
+                      <p>No {activitySubTab === 'all' ? 'activity' : activitySubTab} events for this user.</p>
+                    </div>
+                  )}
+                  {filtered.length > 0 && (
                     <div className={styles.tableWrapper}>
                       <table className={styles.table}>
                         <thead>
@@ -1231,7 +1533,7 @@ const UserDetailPage = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {activities.map((doc, idx) => {
+                          {filtered.map((doc, idx) => {
                             const ts = doc?.createdAt;
                             const rawType = doc?.data?.type || '—';
                             const label = TYPE_LABELS[rawType] || rawType;
@@ -1381,6 +1683,42 @@ const UserDetailPage = () => {
                 <h3 className={styles.actionsTitle}>Recommended Actions</h3>
                 <div className={styles.actionsList}>
                   <button
+                    className={styles.actionBtnGreen}
+                    onClick={openEditUser}
+                  >
+                    <span>✎</span>
+                    Edit User Profile
+                  </button>
+
+                  <button
+                    className={styles.actionBtnGray}
+                    onClick={handleOptOutEmail}
+                    disabled={optOutBusy === 'email'}
+                    title={user?.email ? `Unsubscribe ${user.email}` : 'No email on file'}
+                  >
+                    <span>✉</span>
+                    {optOutBusy === 'email' ? 'Opting out…' : 'Opt out of Email'}
+                  </button>
+
+                  <button
+                    className={styles.actionBtnGray}
+                    onClick={handleOptOutPhone}
+                    disabled={optOutBusy === 'phone'}
+                    title={user?.phone ? `Unsubscribe ${user.phone}` : 'No phone on file'}
+                  >
+                    <span>📱</span>
+                    {optOutBusy === 'phone' ? 'Opting out…' : 'Opt out of SMS'}
+                  </button>
+
+                  <button
+                    className={styles.actionBtnRed}
+                    onClick={() => { setDataRemovalReason(''); setShowDataRemoval(true); }}
+                  >
+                    <span>🗑</span>
+                    Request Data Removal
+                  </button>
+
+                  <button
                     className={styles.actionBtnGray}
                     onClick={handlePasswordReset}
                   >
@@ -1501,6 +1839,108 @@ const UserDetailPage = () => {
         />
       )}
 
+      {/* ── Edit User Modal ──────────────────────────────────── */}
+      {showEditUser && (
+        <div className={styles.modalOverlay} onClick={() => !editSaving && setShowEditUser(false)}>
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Edit User Profile</h3>
+            <form onSubmit={handleSaveUserEdit}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <label style={{ fontSize: '0.78rem', color: '#374151' }}>
+                  First name
+                  <input
+                    type="text"
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    style={{ display: 'block', width: '100%', marginTop: '0.25rem', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}
+                  />
+                </label>
+                <label style={{ fontSize: '0.78rem', color: '#374151' }}>
+                  Last name
+                  <input
+                    type="text"
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    style={{ display: 'block', width: '100%', marginTop: '0.25rem', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}
+                  />
+                </label>
+              </div>
+              <label style={{ fontSize: '0.78rem', color: '#374151', display: 'block', marginBottom: '0.75rem' }}>
+                Email
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  style={{ display: 'block', width: '100%', marginTop: '0.25rem', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}
+                />
+              </label>
+              <label style={{ fontSize: '0.78rem', color: '#374151', display: 'block', marginBottom: '0.75rem' }}>
+                Phone
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="10-digit phone"
+                  style={{ display: 'block', width: '100%', marginTop: '0.25rem', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}
+                />
+              </label>
+              {editError && (
+                <p style={{ color: '#b91c1c', fontSize: '0.82rem', margin: '0.25rem 0 0.75rem' }}>{editError}</p>
+              )}
+              <div className={styles.modalActions}>
+                <button type="submit" className={styles.refundConfirmBtn} disabled={editSaving}>
+                  {editSaving ? 'Saving…' : 'Save changes'}
+                </button>
+                <button type="button" className={styles.refundCancelBtn} onClick={() => setShowEditUser(false)} disabled={editSaving}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Data Removal Modal ───────────────────────────────── */}
+      {showDataRemoval && (
+        <div className={styles.modalOverlay} onClick={() => optOutBusy !== 'data' && setShowDataRemoval(false)}>
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Request Data Removal</h3>
+            <p className={styles.modalText}>
+              Files an internal data-removal request for this user. Records an audit note on the account and emails ops with the details. Real removal happens off-platform per SOP.
+            </p>
+            <form onSubmit={handleRequestDataRemoval}>
+              <label style={{ fontSize: '0.82rem', color: '#374151', display: 'block', marginBottom: '0.5rem' }}>
+                Reason / context
+              </label>
+              <textarea
+                value={dataRemovalReason}
+                onChange={(e) => setDataRemovalReason(e.target.value)}
+                rows={4}
+                placeholder="Why is the user requesting removal? Any reference number from the request channel?"
+                style={{ display: 'block', width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}
+              />
+              <div className={styles.modalActions}>
+                <button
+                  type="submit"
+                  className={styles.refundConfirmBtn}
+                  disabled={optOutBusy === 'data' || !dataRemovalReason.trim()}
+                >
+                  {optOutBusy === 'data' ? 'Filing…' : 'File request'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.refundCancelBtn}
+                  onClick={() => setShowDataRemoval(false)}
+                  disabled={optOutBusy === 'data'}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ── Agent Order Modal ───────────────────────────────── */}
       {showAgentOrder && user && (
         <div className={styles.modalOverlay} onClick={() => !agentOrderProcessing && setShowAgentOrder(false)}>
@@ -1511,22 +1951,29 @@ const UserDetailPage = () => {
               This will be logged as a CSR-initiated transaction.
             </p>
 
-            {/* Offer selection */}
-            <label className={styles.agentOrderLabel}>Offer Plan</label>
+            {/* Offer selection — live BC catalog */}
+            <label className={styles.agentOrderLabel}>
+              Offer Plan
+              {offerCatalogLoading && <span style={{ marginLeft: 8, fontSize: '0.78rem', color: '#6b7280' }}>(loading live prices…)</span>}
+            </label>
             <div className={styles.agentOrderOffers}>
-              {[
-                { key: 'comp.offer.signup.main', name: 'Basic Plan', price: '$29.99/mo', desc: 'Standard signup' },
-                { key: 'comp.offer.agent.retention', name: 'Retention Offer', price: '$14.99/mo', desc: '50% off downsell' },
-                { key: 'comp.offer.agent.comp', name: 'Comp / Free Access', price: '$0', desc: 'Complimentary' },
-              ].map(offer => (
+              {(offerCatalog || AGENT_OFFER_KEYS.map((e) => ({
+                key: e.key, name: e.fallbackName, price: e.fallbackPrice, desc: e.desc, live: false,
+              }))).map(offer => (
                 <button
                   key={offer.key}
                   type="button"
                   className={`${styles.agentOrderOfferBtn} ${agentOrderOffer === offer.key ? styles.agentOrderOfferBtnActive : ''}`}
                   onClick={() => setAgentOrderOffer(offer.key)}
                   disabled={agentOrderProcessing}
+                  title={offer.live ? `Live price from BC (${offer.key})` : `Fallback price — BC lookup failed for ${offer.key}`}
                 >
-                  <span className={styles.agentOrderOfferName}>{offer.name}</span>
+                  <span className={styles.agentOrderOfferName}>
+                    {offer.name}
+                    {!offer.live && offerCatalog != null && (
+                      <span style={{ marginLeft: 6, fontSize: '0.65rem', color: '#92400e' }}>· cached</span>
+                    )}
+                  </span>
                   <span className={styles.agentOrderOfferPrice}>{offer.price}</span>
                   <span className={styles.agentOrderOfferDesc}>{offer.desc}</span>
                 </button>
