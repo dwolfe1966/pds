@@ -753,38 +753,59 @@ async function callNewAPI(endpoint, params) {
     case 'admin-purchases-global': {
       const qp = params.queryParams || {};
       const limit = Math.max(1, Math.min(100, Number(qp.limit) || 10));
-      const userPoolSize = Math.max(5, Math.min(100, Number(qp.userPoolSize) || 25));
+      const userPoolSize = Math.max(5, Math.min(100, Number(qp.userPoolSize) || 50));
+
+      // Diagnostics object always returned alongside data so the UI can show
+      // CSRs exactly what BC did with each strategy.
+      const diag = {
+        triedGlobal: false, globalCount: 0, globalError: null,
+        triedFanout: false, usersScanned: 0, usersWithOrders: 0,
+        fanoutOrderCount: 0, fanoutError: null,
+      };
 
       // 1. Fast path — try BC's global commerceOrder search first.
       let globalErr = null;
       try {
+        diag.triedGlobal = true;
         const raw = await apiWrapper.csrFindOrders(qp);
         const items = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+        diag.globalCount = items.length;
         if (items.length > 0) {
           return {
             data: items.slice(0, limit),
             total: raw?.total ?? items.length,
             noMoreDocs: raw?.noMoreDocs,
             source: 'global',
+            diagnostics: diag,
           };
         }
       } catch (err) {
         globalErr = err;
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[admin-purchases-global] global search failed, falling back to fan-out:', err?.message);
-        }
+        diag.globalError = err?.message || 'failed';
+        console.log('[admin-purchases-global] global search failed:', err?.message);
       }
 
-      // 2. Fan-out fallback — pull recent customers, merge their orders.
+      // 2. Fan-out — pull recent customers, merge their orders.
+      let recentUsers = [];
       try {
+        diag.triedFanout = true;
         const usersRes = await apiWrapper.csrFindUsers({ brandId: 'idlookup' });
         const users = usersRes?.docs ?? usersRes?.users ?? usersRes?.data ?? (Array.isArray(usersRes) ? usersRes : []);
+        recentUsers = users;
         const userIds = users.slice(0, userPoolSize)
           .map((u) => u?._id || u?.id)
           .filter(Boolean);
+        diag.usersScanned = userIds.length;
 
         if (userIds.length === 0) {
-          return { data: [], total: 0, noMoreDocs: true, source: 'fanout-empty' };
+          return {
+            data: [],
+            total: 0,
+            noMoreDocs: true,
+            source: 'fanout-empty',
+            diagnostics: diag,
+            recentUsers: [],
+          };
         }
 
         const settle = (p) => p.then((v) => v).catch(() => null);
@@ -795,27 +816,37 @@ async function callNewAPI(endpoint, params) {
         const merged = [];
         orderPages.forEach((page, i) => {
           const arr = page?.orders ?? page?.docs ?? page?.data ?? (Array.isArray(page) ? page : []);
+          if (arr.length > 0) diag.usersWithOrders += 1;
           arr.forEach((o) => {
-            // Tag each order with the source userId so the UI can deep-link
-            // to /admin/purchases?userId=… without an extra lookup.
             merged.push({ ...o, _resolvedUserId: o.payerId || userIds[i] });
           });
         });
 
+        diag.fanoutOrderCount = merged.length;
         merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+        console.log('[admin-purchases-global] diagnostics:', diag);
 
         return {
           data: merged.slice(0, limit),
           total: merged.length,
           noMoreDocs: merged.length <= limit,
-          source: 'fanout',
+          source: merged.length > 0 ? 'fanout' : 'fanout-empty',
           userPoolSize: userIds.length,
+          diagnostics: diag,
+          // Pass the recent-users list back so the UI can render a "lobby"
+          // when no orders surface.
+          recentUsers: recentUsers.slice(0, userPoolSize).map((u) => ({
+            _id: u._id || u.id,
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            createdAt: u.createdAt,
+          })),
         };
       } catch (fanoutErr) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[admin-purchases-global] fan-out also failed:', fanoutErr?.message);
-        }
-        // Surface the original global error if both paths fail.
+        diag.fanoutError = fanoutErr?.message || 'failed';
+        console.log('[admin-purchases-global] fan-out failed:', fanoutErr?.message, diag);
         throw globalErr || fanoutErr;
       }
     }

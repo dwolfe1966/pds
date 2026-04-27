@@ -735,9 +735,9 @@ class ApiWrapperService {
       return await this._csrPost('/commerceMgnt/userOrders', params);
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[csrFindUserOrders] /commerceMgnt/userOrders unavailable, falling back to /database/search payerId query');
-      }
+      // Logging always-on — this is a known BC inconsistency we want visible
+      // in production console while we settle on the right approach.
+      console.log('[csrFindUserOrders] /commerceMgnt/userOrders → 404, retrying via /database/search payerId query');
       const { userId, lastOrderId } = params;
       if (!userId) throw err;
       const body = {
@@ -748,6 +748,7 @@ class ApiWrapperService {
       if (lastOrderId) body.lastId = lastOrderId;
       const raw = await this._csrPost('/database/search', body);
       const orders = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      console.log(`[csrFindUserOrders] fallback returned ${orders.length} order(s) for userId=${userId}`);
       return {
         orders,
         perPage: orders.length,

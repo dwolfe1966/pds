@@ -90,10 +90,13 @@ const OrdersPage = () => {
   const [fetchError, setFetchError] = useState('');
   const [isGlobalView, setIsGlobalView] = useState(!urlUserId); // true when showing default recent list
   const [globalListUnavailable, setGlobalListUnavailable] = useState(false);
-  // 'global' | 'fanout' | null — tells the user whether the list came from
-  // BC's real commerceOrder search or our recent-customer fan-out fallback.
+  // 'global' | 'fanout' | 'fanout-empty' | null — tells the user whether the
+  // list came from BC's real commerceOrder search or our recent-customer
+  // fan-out fallback (and whether the fallback also came up empty).
   const [globalSource, setGlobalSource] = useState(null);
   const [globalUserPoolSize, setGlobalUserPoolSize] = useState(null);
+  const [globalDiagnostics, setGlobalDiagnostics] = useState(null);
+  const [recentCustomers, setRecentCustomers] = useState([]);
 
   // Pending sidebar filters
   const [pendingOrderId, setPendingOrderId] = useState('');
@@ -115,6 +118,8 @@ const OrdersPage = () => {
     setGlobalListUnavailable(false);
     setGlobalSource(null);
     setGlobalUserPoolSize(null);
+    setGlobalDiagnostics(null);
+    setRecentCustomers([]);
     try {
       const res = await api.adminListOrdersGlobal({ limit: 10 });
       const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
@@ -123,6 +128,8 @@ const OrdersPage = () => {
       setIsGlobalView(true);
       setGlobalSource(res?.source || null);
       setGlobalUserPoolSize(res?.userPoolSize || null);
+      setGlobalDiagnostics(res?.diagnostics || null);
+      setRecentCustomers(Array.isArray(res?.recentUsers) ? res.recentUsers : []);
     } catch (err) {
       // BC may not support global commerceOrder search without a filter param.
       // Surface a clear message so CSR knows the call failed rather than assuming zero orders.
@@ -280,8 +287,61 @@ const OrdersPage = () => {
           fontSize: '0.82rem',
           margin: '0 0 1rem',
         }}>
-          <strong>Recent-customer view:</strong> showing the newest orders across the {globalUserPoolSize ?? 'last 25'} most-recent customers. Search by email or user ID above to see a specific account's full history.
+          <strong>Recent-customer view:</strong> showing the newest orders across the {globalUserPoolSize ?? 50} most-recent customers. Search by email or user ID above to see a specific account's full history.
         </div>
+      )}
+
+      {/* "Recent customers" lobby — shown when no orders surface (BC's global
+          commerceOrder search and our user fan-out both returned empty). The
+          users list itself comes from a known-working endpoint, so CSRs can
+          drill into a customer's order history without hitting a dead end. */}
+      {isGlobalView && !loading && !resolvedUserId && orders.length === 0 && recentCustomers.length > 0 && (
+        <section style={{ marginBottom: '1.25rem' }}>
+          <div style={{
+            background: '#fef3c7', border: '1px solid #fde68a', color: '#92400e',
+            borderRadius: '0.5rem', padding: '0.5rem 0.875rem', fontSize: '0.82rem',
+            marginBottom: '0.75rem',
+          }}>
+            <strong>No recent orders surfaced from BC.</strong> Showing the {recentCustomers.length} most-recent customers below — click any to view their full order history.
+            {globalDiagnostics && (
+              <details style={{ marginTop: '0.4rem' }}>
+                <summary style={{ cursor: 'pointer', fontSize: '0.78rem' }}>diagnostics</summary>
+                <pre style={{ margin: '0.4rem 0 0', fontSize: '0.72rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+{JSON.stringify(globalDiagnostics, null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflow: 'hidden' }}>
+            {recentCustomers.slice(0, 25).map((u, idx) => {
+              const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u._id;
+              return (
+                <Link
+                  key={u._id || idx}
+                  to={`/users/${u._id}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.75rem',
+                    padding: '0.55rem 0.875rem',
+                    borderBottom: idx < Math.min(recentCustomers.length, 25) - 1 ? '1px solid #e5e7eb' : 'none',
+                    color: '#111827', textDecoration: 'none', fontSize: '0.875rem',
+                  }}
+                >
+                  <span style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: '#dcfce7', color: '#0d5d2f',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.78rem', fontWeight: 700, flexShrink: 0,
+                  }}>{(name || '?').charAt(0).toUpperCase()}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{u.email || '—'}</div>
+                  </div>
+                  <span style={{ fontSize: '0.78rem', color: '#1a56db', fontWeight: 600 }}>View orders →</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Main area: sidebar + table — always shown */}
