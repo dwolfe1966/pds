@@ -768,24 +768,36 @@ class ApiWrapperService {
         }
       }
 
-      // Final brute-force: query commerceOrder unfiltered (BC accepts that —
-      // it's how the OrdersPage global view works) and filter client-side by
-      // payerId. Capped to a few pages so we don't pull the whole dataset.
+      // Final brute-force: query commerceOrder unfiltered with sort=newest
+      // first (BC's default appears to be insertion order = oldest first,
+      // which means a brand-new user's order sits at page 9000-something).
+      // We pass a few sort variants since the exact param BC honors isn't
+      // documented; whichever is recognized takes precedence.
       try {
         const aggregated = [];
         let cursor = null;
-        const MAX_PAGES = 5; // BC default ~10-50/page → up to ~250 records scanned
+        const MAX_PAGES = 10; // ~500 records scanned with default page size
         for (let i = 0; i < MAX_PAGES; i++) {
-          const body = { ...baseBody, ...(cursor ? { lastId: cursor } : {}) };
+          const body = {
+            ...baseBody,
+            sort: { createdAt: -1 },
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+            ...(cursor ? { lastId: cursor } : {}),
+          };
           const raw = await this._csrPost('/database/search', body);
           const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
           if (docs.length === 0) break;
           aggregated.push(...docs);
+          // Early-exit if we've already found a match in this page.
+          const earlyMatch = aggregated.some((o) => o?.payerId === userId);
           cursor = docs[docs.length - 1]?._id;
-          if (raw?.noMoreDocs || !cursor) break;
+          if (earlyMatch || raw?.noMoreDocs || !cursor) break;
         }
         const matched = aggregated.filter((o) => o?.payerId === userId);
-        console.log(`[csrFindUserOrders] strategy "unfiltered+client-filter": ${matched.length} match(es) of ${aggregated.length} scanned`);
+        const oldestScanned = aggregated[aggregated.length - 1]?.createdAt;
+        const newestScanned = aggregated[0]?.createdAt;
+        console.log(`[csrFindUserOrders] strategy "unfiltered+client-filter": ${matched.length} match(es) of ${aggregated.length} scanned (range: ${newestScanned || '?'} → ${oldestScanned || '?'})`);
         if (matched.length > 0) {
           return {
             orders: matched,
