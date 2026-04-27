@@ -19,7 +19,6 @@ const navLinks = [
   { path: '/tickets',      label: 'Tickets' },
   { path: '/mail-log',     label: 'Mail Log' },
   { path: '/cs-reps',      label: 'CS Reps' },
-  { path: '/email',        label: 'Broadcast' },
   { path: '/analytics',    label: 'Analytics' },
   { path: '/sessions',     label: 'Activity & Logs' },
 ];

@@ -76,7 +76,6 @@ import PurchaseDetailPage from './pages/admin/PurchaseDetailPage';
 import DataRemovalPage from './pages/admin/DataRemovalPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
-import EmailBroadcastPage from './pages/admin/EmailBroadcastPage';
 
 import UnsubscribePage from './pages/admin/UnsubscribePage';
 import NotesPage from './pages/admin/NotesPage';
@@ -360,15 +359,6 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/admin/email"
-            element={
-              <ProtectedRoute role="admin">
-                <EmailBroadcastPage />
-              </ProtectedRoute>
-            }
-          />
-
           <Route
             path="/admin/email-search"
             element={<Navigate to="/admin/users" replace />}

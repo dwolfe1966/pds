@@ -12,7 +12,6 @@ import PurchaseDetailPage from './pages/admin/PurchaseDetailPage';
 import DataRemovalPage from './pages/admin/DataRemovalPage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import CsRepManagementPage from './pages/admin/CsRepManagementPage';
-import EmailBroadcastPage from './pages/admin/EmailBroadcastPage';
 import UnsubscribePage from './pages/admin/UnsubscribePage';
 import NotesPage from './pages/admin/NotesPage';
 import EmailTicketsPage from './pages/admin/EmailTicketsPage';
@@ -94,7 +93,6 @@ const AdminApp = () => {
           <Route path="/tickets" element={<AdminRoute><EmailTicketsPage /></AdminRoute>} />
           <Route path="/mail-log" element={<AdminRoute><MailActivityPage /></AdminRoute>} />
           <Route path="/cs-reps" element={<AdminRoute><CsRepManagementPage /></AdminRoute>} />
-          <Route path="/email" element={<AdminRoute><EmailBroadcastPage /></AdminRoute>} />
           <Route path="/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
           <Route path="/permissions" element={<AdminRoute><PermissionsPage /></AdminRoute>} />
           <Route path="/content" element={<AdminRoute><ContentPage /></AdminRoute>} />
