@@ -744,6 +744,37 @@ class ApiWrapperService {
   }
 
   /**
+   * Prefer the CSR IIFE method for a given dot-path; fall back to the
+   * supplied async function if the wrapper isn't loaded or the method
+   * doesn't exist (or throws). Use this anywhere we'd otherwise call
+   * _csrPost('/some/path', body) directly so BC's wrapper handles the
+   * canonical URL/auth/error envelope.
+   *
+   * @param {string} dotPath e.g. 'api.user.findOrders'
+   * @param {*} args         passed straight through to the wrapper method
+   * @param {() => Promise<*>} fallback
+   */
+  async _viaCsr(dotPath, args, fallback) {
+    try {
+      const csr = await this.getCsrWrapper();
+      if (csr) {
+        const parts = dotPath.split('.');
+        let parent = csr;
+        for (let i = 0; i < parts.length - 1; i++) {
+          parent = parent == null ? parent : parent[parts[i]];
+        }
+        const fn = parent == null ? null : parent[parts[parts.length - 1]];
+        if (typeof fn === 'function') {
+          return await fn.call(parent, args);
+        }
+      }
+    } catch (err) {
+      console.log(`[CsrWrapper] ${dotPath} threw, falling back: ${err?.message}`);
+    }
+    return await fallback();
+  }
+
+  /**
    * GET to a csrWrapper endpoint. Mirrors _csrPost for GET-only BC routes.
    */
   async _csrGet(path) {
@@ -771,29 +802,34 @@ class ApiWrapperService {
 
   // csrWrapper.api.user.find — POST /database/search
   async csrFindUsers(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', ...params });
+    const args = { brandId: 'idlookup', ...params };
+    return await this._viaCsr('api.user.find', args,
+      () => this._csrPost('/database/search', { collectionName: 'users', ...args }));
   }
 
   // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)
-  // BC findAdmin is a separate IIFE method; via _csrPost we call /database/search
-  // with isAdmin flag. If BC ignores it, we filter client-side in apiRouter.
   async csrFindCsReps(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', isAdmin: true, ...params });
+    const args = { brandId: 'idlookup', ...params };
+    return await this._viaCsr('api.user.findAdmin', args,
+      () => this._csrPost('/database/search', { collectionName: 'users', isAdmin: true, ...args }));
   }
 
   // csrWrapper.api.user.getUserDetail — POST /user/management/detail
   async csrGetUserDetail(userId) {
-    return await this._csrPost('/user/management/detail', { userId });
+    return await this._viaCsr('api.user.getUserDetail', { userId },
+      () => this._csrPost('/user/management/detail', { userId }));
   }
 
   // csrWrapper.api.user.update — POST /user/management/update
   async csrUpdateUser(userId, body = {}) {
-    return await this._csrPost('/user/management/update', { userId, ...body });
+    return await this._viaCsr('api.user.update', { userId, ...body },
+      () => this._csrPost('/user/management/update', { userId, ...body }));
   }
 
   // csrWrapper.api.user.create — POST /user/management/create
   async csrCreateUser(body = {}) {
-    return await this._csrPost('/user/management/create', body);
+    return await this._viaCsr('api.user.create', body,
+      () => this._csrPost('/user/management/create', body));
   }
 
   // csrWrapper.api.user.findOrders — POST /commerceMgnt/userOrders
@@ -948,7 +984,9 @@ class ApiWrapperService {
 
   // Global order search via /database/search — collectionName: 'commerceOrder'
   async csrFindOrders(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'commerceOrder', ...params });
+    const args = { brandId: 'idlookup', ...params };
+    return await this._viaCsr('api.user.findOrders', args,
+      () => this._csrPost('/database/search', { collectionName: 'commerceOrder', ...args }));
   }
 
   // csrWrapper.api.user.getOrder — POST /commerceMgnt/getUserOrder
@@ -994,14 +1032,16 @@ class ApiWrapperService {
   // csrWrapper.api.user.cancelUncancelOrder — POST /commerceMgnt/cancelUncancelOrder
   // flag: true = cancel, false = uncancel
   async csrCancelUncancelOrder(orderId, flag) {
-    return await this._csrPost('/commerceMgnt/cancelUncancelOrder', { orderId, flag });
+    return await this._viaCsr('api.user.cancelUncancelOrder', { orderId, flag },
+      () => this._csrPost('/commerceMgnt/cancelUncancelOrder', { orderId, flag }));
   }
 
   // csrWrapper.api.user.refundVoidOrder — POST /commerceBilling/correct
   // params: { commercePaymentType, targetCommerceOrderId, targetCommerceOrderRevisionId,
   //           targetCommercePaymentId, targetCommercePaymentRevisionId, amount }
   async csrRefundVoidOrder(params = {}) {
-    return await this._csrPost('/commerceBilling/correct', params);
+    return await this._viaCsr('api.user.refundVoidOrder', params,
+      () => this._csrPost('/commerceBilling/correct', params));
   }
 
   // csrWrapper.api.user.findOrderPayments — POST /commerceMgnt/orderPayments
@@ -1009,7 +1049,8 @@ class ApiWrapperService {
   async csrFindOrderPayments(orderId, lastPaymentId) {
     const body = { orderId };
     if (lastPaymentId) body.lastPaymentId = lastPaymentId;
-    return await this._csrPost('/commerceMgnt/orderPayments', body);
+    return await this._viaCsr('api.user.findOrderPayments', body,
+      () => this._csrPost('/commerceMgnt/orderPayments', body));
   }
 
   // csrWrapper.api.user.findOrderHistories — POST /commerceMgnt/orderHistories
@@ -1017,32 +1058,38 @@ class ApiWrapperService {
   async csrFindOrderHistories(orderId, lastRevisionId) {
     const body = { orderId };
     if (lastRevisionId) body.lastRevisionId = lastRevisionId;
-    return await this._csrPost('/commerceMgnt/orderHistories', body);
+    return await this._viaCsr('api.user.findOrderHistories', body,
+      () => this._csrPost('/commerceMgnt/orderHistories', body));
   }
 
   // csrWrapper.api.user.updateScheduleDueTimestamp — POST /commerceMgnt/updateScheduleDueTimestamp
   // params: { scheduleId, dueTimestamp }
   async csrUpdateScheduleDueTimestamp(scheduleId, dueTimestamp) {
-    return await this._csrPost('/commerceMgnt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp });
+    return await this._viaCsr('api.user.updateScheduleDueTimestamp', { scheduleId, dueTimestamp },
+      () => this._csrPost('/commerceMgnt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp }));
   }
 
   // POST /commerce/offer/findByShmName — added 2026-04-21
   // Returns the offer with transient.priceInfo.s0/s1 and extName.
   // params: { shmName, key? } — key defaults to 'main' on BC if omitted.
   async csrFindOfferByShmName(params = {}) {
-    return await this._csrPost('/commerce/offer/findByShmName', params);
+    return await this._viaCsr('api.offer.findByShmName', params,
+      () => this._csrPost('/commerce/offer/findByShmName', params));
   }
 
   // CSR-initiated billing sale — POST /commerceBilling/sale
   // Used by CS agents to create orders on behalf of users (retention, comp, downsell).
   // Uses the admin session (connect.sid) so BC tags it as a CSR-initiated order.
   async csrCreateOrder(params = {}) {
-    return await this._csrPost('/commerceBilling/sale', params);
+    return await this._viaCsr('api.billing.sale', params,
+      () => this._csrPost('/commerceBilling/sale', params));
   }
 
   // csrWrapper.api.optOut.find — POST /database/search
   async csrFindOptOuts(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });
+    const args = { brandId: 'idlookup', ...params };
+    return await this._viaCsr('api.optOut.find', args,
+      () => this._csrPost('/database/search', { collectionName: 'optOutRequest', ...args }));
   }
 
   // csrWrapper.api.user.findUserContacts — POST /database/search (collectionName: userContact)
@@ -1052,7 +1099,8 @@ class ApiWrapperService {
     const { userId, ...rest } = params;
     const body = { collectionName: 'userContact', ...rest };
     if (userId) body.targetUserId = userId;
-    return await this._csrPost('/database/search', body);
+    return await this._viaCsr('api.user.findUserContacts', { userId, ...rest },
+      () => this._csrPost('/database/search', body));
   }
 
   // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
@@ -1064,6 +1112,14 @@ class ApiWrapperService {
     const { userId, message, contentType = 'text/plain', attachments } = params;
     const body = { userId, message, contentType };
     if (attachments) body.attachments = attachments;
+    // Prefer the IIFE method when available — it knows the canonical path.
+    try {
+      const csr = await this.getCsrWrapper();
+      const fn = csr?.api?.message?.note?.createUserAdminNote;
+      if (typeof fn === 'function') return await fn.call(csr.api.message.note, body);
+    } catch (csrErr) {
+      console.log('[csrCreateAdminNote] CsrWrapper failed, falling back:', csrErr?.message);
+    }
     try {
       return await this._csrPost('/message/admin/createNote', body);
     } catch (err) {
@@ -1085,13 +1141,21 @@ class ApiWrapperService {
     const { contactMessageId, message, contentType = 'text/plain', attachments } = params;
     const body = { contactMessageId, message, contentType };
     if (attachments) body.attachments = attachments;
-    return await this._csrPost('/message/admin/createNote', body);
+    return await this._viaCsr('api.message.note.createContactAdminNote', body,
+      () => this._csrPost('/message/admin/createNote', body));
   }
 
   // csrWrapper.api.message.note.updateAdminNote — POST /message/admin/updateNote
   // params: { messageId, message }
   // Dual-stack: try new path, fall back to legacy if BC hasn't deployed yet.
   async csrUpdateAdminNote(params = {}) {
+    try {
+      const csr = await this.getCsrWrapper();
+      const fn = csr?.api?.message?.note?.updateAdminNote;
+      if (typeof fn === 'function') return await fn.call(csr.api.message.note, params);
+    } catch (csrErr) {
+      console.log('[csrUpdateAdminNote] CsrWrapper failed, falling back:', csrErr?.message);
+    }
     try {
       return await this._csrPost('/message/admin/updateNote', params);
     } catch (err) {
@@ -1108,17 +1172,20 @@ class ApiWrapperService {
   // csrWrapper.api.user.createCsrMail — POST /message/admin/user/csrMail/create
   // params: { targetUserId, subject, message }
   async csrCreateCsrMail(params = {}) {
-    return await this._csrPost('/message/admin/user/csrMail/create', params);
+    return await this._viaCsr('api.user.createCsrMail', params,
+      () => this._csrPost('/message/admin/user/csrMail/create', params));
   }
 
   // csrWrapper.api.message.contact.find — GET /api/contactMessage/admin/find
   // Lists all contactMessages (member-linked and non-member) sorted by latest reply
   // or by contact date if no reply exists. Each record may include a latestReply.
   async csrFindContactMessages(params = {}) {
-    const qs = new URLSearchParams();
-    if (params.lastId) qs.set('lastId', params.lastId);
-    const suffix = qs.toString() ? `?${qs.toString()}` : '';
-    return await this._csrGet(`/contactMessage/admin/find${suffix}`);
+    return await this._viaCsr('api.message.contact.find', params, () => {
+      const qs = new URLSearchParams();
+      if (params.lastId) qs.set('lastId', params.lastId);
+      const suffix = qs.toString() ? `?${qs.toString()}` : '';
+      return this._csrGet(`/contactMessage/admin/find${suffix}`);
+    });
   }
 
   // csrWrapper.api.user.findUserContacts — POST /contactMessage/admin/find/:targetUserId
@@ -1165,10 +1232,12 @@ class ApiWrapperService {
   // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
   // Returns the full thread (contact + user/csr replies) for a contact message.
   async csrFindContactHistories(params = {}) {
-    const qs = new URLSearchParams();
-    if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
-    if (params.lastId) qs.set('lastId', params.lastId);
-    return await this._csrGet(`/contactMessage/admin/histories?${qs.toString()}`);
+    return await this._viaCsr('api.message.contact.histories', params, () => {
+      const qs = new URLSearchParams();
+      if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
+      if (params.lastId) qs.set('lastId', params.lastId);
+      return this._csrGet(`/contactMessage/admin/histories?${qs.toString()}`);
+    });
   }
 
   // csrWrapper.api.message.contact.createCsrReply — POST /message/admin/user/csrMail/create
@@ -1176,58 +1245,69 @@ class ApiWrapperService {
   // params: { contactMessageId, subject, message, contentType, attachments? }
   async csrCreateCsrReply(params = {}) {
     const { contentType = 'text/html', ...rest } = params;
-    return await this._csrPost('/message/admin/user/csrMail/create', { contentType, ...rest });
+    const body = { contentType, ...rest };
+    return await this._viaCsr('api.message.contact.createCsrReply', body,
+      () => this._csrPost('/message/admin/user/csrMail/create', body));
   }
 
   // csrWrapper.api.message.contact.setActor — POST /contactMessage/admin/setActor
   // Assigns an admin/CSR user to the contact message. actorId defaults to the caller.
   async csrSetContactActor(params = {}) {
-    return await this._csrPost('/contactMessage/admin/setActor', params);
+    return await this._viaCsr('api.message.contact.setActor', params,
+      () => this._csrPost('/contactMessage/admin/setActor', params));
   }
 
   // csrWrapper.api.message.contact.setTargetUser — POST /contactMessage/admin/setTargetUserId
   // Links a contactMessage to a specific user so it appears in findUserContacts.
   async csrSetContactTargetUser(params = {}) {
-    return await this._csrPost('/contactMessage/admin/setTargetUserId', params);
+    return await this._viaCsr('api.message.contact.setTargetUser', params,
+      () => this._csrPost('/contactMessage/admin/setTargetUserId', params));
   }
 
   // csrWrapper.api.message.contact.setTags — POST /contactMessage/admin/setTags
   // Replaces all tags (stored in message.index) with the provided array.
   async csrSetContactTags(params = {}) {
-    return await this._csrPost('/contactMessage/admin/setTags', params);
+    return await this._viaCsr('api.message.contact.setTags', params,
+      () => this._csrPost('/contactMessage/admin/setTags', params));
   }
 
   // csrWrapper.api.message.contact.replyLinkUrl — GET /contactMessage/admin/replyUrl
   // Returns the reply link URL that the user would receive via email.
   async csrGetContactReplyLinkUrl(params = {}) {
-    const qs = new URLSearchParams();
-    if (params.messageId) qs.set('messageId', params.messageId);
-    return await this._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`);
+    return await this._viaCsr('api.message.contact.replyLinkUrl', params, () => {
+      const qs = new URLSearchParams();
+      if (params.messageId) qs.set('messageId', params.messageId);
+      return this._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`);
+    });
   }
 
   // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)
   // params: { type ('email'|'phone'), contactAddress?, lastId? }
   async csrFindManagedContacts(params = {}) {
-    return await this._csrPost('/database/search', { collectionName: 'managedContact', ...params });
+    return await this._viaCsr('api.managedContact.find', params,
+      () => this._csrPost('/database/search', { collectionName: 'managedContact', ...params }));
   }
 
   // csrWrapper.api.managedContact.unsubscribe — POST /managedContact/management/unsubscribe
   // params: { managedContactId }
   async csrUnsubscribeManagedContact(managedContactId) {
-    return await this._csrPost('/managedContact/management/unsubscribe', { managedContactId });
+    return await this._viaCsr('api.managedContact.unsubscribe', { managedContactId },
+      () => this._csrPost('/managedContact/management/unsubscribe', { managedContactId }));
   }
 
   // csrWrapper.api.contact.find — POST /database/search (collectionName: contact)
   // Finds visitor contact messages. Params: { status?, brandId?, email?, lastId? }
   async csrFindContacts(params = {}) {
-    return await this._csrPost('/database/search', { collectionName: 'contact', ...params });
+    return await this._viaCsr('api.contact.find', params,
+      () => this._csrPost('/database/search', { collectionName: 'contact', ...params }));
   }
 
   // csrWrapper.api.contact.changeContactToUserContact — POST /message/admin/user/changeContactToUserContact
   // Links a visitor contact message to a real user account.
   // Params: { messageId, targetUserId }
   async csrChangeContactToUserContact(params = {}) {
-    return await this._csrPost('/message/admin/user/changeContactToUserContact', params);
+    return await this._viaCsr('api.contact.changeContactToUserContact', params,
+      () => this._csrPost('/message/admin/user/changeContactToUserContact', params));
   }
 
   // csrWrapper.api.tracking.findUser — POST /database/search
@@ -1237,8 +1317,9 @@ class ApiWrapperService {
   // USER:nameSearchTeaserOptOut, USER:phoneSearchTeaserOptOut,
   // USER:nameSearch, USER:phoneSearch, USER:login (2026-04-13).
   async csrFindUserTracking(params = {}) {
-    const body = { collectionName: 'tracking', brandId: 'idlookup', ...params };
-    return await this._csrPost('/database/search', body);
+    const args = { brandId: 'idlookup', ...params };
+    return await this._viaCsr('api.tracking.findUser', args,
+      () => this._csrPost('/database/search', { collectionName: 'tracking', ...args }));
   }
 
   /** Generate a random 32-char alphanumeric string matching the IIFE's format. */
