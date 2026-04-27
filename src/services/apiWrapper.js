@@ -8,9 +8,12 @@
 // Candidate URLs for BC's CSR IIFE. We don't know which (if any) is correct —
 // they're attempted in order at first-CSR-call. Whichever responds with a
 // script that defines window.CsrWrapper wins, and the choice is cached.
+// Confirmed by ByteCrtrs as the CSR IIFE URL on dev1. The admin.html bundle
+// preloads this via a static <script> tag, so loadCsrIife() is normally a
+// no-op (window.CsrWrapper is already defined). The runtime list remains as
+// a fallback in case the static tag fails to load (CORS, 503, etc.).
 const CSR_IIFE_CANDIDATES = [
-  'https://dev.www.bytecrtrs.com/libs/cs-wrapper/index.iife.js',
-  'https://dev.www.idlookup.ai/libs/cs-wrapper/index.iife.js',
+  'https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js',
   'https://dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js',
   'https://dev.www.idlookup.ai/libs/csr-wrapper/index.iife.js',
 ];

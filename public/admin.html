@@ -9,6 +9,10 @@
   <script src="https://cdn.jsdelivr.net/npm/axios@1.13.2/dist/axios.min.js"></script>
   <!-- ByteCrtrs API wrapper — always loads the latest version from BC's CDN -->
   <script src="https://dev.www.idlookup.ai/libs/api-wrapper/index.iife.js"></script>
+  <!-- ByteCrtrs CSR wrapper — exposes window.CsrWrapper for admin-only endpoints
+       (commerceMgnt/userOrders, contactMessage/admin/find/:targetUserId, etc.).
+       Without this we'd be guessing at URLs via /database/search fallbacks. -->
+  <script src="https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js"></script>
 </head>
 
 <body>
