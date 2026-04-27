@@ -735,26 +735,41 @@ class ApiWrapperService {
       return await this._csrPost('/commerceMgnt/userOrders', params);
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
-      // Logging always-on — this is a known BC inconsistency we want visible
-      // in production console while we settle on the right approach.
-      console.log('[csrFindUserOrders] /commerceMgnt/userOrders → 404, retrying via /database/search payerId query');
       const { userId, lastOrderId } = params;
       if (!userId) throw err;
-      const body = {
-        collectionName: 'commerceOrder',
-        brandId: 'idlookup',
-        payerId: userId,
-      };
-      if (lastOrderId) body.lastId = lastOrderId;
-      const raw = await this._csrPost('/database/search', body);
-      const orders = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      console.log(`[csrFindUserOrders] fallback returned ${orders.length} order(s) for userId=${userId}`);
-      return {
-        orders,
-        perPage: orders.length,
-        noMoreDocs: raw?.noMoreDocs ?? true,
-        _fallback: 'database-search',
-      };
+
+      // BC's /database/search filter shape isn't documented for commerceOrder;
+      // try the most likely variants in sequence and return the first hit.
+      const baseBody = { collectionName: 'commerceOrder', brandId: 'idlookup' };
+      const strategies = [
+        { name: 'payerId',         body: { ...baseBody, payerId: userId } },
+        { name: 'payerId+filter',  body: { ...baseBody, filter: { payerId: userId } } },
+        { name: 'index payer',     body: { ...baseBody, index: `payer:${userId}` } },
+      ];
+      if (lastOrderId) strategies.forEach((s) => { s.body.lastId = lastOrderId; });
+
+      console.log(`[csrFindUserOrders] /commerceMgnt/userOrders → 404 for userId=${userId}; trying ${strategies.length} /database/search variants`);
+
+      for (const strat of strategies) {
+        try {
+          const raw = await this._csrPost('/database/search', strat.body);
+          const orders = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+          console.log(`[csrFindUserOrders] strategy "${strat.name}": ${orders.length} order(s); response keys=${Object.keys(raw || {}).join(',')}`);
+          if (orders.length > 0) {
+            return {
+              orders,
+              perPage: orders.length,
+              noMoreDocs: raw?.noMoreDocs ?? true,
+              _fallback: `database-search:${strat.name}`,
+            };
+          }
+        } catch (sErr) {
+          console.log(`[csrFindUserOrders] strategy "${strat.name}" failed: ${sErr?.message}`);
+        }
+      }
+
+      console.log(`[csrFindUserOrders] all fallback strategies returned empty for userId=${userId}`);
+      return { orders: [], perPage: 0, noMoreDocs: true, _fallback: 'database-search:empty' };
     }
   }
 
@@ -924,9 +939,30 @@ class ApiWrapperService {
   // csrWrapper.api.user.findUserContacts — POST /contactMessage/admin/find/:targetUserId
   // Lists contactMessages where targetUserId matches. Used to show a user's
   // open tickets on UserDetailPage without leaving the profile.
+  //
+  // Falls back to the known-working /contactMessage/admin/find (no path param)
+  // and filters client-side when BC's targetUserId variant is unavailable on
+  // this deployment.
   async csrFindUserContactMessages({ userId, lastId } = {}) {
     if (!userId) throw new Error('userId is required');
-    return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
+    try {
+      return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
+    } catch (err) {
+      if (err?.status !== 404 && err?.status !== 405) throw err;
+      console.log(`[csrFindUserContactMessages] /contactMessage/admin/find/${userId} → 404, falling back to inbox-wide GET + client-side targetUserId filter`);
+      const raw = await this.csrFindContactMessages(lastId ? { lastId } : {});
+      const docs = raw?.docs ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      const filtered = docs.filter((d) => {
+        const t = d?.content?.targetUserId || d?.targetUserId;
+        return t === userId;
+      });
+      console.log(`[csrFindUserContactMessages] fallback found ${filtered.length} ticket(s) of ${docs.length} scanned for userId=${userId}`);
+      return {
+        docs: filtered,
+        noMoreDocs: raw?.noMoreDocs ?? true,
+        _fallback: 'inbox-filter',
+      };
+    }
   }
 
   // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
