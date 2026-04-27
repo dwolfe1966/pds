@@ -5,9 +5,59 @@
  * for making API calls to the new external API.
  */
 
+// Candidate URLs for BC's CSR IIFE. We don't know which (if any) is correct —
+// they're attempted in order at first-CSR-call. Whichever responds with a
+// script that defines window.CsrWrapper wins, and the choice is cached.
+const CSR_IIFE_CANDIDATES = [
+  'https://dev.www.bytecrtrs.com/libs/cs-wrapper/index.iife.js',
+  'https://dev.www.idlookup.ai/libs/cs-wrapper/index.iife.js',
+  'https://dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js',
+  'https://dev.www.idlookup.ai/libs/csr-wrapper/index.iife.js',
+];
+
+let _csrIifePromise = null;
+
+function _loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve(src);
+    s.onerror = () => reject(new Error(`failed to load ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+async function loadCsrIife() {
+  if (_csrIifePromise) return _csrIifePromise;
+  _csrIifePromise = (async () => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return null;
+    if (window.CsrWrapper) {
+      console.log('[CsrWrapper] already loaded');
+      return window.CsrWrapper;
+    }
+    for (const url of CSR_IIFE_CANDIDATES) {
+      try {
+        await _loadScript(url);
+        if (window.CsrWrapper) {
+          console.log(`[CsrWrapper] loaded from ${url}`);
+          return window.CsrWrapper;
+        }
+        console.log(`[CsrWrapper] script at ${url} loaded but did not expose window.CsrWrapper`);
+      } catch (e) {
+        // 404 or other load error — silent, try next candidate.
+      }
+    }
+    console.log('[CsrWrapper] none of the candidate URLs returned a CSR IIFE — ask ByteCrtrs for the correct path');
+    return null;
+  })();
+  return _csrIifePromise;
+}
+
 class ApiWrapperService {
   constructor() {
     this.wrapper = null;
+    this.csrWrapper = null;
     this.initialized = false;
     // BC API base URL — passed to getInstance() so the IIFE knows where to send requests.
     // In dev proxy mode this is overridden with the local proxy URL.
@@ -671,6 +721,26 @@ class ApiWrapperService {
   }
 
   /**
+   * Load (if needed) the BC CSR IIFE and return its initialized client.
+   * Returns null if BC hasn't published the CSR IIFE at any URL we know.
+   * Cached across calls.
+   */
+  async getCsrWrapper() {
+    if (this.csrWrapper) return this.csrWrapper;
+    const Cls = await loadCsrIife();
+    if (!Cls) return null;
+    try {
+      this.csrWrapper = typeof Cls.getInstance === 'function'
+        ? Cls.getInstance({ endpointUrl: '/api' })
+        : Cls;
+      return this.csrWrapper;
+    } catch (e) {
+      console.log('[CsrWrapper] getInstance() failed:', e?.message);
+      return null;
+    }
+  }
+
+  /**
    * GET to a csrWrapper endpoint. Mirrors _csrPost for GET-only BC routes.
    */
   async _csrGet(path) {
@@ -731,6 +801,19 @@ class ApiWrapperService {
   // collection filtered by payerId, then normalize the response shape so
   // callers see the same { orders, perPage } envelope either way.
   async csrFindUserOrders(params = {}) {
+    // Prefer BC's CSR IIFE if it's loaded — it knows the right URL/auth shape.
+    try {
+      const csr = await this.getCsrWrapper();
+      const findOrders = csr?.api?.user?.findOrders;
+      if (typeof findOrders === 'function') {
+        const res = await findOrders(params);
+        const orders = res?.orders ?? res?.docs ?? (Array.isArray(res) ? res : []);
+        console.log(`[csrFindUserOrders] CsrWrapper.api.user.findOrders → ${orders.length} order(s)`);
+        return res;
+      }
+    } catch (csrErr) {
+      console.log('[csrFindUserOrders] CsrWrapper.findOrders failed, falling back:', csrErr?.message);
+    }
     try {
       return await this._csrPost('/commerceMgnt/userOrders', params);
     } catch (err) {
@@ -871,6 +954,18 @@ class ApiWrapperService {
   // Same 404 risk as csrFindUserOrders on some BC deployments — fall back to
   // /database/search filtered by order _id and normalize the response shape.
   async csrGetUserOrder(params = {}) {
+    // Prefer BC's CSR IIFE when available.
+    try {
+      const csr = await this.getCsrWrapper();
+      const getOrder = csr?.api?.user?.getOrder;
+      if (typeof getOrder === 'function') {
+        const res = await getOrder(params);
+        console.log('[csrGetUserOrder] CsrWrapper.api.user.getOrder succeeded');
+        return res;
+      }
+    } catch (csrErr) {
+      console.log('[csrGetUserOrder] CsrWrapper.getOrder failed, falling back:', csrErr?.message);
+    }
     try {
       return await this._csrPost('/commerceMgnt/getUserOrder', params);
     } catch (err) {
@@ -1032,6 +1127,18 @@ class ApiWrapperService {
   // this deployment.
   async csrFindUserContactMessages({ userId, lastId } = {}) {
     if (!userId) throw new Error('userId is required');
+    // Prefer BC's CSR IIFE — its findUserContacts knows the right URL.
+    try {
+      const csr = await this.getCsrWrapper();
+      const findUserContacts = csr?.api?.user?.findUserContacts;
+      if (typeof findUserContacts === 'function') {
+        const res = await findUserContacts({ userId, ...(lastId ? { lastId } : {}) });
+        console.log('[csrFindUserContactMessages] CsrWrapper.api.user.findUserContacts succeeded');
+        return res;
+      }
+    } catch (csrErr) {
+      console.log('[csrFindUserContactMessages] CsrWrapper.findUserContacts failed, falling back:', csrErr?.message);
+    }
     try {
       return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
     } catch (err) {
