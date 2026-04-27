@@ -10,6 +10,7 @@ import logoSrc from '../assets/idlookup_icon_transparent.png';
 // a URL is typed directly so in-progress work there is preserved. Re-add the
 // entries here once the BC surface for each lands.
 const navLinks = [
+  { path: '/my-dashboard', label: 'My Dashboard' },
   { path: '/users',        label: 'Customers' },
   { path: '/orders',       label: 'Orders' },
   { path: '/data-removal', label: 'Opt-Outs' },
@@ -43,7 +44,7 @@ const AdminNav = () => {
 
   return (
     <nav className={styles.nav}>
-      <Link to="/users" className={styles.logo}>
+      <Link to="/my-dashboard" className={styles.logo}>
         <img src={logoSrc} alt="IDLookup.AI" className={styles.logoImg} />
         <span>Admin</span>
       </Link>

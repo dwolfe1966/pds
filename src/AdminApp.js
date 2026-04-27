@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
 // Admin pages
+import MyDashboardPage from './pages/admin/MyDashboardPage';
 import UsersPage from './pages/admin/UsersPage';
 import UserDetailPage from './pages/admin/UserDetailPage';
 import SessionsPage from './pages/admin/SessionsPage';
@@ -77,10 +78,11 @@ const AdminApp = () => {
       <div style={{ flex: 1 }}>
         <Routes>
           {/* Public routes */}
-          <Route path="/" element={isAdmin ? <Navigate to="/users" replace /> : <AdminLandingPage />} />
-          <Route path="/login" element={isAdmin ? <Navigate to="/users" replace /> : <AdminLoginPage />} />
+          <Route path="/" element={isAdmin ? <Navigate to="/my-dashboard" replace /> : <AdminLandingPage />} />
+          <Route path="/login" element={isAdmin ? <Navigate to="/my-dashboard" replace /> : <AdminLoginPage />} />
 
           {/* Admin routes */}
+          <Route path="/my-dashboard" element={<AdminRoute><MyDashboardPage /></AdminRoute>} />
           <Route path="/users" element={<AdminRoute><UsersPage /></AdminRoute>} />
           <Route path="/users/:id" element={<AdminRoute><UserDetailPage /></AdminRoute>} />
           <Route path="/orders" element={<AdminRoute><OrdersPage /></AdminRoute>} />

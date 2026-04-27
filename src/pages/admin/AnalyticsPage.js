@@ -32,6 +32,15 @@ function KpiCard({ label, value, sub, color = '#0d5d2f' }) {
   );
 }
 
+function isToday(iso) {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear()
+    && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate();
+}
+
 const AnalyticsPage = () => {
   const { token } = useAuth();
   const [metrics, setMetrics] = useState(null);
@@ -39,6 +48,11 @@ const AnalyticsPage = () => {
   const [metricsError, setMetricsError] = useState('');
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
+
+  // CSR performance state — derived from BC contactMessages + CS rep list.
+  const [tickets, setTickets] = useState([]);
+  const [csReps, setCsReps]   = useState([]);
+  const [csrLoading, setCsrLoading] = useState(true);
 
   // Legacy mock-server metrics (totals, revenue)
   useEffect(() => {
@@ -50,6 +64,10 @@ const AnalyticsPage = () => {
 
   // Tracking API summary
   useEffect(() => {
+    if (!TRACKING_API) {
+      setSummaryLoading(false);
+      return;
+    }
     fetch(`${TRACKING_API}/events/summary`, {
       headers: { 'x-admin-key': ADMIN_KEY },
     })
@@ -57,6 +75,25 @@ const AnalyticsPage = () => {
       .then(data => setSummary(data))
       .catch(() => {})
       .finally(() => setSummaryLoading(false));
+  }, []);
+
+  // CSR performance — single fetch of contactMessages + cs reps. Stats are
+  // derived client-side from real BC state.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCsrLoading(true);
+      const settle = (p) => p.then((v) => v).catch(() => null);
+      const [t, r] = await Promise.all([
+        settle(api.adminFindContactMessages?.({}) ?? Promise.resolve(null)),
+        settle(api.adminListCsReps?.() ?? Promise.resolve(null)),
+      ]);
+      if (cancelled) return;
+      setTickets(t?.data ?? t?.docs ?? (Array.isArray(t) ? t : []));
+      setCsReps(r?.data?.docs ?? r?.docs ?? r?.data ?? (Array.isArray(r) ? r : []));
+      setCsrLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const kpis = summary?.kpis || {};

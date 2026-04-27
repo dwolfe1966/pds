@@ -67,6 +67,7 @@ import SettingsPage from './pages/member/SettingsPage';
 import LogoutPage from './pages/member/LogoutPage';
 import SearchHistoryPage from './pages/member/SearchHistoryPage';
 // Admin pages
+import MyDashboardPage from './pages/admin/MyDashboardPage';
 import UsersPage from './pages/admin/UsersPage';
 import UserDetailPage from './pages/admin/UserDetailPage';
 import SessionsPage from './pages/admin/SessionsPage';
@@ -279,6 +280,14 @@ const App = () => {
           />
 
           {/* Admin routes (authenticated & role=admin) */}
+          <Route
+            path="/admin/my-dashboard"
+            element={
+              <ProtectedRoute role="admin">
+                <MyDashboardPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/users"
             element={

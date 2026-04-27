@@ -40,7 +40,11 @@
       "Bash(npx -y acorn-jsx --ecma2020 src/pages/admin/UserDetailPage.js)",
       "Bash(kill %1)",
       "Bash(wait)",
-      "Bash(find *)"
+      "Bash(find *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git fetch *)",
+      "Bash(git push *)"
     ]
   }
 }
