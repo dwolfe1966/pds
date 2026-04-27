@@ -35,6 +35,11 @@ const SessionsPage = () => {
   const [openIds, setOpenIds] = useState(new Set());
 
   useEffect(() => {
+    if (!TRACKING_URL) {
+      setError('Tracking API URL not configured (REACT_APP_TRACKING_API_URL).');
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     fetchEvents()
       .then((evts) => { if (!cancelled) setEvents(evts); })

@@ -99,9 +99,137 @@ const AnalyticsPage = () => {
   const kpis = summary?.kpis || {};
   const funnel = summary?.funnel || [];
 
+  // ── CSR performance derivations ───────────────────────────────────────────
+  const inboxStats = (() => {
+    const total = tickets.length;
+    const replied = tickets.filter((t) => Boolean(t?.latestReply)).length;
+    const awaiting = total - replied;
+    const unassigned = tickets.filter((t) => !t?.content?.actorId).length;
+    const newToday = tickets.filter((t) => isToday(t?.createdAt)).length;
+    const repliedToday = tickets.filter((t) => isToday(t?.latestReply?.createdAt)).length;
+    return { total, replied, awaiting, unassigned, newToday, repliedToday };
+  })();
+
+  // Per-CSR rollup. Falls back to actorId tags when csReps fails to load.
+  const csrPerformance = (() => {
+    const byId = new Map();
+
+    // Seed with known reps so empty-row CSRs still appear in the table.
+    csReps.forEach((rep) => {
+      const id = rep._id || rep.id;
+      if (!id) return;
+      const name = `${rep.firstName || ''} ${rep.lastName || ''}`.trim() || rep.email || id;
+      byId.set(id, {
+        id,
+        name,
+        email: rep.email || '',
+        assigned: 0,
+        awaiting: 0,
+        repliedToday: 0,
+        repliedTotal: 0,
+      });
+    });
+
+    const ensure = (id) => {
+      if (!byId.has(id)) {
+        byId.set(id, { id, name: id.slice(-8), email: '', assigned: 0, awaiting: 0, repliedToday: 0, repliedTotal: 0 });
+      }
+      return byId.get(id);
+    };
+
+    tickets.forEach((t) => {
+      const actor = t?.content?.actorId;
+      if (actor) {
+        const row = ensure(actor);
+        row.assigned += 1;
+        if (!t?.latestReply) row.awaiting += 1;
+      }
+      const replyOwner = t?.latestReply?.ownerId;
+      if (replyOwner) {
+        const row = ensure(replyOwner);
+        row.repliedTotal += 1;
+        if (isToday(t?.latestReply?.createdAt)) row.repliedToday += 1;
+      }
+    });
+
+    return Array.from(byId.values())
+      .filter((r) => r.assigned > 0 || r.repliedTotal > 0)
+      .sort((a, b) => (b.repliedTotal + b.assigned) - (a.repliedTotal + a.assigned));
+  })();
+
   return (
     <main style={{ padding: '2rem', maxWidth: '1100px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Analytics</h1>
+
+      {/* ── CSR Inbox Overview ──────────────────────────────────────────── */}
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.75rem' }}>Inbox Overview</h2>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <KpiCard
+            label="Open tickets"
+            value={csrLoading ? '…' : inboxStats.awaiting}
+            sub={`${inboxStats.total} total in current page`}
+            color="#92400e"
+          />
+          <KpiCard
+            label="Unassigned"
+            value={csrLoading ? '…' : inboxStats.unassigned}
+            sub="needs an actor"
+            color={inboxStats.unassigned > 0 ? '#991b1b' : '#0d5d2f'}
+          />
+          <KpiCard
+            label="New today"
+            value={csrLoading ? '…' : inboxStats.newToday}
+            sub="created in the last 24h"
+            color="#1a7bbf"
+          />
+          <KpiCard
+            label="Replies today"
+            value={csrLoading ? '…' : inboxStats.repliedToday}
+            sub="across all CSRs"
+            color="#0d5d2f"
+          />
+        </div>
+      </section>
+
+      {/* ── CSR Performance ─────────────────────────────────────────────── */}
+      <section style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.75rem' }}>CSR Performance</h2>
+        <div style={{ background: '#fff', borderRadius: '0.75rem', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          {csrLoading ? (
+            <p style={{ padding: '1.5rem', color: '#6b7280', fontSize: '0.875rem', margin: 0 }}>Loading CSR performance…</p>
+          ) : csrPerformance.length === 0 ? (
+            <p style={{ padding: '1.5rem', color: '#6b7280', fontSize: '0.875rem', margin: 0 }}>
+              No CSR activity yet — assign a ticket or send a reply to populate this table.
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb' }}>
+                  {['CSR', 'Email', 'Assigned', 'Awaiting (mine)', 'Replied today', 'Replied total'].map((h) => (
+                    <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#374151', borderBottom: '1px solid #e5e7eb' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {csrPerformance.map((row) => (
+                  <tr key={row.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '0.625rem 1rem', fontWeight: 600 }}>{row.name}</td>
+                    <td style={{ padding: '0.625rem 1rem', color: '#6b7280' }}>{row.email || '—'}</td>
+                    <td style={{ padding: '0.625rem 1rem', fontWeight: 600 }}>{row.assigned}</td>
+                    <td style={{ padding: '0.625rem 1rem', color: row.awaiting > 0 ? '#92400e' : '#9ca3af' }}>{row.awaiting}</td>
+                    <td style={{ padding: '0.625rem 1rem', fontWeight: 600, color: '#0d5d2f' }}>{row.repliedToday}</td>
+                    <td style={{ padding: '0.625rem 1rem' }}>{row.repliedTotal}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <p style={{ margin: '0.4rem 0.25rem 0', fontSize: '0.75rem', color: '#9ca3af' }}>
+          Derived from the current contactMessages page + CS rep directory. Reflects tickets where the rep is the actor or sent the latest reply.
+        </p>
+      </section>
 
       {/* ── KPI summary cards ─────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
