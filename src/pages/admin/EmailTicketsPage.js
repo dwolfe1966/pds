@@ -95,6 +95,10 @@ const EmailTicketsPage = () => {
   const [tagDraft, setTagDraft] = useState('');
   const [savingTags, setSavingTags] = useState(false);
 
+  // Bulk-select (inbox mode only)
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   // User search (used in 'user' mode)
   const [searchInput, setSearchInput] = useState('');
   const [resolvedUser, setResolvedUser] = useState(null);
@@ -388,6 +392,77 @@ const EmailTicketsPage = () => {
     }
   };
 
+  // Reset selection when leaving inbox mode or when search/filter changes the list.
+  useEffect(() => {
+    if (mode !== 'inbox') setSelectedIds(new Set());
+  }, [mode]);
+
+  const toggleSelected = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    setSelectedIds(new Set(listItems.filter((i) => isContactMessage(i.type)).map(resolveId).filter(Boolean)));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkAssignToMe = async () => {
+    if (!adminUserId || selectedIds.size === 0) return;
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    // Always start from the loaded list to read currentRevisionId.
+    const targets = allItems.filter((i) => selectedIds.has(resolveId(i)) && isContactMessage(i.type));
+    for (const t of targets) {
+      try {
+        await api.adminSetContactActor({
+          contactMessageId: resolveId(t),
+          currentRevisionId: t.currentRevisionId,
+          actorId: adminUserId,
+        });
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkBusy(false);
+    showToast(fail === 0 ? `Assigned ${ok} ticket${ok === 1 ? '' : 's'} to you.` : `${ok} assigned, ${fail} failed.`);
+    clearSelection();
+    await fetchInbox(null);
+  };
+
+  const handleBulkApplyTag = async () => {
+    if (selectedIds.size === 0) return;
+    const raw = window.prompt('Apply tag to selected tickets (existing tags are preserved):');
+    if (raw == null) return;
+    const tag = raw.trim();
+    if (!tag) return;
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    const targets = allItems.filter((i) => selectedIds.has(resolveId(i)) && isContactMessage(i.type));
+    for (const t of targets) {
+      try {
+        const existing = Array.isArray(t.index) ? t.index : [];
+        const merged = existing.includes(tag) ? existing : [...existing, tag];
+        await api.adminSetContactTags({
+          contactMessageId: resolveId(t),
+          tags: merged,
+        });
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    setBulkBusy(false);
+    showToast(fail === 0 ? `Tagged ${ok} ticket${ok === 1 ? '' : 's'} with "${tag}".` : `${ok} tagged, ${fail} failed.`);
+    clearSelection();
+    await fetchInbox(null);
+  };
+
   const beginEditTags = () => {
     if (!selected) return;
     const existing = Array.isArray(selected.index) ? selected.index : [];
@@ -615,6 +690,70 @@ const EmailTicketsPage = () => {
         </div>
       )}
 
+      {/* Bulk action bar — visible when at least one ticket is selected */}
+      {mode === 'inbox' && selectedIds.size > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap',
+          padding: '0.5rem 0.75rem',
+          background: '#0d5d2f', color: '#fff',
+          borderRadius: 6, marginBottom: '0.5rem',
+          position: 'sticky', top: 0, zIndex: 5,
+        }}>
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+            {selectedIds.size} selected
+          </span>
+          <button
+            type="button"
+            onClick={handleBulkAssignToMe}
+            disabled={bulkBusy || !adminUserId}
+            style={{
+              background: '#fff', color: '#0d5d2f', border: 'none',
+              padding: '0.3rem 0.7rem', borderRadius: 4,
+              fontSize: '0.82rem', fontWeight: 600, cursor: bulkBusy ? 'wait' : 'pointer',
+            }}
+          >
+            {bulkBusy ? 'Working…' : 'Assign to me'}
+          </button>
+          <button
+            type="button"
+            onClick={handleBulkApplyTag}
+            disabled={bulkBusy}
+            style={{
+              background: '#fff', color: '#0d5d2f', border: 'none',
+              padding: '0.3rem 0.7rem', borderRadius: 4,
+              fontSize: '0.82rem', fontWeight: 600, cursor: bulkBusy ? 'wait' : 'pointer',
+            }}
+          >
+            Apply tag…
+          </button>
+          <button
+            type="button"
+            onClick={selectAllVisible}
+            disabled={bulkBusy}
+            style={{
+              background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)',
+              padding: '0.3rem 0.7rem', borderRadius: 4,
+              fontSize: '0.82rem', fontWeight: 600, cursor: bulkBusy ? 'wait' : 'pointer',
+            }}
+          >
+            Select all visible
+          </button>
+          <button
+            type="button"
+            onClick={clearSelection}
+            disabled={bulkBusy}
+            style={{
+              background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)',
+              padding: '0.3rem 0.7rem', borderRadius: 4,
+              fontSize: '0.82rem', fontWeight: 600, cursor: bulkBusy ? 'wait' : 'pointer',
+              marginLeft: 'auto',
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Two-panel layout */}
       {listItems.length > 0 && (
         <>
@@ -648,22 +787,50 @@ const EmailTicketsPage = () => {
                   : (isCsrMail(item.type)
                       ? (item.owner ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim() : 'CSR')
                       : (userName || 'Customer'));
+                const showCheckbox = mode === 'inbox' && isCM;
+                const checked = selectedIds.has(id);
                 return (
-                  <button
+                  <div
                     key={id}
-                    className={`${styles.ticketItem} ${id === selectedId ? styles.ticketItemActive : ''}`}
-                    onClick={() => setSelectedId(id)}
+                    style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}
                   >
-                    <div className={styles.ticketItemTop}>
-                      <DirectionBadge type={item.type} />
-                      <span className={styles.ticketDate}>{shortDate(item.createdAt)}</span>
-                    </div>
-                    <div className={styles.ticketSubject}>{subject}</div>
-                    <div className={styles.ticketMeta}>
-                      {senderLabel}
-                      {preview ? ` — ${preview.length > 60 ? preview.slice(0, 60) + '...' : preview}` : ''}
-                    </div>
-                  </button>
+                    {showCheckbox && (
+                      <label
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '0 0.5rem',
+                          background: checked ? '#f0fdf4' : '#fff',
+                          borderTop: '1px solid #e5e7eb',
+                          borderLeft: '1px solid #e5e7eb',
+                          borderBottom: '1px solid #e5e7eb',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelected(id)}
+                          aria-label={`Select ticket: ${subject}`}
+                        />
+                      </label>
+                    )}
+                    <button
+                      className={`${styles.ticketItem} ${id === selectedId ? styles.ticketItemActive : ''}`}
+                      onClick={() => setSelectedId(id)}
+                      style={{ flex: 1 }}
+                    >
+                      <div className={styles.ticketItemTop}>
+                        <DirectionBadge type={item.type} />
+                        <span className={styles.ticketDate}>{shortDate(item.createdAt)}</span>
+                      </div>
+                      <div className={styles.ticketSubject}>{subject}</div>
+                      <div className={styles.ticketMeta}>
+                        {senderLabel}
+                        {preview ? ` — ${preview.length > 60 ? preview.slice(0, 60) + '...' : preview}` : ''}
+                      </div>
+                    </button>
+                  </div>
                 );
               })}
 
