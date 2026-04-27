@@ -257,6 +257,12 @@ const UserDetailPage = () => {
   const [userTickets, setUserTickets] = useState([]);
   const [userTicketsLoading, setUserTicketsLoading] = useState(false);
 
+  // Notes & Messages filter — 'all' | 'internal' | 'csrMail' | 'userReply'
+  // Audit-prefixed notes are hidden from internal/all by default since the
+  // Audit tab is their canonical home.
+  const [notesFilter, setNotesFilter] = useState('all');
+  const [showAuditInNotes, setShowAuditInNotes] = useState(false);
+
   // Tracking: Logins tab
   const [logins, setLogins]             = useState([]);
   const [loginsLoading, setLoginsLoading] = useState(false);
@@ -1779,13 +1785,84 @@ const UserDetailPage = () => {
                   </div>
                 )}
 
-                {notes.length === 0 && !showNoteForm && (
-                  <div className={styles.emptyState}>No notes or messages yet.</div>
-                )}
+                {(() => {
+                  const filteredNotes = notes.filter((n) => {
+                    // Hide audit-prefixed notes from this tab unless the toggle is on.
+                    const isAudit = n.kind === 'note' && Boolean(classifyAuditNote(n.text));
+                    if (isAudit && !showAuditInNotes) return false;
+                    if (notesFilter === 'all') return true;
+                    if (notesFilter === 'internal') return n.kind === 'note';
+                    if (notesFilter === 'csrMail') return n.kind === 'csrMail';
+                    if (notesFilter === 'userReply') return n.kind === 'userReply';
+                    return true;
+                  });
+                  const counts = {
+                    all:       notes.filter((n) => showAuditInNotes || n.kind !== 'note' || !classifyAuditNote(n.text)).length,
+                    internal:  notes.filter((n) => n.kind === 'note' && (showAuditInNotes || !classifyAuditNote(n.text))).length,
+                    csrMail:   notes.filter((n) => n.kind === 'csrMail').length,
+                    userReply: notes.filter((n) => n.kind === 'userReply').length,
+                  };
+                  const auditHiddenCount = notes.filter((n) => n.kind === 'note' && classifyAuditNote(n.text)).length;
+                  const Pill = ({ value, label }) => (
+                    <button
+                      type="button"
+                      onClick={() => setNotesFilter(value)}
+                      style={{
+                        padding: '0.35rem 0.7rem',
+                        fontSize: '0.8rem', fontWeight: 600,
+                        borderRadius: 6,
+                        border: '1px solid',
+                        borderColor: notesFilter === value ? '#0d5d2f' : '#d1d5db',
+                        background: notesFilter === value ? '#dcfce7' : '#fff',
+                        color: notesFilter === value ? '#0d5d2f' : '#374151',
+                        cursor: 'pointer', marginRight: '0.35rem',
+                      }}
+                    >
+                      {label} <span style={{ marginLeft: 4, opacity: 0.7 }}>({counts[value]})</span>
+                    </button>
+                  );
 
-                {notes.length > 0 && (
-                  <div className={styles.notesList}>
-                    {notes.map((n) => (
+                  return (
+                    <>
+                      {notes.length > 0 && (
+                        <div style={{
+                          display: 'flex', alignItems: 'center', flexWrap: 'wrap',
+                          gap: '0.25rem', margin: '0.75rem 0 0.875rem',
+                        }}>
+                          <Pill value="all"       label="All" />
+                          <Pill value="internal"  label="Internal notes" />
+                          <Pill value="csrMail"   label="CSR mail" />
+                          <Pill value="userReply" label="User replies" />
+                          {auditHiddenCount > 0 && (
+                            <label style={{
+                              fontSize: '0.78rem', color: '#6b7280',
+                              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                              marginLeft: 'auto',
+                            }}>
+                              <input
+                                type="checkbox"
+                                checked={showAuditInNotes}
+                                onChange={(e) => setShowAuditInNotes(e.target.checked)}
+                              />
+                              Show audit entries ({auditHiddenCount})
+                            </label>
+                          )}
+                        </div>
+                      )}
+
+                      {notes.length === 0 && !showNoteForm && (
+                        <div className={styles.emptyState}>No notes or messages yet.</div>
+                      )}
+
+                      {notes.length > 0 && filteredNotes.length === 0 && (
+                        <div className={styles.emptyState}>
+                          <p>No items match this filter.</p>
+                        </div>
+                      )}
+
+                      {filteredNotes.length > 0 && (
+                        <div className={styles.notesList}>
+                          {filteredNotes.map((n) => (
                       <div
                         key={n.id}
                         className={styles.noteItem}
@@ -1834,8 +1911,11 @@ const UserDetailPage = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
-                )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </>
             )}
 
