@@ -169,7 +169,36 @@ function Toast({ message, type, onDone }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-const TABS = ['Orders & Payments', 'Logins', 'Activity', 'Notes & Messages', 'Actions'];
+const TABS = ['Orders & Payments', 'Logins', 'Activity', 'Notes & Messages', 'Audit', 'Actions'];
+
+// Map prefix → display action type. Notes we write on CSR actions are prefixed
+// with one of these so the audit tab can pluck them out of the general notes
+// stream and group them with appropriate iconography.
+const AUDIT_PREFIXES = [
+  { prefix: 'CSR EDIT:',                  label: 'Profile edit',       color: '#1e40af', bg: '#dbeafe', icon: '✎' },
+  { prefix: 'CSR OPT-OUT (email):',       label: 'Email opt-out',      color: '#7c2d12', bg: '#fef3c7', icon: '✉' },
+  { prefix: 'CSR OPT-OUT (phone):',       label: 'SMS opt-out',        color: '#7c2d12', bg: '#fef3c7', icon: '📱' },
+  { prefix: 'CSR DATA-REMOVAL REQUEST:',  label: 'Data removal',       color: '#991b1b', bg: '#fee2e2', icon: '🗑' },
+  { prefix: 'AGENT ORDER:',               label: 'Agent order',        color: '#166534', bg: '#dcfce7', icon: '+' },
+  { prefix: 'CSR REFUND',                 label: 'Refund',             color: '#9a3412', bg: '#ffedd5', icon: '↩' },
+  { prefix: 'CSR ',                       label: 'CSR action',         color: '#374151', bg: '#f3f4f6', icon: '·' },
+];
+
+function classifyAuditNote(text) {
+  const body = (text || '').trim();
+  for (const def of AUDIT_PREFIXES) {
+    if (body.startsWith(def.prefix)) {
+      return {
+        kind: def.label,
+        color: def.color,
+        bg: def.bg,
+        icon: def.icon,
+        details: body.slice(def.prefix.length).trim() || '(no details)',
+      };
+    }
+  }
+  return null;
+}
 
 const TRACKING_ACTIVITY_TYPES = [
   'USER:nameSearchTeaser',
@@ -1774,6 +1803,80 @@ const UserDetailPage = () => {
                 )}
               </>
             )}
+
+            {/* ── Tab: Audit ─────────────────────────────── */}
+            {activeTab === 'Audit' && (() => {
+              const auditEvents = (notes || [])
+                .map((n) => {
+                  const classified = classifyAuditNote(n.text);
+                  if (!classified) return null;
+                  return {
+                    id: n.id,
+                    createdAt: n.createdAt,
+                    author: n.author || 'CSR',
+                    ...classified,
+                  };
+                })
+                .filter(Boolean)
+                .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+              return (
+                <>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <h3 className={styles.notesTitle} style={{ margin: 0 }}>Audit Log</h3>
+                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', color: '#6b7280' }}>
+                      Every CSR-recorded action taken on this account. Internal notes that aren't actions stay in <strong>Notes &amp; Messages</strong>.
+                    </p>
+                  </div>
+
+                  {auditEvents.length === 0 ? (
+                    <div className={styles.emptyState}>
+                      <p>No CSR actions recorded yet for this user.</p>
+                    </div>
+                  ) : (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0' }}>
+                      {auditEvents.map((evt, idx) => (
+                        <li key={evt.id || idx} style={{
+                          display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                          padding: '0.75rem 0',
+                          borderTop: idx === 0 ? '1px solid #e5e7eb' : 'none',
+                          borderBottom: '1px solid #e5e7eb',
+                        }}>
+                          <span style={{
+                            width: 32, height: 32, flexShrink: 0,
+                            borderRadius: 8,
+                            background: evt.bg, color: evt.color,
+                            fontWeight: 700, fontSize: '1rem',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {evt.icon}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span style={{
+                                fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+                                padding: '0.15rem 0.5rem', borderRadius: 12,
+                                background: evt.bg, color: evt.color,
+                              }}>{evt.kind}</span>
+                              <span style={{ fontSize: '0.78rem', color: '#6b7280' }}>
+                                {formatDateTime(evt.createdAt)}
+                                {evt.author && ` · ${evt.author}`}
+                              </span>
+                            </div>
+                            <div style={{
+                              marginTop: '0.3rem', fontSize: '0.88rem', color: '#111827',
+                              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                            }}>
+                              {evt.details}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              );
+            })()}
 
             {/* ── Tab: Actions ───────────────────────────── */}
             {activeTab === 'Actions' && (
