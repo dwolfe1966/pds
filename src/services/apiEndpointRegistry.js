@@ -76,6 +76,7 @@ export const API_ENDPOINTS = {
   'admin-update-cs-rep': { newApi: true, mockApi: false },
   'admin-update-user': { newApi: true, mockApi: false },
   'admin-find-managed-contact': { newApi: true, mockApi: false },
+  'admin-find-user-contact-messages': { newApi: true, mockApi: false },
   'admin-unsubscribe-managed-contact': { newApi: true, mockApi: false },
   'admin-find-offer': { newApi: true, mockApi: false },
   'admin-cancel-order': { newApi: true, mockApi: false },

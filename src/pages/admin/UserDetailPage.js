@@ -222,6 +222,10 @@ const UserDetailPage = () => {
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [noteText, setNoteText]         = useState('');
 
+  // User-linked contact tickets (contactMessages with targetUserId === id)
+  const [userTickets, setUserTickets] = useState([]);
+  const [userTicketsLoading, setUserTicketsLoading] = useState(false);
+
   // Tracking: Logins tab
   const [logins, setLogins]             = useState([]);
   const [loginsLoading, setLoginsLoading] = useState(false);
@@ -303,6 +307,20 @@ const UserDetailPage = () => {
       }
     } finally {
       setOrdersLoading(false);
+    }
+  }, [id]);
+
+  // ── Fetch contact tickets assigned to this user ─────────────
+  const fetchUserTickets = useCallback(async () => {
+    setUserTicketsLoading(true);
+    try {
+      const res = await api.adminFindUserContactMessages({ userId: id });
+      const docs = res?.data || res?.docs || (Array.isArray(res) ? res : []);
+      setUserTickets(docs);
+    } catch {
+      setUserTickets([]);
+    } finally {
+      setUserTicketsLoading(false);
     }
   }, [id]);
 
@@ -393,7 +411,8 @@ const UserDetailPage = () => {
     fetchUser();
     fetchOrders();
     fetchNotes();
-  }, [id, fetchUser, fetchOrders, fetchNotes]);
+    fetchUserTickets();
+  }, [id, fetchUser, fetchOrders, fetchNotes, fetchUserTickets]);
 
   // Fetch tracking data on tab activation (lazy load)
   useEffect(() => {
@@ -1578,6 +1597,85 @@ const UserDetailPage = () => {
             {/* ── Tab: Notes & Messages ──────────────────── */}
             {activeTab === 'Notes & Messages' && (
               <>
+                {/* User's contact tickets (contactMessages with targetUserId set).
+                    Distinct from the userContact-collection list below — these are
+                    the new-shape contact submissions assigned to this user. */}
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <h3 className={styles.notesTitle} style={{ margin: 0 }}>
+                      Contact tickets
+                      {userTickets.length > 0 && (
+                        <span style={{ marginLeft: '0.5rem', fontSize: '0.78rem', color: '#6b7280', fontWeight: 500 }}>
+                          {userTickets.length} assigned
+                        </span>
+                      )}
+                    </h3>
+                    <Link to="/tickets" style={{ fontSize: '0.82rem', color: '#0d5d2f', fontWeight: 600 }}>
+                      Open inbox →
+                    </Link>
+                  </div>
+
+                  {userTicketsLoading && userTickets.length === 0 && (
+                    <div className={styles.loadingState}>Loading tickets…</div>
+                  )}
+
+                  {!userTicketsLoading && userTickets.length === 0 && (
+                    <p style={{ fontSize: '0.85rem', color: '#9ca3af', margin: '0.25rem 0 0' }}>
+                      No contact tickets are currently assigned to this user.
+                    </p>
+                  )}
+
+                  {userTickets.length > 0 && (
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, border: '1px solid #e5e7eb', borderRadius: 6, overflow: 'hidden' }}>
+                      {userTickets.map((t, idx) => {
+                        const tid = t._id || t.id;
+                        const subject = t?.content?.input?.topic
+                          || (t?.content?.category === 'billing' ? 'Billing inquiry'
+                          : t?.content?.category === 'general' ? 'General inquiry'
+                          : t?.content?.subject || '(No subject)');
+                        const senderEmail = t?.content?.input?.email || t?.content?.email || '';
+                        const lastReplyAt = t?.latestReply?.createdAt;
+                        const lastEvent = lastReplyAt || t?.updatedAt || t?.createdAt;
+                        const replied = Boolean(t?.latestReply);
+                        return (
+                          <li key={tid || idx} style={{
+                            display: 'flex', alignItems: 'center', gap: '0.625rem',
+                            padding: '0.625rem 0.875rem',
+                            borderBottom: idx < userTickets.length - 1 ? '1px solid #e5e7eb' : 'none',
+                            background: '#fff',
+                          }}>
+                            <span style={{
+                              fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+                              padding: '0.15rem 0.45rem', borderRadius: 12,
+                              background: replied ? '#dcfce7' : '#fef3c7',
+                              color: replied ? '#166534' : '#92400e',
+                              whiteSpace: 'nowrap',
+                            }}>{replied ? 'Replied' : 'Awaiting'}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {subject}
+                              </div>
+                              <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '0.1rem' }}>
+                                {senderEmail && <>{senderEmail} · </>}
+                                {formatDateTime(lastEvent)}
+                              </div>
+                            </div>
+                            <Link
+                              to={`/tickets?contactMessageId=${encodeURIComponent(tid || '')}`}
+                              style={{
+                                fontSize: '0.82rem', color: '#1a56db', fontWeight: 600, textDecoration: 'none',
+                                padding: '0.25rem 0.5rem',
+                              }}
+                            >
+                              View →
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+
                 <div className={styles.notesHeader}>
                   <h3 className={styles.notesTitle}>Notes & Messages</h3>
                   {!showNoteForm && (

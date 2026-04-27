@@ -870,6 +870,14 @@ class ApiWrapperService {
     return await this._csrGet(`/contactMessage/admin/find${suffix}`);
   }
 
+  // csrWrapper.api.user.findUserContacts — POST /contactMessage/admin/find/:targetUserId
+  // Lists contactMessages where targetUserId matches. Used to show a user's
+  // open tickets on UserDetailPage without leaving the profile.
+  async csrFindUserContactMessages({ userId, lastId } = {}) {
+    if (!userId) throw new Error('userId is required');
+    return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
+  }
+
   // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
   // Returns the full thread (contact + user/csr replies) for a contact message.
   async csrFindContactHistories(params = {}) {

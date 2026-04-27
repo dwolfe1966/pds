@@ -737,6 +737,11 @@ const api = {
     return await routeApiRequest('admin-find-contact-messages', { queryParams: params });
   },
 
+  // CSR: list contact messages assigned to a specific user (targetUserId).
+  adminFindUserContactMessages: async ({ userId, lastId } = {}) => {
+    return await routeApiRequest('admin-find-user-contact-messages', { userId, lastId });
+  },
+
   // CSR: full thread history for a contact message.
   adminContactHistories: async (params = {}) => {
     return await routeApiRequest('admin-contact-histories', { queryParams: params });

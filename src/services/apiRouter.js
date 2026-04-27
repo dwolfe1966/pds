@@ -294,6 +294,7 @@ export async function routeApiRequest(endpoint, params = {}) {
     'admin-find-contacts',
     'admin-change-contact-to-user',
     'admin-find-contact-messages',
+    'admin-find-user-contact-messages',
     'admin-contact-histories',
     'admin-create-csr-reply',
     'admin-set-contact-actor',
@@ -962,6 +963,17 @@ async function callNewAPI(endpoint, params) {
     // csrWrapper.api.message.contact.find → GET /contactMessage/admin/find
     case 'admin-find-contact-messages': {
       const raw = await apiWrapper.csrFindContactMessages(params.queryParams || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? (docs.length === 0) };
+    }
+
+    // CSR: find contact messages assigned to a specific user.
+    // csrWrapper.api.user.findUserContacts → POST /contactMessage/admin/find/:targetUserId
+    case 'admin-find-user-contact-messages': {
+      const raw = await apiWrapper.csrFindUserContactMessages({
+        userId: params.userId || params.id,
+        lastId: params.lastId,
+      });
       const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
       return { data: docs, noMoreDocs: raw?.noMoreDocs ?? (docs.length === 0) };
     }
