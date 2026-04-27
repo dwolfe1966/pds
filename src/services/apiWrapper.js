@@ -773,11 +773,15 @@ class ApiWrapperService {
       // First combination that returns >0 docs wins. Then filter by payerId
       // client-side. Each probe is a single page so this stays bounded.
       const probes = [
-        { collectionName: 'commerceOrder',  brandId: 'idlookup'  },
-        { collectionName: 'commerceOrder',  brandId: 'bytecrtrs' },
-        { collectionName: 'commerceOrder'                         },
-        { collectionName: 'commerceOrders', brandId: 'idlookup'  },
-        { collectionName: 'orders',         brandId: 'idlookup'  },
+        { collectionName: 'commerceOrder',   brandId: 'idlookup'  },
+        { collectionName: 'commerceOrder',   brandId: 'bytecrtrs' },
+        { collectionName: 'commerceOrder'                          },
+        { collectionName: 'commerceOrders',  brandId: 'idlookup'  },
+        { collectionName: 'orders',          brandId: 'idlookup'  },
+        // Diagnostic-only: if these return docs but commerceOrder doesn't,
+        // /database/search has selective collection-level gating on this BC.
+        { collectionName: 'commercePayment', brandId: 'idlookup'  },
+        { collectionName: 'commerceToken',   brandId: 'idlookup'  },
       ];
 
       let workingProbe = null;

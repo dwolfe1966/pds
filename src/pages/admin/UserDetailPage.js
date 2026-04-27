@@ -1228,7 +1228,17 @@ const UserDetailPage = () => {
                   <div className={styles.errorState}>{ordersError}</div>
                 )}
                 {!ordersLoading && !ordersError && orders.length === 0 && (
-                  <div className={styles.emptyState}>No orders found for this user.</div>
+                  <div className={styles.emptyState}>
+                    <p style={{ margin: 0 }}>No orders retrieved.</p>
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>
+                      If you expect this user to have orders: BC's CSR order endpoints
+                      (<code>/commerceMgnt/userOrders</code>) are returning 404 on this
+                      deployment, and <code>/database/search</code> on the commerceOrder
+                      collection returns 0 docs to admin sessions. Check the browser
+                      console for <code>[csrFindUserOrders]</code> probe output and
+                      escalate to BC if every probe is empty.
+                    </p>
+                  </div>
                 )}
                 {!ordersLoading && !ordersError && orders.length > 0 && orders.map((o) => {
                   const oid = getOrderId(o);
