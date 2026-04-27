@@ -737,11 +737,87 @@ async function callNewAPI(endpoint, params) {
       return { data: items, total: raw?.total ?? items.length };
     }
 
-    // csrWrapper global order search → POST /database/search { collectionName: 'commerceOrder' }
+    // Global recent-orders default view.
+    //
+    // BC's /database/search on commerceOrder may reject unfiltered queries
+    // depending on backend config — when it does, we fan out: pull the top N
+    // recent customers and merge their per-user findOrders pages. Strictly
+    // worse than a real global query (limited to N customers' worth of
+    // orders), but produces a meaningful default view instead of an empty page.
+    //
+    // queryParams:
+    //   - limit (default 10) — number of orders to return after merge
+    //   - userPoolSize (default 25) — how many recent customers to scan when
+    //     falling back. Bump if CSRs report missing recent orders.
+    //   - any other filter passes straight through to the global search.
     case 'admin-purchases-global': {
-      const raw = await apiWrapper.csrFindOrders(params.queryParams || {});
-      const items = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      return { data: items, total: raw?.total ?? items.length, noMoreDocs: raw?.noMoreDocs };
+      const qp = params.queryParams || {};
+      const limit = Math.max(1, Math.min(100, Number(qp.limit) || 10));
+      const userPoolSize = Math.max(5, Math.min(100, Number(qp.userPoolSize) || 25));
+
+      // 1. Fast path — try BC's global commerceOrder search first.
+      let globalErr = null;
+      try {
+        const raw = await apiWrapper.csrFindOrders(qp);
+        const items = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+        if (items.length > 0) {
+          return {
+            data: items.slice(0, limit),
+            total: raw?.total ?? items.length,
+            noMoreDocs: raw?.noMoreDocs,
+            source: 'global',
+          };
+        }
+      } catch (err) {
+        globalErr = err;
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[admin-purchases-global] global search failed, falling back to fan-out:', err?.message);
+        }
+      }
+
+      // 2. Fan-out fallback — pull recent customers, merge their orders.
+      try {
+        const usersRes = await apiWrapper.csrFindUsers({ brandId: 'idlookup' });
+        const users = usersRes?.docs ?? usersRes?.users ?? usersRes?.data ?? (Array.isArray(usersRes) ? usersRes : []);
+        const userIds = users.slice(0, userPoolSize)
+          .map((u) => u?._id || u?.id)
+          .filter(Boolean);
+
+        if (userIds.length === 0) {
+          return { data: [], total: 0, noMoreDocs: true, source: 'fanout-empty' };
+        }
+
+        const settle = (p) => p.then((v) => v).catch(() => null);
+        const orderPages = await Promise.all(
+          userIds.map((uid) => settle(apiWrapper.csrFindUserOrders({ userId: uid })))
+        );
+
+        const merged = [];
+        orderPages.forEach((page, i) => {
+          const arr = page?.orders ?? page?.docs ?? page?.data ?? (Array.isArray(page) ? page : []);
+          arr.forEach((o) => {
+            // Tag each order with the source userId so the UI can deep-link
+            // to /admin/purchases?userId=… without an extra lookup.
+            merged.push({ ...o, _resolvedUserId: o.payerId || userIds[i] });
+          });
+        });
+
+        merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+        return {
+          data: merged.slice(0, limit),
+          total: merged.length,
+          noMoreDocs: merged.length <= limit,
+          source: 'fanout',
+          userPoolSize: userIds.length,
+        };
+      } catch (fanoutErr) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[admin-purchases-global] fan-out also failed:', fanoutErr?.message);
+        }
+        // Surface the original global error if both paths fail.
+        throw globalErr || fanoutErr;
+      }
     }
 
     // csrWrapper.api.user.getOrder → POST /commerceMgnt/getUserOrder → { orders: [order] }

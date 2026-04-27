@@ -111,6 +111,10 @@ const PurchasesPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
+  // Source disclosure for the default global view — 'global' or 'fanout'.
+  const [globalSource, setGlobalSource] = useState(null);
+  const [globalUserPoolSize, setGlobalUserPoolSize] = useState(null);
+
   // Keep resolvedUserId in sync if URL param changes
   useEffect(() => {
     setResolvedUserId(urlUserId || null);
@@ -138,9 +142,13 @@ const PurchasesPage = () => {
   const fetchGlobalRecent = useCallback(async () => {
     setLoading(true);
     setFetchError('');
+    setGlobalSource(null);
+    setGlobalUserPoolSize(null);
     try {
       const res = await api.adminListOrdersGlobal({ limit: 10 });
       const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
+      setGlobalSource(res?.source || null);
+      setGlobalUserPoolSize(res?.userPoolSize || null);
       const sorted = [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       setOrders(sorted.slice(0, 10));
     } catch (err) {
@@ -272,6 +280,22 @@ const PurchasesPage = () => {
 
       {/* ── Fetch error */}
       {fetchError && <div className={styles.errorBanner}>{fetchError}</div>}
+
+      {/* Honest source disclosure when the default view came from the
+          recent-customer fan-out rather than a real global query. */}
+      {!resolvedUserId && globalSource === 'fanout' && orders.length > 0 && (
+        <div style={{
+          background: '#fef3c7',
+          border: '1px solid #fde68a',
+          color: '#92400e',
+          borderRadius: '0.5rem',
+          padding: '0.5rem 0.875rem',
+          fontSize: '0.82rem',
+          margin: '0 0 1rem',
+        }}>
+          <strong>Recent-customer view:</strong> showing the newest orders across the {globalUserPoolSize ?? 'last 25'} most-recent customers. Search by email or user ID above to scope to one customer.
+        </div>
+      )}
 
       {/* ── Filter bar — shown once orders are loaded */}
       {(showTable || showEmpty) && (

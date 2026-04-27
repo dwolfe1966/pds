@@ -90,6 +90,10 @@ const OrdersPage = () => {
   const [fetchError, setFetchError] = useState('');
   const [isGlobalView, setIsGlobalView] = useState(!urlUserId); // true when showing default recent list
   const [globalListUnavailable, setGlobalListUnavailable] = useState(false);
+  // 'global' | 'fanout' | null — tells the user whether the list came from
+  // BC's real commerceOrder search or our recent-customer fan-out fallback.
+  const [globalSource, setGlobalSource] = useState(null);
+  const [globalUserPoolSize, setGlobalUserPoolSize] = useState(null);
 
   // Pending sidebar filters
   const [pendingOrderId, setPendingOrderId] = useState('');
@@ -109,12 +113,16 @@ const OrdersPage = () => {
     setLoading(true);
     setFetchError('');
     setGlobalListUnavailable(false);
+    setGlobalSource(null);
+    setGlobalUserPoolSize(null);
     try {
       const res = await api.adminListOrdersGlobal({ limit: 10 });
       const list = res?.data || res?.docs || res?.orders || (Array.isArray(res) ? res : []);
       const sorted = [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       setOrders(sorted.slice(0, 10));
       setIsGlobalView(true);
+      setGlobalSource(res?.source || null);
+      setGlobalUserPoolSize(res?.userPoolSize || null);
     } catch (err) {
       // BC may not support global commerceOrder search without a filter param.
       // Surface a clear message so CSR knows the call failed rather than assuming zero orders.
@@ -259,6 +267,22 @@ const OrdersPage = () => {
       </form>
 
       {searchError && <div className={styles.errorBanner}>{searchError}</div>}
+
+      {/* Honest source disclosure when the default view came from the
+          recent-customer fan-out rather than a real global query. */}
+      {isGlobalView && globalSource === 'fanout' && orders.length > 0 && (
+        <div style={{
+          background: '#fef3c7',
+          border: '1px solid #fde68a',
+          color: '#92400e',
+          borderRadius: '0.5rem',
+          padding: '0.5rem 0.875rem',
+          fontSize: '0.82rem',
+          margin: '0 0 1rem',
+        }}>
+          <strong>Recent-customer view:</strong> showing the newest orders across the {globalUserPoolSize ?? 'last 25'} most-recent customers. Search by email or user ID above to see a specific account's full history.
+        </div>
+      )}
 
       {/* Main area: sidebar + table — always shown */}
       {(true) && (
