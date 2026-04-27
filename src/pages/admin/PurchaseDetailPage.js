@@ -100,14 +100,37 @@ const PurchaseDetailPage = () => {
     setActing(true);
     setActionMsg('');
     try {
+      // Refresh order before submitting so revision IDs match BC's current state.
+      let orderRevisionId = order.currentRevisionId;
+      let paymentRevisionId = salePayment.currentRevisionId;
+      const orderUserId = order.payerId || userId;
+      if (orderUserId) {
+        try {
+          const fresh = await api.adminGetOrderDetail(orderUserId, order._id);
+          if (fresh?.currentRevisionId) orderRevisionId = fresh.currentRevisionId;
+          const freshPayment = (fresh?.commercePayments || []).find((p) => p._id === salePayment._id);
+          if (freshPayment?.currentRevisionId) paymentRevisionId = freshPayment.currentRevisionId;
+        } catch {}
+      }
+
       await api.adminRefundPurchase({
         commercePaymentType: 'refund',
         targetCommerceOrderId: order._id,
-        targetCommerceOrderRevisionId: order.currentRevisionId,
+        targetCommerceOrderRevisionId: orderRevisionId,
         targetCommercePaymentId: salePayment._id,
-        targetCommercePaymentRevisionId: salePayment.currentRevisionId,
+        targetCommercePaymentRevisionId: paymentRevisionId,
         amount,
       });
+      // Audit note on the user account so the Audit tab reflects this action.
+      if (orderUserId) {
+        try {
+          await api.adminCreateNote({
+            userId: orderUserId,
+            message: `CSR REFUND: $${Number(amount).toFixed(2)} on order ${(order._id || '').slice(-8)} payment ${(salePayment._id || '').slice(-8)}`,
+            contentType: 'text/plain',
+          });
+        } catch {}
+      }
       setActionSuccess(true);
       setActionMsg('Refund initiated successfully.');
       setRefundAmount('');
@@ -125,6 +148,17 @@ const PurchaseDetailPage = () => {
     setActionMsg('');
     try {
       await api.adminCancelOrder(order._id, flag);
+      // Audit note so the Audit tab on the user reflects this cancel/reactivate.
+      const orderUserId = order.payerId || userId;
+      if (orderUserId) {
+        try {
+          await api.adminCreateNote({
+            userId: orderUserId,
+            message: `CSR ${flag ? 'CANCEL' : 'REACTIVATE'}: Order ${(order._id || '').slice(-8)}`,
+            contentType: 'text/plain',
+          });
+        } catch {}
+      }
       setActionSuccess(true);
       setActionMsg(flag ? 'Order canceled.' : 'Order reactivated.');
       setOrder((o) => o ? { ...o, transient: { ...o.transient, canceled: flag } } : o);
