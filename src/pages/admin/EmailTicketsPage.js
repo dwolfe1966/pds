@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import styles from './EmailTicketsPage.module.css';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -77,8 +78,22 @@ function DirectionBadge({ type }) {
 // ─── EmailTicketsPage ─────────────────────────────────────────────────────────
 
 const EmailTicketsPage = () => {
+  const { user: adminUser } = useAuth();
+  const adminUserId = adminUser?._id || adminUser?.id || null;
+
   // Mode: 'inbox' (all contactMessages) or 'user' (per-user search view)
   const [mode, setMode] = useState('inbox');
+
+  // Inbox-mode filters (combined with the existing filterDir)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'awaiting' | 'replied'
+  const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'billing' | 'general'
+  const [myAssignedOnly, setMyAssignedOnly] = useState(false);
+
+  // Tag editor (per-thread)
+  const [editingTags, setEditingTags] = useState(false);
+  const [tagDraft, setTagDraft] = useState('');
+  const [savingTags, setSavingTags] = useState(false);
 
   // User search (used in 'user' mode)
   const [searchInput, setSearchInput] = useState('');
@@ -148,6 +163,22 @@ const EmailTicketsPage = () => {
 
   // ── filtered list ─────────────────────────────────────────────────────────
 
+  // Helpers used by inbox filter chain
+  const matchesSearch = (item, q) => {
+    if (!q) return true;
+    const needle = q.toLowerCase();
+    const subject = (isContactMessage(item.type) ? contactMessageSubject(item) : item.content?.subject || '').toLowerCase();
+    const sender = (isContactMessage(item.type) ? contactMessageSenderName(item) : '').toLowerCase();
+    const email = (isContactMessage(item.type) ? contactMessageSenderEmail(item) : '').toLowerCase();
+    const preview = (isContactMessage(item.type) ? contactMessagePreview(item) : stripHtml(item.content?.message || '')).toLowerCase();
+    const tagBlob = (item.index || []).join(' ').toLowerCase();
+    return [subject, sender, email, preview, tagBlob].some((s) => s.includes(needle));
+  };
+
+  const hasReply = (item) => Boolean(item?.latestReply || (Array.isArray(item?.referenceIds) && item.referenceIds.length > 0));
+  const itemCategory = (item) => item?.content?.category || item?.content?.input?.category || null;
+  const isAssignedTo = (item, csrId) => Boolean(csrId) && item?.content?.actorId === csrId;
+
   const listItems = useMemo(() => {
     if (mode === 'user') {
       const items = allItems.filter((item) => isMailThread(item.type));
@@ -155,11 +186,18 @@ const EmailTicketsPage = () => {
       if (filterDir === 'inbound') return items.filter((item) => isUserContact(item.type));
       return items;
     }
-    // inbox: contactMessages can be linked (member) or unlinked (non-member)
-    if (filterDir === 'member') return allItems.filter(isMemberLinked);
-    if (filterDir === 'nonmember') return allItems.filter((i) => !isMemberLinked(i));
-    return allItems;
-  }, [allItems, filterDir, mode]);
+    // Inbox mode — combine all five filters.
+    let items = allItems;
+    if (filterDir === 'member')    items = items.filter(isMemberLinked);
+    if (filterDir === 'nonmember') items = items.filter((i) => !isMemberLinked(i));
+    if (statusFilter === 'awaiting') items = items.filter((i) => !hasReply(i));
+    if (statusFilter === 'replied')  items = items.filter(hasReply);
+    if (categoryFilter !== 'all')   items = items.filter((i) => itemCategory(i) === categoryFilter);
+    if (myAssignedOnly)             items = items.filter((i) => isAssignedTo(i, adminUserId));
+    if (searchQuery.trim())         items = items.filter((i) => matchesSearch(i, searchQuery.trim()));
+    return items;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allItems, filterDir, mode, statusFilter, categoryFilter, myAssignedOnly, searchQuery, adminUserId]);
 
   const selected = useMemo(() => {
     if (!selectedId) return null;
@@ -350,6 +388,35 @@ const EmailTicketsPage = () => {
     }
   };
 
+  const beginEditTags = () => {
+    if (!selected) return;
+    const existing = Array.isArray(selected.index) ? selected.index : [];
+    setTagDraft(existing.join(', '));
+    setEditingTags(true);
+  };
+
+  const handleSaveTags = async () => {
+    if (!selected || !isContactMessage(selected.type)) return;
+    setSavingTags(true);
+    try {
+      const tags = tagDraft
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      await api.adminSetContactTags({
+        contactMessageId: resolveId(selected),
+        tags,
+      });
+      showToast('Tags updated.');
+      setEditingTags(false);
+      await fetchInbox(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to save tags.');
+    } finally {
+      setSavingTags(false);
+    }
+  };
+
   const userName = resolvedUser
     ? (`${resolvedUser.firstName || ''} ${resolvedUser.lastName || ''}`.trim() || resolvedUser.email || '')
     : '';
@@ -465,21 +532,105 @@ const EmailTicketsPage = () => {
           <p className={styles.emptyIcon}>Inbox is empty — no contact messages yet.</p>
         </div>
       )}
+      {mode === 'inbox' && !loadingItems && allItems.length > 0 && listItems.length === 0 && (
+        <div className={styles.emptyState}>
+          <p className={styles.emptyIcon}>No tickets match the current filters.</p>
+          <button
+            type="button"
+            className={styles.clearBtn}
+            onClick={() => {
+              setSearchQuery('');
+              setFilterDir('all');
+              setStatusFilter('all');
+              setCategoryFilter('all');
+              setMyAssignedOnly(false);
+            }}
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
+
+      {/* Inbox toolbar — visible whenever there are messages, even if the active
+          filter empties the list, so CSR can clear a too-tight filter without
+          losing access. */}
+      {mode === 'inbox' && allItems.length > 0 && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center',
+          padding: '0.5rem 0', marginBottom: '0.5rem',
+        }}>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search subject, sender, email, body, tags…"
+            style={{
+              flex: '1 1 220px', minWidth: 200,
+              padding: '0.4rem 0.6rem', fontSize: '0.85rem',
+              border: '1px solid #d1d5db', borderRadius: 6,
+            }}
+          />
+          <select
+            className={styles.select}
+            value={filterDir}
+            onChange={(e) => setFilterDir(e.target.value)}
+            aria-label="Audience filter"
+          >
+            {filterOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <select
+            className={styles.select}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Reply status"
+          >
+            <option value="all">All statuses</option>
+            <option value="awaiting">Awaiting reply</option>
+            <option value="replied">Replied</option>
+          </select>
+          <select
+            className={styles.select}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            aria-label="Category"
+          >
+            <option value="all">All categories</option>
+            <option value="billing">Billing</option>
+            <option value="general">General</option>
+          </select>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem', color: '#374151' }}>
+            <input
+              type="checkbox"
+              checked={myAssignedOnly}
+              onChange={(e) => setMyAssignedOnly(e.target.checked)}
+              disabled={!adminUserId}
+            />
+            My tickets
+          </label>
+          <span style={{ fontSize: '0.78rem', color: '#6b7280', marginLeft: 'auto' }}>
+            Showing {listItems.length} of {allItems.length}
+          </span>
+        </div>
+      )}
 
       {/* Two-panel layout */}
       {listItems.length > 0 && (
         <>
-          <div className={styles.filterBar}>
-            <select
-              className={styles.select}
-              value={filterDir}
-              onChange={(e) => setFilterDir(e.target.value)}
-            >
-              {filterOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
+          {mode === 'user' && (
+            <div className={styles.filterBar}>
+              <select
+                className={styles.select}
+                value={filterDir}
+                onChange={(e) => setFilterDir(e.target.value)}
+              >
+                {filterOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className={styles.wrapper}>
             {/* Left: message list */}
@@ -562,8 +713,66 @@ const EmailTicketsPage = () => {
                           Assign to me
                         </button>
                       )}
+                      {isContactMessage(selected.type) && selected.content?.actorId === adminUserId && (
+                        <span className={`${styles.badge} ${styles.badgeStatus}`} style={{ background: '#dbeafe', color: '#1e40af' }}>
+                          Assigned to you
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {/* Tags row — visible for contactMessages only. Edit-in-place
+                      via csrSetContactTags; tags appear on the message.index. */}
+                  {isContactMessage(selected.type) && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '0.5rem 0', marginBottom: '0.5rem', flexWrap: 'wrap',
+                      borderBottom: '1px solid #e5e7eb',
+                    }}>
+                      <span style={{ fontSize: '0.78rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Tags
+                      </span>
+                      {!editingTags ? (
+                        <>
+                          {(selected.index || []).length === 0 ? (
+                            <span style={{ fontSize: '0.82rem', color: '#9ca3af' }}>(none)</span>
+                          ) : (
+                            (selected.index || []).map((t) => (
+                              <span key={t} style={{
+                                fontSize: '0.75rem', fontWeight: 600,
+                                background: '#f3f4f6', color: '#374151',
+                                padding: '0.15rem 0.5rem', borderRadius: 12,
+                              }}>{t}</span>
+                            ))
+                          )}
+                          <button type="button" className={styles.clearBtn} onClick={beginEditTags}>
+                            {(selected.index || []).length === 0 ? 'Add tags' : 'Edit'}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={tagDraft}
+                            onChange={(e) => setTagDraft(e.target.value)}
+                            placeholder="comma, separated, tags"
+                            style={{
+                              flex: '1 1 220px',
+                              padding: '0.35rem 0.55rem', fontSize: '0.85rem',
+                              border: '1px solid #d1d5db', borderRadius: 4,
+                            }}
+                            disabled={savingTags}
+                          />
+                          <button type="button" className={styles.replyBtn} onClick={handleSaveTags} disabled={savingTags}>
+                            {savingTags ? 'Saving…' : 'Save tags'}
+                          </button>
+                          <button type="button" className={styles.cancelBtn} onClick={() => setEditingTags(false)} disabled={savingTags}>
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   {/* Thread or single message body */}
                   <div className={styles.thread}>
