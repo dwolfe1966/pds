@@ -725,8 +725,36 @@ class ApiWrapperService {
 
   // csrWrapper.api.user.findOrders — POST /commerceMgnt/userOrders
   // Returns { orders: [...], perPage: N }
+  //
+  // Some BC deployments don't expose /commerceMgnt/userOrders (returns 404).
+  // When that happens, fall back to /database/search on the commerceOrder
+  // collection filtered by payerId, then normalize the response shape so
+  // callers see the same { orders, perPage } envelope either way.
   async csrFindUserOrders(params = {}) {
-    return await this._csrPost('/commerceMgnt/userOrders', params);
+    try {
+      return await this._csrPost('/commerceMgnt/userOrders', params);
+    } catch (err) {
+      if (err?.status !== 404 && err?.status !== 405) throw err;
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[csrFindUserOrders] /commerceMgnt/userOrders unavailable, falling back to /database/search payerId query');
+      }
+      const { userId, lastOrderId } = params;
+      if (!userId) throw err;
+      const body = {
+        collectionName: 'commerceOrder',
+        brandId: 'idlookup',
+        payerId: userId,
+      };
+      if (lastOrderId) body.lastId = lastOrderId;
+      const raw = await this._csrPost('/database/search', body);
+      const orders = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return {
+        orders,
+        perPage: orders.length,
+        noMoreDocs: raw?.noMoreDocs ?? true,
+        _fallback: 'database-search',
+      };
+    }
   }
 
   // Global order search via /database/search — collectionName: 'commerceOrder'
@@ -736,8 +764,30 @@ class ApiWrapperService {
 
   // csrWrapper.api.user.getOrder — POST /commerceMgnt/getUserOrder
   // params: { userId, orderId, lastPaymentId? }
+  //
+  // Same 404 risk as csrFindUserOrders on some BC deployments — fall back to
+  // /database/search filtered by order _id and normalize the response shape.
   async csrGetUserOrder(params = {}) {
-    return await this._csrPost('/commerceMgnt/getUserOrder', params);
+    try {
+      return await this._csrPost('/commerceMgnt/getUserOrder', params);
+    } catch (err) {
+      if (err?.status !== 404 && err?.status !== 405) throw err;
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[csrGetUserOrder] /commerceMgnt/getUserOrder unavailable, falling back to /database/search by _id');
+      }
+      const { orderId } = params;
+      if (!orderId) throw err;
+      const raw = await this._csrPost('/database/search', {
+        collectionName: 'commerceOrder',
+        brandId: 'idlookup',
+        _id: orderId,
+      });
+      const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      return {
+        orders: docs.slice(0, 1),
+        _fallback: 'database-search',
+      };
+    }
   }
 
   // csrWrapper.api.user.cancelUncancelOrder — POST /commerceMgnt/cancelUncancelOrder
