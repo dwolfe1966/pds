@@ -839,19 +839,9 @@ class ApiWrapperService {
   // collection filtered by payerId, then normalize the response shape so
   // callers see the same { orders, perPage } envelope either way.
   async csrFindUserOrders(params = {}) {
-    // Prefer BC's CSR IIFE if it's loaded — it knows the right URL/auth shape.
-    try {
-      const csr = await this.getCsrWrapper();
-      const findOrders = csr?.api?.user?.findOrders;
-      if (typeof findOrders === 'function') {
-        const res = await findOrders(params);
-        const orders = res?.orders ?? res?.docs ?? (Array.isArray(res) ? res : []);
-        console.log(`[csrFindUserOrders] CsrWrapper.api.user.findOrders → ${orders.length} order(s)`);
-        return res;
-      }
-    } catch (csrErr) {
-      console.log('[csrFindUserOrders] CsrWrapper.findOrders failed, falling back:', csrErr?.message);
-    }
+    // Direct POST primary — the IIFE wrapper returns a different envelope
+    // shape than callers expect. With the path typo fixed (commerceMgmt vs
+    // commerceMgnt), this hits the right URL directly.
     try {
       return await this._csrPost('/commerceMgmt/userOrders', params);
     } catch (err) {
@@ -994,18 +984,7 @@ class ApiWrapperService {
   // Same 404 risk as csrFindUserOrders on some BC deployments — fall back to
   // /database/search filtered by order _id and normalize the response shape.
   async csrGetUserOrder(params = {}) {
-    // Prefer BC's CSR IIFE when available.
-    try {
-      const csr = await this.getCsrWrapper();
-      const getOrder = csr?.api?.user?.getOrder;
-      if (typeof getOrder === 'function') {
-        const res = await getOrder(params);
-        console.log('[csrGetUserOrder] CsrWrapper.api.user.getOrder succeeded');
-        return res;
-      }
-    } catch (csrErr) {
-      console.log('[csrGetUserOrder] CsrWrapper.getOrder failed, falling back:', csrErr?.message);
-    }
+    // Direct POST primary — same envelope-mismatch risk as csrFindUserOrders.
     try {
       return await this._csrPost('/commerceMgmt/getUserOrder', params);
     } catch (err) {
@@ -1048,8 +1027,7 @@ class ApiWrapperService {
   async csrFindOrderPayments(orderId, lastPaymentId) {
     const body = { orderId };
     if (lastPaymentId) body.lastPaymentId = lastPaymentId;
-    return await this._viaCsr('api.user.findOrderPayments', body,
-      () => this._csrPost('/commerceMgmt/orderPayments', body));
+    return await this._csrPost('/commerceMgmt/orderPayments', body);
   }
 
   // csrWrapper.api.user.findOrderHistories — POST /commerceMgmt/orderHistories
@@ -1057,8 +1035,7 @@ class ApiWrapperService {
   async csrFindOrderHistories(orderId, lastRevisionId) {
     const body = { orderId };
     if (lastRevisionId) body.lastRevisionId = lastRevisionId;
-    return await this._viaCsr('api.user.findOrderHistories', body,
-      () => this._csrPost('/commerceMgmt/orderHistories', body));
+    return await this._csrPost('/commerceMgmt/orderHistories', body);
   }
 
   // csrWrapper.api.user.updateScheduleDueTimestamp — POST /commerceMgmt/updateScheduleDueTimestamp
@@ -1177,12 +1154,12 @@ class ApiWrapperService {
   // Lists all contactMessages (member-linked and non-member) sorted by latest reply
   // or by contact date if no reply exists. Each record may include a latestReply.
   async csrFindContactMessages(params = {}) {
-    return await this._viaCsr('api.message.contact.find', params, () => {
-      const qs = new URLSearchParams();
-      if (params.lastId) qs.set('lastId', params.lastId);
-      const suffix = qs.toString() ? `?${qs.toString()}` : '';
-      return this._csrGet(`/contactMessage/admin/find${suffix}`);
-    });
+    // Direct only: IIFE's api.message.contact.find returns a different
+    // envelope shape than our parsers expect, breaking the inbox + dashboard.
+    const qs = new URLSearchParams();
+    if (params.lastId) qs.set('lastId', params.lastId);
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return await this._csrGet(`/contactMessage/admin/find${suffix}`);
   }
 
   // csrWrapper.api.user.findUserContacts — POST /contactMessage/admin/find/:targetUserId
@@ -1194,18 +1171,6 @@ class ApiWrapperService {
   // this deployment.
   async csrFindUserContactMessages({ userId, lastId } = {}) {
     if (!userId) throw new Error('userId is required');
-    // Prefer BC's CSR IIFE — its findUserContacts knows the right URL.
-    try {
-      const csr = await this.getCsrWrapper();
-      const findUserContacts = csr?.api?.user?.findUserContacts;
-      if (typeof findUserContacts === 'function') {
-        const res = await findUserContacts({ userId, ...(lastId ? { lastId } : {}) });
-        console.log('[csrFindUserContactMessages] CsrWrapper.api.user.findUserContacts succeeded');
-        return res;
-      }
-    } catch (csrErr) {
-      console.log('[csrFindUserContactMessages] CsrWrapper.findUserContacts failed, falling back:', csrErr?.message);
-    }
     try {
       return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
     } catch (err) {
@@ -1229,12 +1194,10 @@ class ApiWrapperService {
   // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
   // Returns the full thread (contact + user/csr replies) for a contact message.
   async csrFindContactHistories(params = {}) {
-    return await this._viaCsr('api.message.contact.histories', params, () => {
-      const qs = new URLSearchParams();
-      if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
-      if (params.lastId) qs.set('lastId', params.lastId);
-      return this._csrGet(`/contactMessage/admin/histories?${qs.toString()}`);
-    });
+    const qs = new URLSearchParams();
+    if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
+    if (params.lastId) qs.set('lastId', params.lastId);
+    return await this._csrGet(`/contactMessage/admin/histories?${qs.toString()}`);
   }
 
   // csrWrapper.api.message.contact.createCsrReply — POST /message/admin/user/csrMail/create
@@ -1271,11 +1234,9 @@ class ApiWrapperService {
   // csrWrapper.api.message.contact.replyLinkUrl — GET /contactMessage/admin/replyUrl
   // Returns the reply link URL that the user would receive via email.
   async csrGetContactReplyLinkUrl(params = {}) {
-    return await this._viaCsr('api.message.contact.replyLinkUrl', params, () => {
-      const qs = new URLSearchParams();
-      if (params.messageId) qs.set('messageId', params.messageId);
-      return this._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`);
-    });
+    const qs = new URLSearchParams();
+    if (params.messageId) qs.set('messageId', params.messageId);
+    return await this._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`);
   }
 
   // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)
