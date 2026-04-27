@@ -181,6 +181,8 @@ const AUDIT_PREFIXES = [
   { prefix: 'CSR DATA-REMOVAL REQUEST:',  label: 'Data removal',       color: '#991b1b', bg: '#fee2e2', icon: '🗑' },
   { prefix: 'AGENT ORDER:',               label: 'Agent order',        color: '#166534', bg: '#dcfce7', icon: '+' },
   { prefix: 'CSR REFUND',                 label: 'Refund',             color: '#9a3412', bg: '#ffedd5', icon: '↩' },
+  { prefix: 'CSR CANCEL:',                label: 'Order canceled',     color: '#991b1b', bg: '#fee2e2', icon: '⊘' },
+  { prefix: 'CSR REACTIVATE:',            label: 'Order reactivated',  color: '#166534', bg: '#dcfce7', icon: '↺' },
   { prefix: 'CSR ',                       label: 'CSR action',         color: '#374151', bg: '#f3f4f6', icon: '·' },
 ];
 
@@ -602,6 +604,14 @@ const UserDetailPage = () => {
         targetCommercePaymentRevisionId: paymentRevisionId,
         amount,
       });
+      // Audit note so the Audit tab picks it up.
+      try {
+        await api.adminCreateNote({
+          userId: id,
+          message: `CSR REFUND: ${refundForm.type === 'void' ? 'Void' : 'Refund'} $${amount.toFixed(2)} on order ${(refundForm.orderId || '').slice(-8)} payment ${(refundForm.paymentId || '').slice(-8)}`,
+          contentType: 'text/plain',
+        });
+      } catch {}
       showToast(
         refundForm.type === 'void'
           ? `Void of $${amount.toFixed(2)} processed successfully.`
@@ -610,6 +620,7 @@ const UserDetailPage = () => {
       );
       setRefundForm(null);
       fetchOrders(); // Refresh orders to reflect new status
+      fetchNotes();  // Refresh notes so Audit tab reflects this immediately
     } catch (err) {
       showToast(`Refund failed: ${err?.message || 'Unknown error'}`, 'error');
     } finally {
@@ -722,9 +733,24 @@ const UserDetailPage = () => {
     } else {
       showToast(`${successCount} refunded, ${failCount} failed. Check order details.`, 'error');
     }
+    // Audit note summarizing the batch (single line so it shows cleanly in the timeline).
+    if (successCount > 0) {
+      try {
+        const total = eligiblePayments
+          .filter((p) => Number(p?.totalPrice?.amount ?? p?.transient?.amount?.collected ?? 0) > 0)
+          .slice(0, successCount)
+          .reduce((sum, p) => sum + Number(p?.totalPrice?.amount ?? p?.transient?.amount?.collected ?? 0), 0);
+        await api.adminCreateNote({
+          userId: id,
+          message: `CSR REFUND: Batch refund — ${successCount} payment(s)${failCount ? ` (${failCount} failed)` : ''} totaling $${total.toFixed(2)}${multiOrder ? ` across ${orderIds.length} orders` : ` on order ${(orderId || '').slice(-8)}`}`,
+          contentType: 'text/plain',
+        });
+      } catch {}
+    }
     setBatchRefundConfirm(null);
     setBatchRefundProcessing(false);
     fetchOrders();
+    fetchNotes();
   };
 
   // Cancel or reactivate an order
@@ -734,11 +760,20 @@ const UserDetailPage = () => {
     setCancelProcessing(orderId);
     try {
       await api.adminCancelOrder(orderId, shouldCancel);
+      // Audit note so the Audit tab reflects cancel/reactivate actions.
+      try {
+        await api.adminCreateNote({
+          userId: id,
+          message: `CSR ${shouldCancel ? 'CANCEL' : 'REACTIVATE'}: Order ${(orderId || '').slice(-8)}`,
+          contentType: 'text/plain',
+        });
+      } catch {}
       showToast(
         shouldCancel ? 'Order canceled successfully.' : 'Order reactivated successfully.',
         'success'
       );
       fetchOrders();
+      fetchNotes();
     } catch (err) {
       showToast(`Failed to ${action} order: ${err?.message || 'Unknown error'}`, 'error');
     } finally {
