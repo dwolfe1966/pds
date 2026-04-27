@@ -801,17 +801,16 @@ class ApiWrapperService {
   }
 
   // csrWrapper.api.user.find — POST /database/search
+  // Direct /database/search retained: the IIFE's api.user.find returns a
+  // different envelope shape than our callers parse, so wrapper-first here
+  // breaks UsersPage. Revisit once the response normalization is unified.
   async csrFindUsers(params = {}) {
-    const args = { brandId: 'idlookup', ...params };
-    return await this._viaCsr('api.user.find', args,
-      () => this._csrPost('/database/search', { collectionName: 'users', ...args }));
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', ...params });
   }
 
   // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)
   async csrFindCsReps(params = {}) {
-    const args = { brandId: 'idlookup', ...params };
-    return await this._viaCsr('api.user.findAdmin', args,
-      () => this._csrPost('/database/search', { collectionName: 'users', isAdmin: true, ...args }));
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', isAdmin: true, ...params });
   }
 
   // csrWrapper.api.user.getUserDetail — POST /user/management/detail
@@ -832,10 +831,10 @@ class ApiWrapperService {
       () => this._csrPost('/user/management/create', body));
   }
 
-  // csrWrapper.api.user.findOrders — POST /commerceMgnt/userOrders
+  // csrWrapper.api.user.findOrders — POST /commerceMgmt/userOrders
   // Returns { orders: [...], perPage: N }
   //
-  // Some BC deployments don't expose /commerceMgnt/userOrders (returns 404).
+  // Some BC deployments don't expose /commerceMgmt/userOrders (returns 404).
   // When that happens, fall back to /database/search on the commerceOrder
   // collection filtered by payerId, then normalize the response shape so
   // callers see the same { orders, perPage } envelope either way.
@@ -854,7 +853,7 @@ class ApiWrapperService {
       console.log('[csrFindUserOrders] CsrWrapper.findOrders failed, falling back:', csrErr?.message);
     }
     try {
-      return await this._csrPost('/commerceMgnt/userOrders', params);
+      return await this._csrPost('/commerceMgmt/userOrders', params);
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
       const { userId, lastOrderId } = params;
@@ -870,7 +869,7 @@ class ApiWrapperService {
       ];
       if (lastOrderId) strategies.forEach((s) => { s.body.lastId = lastOrderId; });
 
-      console.log(`[csrFindUserOrders] /commerceMgnt/userOrders → 404 for userId=${userId}; trying ${strategies.length + 1} /database/search variants`);
+      console.log(`[csrFindUserOrders] /commerceMgmt/userOrders → 404 for userId=${userId}; trying ${strategies.length + 1} /database/search variants`);
 
       for (const strat of strategies) {
         try {
@@ -982,14 +981,14 @@ class ApiWrapperService {
     }
   }
 
-  // Global order search via /database/search — collectionName: 'commerceOrder'
+  // Global order search via /database/search — collectionName: 'commerceOrder'.
+  // Direct only: BC's IIFE has no global commerceOrder finder; api.user.findOrders
+  // requires userId and 400s on bare brandId.
   async csrFindOrders(params = {}) {
-    const args = { brandId: 'idlookup', ...params };
-    return await this._viaCsr('api.user.findOrders', args,
-      () => this._csrPost('/database/search', { collectionName: 'commerceOrder', ...args }));
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'commerceOrder', ...params });
   }
 
-  // csrWrapper.api.user.getOrder — POST /commerceMgnt/getUserOrder
+  // csrWrapper.api.user.getOrder — POST /commerceMgmt/getUserOrder
   // params: { userId, orderId, lastPaymentId? }
   //
   // Same 404 risk as csrFindUserOrders on some BC deployments — fall back to
@@ -1008,11 +1007,11 @@ class ApiWrapperService {
       console.log('[csrGetUserOrder] CsrWrapper.getOrder failed, falling back:', csrErr?.message);
     }
     try {
-      return await this._csrPost('/commerceMgnt/getUserOrder', params);
+      return await this._csrPost('/commerceMgmt/getUserOrder', params);
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[csrGetUserOrder] /commerceMgnt/getUserOrder unavailable, falling back to /database/search by _id');
+        console.warn('[csrGetUserOrder] /commerceMgmt/getUserOrder unavailable, falling back to /database/search by _id');
       }
       const { orderId } = params;
       if (!orderId) throw err;
@@ -1029,11 +1028,11 @@ class ApiWrapperService {
     }
   }
 
-  // csrWrapper.api.user.cancelUncancelOrder — POST /commerceMgnt/cancelUncancelOrder
+  // csrWrapper.api.user.cancelUncancelOrder — POST /commerceMgmt/cancelUncancelOrder
   // flag: true = cancel, false = uncancel
   async csrCancelUncancelOrder(orderId, flag) {
     return await this._viaCsr('api.user.cancelUncancelOrder', { orderId, flag },
-      () => this._csrPost('/commerceMgnt/cancelUncancelOrder', { orderId, flag }));
+      () => this._csrPost('/commerceMgmt/cancelUncancelOrder', { orderId, flag }));
   }
 
   // csrWrapper.api.user.refundVoidOrder — POST /commerceBilling/correct
@@ -1044,29 +1043,29 @@ class ApiWrapperService {
       () => this._csrPost('/commerceBilling/correct', params));
   }
 
-  // csrWrapper.api.user.findOrderPayments — POST /commerceMgnt/orderPayments
+  // csrWrapper.api.user.findOrderPayments — POST /commerceMgmt/orderPayments
   // params: { orderId, lastPaymentId? }
   async csrFindOrderPayments(orderId, lastPaymentId) {
     const body = { orderId };
     if (lastPaymentId) body.lastPaymentId = lastPaymentId;
     return await this._viaCsr('api.user.findOrderPayments', body,
-      () => this._csrPost('/commerceMgnt/orderPayments', body));
+      () => this._csrPost('/commerceMgmt/orderPayments', body));
   }
 
-  // csrWrapper.api.user.findOrderHistories — POST /commerceMgnt/orderHistories
+  // csrWrapper.api.user.findOrderHistories — POST /commerceMgmt/orderHistories
   // params: { orderId, lastRevisionId? }
   async csrFindOrderHistories(orderId, lastRevisionId) {
     const body = { orderId };
     if (lastRevisionId) body.lastRevisionId = lastRevisionId;
     return await this._viaCsr('api.user.findOrderHistories', body,
-      () => this._csrPost('/commerceMgnt/orderHistories', body));
+      () => this._csrPost('/commerceMgmt/orderHistories', body));
   }
 
-  // csrWrapper.api.user.updateScheduleDueTimestamp — POST /commerceMgnt/updateScheduleDueTimestamp
+  // csrWrapper.api.user.updateScheduleDueTimestamp — POST /commerceMgmt/updateScheduleDueTimestamp
   // params: { scheduleId, dueTimestamp }
   async csrUpdateScheduleDueTimestamp(scheduleId, dueTimestamp) {
     return await this._viaCsr('api.user.updateScheduleDueTimestamp', { scheduleId, dueTimestamp },
-      () => this._csrPost('/commerceMgnt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp }));
+      () => this._csrPost('/commerceMgmt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp }));
   }
 
   // POST /commerce/offer/findByShmName — added 2026-04-21
@@ -1086,10 +1085,9 @@ class ApiWrapperService {
   }
 
   // csrWrapper.api.optOut.find — POST /database/search
+  // Direct only: same envelope issue as csrFindUsers.
   async csrFindOptOuts(params = {}) {
-    const args = { brandId: 'idlookup', ...params };
-    return await this._viaCsr('api.optOut.find', args,
-      () => this._csrPost('/database/search', { collectionName: 'optOutRequest', ...args }));
+    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });
   }
 
   // csrWrapper.api.user.findUserContacts — POST /database/search (collectionName: userContact)
@@ -1099,8 +1097,7 @@ class ApiWrapperService {
     const { userId, ...rest } = params;
     const body = { collectionName: 'userContact', ...rest };
     if (userId) body.targetUserId = userId;
-    return await this._viaCsr('api.user.findUserContacts', { userId, ...rest },
-      () => this._csrPost('/database/search', body));
+    return await this._csrPost('/database/search', body);
   }
 
   // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
@@ -1284,8 +1281,7 @@ class ApiWrapperService {
   // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)
   // params: { type ('email'|'phone'), contactAddress?, lastId? }
   async csrFindManagedContacts(params = {}) {
-    return await this._viaCsr('api.managedContact.find', params,
-      () => this._csrPost('/database/search', { collectionName: 'managedContact', ...params }));
+    return await this._csrPost('/database/search', { collectionName: 'managedContact', ...params });
   }
 
   // csrWrapper.api.managedContact.unsubscribe — POST /managedContact/management/unsubscribe
@@ -1298,8 +1294,7 @@ class ApiWrapperService {
   // csrWrapper.api.contact.find — POST /database/search (collectionName: contact)
   // Finds visitor contact messages. Params: { status?, brandId?, email?, lastId? }
   async csrFindContacts(params = {}) {
-    return await this._viaCsr('api.contact.find', params,
-      () => this._csrPost('/database/search', { collectionName: 'contact', ...params }));
+    return await this._csrPost('/database/search', { collectionName: 'contact', ...params });
   }
 
   // csrWrapper.api.contact.changeContactToUserContact — POST /message/admin/user/changeContactToUserContact
@@ -1317,9 +1312,8 @@ class ApiWrapperService {
   // USER:nameSearchTeaserOptOut, USER:phoneSearchTeaserOptOut,
   // USER:nameSearch, USER:phoneSearch, USER:login (2026-04-13).
   async csrFindUserTracking(params = {}) {
-    const args = { brandId: 'idlookup', ...params };
-    return await this._viaCsr('api.tracking.findUser', args,
-      () => this._csrPost('/database/search', { collectionName: 'tracking', ...args }));
+    const body = { collectionName: 'tracking', brandId: 'idlookup', ...params };
+    return await this._csrPost('/database/search', body);
   }
 
   /** Generate a random 32-char alphanumeric string matching the IIFE's format. */
