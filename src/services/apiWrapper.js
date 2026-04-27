@@ -768,47 +768,87 @@ class ApiWrapperService {
         }
       }
 
-      // Final brute-force: query commerceOrder unfiltered with sort=newest
-      // first (BC's default appears to be insertion order = oldest first,
-      // which means a brand-new user's order sits at page 9000-something).
-      // We pass a few sort variants since the exact param BC honors isn't
-      // documented; whichever is recognized takes precedence.
-      try {
-        const aggregated = [];
-        let cursor = null;
-        const MAX_PAGES = 10; // ~500 records scanned with default page size
-        for (let i = 0; i < MAX_PAGES; i++) {
-          const body = {
-            ...baseBody,
+      // Final brute-force: probe multiple collection / brandId combinations
+      // since BC may store orders under a different shape than the docs imply.
+      // First combination that returns >0 docs wins. Then filter by payerId
+      // client-side. Each probe is a single page so this stays bounded.
+      const probes = [
+        { collectionName: 'commerceOrder',  brandId: 'idlookup'  },
+        { collectionName: 'commerceOrder',  brandId: 'bytecrtrs' },
+        { collectionName: 'commerceOrder'                         },
+        { collectionName: 'commerceOrders', brandId: 'idlookup'  },
+        { collectionName: 'orders',         brandId: 'idlookup'  },
+      ];
+
+      let workingProbe = null;
+      for (const probe of probes) {
+        try {
+          const raw = await this._csrPost('/database/search', {
+            ...probe,
             sort: { createdAt: -1 },
             sortBy: 'createdAt',
             sortOrder: 'desc',
-            ...(cursor ? { lastId: cursor } : {}),
-          };
-          const raw = await this._csrPost('/database/search', body);
+          });
           const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-          if (docs.length === 0) break;
-          aggregated.push(...docs);
-          // Early-exit if we've already found a match in this page.
-          const earlyMatch = aggregated.some((o) => o?.payerId === userId);
-          cursor = docs[docs.length - 1]?._id;
-          if (earlyMatch || raw?.noMoreDocs || !cursor) break;
+          // Log the first doc's keys + brandId so we can see what BC actually has.
+          const firstDocKeys = docs[0] ? Object.keys(docs[0]).slice(0, 12).join(',') : 'n/a';
+          const firstDocBrand = docs[0]?.brandId || 'n/a';
+          const firstDocPayer = docs[0]?.payerId || 'n/a';
+          console.log(`[csrFindUserOrders] probe ${JSON.stringify(probe)} → ${docs.length} doc(s); first.brandId=${firstDocBrand} first.payerId=${firstDocPayer} keys=[${firstDocKeys}]`);
+          if (docs.length > 0) {
+            workingProbe = { probe, firstPage: docs };
+            break;
+          }
+        } catch (sErr) {
+          console.log(`[csrFindUserOrders] probe ${JSON.stringify(probe)} failed: ${sErr?.message}`);
+        }
+      }
+
+      if (!workingProbe) {
+        console.log('[csrFindUserOrders] no probe returned any commerceOrder docs — BC has no orders accessible to this session, or the schema differs from what we expect');
+        return { orders: [], perPage: 0, noMoreDocs: true, _fallback: 'database-search:no-data' };
+      }
+
+      // Page through using the working probe shape; client-filter each page;
+      // early-exit on first match.
+      try {
+        const aggregated = [...workingProbe.firstPage];
+        const earlyMatch0 = aggregated.find((o) => o?.payerId === userId);
+        if (!earlyMatch0) {
+          let cursor = aggregated[aggregated.length - 1]?._id;
+          const MAX_PAGES = 10;
+          for (let i = 1; i < MAX_PAGES && cursor; i++) {
+            const body = {
+              ...workingProbe.probe,
+              sort: { createdAt: -1 },
+              sortBy: 'createdAt',
+              sortOrder: 'desc',
+              lastId: cursor,
+            };
+            const raw = await this._csrPost('/database/search', body);
+            const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+            if (docs.length === 0) break;
+            aggregated.push(...docs);
+            if (aggregated.some((o) => o?.payerId === userId)) break;
+            cursor = docs[docs.length - 1]?._id;
+            if (raw?.noMoreDocs || !cursor) break;
+          }
         }
         const matched = aggregated.filter((o) => o?.payerId === userId);
         const oldestScanned = aggregated[aggregated.length - 1]?.createdAt;
         const newestScanned = aggregated[0]?.createdAt;
-        console.log(`[csrFindUserOrders] strategy "unfiltered+client-filter": ${matched.length} match(es) of ${aggregated.length} scanned (range: ${newestScanned || '?'} → ${oldestScanned || '?'})`);
+        console.log(`[csrFindUserOrders] working probe scan: ${matched.length} match(es) of ${aggregated.length} scanned (range: ${newestScanned || '?'} → ${oldestScanned || '?'})`);
         if (matched.length > 0) {
           return {
             orders: matched,
             perPage: matched.length,
             noMoreDocs: true,
-            _fallback: 'database-search:unfiltered-client-filter',
+            _fallback: `database-search:${workingProbe.probe.collectionName}`,
             _scannedCount: aggregated.length,
           };
         }
       } catch (sErr) {
-        console.log(`[csrFindUserOrders] unfiltered+client-filter failed: ${sErr?.message}`);
+        console.log(`[csrFindUserOrders] working probe scan failed: ${sErr?.message}`);
       }
 
       console.log(`[csrFindUserOrders] all fallback strategies returned empty for userId=${userId}`);
