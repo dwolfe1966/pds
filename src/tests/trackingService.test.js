@@ -65,13 +65,15 @@ afterEach(() => {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('trackingService.track()', () => {
-  // 1. Fires a fetch POST to the correct URL
-  test('fires a fetch POST to http://localhost:3001/api/v1/admin/events', () => {
+  // 1. Fires a fetch POST to the dev NDJSON tracker (the BC tracking call goes
+  //    through api.createTracking which doesn't hit fetch directly — only the
+  //    dev mirror does).
+  test('fires a fetch POST to the local NDJSON tracker', () => {
     track('test_event');
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     const [url, options] = global.fetch.mock.calls[0];
-    expect(url).toBe('http://localhost:3001/api/v1/admin/events');
+    expect(url).toBe('http://localhost:3002/track');
     expect(options.method).toBe('POST');
   });
 
