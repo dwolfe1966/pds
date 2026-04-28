@@ -7,13 +7,12 @@ import { track } from '../../services/trackingService';
 import { readLoginHistory } from '../../services/loginHistory';
 
 /**
- * Dashboard2 — research-workbench prototype.
+ * Dashboard — research-workbench layout.
  *
- * Sister page to /dashboard. All widgets are backed by real BC data or the
- * mock-server search log; no seeded PRNG. The point is to compare honestly
- * against the existing /dashboard which mixes real with fabricated data.
- *
- * Existing /dashboard, /who-is-searching, and watchingHelpers.js are untouched.
+ * Now the canonical dashboard at /dashboard. Every widget is backed by real
+ * BC data or the mock-server search log — no seeded PRNG. The previous
+ * monitoring-framed DashboardHome is parked but still in the repo for
+ * reference. /dashboard2 redirects here.
  */
 
 const PAGE = {
@@ -509,20 +508,6 @@ const Dashboard2 = () => {
   return (
     <main style={{ background: PAGE.bg, minHeight: 'calc(100vh - 4rem)', paddingBottom: '3rem' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '1.5rem 1rem 0' }}>
-
-        {/* Prototype banner */}
-        <div style={{
-          background: PAGE.warnSoft, border: `1px solid #fde68a`, color: PAGE.warn,
-          borderRadius: '0.5rem', padding: '0.5rem 0.875rem', fontSize: '0.8rem',
-          marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem',
-        }}>
-          <span>
-            <strong>Prototype dashboard</strong> — research-workbench framing using only real BC data.
-          </span>
-          <Link to="/dashboard" style={{ color: PAGE.warn, fontWeight: 600, textDecoration: 'underline' }}>
-            ← Back to current dashboard
-          </Link>
-        </div>
 
         {/* Greeting */}
         <header style={{ marginBottom: '1rem' }}>

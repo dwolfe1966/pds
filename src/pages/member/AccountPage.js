@@ -16,8 +16,9 @@ const AccountPage = () => {
   const { token, user, subscription, isPaid, refreshSubscription } = useAuth();
 
   // ─── Tab state (supports ?tab=messages deep-linking) ────────────────────────
-  const validTabs = ['profile', 'security', 'billing', 'messages'];
-  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'profile';
+  // Default lands on Security & Privacy (first tab); Profile is the last tab.
+  const validTabs = ['security', 'billing', 'messages', 'profile'];
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'security';
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // ─── Profile tab state ───────────────────────────────────────────────────────
@@ -452,10 +453,10 @@ const AccountPage = () => {
   const tabBtnInactive = { ...tabBtnBase, background: '#fff', color: '#374151', border: '1px solid transparent' };
 
   const TABS = [
-    { key: 'profile', label: 'Profile' },
     { key: 'security', label: 'Security & Privacy' },
     { key: 'billing', label: 'Subscription & Billing' },
     { key: 'messages', label: 'Messages' },
+    { key: 'profile', label: 'Profile' },
   ];
 
   return (
