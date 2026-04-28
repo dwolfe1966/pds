@@ -126,8 +126,14 @@ export function useSignup() {
       if (!isSafeRedirect(target)) target = selectedPersonId ? '/payment' : '/dashboard';
 
       setRedirectTo(target);
-      track('signup_complete', { source: 'signup' });
-      gtmSignUp({ method: 'email' });
+      // Resolve the search funnel type so GA4 can split signup by funnel.
+      let searchType;
+      try {
+        const ctx = JSON.parse(sessionStorage.getItem('searchContext') || '{}');
+        searchType = ctx?.teaserInput?.type || ctx?.type || undefined;
+      } catch { /* no-op */ }
+      track('signup_complete', { source: 'signup', search_type: searchType });
+      gtmSignUp({ method: 'email', search_type: searchType });
       recordLogin({ method: 'signup', source: 'signup_flow', email });
       // BC compliance tracking — record T&C/FCRA agreement timestamp on BC side.
       api.createTracking({

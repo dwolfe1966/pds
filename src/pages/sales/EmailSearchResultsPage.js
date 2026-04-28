@@ -5,6 +5,7 @@ import ResultCard from '../../components/ResultCard';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext } from '../../services/searchContext';
+import { track } from '../../services/trackingService';
 import { readThinMatch, isThinMatch } from '../../services/thinMatch';
 
 /**
@@ -20,6 +21,11 @@ const EmailSearchResultsPage = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    track('results_view', { search_type: 'email', query: email || '' });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchResults = async () => {

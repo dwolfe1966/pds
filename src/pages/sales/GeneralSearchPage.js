@@ -20,6 +20,7 @@ const GeneralSearchPage = () => {
   
   // Email search state
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   const usStates = [
     { value: '', label: 'Select State (Optional)' },
@@ -125,17 +126,19 @@ const GeneralSearchPage = () => {
 
   const handleEmailSubmit = (e) => {
     e.preventDefault();
+    setEmailError('');
     if (!email.trim()) {
+      setEmailError('Enter an email address to search.');
       return;
     }
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      alert('Please enter a valid email address');
+      setEmailError('That doesn\'t look like a valid email address.');
       return;
     }
-    
+
     const params = new URLSearchParams();
     params.set('email', email.trim());
     navigate(`/email/loader?${params.toString()}`);
@@ -444,18 +447,29 @@ const GeneralSearchPage = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
                   placeholder="example@email.com"
                   required
                   className={styles.input}
+                  aria-invalid={emailError ? 'true' : 'false'}
                 />
-                <p style={{ 
-                  marginTop: '0.5rem', 
-                  fontSize: '0.875rem', 
-                  color: '#6b7280' 
-                }}>
-                  Enter a complete email address to search
-                </p>
+                {emailError ? (
+                  <p role="alert" style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.875rem',
+                    color: '#b91c1c',
+                  }}>
+                    {emailError}
+                  </p>
+                ) : (
+                  <p style={{
+                    marginTop: '0.5rem',
+                    fontSize: '0.875rem',
+                    color: '#6b7280'
+                  }}>
+                    Enter a complete email address to search
+                  </p>
+                )}
               </div>
 
               <button

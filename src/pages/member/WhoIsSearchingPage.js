@@ -357,6 +357,22 @@ const TabContent = ({ events, kind, isPaid }) => {
 
   return (
     <>
+      {/* Inline disclosure: every chart and table on this view is generated
+          from a seeded simulation until BC ships a reverse-index endpoint.
+          The page-level banner above already says so; we repeat it here so
+          the numbers right next to it are unambiguous. */}
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+        padding: '0.25rem 0.6rem',
+        background: '#fef3c7', border: '1px solid #fde68a',
+        borderRadius: '999px', color: '#92400e',
+        fontSize: '0.7rem', fontWeight: 700,
+        letterSpacing: '0.04em', textTransform: 'uppercase',
+        marginBottom: '0.5rem',
+      }}>
+        Estimated activity · simulated until tracking ships
+      </div>
+
       {/* Stat cards */}
       <div className={styles.statsGrid}>
         <StatCard label="Total (all time)" value={stats.total} />
@@ -370,7 +386,7 @@ const TabContent = ({ events, kind, isPaid }) => {
           <h2 className={styles.sectionTitle}>
             {kind === 'searchers' ? 'Searches over time' : 'Profile views over time'}
           </h2>
-          <p className={styles.sectionCaption}>Last 30 days</p>
+          <p className={styles.sectionCaption}>Last 30 days · simulated</p>
         </div>
         <TrendChart data={trendData} />
       </div>

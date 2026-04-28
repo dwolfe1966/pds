@@ -842,7 +842,7 @@ const AccountPage = () => {
                   style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
                 />
                 <label htmlFor={key} style={{ fontSize: '0.95rem', color: '#374151', cursor: 'pointer' }}>
-                  {key === 'emailAlerts' && 'Email me when an alert is triggered'}
+                  {key === 'emailAlerts' && 'Email me about my account activity'}
                   {key === 'weeklyDigest' && 'Weekly activity digest'}
                   {key === 'marketingEmails' && 'Promotional emails and special offers'}
                 </label>
@@ -910,7 +910,7 @@ const AccountPage = () => {
                   <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.8' }}>
                     <li>Unlimited people searches</li>
                     <li>Full background reports</li>
-                    <li>Real-time alerts when someone searches for you</li>
+                    <li>Saved search history with one-click re-pull</li>
                     <li>PDF report downloads</li>
                     <li>Priority support</li>
                   </ul>

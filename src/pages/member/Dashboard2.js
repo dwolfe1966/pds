@@ -292,7 +292,7 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
                     fontSize: '0.82rem', color: PAGE.accent, textDecoration: 'none', fontWeight: 600,
                     padding: '0.35rem 0.6rem', borderRadius: 4,
                   }}
-                  onClick={() => track('dashboard2_report_open', { reportId: id, fresh: fresh.label })}
+                  onClick={() => track('dashboard_report_open', { reportId: id, fresh: fresh.label })}
                 >
                   Open →
                 </Link>
@@ -416,7 +416,7 @@ const Dashboard2 = () => {
   }, []);
 
   useEffect(() => {
-    track('dashboard2_view', { has_token: !!token });
+    track('dashboard_view', { has_token: !!token });
   }, [token]);
 
   // Reports
@@ -464,7 +464,7 @@ const Dashboard2 = () => {
 
   const handlePdfDownload = (commerceContentId) => {
     if (!commerceContentId) return;
-    track('dashboard2_pdf_download', { reportId: commerceContentId });
+    track('dashboard_pdf_download', { reportId: commerceContentId });
     try { api.downloadPdfReport?.(commerceContentId); } catch {}
   };
 
@@ -609,7 +609,7 @@ const Dashboard2 = () => {
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
           <button
             type="button"
-            onClick={() => { track('dashboard2_cta_click', { target: 'search' }); navigate('/people-search'); }}
+            onClick={() => { track('dashboard_cta_click', { target: 'search' }); navigate('/people-search'); }}
             style={{
               background: PAGE.brand, color: '#fff', border: 'none',
               padding: '0.6rem 1rem', borderRadius: '0.375rem',
@@ -620,7 +620,7 @@ const Dashboard2 = () => {
           </button>
           <button
             type="button"
-            onClick={() => { track('dashboard2_cta_click', { target: 'account' }); navigate('/account'); }}
+            onClick={() => { track('dashboard_cta_click', { target: 'account' }); navigate('/account'); }}
             style={{
               background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
               padding: '0.6rem 1rem', borderRadius: '0.375rem',
@@ -631,7 +631,7 @@ const Dashboard2 = () => {
           </button>
           <button
             type="button"
-            onClick={() => { track('dashboard2_cta_click', { target: 'support' }); navigate('/contact'); }}
+            onClick={() => { track('dashboard_cta_click', { target: 'support' }); navigate('/contact'); }}
             style={{
               background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
               padding: '0.6rem 1rem', borderRadius: '0.375rem',
@@ -643,7 +643,7 @@ const Dashboard2 = () => {
         </div>
 
         {/* Two-column: Reports library (hero) + Activity */}
-        <div style={{
+        <div data-dashboard-grid style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
           gap: '1rem',
@@ -673,10 +673,13 @@ const Dashboard2 = () => {
         </p>
       </div>
 
-      {/* Mobile: stack columns */}
+      {/* Mobile: stack columns + tighten the stat row on phones. */}
       <style>{`
         @media (max-width: 880px) {
-          [data-dashboard2-grid] { grid-template-columns: 1fr !important; }
+          [data-dashboard-grid] { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          [data-dashboard-grid] { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </main>

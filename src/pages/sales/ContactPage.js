@@ -665,7 +665,9 @@ const ContactPage = () => {
           navigate('/opt-out');
           break;
         case 'unsubscribe':
-          navigate('/unsubscribe');
+          // No dedicated consumer /unsubscribe route — opt-out flow handles
+          // the user-initiated removal request.
+          navigate('/opt-out');
           break;
         case 'billing':
           setBillingModalOpen(true);
@@ -723,7 +725,10 @@ const ContactPage = () => {
               </div>
             </section>
 
-            {/* Speak With Us */}
+            {/* Speak With Us — phone support card hidden until a real
+                support number is provisioned. Restore by uncommenting and
+                replacing the tel: target + display number. */}
+            {/*
             <section className={`${styles.card} ${styles.channelCard}`}>
               <div className={styles.channelIcon}>
                 <PhoneIcon />
@@ -734,11 +739,12 @@ const ContactPage = () => {
                 <p className={styles.channelDescription}>
                   Get assistance by phone from our team of experts.
                 </p>
-                <a href="tel:+18885550100" className={styles.channelButton}>
-                  Call 1 (888) 555-0100
+                <a href="tel:+1XXXXXXXXXX" className={styles.channelButton}>
+                  Call 1 (XXX) XXX-XXXX
                 </a>
               </div>
             </section>
+            */}
 
             {/* Email Us */}
             <section className={`${styles.card} ${styles.channelCard}`}>

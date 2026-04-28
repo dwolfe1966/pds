@@ -38,6 +38,11 @@ const PhoneSearchResultsPage = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    track('results_view', { search_type: 'phone', query: phone || '' });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     const fetchResults = async () => {
       // Check if we have results from the loader page
       const storedResults = sessionStorage.getItem('phoneSearchResults');
