@@ -94,6 +94,7 @@ const ProfilePage = () => {
                   name="fullName"
                   value={form.fullName}
                   onChange={handleChange}
+                  autoComplete="name"
                   className={styles.input}
                 />
               </div>
@@ -118,6 +119,11 @@ const ProfilePage = () => {
                   name="zip"
                   value={form.zip}
                   onChange={handleChange}
+                  inputMode="numeric"
+                  pattern="[0-9]{5}(-[0-9]{4})?"
+                  maxLength={10}
+                  autoComplete="postal-code"
+                  placeholder="80202"
                   className={styles.input}
                 />
               </div>
@@ -129,6 +135,8 @@ const ProfilePage = () => {
                   name="phone"
                   value={form.phone}
                   onChange={handleChange}
+                  inputMode="tel"
+                  autoComplete="tel"
                   placeholder="(555) 555-5555"
                   className={styles.input}
                 />
