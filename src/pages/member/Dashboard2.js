@@ -542,6 +542,12 @@ const Dashboard2 = () => {
             </div>
             <h2 style={{
               margin: '0.2rem 0 0', fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.01em',
+              // Explicit yellow — relying on inherited #fff was being clobbered
+              // by global heading styles, leaving the headline near-invisible
+              // against the green gradient. A small dark shadow gives it edge
+              // without making it look neon.
+              color: '#fde047',
+              textShadow: '0 1px 2px rgba(0,0,0,0.25)',
             }}>
               12B+ public records, refreshed continuously by our data partners.
             </h2>
