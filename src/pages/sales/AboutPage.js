@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../../styles/contentContainer.css';
 
 /**
@@ -42,7 +43,7 @@ const AboutPage = () => {
           We take privacy seriously and are committed to compliance with applicable privacy laws, 
           including the California Consumer Privacy Act (CCPA). We provide tools for individuals 
           to opt-out of our database and manage their information. Learn more about our privacy 
-          practices in our <a href="/privacy" style={{ color: '#0d5d2f' }}>Privacy Policy</a>.
+          practices in our <Link to="/privacy" style={{ color: '#0d5d2f' }}>Privacy Policy</Link>.
         </p>
       </section>
 
@@ -50,7 +51,7 @@ const AboutPage = () => {
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Contact Us</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.8' }}>
           Have questions about IDLookup.AI? We'd love to hear from you. 
-          <a href="/contact" style={{ color: '#0d5d2f', marginLeft: '0.5rem' }}>Contact us</a> for 
+          <Link to="/contact" style={{ color: '#0d5d2f', marginLeft: '0.5rem' }}>Contact us</Link> for
           support, partnerships, or general inquiries.
         </p>
       </section>

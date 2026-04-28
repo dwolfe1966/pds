@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useSignup, validatePassword } from '../../hooks/useSignup';
 import styles from './SignupPageStepped.module.css';
 
@@ -233,7 +233,7 @@ const SignupPageStepped = () => {
                   </button>
 
                   <p className={styles.loginHint}>
-                    Already have an account? <a href="/login">Sign in</a>
+                    Already have an account? <Link to="/login">Sign in</Link>
                   </p>
                 </form>
               )}

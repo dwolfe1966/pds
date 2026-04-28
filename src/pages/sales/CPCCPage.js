@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../../styles/contentContainer.css';
 
 /**
@@ -100,7 +101,7 @@ const CPCCPage = () => {
           Address: [Your Company Address]
         </p>
         <p style={{ color: '#6b7280', lineHeight: '1.6', marginTop: '1rem' }}>
-          You can also submit requests through our <a href="/opt-out" style={{ color: '#0d5d2f' }}>opt-out page</a>.
+          You can also submit requests through our <Link to="/opt-out" style={{ color: '#0d5d2f' }}>opt-out page</Link>.
         </p>
       </section>
       </div>

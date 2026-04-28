@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
 import '../../styles/contentContainer.css';
@@ -179,7 +179,7 @@ const SignupPage = ({ source = 'direct' }) => {
               {error && (
                 <div className={styles.errorMsg}>
                   {error === 'already_exists' ? (
-                    <p>An account with this email already exists. <a href="/login" style={{ color: '#0d5d2f', fontWeight: 600 }}>Log in instead</a></p>
+                    <p>An account with this email already exists. <Link to="/login" style={{ color: '#0d5d2f', fontWeight: 600 }}>Log in instead</Link></p>
                   ) : (
                     <><p><strong>Error:</strong></p><p>{error}</p></>
                   )}
@@ -189,7 +189,7 @@ const SignupPage = ({ source = 'direct' }) => {
                 {loading ? 'Creating account…' : 'Create My Free Account'}
               </button>
               <p className={styles.loginLink}>
-                Already have an account? <a href="/login">Log in</a>
+                Already have an account? <Link to="/login">Log in</Link>
               </p>
             </form>
           )}

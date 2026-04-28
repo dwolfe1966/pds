@@ -56,20 +56,24 @@ const LoginPage = () => {
         <h1 className={styles.title}>Login</h1>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Email</label>
+            <label className={styles.label} htmlFor="login-email">Email</label>
             <input
-              type="text"
+              id="login-email"
+              type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
               required
               autoComplete="username"
+              inputMode="email"
+              placeholder="you@example.com"
               className={styles.input}
             />
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Password</label>
+            <label className={styles.label} htmlFor="login-password">Password</label>
             <input
+              id="login-password"
               type="password"
               name="password"
               value={form.password}

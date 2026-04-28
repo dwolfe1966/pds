@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SearchBar from '../../components/SearchBar';
@@ -404,7 +404,7 @@ const MemberSearchResultsPage = () => {
               gap: '0.5rem',
             }}>
               <span>Viewing full reports requires a Pro subscription.</span>
-              <a href="/payment" style={{ color: '#0d5d2f', fontWeight: 600, textDecoration: 'underline' }}>Upgrade now</a>
+              <Link to="/payment" style={{ color: '#0d5d2f', fontWeight: 600, textDecoration: 'underline' }}>Upgrade now</Link>
             </div>
           )}
           {filteredResults.map((result) => (
