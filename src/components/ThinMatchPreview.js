@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useSignup, validatePassword } from '../hooks/useSignup';
 import { thinMatchVariant } from '../services/thinMatch';
 
@@ -82,6 +84,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
   const copy = VARIANT_COPY[variant] || VARIANT_COPY.default;
   const cards = useMemo(() => buildPreviewCards(searchType, query), [searchType, query]);
 
+  const { token, isPaid } = useAuth();
   const { submit, loading, error, setError } = useSignup();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -153,47 +156,89 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
         ))}
       </div>
 
-      {/* Inline signup form */}
-      <div style={{
-        border: '2px solid #1a56db',
-        borderRadius: '0.75rem',
-        padding: '1.5rem',
-        background: '#fff',
-      }}>
-        <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
-          Create a free account to unlock full results
-        </h3>
-        <p style={{ margin: '0 0 1rem', color: '#4b5563', fontSize: '0.9rem' }}>
-          No credit card required to sign up. Billing occurs only if you order a full report.
-        </p>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-          <input
-            type="email" required autoComplete="email"
-            placeholder="Email address"
-            value={email} onChange={(e) => setEmail(e.target.value)}
-            style={inputStyle}
-          />
-          <input
-            type="password" required autoComplete="new-password"
-            placeholder="Create a password (8+ chars, upper/lower/number/symbol)"
-            value={password} onChange={(e) => setPassword(e.target.value)}
-            style={inputStyle}
-          />
-          <label style={{ fontSize: '0.8125rem', color: '#4b5563', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-            <input type="checkbox" checked={optin} onChange={(e) => setOptin(e.target.checked)} />
-            <span>Send me product updates and offers (optional).</span>
-          </label>
-          {error && (
-            <div style={{ color: '#b91c1c', fontSize: '0.8125rem' }}>{error}</div>
-          )}
-          <button type="submit" disabled={loading} style={ctaStyle(loading)}>
-            {loading ? 'Creating your account…' : 'Create account & continue'}
-          </button>
-          <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-            🔒 We never notify the person you searched. Your account is private.
-          </div>
-        </form>
-      </div>
+      {/* CTA — visitor sees inline signup, free member sees upgrade CTA,
+          paid member sees a "refine search" hint instead of a payment prompt. */}
+      {!token ? (
+        <div style={{
+          border: '2px solid #1a56db',
+          borderRadius: '0.75rem',
+          padding: '1.5rem',
+          background: '#fff',
+        }}>
+          <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
+            Create a free account to unlock full results
+          </h3>
+          <p style={{ margin: '0 0 1rem', color: '#4b5563', fontSize: '0.9rem' }}>
+            No credit card required to sign up. Billing occurs only if you order a full report.
+          </p>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+            <input
+              type="email" required autoComplete="email"
+              placeholder="Email address"
+              value={email} onChange={(e) => setEmail(e.target.value)}
+              style={inputStyle}
+            />
+            <input
+              type="password" required autoComplete="new-password"
+              placeholder="Create a password (8+ chars, upper/lower/number/symbol)"
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              style={inputStyle}
+            />
+            <label style={{ fontSize: '0.8125rem', color: '#4b5563', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+              <input type="checkbox" checked={optin} onChange={(e) => setOptin(e.target.checked)} />
+              <span>Send me product updates and offers (optional).</span>
+            </label>
+            {error && (
+              <div style={{ color: '#b91c1c', fontSize: '0.8125rem' }}>{error}</div>
+            )}
+            <button type="submit" disabled={loading} style={ctaStyle(loading)}>
+              {loading ? 'Creating your account…' : 'Create account & continue'}
+            </button>
+            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+              🔒 We never notify the person you searched. Your account is private.
+            </div>
+          </form>
+        </div>
+      ) : !isPaid ? (
+        <div style={{
+          border: '2px solid #1a56db',
+          borderRadius: '0.75rem',
+          padding: '1.5rem',
+          background: '#fff',
+        }}>
+          <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
+            Upgrade to view the full report
+          </h3>
+          <p style={{ margin: '0 0 1rem', color: '#4b5563', fontSize: '0.9rem' }}>
+            You're signed in. Add a payment method to unlock contact details, relatives, and full address history.
+          </p>
+          <Link to="/payment" style={{
+            display: 'inline-block',
+            padding: '0.875rem 1.25rem',
+            background: '#1a56db',
+            color: '#fff',
+            borderRadius: '0.5rem',
+            textDecoration: 'none',
+            fontWeight: 700,
+          }}>
+            Upgrade now
+          </Link>
+        </div>
+      ) : (
+        <div style={{
+          border: '1px solid #e5e7eb',
+          borderRadius: '0.75rem',
+          padding: '1.5rem',
+          background: '#f8fafc',
+        }}>
+          <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
+            Try a different search
+          </h3>
+          <p style={{ margin: 0, color: '#4b5563', fontSize: '0.9rem' }}>
+            Limited matches for this query. Add a state, refine the spelling, or try /people-search for member-only filters.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

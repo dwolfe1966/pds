@@ -193,11 +193,8 @@ const NameSearchLandingV2Page = () => {
   };
 
   const continueFromLocation = () => {
-    // Partner feedback (bug 12): state is required on every name variant.
-    if (!state.trim()) {
-      setLocationError('Please select a state before continuing.');
-      return;
-    }
+    // State is optional — BC accepts the search without it. Empty submissions
+    // just route to a broader SRP that can show a "refine your search" hint.
     setLocationError('');
     setStep('searching-two');
   };
@@ -334,7 +331,7 @@ const NameSearchLandingV2Page = () => {
                 </div>
                 <div className={styles.fieldGroup}>
                   <label className={styles.label} htmlFor="state">
-                    State *
+                    State <span style={{ color: '#6b7280', fontWeight: 400 }}>(optional)</span>
                   </label>
                   <select
                     id="state"

@@ -74,20 +74,19 @@ const NameSearchLandingPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Partner feedback (bugs 1, 2): block submission with inline errors so users
-    // don't silently land on a bad SRP. State is required — first+last alone
-    // returns unreliable matches from BC.
+    // Block on missing first/last name (BC requires both). State stays optional —
+    // BC accepts the search without it and the SRP shows a "refine your search"
+    // hint when matches are thin.
     const next = {};
     if (!firstName.trim()) next.firstName = 'Please enter a first name.';
     if (!lastName.trim()) next.lastName = 'Please enter a last name.';
-    if (!state.trim()) next.state = 'Please select a state.';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
     params.set('lastName', lastName.trim());
-    params.set('state', state.trim());
+    if (state.trim()) params.set('state', state.trim());
     navigate(`/name/loader?${params.toString()}`);
   };
 
@@ -152,7 +151,7 @@ const NameSearchLandingPage = () => {
 
                 <div className={styles.fieldGroup}>
                   <label className={styles.label}>
-                    State *
+                    State <span style={{ color: '#6b7280', fontWeight: 400 }}>(optional)</span>
                   </label>
                   <select
                     value={state}
