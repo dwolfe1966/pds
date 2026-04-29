@@ -1535,6 +1535,42 @@ app.post('/api/v1/searches', authenticateToken, (req, res) => {
   });
 });
 
+// POST /api/v1/searches/import — bulk replay of visitor search log on signup.
+// Mirrors POST /api/v1/searches per item but accepts an array. Skips invalid
+// rows silently so a single bad entry doesn't blow up the whole import.
+app.post('/api/v1/searches/import', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  const { items } = req.body || {};
+
+  if (!Array.isArray(items)) {
+    return res.status(400).json({
+      error: { code: 'VALIDATION_ERROR', message: 'items array is required', details: [] }
+    });
+  }
+
+  const user = dataStore.users.find(u => u.id === userId);
+  const imported = [];
+
+  for (const item of items) {
+    if (!item || !item.type || !item.query) continue;
+    const record = {
+      id: `search-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      userId,
+      type: item.type,
+      query: item.query,
+      resultCount: item.resultCount || 0,
+      source: 'visitor-import',
+      searcherId: user?.id || userId,
+      searcherMembershipLevel: user?.membershipLevel || user?.plan || 'member',
+      timestamp: item.ts || new Date().toISOString(),
+    };
+    dataStore.searches.unshift(record);
+    imported.push(record);
+  }
+
+  res.status(201).json({ data: imported, importedCount: imported.length });
+});
+
 // GET /api/v1/searches/me
 app.get('/api/v1/searches/me', authenticateToken, (req, res) => {
   const userId = req.user.userId;

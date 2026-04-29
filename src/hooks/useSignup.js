@@ -5,6 +5,7 @@ import api from '../api';
 import { track } from '../services/trackingService';
 import { gtmEvent, gtmSignUp } from '../services/gtm';
 import { recordLogin } from '../services/loginHistory';
+import { readLog as readVisitorSearchLog, clearLog as clearVisitorSearchLog } from '../services/visitorSearchLog';
 
 /**
  * Allowed post-signup redirect targets.
@@ -142,6 +143,27 @@ export function useSignup() {
         date: new Date().toISOString(),
         email,
       });
+      // Replay any visitor searches captured before signup so the new member's
+      // history isn't blank. Fire-and-forget — clear local log only on success.
+      try {
+        const { items } = readVisitorSearchLog();
+        if (items.length > 0 && response.accessToken) {
+          api.post('/searches/import', {
+            body: { items },
+            token: response.accessToken,
+          })
+            .then(() => clearVisitorSearchLog())
+            .catch((err) => {
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[visitorSearchLog] import failed:', err?.message);
+              }
+            });
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[visitorSearchLog] flush threw:', err?.message);
+        }
+      }
       setSuccess(true);
       timeoutRef.current = setTimeout(() => navigate(target), 2000);
       return true;

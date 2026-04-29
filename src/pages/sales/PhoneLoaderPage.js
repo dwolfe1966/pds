@@ -5,6 +5,7 @@ import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import { gtmSearchSubmit } from '../../services/gtm';
 import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
+import { appendSearch } from '../../services/visitorSearchLog';
 import styles from './LoaderPage.module.css';
 
 const SCAN_PHASES = [
@@ -65,6 +66,8 @@ const PhoneLoaderPage = () => {
         const identityCount = (response.data || []).length;
         track('search_submit', { type: 'phone', resultCount: identityCount });
         gtmSearchSubmit({ search_type: 'phone', result_count: identityCount });
+        // Persist visitor search intent for replay on signup.
+        appendSearch({ type: 'phone', query: { phone }, resultCount: identityCount });
 
         // Capture BC's thin-match signal so SRP + PaymentPage can react.
         const flags = deriveThinMatchFlags(response.rawResponse || response, { identityCount });
