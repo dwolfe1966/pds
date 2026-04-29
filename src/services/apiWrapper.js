@@ -20,6 +20,31 @@ const CSR_IIFE_CANDIDATES = [
 
 let _csrIifePromise = null;
 
+// ─── admin-auth-debug ───────────────────────────────────────────────────────
+// Temporary diagnostic logging for the admin/CSR 403 investigation. All entry
+// points emit a single object so it's grep-friendly. Search the console for
+// "[admin-auth-debug]" to see the full chain. Remove once root-cause is fixed.
+function _adminAuthDebug(stage, details = {}) {
+  try {
+    const cookieHeader = (typeof document !== 'undefined' && document.cookie) ? document.cookie : '<empty>';
+    const cookieNames = cookieHeader === '<empty>'
+      ? []
+      : cookieHeader.split(';').map((c) => c.trim().split('=')[0]).filter(Boolean);
+    // eslint-disable-next-line no-console
+    console.log('[admin-auth-debug]', stage, {
+      ...details,
+      origin: typeof window !== 'undefined' ? window.location.origin : '<no-window>',
+      cookieNamesSent: cookieNames,
+      cookieCount: cookieNames.length,
+      hasWindowApiWrapper: typeof window !== 'undefined' && typeof window.ApiWrapper !== 'undefined',
+      hasWindowCsrWrapper: typeof window !== 'undefined' && typeof window.CsrWrapper !== 'undefined',
+    });
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.log('[admin-auth-debug]', stage, '(logging itself failed)', e?.message);
+  }
+}
+
 function _loadScript(src) {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -96,6 +121,14 @@ class ApiWrapperService {
       const endpointUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
       this.wrapper = window.ApiWrapper.getInstance({ endpointUrl });
       this.initialized = true;
+      _adminAuthDebug('consumer-iife.getInstance', {
+        endpointUrlPassed: endpointUrl,
+        wrapperType: typeof this.wrapper,
+        wrapperKeysSample: this.wrapper ? Object.keys(this.wrapper).slice(0, 12) : null,
+        wrapperApiKeys: this.wrapper?.api ? Object.keys(this.wrapper.api).slice(0, 12) : null,
+        wrapperApiAuthKeys: this.wrapper?.api?.auth ? Object.keys(this.wrapper.api.auth) : null,
+        wrapperClientId: this.wrapper?.clientId ?? '<not-exposed>',
+      });
       return this.wrapper;
     } catch (error) {
       console.error('Failed to initialize ApiWrapper:', error);
@@ -132,11 +165,33 @@ class ApiWrapperService {
    * Auth endpoints
    */
   async login(body) {
+    _adminAuthDebug('login.start', {
+      useProxy: this.useProxy,
+      proxyUrl: this.proxyUrl,
+      endpointUrl: this.endpointUrl,
+      authUrl: this.authUrl,
+      emailLen: body?.email?.length ?? 0,
+      hasPassword: !!body?.password,
+    });
     if (this.useProxy) {
       try {
         await this.getWrapper().catch(() => {});
-        return await this._loginViaProxy(body);
+        const result = await this._loginViaProxy(body);
+        _adminAuthDebug('login.success.proxy', {
+          hasAccessToken: !!result?.accessToken,
+          accessTokenLen: result?.accessToken?.length ?? 0,
+          hasRefreshToken: !!result?.refreshToken,
+          userRole: result?.user?.role,
+          userRoles: result?.user?.roles,
+          responseKeys: result ? Object.keys(result) : null,
+        });
+        return result;
       } catch (error) {
+        _adminAuthDebug('login.error.proxy', {
+          status: error?.status,
+          message: error?.message,
+          dataKeys: error?.data ? Object.keys(error.data) : null,
+        });
         const enhancedError = new Error(error.message || 'Login failed');
         enhancedError.originalError = error;
         enhancedError.status = error.status;
@@ -146,8 +201,30 @@ class ApiWrapperService {
     }
     try {
       const wrapper = await this.getWrapper();
-      return await wrapper.api.auth.login(body);
+      _adminAuthDebug('login.via-iife.before', {
+        wrapperEndpointUrlPossible: wrapper?.endpointUrl ?? wrapper?.config?.endpointUrl ?? '<unknown>',
+        hasAuthLogin: typeof wrapper?.api?.auth?.login === 'function',
+      });
+      const result = await wrapper.api.auth.login(body);
+      _adminAuthDebug('login.success.iife', {
+        hasAccessToken: !!result?.accessToken,
+        accessTokenLen: result?.accessToken?.length ?? 0,
+        hasRefreshToken: !!result?.refreshToken,
+        userRole: result?.user?.role,
+        userRoles: result?.user?.roles,
+        userId: result?.user?._id || result?.user?.id,
+        responseKeys: result ? Object.keys(result) : null,
+        wrapperClientIdAfter: this.wrapper?.clientId ?? '<not-exposed>',
+      });
+      return result;
     } catch (error) {
+      _adminAuthDebug('login.error.iife', {
+        status: error?.status ?? error?.response?.status,
+        message: error?.message,
+        responseDataKeys: error?.response?.data ? Object.keys(error.response.data) : null,
+        responseConfigUrl: error?.response?.config?.url ?? error?.config?.url,
+        responseConfigBaseURL: error?.response?.config?.baseURL ?? error?.config?.baseURL,
+      });
       const enhancedError = new Error(error.message || 'Login failed');
       enhancedError.originalError = error;
       enhancedError.isCorsError = this._isCorsError(error);
@@ -703,10 +780,19 @@ class ApiWrapperService {
     const baseUrl = this.useProxy
       ? `${this.proxyUrl}${path}`
       : `${this.endpointUrl}${path}`;
+    const clientIdSource = this.wrapper?.clientId ? 'wrapper' : 'random-fallback';
     const clientId = this.wrapper?.clientId || this._generateRandomId();
     const apiId = this._generateRandomId();
     const sep = path.includes('?') ? '&' : '?';
     const url = `${baseUrl}${sep}clientId=${clientId}&apiId=${apiId}`;
+    _adminAuthDebug('_csrPost.before', {
+      path,
+      url,
+      clientIdSource,
+      clientIdSample: String(clientId).slice(0, 8) + '…',
+      bodyKeys: body ? Object.keys(body).slice(0, 12) : null,
+      collectionName: body?.collectionName,
+    });
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
@@ -715,12 +801,27 @@ class ApiWrapperService {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      _adminAuthDebug('_csrPost.error', {
+        path,
+        status: response.status,
+        statusText: response.statusText,
+        errorKeys: errorData ? Object.keys(errorData) : null,
+        errorMessage: errorData?.error?.message || errorData?.message,
+        errorCode: errorData?.error?.code || errorData?.code,
+      });
       const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
       err.status = response.status;
       err.data = errorData;
       throw err;
     }
-    return await response.json();
+    const json = await response.json();
+    _adminAuthDebug('_csrPost.success', {
+      path,
+      status: response.status,
+      responseKeys: json ? Object.keys(json).slice(0, 12) : null,
+      docsCount: Array.isArray(json?.docs) ? json.docs.length : null,
+    });
+    return json;
   }
 
   /**
@@ -729,16 +830,35 @@ class ApiWrapperService {
    * Cached across calls.
    */
   async getCsrWrapper() {
-    if (this.csrWrapper) return this.csrWrapper;
+    if (this.csrWrapper) {
+      _adminAuthDebug('getCsrWrapper.cached', {
+        csrApiKeys: this.csrWrapper?.api ? Object.keys(this.csrWrapper.api).slice(0, 12) : null,
+        csrAuthKeys: this.csrWrapper?.api?.auth ? Object.keys(this.csrWrapper.api.auth) : null,
+        csrClientId: this.csrWrapper?.clientId ?? '<not-exposed>',
+      });
+      return this.csrWrapper;
+    }
     const Cls = await loadCsrIife();
-    if (!Cls) return null;
+    if (!Cls) {
+      _adminAuthDebug('getCsrWrapper.no-class', { reason: 'loadCsrIife returned null' });
+      return null;
+    }
     try {
       this.csrWrapper = typeof Cls.getInstance === 'function'
         ? Cls.getInstance({ endpointUrl: '/api' })
         : Cls;
+      _adminAuthDebug('getCsrWrapper.created', {
+        usedGetInstance: typeof Cls.getInstance === 'function',
+        csrType: typeof this.csrWrapper,
+        csrTopKeys: this.csrWrapper ? Object.keys(this.csrWrapper).slice(0, 12) : null,
+        csrApiKeys: this.csrWrapper?.api ? Object.keys(this.csrWrapper.api).slice(0, 12) : null,
+        csrAuthKeys: this.csrWrapper?.api?.auth ? Object.keys(this.csrWrapper.api.auth) : null,
+        csrClientId: this.csrWrapper?.clientId ?? '<not-exposed>',
+      });
       return this.csrWrapper;
     } catch (e) {
       console.log('[CsrWrapper] getInstance() failed:', e?.message);
+      _adminAuthDebug('getCsrWrapper.error', { message: e?.message });
       return null;
     }
   }
@@ -781,10 +901,17 @@ class ApiWrapperService {
     const baseUrl = this.useProxy
       ? `${this.proxyUrl}${path}`
       : `${this.endpointUrl}${path}`;
+    const clientIdSource = this.wrapper?.clientId ? 'wrapper' : 'random-fallback';
     const clientId = this.wrapper?.clientId || this._generateRandomId();
     const apiId = this._generateRandomId();
     const sep = path.includes('?') ? '&' : '?';
     const url = `${baseUrl}${sep}clientId=${clientId}&apiId=${apiId}`;
+    _adminAuthDebug('_csrGet.before', {
+      path,
+      url,
+      clientIdSource,
+      clientIdSample: String(clientId).slice(0, 8) + '…',
+    });
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',
@@ -792,12 +919,26 @@ class ApiWrapperService {
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      _adminAuthDebug('_csrGet.error', {
+        path,
+        status: response.status,
+        statusText: response.statusText,
+        errorKeys: errorData ? Object.keys(errorData) : null,
+        errorMessage: errorData?.error?.message || errorData?.message,
+        errorCode: errorData?.error?.code || errorData?.code,
+      });
       const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
       err.status = response.status;
       err.data = errorData;
       throw err;
     }
-    return await response.json();
+    const json = await response.json();
+    _adminAuthDebug('_csrGet.success', {
+      path,
+      status: response.status,
+      responseKeys: json ? Object.keys(json).slice(0, 12) : null,
+    });
+    return json;
   }
 
   // csrWrapper.api.user.find — POST /database/search
