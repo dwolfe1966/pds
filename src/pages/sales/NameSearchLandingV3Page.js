@@ -52,6 +52,7 @@ const NameSearchLandingV3Page = () => {
   const [step, setStep] = useState('name');
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [locationError, setLocationError] = useState('');
   const [agreeError, setAgreeError] = useState('');
   const [finalStatus, setFinalStatus] = useState('Searching our database...');
   const [finalProgress, setFinalProgress] = useState(0);
@@ -212,7 +213,11 @@ const NameSearchLandingV3Page = () => {
     setStep('searching-one');
   };
 
-  const continueFromLocation = () => setStep('searching-two');
+  const continueFromLocation = () => {
+    if (!state.trim()) { setLocationError('Please select a state before continuing.'); return; }
+    setLocationError('');
+    setStep('searching-two');
+  };
   const continueFromDetails = () => setStep('confirm');
 
   const handleConfirm = () => {
@@ -329,8 +334,8 @@ const NameSearchLandingV3Page = () => {
           {/* Step 2: Location */}
           {step === 'location' && (
             <div className={styles.form}>
-              <h2 className={styles.sectionTitle}>Which State or County?</h2>
-              <p className={styles.helperText}>Narrow by state or city to search county jails and state prisons. Optional—you can skip.</p>
+              <h2 className={styles.sectionTitle}>Which State?</h2>
+              <p className={styles.helperText}>State narrows the search to county jails and state prisons. City is optional.</p>
 
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v3-city">City (optional)</label>
@@ -344,25 +349,27 @@ const NameSearchLandingV3Page = () => {
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v3-state">State (optional)</label>
+                <label className={styles.label} htmlFor="v3-state">State *</label>
                 <select
                   id="v3-state"
                   className={styles.select}
                   value={state}
-                  onChange={(e) => setState(e.target.value)}
+                  onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}
+                  aria-invalid={!!locationError}
+                  style={locationError ? { borderColor: '#b91c1c' } : undefined}
                 >
                   {usStates.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
+                {locationError && (
+                  <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0.4rem 0 0' }} role="alert">{locationError}</p>
+                )}
               </div>
 
               <div className={styles.actions}>
                 <button type="button" className={styles.buttonPrimary} onClick={continueFromLocation}>
                   Continue
-                </button>
-                <button type="button" className={styles.buttonSecondary} onClick={continueFromLocation}>
-                  Skip
                 </button>
               </div>
             </div>

@@ -176,7 +176,8 @@ const NameSearchLandingV5Page = () => {
   };
 
   const continueFromLocation = () => {
-    // State is optional — BC accepts the search without it.
+    // State is required on every name landing.
+    if (!state.trim()) { setLocationError('Please select a state before continuing.'); return; }
     setLocationError('');
     setStep('searching-two');
   };
@@ -282,7 +283,7 @@ const NameSearchLandingV5Page = () => {
                   value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v5-state">State <span style={{ color: '#6b7280', fontWeight: 400 }}>(optional)</span></label>
+                <label className={styles.label} htmlFor="v5-state">State *</label>
                 <select id="v5-state" className={styles.select}
                   value={state}
                   onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}

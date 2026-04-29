@@ -150,14 +150,19 @@ const MemberGeneralSearchPage = () => {
   const handleNameSubmit = (e) => {
     e.preventDefault();
     setError('');
-    // State, city, and age are optional — BC accepts first+last alone. Only
-    // first/last names are required by the BC search endpoint.
+    // First, last, AND state are required on name searches. City and age stay
+    // optional — they narrow results client-side. (Phone/email tabs don't take
+    // state at all.)
     if (!firstName.trim() || !lastName.trim()) {
       setError('Please enter both first and last name.');
       return;
     }
+    if (!state.trim()) {
+      setError('Please select a state.');
+      return;
+    }
     const params = new URLSearchParams({ firstName: firstName.trim(), lastName: lastName.trim() });
-    if (state.trim()) params.set('state', state.trim().toUpperCase());
+    params.set('state', state.trim().toUpperCase());
     if (nameCity.trim()) params.set('city', nameCity.trim());
     if (ageRange) params.set('age', ageRange);
     navigate(`/people-results?${params.toString()}`);
@@ -306,13 +311,14 @@ const MemberGeneralSearchPage = () => {
               </div>
               <div className={styles.fieldGroup} style={{ marginBottom: 0 }}>
                 <label className={styles.label} htmlFor="gs-state">
-                  State <span style={{ color: '#6b7280', fontWeight: 400 }}>(optional)</span>
+                  State *
                 </label>
                 <select
                   id="gs-state"
                   value={state}
                   onChange={(e) => setState(e.target.value)}
                   disabled={loading}
+                  required
                   className={styles.select}
                 >
                   {US_STATES.map((s) => (

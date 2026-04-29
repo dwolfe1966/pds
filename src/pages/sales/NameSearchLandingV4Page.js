@@ -50,6 +50,7 @@ const NameSearchLandingV4Page = () => {
   const [step, setStep] = useState('name');
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [locationError, setLocationError] = useState('');
   const [agreeError, setAgreeError] = useState('');
   const [finalStatus, setFinalStatus] = useState('Searching our database...');
   const [finalProgress, setFinalProgress] = useState(0);
@@ -173,7 +174,11 @@ const NameSearchLandingV4Page = () => {
     setStep('searching-one');
   };
 
-  const continueFromLocation = () => setStep('searching-two');
+  const continueFromLocation = () => {
+    if (!state.trim()) { setLocationError('Please select a state before continuing.'); return; }
+    setLocationError('');
+    setStep('searching-two');
+  };
   const continueFromDetails = () => setStep('confirm');
 
   const handleConfirm = () => {
@@ -269,24 +274,29 @@ const NameSearchLandingV4Page = () => {
           {step === 'location' && (
             <div className={styles.form}>
               <h2 className={styles.sectionTitle}>Where Did They Last Live?</h2>
-              <p className={styles.helperText}>Providing a location helps us narrow results. Optional — you can skip.</p>
+              <p className={styles.helperText}>State is required so we can search the right county and state records. City is optional.</p>
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v4-city">City (optional)</label>
                 <input id="v4-city" type="text" className={styles.input}
                   value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v4-state">State (optional)</label>
+                <label className={styles.label} htmlFor="v4-state">State *</label>
                 <select id="v4-state" className={styles.select}
-                  value={state} onChange={(e) => setState(e.target.value)}>
+                  value={state}
+                  onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}
+                  aria-invalid={!!locationError}
+                  style={locationError ? { borderColor: '#b91c1c' } : undefined}>
                   {usStates.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
+                {locationError && (
+                  <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0.4rem 0 0' }} role="alert">{locationError}</p>
+                )}
               </div>
               <div className={styles.actions}>
                 <button type="button" className={styles.buttonPrimary} onClick={continueFromLocation}>Continue</button>
-                <button type="button" className={styles.buttonSecondary} onClick={continueFromLocation}>Skip</button>
               </div>
             </div>
           )}

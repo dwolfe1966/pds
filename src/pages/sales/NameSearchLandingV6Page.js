@@ -51,12 +51,13 @@ const NameSearchLandingV6Page = () => {
   const [step, setStep] = useState('name');
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [locationError, setLocationError] = useState('');
   const [agreeError, setAgreeError] = useState('');
   const [finalStatus, setFinalStatus] = useState('Searching our database...');
   const [finalProgress, setFinalProgress] = useState(0);
 
   const usStates = [
-    { value: '', label: 'Select state (optional)' },
+    { value: '', label: 'Select state' },
     { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
     { value: 'AZ', label: 'Arizona' }, { value: 'AR', label: 'Arkansas' },
     { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
@@ -174,7 +175,11 @@ const NameSearchLandingV6Page = () => {
     setStep('searching-one');
   };
 
-  const continueFromLocation = () => setStep('searching-two');
+  const continueFromLocation = () => {
+    if (!state.trim()) { setLocationError('Please select a state before continuing.'); return; }
+    setLocationError('');
+    setStep('searching-two');
+  };
   const continueFromDetails = () => setStep('confirm');
 
   const handleConfirm = () => {
@@ -270,24 +275,29 @@ const NameSearchLandingV6Page = () => {
           {step === 'location' && (
             <div className={styles.form}>
               <h2 className={styles.sectionTitle}>Where Do They Live?</h2>
-              <p className={styles.helperText}>Adding a location narrows results and improves accuracy. Optional — you can skip.</p>
+              <p className={styles.helperText}>State is required for accurate results. City is optional and narrows further.</p>
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v6-city">City (optional)</label>
                 <input id="v6-city" type="text" className={styles.input}
                   value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v6-state">State (optional)</label>
+                <label className={styles.label} htmlFor="v6-state">State *</label>
                 <select id="v6-state" className={styles.select}
-                  value={state} onChange={(e) => setState(e.target.value)}>
+                  value={state}
+                  onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}
+                  aria-invalid={!!locationError}
+                  style={locationError ? { borderColor: '#b91c1c' } : undefined}>
                   {usStates.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
+                {locationError && (
+                  <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0.4rem 0 0' }} role="alert">{locationError}</p>
+                )}
               </div>
               <div className={styles.actions}>
                 <button type="button" className={styles.buttonPrimary} onClick={continueFromLocation}>Continue</button>
-                <button type="button" className={styles.buttonSecondary} onClick={continueFromLocation}>Skip</button>
               </div>
             </div>
           )}

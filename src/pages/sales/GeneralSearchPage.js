@@ -14,6 +14,7 @@ const GeneralSearchPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [state, setState] = useState('');
+  const [nameError, setNameError] = useState('');
   
   // Phone search state
   const [phone, setPhone] = useState('');
@@ -23,7 +24,7 @@ const GeneralSearchPage = () => {
   const [emailError, setEmailError] = useState('');
 
   const usStates = [
-    { value: '', label: 'Select State (Optional)' },
+    { value: '', label: 'Select State' },
     { value: 'AL', label: 'Alabama' },
     { value: 'AK', label: 'Alaska' },
     { value: 'AZ', label: 'Arizona' },
@@ -100,16 +101,20 @@ const GeneralSearchPage = () => {
 
   const handleNameSubmit = (e) => {
     e.preventDefault();
+    setNameError('');
     if (!firstName.trim() || !lastName.trim()) {
+      setNameError('Please enter a first and last name.');
       return;
     }
-    
+    if (!state.trim()) {
+      setNameError('Please select a state.');
+      return;
+    }
+
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
     params.set('lastName', lastName.trim());
-    if (state.trim()) {
-      params.set('state', state.trim());
-    }
+    params.set('state', state.trim());
     navigate(`/name/loader?${params.toString()}`);
   };
 
@@ -361,12 +366,15 @@ const GeneralSearchPage = () => {
               
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>
-                  State (Optional)
+                  State *
                 </label>
                 <select
                   value={state}
-                  onChange={(e) => setState(e.target.value)}
+                  onChange={(e) => { setState(e.target.value); if (nameError) setNameError(''); }}
+                  required
+                  aria-invalid={!!nameError}
                   className={styles.select}
+                  style={nameError ? { borderColor: '#b91c1c' } : undefined}
                 >
                   {usStates.map((stateOption) => (
                     <option key={stateOption.value} value={stateOption.value}>
@@ -375,6 +383,10 @@ const GeneralSearchPage = () => {
                   ))}
                 </select>
               </div>
+
+              {nameError && (
+                <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.75rem' }} role="alert">{nameError}</p>
+              )}
 
               <button type="submit" className={styles.submitButton}>
                 Search Records

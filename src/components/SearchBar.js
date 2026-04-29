@@ -5,10 +5,11 @@ import styles from './SearchBar.module.css';
 const SearchBar = ({ initialQuery = '' }) => {
   const [query, setQuery] = useState(initialQuery);
   const [state, setState] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const usStates = [
-    { value: '', label: 'State' },
+    { value: '', label: 'State *' },
     { value: 'AL', label: 'AL' },
     { value: 'AK', label: 'AK' },
     { value: 'AZ', label: 'AZ' },
@@ -63,38 +64,47 @@ const SearchBar = ({ initialQuery = '' }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Navigate to search results page with query params
+    setError('');
+    if (!query.trim()) { setError('Please enter a name to search.'); return; }
+    if (!state) { setError('Please select a state.'); return; }
     const params = new URLSearchParams();
-    if (query) params.set('q', query);
-    if (state) params.set('state', state);
+    params.set('q', query);
+    params.set('state', state);
     navigate(`/search-results?${params.toString()}`);
   };
 
   return (
-    <form onSubmit={handleSubmit} className={styles.searchForm}>
-      <input
-        type="text"
-        placeholder="Name"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className={styles.searchInput}
-        required
-      />
-      <select
-        value={state}
-        onChange={(e) => setState(e.target.value)}
-        className={styles.stateSelect}
-      >
-        {usStates.map((stateOption) => (
-          <option key={stateOption.value} value={stateOption.value}>
-            {stateOption.label}
-          </option>
-        ))}
-      </select>
-      <button type="submit" className={styles.searchButton}>
-        Search Now
-      </button>
-    </form>
+    <div>
+      <form onSubmit={handleSubmit} className={styles.searchForm}>
+        <input
+          type="text"
+          placeholder="Name"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); if (error) setError(''); }}
+          className={styles.searchInput}
+          required
+        />
+        <select
+          value={state}
+          onChange={(e) => { setState(e.target.value); if (error) setError(''); }}
+          required
+          aria-invalid={!!error}
+          className={styles.stateSelect}
+        >
+          {usStates.map((stateOption) => (
+            <option key={stateOption.value} value={stateOption.value}>
+              {stateOption.label}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className={styles.searchButton}>
+          Search Now
+        </button>
+      </form>
+      {error && (
+        <p style={{ color: '#b91c1c', fontSize: '0.875rem', margin: '0.5rem 0 0' }} role="alert">{error}</p>
+      )}
+    </div>
   );
 };
 
