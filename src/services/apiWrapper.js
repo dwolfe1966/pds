@@ -15,7 +15,7 @@
 const CSR_IIFE_CANDIDATES = [
   'https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js',
   'https://dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js',
-  'https://dev.www.idlookup.ai/libs/csr-wrapper/index.iife.js',
+  'https://www.idlookup.ai/libs/csr-wrapper/index.iife.js',
 ];
 
 let _csrIifePromise = null;
