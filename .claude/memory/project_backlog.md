@@ -12,9 +12,9 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 
 **BACKLOG-3 — Tracking Platform (server-agnostic).** Only GTM → GA4 (`src/services/gtm.js`, `REACT_APP_GTM_ID=GTM-WV7N6WWP` in `.env.production`) is wired. No Segment / Mixpanel / PostHog. `cloudflare-worker.js` exists but is an API/CORS proxy, not an event ingest. Track is open if production drops `/server` and `/tracking-api`.
 
-**BACKLOG-4 — Admin App (ByteCrtrs API).** Admin app builds via `scripts/build-admin.js` → `build-admin/`. `public/admin.html` loads the BC `csrWrapper` IIFE. Many CSR endpoints are wired in `src/services/apiWrapper.js`. **Active blocker:** production CSR calls return 403. Diagnostic instrumentation is live (`[admin-auth-debug]` logs in `apiWrapper.js`, commit `cddbcec`) — pending reproduction + root-cause + log removal.
+**BACKLOG-4 — Admin App (ByteCrtrs API).** Admin app builds via `scripts/build-admin.js` → `build-admin/`. `public/admin.html` loads the BC `csrWrapper` IIFE. Many CSR endpoints are wired in `src/services/apiWrapper.js`. The production-CSR-403 issue (commit `cddbcec` instrumented it) is **resolved**; the `[admin-auth-debug]` logging has been removed. Active focus has shifted to nav cleanup across the admin/CSR app.
 
-**BACKLOG-5 — Member Experience Refinement.** Dashboard2 is the canonical `/dashboard` (commit `3108599`); old `DashboardHome` is orphaned but not deleted. WSFY page (`WhoIsSearchingPage.js`) is wired. AlertsPage redesigned as a search entry surface, not a fake-feed list. Visitor searches now persist across signup (`visitorSearchLog.js` → `POST /searches/import`).
+**BACKLOG-5 — Member Experience Refinement.** Dashboard2 is the canonical `/dashboard` (commit `3108599`); old `DashboardHome` is orphaned but not deleted. WSFY page (`WhoIsSearchingPage.js`) is wired. AlertsPage redesigned as a search entry surface, not a fake-feed list. Visitor searches now persist across signup (`visitorSearchLog.js` → `POST /searches/import`). Active focus: building out the consumer-app test suite and cleaning up consumer nav.
 
 ## Known gaps (not tied to a single track)
 
