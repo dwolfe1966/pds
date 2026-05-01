@@ -1,3 +1,9 @@
+---
+name: Project session log (sprints + status snapshot through 2026-03-18)
+description: Running log of completed sprints, fixed bugs, test baselines, backlog items, and known gaps from the Windows side. Predates the per-topic memory split — newer entries belong in dedicated project_*.md files.
+type: project
+---
+
 # Project Memory — idlookup-app-updated
 
 ## Architecture

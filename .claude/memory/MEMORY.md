@@ -1,2 +1,13 @@
 - [User context & dual-machine setup](user_context.md) — Mac + Windows, sync via git, separate `~/.claude/` per machine
 - [Cross-machine memory sync](reference_memory_sync.md) — `.claude/memory/` is committed; symlink/junction the per-project memory path on each machine
+- [ByteCrtrs API reference](bytecrtrs_api_reference.md) — full method signatures, paths, required params on `window.ApiWrapper`
+- [BC Admin API reference (csrWrapper)](bc_admin_api_reference.md) — admin-side endpoints for the separate Admin App build
+- [Architecture decisions](project_architecture_decisions.md) — finalized decisions for tracking, email, deployment
+- [Production deployment architecture](project_production_architecture.md) — production may ship as pure React SPA; `/server` is dev mock only
+- [Funnel UX research](project_funnel_ux_research.md) — designer competitor analysis (BeenVerified/TruthFinder/Spokeo/Intelius)
+- [Payment UX research](project_payment_ux_research.md) — designer competitor analysis for checkout/subscription
+- [Member search result limit caveat](project_member_search_result_limit.md) — test ByteCrtrs >5 results behavior before relying on it
+- [Project session log (sprints + status through 2026-03-18)](project_session_log.md) — running log; new entries go in dedicated project_*.md files
+- [Team roles](team_roles.md) — Lead, Developer, Tester, Designer, Analyst/Report Developer
+- [Feedback: narrow paywall to /people/:id](feedback_narrow_paywall.md) — do NOT guard /search or /alerts
+- [Feedback: search contextKey/teaserInput require extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time, test between
