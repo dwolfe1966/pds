@@ -1,0 +1,2 @@
+- [User context & dual-machine setup](user_context.md) — Mac + Windows, sync via git, separate `~/.claude/` per machine
+- [Cross-machine memory sync](reference_memory_sync.md) — `.claude/memory/` is committed; symlink/junction the per-project memory path on each machine
