@@ -1,0 +1,7 @@
+{
+  "/libs": {
+    "target": "https://www.idlookup.ai",
+    "secure": true,
+    "changeOrigin": true
+  }
+}
