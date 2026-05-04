@@ -2,7 +2,7 @@
  * Build script for admin app.
  *
  * Uses Node to invoke Parcel so that Git Bash on Windows doesn't mangle
- * the --public-url /admin/ path into a local file path.
+ * the --public-url /csr/ path into a local file path.
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -17,9 +17,9 @@ fs.copyFileSync(src, dst);
 console.log('build-admin: copied .env.admin → .env.production.local');
 
 try {
-  // 2. Run Parcel build with --public-url /admin/
-  //    MSYS_NO_PATHCONV prevents Git Bash from converting /admin/ to C:/Program Files/Git/admin/
-  execSync('npx parcel build public/admin.html --dist-dir build-admin --public-url /admin/', {
+  // 2. Run Parcel build with --public-url /csr/
+  //    MSYS_NO_PATHCONV prevents Git Bash from converting /csr/ to C:/Program Files/Git/csr/
+  execSync('npx parcel build public/admin.html --dist-dir build-admin --public-url /csr/', {
     cwd: root,
     stdio: 'inherit',
     env: { ...process.env, MSYS_NO_PATHCONV: '1' },

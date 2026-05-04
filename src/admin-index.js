@@ -13,7 +13,7 @@ const root = createRoot(container);
 
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename="/admin" future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter basename="/csr" future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <ToastProvider>
           <AdminApp />
