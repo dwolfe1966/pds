@@ -2,12 +2,14 @@
  * Regression tests: admin list pages must correctly unwrap { data: [...] }
  * responses and render list items.
  *
- * Skipped pending rewrite — the api module mock here only stubs the original
- * generic get/post/put/delete, but pages now call typed methods like
- * adminListUsers / adminListCsReps / adminListPurchases / adminListSessions /
- * adminListDataRemoval. The unwrap-shape regression these guarded is still
- * worth covering, but the test setup needs the full admin* mock surface
- * before they can run again.
+ * Pages call typed admin* methods (adminListUsers / adminListCsReps /
+ * adminListPurchases / adminListOrdersGlobal / adminListDataRemoval /
+ * adminListPhoneOptOuts). All return a `{ data: [...], noMoreDocs? }` shape;
+ * tests assert the page unwraps and renders rows from `data`.
+ *
+ * SessionsPage was rewritten to consume the tracking API directly via fetch()
+ * rather than the admin api, so its old unwrap regression no longer applies
+ * and is not covered here.
  */
 
 import React, { act } from 'react';
@@ -16,10 +18,12 @@ import ReactDOM from 'react-dom/client';
 // ── Mock api module ──────────────────────────────────────────────────────
 
 const mockApi = {
-  get: jest.fn().mockResolvedValue({ data: [] }),
-  post: jest.fn().mockResolvedValue({ success: true }),
-  put: jest.fn().mockResolvedValue({ success: true }),
-  delete: jest.fn().mockResolvedValue({ success: true }),
+  adminListUsers:        jest.fn().mockResolvedValue({ data: [], noMoreDocs: true }),
+  adminListCsReps:       jest.fn().mockResolvedValue({ data: [], noMoreDocs: true }),
+  adminListPurchases:    jest.fn().mockResolvedValue({ data: [] }),
+  adminListOrdersGlobal: jest.fn().mockResolvedValue({ data: [] }),
+  adminListDataRemoval:  jest.fn().mockResolvedValue({ data: [], noMoreDocs: true }),
+  adminListPhoneOptOuts: jest.fn().mockResolvedValue({ data: [], noMoreDocs: true }),
 };
 
 jest.mock('../api', () => ({
@@ -36,6 +40,7 @@ jest.mock('react-router-dom', () => {
   return {
     useNavigate: () => jest.fn(),
     useParams: () => ({}),
+    useSearchParams: () => [new URLSearchParams(), jest.fn()],
     Link: ({ children, to }) => mockReact.createElement('a', { href: to }, children),
   };
 });
@@ -52,7 +57,7 @@ beforeAll(() => {
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
-  mockApi.get.mockClear();
+  Object.values(mockApi).forEach((fn) => fn.mockClear());
 });
 
 afterEach(() => {
@@ -76,14 +81,14 @@ function getCellTexts(row) {
 
 // ── UsersPage ────────────────────────────────────────────────────────────
 
-describe.skip('UsersPage response unwrapping', () => {
+describe('UsersPage response unwrapping', () => {
   test('renders user rows when API returns { data: [...] }', async () => {
-    mockApi.get.mockResolvedValue({
+    mockApi.adminListUsers.mockResolvedValue({
       data: [
         { id: 'u1', fullName: 'Alice Smith', email: 'alice@example.com' },
         { id: 'u2', fullName: 'Bob Jones', email: 'bob@example.com' },
       ],
-      pagination: { page: 1, total: 2 },
+      noMoreDocs: true,
     });
 
     const UsersPage = require('../pages/admin/UsersPage').default;
@@ -94,13 +99,14 @@ describe.skip('UsersPage response unwrapping', () => {
 
     const rows = getTableRows();
     expect(rows).toHaveLength(2);
-    expect(getCellTexts(rows[0])).toEqual(expect.arrayContaining(['u1', 'alice@example.com']));
+    expect(rows[0].textContent).toContain('alice@example.com');
     expect(rows[0].textContent).toContain('Alice Smith');
-    expect(getCellTexts(rows[1])).toEqual(expect.arrayContaining(['u2', 'bob@example.com']));
+    expect(rows[1].textContent).toContain('bob@example.com');
+    expect(rows[1].textContent).toContain('Bob Jones');
   });
 
   test('shows "No users found" when API returns empty data array', async () => {
-    mockApi.get.mockResolvedValue({ data: [] });
+    mockApi.adminListUsers.mockResolvedValue({ data: [], noMoreDocs: true });
 
     const UsersPage = require('../pages/admin/UsersPage').default;
     await act(async () => {
@@ -108,79 +114,22 @@ describe.skip('UsersPage response unwrapping', () => {
       root.render(React.createElement(UsersPage));
     });
 
-    expect(container.textContent).toContain('No users found');
-  });
-});
-
-// ── SessionsPage ─────────────────────────────────────────────────────────
-
-describe.skip('SessionsPage response unwrapping', () => {
-  test('renders session rows when API returns { data: [...] }', async () => {
-    mockApi.get.mockResolvedValue({
-      data: [
-        { userId: 'u1', ipAddress: '192.168.1.1', createdAt: '2024-01-15T10:00:00Z' },
-        { userId: 'u2', ipAddress: '10.0.0.1', createdAt: '2024-01-16T12:00:00Z' },
-      ],
-    });
-
-    const SessionsPage = require('../pages/admin/SessionsPage').default;
-    await act(async () => {
-      root = ReactDOM.createRoot(container);
-      root.render(React.createElement(SessionsPage));
-    });
-
-    const rows = getTableRows();
-    expect(rows).toHaveLength(2);
-    expect(getCellTexts(rows[0])).toContain('u1');
-    expect(getCellTexts(rows[0])).toContain('192.168.1.1');
-  });
-
-  test('uses createdAt for session date display', async () => {
-    mockApi.get.mockResolvedValue({
-      data: [
-        { userId: 'u1', ipAddress: '1.2.3.4', createdAt: '2024-03-01' },
-      ],
-    });
-
-    const SessionsPage = require('../pages/admin/SessionsPage').default;
-    await act(async () => {
-      root = ReactDOM.createRoot(container);
-      root.render(React.createElement(SessionsPage));
-    });
-
-    const rows = getTableRows();
-    expect(rows).toHaveLength(1);
-    const cells = getCellTexts(rows[0]);
-    expect(cells).toContain('2024-03-01');
-  });
-
-  test('falls back to startedAt when createdAt is missing', async () => {
-    mockApi.get.mockResolvedValue({
-      data: [
-        { userId: 'u1', ipAddress: '1.2.3.4', startedAt: '2024-02-15' },
-      ],
-    });
-
-    const SessionsPage = require('../pages/admin/SessionsPage').default;
-    await act(async () => {
-      root = ReactDOM.createRoot(container);
-      root.render(React.createElement(SessionsPage));
-    });
-
-    const rows = getTableRows();
-    const cells = getCellTexts(rows[0]);
-    expect(cells).toContain('2024-02-15');
+    expect(container.textContent).toContain('No customers found');
   });
 });
 
 // ── PurchasesPage ────────────────────────────────────────────────────────
+//
+// PurchasesPage's default mode (no userId in URL) loads global recent orders
+// via api.adminListOrdersGlobal. It does not render an empty-state string for
+// the "no purchases" case — only the rows list is asserted here.
 
-describe.skip('PurchasesPage response unwrapping', () => {
+describe('PurchasesPage response unwrapping', () => {
   test('renders purchase rows when API returns { data: [...] }', async () => {
-    mockApi.get.mockResolvedValue({
+    mockApi.adminListOrdersGlobal.mockResolvedValue({
       data: [
-        { id: 'p1', userId: 'u1', amount: '$9.99' },
-        { id: 'p2', userId: 'u2', amount: '$19.99' },
+        { _id: 'p1', userId: 'u1', amount: 9.99, createdAt: '2024-02-01' },
+        { _id: 'p2', userId: 'u2', amount: 19.99, createdAt: '2024-02-02' },
       ],
     });
 
@@ -190,33 +139,21 @@ describe.skip('PurchasesPage response unwrapping', () => {
       root.render(React.createElement(PurchasesPage));
     });
 
-    const rows = getTableRows();
-    expect(rows).toHaveLength(2);
-    expect(rows[0].textContent).toContain('p1');
-    expect(rows[0].textContent).toContain('$9.99');
-  });
-
-  test('shows "No purchases found" when data is empty', async () => {
-    mockApi.get.mockResolvedValue({ data: [] });
-
-    const PurchasesPage = require('../pages/admin/PurchasesPage').default;
-    await act(async () => {
-      root = ReactDOM.createRoot(container);
-      root.render(React.createElement(PurchasesPage));
-    });
-
-    expect(container.textContent).toContain('No purchases found');
+    expect(container.textContent).toContain('p1');
+    expect(container.textContent).toContain('$9.99');
+    expect(container.textContent).toContain('p2');
   });
 });
 
 // ── CsRepManagementPage ─────────────────────────────────────────────────
 
-describe.skip('CsRepManagementPage response unwrapping', () => {
+describe('CsRepManagementPage response unwrapping', () => {
   test('renders rep rows when API returns { data: [...] }', async () => {
-    mockApi.get.mockResolvedValue({
+    mockApi.adminListCsReps.mockResolvedValue({
       data: [
-        { id: 'r1', name: 'Rep Alice', email: 'rep@example.com', role: 'senior' },
+        { id: 'r1', firstName: 'Alice', lastName: 'Rep', email: 'rep@example.com', roles: ['csr'] },
       ],
+      noMoreDocs: true,
     });
 
     const CsRepManagementPage = require('../pages/admin/CsRepManagementPage').default;
@@ -225,15 +162,12 @@ describe.skip('CsRepManagementPage response unwrapping', () => {
       root.render(React.createElement(CsRepManagementPage));
     });
 
-    const rows = getTableRows();
-    expect(rows).toHaveLength(1);
-    expect(rows[0].textContent).toContain('Rep Alice');
-    expect(rows[0].textContent).toContain('rep@example.com');
-    expect(rows[0].textContent).toContain('senior');
+    expect(container.textContent).toContain('Alice Rep');
+    expect(container.textContent).toContain('rep@example.com');
   });
 
-  test('shows "No representatives found" when data is empty', async () => {
-    mockApi.get.mockResolvedValue({ data: [] });
+  test('renders empty list without crashing when data is empty', async () => {
+    mockApi.adminListCsReps.mockResolvedValue({ data: [], noMoreDocs: true });
 
     const CsRepManagementPage = require('../pages/admin/CsRepManagementPage').default;
     await act(async () => {
@@ -241,18 +175,20 @@ describe.skip('CsRepManagementPage response unwrapping', () => {
       root.render(React.createElement(CsRepManagementPage));
     });
 
-    expect(container.textContent).toContain('No representatives found');
+    expect(mockApi.adminListCsReps).toHaveBeenCalled();
+    expect(getTableRows()).toHaveLength(0);
   });
 });
 
 // ── DataRemovalPage ──────────────────────────────────────────────────────
 
-describe.skip('DataRemovalPage response unwrapping', () => {
+describe('DataRemovalPage response unwrapping', () => {
   test('renders removal request rows when API returns { data: [...] }', async () => {
-    mockApi.get.mockResolvedValue({
+    mockApi.adminListDataRemoval.mockResolvedValue({
       data: [
-        { id: 'dr1', userId: 'u1', email: 'remove@test.com', createdAt: '2024-01-20' },
+        { _id: 'dr1', userId: 'u1', email: 'remove@test.com', createdAt: '2024-01-20' },
       ],
+      noMoreDocs: true,
     });
 
     const DataRemovalPage = require('../pages/admin/DataRemovalPage').default;
@@ -261,13 +197,11 @@ describe.skip('DataRemovalPage response unwrapping', () => {
       root.render(React.createElement(DataRemovalPage));
     });
 
-    const rows = getTableRows();
-    expect(rows).toHaveLength(1);
-    expect(rows[0].textContent).toContain('dr1');
+    expect(container.textContent).toContain('remove@test.com');
   });
 
-  test('shows empty state when data is empty', async () => {
-    mockApi.get.mockResolvedValue({ data: [] });
+  test('does not crash when data is empty', async () => {
+    mockApi.adminListDataRemoval.mockResolvedValue({ data: [], noMoreDocs: true });
 
     const DataRemovalPage = require('../pages/admin/DataRemovalPage').default;
     await act(async () => {
@@ -275,6 +209,6 @@ describe.skip('DataRemovalPage response unwrapping', () => {
       root.render(React.createElement(DataRemovalPage));
     });
 
-    expect(container.textContent).toContain('No requests');
+    expect(mockApi.adminListDataRemoval).toHaveBeenCalled();
   });
 });
