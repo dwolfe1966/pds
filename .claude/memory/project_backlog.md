@@ -2,8 +2,8 @@
 name: Active backlog and known gaps
 description: Forward-looking work — the five BACKLOG-X tracks plus known gaps not tied to a specific track. Captures intent and the most recent verified state; check code/git when acting.
 type: project
+originSessionId: ed6a1fb6-9daf-4f36-a40e-b2ed117467bc
 ---
-
 Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 
 **BACKLOG-1 — Outbound Email Platform.** `server/emailService.js` wired with SendGrid + SES + SMTP + console fallback. Unsubscribe handler lives at `/admin/unsubscribe`. **Gap:** `EmailBroadcastPage.js` exists but is orphaned — the `/admin/email` route and nav link were removed in commit `2a9f31b`, so there is no UI entry to send broadcasts. `sendAlertDigest` is exported but never scheduled. No open/click tracking pixels in templates.
@@ -21,5 +21,5 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 - **CI/CD:** No `.github/workflows/`. `vercel.json` is deploy-config only.
 - **Toast notifications:** Still inline `useState + setTimeout` patterns (e.g., `NotesPage.js`). No shared toast component / context.
 - **`perPage: 5`** in `apiRouter.js` for history endpoints — verify BC handles >5 cleanly before raising.
-- **Pre-existing Jest failures:** Last logged baseline was 26 failures (paymentFlow / signupFlow / dashboardHome / memberGeneralSearch / apiCallSignatures) as of 2026-03-17. Run `npm test` for current count before planning a cleanup sprint — the number may have moved.
+- **Jest baseline (2026-05-04):** 0 failures, 192 passing, 89 skipped across 14 suites. Four fully-skipped suites remain: paymentFlow, memberGeneralSearch, signupFlow, signupTransitions. apiCallSignatures has one inline skip: `member/SettingsPage — handlePrivacyToggle`. The earlier 26-failure baseline (2026-03-17) was resolved by skipping rather than fixing — the cleanup work is unskip-and-fix, not green-the-failures. **adminPageUnwrapping was unskipped in this session** (typed admin* methods added to mockApi, SessionsPage suite dropped because the page now consumes the tracking API via fetch instead of admin api). signupTransitions T1 was unskipped briefly and re-skipped: significant architectural drift — SignupPage form is now email+password+optin only (no fullName/zip — collected on PaymentPage), api.billingSignup is no longer called from signup, all logic moved into hooks/useSignup, password complexity rules now require upper/lower/digit/special, and the success path uses a 2-second navigation timeout. T1 needs a real rewrite, not a surgical fix.
 - **`REACT_APP_USE_NEW_API_AUTH=true`** in `.env.production`. Consumer auth is now on BC; the mock-only auth note from older memories is stale.
