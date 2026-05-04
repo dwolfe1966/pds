@@ -57,7 +57,11 @@
       "Bash(git stash *)",
       "Bash(git checkout *)",
       "Bash(gh api *)",
-      "Bash(npm audit *)"
+      "Bash(npm audit *)",
+      "Read(//tmp/**)",
+      "Bash(shasum -a 256 /tmp/prod.iife.js public/libs/api-wrapper/index.iife.js)",
+      "Bash(shasum -a 256 /tmp/admin.iife.js)",
+      "Bash(shasum *)"
     ]
   }
 }
