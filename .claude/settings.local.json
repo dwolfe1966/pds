@@ -56,7 +56,8 @@
       "Bash(gh run *)",
       "Bash(git stash *)",
       "Bash(git checkout *)",
-      "Bash(gh api *)"
+      "Bash(gh api *)",
+      "Bash(npm audit *)"
     ]
   }
 }
