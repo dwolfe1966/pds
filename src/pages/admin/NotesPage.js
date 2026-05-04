@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import styles from './NotesPage.module.css';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -107,17 +108,12 @@ const NotesPage = () => {
   // Modal
   const [editingNote, setEditingNote] = useState(null); // null=closed, undefined=new, note obj=edit
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState('');
+  const showToast = useToast();
 
   // Default view: recent users (BC has no global notes-listing endpoint, so
   // we surface recent users as a starting point instead of a blank prompt).
   const [recentUsers, setRecentUsers] = useState([]);
   const [loadingRecent, setLoadingRecent] = useState(false);
-
-  const showToast = useCallback((msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
-  }, []);
 
   // ── user search ────────────────────────────────────────────────────────────
 
@@ -248,7 +244,6 @@ const NotesPage = () => {
 
   return (
     <main className={styles.page}>
-      {toast && <div className={styles.toast}>{toast}</div>}
 
       {editingNote !== undefined && editingNote !== null && (
         <NoteModal

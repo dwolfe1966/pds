@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import AdminApp from './AdminApp';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import './styles/variables.css';
 import './styles/base.css';
 import './styles/contentContainer.css';
@@ -14,7 +15,9 @@ root.render(
   <React.StrictMode>
     <BrowserRouter basename="/admin" future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <AdminApp />
+        <ToastProvider>
+          <AdminApp />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

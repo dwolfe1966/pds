@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { Link } from 'react-router-dom';
 import styles from './MailActivityPage.module.css';
 
@@ -148,13 +149,9 @@ const MailActivityPage = () => {
 
   // Compose
   const [composing, setComposing] = useState(false);
-  const [toast, setToast] = useState('');
   const [view, setView] = useState('list'); // 'list' | 'cards'
 
-  const showToast = useCallback((msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(''), 3000);
-  }, []);
+  const showToast = useToast();
 
   // ── user search ────────────────────────────────────────────────────────────
 
@@ -258,7 +255,6 @@ const MailActivityPage = () => {
 
   return (
     <main className={styles.page}>
-      {toast && <div className={styles.toast}>{toast}</div>}
 
       {composing && resolvedUser && (
         <ComposeModal
