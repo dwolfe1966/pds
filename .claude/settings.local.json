@@ -54,7 +54,8 @@
       "Bash(ln -s /Users/davidwolfe/Documents/GitHub/pds/.claude/memory /Users/davidwolfe/.claude/projects/-Users-davidwolfe-Documents-GitHub-pds/memory)",
       "Bash(git pull *)",
       "Bash(gh run *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(git checkout *)"
     ]
   }
 }
