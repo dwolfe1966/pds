@@ -1,20 +1,6 @@
 /**
  * Tests for PaymentPage payment flow.
  * Covers authenticated/unauthenticated states, success, failure, and skip paths.
- *
- * Skipped — TRIAGED 2026-05-04: 9/15 already pass; the 6 failures are almost
- * pure UI copy drift. Cheap to fix:
- *   - "Complete Purchase" → "Subscribe Now — $29.99/mo"
- *   - "Payment Successful" heading → "You're in!" panel
- *   - "Processing Payment" button label → "Processing…"
- *   - "$29.99/month" → "$29.99/mo"
- *   - Trust-badge strings: "SSL Encrypted" / "PCI Compliant" → "🔒 256-bit SSL"
- *     / "✓ PCI Compliant" / "🔐 Encrypted"
- * One failure may reflect a real behavior change worth re-asserting:
- *   - Success state no longer auto-navigates to /dashboard; the "You're in!"
- *     panel exposes a "Go to my dashboard" Link the user must click. If that
- *     was intentional, drop the navigate assertion; if not, the regression is
- *     worth catching.
  */
 
 import React, { act } from 'react';
@@ -128,7 +114,7 @@ function submitForm() {
 // Form rendering
 // ---------------------------------------------------------------------------
 
-describe.skip('PaymentPage — form rendering', () => {
+describe('PaymentPage — form rendering', () => {
   test('renders all payment form fields', () => {
     render();
     expect(container.querySelector('input[name="cardNumber"]')).not.toBeNull();
@@ -140,21 +126,21 @@ describe.skip('PaymentPage — form rendering', () => {
     expect(container.querySelector('input[name="billingZip"]')).not.toBeNull();
   });
 
-  test('shows plan price $29.99/month', () => {
+  test('shows plan price $29.99/mo', () => {
     render();
-    expect(container.textContent).toContain('$29.99/month');
+    expect(container.textContent).toContain('$29.99/mo');
   });
 
   test('shows all three trust badges', () => {
     render();
-    expect(container.textContent).toContain('Secure Payment');
-    expect(container.textContent).toContain('SSL Encrypted');
+    expect(container.textContent).toContain('256-bit SSL');
     expect(container.textContent).toContain('PCI Compliant');
+    expect(container.textContent).toContain('Encrypted');
   });
 
-  test('shows Complete Purchase button', () => {
+  test('shows Subscribe Now button with price', () => {
     render();
-    expect(container.textContent).toContain('Complete Purchase');
+    expect(container.textContent).toContain('Subscribe Now — $29.99/mo');
   });
 
   test('shows authenticated user email', () => {
@@ -167,7 +153,7 @@ describe.skip('PaymentPage — form rendering', () => {
 // Auth guard
 // ---------------------------------------------------------------------------
 
-describe.skip('PaymentPage — authentication guard', () => {
+describe('PaymentPage — authentication guard', () => {
   test('redirects to /signup when user is not authenticated', () => {
     mockAuthState = { token: null, user: null, loading: false, setToken: mockSetToken, setUser: mockSetUser };
     render();
@@ -193,7 +179,7 @@ describe.skip('PaymentPage — authentication guard', () => {
 // Payment submission
 // ---------------------------------------------------------------------------
 
-describe.skip('PaymentPage — payment submission', () => {
+describe('PaymentPage — payment submission', () => {
   test('calls api.billingSale with userInfo on submit', async () => {
     mockApi.billingSale.mockResolvedValue({ success: true });
     render();
@@ -207,21 +193,25 @@ describe.skip('PaymentPage — payment submission', () => {
     );
   });
 
-  test('shows Payment Successful heading on success', async () => {
+  test('shows "You\'re in!" success panel after billingSale resolves', async () => {
     mockApi.billingSale.mockResolvedValue({ success: true });
     render();
     fillValidPaymentForm();
     await act(async () => { submitForm(); });
-    expect(container.textContent).toContain('Payment Successful');
+    expect(container.textContent).toContain("You're in!");
   });
 
-  test('paid path (no selected person): redirects to /dashboard after success', async () => {
+  // Successful payment no longer auto-navigates — the success panel renders a
+  // "Go to my dashboard" button the user clicks. This guards the click-through
+  // model so an accidental auto-redirect regression is caught.
+  test('paid path (no selected person): renders Go to my dashboard click-through, no auto-navigate', async () => {
     mockApi.billingSale.mockResolvedValue({ success: true });
     render();
     fillValidPaymentForm();
     await act(async () => { submitForm(); });
     act(() => { jest.runAllTimers(); });
-    expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('Go to my dashboard');
   });
 
   test('shows error message when billingSale throws', async () => {
@@ -237,7 +227,7 @@ describe.skip('PaymentPage — payment submission', () => {
     render();
     fillValidPaymentForm();
     await act(async () => { submitForm(); });
-    expect(container.textContent).not.toContain('Payment Successful');
+    expect(container.textContent).not.toContain("You're in!");
   });
 
   test('disables submit button while payment is processing', async () => {
@@ -247,7 +237,7 @@ describe.skip('PaymentPage — payment submission', () => {
     fillValidPaymentForm();
     act(() => { submitForm(); });
     expect(container.querySelector('button[type="submit"]').disabled).toBe(true);
-    expect(container.textContent).toContain('Processing Payment');
+    expect(container.textContent).toContain('Processing…');
     await act(async () => { resolveFn({ success: true }); });
   });
 });
@@ -256,7 +246,7 @@ describe.skip('PaymentPage — payment submission', () => {
 // Skip / unpaid path
 // ---------------------------------------------------------------------------
 
-describe.skip('PaymentPage — skip payment path', () => {
+describe('PaymentPage — skip payment path', () => {
   test('page renders without a skip/upgrade-later link by default', () => {
     // Documents current state: skip path not yet present.
     // Update this test when the "I'll upgrade later" button is added.
