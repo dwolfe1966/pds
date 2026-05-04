@@ -21,7 +21,7 @@ const COMMON_US_CITIES = [
   'Arlington, TX', 'Tampa, FL', 'New Orleans, LA', 'Cleveland, OH', 'Honolulu, HI',
   'Anaheim, CA', 'Orlando, FL', 'Saint Paul, MN', 'Pittsburgh, PA', 'Cincinnati, OH',
   'Anchorage, AK', 'Buffalo, NY', 'Plano, TX', 'Lincoln, NE', 'Henderson, NV',
-  'Fort Wayne, IN', 'Jersey City, NJ', 'Saint Louis, MO', 'Chula Vista, CA', 'Orlando, FL',
+  'Fort Wayne, IN', 'Jersey City, NJ', 'Saint Louis, MO', 'Chula Vista, CA',
   'Newark, NJ', 'Norfolk, VA', 'Chandler, AZ', 'Lexington, KY', 'Madison, WI',
   'Scottsdale, AZ', 'Fort Lauderdale, FL', 'Salt Lake City, UT', 'Spokane, WA', 'Tacoma, WA',
 ];

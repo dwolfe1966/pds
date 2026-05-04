@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import styles from './OffersProductsPage.module.css';
+import * as styles from './OffersProductsPage.module.css';
 
 // ─── seed data ────────────────────────────────────────────────────────────────
 
