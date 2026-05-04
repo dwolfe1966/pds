@@ -28,6 +28,14 @@ const FULL_REPORT_ITEMS = [
   { icon: '📋', label: 'Other public-record details' },
 ];
 
+// "Jane Doe" → "JD"; "Cher" → "C"; falls back to '?' for missing/empty names.
+function getInitials(fullName) {
+  const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 /**
  * Preview page when a visitor clicks a search result.
  *
@@ -152,7 +160,8 @@ const SearchDetailPreviewPage = () => {
       <main className={styles.main} data-no-nav="true">
         <div className={styles.loadingWrap}>
           <div className={styles.loadingSpinner} aria-hidden="true" />
-          <p>Loading report preview…</p>
+          <p className={styles.loadingTitle}>Searching 247 sources…</p>
+          <p className={styles.loadingSub}>Pulling public records, address history, and connections.</p>
         </div>
       </main>
     );
@@ -303,6 +312,7 @@ const SearchDetailPreviewPage = () => {
 
       {/* ── Hero: just the real fields we actually have ── */}
       <section className={styles.heroSection}>
+        <div className={styles.personAvatar} aria-hidden="true">{getInitials(person.fullName)}</div>
         <h1 className={styles.personName}>{person.fullName}</h1>
         {(person.ageRange || person.location) && (
           <p className={styles.personMeta}>
@@ -358,6 +368,16 @@ const SearchDetailPreviewPage = () => {
           ))}
         </ul>
       </section>
+
+      {/* ── Confidentiality reassurance — placed immediately above the form so
+           it's the last thing the visitor reads before committing. ── */}
+      <div className={styles.confidentialityBanner}>
+        <span className={styles.confidentialityIcon} aria-hidden="true">🔒</span>
+        <span>
+          <span className={styles.confidentialityHeadline}>Your search is 100% confidential.</span>
+          We never notify the person you searched, and we never share your activity.
+        </span>
+      </div>
 
       {/* ── Inline signup form ── */}
       {signupFormJsx}
