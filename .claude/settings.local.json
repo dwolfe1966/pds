@@ -52,7 +52,9 @@
       "Bash(cp /Users/davidwolfe/.claude/projects/-Users-davidwolfe-Documents-GitHub-pds/memory/*.md /Users/davidwolfe/Documents/GitHub/pds/.claude/memory/)",
       "Bash(rm -rf /Users/davidwolfe/.claude/projects/-Users-davidwolfe-Documents-GitHub-pds/memory)",
       "Bash(ln -s /Users/davidwolfe/Documents/GitHub/pds/.claude/memory /Users/davidwolfe/.claude/projects/-Users-davidwolfe-Documents-GitHub-pds/memory)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(gh run *)",
+      "Bash(git stash *)"
     ]
   }
 }
