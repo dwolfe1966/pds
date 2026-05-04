@@ -1,6 +1,23 @@
 /**
  * Tests for SignupPage signup flow.
  * Covers both paid path (with ?selected=) and free/unpaid path (no selected person).
+ *
+ * Skipped — TRIAGED 2026-05-04: same architectural drift as signupTransitions T1.
+ * SignupPage was reduced to email + password + optin (fullName/zip removed —
+ * collected on PaymentPage now). All logic moved into hooks/useSignup which
+ * pulls in additional services none of which are mocked here:
+ *   - services/gtm (gtmEvent, gtmSignUp)
+ *   - services/loginHistory (recordLogin)
+ *   - services/visitorSearchLog (readLog, clearLog)
+ *   - api.createTracking, api.post('/searches/import')
+ * The react-router-dom mock also needs `Link` and `useLocation` added.
+ * Form-field drift: tests fill `fullName` (gone), assert "Sign Up" button
+ * label (now "Create My Free Account"), assume optin checked by default
+ * (now false). Submit button label while loading: "Creating account…"
+ * (was likely something else).
+ *
+ * This is a real rewrite, not a surgical fix. Pair this work with the
+ * signupTransitions T1/T2/T5 rewrite — same dependency graph.
  */
 
 import React, { act } from 'react';

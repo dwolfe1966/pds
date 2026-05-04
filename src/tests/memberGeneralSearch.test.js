@@ -3,6 +3,13 @@
  *
  * Since React Testing Library is not installed, we test by rendering the
  * component with ReactDOM into jsdom and interacting via DOM APIs.
+ *
+ * Skipped — TRIAGED 2026-05-04: all 18 tests fail at the same point —
+ * `useLocation is not a function`. The page calls `useLocation()` but the
+ * react-router-dom mock only exposes `useNavigate`. The fix is one line
+ * in the mock: `useLocation: () => ({ search: '', pathname: '' })`. After
+ * that, the suite may surface follow-on copy/behavior drift, but this is
+ * the cheapest skipped suite to revive.
  */
 
 import React, { act } from 'react';
