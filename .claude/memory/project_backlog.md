@@ -21,12 +21,12 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 - **CI/CD:** No `.github/workflows/`. `vercel.json` is deploy-config only.
 - **Toast notifications:** Still inline `useState + setTimeout` patterns (e.g., `NotesPage.js`). No shared toast component / context.
 - **`perPage: 5`** in `apiRouter.js` for history endpoints — verify BC handles >5 cleanly before raising.
-- **Jest baseline (2026-05-04):** 0 failures, 192 passing, 89 skipped across 14 suites. Four fully-skipped suites remain, each triaged with a diagnostic comment in its file header:
+- **Jest baseline (2026-05-04):** 0 failures, 210 passing, 71 skipped across 14 suites. Three fully-skipped suites remain:
   - **paymentFlow** — 9/15 already pass. 6 failures are pure copy drift ("Complete Purchase"→"Subscribe Now…", "Payment Successful"→"You're in!", trust badges, etc.); one may be a real behavior change (no auto-navigate after success — uses a click-through panel).
-  - **memberGeneralSearch** — all 18 fail at `useLocation is not a function`. One-line fix in the react-router-dom mock; follow-on drift unknown until that's added.
   - **signupFlow** — all 13 fail. Same architectural drift as signupTransitions T1: form reduced to email+password+optin (no fullName/zip), logic moved into `hooks/useSignup` which pulls in `gtm`, `loginHistory`, `visitorSearchLog`, `api.createTracking`, `api.post('/searches/import')` — none mocked. Real rewrite, not surgical fix. Pair with signupTransitions T1.
   - **signupTransitions** — T1 surfaces the same `useSignup` drift; T2/T4 likely have the PaymentPage copy drift seen in paymentFlow; T5 (apiRouter unit test) is closest to current reality but unverified. Highest business value since T1–T5 cover the auth/paywall flows.
 - apiCallSignatures has one inline skip: `member/SettingsPage — handlePrivacyToggle`.
-- The earlier 26-failure baseline (2026-03-17) was resolved by skipping rather than fixing. **adminPageUnwrapping was unskipped 2026-05-04** (commit `6919afd`): typed admin* methods added to mockApi, SessionsPage suite dropped because the page now consumes the tracking API via `fetch` instead of admin api.
-- **Recommended next investment:** memberGeneralSearch (cheapest revive), then paymentFlow (mostly copy fixes). signupFlow + signupTransitions are a paired multi-hour rewrite.
+- The earlier 26-failure baseline (2026-03-17) was resolved by skipping rather than fixing. Two suites have been revived this session: **adminPageUnwrapping** (commit `6919afd`, +7 tests — typed admin* methods added, SessionsPage suite dropped because the page now consumes the tracking API via `fetch`); **memberGeneralSearch** (+18 tests — useLocation mock, tab/placeholder/error-message drift, state-required-for-name-search behavior added).
+- **Side note from memberGeneralSearch revival:** `MemberGeneralSearchPage.js` `COMMON_US_CITIES` has "Orlando, FL" duplicated on lines 19 & 24, producing a React duplicate-key warning. Real but out-of-scope for the test work.
+- **Recommended next investment:** paymentFlow (mostly copy fixes, ~20 min). signupFlow + signupTransitions are a paired multi-hour rewrite.
 - **`REACT_APP_USE_NEW_API_AUTH=true`** in `.env.production`. Consumer auth is now on BC; the mock-only auth note from older memories is stale.
