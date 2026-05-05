@@ -5,6 +5,7 @@
 - [BC integration boundary](project_bc_integration_boundary.md) — IIFE only exposes auth/idLookup/optOut/billing; profile/sub/alerts/notif/pwd stay mock until BC expands
 - [Architecture decisions](project_architecture_decisions.md) — finalized decisions for tracking, email, deployment
 - [Production deployment architecture](project_production_architecture.md) — production may ship as pure React SPA; `/server` is dev mock only
+- [BC hosting cert + URL quirks](project_bc_hosting_quirks.md) — cert only covers `dev.admin.www.bytecrtrs.com`/`dev.gwhubadmin.www.bytecrtrs.com`; use relative `/api`
 - [Active backlog and known gaps](project_backlog.md) — BACKLOG-1..5 plus untracked gaps
 - [Funnel UX research](project_funnel_ux_research.md) — designer competitor analysis (BeenVerified/TruthFinder/Spokeo/Intelius)
 - [Payment UX research](project_payment_ux_research.md) — designer competitor analysis for checkout/subscription
