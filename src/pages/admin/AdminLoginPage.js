@@ -17,8 +17,11 @@ const AdminLoginPage = () => {
     if (!email || !password) { setError('Please enter email and password.'); return; }
     setLoading(true);
     try {
-      const result = await login(email, password);
-      if (result?.user?.role !== 'admin') {
+      // AuthContext.login resolves with the user object directly (not wrapped
+      // in `{ user }`). Reading `result.user.role` would always be undefined,
+      // sending every successful admin login down the access-denied branch.
+      const userData = await login(email, password);
+      if (userData?.role !== 'admin') {
         setError('Access denied. Admin credentials required.');
         setLoading(false);
         return;
