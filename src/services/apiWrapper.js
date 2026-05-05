@@ -95,12 +95,32 @@ class ApiWrapperService {
       // In production: point directly to the BC API.
       const endpointUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
       this.wrapper = window.ApiWrapper.getInstance({ endpointUrl });
+      this._installCaptchaAutofill();
       this.initialized = true;
       return this.wrapper;
     } catch (error) {
       console.error('Failed to initialize ApiWrapper:', error);
       throw error;
     }
+  }
+
+  /**
+   * Auto-fill BC's password.v0 captcha modal so users never see the prompt.
+   *
+   * BC's IIFE shows a generic "Input Password" modal on every captcha challenge
+   * and forwards whatever the user types as the verify token. The expected
+   * password is provisioned by BC per environment (REACT_APP_NEW_API_CAPTCHA).
+   * We override the instance's executePasswordCaptcha to skip the modal and
+   * return the configured password directly.
+   *
+   * No-ops if the env var isn't set or the IIFE structure changes (so we
+   * fall back to BC's modal rather than breaking silently).
+   */
+  _installCaptchaAutofill() {
+    const captchaPass = process.env.REACT_APP_NEW_API_CAPTCHA;
+    if (!captchaPass) return;
+    if (!this.wrapper?.captcha || typeof this.wrapper.captcha.executePasswordCaptcha !== 'function') return;
+    this.wrapper.captcha.executePasswordCaptcha = async () => ({ token: captchaPass });
   }
 
   /**
