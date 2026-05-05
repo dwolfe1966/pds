@@ -72,3 +72,34 @@ export async function setAuthInLocalStorage(page, role = 'admin') {
     localStorage.setItem('user', JSON.stringify(user));
   }, { user: { ...ADMIN_USER, role } });
 }
+
+/**
+ * Mock POST /database/search responses scoped to a single collectionName.
+ *
+ * BC's csrFindUsers/csrFindCsReps/csrFindOptOuts/etc. all hit
+ * /database/search; the request body's `collectionName` discriminates.
+ * Tests pass collectionName + the docs/total/noMoreDocs to fulfill.
+ *
+ * Calls with a different collectionName fall through to the next route
+ * handler (or hit the network if none is registered).
+ *
+ * @param {object} opts
+ * @param {string}  opts.collectionName - 'users', 'optOutRequest', 'userContact', etc.
+ * @param {Array}   opts.docs           - documents returned in the BC envelope
+ * @param {boolean} [opts.noMoreDocs]   - paging signal, default true
+ * @param {(body: any) => boolean} [opts.bodyMatch] - additional predicate on the request body
+ */
+export async function mockDatabaseSearch(page, { collectionName, docs, noMoreDocs = true, bodyMatch } = {}) {
+  await page.route(/\/database\/search($|\?)/, async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    let body = {};
+    try { body = JSON.parse(route.request().postData() || '{}'); } catch {}
+    if (body.collectionName !== collectionName) return route.continue();
+    if (bodyMatch && !bodyMatch(body)) return route.continue();
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ docs, total: docs.length, noMoreDocs }),
+    });
+  });
+}
