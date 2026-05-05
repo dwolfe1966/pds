@@ -10,7 +10,6 @@ export default defineConfig({
   reporter: [['html', { open: 'never' }], ['list']],
 
   use: {
-    baseURL: 'http://localhost:3000',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     // Give API calls time to complete (ByteCrtrs calls can be slow)
@@ -19,13 +18,28 @@ export default defineConfig({
   },
 
   projects: [
+    // Consumer SPA — talks to mock server + BC IIFE proxy
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'consumer',
+      testIgnore: /\/admin\//,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3000',
+      },
+    },
+    // Admin SPA — separate parcel build at port 3003 with basename /csr.
+    // Tests mock /api/* with page.route() so no real backend needed.
+    {
+      name: 'admin',
+      testMatch: /\/admin\/.*\.spec\.js$/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3003',
+      },
     },
   ],
 
-  // Start both the mock API server and Parcel dev server before running tests
+  // Start mock server, consumer parcel, admin parcel before running tests
   webServer: [
     {
       command: 'node server/index.js',
@@ -36,6 +50,14 @@ export default defineConfig({
     {
       command: 'npx parcel public/index.html --port 3000 --no-cache',
       url: 'http://localhost:3000',
+      reuseExistingServer: true,
+      timeout: 60_000,
+    },
+    {
+      // Admin parcel — admin.html is the entry, served at root on port 3003.
+      // BrowserRouter basename="/csr" means React routes are /csr/login etc.
+      command: 'npx parcel public/admin.html --port 3003 --no-cache',
+      url: 'http://localhost:3003',
       reuseExistingServer: true,
       timeout: 60_000,
     },
