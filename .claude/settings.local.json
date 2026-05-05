@@ -61,7 +61,26 @@
       "Read(//tmp/**)",
       "Bash(shasum -a 256 /tmp/prod.iife.js public/libs/api-wrapper/index.iife.js)",
       "Bash(shasum -a 256 /tmp/admin.iife.js)",
-      "Bash(shasum *)"
+      "Bash(shasum *)",
+      "Bash(uuidgen)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"dynamicData\"\\); while\\(idx>0\\){ print \"OFFSET\", idx, \":\", substr\\($0, idx-60, 180\\); $0=substr\\($0, idx+11\\); idx=index\\($0, \"dynamicData\"\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"dynamicCaptcha\"\\); while\\(idx>0\\){ print \"OFFSET\", idx, \":\", substr\\($0, idx-100, 400\\); $0=substr\\($0, idx+14\\); idx=index\\($0, \"dynamicCaptcha\"\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"executeDynamicCaptcha\"\\); while\\(idx>0\\){ print \"OFFSET\", idx, \":\", substr\\($0, idx-50, 600\\); print \"----\"; $0=substr\\($0, idx+21\\); idx=index\\($0, \"executeDynamicCaptcha\"\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"verifyCaptcha\"\\); while\\(idx>0\\){ print \"OFFSET\", idx, \":\", substr\\($0, idx-40, 500\\); print \"----\"; $0=substr\\($0, idx+13\\); idx=index\\($0, \"verifyCaptcha\"\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"guardRetryResponseError\"\\); while\\(idx>0\\){ print \"OFFSET\", idx, \":\", substr\\($0, idx-50, 800\\); print \"----\"; $0=substr\\($0, idx+23\\); idx=index\\($0, \"guardRetryResponseError\"\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"isVerifyCaptchaFailedError\"\\); while\\(idx>0\\){ print \"OFFSET\", idx, \":\", substr\\($0, idx-200, 600\\); print \"----\"; $0=substr\\($0, idx+26\\); idx=index\\($0, \"isVerifyCaptchaFailedError\"\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"guardRetryResponseError\"\\); count=0; while\\(idx>0 && count<3\\){ print \"--- OFFSET\", idx, \"---\"; print substr\\($0, idx, 600\\); print; $0=substr\\($0, idx+23\\); idx=index\\($0, \"guardRetryResponseError\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"makeCaptchaRetryRequest\"\\); count=0; while\\(idx>0 && count<2\\){ print \"--- OFFSET\", idx, \"---\"; print substr\\($0, idx, 1500\\); print; $0=substr\\($0, idx+23\\); idx=index\\($0, \"makeCaptchaRetryRequest\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"handleRequest\"\\); count=0; while\\(idx>0 && count<3\\){ print \"--- OFFSET\", idx, \"---\"; print substr\\($0, idx, 700\\); print; $0=substr\\($0, idx+13\\); idx=index\\($0, \"handleRequest\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"handleRequest\\(config\\) {\"\\); if\\(idx>0\\){ print \"FOUND AT\", idx; print substr\\($0, idx, 1200\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"executePasswordCaptcha\"\\); count=0; while\\(idx>0 && count<2\\){ print \"OFFSET\", idx; print substr\\($0, idx, 600\\); print \"----\"; $0=substr\\($0, idx+22\\); idx=index\\($0, \"executePasswordCaptcha\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"passwordModal\"\\); count=0; while\\(idx>0 && count<3\\){ print \"OFFSET\", idx; print substr\\($0, idx, 1500\\); print \"----\"; $0=substr\\($0, idx+13\\); idx=index\\($0, \"passwordModal\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"promptModal\"\\); count=0; while\\(idx>0 && count<2\\){ print \"OFFSET\", idx; print substr\\($0, idx, 1200\\); print \"----\"; $0=substr\\($0, idx+11\\); idx=index\\($0, \"promptModal\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"__requestCallback\"\\); count=0; while\\(idx>0 && count<3\\){ print \"OFFSET\", idx; print substr\\($0, idx-50, 400\\); print \"----\"; $0=substr\\($0, idx+17\\); idx=index\\($0, \"__requestCallback\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"localStorage\"\\); count=0; while\\(idx>0 && count<6\\){ print \"OFFSET\", idx; print substr\\($0, idx-50, 250\\); print \"----\"; $0=substr\\($0, idx+12\\); idx=index\\($0, \"localStorage\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"markPathHistories\"\\); count=0; while\\(idx>0 && count<5\\){ print \"OFFSET\", idx; print substr\\($0, idx-100, 400\\); print \"----\"; $0=substr\\($0, idx+17\\); idx=index\\($0, \"markPathHistories\"\\); count++ } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"handleRequest\\(config\\) {\"\\); if\\(idx>0\\){ print substr\\($0, idx, 500\\) } }' /tmp/prod.iife.js)",
+      "Bash(awk 'BEGIN{RS=\"\"}{ idx=index\\($0, \"ApiWrapperModal\"\\); count=0; while\\(idx>0 && count<5\\){ print \"OFFSET\", idx, \":\"; print substr\\($0, idx-30, 250\\); print \"----\"; $0=substr\\($0, idx+15\\); idx=index\\($0, \"ApiWrapperModal\"\\); count++ } }' /tmp/prod.iife.js)"
     ]
   }
 }
