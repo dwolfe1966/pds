@@ -18,15 +18,28 @@ export const ADMIN_USER = {
 };
 
 /**
- * Intercept POST /api/auth/login and return a canned admin login response.
+ * Intercept POST .../auth/login and return a canned admin login response.
  * Call this BEFORE navigating, so the route is in place when the form submits.
+ *
+ * Matches both prod and dev-proxy URL shapes the IIFE may use:
+ *   - prod: /api/auth/login                (REACT_APP_NEW_API_URL=/api)
+ *   - dev:  /api/proxy/auth/login          (server/index.js proxy)
+ *   - dev:  https://...bytecrtrs.com/api/auth/login
+ * Also stubs /shape/compiled which the IIFE calls during init — left
+ * unmocked it 502s in CI and the form renders "Bad Gateway" before
+ * the test can submit.
  *
  * @param {object} opts
  * @param {boolean} [opts.success=true] - return success vs 401
  * @param {string}  [opts.role='admin'] - role on the returned user
  */
 export async function mockAdminLogin(page, { success = true, role = 'admin' } = {}) {
-  await page.route('**/api/auth/login**', async (route) => {
+  // IIFE init probe — return empty shape so init proceeds.
+  await page.route(/\/shape\/compiled($|\?)/, (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+  );
+
+  await page.route(/\/auth\/login($|\?)/, async (route) => {
     if (route.request().method() !== 'POST') return route.continue();
     if (!success) {
       return route.fulfill({
