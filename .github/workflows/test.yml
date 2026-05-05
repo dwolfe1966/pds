@@ -33,6 +33,11 @@ jobs:
 
       - run: npm ci
 
+      # Mock server has its own package.json + node_modules and is started by
+      # playwright.config.js's webServer entry. Without this install, parcel
+      # starts but `node server/index.js` fails with "Cannot find module 'express'".
+      - run: npm run install-server
+
       - name: Install Playwright chromium
         run: npx playwright install --with-deps chromium
 
