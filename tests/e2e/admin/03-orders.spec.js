@@ -66,10 +66,11 @@ test.describe('Admin Orders page', () => {
 
     const rows = page.locator('tbody tr');
     await expect(rows).toHaveCount(3);
-    // All three order IDs surface (truncated; just check the prefix)
-    await expect(page.locator('tbody')).toContainText('order-active-sa');
+    // The page truncates IDs longer than 14 chars to `slice(0,14) + '…'`
+    // (see shortId() in OrdersPage.js), so assert the truncated 14-char forms.
+    await expect(page.locator('tbody')).toContainText('order-active-s');
     await expect(page.locator('tbody')).toContainText('order-canceled');
-    await expect(page.locator('tbody')).toContainText('order-active-re');
+    await expect(page.locator('tbody')).toContainText('order-active-r');
   });
 
   test('status filter narrows the list client-side without refetching', async ({ page }) => {
@@ -84,7 +85,7 @@ test.describe('Admin Orders page', () => {
 
     await expect(page.locator('tbody tr')).toHaveCount(1);
     await expect(page.locator('tbody')).toContainText('order-canceled');
-    await expect(page.locator('tbody')).not.toContainText('order-active-sa');
+    await expect(page.locator('tbody')).not.toContainText('order-active-s');
   });
 
   test('View link navigates to /csr/purchases/:id', async ({ page }) => {
