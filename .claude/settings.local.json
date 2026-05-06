@@ -86,7 +86,9 @@
       "Bash(openssl s_client -servername dev.admin.www.bytecrtrs.com -connect dev.admin.www.bytecrtrs.com:443)",
       "Bash(openssl s_client -servername dev1.dev.www.bytecrtrs.com -connect dev1.dev.www.bytecrtrs.com:443)",
       "Bash(git restore *)",
-      "Bash(ps -p 76210 79592 -o pid,command)"
+      "Bash(ps -p 76210 79592 -o pid,command)",
+      "Bash(unzip -l data/4f563a3da99bedba2ed4acae5f7da916fe859733.zip)",
+      "Bash(unzip -p data/4f563a3da99bedba2ed4acae5f7da916fe859733.zip 0-trace.network)"
     ]
   }
 }
