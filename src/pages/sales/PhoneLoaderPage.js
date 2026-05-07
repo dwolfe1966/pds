@@ -53,7 +53,6 @@ const PhoneLoaderPage = () => {
 
         setStatus('Searching our database...');
 
-        // Perform the search using ByteCreators ApiWrapper via our helper
         const response = await api.searchPeople({
           phone,
           type: 'phone'

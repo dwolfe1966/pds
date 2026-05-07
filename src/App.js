@@ -173,9 +173,13 @@ const App = () => {
           <Route path="/suppression-list" element={<SuppressionListPage />} />
           <Route path="/cpcc" element={<CPCCPage />} />
           <Route path="/addon" element={<AddonPage />} />
-          {/* Development test routes */}
-          <Route path="/api-test" element={<ApiTestPage />} />
-          <Route path="/search-test" element={<SearchTestPage />} />
+          {/* Development-only routes — not registered in production builds. */}
+          {process.env.NODE_ENV === 'development' && (
+            <>
+              <Route path="/api-test" element={<ApiTestPage />} />
+              <Route path="/search-test" element={<SearchTestPage />} />
+            </>
+          )}
 
           {/* Member routes (authenticated) */}
           <Route

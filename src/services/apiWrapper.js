@@ -64,9 +64,13 @@ class ApiWrapperService {
     this.initialized = false;
     // BC API base URL — passed to getInstance() so the IIFE knows where to send requests.
     // In dev proxy mode this is overridden with the local proxy URL.
-    this.endpointUrl = process.env.REACT_APP_NEW_API_URL || 'https://dev.www.bytecrtrs.com/api';
-    this.authUrl = process.env.REACT_APP_AUTH_API_URL || 'https://dev1.dev.www.bytecrtrs.com/api';
-    this.proxyUrl = process.env.REACT_APP_PROXY_URL || 'http://localhost:3001/api/proxy';
+    // Dev fallbacks are dev-only so production bundles don't leak vendor URLs
+    // or localhost ports if an env var is missing — prod always reads from
+    // .env.production (relative `/api`, empty proxy).
+    const _isDev = process.env.NODE_ENV === 'development';
+    this.endpointUrl = process.env.REACT_APP_NEW_API_URL || (_isDev ? 'https://dev.www.bytecrtrs.com/api' : '/api');
+    this.authUrl = process.env.REACT_APP_AUTH_API_URL || (_isDev ? 'https://dev1.dev.www.bytecrtrs.com/api' : '/api');
+    this.proxyUrl = process.env.REACT_APP_PROXY_URL || (_isDev ? 'http://localhost:3001/api/proxy' : '');
     const explicitProxy = process.env.REACT_APP_USE_API_PROXY === 'true';
     const devProxy = process.env.NODE_ENV === 'development' &&
       (this.proxyUrl.startsWith('http://localhost') || this.proxyUrl.startsWith('http://127.0.0.1'));

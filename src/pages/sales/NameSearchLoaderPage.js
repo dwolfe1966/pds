@@ -79,7 +79,6 @@ const NameSearchLoaderPage = () => {
           searchParams.state = state.trim();
         }
 
-        // Perform the search using ByteCreators ApiWrapper via our helper
         const response = await api.searchPeople(searchParams);
         const identityCount = (response.data || []).length;
         track('search_submit', { type: 'name', resultCount: identityCount });
@@ -131,11 +130,12 @@ const NameSearchLoaderPage = () => {
           navigate('/name/search-result');
         }, 500);
       } catch (err) {
-        console.error('Search error:', err);
-        if (process.env.NODE_ENV === 'development' && err?.apiResponse) {
-          console.error('[ByteCrtrs] API response:', err.apiResponse);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Search error:', err);
+          if (err?.apiResponse) console.error('API response:', err.apiResponse);
         }
-        setStatus(err?.message || 'Error occurred. Redirecting...');
+        // Generic message — never surface raw upstream errors to users.
+        setStatus('Something went wrong. Redirecting...');
         setTimeout(() => {
           navigate('/name/search-result?error=true');
         }, 2000);
