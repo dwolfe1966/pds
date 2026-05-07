@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Autonomous mode (launch sprint)
+
+The owner has explicitly requested autonomous operation for the launch sprint (set 2026-05-07). Default behavior on this repo:
+
+- **Proceed without per-step confirmation** for routine work: file edits, builds (`npm run build`), local servers, manual smoke tests, memory updates, and committing directly to `main` (no feature branch needed unless asked).
+- **Still pause and confirm** before: destructive git operations (force-push, `reset --hard`, branch deletion), pushing to remote, opening PRs, posting outside the repo, adding npm dependencies (small/well-known acks in passing are fine; bigger ones surface first), or touching admin/CSR code while focused on consumer (and vice-versa).
+- **Wide-open audit/cleanup tasks**: produce a tight findings report first, then start applying — don't bulk-edit before the owner has seen the scope.
+- This is sprint-level; revisit after launch.
+
 ## Commands
 
 ```bash
