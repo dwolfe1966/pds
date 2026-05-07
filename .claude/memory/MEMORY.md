@@ -7,9 +7,11 @@
 - [Production deployment architecture](project_production_architecture.md) — production may ship as pure React SPA; `/server` is dev mock only
 - [BC hosting cert + URL quirks](project_bc_hosting_quirks.md) — cert only covers `dev.admin.www.bytecrtrs.com`/`dev.gwhubadmin.www.bytecrtrs.com`; use relative `/api`
 - [Active backlog and known gaps](project_backlog.md) — BACKLOG-1..5 plus untracked gaps
+- [Production launch timeline](project_launch_timeline.md) — 5-10 day window from 2026-05-06; backlog arriving 2026-05-07
 - [Funnel UX research](project_funnel_ux_research.md) — designer competitor analysis (BeenVerified/TruthFinder/Spokeo/Intelius)
 - [Payment UX research](project_payment_ux_research.md) — designer competitor analysis for checkout/subscription
 - [Member search result limit caveat](project_member_search_result_limit.md) — test BC >5 results before relying on it
 - [Team roles](team_roles.md) — Lead, Developer, Tester, Designer, Analyst/Report Developer
 - [Feedback: narrow paywall to /people/:id](feedback_narrow_paywall.md) — do NOT guard /search or /alerts
+- [Feedback: subscription state authority](feedback_subscription_state_authority.md) — member paid status derives from BC `billing.getOrders()` only; no local `isPaid` flag
 - [Feedback: search contextKey/teaserInput require extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time

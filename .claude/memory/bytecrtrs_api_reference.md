@@ -2,8 +2,8 @@
 name: ByteCrtrs API reference
 description: Complete ByteCrtrs ApiWrapper method signatures, paths, and required parameters
 type: reference
+originSessionId: 56f0e1b9-fadc-446e-a685-2ca079fb513a
 ---
-
 All methods are on the `window.ApiWrapper` instance returned by `window.ApiWrapper.getInstance({ endpointUrl })`.
 Our app accesses them via `apiWrapper.js` which wraps the instance.
 
@@ -81,15 +81,84 @@ Our app accesses them via `apiWrapper.js` which wraps the instance.
 - `{ userInfo: { email, firstName, lastName, optin }, queryString }`
 - Called during signup to register user in ByteCrtrs billing system before payment
 
+## User Profile / Account
+
+**Update Profile** — `wrapper.api.user.update({ firstName?, lastName?, phone? })`
+- POST `/api/user/update`
+- All fields optional; pass only the ones being changed
+
+**Change Password** — `wrapper.api.user.changePassword(password)`
+- POST `/api/user/changePassword`
+
+**Reset Password** — `wrapper.api.user.resetPassword(email)`
+- POST `/api/user/resetPassword`
+- Sends email with login link
+
+## Subscription / Orders (authoritative source for "is paid")
+
+**Get Orders** — `wrapper.api.billing.getOrders()`
+- POST `/api/commerceBilling/getUserOrders`
+- Returns array of orders. Each has `transient.canceled / cancelable / uncancelable` flags
+- **This is THE source of truth for subscription state** — see `feedback_subscription_state_authority.md`
+
+**Get Activated Product Types** — `wrapper.api.billing.getActivatedProductTypes()`
+- POST `/api/commerceBilling/getActivatedProductTypes`
+
+**Cancel / Uncancel Order** — `wrapper.api.billing.cancelOrUncancelOrder(flag, orderId)`
+- POST `/api/commerceBilling/cancelOrUncancelOrder`
+- `flag`: true=cancel, false=uncancel
+
+**Find Offer By shmName** — `wrapper.api.offer.findByShmName({ shmName, key? })`
+- POST `/commerce/offer/findByShmName`
+- `shmName`: name starting with `comp.`; `key` defaults to `main`
+- Returns `commerceProducts` and `transient.priceInfo` (s0, s1 prices and s1 period)
+
+## Statistics (member dashboard counters)
+
+- `wrapper.api.idLookup.countUserTeaserSearches()` — GET `/api/idLookup/statistic/userTeaserSearches`
+- `wrapper.api.idLookup.countUserReportCreations()` — GET `/api/idLookup/statistic/userReportCreations`
+- `wrapper.api.idLookup.countUserPdfDownloads()` — GET `/api/idLookup/statistic/userPdfDownloads`
+
+## Contact Messages
+
+**Create Contact (unauthed)** — `wrapper.api.message.contact.create(params)`
+- POST `/api/contactMessage/create`
+- Two shapes: `{ category: 'billing', date, name, email, zip, last4, phone?, orderId? }` OR `{ category: 'general', topic, name, email, phone, description, orderId, zip?, last4? }`
+
+**User Reply via Email Link** — `wrapper.api.message.contact.reply({ contactMessageId, hash, message, contentType, attachments? })`
+- POST `/api/contactMessage/userReply`
+- `contactMessageId` and `hash` come from email reply link querystring
+
+**Contact Histories** — `wrapper.api.message.contact.histories({ contactMessageId, hash, lastId? })`
+- GET `/api/contactMessage/histories`
+
+**User Contact (logged-in)** — `wrapper.api.user.createContact({ message, parentCsrMessageId, contentType, attachments? })`
+- POST `/api/message/userContact`
+- `parentCsrMessageId` from email querystring when replying to CSR mail
+
+**User Contact List** — `wrapper.api.user.getContacts({ lastId? })`
+- POST `/api/message/userContact/list`
+- Returns 10 entries per page
+
+## Managed Contact (alerts / opt-in addresses)
+
+**Create Managed Contact** — `wrapper.api.managedContact.create({ type, contactAddress, campaignKey? })`
+- POST `/api/managedContact/create`
+- `type`: 'email' or 'phone'
+- `contactAddress`: email or phone number
+- `campaignKey`: optional (e.g., 'guest')
+
+## Tracking
+
+**Create Tracking Event** — `wrapper.api.tracking.create(data)`
+- POST `/api/tracking/create`
+- `data`: arbitrary `Record<string, any>`
+
 ## Other
 
 **OptOut Page** — `window.ApiWrapper.goPage('optOut', { newPage: true })`
 - Opens ByteCrtrs-hosted optout page in new window (`newPage: true`) or redirects current page (`newPage: false`)
 - This is the recommended approach — NOT our custom optout form
-
-**Create Contact** — `wrapper.api.contact.create(params)`
-- POST `/api/message/contact`
-- `{ firstName, lastName, email, telephone, message }`
 
 ## Context Keys
 

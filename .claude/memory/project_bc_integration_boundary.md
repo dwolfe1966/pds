@@ -1,15 +1,29 @@
 ---
 name: ByteCrtrs integration boundary — what's wireable vs forced-mock
-description: The consumer ApiWrapper IIFE only exposes auth/idLookup/optOut/billing. profile, subscription, alerts, notifications, and password-change cannot be wired until BC expands the IIFE — they remain mock-only.
+description: BC consumer ApiWrapper now exposes auth, idLookup, billing (incl. orders/offers), user (update/password), statistics, message/contact, managedContact, tracking, and optOut. Almost everything in the consumer app is wireable; only features with no BC counterpart (e.g., WSFY) remain mock.
 type: project
+originSessionId: 56f0e1b9-fadc-446e-a685-2ca079fb513a
 ---
+Updated 2026-05-06 from full consumer API doc the user shared. The earlier boundary memory was incomplete — BC exposes substantially more than auth/idLookup/optOut/billing alone.
 
-Consumer-side `window.ApiWrapper` IIFE surface is **bounded**. Only these areas are exposed: `auth`, `idLookup`, `optOut`, `billing`. A grep of the IIFE confirmed there are no methods for profile, subscription, alerts, notifications, or password-change.
+**Wireable against real BC (consumer):**
+- Auth: `auth.login` (also rehydrates session when called with no args), `auth.logout`
+- Search: `idLookup.searchTeaser` (name/phone/email; pagination via `getMore`/`hasMore`)
+- Reports: `idLookup.createReport`, `getReport`, `getReports` (list w/ pagination), `downloadPdfReport`
+- Billing: `billing.sale`, `tokenSale`, `signup`, `getOrders`, `getActivatedProductTypes`, `cancelOrUncancelOrder`, `offer.findByShmName`
+- User profile: `user.update({ firstName?, lastName?, phone? })`, `user.changePassword`, `user.resetPassword`
+- Statistics: `countUserTeaserSearches`, `countUserReportCreations`, `countUserPdfDownloads`
+- Contact: `message.contact.create` (billing/general), `message.contact.reply`, `message.contact.histories`, `user.createContact`, `user.getContacts`
+- Managed contact (likely alerts opt-in): `managedContact.create`
+- Tracking: `tracking.create`
+- OptOut: `ApiWrapper.goPage('optOut', { newPage })`
 
-**Consequence:**
-- Wired against real BC: login, logout, signup, search (name/phone/email), report create/get/list, payment via `commerceBilling/sale`, opt-out search.
-- Forced mock until BC expands the IIFE: profile, subscription, alerts, notifications, password-change. Also `REACT_APP_USE_NEW_API_AUTH=false` in `.env`.
+**No BC counterpart — must stay mock or be hidden behind a "coming soon" surface:**
+- WSFY ("Who's Searching For You") — no endpoint exposed; ship as "coming soon" banner per 2026-05-06 direction
+- Any feature not on the list above
 
-**How to apply:** Before proposing "wire X against BC," check whether X is in the wireable list. If not, the only paths forward are (a) wait for BC to expand the IIFE, (b) ship that area against the mock server in production, or (c) bypass the IIFE and call BC HTTP endpoints directly (not how the rest of the app works).
+**Why:** Treating BC as authoritative wherever it exposes an endpoint is the launch posture. Consumer-facing UI must NOT leak endpoint/internal info (production-grade).
 
-Admin-side is a separate story: it uses the `csrWrapper` IIFE (not `ApiWrapper`). See `bc_admin_api_reference.md`. CSR endpoints currently 403 in production — instrumentation is staged in `src/services/apiWrapper.js` (commit `cddbcec`) to diagnose.
+**How to apply:** Before stubbing or mocking a consumer feature, check this list. If BC has it, wire it. If not, hide the feature behind "coming soon" rather than half-building. Subscription state is **authoritative from `billing.getOrders()`** — see `feedback_subscription_state_authority.md`.
+
+Admin-side uses the separate `csrWrapper` IIFE — see `bc_admin_api_reference.md`.
