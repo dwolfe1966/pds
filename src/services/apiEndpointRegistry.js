@@ -84,8 +84,6 @@ export const API_ENDPOINTS = {
   'admin-order-histories': { newApi: true, mockApi: false },
   'admin-order-detail': { newApi: true, mockApi: false },
   'admin-update-schedule': { newApi: true, mockApi: false },
-  'admin-email-log': { newApi: false, mockApi: true },
-  'admin-email-broadcast': { newApi: false, mockApi: true },
   // Unsubscribe — managedContact.find({ type: 'email' }) + managedContact.unsubscribe
   'admin-unsubscribe': { newApi: true, mockApi: false },
   'admin-unsubscribe-delete': { newApi: true, mockApi: false },
