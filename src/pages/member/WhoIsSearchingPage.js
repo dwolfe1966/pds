@@ -540,27 +540,37 @@ const WhoIsSearchingPage = () => {
 
   return (
     <main className={styles.main}>
+      {/* Coming-soon banner — the live "who's watching you" feature is not
+          shipped yet. Page contents below are a sample preview only. */}
+      <div
+        role="status"
+        style={{
+          marginBottom: '1.25rem',
+          background: '#fffbeb',
+          border: '1px solid #f59e0b',
+          borderRadius: '0.5rem',
+          padding: '0.875rem 1.125rem',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.75rem',
+        }}
+      >
+        <span aria-hidden="true" style={{ fontSize: '1.25rem', lineHeight: 1 }}>🔔</span>
+        <div>
+          <p style={{ margin: 0, fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
+            Coming soon
+          </p>
+          <p style={{ margin: '0.25rem 0 0', color: '#78350f', fontSize: '0.875rem', lineHeight: 1.4 }}>
+            This feature isn't live yet. The activity below is a sample preview so you can see what
+            "Who's Watching You" will look like — real alerts will appear here once we turn it on.
+          </p>
+        </div>
+      </div>
+
       <header className={styles.header}>
         <h1 className={styles.title}>Who's Watching You</h1>
         <p className={styles.subtitle}>
           See who's been searching for and viewing your profile
-        </p>
-        {/* Sample data disclosure — BC does not yet expose target-user tracking
-            (queries like "who searched for me"). Events shown here are seeded
-            demo data until we ship a server-side reverse index. */}
-        <p
-          role="note"
-          style={{
-            marginTop: '0.75rem',
-            background: '#fffbeb',
-            border: '1px solid #fde68a',
-            color: '#92400e',
-            borderRadius: '0.5rem',
-            padding: '0.5rem 0.875rem',
-            fontSize: '0.8rem',
-          }}
-        >
-          Showing preview data — real alerts will appear here once live tracking is enabled on your profile.
         </p>
       </header>
 
