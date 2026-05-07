@@ -57,6 +57,29 @@ async function loadCsrIife() {
   return _csrIifePromise;
 }
 
+/**
+ * Unwrap a BC IIFE response. Both the consumer ApiWrapper and CSR IIFE wrap
+ * results in an `ApiResponseHelperGeneral` (or similar) with a `.getData()`
+ * method or a `.params.response.data` chain. Direct-POST fallbacks already
+ * return the raw body. This helper accepts either shape.
+ *
+ * Returns the wrapper's data if it looks like a wrapper, otherwise returns the
+ * input as-is — callers see the same shape regardless of which path served the
+ * call.
+ */
+function _unwrapBcResponse(value) {
+  if (value == null || typeof value !== 'object') return value;
+  if (typeof value.getData === 'function') {
+    try {
+      const data = value.getData();
+      if (data !== undefined && data !== null) return data;
+    } catch { /* fall through */ }
+  }
+  const nested = value.params?.response?.data;
+  if (nested !== undefined && nested !== null) return nested;
+  return value;
+}
+
 class ApiWrapperService {
   constructor() {
     this.wrapper = null;
@@ -767,6 +790,42 @@ class ApiWrapperService {
   }
 
   /**
+   * Same as _csrPost but uses multipart/form-data. Some BC contact endpoints
+   * (notably /contactMessage/admin/csrReply and /contactMessage/admin/create)
+   * expect FormData rather than JSON.
+   */
+  async _csrPostFormData(path, body = {}) {
+    const baseUrl = this.useProxy ? `${this.proxyUrl}${path}` : `${this.endpointUrl}${path}`;
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
+    const sep = path.includes('?') ? '&' : '?';
+    const url = `${baseUrl}${sep}clientId=${clientId}&apiId=${apiId}`;
+    const fd = new FormData();
+    Object.entries(body).forEach(([k, v]) => {
+      if (v === null || v === undefined || v === '') return;
+      if (Array.isArray(v) && v.every(item => item instanceof File)) {
+        v.forEach(f => fd.append(k, f));
+      } else {
+        fd.append(k, v);
+      }
+    });
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      // Don't set Content-Type — the browser auto-sets it with boundary for FormData.
+      body: fd,
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      err.status = response.status;
+      err.data = errorData;
+      throw err;
+    }
+    return await response.json();
+  }
+
+  /**
    * Verify a captcha challenge using the env-configured password. Returns true
    * on success. Mirrors the IIFE's verifyCaptcha (GET /captcha/verify).
    */
@@ -837,7 +896,7 @@ class ApiWrapperService {
         }
         const fn = parent == null ? null : parent[parts[parts.length - 1]];
         if (typeof fn === 'function') {
-          return await fn.call(parent, args);
+          return _unwrapBcResponse(await fn.call(parent, args));
         }
       }
     } catch (err) {
@@ -1273,14 +1332,16 @@ class ApiWrapperService {
     return await this._csrGet(`/contactMessage/admin/histories?${qs.toString()}`);
   }
 
-  // csrWrapper.api.message.contact.createCsrReply — POST /message/admin/user/csrMail/create
-  // Edited 2026-04-17: a CSR can reply to any contactMessage retrieved via Find Contact Messages.
+  // csrWrapper.api.message.contact.createCsrReply — POST /contactMessage/admin/csrReply
+  // The deployed CSR IIFE uses /contactMessage/admin/csrReply (not the older
+  // /message/admin/user/csrMail/create from earlier BC docs) and posts
+  // FormData rather than JSON. Direct fallback follows the same shape.
   // params: { contactMessageId, subject, message, contentType, attachments? }
   async csrCreateCsrReply(params = {}) {
     const { contentType = 'text/html', ...rest } = params;
     const body = { contentType, ...rest };
     return await this._viaCsr('api.message.contact.createCsrReply', body,
-      () => this._csrPost('/message/admin/user/csrMail/create', body));
+      () => this._csrPostFormData('/contactMessage/admin/csrReply', body));
   }
 
   // csrWrapper.api.message.contact.setActor — POST /contactMessage/admin/setActor
@@ -1340,13 +1401,28 @@ class ApiWrapperService {
   }
 
   // csrWrapper.api.tracking.findUser — POST /database/search
-  // BC spec (added 2026-04-07): params { type, lastId, updaterId? }
-  // type supports pipe-separated values, e.g. 'USER:nameSearchTeaser|USER:phoneSearchTeaser'.
+  // BC's IIFE shapes the body as { collectionName: 'trackings' (plural),
+  // query: { 'data.type': type } } — confirmed against the deployed CSR
+  // wrapper at dev.admin.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js.
+  // We extend with `updaterId` so the search filters server-side to a specific
+  // user; without it BC returns events for everyone of that type and we'd have
+  // to paginate through the whole system to find one user's events.
+  // type supports pipe-separated values, e.g.
+  //   'USER:nameSearchTeaser|USER:phoneSearchTeaser'.
   // Supported types: USER:nameSearchTeaser, USER:phoneSearchTeaser,
-  // USER:nameSearchTeaserOptOut, USER:phoneSearchTeaserOptOut,
-  // USER:nameSearch, USER:phoneSearch, USER:login (2026-04-13).
+  //   USER:nameSearchTeaserOptOut, USER:phoneSearchTeaserOptOut,
+  //   USER:nameSearch, USER:phoneSearch, USER:login (2026-04-13).
   async csrFindUserTracking(params = {}) {
-    const body = { collectionName: 'tracking', brandId: 'idlookup', ...params };
+    const { type, lastId, updaterId } = params;
+    const query = {};
+    if (type) query['data.type'] = type;
+    if (updaterId) query['updaterId'] = updaterId;
+    const body = { collectionName: 'trackings', query };
+    if (lastId) body.lastId = lastId;
+    // Always direct-POST: the IIFE's tracking.findUser doesn't accept an
+    // updaterId filter, so going through it returns events for every user
+    // and we'd page forever to find this one's. The direct path filters
+    // server-side via query.updaterId.
     return await this._csrPost('/database/search', body);
   }
 

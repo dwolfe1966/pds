@@ -27,13 +27,13 @@ All methods are on `csrWrapper.api.*`
 ## Orders & Commerce
 | Desc | BC call | Path | Params |
 |---|---|---|---|
-| Find User Orders | `csrWrapper.api.user.findOrders({ userId, lastOrderId? })` | POST /api/commerceMgnt/userOrders | Returns orders with `schedule` (next payment), `commercePayments[]`, `orderHistories[]` |
-| Get User Order | `csrWrapper.api.user.getOrder({ userId, orderId, lastPaymentId? })` | POST /api/commerceMgnt/getUserOrder | lastPaymentId: fetch payments up to id |
-| Find Order Payments | `csrWrapper.api.user.findOrderPayments({ orderId, lastPaymentId? })` | POST /api/commerceMgnt/orderPayments | Pagination of commercePayments |
-| Find Order Histories | `csrWrapper.api.user.findOrderHistories({ orderId, lastRevisionId? })` | POST /api/commerceMgnt/orderHistories | lastRevisionId = orderHistories._id |
-| Cancel / Uncancel Order | `csrWrapper.api.user.cancelUncancelOrder({ orderId, flag })` | POST /api/commerceMgnt/cancelUncancelOrder | flag: true=cancel, false=reactivate |
+| Find User Orders | `csrWrapper.api.user.findOrders({ userId, lastOrderId? })` | POST /api/commerceMgmt/userOrders | Returns orders with `schedule` (next payment), `commercePayments[]`, `orderHistories[]` |
+| Get User Order | `csrWrapper.api.user.getOrder({ userId, orderId, lastPaymentId? })` | POST /api/commerceMgmt/getUserOrder | lastPaymentId: fetch payments up to id |
+| Find Order Payments | `csrWrapper.api.user.findOrderPayments({ orderId, lastPaymentId? })` | POST /api/commerceMgmt/orderPayments | Pagination of commercePayments |
+| Find Order Histories | `csrWrapper.api.user.findOrderHistories({ orderId, lastRevisionId? })` | POST /api/commerceMgmt/orderHistories | lastRevisionId = orderHistories._id |
+| Cancel / Uncancel Order | `csrWrapper.api.user.cancelUncancelOrder({ orderId, flag })` | POST /api/commerceMgmt/cancelUncancelOrder | flag: true=cancel, false=reactivate |
 | Refund / Void | `csrWrapper.api.user.refundVoidOrder({ commercePaymentType, targetCommerceOrderId, targetCommerceOrderRevisionId, targetCommercePaymentId, targetCommercePaymentRevisionId, amount })` | POST /api/commerceBilling/correct | type: 'refund' or 'void' |
-| Update Schedule | `csrWrapper.api.user.updateScheduleDueTimestamp({ scheduleId, dueTimestamp })` | POST /api/commerceMgnt/updateScheduleDueTimestamp | scheduleId = order.schedule._id |
+| Update Schedule | `csrWrapper.api.user.updateScheduleDueTimestamp({ scheduleId, dueTimestamp })` | POST /api/commerceMgmt/updateScheduleDueTimestamp | scheduleId = order.schedule._id |
 
 ## OptOut
 | Desc | BC call | Path | Params |

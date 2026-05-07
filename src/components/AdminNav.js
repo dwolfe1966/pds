@@ -6,9 +6,10 @@ import styles from './AdminNav.module.css';
 import logoSrc from '../assets/idlookup_icon_transparent.png';
 
 // Permissions / Content & UX / Offers are hidden from v1 nav — they're
-// localStorage-only today (no BC endpoints exist). Routes still resolve if
-// a URL is typed directly so in-progress work there is preserved. Re-add the
-// entries here once the BC surface for each lands.
+// localStorage-only today (no BC endpoints exist). Mail Log, CS Reps,
+// Analytics, and Activity & Logs were also removed from v1 nav (some
+// depend on tracking-api, others on mock-only fetches). Routes still
+// resolve if a URL is typed directly so in-progress work is preserved.
 const navLinks = [
   { path: '/my-dashboard', label: 'My Dashboard' },
   { path: '/users',        label: 'Customers' },
@@ -16,11 +17,7 @@ const navLinks = [
   { path: '/data-removal', label: 'Opt-Outs' },
   { path: '/unsubscribe',  label: 'Unsubscribed' },
   { path: '/notes',        label: 'Notes' },
-  { path: '/tickets',      label: 'Tickets' },
-  { path: '/mail-log',     label: 'Mail Log' },
-  { path: '/cs-reps',      label: 'CS Reps' },
-  { path: '/analytics',    label: 'Analytics' },
-  { path: '/sessions',     label: 'Activity & Logs' },
+  { path: '/tickets',      label: 'Messages' },
 ];
 
 const AdminNav = () => {
