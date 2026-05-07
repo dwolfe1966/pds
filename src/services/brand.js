@@ -40,6 +40,10 @@ export const BRANDS = {
     featuresBg: '#ffffff',
     featureCardBg: '#f9fafb',
     featureCardAccent: '#0d5d2f',
+    // Translucent variants of the primary color, used by the sticky
+    // header bar and the mobile nav active-state tint.
+    headerBg: 'rgba(13, 93, 47, 0.95)',
+    headerActiveTint: 'rgba(13, 93, 47, 0.05)',
   },
   'peoplesearcher.ai': {
     id: 'peoplesearcher',
@@ -58,6 +62,8 @@ export const BRANDS = {
     featuresBg: '#ffffff',
     featureCardBg: '#f8fafc',
     featureCardAccent: '#f97316',
+    headerBg: 'rgba(30, 58, 138, 0.95)',
+    headerActiveTint: 'rgba(30, 58, 138, 0.05)',
   },
   'inmatefinderhub.com': {
     id: 'inmatefinder',
@@ -76,6 +82,8 @@ export const BRANDS = {
     featuresBg: '#ffffff',
     featureCardBg: '#f8fafc',
     featureCardAccent: '#d97706',
+    headerBg: 'rgba(51, 65, 85, 0.95)',
+    headerActiveTint: 'rgba(51, 65, 85, 0.05)',
   },
 };
 

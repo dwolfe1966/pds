@@ -3,7 +3,7 @@
  */
 
 .header {
-  background-color: rgba(13, 93, 47, 0.95); /* Translucent green background */
+  background-color: var(--brand-header-bg, rgba(13, 93, 47, 0.95));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: var(--color-text-inverse);

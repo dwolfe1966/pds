@@ -23,6 +23,8 @@ const BrandStyles = () => {
   --brand-features-bg: ${brand.featuresBg};
   --brand-feature-card-bg: ${brand.featureCardBg};
   --brand-feature-card-accent: ${brand.featureCardAccent};
+  --brand-header-bg: ${brand.headerBg};
+  --brand-header-active-tint: ${brand.headerActiveTint};
 }`;
   return <style>{css}</style>;
 };
