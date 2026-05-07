@@ -1423,7 +1423,13 @@ class ApiWrapperService {
       }
     }
     try {
-      return await this._csrPost('/contactMessage/create', params);
+      // BC expects this body wrapped as { input: <payload> } with empty values
+      // dropped (matching the IIFE's createContactMessage shaping). A flat
+      // payload causes 500.
+      const payload = Object.fromEntries(
+        Object.entries(params || {}).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+      );
+      return await this._csrPost('/contactMessage/create', { input: payload });
     } catch (error) {
       const enhancedError = new Error(error.message || 'Create contact message failed');
       enhancedError.originalError = error;
