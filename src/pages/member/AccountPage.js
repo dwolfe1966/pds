@@ -30,15 +30,13 @@ const AccountPage = () => {
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState(false);
 
-  // ─── Security & Privacy tab state ────────────────────────────────────────────
+  // ─── Security tab state ──────────────────────────────────────────────────────
+  // Privacy toggle and notification preferences are hidden until BC ships
+  // matching endpoints (mock-only `PUT /privacy` and `POST /notifications`
+  // were removed from the consumer surface for launch).
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '' });
-  const [privacy, setPrivacy] = useState({ searchable: true });
-  const [notifPrefs, setNotifPrefs] = useState({ emailAlerts: true, weeklyDigest: false, marketingEmails: false });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState('');
-  const [notifLoading, setNotifLoading] = useState(false);
-  const [notifMessage, setNotifMessage] = useState('');
-  const [privacyMessage, setPrivacyMessage] = useState('');
 
   // ─── Subscription & Billing tab state ────────────────────────────────────────
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -106,26 +104,6 @@ const AccountPage = () => {
     };
     fetchProfile();
   }, [token, user]);
-
-  // ─── Fetch: notification prefs ───────────────────────────────────────────────
-  useEffect(() => {
-    if (!token) return;
-    const fetchNotifPrefs = async () => {
-      try {
-        const data = await api.get('/notifications/preferences', { token });
-        if (data) {
-          setNotifPrefs({
-            emailAlerts: data.emailAlerts ?? true,
-            weeklyDigest: data.weeklyDigest ?? false,
-            marketingEmails: data.marketingEmails ?? false,
-          });
-        }
-      } catch {
-        // Silently ignore; defaults are fine
-      }
-    };
-    fetchNotifPrefs();
-  }, [token]);
 
   // ─── Fetch: orders (billing history source of truth) ─────────────────────────
   // BC `billing.getOrders()` returns the user's full order list; each order
@@ -390,30 +368,6 @@ const AccountPage = () => {
     }
   };
 
-  const handlePrivacyToggle = async () => {
-    const newSearchable = !privacy.searchable;
-    setPrivacy({ searchable: newSearchable });
-    setPrivacyMessage('');
-    try {
-      await api.put('/privacy', { body: { searchable: newSearchable }, token });
-    } catch (err) {
-      setPrivacyMessage(err.message || 'Failed to update privacy setting');
-    }
-  };
-
-  const handleNotifSave = async () => {
-    setNotifLoading(true);
-    setNotifMessage('');
-    try {
-      await api.post('/notifications', { body: notifPrefs, token });
-      setNotifMessage('Preferences saved successfully');
-    } catch (err) {
-      setNotifMessage(err.message || 'Failed to save preferences');
-    } finally {
-      setNotifLoading(false);
-    }
-  };
-
   // ─── Subscription & Billing handlers ─────────────────────────────────────────
   const handleCancelConfirm = async () => {
     if (!token) {
@@ -514,7 +468,7 @@ const AccountPage = () => {
   const tabBtnInactive = { ...tabBtnBase, background: '#fff', color: '#374151', border: '1px solid transparent' };
 
   const TABS = [
-    { key: 'security', label: 'Security & Privacy' },
+    { key: 'security', label: 'Security' },
     { key: 'billing', label: 'Subscription & Billing' },
     { key: 'messages', label: 'Messages' },
     { key: 'profile', label: 'Profile' },
@@ -871,79 +825,6 @@ const AccountPage = () => {
             </form>
           </div>
 
-          {/* Privacy */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Privacy</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <input
-                id="searchable"
-                type="checkbox"
-                checked={privacy.searchable}
-                onChange={handlePrivacyToggle}
-                style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
-              />
-              <label htmlFor="searchable" style={{ fontSize: '0.95rem', color: '#374151', cursor: 'pointer' }}>
-                Allow my information to be searchable
-              </label>
-            </div>
-            {privacyMessage && (
-              <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#dc2626' }}>{privacyMessage}</p>
-            )}
-          </div>
-
-          {/* Notification Preferences */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Notification Preferences</h2>
-            {(['emailAlerts', 'weeklyDigest', 'marketingEmails']).map((key) => (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.85rem' }}>
-                <input
-                  id={key}
-                  type="checkbox"
-                  checked={notifPrefs[key]}
-                  onChange={() => setNotifPrefs((prev) => ({ ...prev, [key]: !prev[key] }))}
-                  style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
-                />
-                <label htmlFor={key} style={{ fontSize: '0.95rem', color: '#374151', cursor: 'pointer' }}>
-                  {key === 'emailAlerts' && 'Email me about my account activity'}
-                  {key === 'weeklyDigest' && 'Weekly activity digest'}
-                  {key === 'marketingEmails' && 'Promotional emails and special offers'}
-                </label>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={handleNotifSave}
-              disabled={notifLoading}
-              style={{
-                marginTop: '0.5rem',
-                padding: '0.7rem 1.75rem',
-                background: '#0d5d2f',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '0.5rem',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                cursor: notifLoading ? 'not-allowed' : 'pointer',
-                opacity: notifLoading ? 0.7 : 1,
-              }}
-            >
-              {notifLoading ? 'Saving...' : 'Save Preferences'}
-            </button>
-            {notifMessage && (
-              <p
-                style={{
-                  marginTop: '0.75rem',
-                  fontSize: '0.9rem',
-                  color: notifMessage.includes('successfully') ? '#166534' : '#dc2626',
-                  background: notifMessage.includes('successfully') ? '#dcfce7' : '#fee2e2',
-                  padding: '0.6rem 0.9rem',
-                  borderRadius: '0.375rem',
-                }}
-              >
-                {notifMessage}
-              </p>
-            )}
-          </div>
         </>
       )}
 

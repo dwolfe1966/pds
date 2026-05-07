@@ -64,7 +64,6 @@ import SearchResultDetailPage from './pages/member/SearchResultDetailPage';
 import WhoIsSearchingPage from './pages/member/WhoIsSearchingPage';
 import AlertsPage from './pages/member/AlertsPage';
 import AccountPage from './pages/member/AccountPage';
-import SettingsPage from './pages/member/SettingsPage';
 import LogoutPage from './pages/member/LogoutPage';
 import SearchHistoryPage from './pages/member/SearchHistoryPage';
 // Admin pages

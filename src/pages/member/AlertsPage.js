@@ -60,19 +60,35 @@ const AlertsPage = () => {
 
   return (
     <main className={styles.pageWrapper}>
-      <h1 className={styles.pageTitle}>Set Up an Alert</h1>
-
-      <div style={{
-        background: '#f0fdf4',
-        border: '1px solid #bbf7d0',
-        borderRadius: '0.5rem',
-        padding: '0.875rem 1rem',
-        marginBottom: '1.5rem',
-        color: '#166534',
-        fontSize: '0.9rem',
-      }}>
-        <strong>How alerts work right now:</strong> when you submit one, we run the search immediately so you can see what's already in our records. Continuous monitoring is on the way — your existing searches will become alerts when it ships.
+      {/* Coming-soon banner — continuous-alert monitoring isn't shipped yet.
+          The form below runs a one-time search; pattern matches WSFY. */}
+      <div
+        role="status"
+        style={{
+          marginBottom: '1.25rem',
+          background: '#fffbeb',
+          border: '1px solid #f59e0b',
+          borderRadius: '0.5rem',
+          padding: '0.875rem 1.125rem',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.75rem',
+        }}
+      >
+        <span aria-hidden="true" style={{ fontSize: '1.25rem', lineHeight: 1 }}>🔔</span>
+        <div>
+          <p style={{ margin: 0, fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
+            Coming soon
+          </p>
+          <p style={{ margin: '0.25rem 0 0', color: '#78350f', fontSize: '0.875rem', lineHeight: 1.4 }}>
+            Continuous alert monitoring isn't live yet. For now, submitting below
+            runs a one-time search — your saved searches will become alerts when
+            we turn it on.
+          </p>
+        </div>
       </div>
+
+      <h1 className={styles.pageTitle}>Set Up an Alert</h1>
 
       <div className={styles.createSection}>
         <h2 className={styles.sectionTitle}>Who should we watch?</h2>
