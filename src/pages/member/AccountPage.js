@@ -265,12 +265,20 @@ const AccountPage = () => {
     setComposeError('');
     setComposeSuccess(false);
     try {
-      // BC user.createContact only takes message + contentType; identity comes
-      // from session. Prepend the subject so CSR sees both fields.
-      const subject = (composeSubject || 'General inquiry').trim();
-      const body = composeMessage.trim();
-      const message = subject ? `[${subject}]\n\n${body}` : body;
-      await api.userCreateContact({ message, contentType: 'text/plain' });
+      // BC dev doesn't yet route /api/message/userContact (the doc'd member
+      // endpoint), so we use the general /api/contactMessage/create path which
+      // accepts a 'general' category payload. submitContact handles the body
+      // shaping; the IIFE-missing fallback in apiWrapper covers the 'message'
+      // namespace not being on the dev IIFE either.
+      await api.submitContact({
+        category: 'general',
+        topic: composeSubject,
+        message: composeMessage.trim(),
+        name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Member',
+        email: user?.email || '',
+        phone: user?.phone || '',
+        orderId: subscription?.orderId || '',
+      });
       setComposeSuccess(true);
       setComposeMessage('');
       setComposeSubject('General inquiry');
