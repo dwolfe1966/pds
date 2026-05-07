@@ -16,4 +16,5 @@
 - [Team roles](team_roles.md) — Lead, Developer, Tester, Designer, Analyst/Report Developer
 - [Feedback: narrow paywall to /people/:id](feedback_narrow_paywall.md) — do NOT guard /search or /alerts
 - [Feedback: subscription state authority](feedback_subscription_state_authority.md) — member paid status derives from BC `billing.getOrders()` only; no local `isPaid` flag
+- [Feedback: autonomous mode for launch sprint](feedback_autonomous_mode.md) — proceed on agreed work without per-step confirmation; pause only for destructive or genuinely ambiguous actions
 - [Feedback: search contextKey/teaserInput require extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time
