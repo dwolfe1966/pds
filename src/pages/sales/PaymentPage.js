@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
@@ -82,7 +82,7 @@ const PLAN_FEATURES = [
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription, refreshSubscription } = useAuth();
+  const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription } = useAuth();
 
   const [form, setForm] = useState({
     cardNumber: '',
@@ -107,19 +107,14 @@ const PaymentPage = () => {
   // the report the user was trying to reach before the paywall (partner bug 22).
   const [confirmedReportId, setConfirmedReportId] = useState(null);
   const [reportProvisioning, setReportProvisioning] = useState(false);
+  // Suppresses the "already paid → redirect to dashboard" guard while a purchase
+  // is mid-flight. AuthContext refetches subscription on token change, so the
+  // billing.sale-issued token can flip isPaid mid-handler — without this flag,
+  // the user is bounced to /dashboard before the success screen renders.
+  const [paying, setPaying] = useState(false);
 
   const simulateParam = searchParams.get('simulate');
   const cardType = detectCardType(form.cardNumber);
-
-  // Reconcile swaps the synthetic subscription for BC's real order shortly
-  // after payment. Cancel on unmount so a stale refresh doesn't fire after
-  // the user navigates away.
-  const reconcileTimeoutRef = useRef(null);
-  useEffect(() => {
-    return () => {
-      if (reconcileTimeoutRef.current) clearTimeout(reconcileTimeoutRef.current);
-    };
-  }, []);
 
   // Track page entry (after auth resolves so we know if it's an upgrade)
   useEffect(() => {
@@ -141,10 +136,10 @@ const PaymentPage = () => {
       const redirect = `/payment${window.location.search || ''}`;
       navigate(`/signup?redirect=${encodeURIComponent(redirect)}`, { replace: true });
     }
-    if (!authLoading && token && isPaid && !success) {
+    if (!authLoading && token && isPaid && !success && !paying) {
       navigate('/dashboard', { replace: true });
     }
-  }, [token, authLoading, isPaid, success, navigate]);
+  }, [token, authLoading, isPaid, success, paying, navigate]);
 
   // Load selected person from sessionStorage
   useEffect(() => {
@@ -220,6 +215,7 @@ const PaymentPage = () => {
     if (!form.billingZip.trim()) { setError('Please enter your billing ZIP code.'); setBillingOpen(true); return; }
     setError('');
     setLoading(true);
+    setPaying(true);
     try {
       const { expMonth, expYear } = parseExpiry(form.expiry);
       // Build userInfo here from current form state — avoids stale closure from render-time const.
@@ -346,27 +342,78 @@ const PaymentPage = () => {
         throw new Error('Your card was declined. Please check your card details and try again, or use a different card.');
       }
 
-      // Set subscription immediately so isPaid=true for the rest of this flow.
-      // Tag with syntheticAt so AuthContext.refreshSubscription can preserve it
-      // during BC's provisioning grace window (getUserOrders 403s for ~seconds
-      // after billing.sale). AuthContext also persists this to localStorage, so
-      // a mid-flow page refresh keeps the user on the paid side.
-      setSubscription?.({
+      // BC `getUserOrders` is the single source of truth for subscription state.
+      // Poll it until BC has provisioned the order from the sale, up to 20s.
+      // Backoff grows from 800ms to ~2.5s. 403/empty responses during BC's
+      // provisioning window are expected — we keep polling.
+      let verifiedOrder = null;
+      const verifyDeadline = Date.now() + 20000;
+      let pollDelay = 800;
+      while (Date.now() < verifyDeadline) {
+        try {
+          const orders = await api.getUserOrders();
+          if (Array.isArray(orders)) {
+            verifiedOrder = orders.find(o =>
+              o.status === 'active' && !o.transient?.canceled && o.subStatus !== 'canceled'
+            );
+            if (verifiedOrder) break;
+          }
+        } catch {
+          // 403 / network blip during provisioning — keep polling.
+        }
+        await new Promise(r => setTimeout(r, pollDelay));
+        pollDelay = Math.min(Math.round(pollDelay * 1.4), 2500);
+      }
+      if (!verifiedOrder) {
+        throw new Error("Your payment was submitted but we couldn't confirm your subscription yet. Please refresh in a moment, or contact support if this persists.");
+      }
+
+      const verifiedSubscription = {
         status: 'active',
-        plan: 'comp.offer.signup.main',
-        syntheticAt: Date.now(),
-      });
+        plan: verifiedOrder.commerceOffers?.[0] || 'subscriber',
+        dueDate: verifiedOrder.dueTimestamp ? new Date(verifiedOrder.dueTimestamp).toISOString() : null,
+        orderId: verifiedOrder._id || verifiedOrder.id,
+        cancelable: verifiedOrder.transient?.cancelable ?? false,
+      };
 
-      // Schedule a delayed reconcile — by then BC should have provisioned the
-      // account and getUserOrders will return a real order, swapping the
-      // synthetic sub for BC's authoritative data (orderId, dueDate, cancelable).
-      // 15s was chosen empirically; well within the 2-min grace window.
-      if (reconcileTimeoutRef.current) clearTimeout(reconcileTimeoutRef.current);
-      reconcileTimeoutRef.current = setTimeout(() => {
-        refreshSubscription?.();
-      }, 15000);
+      // Create the report BEFORE flipping success — so the confirmation screen
+      // renders with the report link in place from first paint.
+      let resolvedReportId = null;
+      let reportFailed = false;
+      if (selectedPerson && selectedPerson.extId) {
+        try {
+          const reportResult = await createReportForIdentity(selectedPerson.extId, selectedPerson);
+          if (reportResult.success && reportResult.commerceContentId) {
+            resolvedReportId = reportResult.commerceContentId;
+          } else {
+            reportFailed = true;
+          }
+        } catch {
+          reportFailed = true;
+        }
+      }
+      if (reportFailed && selectedPerson) {
+        try {
+          sessionStorage.setItem('pendingReport', JSON.stringify({
+            extId: selectedPerson.extId,
+            fullName: selectedPerson.fullName,
+            location: selectedPerson.location,
+            createdAt: Date.now(),
+          }));
+        } catch { /* storage may be unavailable — non-fatal */ }
+      } else if (resolvedReportId) {
+        sessionStorage.removeItem('pendingReport');
+      }
+      sessionStorage.removeItem('selectedPersonId');
 
+      // Commit final state in one synchronous block so React batches them into a
+      // single render — prevents the redirect effect from firing between
+      // setSubscription (isPaid → true) and setSuccess (suppresses the redirect).
+      if (resolvedReportId) setConfirmedReportId(resolvedReportId);
+      else if (reportFailed) setReportProvisioning(true);
       setSuccess(true);
+      setSubscription?.(verifiedSubscription);
+
       track('payment_complete', { plan: 'pro', offer_key: SIGNUP_OFFER_KEY });
       gtmPurchase({
         value: SIGNUP_OFFER_S0_USD,
@@ -381,42 +428,6 @@ const PaymentPage = () => {
         date: new Date().toISOString(),
         plan: 'comp.offer.signup.main',
       });
-
-      // Attempt report creation so the confirmation screen (bug 22) can show a
-      // direct link to the report the user was trying to reach before the paywall.
-      // On failure we stash a pendingReport for DashboardHome to retry later.
-      if (selectedPerson && selectedPerson.extId) {
-        try {
-          const reportResult = await createReportForIdentity(selectedPerson.extId, selectedPerson);
-          if (reportResult.success && reportResult.commerceContentId) {
-            sessionStorage.removeItem('selectedPersonId');
-            sessionStorage.removeItem('pendingReport');
-            setConfirmedReportId(reportResult.commerceContentId);
-          } else {
-            setReportProvisioning(true);
-            try {
-              sessionStorage.setItem('pendingReport', JSON.stringify({
-                extId: selectedPerson.extId,
-                fullName: selectedPerson.fullName,
-                location: selectedPerson.location,
-                createdAt: Date.now(),
-              }));
-            } catch { /* storage may be unavailable — non-fatal */ }
-          }
-        } catch {
-          setReportProvisioning(true);
-          try {
-            sessionStorage.setItem('pendingReport', JSON.stringify({
-              extId: selectedPerson.extId,
-              fullName: selectedPerson.fullName,
-              location: selectedPerson.location,
-              createdAt: Date.now(),
-            }));
-          } catch { /* non-fatal */ }
-        }
-      }
-      // Clear the raw selected-person id now that we've either resolved or stashed it.
-      sessionStorage.removeItem('selectedPersonId');
       // NOTE: no auto-redirect from the confirmation screen. Partner bug 22 —
       // the user should see the confirmation, read it, and choose to view their
       // report or head to the dashboard on their own.
@@ -431,6 +442,7 @@ const PaymentPage = () => {
       setError(message);
     } finally {
       setLoading(false);
+      setPaying(false);
     }
   };
 

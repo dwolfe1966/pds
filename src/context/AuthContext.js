@@ -4,44 +4,20 @@ import api, { setTokenGetter, setLogoutHandler } from '../api';
 
 const AuthContext = createContext();
 
-// Synthetic subscriptions set immediately after billing.sale get a timestamp so
-// refreshSubscription can preserve them for a grace window while BC provisions
-// the account (getUserOrders returns 403/empty during that window).
-const SUBSCRIPTION_KEY = 'subscription';
-const PROVISIONING_GRACE_MS = 2 * 60 * 1000;
-
+// BC `billing.getOrders()` is the single source of truth for member subscription state.
+// No synthetic state, no localStorage cache, no provisioning grace window — see
+// feedback_subscription_state_authority.md.
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscriptionState] = useState(null);
-  const subscriptionRef = useRef(null);
+  const [subscription, setSubscription] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const userRef = useRef(null);
 
-  // Wrap setSubscription so every state write (from inside AuthContext OR from
-  // callers like PaymentPage/AccountPage) also syncs localStorage. Supports
-  // functional updates so refreshSubscription's `setSubscription(prev => ...)`
-  // pattern keeps working.
-  const setSubscription = useCallback((next) => {
-    setSubscriptionState((prev) => {
-      const resolved = typeof next === 'function' ? next(prev) : next;
-      try {
-        if (resolved && resolved.status === 'active') {
-          localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(resolved));
-        } else {
-          localStorage.removeItem(SUBSCRIPTION_KEY);
-        }
-      } catch { /* localStorage may be unavailable in private mode — non-fatal */ }
-      return resolved;
-    });
-  }, []);
-
-  // Keep refs in sync so token useEffect can read latest values without extra dependencies
-  useEffect(() => { subscriptionRef.current = subscription; }, [subscription]);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // Set token getter for API client
   useEffect(() => {
     setTokenGetter(() => token);
   }, [token]);
@@ -51,74 +27,69 @@ export const AuthProvider = ({ children }) => {
     setLogoutHandler(logout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch subscription status from BC getUserOrders whenever token changes.
-  // A subscriber = has at least one order with status 'active' and transient.canceled false.
+  // Fetch subscription state from BC. Returns the active subscription (or null) so
+  // callers like PaymentPage can poll until BC has provisioned the order.
   const refreshSubscription = useCallback(async (currentToken) => {
     const t = currentToken || token;
-    if (!t) { setSubscription(null); return; }
+    if (!t) {
+      setSubscription(null);
+      setSubscriptionLoading(false);
+      return null;
+    }
+    if (userRef.current?.role === 'admin') {
+      setSubscription(null);
+      setSubscriptionLoading(false);
+      return null;
+    }
+    setSubscriptionLoading(true);
     try {
       const orders = await api.getUserOrders();
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AuthContext] getUserOrders result:', JSON.stringify(orders)?.substring(0, 600));
-      }
-      const activeOrders = Array.isArray(orders)
-        ? orders.filter(o =>
+      const activeOrder = Array.isArray(orders)
+        ? orders.find(o =>
             o.status === 'active' &&
             !o.transient?.canceled &&
             o.subStatus !== 'canceled'
           )
-        : [];
-      if (activeOrders.length > 0) {
-        const order = activeOrders[0];
-        setSubscription({
+        : null;
+      if (activeOrder) {
+        const next = {
           status: 'active',
-          plan: order.commerceOffers?.[0] || 'subscriber',
-          dueDate: order.dueTimestamp ? new Date(order.dueTimestamp).toISOString() : null,
-          orderId: order._id || order.id,
-          cancelable: order.transient?.cancelable ?? false,
-        });
-      } else {
-        // Empty activeOrders — BC may simply not have provisioned the account yet.
-        // Preserve a recently-set synthetic subscription for up to PROVISIONING_GRACE_MS
-        // so paid users don't get bounced to "Free Account" during the race.
-        setSubscription(prev => {
-          if (prev?.syntheticAt && Date.now() - prev.syntheticAt < PROVISIONING_GRACE_MS) return prev;
-          return null;
-        });
+          plan: activeOrder.commerceOffers?.[0] || 'subscriber',
+          dueDate: activeOrder.dueTimestamp ? new Date(activeOrder.dueTimestamp).toISOString() : null,
+          orderId: activeOrder._id || activeOrder.id,
+          cancelable: activeOrder.transient?.cancelable ?? false,
+        };
+        setSubscription(next);
+        return next;
       }
+      setSubscription(null);
+      return null;
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[AuthContext] refreshSubscription failed:', err?.message);
       }
-      // Don't clear an already-active subscription on API failure (403 immediately
-      // after billing.sale, flaky network, etc.).
-      setSubscription(prev => {
-        if (prev?.status === 'active') return prev;
-        if (prev?.syntheticAt && Date.now() - prev.syntheticAt < PROVISIONING_GRACE_MS) return prev;
-        return null;
-      });
-    }
-  }, [token, setSubscription]);
-
-  useEffect(() => {
-    if (token) {
-      // Admin/CSR users have no member subscription — skip getUserOrders (would 403).
-      if (userRef.current?.role === 'admin') return;
-      // Skip if subscription is already active — avoids a getUserOrders 403
-      // immediately after billing.sale clears the subscription we just set.
-      if (subscriptionRef.current?.status !== 'active') {
-        refreshSubscription(token);
-      }
-    } else {
+      // BC unreachable / 403 / etc → treat as "no subscription". Callers that need
+      // to wait for provisioning (PaymentPage) poll us; we never speculate.
       setSubscription(null);
+      return null;
+    } finally {
+      setSubscriptionLoading(false);
     }
+  }, [token]);
+
+  // Refetch on every token change. BC is authoritative; never skip.
+  useEffect(() => {
+    refreshSubscription(token);
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Check for stored session on mount
+  // Restore token+user from localStorage on mount. Subscription is NEVER restored
+  // from localStorage — it's always fetched fresh from BC.
   useEffect(() => {
     const storedToken = localStorage.getItem('accessToken');
     const storedUser = localStorage.getItem('user');
-    const storedSubscription = localStorage.getItem(SUBSCRIPTION_KEY);
+
+    // Defensive cleanup: drop any legacy persisted subscription from prior versions.
+    localStorage.removeItem('subscription');
 
     if (storedToken && storedUser) {
       try {
@@ -130,14 +101,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('user');
       }
     }
-    if (storedSubscription) {
-      try {
-        // Restore directly into state (skip the persist wrapper — we just read from storage).
-        setSubscriptionState(JSON.parse(storedSubscription));
-      } catch (err) {
-        localStorage.removeItem(SUBSCRIPTION_KEY);
-      }
-    }
     setLoading(false);
   }, []);
 
@@ -145,7 +108,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await api.login({ email, password });
       if (!data.accessToken) {
-        // BC session established but no token returned — should not happen with synthetic token logic.
         throw new Error('Login succeeded but no session token was returned. Please try again.');
       }
       const userData = data.user || { role: 'member' };
@@ -169,12 +131,12 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setSubscription(null);
+    setSubscriptionLoading(false);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    localStorage.removeItem(SUBSCRIPTION_KEY);
     try {
-      await api.logout(); // Call API logout
+      await api.logout();
     } catch (err) {
       console.warn('[Auth] Logout request failed:', err?.message || err);
     } finally {
@@ -194,6 +156,7 @@ export const AuthProvider = ({ children }) => {
     setToken,
     subscription,
     setSubscription,
+    subscriptionLoading,
     isPaid,
     refreshSubscription,
   };
