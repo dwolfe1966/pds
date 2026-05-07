@@ -66,6 +66,9 @@ const AccountPage = () => {
   const [showCompose, setShowCompose] = useState(false);
   const [composeSubject, setComposeSubject] = useState('General inquiry');
   const [composeMessage, setComposeMessage] = useState('');
+  // BC's /contactMessage/create requires phone in the general category.
+  // Pre-fill from the user's saved phone; the input is editable and required.
+  const [composePhone, setComposePhone] = useState('');
   const [composeSending, setComposeSending] = useState(false);
   const [composeSuccess, setComposeSuccess] = useState(false);
   const [composeError, setComposeError] = useState('');
@@ -239,22 +242,24 @@ const AccountPage = () => {
   const handleComposeSubmit = async (e) => {
     e.preventDefault();
     if (!composeMessage.trim()) return;
+    // BC validates phone server-side ("input.phone must be a valid phone
+    // number"). Strip non-digits, require at least 10 (US baseline).
+    const phoneDigits = (composePhone || '').replace(/\D/g, '');
+    if (phoneDigits.length < 10) {
+      setComposeError('Please enter a valid phone number (10+ digits).');
+      return;
+    }
     setComposeSending(true);
     setComposeError('');
     setComposeSuccess(false);
     try {
-      // BC dev doesn't yet route /api/message/userContact (the doc'd member
-      // endpoint), so we use the general /api/contactMessage/create path which
-      // accepts a 'general' category payload. submitContact handles the body
-      // shaping; the IIFE-missing fallback in apiWrapper covers the 'message'
-      // namespace not being on the dev IIFE either.
       await api.submitContact({
         category: 'general',
         topic: composeSubject,
         message: composeMessage.trim(),
         name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Member',
         email: user?.email || '',
-        phone: user?.phone || '',
+        phone: phoneDigits,
         orderId: subscription?.orderId || '',
       });
       setComposeSuccess(true);
@@ -1061,7 +1066,13 @@ const AccountPage = () => {
           {/* New Message button */}
           {!showCompose && (
             <button
-              onClick={() => { setShowCompose(true); setComposeError(''); setComposeSuccess(false); }}
+              onClick={() => {
+                setShowCompose(true);
+                setComposeError('');
+                setComposeSuccess(false);
+                // Seed phone from saved profile so the user usually doesn't have to retype.
+                setComposePhone(user?.phone || '');
+              }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1145,6 +1156,35 @@ const AccountPage = () => {
                   <option value="General inquiry">General inquiry</option>
                   <option value="Other">Other</option>
                 </select>
+              </div>
+
+              {/* Phone — required by BC for the general contact category. */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label
+                  htmlFor="composePhone"
+                  style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
+                >
+                  Phone
+                </label>
+                <input
+                  id="composePhone"
+                  type="tel"
+                  value={composePhone}
+                  onChange={(e) => setComposePhone(e.target.value)}
+                  placeholder="(555) 555-5555"
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.6rem 0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <span style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.3rem', display: 'block' }}>
+                  We use this to follow up on your message.
+                </span>
               </div>
 
               {/* Message textarea */}

@@ -833,24 +833,7 @@ const api = {
       };
     }
 
-    const bcResult = await routeApiRequest('create-contact-message', { body: contactBody });
-
-    // Mirror into mock server so the legacy /contact/thread/:threadId viewer still works
-    // for visitor follow-up links. This is best-effort — BC thread viewing goes through
-    // contactHistories via the reply-link query string (contactMessageId + hash).
-    try {
-      const res = await fetch(`${MOCK_API_URL}/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, bcMessageId: bcResult?._id || bcResult?.messageResult?._id }),
-      });
-      if (res.ok) {
-        const mockResult = await res.json();
-        return { ...bcResult, threadId: mockResult.threadId, threadUrl: mockResult.threadUrl };
-      }
-    } catch { /* mock unavailable — still return BC result */ }
-
-    return bcResult;
+    return await routeApiRequest('create-contact-message', { body: contactBody });
   },
 
   /** Reply to a contact message thread via BC — requires contactMessageId + hash from reply link. */

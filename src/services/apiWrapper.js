@@ -69,6 +69,23 @@ async function loadCsrIife() {
  */
 function _unwrapBcResponse(value) {
   if (value == null || typeof value !== 'object') return value;
+  // BC IIFEs catch their own axios errors and return a wrapper with
+  // .params.error rather than throwing. Surface that as a real exception so
+  // callers (and the UI) see a failed call, not a silently-empty success.
+  const inner = value.params?.error;
+  if (inner) {
+    const responseData = inner.response?.data;
+    let msg =
+      responseData?.message ||
+      responseData?.error ||
+      inner.message ||
+      'BC request failed';
+    if (Array.isArray(msg)) msg = msg.join(', ');
+    const e = new Error(msg);
+    e.status = inner.response?.status;
+    e.data = responseData;
+    throw e;
+  }
   if (typeof value.getData === 'function') {
     try {
       const data = value.getData();
@@ -1531,7 +1548,7 @@ class ApiWrapperService {
       try {
         const wrapper = await this.getWrapper();
         if (typeof wrapper.api?.message?.contact?.create === 'function') {
-          return await wrapper.api.message.contact.create(params);
+          return _unwrapBcResponse(await wrapper.api.message.contact.create(params));
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
@@ -1627,12 +1644,13 @@ class ApiWrapperService {
       try {
         const wrapper = await this.getWrapper();
         if (typeof wrapper.api?.user?.createContact === 'function') {
-          return await wrapper.api.user.createContact(params);
+          return _unwrapBcResponse(await wrapper.api.user.createContact(params));
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
           console.warn('[BC user.createContact] IIFE path threw; falling back to direct POST:', error?.message);
         }
+        if (error?.status || error?.data) throw error;
       }
     }
     try {
@@ -1730,12 +1748,16 @@ class ApiWrapperService {
     try {
       const wrapper = await this.getWrapper();
       if (typeof wrapper.api?.user?.update === 'function') {
-        return await wrapper.api.user.update(body);
+        return _unwrapBcResponse(await wrapper.api.user.update(body));
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[BC user.update] IIFE path threw; falling back to direct POST:', error?.message);
       }
+      // If the IIFE returned a wrapper with .params.error, _unwrapBcResponse
+      // already converted it to a thrown Error — propagate to the caller as a
+      // genuine failure rather than silently falling back.
+      if (error?.status || error?.data) throw error;
     }
     try {
       return await this._csrPost('/user/update', body);
