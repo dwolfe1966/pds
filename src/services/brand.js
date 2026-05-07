@@ -30,6 +30,16 @@ export const BRANDS = {
     primaryColor: '#0d5d2f',
     accentColor: '#0d5d2f',
     initials: 'ID',
+    // Home-page surfaces. heroBg accepts any background value (gradient
+    // or solid). featureCardBg is the per-card surface in the "Why
+    // Choose" grid. featureCardAccent is the colored top-border / hover
+    // tint that ties the cards back to the brand.
+    heroBg: 'linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%)',
+    heroTitleColor: '#111827',
+    heroSubtitleColor: '#6b7280',
+    featuresBg: '#ffffff',
+    featureCardBg: '#f9fafb',
+    featureCardAccent: '#0d5d2f',
   },
   'peoplesearcher.ai': {
     id: 'peoplesearcher',
@@ -42,6 +52,12 @@ export const BRANDS = {
     primaryColor: '#1e3a8a',
     accentColor: '#f97316',
     initials: 'PS',
+    heroBg: 'linear-gradient(135deg, #eef2ff 0%, #fff7ed 100%)',
+    heroTitleColor: '#1e3a8a',
+    heroSubtitleColor: '#475569',
+    featuresBg: '#ffffff',
+    featureCardBg: '#f8fafc',
+    featureCardAccent: '#f97316',
   },
   'inmatefinderhub.com': {
     id: 'inmatefinder',
@@ -54,6 +70,12 @@ export const BRANDS = {
     primaryColor: '#334155',
     accentColor: '#d97706',
     initials: 'IF',
+    heroBg: 'linear-gradient(135deg, #f1f5f9 0%, #fef3c7 100%)',
+    heroTitleColor: '#0f172a',
+    heroSubtitleColor: '#475569',
+    featuresBg: '#ffffff',
+    featureCardBg: '#f8fafc',
+    featureCardAccent: '#d97706',
   },
 };
 
