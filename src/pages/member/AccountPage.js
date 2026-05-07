@@ -243,13 +243,15 @@ const AccountPage = () => {
     setComposeError('');
     setComposeSuccess(false);
     try {
-      // BC's general-category contact endpoint requires a non-empty phone
-      // ("input.phone must be a valid phone number"). Use the saved profile
-      // phone if we have one; otherwise fall back to a US 555-fictional-use
-      // placeholder so the send still succeeds. Remove this fallback once BC
-      // drops the phone requirement.
+      // BC's general-category contact endpoint requires a non-empty *valid*
+      // phone ("input.phone must be a valid phone number"). Use the saved
+      // profile phone if we have one; otherwise fall back to 212-555-0100 —
+      // a real NANP area code (212 = NYC) paired with the official 555-01XX
+      // fictional-use subscriber range. Most phone validators (libphonenumber
+      // included) accept this combo as format-valid. Remove this fallback once
+      // BC drops the phone requirement.
       const userPhoneDigits = (user?.phone || '').replace(/\D/g, '');
-      const phone = userPhoneDigits.length >= 10 ? userPhoneDigits : '5555550100';
+      const phone = userPhoneDigits.length >= 10 ? userPhoneDigits : '2125550100';
       await api.submitContact({
         category: 'general',
         topic: composeSubject,
