@@ -5,6 +5,7 @@ import { useBrand } from './services/brand';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import BrandStyles from './components/BrandStyles';
 // Sales pages
 import HomePage from './pages/sales/HomePage';
 import AboutPage from './pages/sales/AboutPage';
@@ -110,6 +111,7 @@ const App = () => {
   }, [brand.name]);
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <BrandStyles />
       <ScrollToTop />
       <Header />
       <div style={{ flex: 1 }}>

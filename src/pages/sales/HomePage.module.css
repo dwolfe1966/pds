@@ -7,7 +7,7 @@
 }
 
 .hero {
-  background: linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%);
+  background: var(--brand-hero-bg, linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%));
   color: var(--color-text-primary);
   padding: 5rem 1.5rem;
   text-align: center;
@@ -24,13 +24,14 @@
   margin-bottom: var(--spacing-md);
   line-height: var(--line-height-tight);
   letter-spacing: -0.02em;
+  color: var(--brand-hero-title, var(--color-text-primary));
 }
 
 .heroSubtitle {
   font-size: var(--font-size-xl);
   margin-bottom: var(--spacing-2xl);
   line-height: var(--line-height-relaxed);
-  color: var(--color-text-secondary);
+  color: var(--brand-hero-subtitle, var(--color-text-secondary));
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
@@ -64,7 +65,7 @@
 
 .features {
   padding: var(--spacing-4xl) var(--spacing-xl);
-  background-color: var(--color-bg-default);
+  background-color: var(--brand-features-bg, var(--color-bg-default));
 }
 
 .featuresContent {
@@ -89,9 +90,10 @@
 
 .featureCard {
   padding: var(--spacing-xl);
-  background-color: var(--color-gray-50);
+  background-color: var(--brand-feature-card-bg, var(--color-gray-50));
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
+  border-top: 3px solid var(--brand-feature-card-accent, var(--color-primary));
   transition: all var(--transition-slow);
   cursor: pointer;
 }
@@ -99,7 +101,7 @@
 .featureCard:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
-  border-color: var(--color-primary);
+  border-color: var(--brand-feature-card-accent, var(--color-primary));
 }
 
 .featureIcon {
