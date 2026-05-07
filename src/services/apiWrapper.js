@@ -724,8 +724,14 @@ class ApiWrapperService {
   /**
    * POST to a csrWrapper endpoint. Respects useProxy/endpointUrl so it works
    * in both dev (Express proxy) and production (direct BC with CORS).
+   *
+   * Captcha handling: BC returns 412 with `{ type, captchaId, step }` on
+   * captcha-protected endpoints (notably `/contactMessage/create`). We mirror
+   * the IIFE's auto-retry — call `/captcha/verify` with the configured
+   * password (REACT_APP_NEW_API_CAPTCHA) as the token, then retry the
+   * original POST with the `x-captcha-id` header. Bounded by a single retry.
    */
-  async _csrPost(path, body = {}) {
+  async _csrPost(path, body = {}, { _captchaRetried = false, _captchaId = null } = {}) {
     const baseUrl = this.useProxy
       ? `${this.proxyUrl}${path}`
       : `${this.endpointUrl}${path}`;
@@ -733,12 +739,23 @@ class ApiWrapperService {
     const apiId = this._generateRandomId();
     const sep = path.includes('?') ? '&' : '?';
     const url = `${baseUrl}${sep}clientId=${clientId}&apiId=${apiId}`;
+    const headers = { 'Content-Type': 'application/json' };
+    if (_captchaId) headers['x-captcha-id'] = _captchaId;
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     });
+    if (response.status === 412 && !_captchaRetried) {
+      const captcha = await response.json().catch(() => null);
+      if (captcha?.captchaId && captcha?.type) {
+        const verified = await this._verifyCaptcha(captcha);
+        if (verified) {
+          return this._csrPost(path, body, { _captchaRetried: true, _captchaId: captcha.captchaId });
+        }
+      }
+    }
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
       const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
@@ -746,8 +763,32 @@ class ApiWrapperService {
       err.data = errorData;
       throw err;
     }
-    const json = await response.json();
-    return json;
+    return await response.json();
+  }
+
+  /**
+   * Verify a captcha challenge using the env-configured password. Returns true
+   * on success. Mirrors the IIFE's verifyCaptcha (GET /captcha/verify).
+   */
+  async _verifyCaptcha(captcha) {
+    const token = process.env.REACT_APP_NEW_API_CAPTCHA;
+    if (!token || captcha?.type !== 'password.v0') return false;
+    const baseUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
+    const params = new URLSearchParams({
+      token,
+      type: captcha.type,
+      step: captcha.step || '',
+    });
+    try {
+      const res = await fetch(`${baseUrl}/captcha/verify?${params.toString()}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'x-captcha-id': captcha.captchaId },
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   /**
