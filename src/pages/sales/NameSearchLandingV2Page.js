@@ -4,8 +4,10 @@ import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV2Page.module.css';
+import { useBrand } from '../../services/brand';
 
 const NameSearchLandingV2Page = () => {
+  const brand = useBrand();
   useLandingTrack('name', 'v2');
   const navigate = useNavigate();
   const location = useLocation();
@@ -239,7 +241,7 @@ const NameSearchLandingV2Page = () => {
             <span className={styles.stepBadge}>{stepLabel}</span>
             <h1 className={styles.title}>Find Anyone Fast</h1>
             <p className={styles.subtitle}>
-              Search billions of public records with the IDlookup.ai people finder.
+              Search billions of public records with the {brand.name} people finder.
             </p>
           </div>
 
@@ -416,7 +418,7 @@ const NameSearchLandingV2Page = () => {
             <div className={styles.form}>
               <h2 className={styles.sectionTitle}>Please confirm before we continue</h2>
               <p className={styles.helperText}>
-                There are limits to how you can use IDlookup.ai reports.
+                There are limits to how you can use {brand.name} reports.
               </p>
               <label className={styles.checkboxRow}>
                 <input
@@ -425,7 +427,7 @@ const NameSearchLandingV2Page = () => {
                   onChange={(event) => setAgree(event.target.checked)}
                 />
                 <span>
-                  I will not use information provided by IDlookup.ai for employment, insurance, tenant screening,
+                  I will not use information provided by {brand.name} for employment, insurance, tenant screening,
                   consumer credit, or any other purpose restricted by the Fair Credit Reporting Act (FCRA).
                 </span>
               </label>

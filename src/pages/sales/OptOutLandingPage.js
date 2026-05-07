@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api';
+import { useBrand } from '../../services/brand';
 
 /**
  * Opt-out landing page. Serves two purposes:
@@ -10,6 +11,7 @@ import api from '../../api';
  */
 const OptOutLandingPage = () => {
   const navigate = useNavigate();
+  const brand = useBrand();
   const [searchParams] = useSearchParams();
 
   // Opt-out confirmation state (for email link flow)
@@ -146,7 +148,7 @@ const OptOutLandingPage = () => {
                 Unable to process your opt-out confirmation. The link may have expired or already been used.
               </p>
               <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Please contact support at <a href="mailto:support@idlookup.ai" style={{ color: '#0d5d2f' }}>support@idlookup.ai</a> if you need assistance.
+                Please contact support at <a href={`mailto:${brand.supportEmail}`} style={{ color: '#0d5d2f' }}>{brand.supportEmail}</a> if you need assistance.
               </p>
               <button
                 onClick={() => navigate('/opt-out')}

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useBrand } from './services/brand';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
@@ -103,6 +104,10 @@ const HomePageRedirect = () => {
 };
 
 const App = () => {
+  const brand = useBrand();
+  useEffect(() => {
+    document.title = brand.name;
+  }, [brand.name]);
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <ScrollToTop />

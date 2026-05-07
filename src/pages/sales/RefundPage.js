@@ -1,10 +1,12 @@
 import React from 'react';
 import '../../styles/contentContainer.css';
+import { useBrand } from '../../services/brand';
 
 /**
- * Refund Policy page outlining IDLookup.AI's refund policy and procedures.
+ * Refund Policy page outlining the active brand's refund policy and procedures.
  */
 const RefundPage = () => {
+  const brand = useBrand();
   return (
     <main className="pageBackground">
       <div className="contentContainer contentContainerNarrow">
@@ -16,7 +18,7 @@ const RefundPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Overview</h2>
         <p style={{ color: '#111827', lineHeight: '1.8' }}>
-          At IDLookup.AI, we strive to provide high-quality services and customer satisfaction. 
+          At {brand.name}, we strive to provide high-quality services and customer satisfaction.
           This Refund Policy outlines the circumstances under which refunds may be issued for our services.
         </p>
       </section>
@@ -43,7 +45,7 @@ const RefundPage = () => {
         <div style={{ padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', marginBottom: '1rem' }}>
           <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>How to Request a Refund</h3>
           <ol style={{ color: '#6b7280', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-            <li>Contact our support team at <strong>support@idlookup.ai</strong> or through our contact form</li>
+            <li>Contact our support team at <strong>{brand.supportEmail}</strong> or through our contact form</li>
             <li>Provide your order number or transaction ID</li>
             <li>Explain the reason for your refund request</li>
             <li>Include any relevant documentation or screenshots</li>
@@ -80,7 +82,7 @@ const RefundPage = () => {
           If you have questions about our refund policy or need assistance with a refund request, please contact us:
         </p>
         <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: support@idlookup.ai<br />
+          Email: {brand.supportEmail}<br />
           Phone: [Your Support Phone Number]<br />
           Hours: Monday - Friday, 9:00 AM - 5:00 PM EST
         </p>

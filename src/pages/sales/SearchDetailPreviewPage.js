@@ -12,6 +12,7 @@ import SearchDetailPreviewVariantC from './SearchDetailPreviewVariantC';
 import SearchDetailPreviewVariantD from './SearchDetailPreviewVariantD';
 import SearchDetailPreviewVariantE from './SearchDetailPreviewVariantE';
 import styles from './SearchDetailPreviewPage.module.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Items included in the paid full report. Kept honest: no fake counts, no
@@ -49,6 +50,7 @@ function getInitials(fullName) {
  * to unmount/remount it and lose input focus after every keystroke.
  */
 const SearchDetailPreviewPage = () => {
+  const brand = useBrand();
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -185,7 +187,7 @@ const SearchDetailPreviewPage = () => {
       <main className={styles.main} data-no-nav="true">
         <div className={styles.miniHeader}>
           <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
-          <span className={styles.miniHeaderBrand}>🔒 IDLookup.ai</span>
+          <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
         </div>
         <h1 className={styles.pageTitle}>{person.fullName}</h1>
         <section className={styles.section}>
@@ -307,7 +309,7 @@ const SearchDetailPreviewPage = () => {
     <main className={styles.main} data-no-nav="true">
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
-        <span className={styles.miniHeaderBrand}>🔒 IDLookup.ai</span>
+        <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
       </div>
 
       {/* ── Hero: just the real fields we actually have ── */}

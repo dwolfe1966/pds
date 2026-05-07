@@ -1,15 +1,17 @@
 import React from 'react';
+import { useBrand } from '../../services/brand';
 
 /**
  * Suppression List page explaining how users can add themselves to a suppression list
  * to limit their information in search results.
  */
 const SuppressionListPage = () => {
+  const brand = useBrand();
   return (
     <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
       <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Suppression List</h1>
       <p style={{ marginBottom: '2rem', color: '#111827', lineHeight: '1.6', fontSize: '1.1rem' }}>
-        The IDLookup.AI Suppression List allows individuals to limit the display of their information 
+        The {brand.name} Suppression List allows individuals to limit the display of their information
         in search results while maintaining compliance with public records laws.
       </p>
 
@@ -94,7 +96,7 @@ const SuppressionListPage = () => {
           If you have questions about the suppression list or need assistance, please contact us:
         </p>
         <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: support@idlookup.ai<br />
+          Email: {brand.supportEmail}<br />
           Phone: [Your Support Phone Number]
         </p>
       </section>

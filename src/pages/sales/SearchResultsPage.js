@@ -9,6 +9,7 @@ import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import { readThinMatch, isThinMatch } from '../../services/thinMatch';
 import styles from './SearchResultsPage.module.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Displays search results for public searches on the marketing funnel.
@@ -16,6 +17,7 @@ import styles from './SearchResultsPage.module.css';
  * Fetches results from the public `/search` endpoint or from sessionStorage.
  */
 const SalesSearchResultsPage = () => {
+  const brand = useBrand();
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);

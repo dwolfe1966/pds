@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSignup, validatePassword } from '../../hooks/useSignup';
 import styles from './SearchDetailPreviewPage.module.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Variant C — LOW TEASE (Mystery/Curiosity)
@@ -19,6 +20,7 @@ import styles from './SearchDetailPreviewPage.module.css';
  * React remounting inputs on every re-render.
  */
 const SearchDetailPreviewVariantC = ({ person, id }) => {
+  const brand = useBrand();
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const { submit: submitSignup, loading, error, setError, success } = useSignup();
@@ -86,7 +88,7 @@ const SearchDetailPreviewVariantC = ({ person, id }) => {
           fontSize: '0.78rem', fontWeight: 600, color: '#0d5d2f', letterSpacing: '0.12em',
           textTransform: 'uppercase', fontFamily: '"DM Mono", "IBM Plex Mono", monospace',
         }}>
-          IDLookup.ai
+          {brand.name}.ai
         </span>
       </div>
 

@@ -4,6 +4,7 @@ import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV5Page.module.css';
+import { useBrand } from '../../services/brand';
 
 const getStepIndex = (step) => {
   switch (step) {
@@ -37,6 +38,7 @@ const BENEFIT_BULLETS = [
  * Same 4-step flow: Name → Location → Details → Confirm → Results.
  */
 const NameSearchLandingV5Page = () => {
+  const brand = useBrand();
   useLandingTrack('name', 'v5');
   const navigate = useNavigate();
   const location = useLocation();
@@ -341,13 +343,13 @@ const NameSearchLandingV5Page = () => {
             <div className={styles.form}>
               <h2 className={styles.sectionTitle}>One Last Step</h2>
               <p className={styles.helperText}>
-                Please confirm before we show your results. IDlookup.ai reports are for personal use only,
+                Please confirm before we show your results. {brand.name} reports are for personal use only,
                 not employment screening, credit, or other FCRA purposes.
               </p>
               <label className={styles.checkboxRow}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
                 <span>
-                  I will not use information from IDlookup.ai for employment, insurance, tenant screening,
+                  I will not use information from {brand.name} for employment, insurance, tenant screening,
                   consumer credit, or any other purpose restricted by the Fair Credit Reporting Act (FCRA).
                 </span>
               </label>

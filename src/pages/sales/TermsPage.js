@@ -1,10 +1,13 @@
 import React from 'react';
 import '../../styles/contentContainer.css';
+import { useBrand } from '../../services/brand';
 
 /**
- * Terms of Service page outlining the terms and conditions for using IDLookup.AI.
+ * Terms of Service page outlining the terms and conditions for using the
+ * active-brand site.
  */
 const TermsPage = () => {
+  const brand = useBrand();
   return (
     <main className="pageBackground">
       <div className="contentContainer contentContainerNarrow">
@@ -16,7 +19,7 @@ const TermsPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Agreement to Terms</h2>
         <p style={{ color: '#111827', lineHeight: '1.8' }}>
-          By accessing or using IDLookup.AI ("the Service"), you agree to be bound by these Terms of Service 
+          By accessing or using {brand.name} ("the Service"), you agree to be bound by these Terms of Service 
           and all applicable laws and regulations. If you do not agree with any of these terms, you are 
           prohibited from using or accessing the Service.
         </p>
@@ -25,7 +28,7 @@ const TermsPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Use License</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.8', marginBottom: '1rem' }}>
-          Permission is granted to temporarily access the materials on IDLookup.AI for personal, 
+          Permission is granted to temporarily access the materials on {brand.name} for personal, 
           non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, 
           and under this license you may not:
         </p>
@@ -74,7 +77,7 @@ const TermsPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Limitation of Liability</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.8' }}>
-          In no event shall IDLookup.AI or its suppliers be liable for any damages (including, without 
+          In no event shall {brand.name} or its suppliers be liable for any damages (including, without 
           limitation, damages for loss of data or profit, or due to business interruption) arising out of 
           the use or inability to use the materials on the Service, even if we or an authorized 
           representative has been notified orally or in writing of the possibility of such damage.
@@ -101,7 +104,7 @@ const TermsPage = () => {
         </p>
         <h3 style={{ color: '#0d5d2f', marginTop: '1.25rem' }}>How to Request a Refund</h3>
         <ol style={{ color: '#6b7280', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-          <li>Contact our support team at <strong>support@idlookup.ai</strong> or through our contact form</li>
+          <li>Contact our support team at <strong>{brand.supportEmail}</strong> or through our contact form</li>
           <li>Provide your order number or transaction ID</li>
           <li>Explain the reason for your refund request</li>
           <li>Include any relevant documentation or screenshots</li>
@@ -118,7 +121,7 @@ const TermsPage = () => {
           If you have any questions about these Terms of Service, please contact us at:
         </p>
         <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: legal@idlookup.ai<br />
+          Email: {brand.legalEmail}<br />
           Address: [Your Company Address]
         </p>
       </section>

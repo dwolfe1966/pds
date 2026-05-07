@@ -7,6 +7,7 @@ import { gtmSearchSubmit } from '../../services/gtm';
 import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import { appendSearch } from '../../services/visitorSearchLog';
 import styles from './LoaderPage.module.css';
+import { useBrand } from '../../services/brand';
 
 const SCAN_PHASES = [
   'Searching 247 million records\u2026',
@@ -20,6 +21,7 @@ const SCAN_PHASES = [
  * Automatically redirects to search results when complete.
  */
 const NameSearchLoaderPage = () => {
+  const brand = useBrand();
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);

@@ -11,6 +11,7 @@ import { readThinMatch } from '../../services/thinMatch';
 const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
 const SIGNUP_OFFER_S0_USD = 1.01;
 import styles from './SearchDetailPreviewPage.module.css';
+import { useBrand } from '../../services/brand';
 
 // ── Card utilities ────────────────────────────────────────────────────────────
 
@@ -88,6 +89,7 @@ const PLAN_FEATURES = [
  * inside a sub-component defined in render — so React never remounts inputs.
  */
 const SearchDetailPreviewVariantB = ({ person, id }) => {
+  const brand = useBrand();
   const navigate = useNavigate();
   const { setToken, setUser, setSubscription } = useAuth();
 
@@ -231,7 +233,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
         value: SIGNUP_OFFER_S0_USD,
         currency: 'USD',
         offer_key: SIGNUP_OFFER_KEY,
-        item_name: 'IDLookup Signup (S0 — 7-day access)',
+        item_name: `${brand.name} Signup (S0 — 7-day access)`,
       });
       sessionStorage.removeItem('selectedPersonId');
 
@@ -277,7 +279,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
       {/* ── Mini header ── */}
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
-        <span className={styles.miniHeaderBrand}>🔒 IDLookup.ai</span>
+        <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
       </div>
 
       {/* ── VCard ── */}

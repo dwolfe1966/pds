@@ -1,10 +1,12 @@
 import React from 'react';
 import '../../styles/contentContainer.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Privacy Policy page outlining how IDLookup.AI handles user data and privacy.
  */
 const PrivacyPage = () => {
+  const brand = useBrand();
   return (
     <main className="pageBackground">
       <div className="contentContainer contentContainerNarrow">
@@ -16,7 +18,7 @@ const PrivacyPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Introduction</h2>
         <p style={{ color: '#111827', lineHeight: '1.8' }}>
-          IDLookup.AI ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy 
+          {brand.name} ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy 
           explains how we collect, use, disclose, and safeguard your information when you use our website 
           and services.
         </p>
@@ -93,7 +95,7 @@ const PrivacyPage = () => {
         </ul>
         <h3 style={{ color: '#0d5d2f', marginTop: '1.25rem' }}>How to Exercise Your Rights</h3>
         <p style={{ color: '#6b7280', lineHeight: '1.8' }}>
-          To exercise any of these rights, contact us at <strong>privacy@idlookup.ai</strong> or use
+          To exercise any of these rights, contact us at <strong>{brand.privacyEmail}</strong> or use
           our Opt Out page. You may also designate an authorized agent. We will verify your identity
           before fulfilling any request and respond within 45 days.
         </p>
@@ -108,7 +110,7 @@ const PrivacyPage = () => {
           If you have questions about this Privacy Policy or wish to exercise your rights, please contact us at:
         </p>
         <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: privacy@idlookup.ai<br />
+          Email: {brand.privacyEmail}<br />
           Address: [Your Company Address]
         </p>
       </section>

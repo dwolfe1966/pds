@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import styles from './ContactPage.module.css';
+import { useBrand } from '../../services/brand';
 
 /* ------------------------------------------------------------------ */
 /* Inline SVG icons                                                    */
@@ -109,6 +110,7 @@ const INITIAL_EMAIL_FORM = {
 };
 
 const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
+  const brand = useBrand();
   const [form, setForm] = useState(INITIAL_EMAIL_FORM);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
@@ -342,7 +344,7 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
 
             <div className={styles.field}>
               <span className={styles.radioGroupLabel}>
-                Email me about IDLookup&apos;s special offers and tips for better searches.
+                Email me about {brand.name}&apos;s special offers and tips for better searches.
               </span>
               <div className={styles.radioGroup}>
                 <label className={styles.radioOption}>
@@ -369,7 +371,7 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
             </div>
 
             <p className={styles.disclaimer}>
-              By clicking Submit, I give IDLookup permission to contact me. See IDLookup&apos;s{' '}
+              By clicking Submit, I give {brand.name} permission to contact me. See {brand.name}&apos;s{' '}
               <Link to="/privacy">Privacy Policy</Link> for more information.
             </p>
 
@@ -631,27 +633,31 @@ const BillingQuestionModal = ({ isOpen, onClose, user, token }) => {
 /* Main ContactPage                                                    */
 /* ------------------------------------------------------------------ */
 
-const FAQ_ITEMS = [
+const buildFaqItems = (brand) => [
   {
-    q: 'What is IDLookup.AI?',
-    a: 'IDLookup.AI is a people search service that organizes public information about people into simple, comprehensive online profiles accessible to consumers, businesses, and non-profits.',
+    q: `What is ${brand.name}?`,
+    a: `${brand.name} is a people search service that organizes public information about people into simple, comprehensive online profiles accessible to consumers, businesses, and non-profits.`,
   },
   {
     q: 'How do I perform a search?',
-    a: "IDLookup supports five types of searches. Enter a first and last name, phone number, email address, physical address, or username and click 'search.' Our search bar automatically detects the type of search entered, and displays all available results once the search is complete.",
+    a: `${brand.name} supports five types of searches. Enter a first and last name, phone number, email address, physical address, or username and click 'search.' Our search bar automatically detects the type of search entered, and displays all available results once the search is complete.`,
   },
   {
     q: 'What will show up on my bank or credit card statement?',
+    // Merchant descriptors are set by the payment processor and don't vary
+    // by brand surface — leave as IDLOOKUP*… until billing reconfigures.
     a: 'Charges may appear on your credit card statement as: IDLOOKUP*AI, IDL*SEARCH, or IDLOOKUP.AI followed by a phone number (e.g., 800-555-0100).',
   },
 ];
 
 const ContactPage = () => {
   const navigate = useNavigate();
+  const brand = useBrand();
   const { user, token } = useAuth();
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [billingModalOpen, setBillingModalOpen] = useState(false);
   const [helpTopic, setHelpTopic] = useState('');
+  const faqItems = buildFaqItems(brand);
 
   const handleHelpChange = useCallback(
     (e) => {
@@ -779,7 +785,7 @@ const ContactPage = () => {
             <div className={styles.faqPanel}>
               <h2 className={styles.faqHeading}>Frequently Asked Questions</h2>
               <div className={styles.faqList}>
-                {FAQ_ITEMS.map((item) => (
+                {faqItems.map((item) => (
                   <div key={item.q} className={styles.faqItem}>
                     <h3 className={styles.faqQuestion}>{item.q}</h3>
                     <p className={styles.faqAnswer}>{item.a}</p>

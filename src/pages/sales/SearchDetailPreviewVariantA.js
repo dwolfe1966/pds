@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSignup } from '../../hooks/useSignup';
 import styles from './SearchDetailPreviewPage.module.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Variant A — VCard + free signup form.
@@ -16,6 +17,7 @@ import styles from './SearchDetailPreviewPage.module.css';
  * never remounts the inputs on re-render.
  */
 const SearchDetailPreviewVariantA = ({ person, id }) => {
+  const brand = useBrand();
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const { submit: submitSignup, loading, error, setError, success } = useSignup();
@@ -33,7 +35,7 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
       {/* ── Mini header ── */}
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
-        <span className={styles.miniHeaderBrand}>🔒 IDLookup.ai</span>
+        <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
       </div>
 
       {/* ── VCard ── */}

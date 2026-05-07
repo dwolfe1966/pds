@@ -4,6 +4,7 @@ import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV3Page.module.css';
+import { useBrand } from '../../services/brand';
 
 /** Step index for progress bar (1–3). Interstitials and final-search don't show a step. */
 const getStepIndex = (step) => {
@@ -43,6 +44,7 @@ const formatPhone = (digits) => {
  * 3-step flow: Phone → Location → Confirm → Results.
  */
 const PhoneSearchLandingV3Page = () => {
+  const brand = useBrand();
   useLandingTrack('phone', 'v3');
   const navigate = useNavigate();
   const location = useLocation();
@@ -331,7 +333,7 @@ const PhoneSearchLandingV3Page = () => {
             <div className={styles.form}>
               <h2 className={styles.sectionTitle}>Ready to View Results</h2>
               <p className={styles.helperText}>
-                Please confirm before we show your results. IDlookup.ai reports are not for employment, tenant screening, credit, or other FCRA purposes.
+                Please confirm before we show your results. {brand.name} reports are not for employment, tenant screening, credit, or other FCRA purposes.
               </p>
 
               <label className={styles.checkboxRow}>
@@ -341,7 +343,7 @@ const PhoneSearchLandingV3Page = () => {
                   onChange={(e) => setAgree(e.target.checked)}
                 />
                 <span>
-                  I will not use information from IDlookup.ai for employment, insurance, tenant screening,
+                  I will not use information from {brand.name} for employment, insurance, tenant screening,
                   consumer credit, or any other purpose restricted by the Fair Credit Reporting Act (FCRA).
                 </span>
               </label>

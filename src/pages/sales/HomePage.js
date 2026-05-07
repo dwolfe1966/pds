@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../../components/SearchBar';
 import styles from './HomePage.module.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Home page for public visitors.
@@ -9,6 +10,7 @@ import styles from './HomePage.module.css';
  * Uses PQS production site design system.
  */
 const HomePage = () => {
+  const brand = useBrand();
   const navigate = useNavigate();
 
   return (
@@ -51,7 +53,7 @@ const HomePage = () => {
       <section className={styles.features}>
         <div className={styles.featuresContent}>
           <h2 className={styles.featuresTitle}>
-            Why Choose IDLookup.AI?
+            Why Choose {brand.name}?
           </h2>
           
           <div className={styles.featuresGrid}>

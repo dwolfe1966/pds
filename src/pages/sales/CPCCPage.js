@@ -1,19 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/contentContainer.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * CPCC (California Privacy Compliance) page explaining California privacy rights
- * and how IDLookup.AI complies with California privacy laws.
+ * and how the active brand complies with California privacy laws.
  */
 const CPCCPage = () => {
+  const brand = useBrand();
   return (
     <main className="pageBackground">
       <div className="contentContainer contentContainerNarrow">
       <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>California Privacy Rights (CPCC)</h1>
       <p style={{ marginBottom: '2rem', color: '#6b7280', fontStyle: 'italic' }}>
         This page explains your privacy rights under the California Consumer Privacy Act (CCPA) and 
-        how IDLookup.AI complies with California privacy laws.
+        how {brand.name} complies with California privacy laws.
       </p>
 
       <section style={{ marginBottom: '2rem' }}>
@@ -96,7 +98,7 @@ const CPCCPage = () => {
           To exercise your California privacy rights or if you have questions about this notice, please contact us:
         </p>
         <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: privacy@idlookup.ai<br />
+          Email: {brand.privacyEmail}<br />
           Phone: [Your Support Phone Number]<br />
           Address: [Your Company Address]
         </p>

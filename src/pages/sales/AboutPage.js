@@ -1,17 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import '../../styles/contentContainer.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * About page describing the service and company.
  */
 const AboutPage = () => {
+  const brand = useBrand();
   return (
     <main className="pageBackground">
       <div className="contentContainer contentContainerNarrow">
-      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>About IDLookup.AI</h1>
+      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>About {brand.name}</h1>
       <p style={{ marginBottom: '2rem', color: '#6b7280', lineHeight: '1.8', fontSize: '1.1rem' }}>
-        IDLookup.AI aggregates publicly available records and helps you discover information
+        {brand.name} aggregates publicly available records and helps you discover information
         about people and understand who is searching for you. Our mission is to bring
         transparency to public data while respecting privacy.
       </p>
@@ -19,7 +21,7 @@ const AboutPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Our Mission</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.8' }}>
-          We believe that public information should be accessible and transparent. IDLookup.AI 
+          We believe that public information should be accessible and transparent. {brand.name} 
           provides a platform that makes it easy to find people and understand your digital footprint. 
           At the same time, we respect privacy and provide tools for individuals to manage their 
           information in our database.
@@ -50,7 +52,7 @@ const AboutPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Contact Us</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.8' }}>
-          Have questions about IDLookup.AI? We'd love to hear from you. 
+          Have questions about {brand.name}? We'd love to hear from you. 
           <Link to="/contact" style={{ color: '#0d5d2f', marginLeft: '0.5rem' }}>Contact us</Link> for
           support, partnerships, or general inquiries.
         </p>

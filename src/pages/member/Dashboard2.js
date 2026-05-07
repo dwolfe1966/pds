@@ -5,6 +5,7 @@ import api from '../../api';
 import { getReportList } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import { readLoginHistory } from '../../services/loginHistory';
+import { getBrand } from '../../services/brand';
 
 /**
  * Dashboard — research-workbench layout.
@@ -103,10 +104,11 @@ function reportType(report) {
 // ─── Subscription tile ──────────────────────────────────────────────────────
 
 function SubscriptionTile({ subscription, orders, navigate }) {
+  const brand = getBrand();
   const order = (orders || []).find((o) => o.status === 'active' && !o?.transient?.canceled) || (orders || [])[0] || null;
   const renewal = order?.dueTimestamp ? new Date(order.dueTimestamp) : null;
   const status = subscription?.status === 'active' && !order?.transient?.canceled ? 'Active' : subscription?.status === 'active' ? 'Canceling' : 'Free';
-  const planLabel = subscription?.plan || order?.commerceOffers?.[0] || (status === 'Free' ? 'No plan' : 'IDLookup Membership');
+  const planLabel = subscription?.plan || order?.commerceOffers?.[0] || (status === 'Free' ? 'No plan' : `${brand.name} Membership`);
 
   return (
     <div style={{

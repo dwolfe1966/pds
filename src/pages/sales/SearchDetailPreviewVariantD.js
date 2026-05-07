@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSignup, validatePassword } from '../../hooks/useSignup';
 import styles from './SearchDetailPreviewPage.module.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Variant D — HIGH TEASE (Partial Reveal)
@@ -74,6 +75,7 @@ function generatePartialData(person, id) {
 }
 
 const SearchDetailPreviewVariantD = ({ person, id }) => {
+  const brand = useBrand();
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const { submit: submitSignup, loading, error, setError, success } = useSignup();
@@ -135,7 +137,7 @@ const SearchDetailPreviewVariantD = ({ person, id }) => {
           &larr; Results
         </Link>
         <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0d5d2f', letterSpacing: '-0.01em' }}>
-          IDLookup.ai
+          {brand.name}.ai
         </span>
       </div>
 

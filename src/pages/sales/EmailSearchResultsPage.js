@@ -7,12 +7,14 @@ import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import { readThinMatch, isThinMatch } from '../../services/thinMatch';
+import { useBrand } from '../../services/brand';
 
 /**
  * Displays email search results for public searches.
  * Mimics the name search results flow with IDLookup design.
  */
 const EmailSearchResultsPage = () => {
+  const brand = useBrand();
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);

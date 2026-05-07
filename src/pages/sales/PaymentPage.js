@@ -12,6 +12,7 @@ import { readThinMatch } from '../../services/thinMatch';
 const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
 const SIGNUP_OFFER_S0_USD = 1.01;
 import styles from './PaymentPage.module.css';
+import { useBrand } from '../../services/brand';
 
 // Detect card type from PAN prefix
 function detectCardType(pan) {
@@ -80,6 +81,7 @@ const PLAN_FEATURES = [
 ];
 
 const PaymentPage = () => {
+  const brand = useBrand();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription } = useAuth();
@@ -419,7 +421,7 @@ const PaymentPage = () => {
         value: SIGNUP_OFFER_S0_USD,
         currency: 'USD',
         offer_key: SIGNUP_OFFER_KEY,
-        item_name: 'IDLookup Signup (S0 — 7-day access)',
+        item_name: `${brand.name} Signup (S0 — 7-day access)`,
       });
       // BC compliance tracking — record subscription agreement timestamp on BC side.
       api.createTracking({
@@ -476,7 +478,7 @@ const PaymentPage = () => {
               <div className={styles.successIcon}>✓</div>
               <h2 className={styles.successTitle}>You're in!</h2>
               <p className={styles.successText}>
-                Your IDlookup Basic membership is now active. A receipt is on its way to <strong>{user?.email}</strong>.
+                Your {brand.name} Basic membership is now active. A receipt is on its way to <strong>{user?.email}</strong>.
               </p>
 
               {/* Primary CTA varies by whether report creation succeeded.

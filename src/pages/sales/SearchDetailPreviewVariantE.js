@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSignup, validatePassword } from '../../hooks/useSignup';
 import styles from './SearchDetailPreviewPage.module.css';
+import { useBrand } from '../../services/brand';
 
 /**
  * Variant E — SOCIAL PROOF (Trust/Authority)
@@ -64,6 +65,7 @@ const TOC_SECTIONS = [
 ];
 
 const SearchDetailPreviewVariantE = ({ person, id }) => {
+  const brand = useBrand();
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const { submit: submitSignup, loading, error, setError, success } = useSignup();
@@ -109,7 +111,7 @@ const SearchDetailPreviewVariantE = ({ person, id }) => {
           fontSize: '0.78rem', fontWeight: 700, color: '#0d5d2f', letterSpacing: '0.06em',
           textTransform: 'uppercase',
         }}>
-          IDLookup.ai
+          {brand.name}.ai
         </span>
       </div>
 

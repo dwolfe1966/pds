@@ -1,19 +1,21 @@
 import React from 'react';
+import { useBrand } from '../../services/brand';
 
 /**
  * Partner page for businesses interested in partnering with IDLookup.AI.
  */
 const PartnerPage = () => {
+  const brand = useBrand();
   return (
     <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
       <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Partner With Us</h1>
       <p style={{ marginBottom: '2rem', color: '#111827', lineHeight: '1.6', fontSize: '1.1rem' }}>
-        IDLookup.AI offers partnership opportunities for businesses looking to integrate 
+        {brand.name} offers partnership opportunities for businesses looking to integrate 
         public records search capabilities into their platforms.
       </p>
 
       <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Why Partner With IDLookup.AI?</h2>
+        <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Why Partner With {brand.name}?</h2>
         <ul style={{ color: '#6b7280', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
           <li>Access to comprehensive public records database</li>
           <li>Reliable API integration for seamless user experience</li>
@@ -36,7 +38,7 @@ const PartnerPage = () => {
           <div style={{ padding: '1.5rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}>
             <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>White Label Solutions</h3>
             <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
-              Offer IDLookup.AI services under your own brand. We handle the backend while 
+              Offer {brand.name} services under your own brand. We handle the backend while 
               you maintain your brand identity.
             </p>
           </div>
