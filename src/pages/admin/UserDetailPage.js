@@ -169,7 +169,9 @@ function Toast({ message, type, onDone }) {
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-const TABS = ['Orders & Payments', 'Logins', 'Activity', 'Notes & Messages', 'Audit', 'Actions'];
+// Tab order matches the four-up-front profile framing: orders, searches,
+// reports, logins. Notes/Audit/Actions follow.
+const TABS = ['Orders & Payments', 'Searches', 'Reports', 'Logins', 'Notes & Messages', 'Audit', 'Actions'];
 
 // Map prefix → display action type. Notes we write on CSR actions are prefixed
 // with one of these so the audit tab can pluck them out of the general notes
@@ -456,7 +458,9 @@ const UserDetailPage = () => {
     if (activeTab === 'Logins' && !loginsFetched && id) {
       fetchLogins();
     }
-    if (activeTab === 'Activity' && !activityFetched && id) {
+    // Searches and Reports both pull from the same tracking dataset; one
+    // fetch hydrates both tabs and we filter client-side.
+    if ((activeTab === 'Searches' || activeTab === 'Reports') && !activityFetched && id) {
       fetchActivity();
     }
   }, [activeTab, loginsFetched, activityFetched, id, fetchLogins, fetchActivity]);
@@ -1530,8 +1534,12 @@ const UserDetailPage = () => {
               </>
             )}
 
-            {/* ── Tab: Activity ─────────────────────────────── */}
-            {activeTab === 'Activity' && (() => {
+            {/* ── Tab: Searches ─────────────────────────────── */}
+            {/* Pulls from `activities` (the tracking fetch). Same dataset feeds
+                the Reports tab; one fetch hydrates both. */}
+            {(activeTab === 'Searches' || activeTab === 'Reports') && (() => {
+              const isReports = activeTab === 'Reports';
+
               const TYPE_LABELS = {
                 'USER:nameSearchTeaser': 'Name Search',
                 'USER:phoneSearchTeaser': 'Phone Search',
@@ -1541,24 +1549,22 @@ const UserDetailPage = () => {
                 'USER:phoneSearchTeaserOptOut': 'Opt-Out Phone Search',
               };
 
-              const SEARCH_TYPES = new Set(['USER:nameSearchTeaser', 'USER:phoneSearchTeaser']);
-              const REPORT_TYPES = new Set(['USER:nameSearch', 'USER:phoneSearch']);
+              const TEASER_TYPES = new Set(['USER:nameSearchTeaser', 'USER:phoneSearchTeaser']);
               const OPTOUT_TYPES = new Set(['USER:nameSearchTeaserOptOut', 'USER:phoneSearchTeaserOptOut']);
+              const REPORT_TYPES = new Set(['USER:nameSearch', 'USER:phoneSearch']);
 
+              // Searches tab: teaser searches (with an "include opt-outs" toggle).
+              // Reports tab: report-creation events only (no sub-toggle).
+              const includeOptouts = !isReports && activitySubTab === 'optout';
               const filterFor = (rawType) => {
-                if (activitySubTab === 'searches') return SEARCH_TYPES.has(rawType);
-                if (activitySubTab === 'reports')  return REPORT_TYPES.has(rawType);
-                if (activitySubTab === 'optout')   return OPTOUT_TYPES.has(rawType);
-                return true;
+                if (isReports) return REPORT_TYPES.has(rawType);
+                if (activitySubTab === 'optout') return OPTOUT_TYPES.has(rawType);
+                return TEASER_TYPES.has(rawType);
               };
-
               const filtered = activities.filter((d) => filterFor(d?.data?.type));
-              const counts = {
-                all: activities.length,
-                searches: activities.filter((d) => SEARCH_TYPES.has(d?.data?.type)).length,
-                reports:  activities.filter((d) => REPORT_TYPES.has(d?.data?.type)).length,
-                optout:   activities.filter((d) => OPTOUT_TYPES.has(d?.data?.type)).length,
-              };
+
+              const teaserCount = activities.filter(d => TEASER_TYPES.has(d?.data?.type)).length;
+              const optoutCount = activities.filter(d => OPTOUT_TYPES.has(d?.data?.type)).length;
 
               const formatTeaserInput = (input) => {
                 if (!input) return '—';
@@ -1571,7 +1577,7 @@ const UserDetailPage = () => {
                 return parts.length > 0 ? parts.join(', ') : '—';
               };
 
-              const SubTabBtn = ({ value, label }) => (
+              const SubTabBtn = ({ value, label, count }) => (
                 <button
                   type="button"
                   onClick={() => setActivitySubTab(value)}
@@ -1588,36 +1594,33 @@ const UserDetailPage = () => {
                     marginRight: '0.4rem',
                   }}
                 >
-                  {label} <span style={{ marginLeft: 4, opacity: 0.7 }}>({counts[value]})</span>
+                  {label} <span style={{ marginLeft: 4, opacity: 0.7 }}>({count})</span>
                 </button>
               );
 
+              const emptyLabel = isReports ? 'reports' : (includeOptouts ? 'opt-out searches' : 'searches');
+
               return (
                 <>
-                  {activities.length > 0 && (
+                  {/* Searches tab gets a small filter bar to flip between teaser
+                      searches and opt-out searches. Reports tab has no toggle. */}
+                  {!isReports && activities.length > 0 && (
                     <div style={{ marginBottom: '0.875rem', display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                      <SubTabBtn value="all"      label="All" />
-                      <SubTabBtn value="searches" label="Searches" />
-                      <SubTabBtn value="reports"  label="Reports" />
-                      <SubTabBtn value="optout"   label="Opt-out searches" />
+                      <SubTabBtn value="all"    label="Teaser searches" count={teaserCount} />
+                      <SubTabBtn value="optout" label="Opt-out searches" count={optoutCount} />
                     </div>
                   )}
 
                   {activityLoading && activities.length === 0 && (
-                    <div className={styles.loadingState}>Loading activity...</div>
+                    <div className={styles.loadingState}>Loading {emptyLabel}...</div>
                   )}
                   {activityError && (
                     <div className={styles.errorState}>{activityError}</div>
                   )}
-                  {!activityLoading && !activityError && activities.length === 0 && activityFetched && (
+                  {!activityLoading && !activityError && activityFetched && filtered.length === 0 && (
                     <div className={styles.emptyState}>
                       <div className={styles.emptyIcon}>--</div>
-                      <p>No activity events found for this user.</p>
-                    </div>
-                  )}
-                  {!activityLoading && activities.length > 0 && filtered.length === 0 && (
-                    <div className={styles.emptyState}>
-                      <p>No {activitySubTab === 'all' ? 'activity' : activitySubTab} events for this user.</p>
+                      <p>No {emptyLabel} found for this user.</p>
                     </div>
                   )}
                   {filtered.length > 0 && (
@@ -1626,7 +1629,7 @@ const UserDetailPage = () => {
                         <thead>
                           <tr>
                             <th className={styles.th}>Date / Time</th>
-                            <th className={styles.th}>Action Type</th>
+                            <th className={styles.th}>{isReports ? 'Report Type' : 'Search Type'}</th>
                             <th className={styles.th}>Details</th>
                             <th className={styles.th}>Status</th>
                           </tr>

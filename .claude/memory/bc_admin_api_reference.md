@@ -24,13 +24,6 @@ All methods are on `csrWrapper.api.*`
 | Find Users (members) | `csrWrapper.api.user.find({ brandId?, email?, lastId? })` | POST /api/database/search | Paginated via lastId |
 | Find Admin Users | `csrWrapper.api.user.findAdmin({ brandId?, email?, lastId? })` | POST /api/database/search | CSR/admin staff only |
 
-## Admin Notes
-| Desc | BC call | Path | Params |
-|---|---|---|---|
-| Create Note | `csrWrapper.api.user.createAdminNote({ userId, message })` | POST /api/message/admin/user/note/create | Admin-only memos |
-| Find Notes | `csrWrapper.api.user.findAdminNotes({ userId, lastId? })` | POST /api/database/search | Paginated |
-| Update Note | `csrWrapper.api.user.updateAdminNote({ messageId, message })` | POST /api/message/admin/user/note/update | |
-
 ## Orders & Commerce
 | Desc | BC call | Path | Params |
 |---|---|---|---|
