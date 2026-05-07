@@ -149,16 +149,18 @@ class ApiWrapperService {
   }
 
   /**
-   * Auto-fill BC's password.v0 captcha modal so users never see the prompt.
+   * Auto-fill BC's password.v0 captcha modal — DEV ONLY.
    *
    * BC's IIFE shows a generic "Input Password" modal on every captcha challenge
-   * and forwards whatever the user types as the verify token. The expected
-   * password is provisioned by BC per environment (REACT_APP_NEW_API_CAPTCHA).
-   * We override the instance's executePasswordCaptcha to skip the modal and
-   * return the configured password directly.
+   * and forwards whatever the user types as the verify token. We CANNOT bake
+   * the password into a public bundle (it would be readable in browser
+   * DevTools by any visitor), so REACT_APP_NEW_API_CAPTCHA is empty in
+   * committed production env files. Set it locally in an untracked .env.local
+   * file when debugging captcha-protected endpoints. In production BC must
+   * either remove password.v0 challenges on user-facing endpoints or replace
+   * them with a real captcha (turnstile.v0).
    *
-   * No-ops if the env var isn't set or the IIFE structure changes (so we
-   * fall back to BC's modal rather than breaking silently).
+   * No-ops if the env var isn't set or the IIFE structure changes.
    */
   _installCaptchaAutofill() {
     const captchaPass = process.env.REACT_APP_NEW_API_CAPTCHA;
