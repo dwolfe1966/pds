@@ -463,6 +463,15 @@ const api = {
   },
 
   /**
+   * Look up a commerce offer by its shmName (e.g. 'comp.offer.signup.main').
+   * POST /commerce/offer/findByShmName
+   * Returns offer with extName (human-readable) and transient.priceInfo.s0/s1.
+   */
+  findOfferByShmName: async ({ shmName, key } = {}) => {
+    return await routeApiRequest('find-offer', { shmName, key });
+  },
+
+  /**
    * Register user in ByteCrtrs (pre-payment, no charge)
    * Must be called before billingSale so ByteCrtrs knows the user.
    */

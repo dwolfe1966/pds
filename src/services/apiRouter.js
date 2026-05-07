@@ -249,6 +249,9 @@ export async function routeApiRequest(endpoint, params = {}) {
     'count-pdf-downloads',
     // Activated product types — BC only
     'get-activated-product-types',
+    // Member self-serve profile update + offer lookup — BC only
+    'update-profile',
+    'find-offer',
     // Admin (CSR) endpoints — BC only, no mock fallback
     'admin-users',
     'admin-user-detail',
@@ -692,6 +695,20 @@ async function callNewAPI(endpoint, params) {
 
     case 'get-activated-product-types':
       return await apiWrapper.getActivatedProductTypes();
+
+    // Update logged-in user's profile (firstName/lastName/phone).
+    // BC apiWrapper.api.user.update — POST /api/user/update
+    case 'update-profile': {
+      const body = params.body || {};
+      return await apiWrapper.userUpdate(body);
+    }
+
+    // Look up a commerce offer by shmName (e.g. 'comp.offer.signup.main').
+    // BC apiWrapper.api.offer.findByShmName — POST /commerce/offer/findByShmName
+    case 'find-offer': {
+      const { shmName, key } = params;
+      return await apiWrapper.findOfferByShmName({ shmName, key });
+    }
 
     case 'download-pdf-report':
       return await apiWrapper.downloadPdfReport(params.commerceContentId || params.id);

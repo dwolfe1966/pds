@@ -13,7 +13,7 @@ import styles from './AccountPage.module.css';
 const AccountPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { token, user, subscription, isPaid, refreshSubscription } = useAuth();
+  const { token, user, setUser, subscription, isPaid, refreshSubscription } = useAuth();
 
   // ─── Tab state (supports ?tab=messages deep-linking) ────────────────────────
   // Default lands on Security & Privacy (first tab); Profile is the last tab.
@@ -22,8 +22,9 @@ const AccountPage = () => {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // ─── Profile tab state ───────────────────────────────────────────────────────
+  // BC `user.update` accepts firstName, lastName, and phone — no zip.
   const [profile, setProfile] = useState(null);
-  const [profileForm, setProfileForm] = useState({ fullName: '', email: '', zip: '', phone: '' });
+  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState('');
@@ -42,9 +43,12 @@ const AccountPage = () => {
   // ─── Subscription & Billing tab state ────────────────────────────────────────
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelError, setCancelError] = useState('');
-  const [invoices, setInvoices] = useState([]);
-  const [invoicesLoading, setInvoicesLoading] = useState(true);
-  const [invoicesError, setInvoicesError] = useState('');
+  // BC orders fed both the billing-history panel and the "Plan" display via
+  // findOfferByShmName lookup (see fetchPlanName below).
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState('');
+  const [planDisplayName, setPlanDisplayName] = useState('');
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(true);
   const [reportsError, setReportsError] = useState('');
@@ -69,27 +73,39 @@ const AccountPage = () => {
   const [composeError, setComposeError] = useState('');
 
   // ─── Fetch: profile ──────────────────────────────────────────────────────────
+  // BC has no consumer GET /me equivalent — seed from the AuthContext user
+  // populated at login. We still try /me as a best-effort to pick up any extra
+  // fields (createdAt for "Member since"), but don't fail if it's missing.
   useEffect(() => {
-    if (!token) return;
+    if (!token || !user) return;
+    setProfileForm({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+    });
     const fetchProfile = async () => {
       setProfileLoading(true);
       try {
         const data = await api.get('/me', { token });
-        setProfile(data);
-        setProfileForm({
-          fullName: data.fullName || '',
-          email: data.email || '',
-          zip: data.zip || '',
-          phone: data.phone || '',
-        });
-      } catch (err) {
-        setProfileError(err.message || 'Failed to load profile');
+        if (data) {
+          setProfile(data);
+          setProfileForm((prev) => ({
+            firstName: data.firstName || prev.firstName,
+            lastName: data.lastName || prev.lastName,
+            email: data.email || prev.email,
+            phone: data.phone || prev.phone,
+          }));
+        }
+      } catch {
+        // Best-effort — BC doesn't expose /me, so this fetch may 404 in prod.
+        // The form is already seeded from the auth user.
       } finally {
         setProfileLoading(false);
       }
     };
     fetchProfile();
-  }, [token]);
+  }, [token, user]);
 
   // ─── Fetch: notification prefs ───────────────────────────────────────────────
   useEffect(() => {
@@ -111,22 +127,50 @@ const AccountPage = () => {
     fetchNotifPrefs();
   }, [token]);
 
-  // ─── Fetch: invoices ─────────────────────────────────────────────────────────
+  // ─── Fetch: orders (billing history source of truth) ─────────────────────────
+  // BC `billing.getOrders()` returns the user's full order list; each order
+  // carries a `commercePayments[]` array we flatten into rows for the history
+  // panel.
   useEffect(() => {
     if (!token) return;
-    const fetchInvoices = async () => {
-      setInvoicesLoading(true);
+    const fetchOrders = async () => {
+      setOrdersLoading(true);
       try {
-        const data = await api.get('/invoices', { token });
-        setInvoices(Array.isArray(data) ? data : data?.invoices || []);
+        const data = await api.getUserOrders();
+        setOrders(Array.isArray(data) ? data : []);
       } catch (err) {
-        setInvoicesError(err.message || 'Failed to load billing history');
+        setOrdersError(err.message || 'Failed to load billing history');
       } finally {
-        setInvoicesLoading(false);
+        setOrdersLoading(false);
       }
     };
-    fetchInvoices();
+    fetchOrders();
   }, [token]);
+
+  // ─── Fetch: human-readable plan name via findByShmName ──────────────────────
+  // The active subscription stores the BC offer ID; the user-visible name lives
+  // on the offer record (extName / commerceProducts[].name). We currently only
+  // ship one offer (comp.offer.signup.main) so the shmName is fixed.
+  useEffect(() => {
+    if (!token || !isPaid) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const offer = await api.findOfferByShmName({ shmName: 'comp.offer.signup.main' });
+        if (cancelled) return;
+        const name =
+          offer?.extName ||
+          offer?.commerceProducts?.[0]?.extName ||
+          offer?.commerceProducts?.[0]?.name ||
+          offer?.name ||
+          '';
+        setPlanDisplayName(name);
+      } catch {
+        // Non-fatal — fall back to a generic "Subscription" label in render.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, isPaid]);
 
   // ─── Fetch: reports ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -282,8 +326,24 @@ const AccountPage = () => {
     setProfileSuccess(false);
     setProfileError('');
     try {
-      const updated = await api.put('/me', { body: profileForm, token });
-      setProfile(updated);
+      // BC user.update accepts firstName, lastName, phone — all optional.
+      await api.updateProfile({
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+        phone: profileForm.phone,
+      }, token);
+      // Keep AuthContext.user in sync so header/dashboard reflect the new name
+      // immediately (BC doesn't push the updated user back; we mirror locally).
+      if (setUser && user) {
+        const nextUser = {
+          ...user,
+          firstName: profileForm.firstName,
+          lastName: profileForm.lastName,
+          phone: profileForm.phone,
+        };
+        setUser(nextUser);
+        try { localStorage.setItem('user', JSON.stringify(nextUser)); } catch { /* non-fatal */ }
+      }
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 4000);
     } catch (err) {
@@ -294,15 +354,10 @@ const AccountPage = () => {
   };
 
   const getInitials = () => {
-    const name = profile?.fullName || profileForm.fullName || '';
-    return (
-      name
-        .trim()
-        .split(/\s+/)
-        .map((n) => n[0]?.toUpperCase() || '')
-        .slice(0, 2)
-        .join('') || '?'
-    );
+    const first = (profileForm.firstName || user?.firstName || '').trim();
+    const last = (profileForm.lastName || user?.lastName || '').trim();
+    const initials = `${first[0] || ''}${last[0] || ''}`.toUpperCase();
+    return initials || '?';
   };
 
   const memberSince = profile?.createdAt
@@ -583,28 +638,53 @@ const AccountPage = () => {
 
               {/* Editable form */}
               <form onSubmit={handleProfileSave}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label
-                    htmlFor="fullName"
-                    style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
-                  >
-                    Full Name
-                  </label>
-                  <input
-                    id="fullName"
-                    type="text"
-                    name="fullName"
-                    value={profileForm.fullName}
-                    onChange={handleProfileChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem 0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.95rem',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                  <div>
+                    <label
+                      htmlFor="firstName"
+                      style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
+                    >
+                      First Name
+                    </label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      name="firstName"
+                      value={profileForm.firstName}
+                      onChange={handleProfileChange}
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem 0.75rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.95rem',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="lastName"
+                      style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
+                    >
+                      Last Name
+                    </label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      name="lastName"
+                      value={profileForm.lastName}
+                      onChange={handleProfileChange}
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem 0.75rem',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.95rem',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
@@ -634,30 +714,6 @@ const AccountPage = () => {
                   <span style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.3rem', display: 'block' }}>
                     Email cannot be changed
                   </span>
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                  <label
-                    htmlFor="zip"
-                    style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
-                  >
-                    ZIP Code
-                  </label>
-                  <input
-                    id="zip"
-                    type="text"
-                    name="zip"
-                    value={profileForm.zip}
-                    onChange={handleProfileChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem 0.75rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.95rem',
-                      boxSizing: 'border-box',
-                    }}
-                  />
                 </div>
 
                 <div style={{ marginBottom: '1.25rem' }}>
@@ -896,11 +952,17 @@ const AccountPage = () => {
               <div>
                 <div className={styles.planInfo}>
                   <span>
-                    <strong>Plan:</strong> {subscription.plan || 'Basic'}
+                    <strong>Plan:</strong> {planDisplayName || 'Subscription'}
                   </span>
                   <span className={`${styles.subscriptionBadge} ${styles.active}`}>Active</span>
                   <span>
-                    <strong>Renewal date:</strong> {subscription.renewalDate || 'N/A'}
+                    <strong>Renewal date:</strong>{' '}
+                    {subscription.dueDate
+                      ? (() => {
+                          try { return new Date(subscription.dueDate).toLocaleDateString(); }
+                          catch { return 'N/A'; }
+                        })()
+                      : 'N/A'}
                   </span>
                 </div>
                 <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
@@ -941,70 +1003,79 @@ const AccountPage = () => {
             )}
           </div>
 
-          {/* Billing History Section */}
+          {/* Billing History Section — flat list of payments across all orders, newest first. */}
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Billing History</h2>
-            {invoicesLoading ? (
+            {ordersLoading ? (
               <div>
                 <Skeleton variant="card" height={52} style={{ marginBottom: '0.5rem' }} />
                 <Skeleton variant="card" height={52} style={{ marginBottom: '0.5rem' }} />
                 <Skeleton variant="card" height={52} />
               </div>
-            ) : invoicesError ? (
-              <p className={styles.errorText}>{invoicesError}</p>
-            ) : invoices.length === 0 ? (
-              <p className={styles.emptyState}>No billing history found.</p>
-            ) : (
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {invoices.map((invoice, idx) => {
-                  const status = invoice.status || 'unknown';
-                  const badgeStyle = getInvoiceBadgeStyle(status);
-                  return (
-                    <li
-                      key={invoice.id || invoice._id || idx}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.75rem 0.5rem',
-                        borderBottom: idx < invoices.length - 1 ? '1px solid #e5e7eb' : 'none',
-                        gap: '1rem',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span style={{ color: '#374151', fontSize: '0.9rem' }}>
-                        {invoice.date
-                          ? (() => {
-                              try {
-                                return new Date(invoice.date).toLocaleDateString();
-                              } catch {
-                                return invoice.date;
-                              }
-                            })()
-                          : 'N/A'}
-                      </span>
-                      <span style={{ fontWeight: 600, color: '#111827', fontSize: '0.95rem' }}>
-                        {invoice.amount != null
-                          ? `$${(invoice.amount / 100).toFixed(2)}`
-                          : invoice.amountFormatted || 'N/A'}
-                      </span>
-                      <span
+            ) : ordersError ? (
+              <p className={styles.errorText}>{ordersError}</p>
+            ) : (() => {
+              const payments = orders
+                .flatMap((o) => Array.isArray(o.commercePayments) ? o.commercePayments : [])
+                .map((p) => ({
+                  id: p._id || p.id,
+                  ts: p.paymentTimestamp || (p.createdAt ? new Date(p.createdAt).getTime() : 0),
+                  amount: p.totalPrice?.amount,
+                  currency: (p.totalPrice?.code || 'usd').toUpperCase(),
+                  type: p.type || 'sale',
+                  status: p.status || 'unknown',
+                }))
+                .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+              if (payments.length === 0) {
+                return <p className={styles.emptyState}>No billing history found.</p>;
+              }
+              return (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {payments.map((p, idx) => {
+                    const badgeStyle = getInvoiceBadgeStyle(p.status);
+                    const dateLabel = p.ts ? new Date(p.ts).toLocaleDateString() : 'N/A';
+                    const isRefund = p.type === 'refund' || p.type === 'void';
+                    const amountLabel = p.amount != null
+                      ? `${isRefund ? '-' : ''}$${Number(p.amount).toFixed(2)}`
+                      : 'N/A';
+                    return (
+                      <li
+                        key={p.id || idx}
                         style={{
-                          padding: '0.2rem 0.65rem',
-                          borderRadius: '9999px',
-                          fontSize: '0.78rem',
-                          fontWeight: 600,
-                          textTransform: 'capitalize',
-                          ...badgeStyle,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.75rem 0.5rem',
+                          borderBottom: idx < payments.length - 1 ? '1px solid #e5e7eb' : 'none',
+                          gap: '1rem',
+                          flexWrap: 'wrap',
                         }}
                       >
-                        {status}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                        <span style={{ color: '#374151', fontSize: '0.9rem' }}>{dateLabel}</span>
+                        <span style={{ color: '#6b7280', fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                          {p.type}
+                        </span>
+                        <span style={{ fontWeight: 600, color: isRefund ? '#b91c1c' : '#111827', fontSize: '0.95rem' }}>
+                          {amountLabel}
+                        </span>
+                        <span
+                          style={{
+                            padding: '0.2rem 0.65rem',
+                            borderRadius: '9999px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            textTransform: 'capitalize',
+                            ...badgeStyle,
+                          }}
+                        >
+                          {p.status}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()}
           </div>
 
           {/* Reports Section */}

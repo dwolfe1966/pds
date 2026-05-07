@@ -1568,6 +1568,50 @@ class ApiWrapperService {
   }
 
   /**
+   * Update the logged-in user's profile (firstName/lastName/phone).
+   * POST /api/user/update
+   * All fields optional — pass only what's changing.
+   */
+  async userUpdate({ firstName, lastName, phone } = {}) {
+    try {
+      const wrapper = await this.getWrapper();
+      const body = {};
+      if (firstName !== undefined) body.firstName = firstName;
+      if (lastName !== undefined) body.lastName = lastName;
+      if (phone !== undefined) body.phone = phone;
+      if (typeof wrapper.api?.user?.update !== 'function') {
+        throw new Error('user.update not available in ApiWrapper');
+      }
+      return await wrapper.api.user.update(body);
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Profile update failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Look up a commerce offer by its shmName (e.g. 'comp.offer.signup.main').
+   * POST /commerce/offer/findByShmName
+   * Returns offer with extName (human-readable) and transient.priceInfo.s0/s1.
+   */
+  async findOfferByShmName({ shmName, key } = {}) {
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.offer?.findByShmName !== 'function') {
+        throw new Error('offer.findByShmName not available in ApiWrapper');
+      }
+      return await wrapper.api.offer.findByShmName({ shmName, ...(key ? { key } : {}) });
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'findByShmName failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
    * Get account shape/configuration from ByteCrtrs.
    * GET /shape/compiled
    * Returns a ShapeCompiled object with getShComp(key) for reading config values.
