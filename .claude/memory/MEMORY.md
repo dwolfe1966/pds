@@ -7,6 +7,7 @@
 - [Production deployment architecture](project_production_architecture.md) — production may ship as pure React SPA; `/server` is dev mock only
 - [BC hosting cert + URL quirks](project_bc_hosting_quirks.md) — cert only covers `dev.admin.www.bytecrtrs.com`/`dev.gwhubadmin.www.bytecrtrs.com`; use relative `/api`
 - [Local production-bundle test setup](reference_local_prod_bundle_test.md) — `node scripts/serve-prod.js` serves build/ on :3000, proxies /api → dev.www.idlookup.ai
+- [BC IIFE request body shapes](reference_bc_iife_request_shapes.md) — direct POST fallback must match per-endpoint shape; some need `{ input: payload }`
 - [Active backlog and known gaps](project_backlog.md) — BACKLOG-1..5 plus untracked gaps
 - [Production launch timeline](project_launch_timeline.md) — 5-10 day window from 2026-05-06; backlog arriving 2026-05-07
 - [Funnel UX research](project_funnel_ux_research.md) — designer competitor analysis (BeenVerified/TruthFinder/Spokeo/Intelius)
