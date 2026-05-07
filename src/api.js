@@ -820,14 +820,18 @@ const api = {
         ...(body.orderId ? { orderId: body.orderId } : {}),
       };
     } else {
+      // BC's general-category 'orderId' is required by the doc but empty
+      // string is rejected (likely with 403 or 400). Only include when we
+      // actually have one so BC's _unwrapBcResponse strips empties before
+      // sending. Same for phone/zip/last4.
       contactBody = {
         category: 'general',
         topic: body.topic || body.reason || body.subject || 'General inquiry',
         name: body.name || '',
         email: body.email || '',
-        phone: body.phone || '',
         description: body.description || body.message || '',
-        orderId: body.orderId || '',
+        ...(body.phone ? { phone: body.phone } : {}),
+        ...(body.orderId ? { orderId: body.orderId } : {}),
         ...(body.zip ? { zip: body.zip } : {}),
         ...(body.last4 ? { last4: body.last4 } : {}),
       };

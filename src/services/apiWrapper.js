@@ -850,10 +850,16 @@ class ApiWrapperService {
     const token = process.env.REACT_APP_NEW_API_CAPTCHA;
     if (!token || captcha?.type !== 'password.v0') return false;
     const baseUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
+    // BC's bare-axios captcha instance still has a request interceptor that
+    // adds clientId+apiId — match that or BC rejects the verify with 400.
+    const clientId = this.wrapper?.clientId || this._generateRandomId();
+    const apiId = this._generateRandomId();
     const params = new URLSearchParams({
       token,
       type: captcha.type,
       step: captcha.step || '',
+      clientId,
+      apiId,
     });
     try {
       const res = await fetch(`${baseUrl}/captcha/verify?${params.toString()}`, {

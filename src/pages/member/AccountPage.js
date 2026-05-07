@@ -308,7 +308,11 @@ const AccountPage = () => {
         setComposeSuccess(false);
       }, 2000);
     } catch (err) {
-      setComposeError(err?.message || 'Failed to send message. Please try again.');
+      // Surface BC's response body so we can see exactly what was rejected
+      // (status code + payload). Strip later once messaging is stable.
+      const status = err?.status ? ` (HTTP ${err.status})` : '';
+      const body = err?.data ? ` — ${JSON.stringify(err.data).slice(0, 300)}` : '';
+      setComposeError(`${err?.message || 'Failed to send message'}${status}${body}`);
     } finally {
       setComposeSending(false);
     }
