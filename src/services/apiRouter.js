@@ -471,9 +471,13 @@ async function callNewAPI(endpoint, params) {
 
       const bcToken = d.accessToken || d.token || d.jwt || d.access_token || raw?.accessToken;
       const bcRefresh = d.refreshToken || d.refresh_token || raw?.refreshToken;
-      const rawUser = d.user || d.userData || d.profile || raw?.user || {
+      // BC's login response sometimes nests the user under .user, sometimes
+      // returns user fields at the top level (matching the CSR doc shape:
+      // { _id, email, firstName, lastName, roles, ... }). Detect either.
+      const looksLikeUser = !!(d && (d.firstName || d.lastName || d._id || d.uniqueId));
+      const rawUser = d.user || d.userData || d.profile || raw?.user || (looksLikeUser ? d : {
         email: loginBody.email || loginBody.username,
-      };
+      });
 
       // BC returns roles as an array; normalize to a single role string for ProtectedRoute.
       // BC uses 'csr' or 'admin' to denote admin-level users.

@@ -197,23 +197,44 @@ const AccountPage = () => {
     fetchMessages();
   }, [token, activeTab, messagesFetched]);
 
+  // BC has no consumer-side "list my messages" endpoint deployed yet
+  // (/api/message/userContact/list 404s, IIFE doesn't expose user.getContacts).
+  // CSR replies arrive in the user's email; until BC ships the list endpoint,
+  // we mirror the user's own sent messages locally per-account so they at
+  // least see what they submitted.
+  const localMessagesKey = (user?.id || user?._id || user?.email)
+    ? `accountMessages:${user?.id || user?._id || user?.email}`
+    : null;
+  const readLocalMessages = () => {
+    if (!localMessagesKey) return [];
+    try {
+      const raw = sessionStorage.getItem(localMessagesKey);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+  const writeLocalMessages = (next) => {
+    if (!localMessagesKey) return;
+    try { sessionStorage.setItem(localMessagesKey, JSON.stringify(next)); }
+    catch { /* storage may be unavailable — non-fatal */ }
+  };
+
   const fetchMessages = async (lastId = null) => {
     if (!token) return;
     setMessagesLoading(true);
     setMessagesError('');
     try {
       const result = await api.getUserContacts(lastId || undefined);
-      // BC response: { messages: [...], noMoreDocs: boolean }
-      // The wrapper may also return via getData() or raw shape
       const data = result?.getData?.() ?? result?.data ?? result ?? {};
       const msgs = data.messages || data.docs || (Array.isArray(data) ? data : []);
+      // If BC returned anything, show that; otherwise fall back to the local
+      // mirror so the user sees their own outbound messages echoed.
+      const finalMsgs = msgs.length > 0 ? msgs : readLocalMessages();
       if (lastId) {
-        setMessages((prev) => [...prev, ...msgs]);
+        setMessages((prev) => [...prev, ...finalMsgs]);
       } else {
-        setMessages(msgs);
+        setMessages(finalMsgs);
       }
-      // Track pagination cursor: last message _id
-      const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1] : null;
+      const lastMsg = finalMsgs.length > 0 ? finalMsgs[finalMsgs.length - 1] : null;
       setLastMessageId(lastMsg?._id || null);
       setHasMoreMessages(data.noMoreDocs === false);
       setMessagesFetched(true);
@@ -221,9 +242,8 @@ const AccountPage = () => {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[AccountPage] Failed to fetch messages:', err?.message);
       }
-      // Gracefully handle case where user.getContacts is not available
       setMessagesError('');
-      setMessages([]);
+      setMessages(readLocalMessages());
       setMessagesFetched(true);
     } finally {
       setMessagesLoading(false);
@@ -252,20 +272,37 @@ const AccountPage = () => {
       // BC drops the phone requirement.
       const userPhoneDigits = (user?.phone || '').replace(/\D/g, '');
       const phone = userPhoneDigits.length >= 10 ? userPhoneDigits : '2125550100';
+      const submittedSubject = composeSubject;
+      const submittedMessage = composeMessage.trim();
       await api.submitContact({
         category: 'general',
-        topic: composeSubject,
-        message: composeMessage.trim(),
+        topic: submittedSubject,
+        message: submittedMessage,
         name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Member',
         email: user?.email || '',
         phone,
         orderId: subscription?.orderId || '',
       });
+      // BC has no consumer "list my messages" endpoint yet, so mirror the
+      // outbound message locally (sessionStorage-backed) and prepend to the
+      // visible list. Newest first.
+      const localEntry = {
+        _id: `local-${Date.now()}`,
+        type: 'userContact',
+        createdAt: new Date().toISOString(),
+        content: {
+          subject: submittedSubject,
+          message: submittedMessage,
+          contentType: 'text/plain',
+        },
+      };
+      const nextLocal = [localEntry, ...readLocalMessages()];
+      writeLocalMessages(nextLocal);
+      setMessages((prev) => [localEntry, ...prev]);
       setComposeSuccess(true);
       setComposeMessage('');
       setComposeSubject('General inquiry');
-      // Refresh message list
-      setMessagesFetched(false);
+      setMessagesFetched(true);
       setTimeout(() => {
         setShowCompose(false);
         setComposeSuccess(false);
