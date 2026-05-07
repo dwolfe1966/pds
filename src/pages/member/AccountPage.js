@@ -265,14 +265,12 @@ const AccountPage = () => {
     setComposeError('');
     setComposeSuccess(false);
     try {
-      await api.submitContact({
-        subject: composeSubject,
-        message: composeMessage.trim(),
-        name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.name || 'Member',
-        email: user?.email,
-        userId: user?._id || user?.id,
-        source: 'account-messages',
-      });
+      // BC user.createContact only takes message + contentType; identity comes
+      // from session. Prepend the subject so CSR sees both fields.
+      const subject = (composeSubject || 'General inquiry').trim();
+      const body = composeMessage.trim();
+      const message = subject ? `[${subject}]\n\n${body}` : body;
+      await api.userCreateContact({ message, contentType: 'text/plain' });
       setComposeSuccess(true);
       setComposeMessage('');
       setComposeSubject('General inquiry');

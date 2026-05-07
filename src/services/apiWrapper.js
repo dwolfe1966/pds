@@ -1410,12 +1410,20 @@ class ApiWrapperService {
    *   { category: 'general', topic, name, email, phone, description, orderId, zip?, last4? }
    */
   async createContactMessage(params) {
-    if (this.useProxy) {
-      return await this._csrPost('/contactMessage/create', params);
+    if (!this.useProxy) {
+      try {
+        const wrapper = await this.getWrapper();
+        if (typeof wrapper.api?.message?.contact?.create === 'function') {
+          return await wrapper.api.message.contact.create(params);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[BC message.contact.create] IIFE path threw; falling back to direct POST:', error?.message);
+        }
+      }
     }
     try {
-      const wrapper = await this.getWrapper();
-      return await wrapper.api.message.contact.create(params);
+      return await this._csrPost('/contactMessage/create', params);
     } catch (error) {
       const enhancedError = new Error(error.message || 'Create contact message failed');
       enhancedError.originalError = error;
@@ -1487,14 +1495,25 @@ class ApiWrapperService {
    * POST /api/message/userContact
    * apiWrapper.api.user.createContact({ message, parentCsrMessageId?, contentType })
    * Used for member-initiated messages and replies to CSR mail.
+   *
+   * The dev IIFE may not expose `user.createContact` — try it first, fall back
+   * to direct POST. Same pattern as userUpdate.
    */
   async createUserContact(params) {
-    if (this.useProxy) {
-      return await this._csrPost('/message/userContact', params);
+    if (!this.useProxy) {
+      try {
+        const wrapper = await this.getWrapper();
+        if (typeof wrapper.api?.user?.createContact === 'function') {
+          return await wrapper.api.user.createContact(params);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[BC user.createContact] IIFE path threw; falling back to direct POST:', error?.message);
+        }
+      }
     }
     try {
-      const wrapper = await this.getWrapper();
-      return await wrapper.api.user.createContact(params);
+      return await this._csrPost('/message/userContact', params);
     } catch (error) {
       const enhancedError = new Error(error.message || 'Create user contact failed');
       enhancedError.originalError = error;
@@ -1575,18 +1594,28 @@ class ApiWrapperService {
    * Update the logged-in user's profile (firstName/lastName/phone).
    * POST /api/user/update
    * All fields optional — pass only what's changing.
+   *
+   * The dev IIFE on dev.www.idlookup.ai doesn't expose `user.update`, so we try
+   * the IIFE method first and fall back to a direct POST via _csrPost (which
+   * routes through the proxy in dev and to the relative /api endpoint in prod).
    */
   async userUpdate({ firstName, lastName, phone } = {}) {
+    const body = {};
+    if (firstName !== undefined) body.firstName = firstName;
+    if (lastName !== undefined) body.lastName = lastName;
+    if (phone !== undefined) body.phone = phone;
     try {
       const wrapper = await this.getWrapper();
-      const body = {};
-      if (firstName !== undefined) body.firstName = firstName;
-      if (lastName !== undefined) body.lastName = lastName;
-      if (phone !== undefined) body.phone = phone;
-      if (typeof wrapper.api?.user?.update !== 'function') {
-        throw new Error('user.update not available in ApiWrapper');
+      if (typeof wrapper.api?.user?.update === 'function') {
+        return await wrapper.api.user.update(body);
       }
-      return await wrapper.api.user.update(body);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[BC user.update] IIFE path threw; falling back to direct POST:', error?.message);
+      }
+    }
+    try {
+      return await this._csrPost('/user/update', body);
     } catch (error) {
       const enhancedError = new Error(error.message || 'Profile update failed');
       enhancedError.originalError = error;
