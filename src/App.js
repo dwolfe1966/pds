@@ -56,8 +56,6 @@ import ContactThreadPage from './pages/sales/ContactThreadPage';
 import Dashboard2 from './pages/member/Dashboard2';
 // DashboardHome (the original monitoring-framed dashboard) is parked. Kept in
 // the repo for reference but no longer routed anywhere on the consumer SPA.
-import ProfilePage from './pages/member/ProfilePage';
-import SearchPage from './pages/member/SearchPage';
 import MemberGeneralSearchPage from './pages/member/MemberGeneralSearchPage';
 import MemberSearchResultsPage from './pages/member/SearchResultsPage';
 import SearchResultDetailPage from './pages/member/SearchResultDetailPage';

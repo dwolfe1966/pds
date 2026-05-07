@@ -26,6 +26,6 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
   - **signupTransitions** — T1 surfaces the same `useSignup` drift; T2/T4 cover PaymentPage but use the new "You're in!" / click-through model now exercised in paymentFlow.test.js, so those should be partially salvageable; T5 (apiRouter unit) is closest to current reality.
 - apiCallSignatures has one inline skip: `member/SettingsPage — handlePrivacyToggle`.
 - The earlier 26-failure baseline (2026-03-17) was resolved by skipping rather than fixing. Three suites revived this session: **adminPageUnwrapping** (commit `6919afd`, +7 tests), **memberGeneralSearch** (commit `dbafe68`, +18 tests), **paymentFlow** (+15 tests — copy drift + new click-through success model captured as positive assertion).
-- **Side note:** `MemberGeneralSearchPage.js` `COMMON_US_CITIES` has "Orlando, FL" duplicated on lines 19 & 24, producing a React duplicate-key warning at render. One-line fix; out of scope of the test work.
+- **Side note (resolved 2026-05-07):** `MemberGeneralSearchPage.js` `COMMON_US_CITIES` Orlando, FL duplicate is gone — only one entry now (line 22).
 - **Recommended next investment:** signupFlow + signupTransitions as a paired rewrite. Reuse the `useSignup` mock surface across both files.
 - **`REACT_APP_USE_NEW_API_AUTH=true`** in `.env.production`. Consumer auth is now on BC; the mock-only auth note from older memories is stale.

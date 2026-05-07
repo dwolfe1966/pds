@@ -131,72 +131,12 @@ describe('api.post/put call signatures', () => {
   // search flow on submit (see src/pages/member/AlertsPage.js). Test removed
   // intentionally; the regression it guarded (3-arg api.post) doesn't apply.
 
-  describe('member/ProfilePage — handleSave', () => {
-    test('api.put("/me", { body, token }) uses correct signature', async () => {
-      const ProfilePage = require('../pages/member/ProfilePage').default;
-      mockApi.get.mockResolvedValue({ fullName: 'John', email: 'j@e.com', zip: '80202' });
-
-      await act(async () => {
-        root = ReactDOM.createRoot(container);
-        root.render(React.createElement(ProfilePage));
-      });
-
-      mockApi.put.mockClear();
-      await act(async () => {
-        submitFirstForm();
-      });
-
-      assertCorrectSignature(mockApi.put);
-      assertHasToken(mockApi.put);
-      assertHasBody(mockApi.put);
-      expect(mockApi.put.mock.calls[0][0]).toBe('/me');
-    });
-  });
-
-  // SettingsPage has multiple forms now (privacy, MFA, password) so
-  // submitFirstForm() can't reliably target the password form. The
-  // signature regression these guard is well-covered by the surviving
-  // ProfilePage and DataRemovalPage assertions below; a re-write that
-  // targets specific forms by data-testid is tracked separately.
-
-  describe.skip('member/SettingsPage — handlePrivacyToggle', () => {
-    test('api.put("/privacy", { body, token }) uses correct signature', async () => {
-      const SettingsPage = require('../pages/member/SettingsPage').default;
-
-      await act(async () => {
-        root = ReactDOM.createRoot(container);
-        root.render(React.createElement(SettingsPage));
-      });
-
-      mockApi.put.mockClear();
-      // Find and click the privacy toggle button
-      const buttons = container.querySelectorAll('button');
-      const toggleBtn = Array.from(buttons).find(b =>
-        b.textContent.includes('Disable') || b.textContent.includes('Enable') || b.textContent.includes('Toggle')
-      );
-
-      if (toggleBtn) {
-        await act(async () => { toggleBtn.click(); });
-
-        assertCorrectSignature(mockApi.put);
-        assertHasToken(mockApi.put);
-        assertHasBody(mockApi.put);
-        expect(mockApi.put.mock.calls[0][0]).toBe('/privacy');
-      } else {
-        // If no toggle button found, check if there's a checkbox or other toggle mechanism
-        // The privacy toggle might be a different element type
-        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-        if (checkboxes.length > 0) {
-          await act(async () => {
-            checkboxes[0].click();
-          });
-          assertCorrectSignature(mockApi.put);
-        } else {
-          throw new Error('Could not find privacy toggle control');
-        }
-      }
-    });
-  });
+  // Profile/Settings page tests removed: ProfilePage and SettingsPage were
+  // standalone consumer pages that have been folded into AccountPage. The
+  // privacy/notification UI those tests covered is no longer part of the
+  // consumer surface (see commit c80bf7c). The remaining assertions in
+  // DataRemovalPage cover the api.put/api.post signature regression they
+  // guarded.
 
   describe('admin/DataRemovalPage — handleApprove', () => {
     test('api.post("/admin/data-removal/:id/approve", { token }) uses correct signature', async () => {
