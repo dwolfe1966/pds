@@ -6,7 +6,7 @@ originSessionId: 56f0e1b9-fadc-446e-a685-2ca079fb513a
 ---
 The production bundle is built from `.env.production` which uses `REACT_APP_NEW_API_URL=/api` (relative) and `REACT_APP_USE_MOCK_API=false`. Running it on plain localhost would 404 every API call. Solution: serve `build/` locally with a tiny zero-dep Node proxy that forwards `/api/*` to a BC dev host server-side.
 
-## How to run
+## How to run — consumer
 
 ```bash
 npm run build
@@ -16,6 +16,18 @@ node scripts/serve-prod.js          # listens on :3000, proxies /api → dev.www
 ```
 
 Then open http://localhost:3000.
+
+## How to run — admin / CSR
+
+```bash
+npm run build:admin
+node scripts/serve-admin-prod.js    # listens on :3004, proxies /api + /libs → dev.admin.www.bytecrtrs.com
+# Override:  BC_HOST=dev.gwhubadmin.www.bytecrtrs.com node scripts/serve-admin-prod.js
+```
+
+Then open http://localhost:3004 (auto-redirects to `/csr/`).
+
+The admin script differs from the consumer one because the prod admin bundle is built with `--public-url /csr/` and BC serves the IIFE wrappers (api-wrapper *and* csr-wrapper) at the domain root — both `/api/*` and `/libs/*` are proxied upstream while `build-admin/*` is served from disk under the `/csr/` mount.
 
 ## What it does
 
