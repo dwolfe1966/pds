@@ -1099,9 +1099,36 @@ const AccountPage = () => {
       {activeTab === 'messages' && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Support Messages</h2>
-          <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1.25rem' }}>
+          <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1rem' }}>
             Your correspondence with our support team
           </p>
+
+          {/* How replies work — BC has no consumer-side inbox endpoint, so
+              support replies come back to the user's account email with a
+              link that opens the full thread on /contact/thread/:id. The
+              tab below shows the user's own outbound submissions only. */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.625rem',
+            padding: '0.75rem 1rem',
+            marginBottom: '1.25rem',
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '0.5rem',
+            color: '#1e40af',
+            fontSize: '0.85rem',
+            lineHeight: 1.5,
+          }}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+            <div>
+              Replies from our support team are sent to <strong>{user?.email || 'your account email'}</strong>.
+              Click the link in the reply email to open the full conversation thread.
+            </div>
+          </div>
 
           {/* New Message button */}
           {!showCompose && (

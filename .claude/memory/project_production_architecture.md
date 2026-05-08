@@ -1,23 +1,22 @@
 ---
 name: Production deployment architecture
-description: In production this app may deploy as a pure React SPA talking only to ByteCrtrs API — the /server directory may not exist
+description: Static React assets from /build and /build-admin are MANUALLY uploaded to a BC-managed VPS. No Vercel, no automated pipeline. The /server directory is dev-only.
 type: project
+originSessionId: c440a532-76cb-478f-b386-94d3d358bd6c
 ---
+**Deployment is manual upload of static assets to a VPS that ByteCrtrs (BC) manages.** Owner copies `build/` (consumer SPA) and `build-admin/` (admin SPA) onto the VPS by hand. There is **no Vercel**, no GitHub Actions, no automated deploy pipeline, and `vercel.json` is irrelevant to the actual production hosting.
 
-The `/server` directory is a **development mock only**. In production the app may be deployed as a static React SPA that communicates exclusively with the ByteCrtrs API. No Express server, no mock endpoints, no server-side email service.
+**Why this matters when troubleshooting:**
+- Don't propose Vercel-specific config (rewrites, headers, env vars in dashboard) — it isn't there.
+- Any host-level routing (`/api/*` proxy, redirects, headers) is configured by BC on their VPS — out of our control unless we ask them.
+- Bundle hashes change per build — if the deployed asset still has an old hash after a "redeploy," the upload didn't actually replace the file on the VPS. Suspect either a stale upload or BC's VPS still serving cached assets.
+- The `/server` directory is **development mock only** and never ships to production.
 
-**Why:** ByteCrtrs provides the backend. The Express server exists solely to unblock frontend development before the real API is fully integrated.
+**How to apply:**
+- Build via `npm run build` (consumer) and `npm run build:admin` (admin) — both output to gitignored dirs (`build/`, `build-admin/`).
+- Owner uploads the resulting files to BC's VPS manually.
+- BC's VPS handles host-level routing (presumably nginx/Apache with `/api/*` reverse-proxied to BC's actual API). Treat that as a black box; if a route isn't working, ask BC to wire it up rather than building infra on our end.
+- Server-side concerns (email delivery, /api proxy, CORS allowlist) are BC's responsibility on their VPS, not ours in the bundle.
 
-**How to apply when making suggestions:**
-- Do not design features that depend on `/server` being present in production
-- Any feature that needs server-side logic (email delivery, scheduled jobs, event persistence, auth) must be designed with a production-safe path:
-  - ByteCrtrs API may handle it natively (e.g., transactional emails on signup/payment)
-  - A lightweight serverless function (Lambda, Vercel Edge, Netlify Function) can be the production home for anything server-side
-  - Third-party client-safe SDKs (e.g., Resend, EmailJS) can handle email from the browser if keys are scoped appropriately
-- Feature flags (`REACT_APP_USE_NEW_API_*`) already gate which backend is used per-endpoint — this is the intended swap mechanism
-- The pluggable email provider pattern in `server/providers/` is good for dev/staging but is NOT the production email solution
-
-**Production email options to evaluate when the time comes:**
-1. ByteCrtrs sends transactional emails automatically (signup confirmation, payment receipt) — check their API docs
-2. Serverless function (same domain, no CORS) wrapping SendGrid/SES — minimal surface area
-3. Client-side email SDK with restricted publishable key (Resend, EmailJS) — no backend needed
+**Bundle config:**
+- `.env.production` keeps `REACT_APP_NEW_API_URL=/api` (relative). The bundle calls same-origin `/api/*` and BC's VPS handles forwarding to the BC API host. Absolute URLs in the bundle re-introduce CORS dependencies that BC has historically not configured.

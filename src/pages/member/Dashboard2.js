@@ -495,7 +495,7 @@ const Dashboard2 = () => {
       return {
         kind: 'login',
         id: `login-${i}-${l.timestamp}`,
-        label: `${verb}${l.email ? ` · ${l.email}` : ''}`,
+        label: verb,
         timestamp: l.timestamp,
       };
     });
