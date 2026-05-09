@@ -140,15 +140,120 @@ export function generateEvents(seed, kind, count) {
 }
 
 // ---------- Masking helpers ----------
+// First letter visible, remaining characters replaced with `*` of matching
+// length. "Tim Chin" → "T** C***". Used wherever we display another
+// member's name without revealing it to the viewer.
 export function maskName(name) {
   if (!name) return '***';
   return name
-    .split(' ')
+    .trim()
+    .split(/\s+/)
     .map((part) => {
-      if (part.length <= 1) return part + '***';
-      return part[0] + '*'.repeat(Math.max(3, part.length - 1));
+      if (part.length <= 1) return part || '*';
+      return part[0] + '*'.repeat(part.length - 1);
     })
     .join(' ');
+}
+
+// "tim@gmail.com" → "t**@g****.com". Local part: first letter + asterisks
+// to length. Domain: first letter of registrable name + asterisks to
+// length, TLD preserved so it still reads as an email.
+export function maskEmail(email) {
+  if (!email || typeof email !== 'string') return '***';
+  const at = email.indexOf('@');
+  if (at < 1) {
+    // No usable local-part; mask the whole thing.
+    return email.length > 0 ? email[0] + '*'.repeat(email.length - 1) : '***';
+  }
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const lastDot = domain.lastIndexOf('.');
+  const dn = lastDot > 0 ? domain.slice(0, lastDot) : domain;
+  const tld = lastDot > 0 ? domain.slice(lastDot) : '';
+  const maskedLocal = local.length === 1
+    ? local
+    : local[0] + '*'.repeat(local.length - 1);
+  const maskedDomain = dn.length === 0
+    ? ''
+    : (dn.length === 1 ? dn : dn[0] + '*'.repeat(dn.length - 1));
+  return `${maskedLocal}@${maskedDomain}${tld}`;
+}
+
+// Pick the best display label for a (possibly partial) user record and
+// mask it. Prefers name when available; falls back to email; finally
+// returns "Anonymous". Pass any subset of { firstName, lastName,
+// fullName, email }.
+export function maskUserDisplay({ firstName, lastName, fullName, email } = {}) {
+  const fl = [firstName, lastName].filter(Boolean).join(' ').trim();
+  const name = fl || (fullName || '').trim();
+  if (name) return maskName(name);
+  if (email) return maskEmail(email);
+  return 'Anonymous';
+}
+
+// Synthetic cross-user activity feed for the member dashboard. Generates
+// plausible recent-activity events keyed off a seed (daily rotation +
+// per-viewer jitter). Each event carries the ALREADY-MASKED actor so
+// callers can render directly without re-masking. Real cross-user data
+// would replace this once BC ships an aggregate endpoint.
+//
+// Returns up to `count` items, mixing searches, logins, signups, and
+// report pulls. Timestamps are biased toward the recent few hours.
+export function generateSyntheticActivity(seed, count = 12) {
+  const rand = mulberry32(seed);
+  const now = Date.now();
+  // Weighted action mix — searches dominate, signups are rarer.
+  const KIND_WEIGHTS = [
+    ['search', 5],
+    ['login', 3],
+    ['report', 2],
+    ['signup', 1],
+  ];
+  const SEARCH_TYPES_LC = ['name', 'phone', 'email', 'address'];
+  const EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'outlook.com', 'icloud.com', 'hotmail.com'];
+
+  const events = [];
+  for (let i = 0; i < count; i++) {
+    const kind = pickWeighted(rand, KIND_WEIGHTS);
+    // Squared random pulls timestamps toward "now" — most recent activity
+    // looks freshest, with a long tail.
+    const ageFrac = rand() * rand();
+    const ageMs = Math.floor(ageFrac * 36 * 60 * 60 * 1000); // 36h window
+    const ts = now - ageMs;
+
+    // 30% of synthetic actors are identified by email rather than name —
+    // matches the real shape where some accounts have one and not the other.
+    const useEmail = rand() < 0.3;
+    const fn = FIRST_NAMES[Math.floor(rand() * FIRST_NAMES.length)];
+    const ln = LAST_NAMES[Math.floor(rand() * LAST_NAMES.length)];
+    const domain = EMAIL_DOMAINS[Math.floor(rand() * EMAIL_DOMAINS.length)];
+    const actor = useEmail
+      ? maskEmail(`${fn.toLowerCase()}.${ln.toLowerCase()}@${domain}`)
+      : maskName(`${fn} ${ln}`);
+
+    let subject = null;
+    let searchType = null;
+    if (kind === 'search') {
+      searchType = SEARCH_TYPES_LC[Math.floor(rand() * SEARCH_TYPES_LC.length)];
+      const sfn = FIRST_NAMES[Math.floor(rand() * FIRST_NAMES.length)];
+      const sln = LAST_NAMES[Math.floor(rand() * LAST_NAMES.length)];
+      subject = `${sfn} ${sln}`;
+    } else if (kind === 'report') {
+      const sfn = FIRST_NAMES[Math.floor(rand() * FIRST_NAMES.length)];
+      const sln = LAST_NAMES[Math.floor(rand() * LAST_NAMES.length)];
+      subject = `${sfn} ${sln}`;
+    }
+
+    events.push({
+      kind,
+      actor,
+      searchType,
+      subject,
+      synthetic: true,
+      timestamp: new Date(ts).toISOString(),
+    });
+  }
+  return events;
 }
 
 export function maskLocation(city, state) {

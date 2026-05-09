@@ -6,6 +6,7 @@ import { getReportList } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import { readLoginHistory } from '../../services/loginHistory';
 import { getBrand } from '../../services/brand';
+import { generateSyntheticActivity, hashString } from './watchingHelpers';
 
 /**
  * Dashboard — research-workbench layout.
@@ -325,6 +326,7 @@ function ActivityTimeline({ items, loading }) {
     report: { bg: PAGE.brandSoft,  fg: PAGE.brand,  letter: 'R' },
     search: { bg: PAGE.accentSoft, fg: PAGE.accent, letter: 'S' },
     login:  { bg: '#f3e8ff',       fg: '#6b21a8',   letter: 'L' },
+    signup: { bg: '#fef3c7',       fg: '#92400e',   letter: 'N' },
   };
 
   return (
@@ -340,7 +342,7 @@ function ActivityTimeline({ items, loading }) {
       }}>
         <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: PAGE.text }}>Recent Activity</h2>
         <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: PAGE.textMuted }}>
-          Sign-ins, searches, and reports — newest first.
+          Your activity plus what's happening across the platform — newest first.
         </p>
       </header>
 
@@ -470,12 +472,17 @@ const Dashboard2 = () => {
     try { api.downloadPdfReport?.(commerceContentId); } catch {}
   };
 
-  // Merge reports + searches + logins into a single timeline.
+  // Merge the member's own activity (reports, searches, logins — labelled
+  // "You") with synthetic cross-user entries (other members, anonymized
+  // per the masking spec) into a single Recent Activity timeline. Real
+  // cross-user data isn't available from the consumer SPA today; the
+  // synthetic feed will be replaced once BC ships an aggregate endpoint.
   const activity = useMemo(() => {
     const reportItems = (reports || []).slice(0, 20).map((r) => ({
       kind: 'report',
       id: r._id || r.id,
-      label: `Pulled report on ${reportSubject(r)}`,
+      actor: 'You',
+      label: `You pulled a report on ${reportSubject(r)}`,
       timestamp: r.createdAt,
     }));
     const searchItems = (searches || []).slice(0, 20).map((s, i) => {
@@ -486,24 +493,54 @@ const Dashboard2 = () => {
       return {
         kind: 'search',
         id: s._id || s.id || `s-${i}`,
-        label: `Searched ${s.type || 'name'} · ${subject}`,
+        actor: 'You',
+        label: `You searched ${s.type || 'name'} · ${subject}`,
         timestamp: s.createdAt || s.timestamp,
       };
     });
     const loginItems = (logins || []).slice(0, 20).map((l, i) => {
-      const verb = l.method === 'signup' ? 'Created account' : 'Signed in';
+      const verb = l.method === 'signup' ? 'created your account' : 'signed in';
       return {
         kind: 'login',
         id: `login-${i}-${l.timestamp}`,
-        label: verb,
+        actor: 'You',
+        label: `You ${verb}`,
         timestamp: l.timestamp,
       };
     });
-    return [...reportItems, ...searchItems, ...loginItems]
+
+    // Synthetic cross-user feed. Seed combines a 5-minute time bucket with
+    // a per-viewer hash so every member sees a slightly different feed and
+    // it rotates without re-renders pinning the same items.
+    const fiveMinBucket = Math.floor(Date.now() / (5 * 60 * 1000));
+    const viewerHash = hashString(user?.id || user?._id || user?.email || 'visitor');
+    const syntheticRaw = generateSyntheticActivity(fiveMinBucket ^ viewerHash, 12);
+    const syntheticItems = syntheticRaw.map((s, i) => {
+      let label;
+      if (s.kind === 'search') {
+        label = `${s.actor} searched ${s.searchType} · ${s.subject}`;
+      } else if (s.kind === 'report') {
+        label = `${s.actor} pulled a report on ${s.subject}`;
+      } else if (s.kind === 'signup') {
+        label = `${s.actor} created an account`;
+      } else {
+        label = `${s.actor} signed in`;
+      }
+      return {
+        kind: s.kind,
+        id: `syn-${i}-${s.timestamp}`,
+        actor: s.actor,
+        label,
+        timestamp: s.timestamp,
+        synthetic: true,
+      };
+    });
+
+    return [...reportItems, ...searchItems, ...loginItems, ...syntheticItems]
       .filter((x) => x.timestamp)
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .slice(0, 15);
-  }, [reports, searches, logins]);
+      .slice(0, 18);
+  }, [reports, searches, logins, user]);
 
   const greetingName = user?.firstName || (user?.fullName || '').split(/\s+/)[0] || (user?.email || '').split('@')[0] || 'there';
 
