@@ -498,16 +498,31 @@ const Dashboard2 = () => {
         timestamp: s.createdAt || s.timestamp,
       };
     });
-    const loginItems = (logins || []).slice(0, 20).map((l, i) => {
-      const verb = l.method === 'signup' ? 'created your account' : 'signed in';
-      return {
-        kind: 'login',
+    // Account creation only happens once per user, so dedupe signup
+     // entries — keep the earliest one (the actual signup) and drop any
+     // others that loginHistory may have recorded as method='signup'.
+    let earliestSignupTs = null;
+    for (const l of (logins || [])) {
+      if (l.method === 'signup' && l.timestamp) {
+        const ts = new Date(l.timestamp).getTime();
+        if (earliestSignupTs == null || ts < earliestSignupTs) earliestSignupTs = ts;
+      }
+    }
+    const loginItems = (logins || []).slice(0, 20).reduce((acc, l, i) => {
+      const isSignup = l.method === 'signup';
+      const ts = l.timestamp ? new Date(l.timestamp).getTime() : null;
+      // Skip duplicate signup entries — only the earliest one renders.
+      if (isSignup && ts !== earliestSignupTs) return acc;
+      const verb = isSignup ? 'created your account' : 'signed in';
+      acc.push({
+        kind: isSignup ? 'signup' : 'login',
         id: `login-${i}-${l.timestamp}`,
         actor: 'You',
         label: `You ${verb}`,
         timestamp: l.timestamp,
-      };
-    });
+      });
+      return acc;
+    }, []);
 
     // Synthetic cross-user feed. Seed combines a 5-minute time bucket with
     // a per-viewer hash so every member sees a slightly different feed and
