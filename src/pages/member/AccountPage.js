@@ -197,13 +197,19 @@ const AccountPage = () => {
     fetchMessages();
   }, [token, activeTab, messagesFetched]);
 
-  // BC has no consumer-side "list my messages" endpoint deployed yet
-  // (/api/message/userContact/list 404s, IIFE doesn't expose user.getContacts).
-  // CSR replies arrive in the user's email; until BC ships the list endpoint,
-  // we mirror the user's own sent messages locally per-account so they at
-  // least see what they submitted.
+  // BC's consumer surface has no "list my contact messages" endpoint —
+  // the IIFE only exposes contact.create. To still surface CSR replies
+  // in-app, we capture (contactMessageId, hash) on every submit and
+  // store the pair locally per-account. On each tab open we replay the
+  // refs through getContactHistories (BC's documented endpoint that
+  // returns the full thread when given id+hash) and merge the results.
+  // The local-mirror fallback below is kept for the moment between
+  // submit and BC's first round-trip.
   const localMessagesKey = (user?.id || user?._id || user?.email)
     ? `accountMessages:${user?.id || user?._id || user?.email}`
+    : null;
+  const localThreadsKey = (user?.id || user?._id || user?.email)
+    ? `accountThreads:${user?.id || user?._id || user?.email}`
     : null;
   const readLocalMessages = () => {
     if (!localMessagesKey) return [];
@@ -217,30 +223,87 @@ const AccountPage = () => {
     try { sessionStorage.setItem(localMessagesKey, JSON.stringify(next)); }
     catch { /* storage may be unavailable — non-fatal */ }
   };
+  const readLocalThreads = () => {
+    if (!localThreadsKey) return [];
+    try {
+      const raw = localStorage.getItem(localThreadsKey);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+  const writeLocalThreads = (next) => {
+    if (!localThreadsKey) return;
+    try { localStorage.setItem(localThreadsKey, JSON.stringify(next)); }
+    catch { /* storage may be unavailable — non-fatal */ }
+  };
 
-  const fetchMessages = async (lastId = null) => {
+  // Flatten BC histories docs from all stored threads into a single
+  // newest-first list. Each contactMessage thread returns docs of type
+  // 'contact' (original), 'csrReply' (support), and 'userReply' (user).
+  // We translate to the existing rendering vocabulary on the way out so
+  // the message-list JSX below doesn't need to learn new types.
+  const fetchMessages = async () => {
     if (!token) return;
     setMessagesLoading(true);
     setMessagesError('');
     try {
-      const result = await api.getUserContacts(lastId || undefined);
-      const data = result?.getData?.() ?? result?.data ?? result ?? {};
-      const msgs = data.messages || data.docs || (Array.isArray(data) ? data : []);
-      // If BC returned anything, show that; otherwise fall back to the local
-      // mirror so the user sees their own outbound messages echoed.
-      const finalMsgs = msgs.length > 0 ? msgs : readLocalMessages();
-      if (lastId) {
-        setMessages((prev) => [...prev, ...finalMsgs]);
-      } else {
-        setMessages(finalMsgs);
+      const refs = readLocalThreads();
+      if (refs.length === 0) {
+        // No tracked threads yet — fall back to the local-mirror so the
+        // user still sees what they just submitted before the first
+        // round-trip captures a thread ref.
+        setMessages(readLocalMessages());
+        setHasMoreMessages(false);
+        setMessagesFetched(true);
+        return;
       }
-      const lastMsg = finalMsgs.length > 0 ? finalMsgs[finalMsgs.length - 1] : null;
-      setLastMessageId(lastMsg?._id || null);
-      setHasMoreMessages(data.noMoreDocs === false);
+      const allDocs = [];
+      for (const ref of refs) {
+        if (!ref?.contactMessageId || !ref?.hash) continue;
+        try {
+          const result = await api.getContactHistories({
+            contactMessageId: ref.contactMessageId,
+            hash: ref.hash,
+          });
+          const data = result?.getData?.() ?? result ?? {};
+          const docs = data.docs || (Array.isArray(data) ? data : []);
+          for (const d of docs) {
+            const t = d.type;
+            // Map BC histories types to the rendering vocabulary the
+            // existing JSX understands (userContactCsrMail = support).
+            const mappedType = t === 'csrReply' ? 'userContactCsrMail' : 'userContact';
+            const subject = d?.content?.input?.topic || d?.content?.subject || '';
+            const body = d?.content?.message || d?.content?.input?.description || '';
+            const contentType = d?.content?.contentType || 'text/plain';
+            allDocs.push({
+              _id: d._id || d.id,
+              type: mappedType,
+              createdAt: d.createdAt,
+              content: {
+                subject: t === 'contact' ? subject : '',
+                message: body,
+                contentType,
+              },
+            });
+          }
+        } catch (err) {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(`[AccountPage] getContactHistories failed for thread ${ref.contactMessageId}:`, err?.message);
+          }
+          // Skip this thread; keep going for the rest.
+        }
+      }
+      // Newest first.
+      allDocs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      // If every thread fetch failed, fall back to the local mirror
+      // rather than presenting an empty inbox to a user who knows they
+      // sent messages.
+      const finalMsgs = allDocs.length > 0 ? allDocs : readLocalMessages();
+      setMessages(finalMsgs);
+      setHasMoreMessages(false);
       setMessagesFetched(true);
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[AccountPage] Failed to fetch messages:', err?.message);
+        console.warn('[AccountPage] Failed to fetch message threads:', err?.message);
       }
       setMessagesError('');
       setMessages(readLocalMessages());
@@ -274,7 +337,7 @@ const AccountPage = () => {
       const phone = userPhoneDigits.length >= 10 ? userPhoneDigits : '2125550100';
       const submittedSubject = composeSubject;
       const submittedMessage = composeMessage.trim();
-      await api.submitContact({
+      const created = await api.submitContact({
         category: 'general',
         topic: submittedSubject,
         message: submittedMessage,
@@ -283,11 +346,25 @@ const AccountPage = () => {
         phone,
         orderId: subscription?.orderId || '',
       });
-      // BC has no consumer "list my messages" endpoint yet, so mirror the
-      // outbound message locally (sessionStorage-backed) and prepend to the
-      // visible list. Newest first.
+      // BC's contact-create returns the new contactMessage doc with both
+      // _id and hash (per the 2026-04-17 spec). Capture the pair so we
+      // can reload this thread via /contactMessage/histories on later
+      // visits — that's how CSR replies become visible in-app.
+      const newThreadId = created?._id || created?.id || created?.docs?.[0]?._id || created?.docs?.[0]?.id || null;
+      const newThreadHash = created?.hash || created?.docs?.[0]?.hash || null;
+      if (newThreadId && newThreadHash) {
+        const nextRefs = [
+          { contactMessageId: newThreadId, hash: newThreadHash, createdAt: new Date().toISOString(), subject: submittedSubject },
+          ...readLocalThreads().filter((r) => r.contactMessageId !== newThreadId),
+        ];
+        writeLocalThreads(nextRefs);
+      }
+      // Mirror the just-submitted message into the visible list so the
+      // user sees instant feedback. The next tab open (or refresh) will
+      // replace this with the BC-side canonical doc fetched via
+      // /contactMessage/histories.
       const localEntry = {
-        _id: `local-${Date.now()}`,
+        _id: newThreadId || `local-${Date.now()}`,
         type: 'userContact',
         createdAt: new Date().toISOString(),
         content: {
@@ -303,9 +380,14 @@ const AccountPage = () => {
       setComposeMessage('');
       setComposeSubject('General inquiry');
       setMessagesFetched(true);
+      // Reset the fetched flag so the next tab visit re-runs fetchMessages
+      // with the freshly-stored thread ref. We don't need to re-fetch right
+      // now because BC's reply latency is human-scale; the local mirror
+      // shows the user's outbound copy instantly.
       setTimeout(() => {
         setShowCompose(false);
         setComposeSuccess(false);
+        setMessagesFetched(false);
       }, 2000);
     } catch (err) {
       // Surface BC's response body so we can see exactly what was rejected
@@ -1103,10 +1185,9 @@ const AccountPage = () => {
             Your correspondence with our support team
           </p>
 
-          {/* How replies work — BC has no consumer-side inbox endpoint, so
-              support replies come back to the user's account email with a
-              link that opens the full thread on /contact/thread/:id. The
-              tab below shows the user's own outbound submissions only. */}
+          {/* Replies fetched via BC's /contactMessage/histories. Threads
+              submitted from this page surface here; we also email you a
+              copy with a direct link to the thread. */}
           <div style={{
             display: 'flex',
             alignItems: 'flex-start',
@@ -1125,8 +1206,8 @@ const AccountPage = () => {
               <path d="M12 8v4M12 16h.01" />
             </svg>
             <div>
-              Replies from our support team are sent to <strong>{user?.email || 'your account email'}</strong>.
-              Click the link in the reply email to open the full conversation thread.
+              We also email a copy of every reply to <strong>{user?.email || 'your account email'}</strong> so
+              you'll never miss one. Reload this page to see new responses from our support team.
             </div>
           </div>
 
