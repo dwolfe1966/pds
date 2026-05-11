@@ -19,7 +19,7 @@ console.log('build-admin: copied .env.admin → .env.production.local');
 try {
   // 2. Run Parcel build with --public-url /csr/
   //    MSYS_NO_PATHCONV prevents Git Bash from converting /csr/ to C:/Program Files/Git/csr/
-  execSync('npx parcel build public/admin.html --dist-dir build-admin --public-url /csr/', {
+  execSync('npx parcel build public/admin.html --dist-dir build-admin --public-url /csr/ --no-source-maps', {
     cwd: root,
     stdio: 'inherit',
     env: { ...process.env, MSYS_NO_PATHCONV: '1' },

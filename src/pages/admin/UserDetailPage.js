@@ -350,10 +350,13 @@ const UserDetailPage = () => {
   }, [id]);
 
   // ── Fetch contact tickets assigned to this user ─────────────
+  // Most member-submitted contactMessages have no targetUserId set (BC
+  // doesn't auto-link them server-side on this deployment). We pass the
+  // user's email so csrFindUserContactMessages can match by either key.
   const fetchUserTickets = useCallback(async () => {
     setUserTicketsLoading(true);
     try {
-      const res = await api.adminFindUserContactMessages({ userId: id });
+      const res = await api.adminFindUserContactMessages({ userId: id, userEmail: user?.email });
       const docs = res?.data || res?.docs || (Array.isArray(res) ? res : []);
       setUserTickets(docs);
     } catch {
@@ -361,7 +364,7 @@ const UserDetailPage = () => {
     } finally {
       setUserTicketsLoading(false);
     }
-  }, [id]);
+  }, [id, user?.email]);
 
   // ── Fetch notes & messages (all user contacts: notes, CSR mail, user replies) ──
   const fetchNotes = useCallback(async () => {

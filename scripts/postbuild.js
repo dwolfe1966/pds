@@ -52,3 +52,28 @@ if (fs.existsSync(htmlPath)) {
 
   fs.writeFileSync(htmlPath, html);
 }
+
+// ── secret scan ──────────────────────────────────────────────────────────────
+// Refuse to ship a bundle that contains known BC dev secrets. If this fires,
+// fix .env.production.local / .env.local instead of bypassing the check.
+const FORBIDDEN_STRINGS = [
+  'bcEdgeApiPass',   // BC dev captcha password — must never reach a public bundle
+];
+const buildDir = path.resolve(__dirname, '../build');
+if (fs.existsSync(buildDir)) {
+  const offenders = [];
+  for (const f of fs.readdirSync(buildDir)) {
+    if (!f.endsWith('.js')) continue;
+    const content = fs.readFileSync(path.join(buildDir, f), 'utf8');
+    for (const needle of FORBIDDEN_STRINGS) {
+      if (content.includes(needle)) offenders.push({ file: f, needle });
+    }
+  }
+  if (offenders.length > 0) {
+    console.error('\npostbuild: ❌ FORBIDDEN STRINGS FOUND IN BUILD OUTPUT');
+    for (const o of offenders) console.error(`  - ${o.file}  contains  "${o.needle}"`);
+    console.error('Refusing to ship this bundle. Clear .env.production.local / .env.local and rebuild.\n');
+    process.exit(1);
+  }
+  console.log('postbuild: secret scan clean');
+}

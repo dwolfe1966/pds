@@ -475,9 +475,10 @@ const api = {
    * BC user.createContact accepts only { message, contentType, parentCsrMessageId? }
    * — the member's identity comes from the session.
    */
-  userCreateContact: async ({ message, contentType = 'text/plain', parentCsrMessageId } = {}) => {
+  userCreateContact: async ({ message, contentType = 'text/plain', parentCsrMessageId, subject } = {}) => {
     const body = { message, contentType };
     if (parentCsrMessageId) body.parentCsrMessageId = parentCsrMessageId;
+    if (subject) body.subject = subject;
     return await routeApiRequest('create-user-contact', { body });
   },
 
@@ -646,6 +647,12 @@ const api = {
     return await routeApiRequest('admin-user-contacts', { queryParams: params });
   },
 
+  // CSR: list ALL userContact docs (across all users) for the unified inbox
+  // — paginated via lastId.
+  adminFindAllUserContacts: async ({ lastId } = {}) => {
+    return await routeApiRequest('admin-find-all-user-contacts', { queryParams: lastId ? { lastId } : {} });
+  },
+
   adminCreateOrder: async (body = {}) => {
     return await routeApiRequest('admin-create-order', { body });
   },
@@ -728,9 +735,11 @@ const api = {
     return await routeApiRequest('admin-find-contact-messages', { queryParams: params });
   },
 
-  // CSR: list contact messages assigned to a specific user (targetUserId).
-  adminFindUserContactMessages: async ({ userId, lastId } = {}) => {
-    return await routeApiRequest('admin-find-user-contact-messages', { userId, lastId });
+  // CSR: list contact messages assigned to a specific user.
+  // Matches by targetUserId OR sender email — BC's targetUserId is often unset
+  // on member-submitted contactMessages, so the email fallback fills the gap.
+  adminFindUserContactMessages: async ({ userId, userEmail, lastId } = {}) => {
+    return await routeApiRequest('admin-find-user-contact-messages', { userId, userEmail, lastId });
   },
 
   // CSR: full thread history for a contact message.
@@ -801,7 +810,11 @@ const api = {
         email: body.email || '',
         description: body.description || body.message || '',
         ...(body.phone ? { phone: body.phone } : {}),
-        ...(body.orderId ? { orderId: body.orderId } : {}),
+        // BC requires orderId on general-category per their 2026-04-17 spec
+        // (must match /^[a-zA-Z0-9]{8,24}$/). Members without an active
+        // subscription have no real orderId, so send a recognisable sentinel.
+        // CSRs: orderId starting with NOORDERID = no order on file.
+        orderId: body.orderId || 'NOORDERID0000',
         ...(body.zip ? { zip: body.zip } : {}),
         ...(body.last4 ? { last4: body.last4 } : {}),
       };

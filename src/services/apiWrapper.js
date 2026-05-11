@@ -1,20 +1,19 @@
 /**
  * API Wrapper Service
- * 
+ *
  * Wraps the ByteCrtrs ApiWrapper library and provides a clean interface
  * for making API calls to the new external API.
  */
 
-// Candidate URLs for BC's CSR IIFE. We don't know which (if any) is correct —
-// they're attempted in order at first-CSR-call. Whichever responds with a
-// script that defines window.CsrWrapper wins, and the choice is cached.
-// Confirmed by ByteCrtrs as the CSR IIFE URL on dev1. The admin.html bundle
-// preloads this via a static <script> tag, so loadCsrIife() is normally a
-// no-op (window.CsrWrapper is already defined). The runtime list remains as
-// a fallback in case the static tag fails to load (CORS, 503, etc.).
+import { dbg, dbgWarn, dbgError } from './_debug';
+
+// CSR IIFE is loaded by admin.html via a static <script> tag at runtime.
+// loadCsrIife() is normally a no-op (window.CsrWrapper is already defined).
+// This list is the runtime fallback if the static tag fails to load.
+// Same-origin only — absolute upstream URLs are stripped to keep them out
+// of the production bundle (they were broken anyway: cert mismatch on
+// dev.www.bytecrtrs.com, 502 on dev1.dev.www.bytecrtrs.com).
 const CSR_IIFE_CANDIDATES = [
-  'https://dev1.dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js',
-  'https://dev.www.bytecrtrs.com/libs/csr-wrapper/index.iife.js',
   '/libs/csr-wrapper/index.iife.js',
 ];
 
@@ -36,22 +35,22 @@ async function loadCsrIife() {
   _csrIifePromise = (async () => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return null;
     if (window.CsrWrapper) {
-      console.log('[CsrWrapper] already loaded');
+      dbg('[CsrWrapper] already loaded');
       return window.CsrWrapper;
     }
     for (const url of CSR_IIFE_CANDIDATES) {
       try {
         await _loadScript(url);
         if (window.CsrWrapper) {
-          console.log(`[CsrWrapper] loaded from ${url}`);
+          dbg(`[CsrWrapper] loaded from ${url}`);
           return window.CsrWrapper;
         }
-        console.log(`[CsrWrapper] script at ${url} loaded but did not expose window.CsrWrapper`);
+        dbg(`[CsrWrapper] script at ${url} loaded but did not expose window.CsrWrapper`);
       } catch (e) {
         // 404 or other load error — silent, try next candidate.
       }
     }
-    console.log('[CsrWrapper] none of the candidate URLs returned a CSR IIFE — ask ByteCrtrs for the correct path');
+    dbg('[CsrWrapper] none of the candidate URLs returned a CSR IIFE — ask ByteCrtrs for the correct path');
     return null;
   })();
   return _csrIifePromise;
@@ -143,7 +142,7 @@ class ApiWrapperService {
       this.initialized = true;
       return this.wrapper;
     } catch (error) {
-      console.error('Failed to initialize ApiWrapper:', error);
+      dbgError('Failed to initialize ApiWrapper:', error);
       throw error;
     }
   }
@@ -309,11 +308,11 @@ class ApiWrapperService {
     }
     try {
       if (process.env.NODE_ENV === 'development') {
-        console.log('[ByteCrtrs API] searchTeaser called with params:', JSON.stringify(query, null, 2));
+        dbg('[ByteCrtrs API] searchTeaser called with params:', JSON.stringify(query, null, 2));
         const perPageKeys = ['perPage', 'per_page', 'pageSize'];
         const hasPerPage = perPageKeys.some(k => query[k] != null);
-        console.log('[ByteCrtrs API] Results-per-page:', hasPerPage ? perPageKeys.map(k => `${k}=${query[k]}`).filter(Boolean).join(', ') : 'NOT SET');
-        console.log('[ByteCrtrs API] Is pagination (getMore):', !!(query.commerceContentId && query.page != null));
+        dbg('[ByteCrtrs API] Results-per-page:', hasPerPage ? perPageKeys.map(k => `${k}=${query[k]}`).filter(Boolean).join(', ') : 'NOT SET');
+        dbg('[ByteCrtrs API] Is pagination (getMore):', !!(query.commerceContentId && query.page != null));
       }
       // When using proxy mode, the wrapper is configured to point to our proxy server
       // So we can use the library normally - it will make requests to our proxy (no CORS)
@@ -323,64 +322,64 @@ class ApiWrapperService {
       
       // Log the response structure for debugging
       if (process.env.NODE_ENV === 'development') {
-        console.log('[API Wrapper] searchTeaser response type:', typeof response);
-        console.log('[API Wrapper] response has getIdentities?', typeof response?.getIdentities === 'function');
-        console.log('[API Wrapper] response has getCommerceContent?', typeof response?.getCommerceContent === 'function');
-        console.log('[API Wrapper] response has getTeaserInput?', typeof response?.getTeaserInput === 'function');
-        console.log('[API Wrapper] response has hasMore?', typeof response?.hasMore === 'function');
-        console.log('[API Wrapper] response object keys:', Object.keys(response || {}));
+        dbg('[API Wrapper] searchTeaser response type:', typeof response);
+        dbg('[API Wrapper] response has getIdentities?', typeof response?.getIdentities === 'function');
+        dbg('[API Wrapper] response has getCommerceContent?', typeof response?.getCommerceContent === 'function');
+        dbg('[API Wrapper] response has getTeaserInput?', typeof response?.getTeaserInput === 'function');
+        dbg('[API Wrapper] response has hasMore?', typeof response?.hasMore === 'function');
+        dbg('[API Wrapper] response object keys:', Object.keys(response || {}));
         
         if (typeof response?.getIdentities === 'function') {
           const identities = response.getIdentities();
-          console.log('[API Wrapper] getIdentities() returned:', identities?.length || 0, 'items');
+          dbg('[API Wrapper] getIdentities() returned:', identities?.length || 0, 'items');
           if (identities && identities.length > 0) {
-            console.log('[API Wrapper] First identity sample:', JSON.stringify(identities[0]).substring(0, 200));
+            dbg('[API Wrapper] First identity sample:', JSON.stringify(identities[0]).substring(0, 200));
           }
         }
         if (typeof response?.getCommerceContent === 'function') {
           const commerceContent = response.getCommerceContent();
-          console.log('[API Wrapper] getCommerceContent() returned:', commerceContent ? JSON.stringify(commerceContent).substring(0, 200) : 'null/undefined');
+          dbg('[API Wrapper] getCommerceContent() returned:', commerceContent ? JSON.stringify(commerceContent).substring(0, 200) : 'null/undefined');
         }
         if (typeof response?.getTeaserInput === 'function') {
           const teaserInput = response.getTeaserInput();
-          console.log('[API Wrapper] getTeaserInput() returned:', teaserInput ? JSON.stringify(teaserInput).substring(0, 200) : 'null/undefined');
+          dbg('[API Wrapper] getTeaserInput() returned:', teaserInput ? JSON.stringify(teaserInput).substring(0, 200) : 'null/undefined');
         }
         if (typeof response?.hasMore === 'function') {
           const hasMore = response.hasMore();
-          console.log('[API Wrapper] hasMore() returned:', hasMore);
+          dbg('[API Wrapper] hasMore() returned:', hasMore);
         }
         // Check the wrapper's internal structure
         if (response && typeof response === 'object') {
           // The library wrapper might store data in params or other properties
           if (response.params) {
-            console.log('[API Wrapper] response.params:', JSON.stringify(response.params).substring(0, 500));
+            dbg('[API Wrapper] response.params:', JSON.stringify(response.params).substring(0, 500));
             // Check the actual response data structure
             if (response.params.response) {
               const apiResponse = response.params.response;
-              console.log('[API Wrapper] API Response status:', apiResponse.status);
-              console.log('[API Wrapper] API Response data keys:', Object.keys(apiResponse.data || {}));
-              console.log('[API Wrapper] API Response data:', JSON.stringify(apiResponse.data).substring(0, 500));
+              dbg('[API Wrapper] API Response status:', apiResponse.status);
+              dbg('[API Wrapper] API Response data keys:', Object.keys(apiResponse.data || {}));
+              dbg('[API Wrapper] API Response data:', JSON.stringify(apiResponse.data).substring(0, 500));
               
               // Check if it has raws structure (expected format)
               if (apiResponse.data?.raws) {
-                console.log('[API Wrapper] ✓ Found raws array with', apiResponse.data.raws.length, 'items');
+                dbg('[API Wrapper] ✓ Found raws array with', apiResponse.data.raws.length, 'items');
                 if (apiResponse.data.raws[0]?.transient?.identities) {
-                  console.log('[API Wrapper] ✓ Found', apiResponse.data.raws[0].transient.identities.length, 'identities in raws[0].transient.identities');
+                  dbg('[API Wrapper] ✓ Found', apiResponse.data.raws[0].transient.identities.length, 'identities in raws[0].transient.identities');
                 } else {
-                  console.log('[API Wrapper] ✗ No identities found in raws[0].transient');
+                  dbg('[API Wrapper] ✗ No identities found in raws[0].transient');
                 }
               } else if (apiResponse.data?.commerceContent === null) {
-                console.log('[API Wrapper] ✗ Response has commerceContent: null - API returned empty result');
+                dbg('[API Wrapper] ✗ Response has commerceContent: null - API returned empty result');
               } else {
-                console.log('[API Wrapper] ⚠ Unexpected response structure');
+                dbg('[API Wrapper] ⚠ Unexpected response structure');
               }
             }
           }
           if (response.options) {
-            console.log('[API Wrapper] response.options:', JSON.stringify(response.options).substring(0, 300));
+            dbg('[API Wrapper] response.options:', JSON.stringify(response.options).substring(0, 300));
           }
           if (response.currentPage !== undefined) {
-            console.log('[API Wrapper] response.currentPage:', response.currentPage);
+            dbg('[API Wrapper] response.currentPage:', response.currentPage);
           }
           
           // Try to access any data property
@@ -388,17 +387,17 @@ class ApiWrapperService {
             !['getIdentities', 'getCommerceContent', 'getTeaserInput', 'hasMore', 'getMore', 'params', 'options', 'currentPage'].includes(key)
           );
           if (dataKeys.length > 0) {
-            console.log('[API Wrapper] Other response keys:', dataKeys);
+            dbg('[API Wrapper] Other response keys:', dataKeys);
             dataKeys.forEach(key => {
               try {
                 const value = response[key];
                 if (typeof value === 'object' && value !== null) {
-                  console.log(`[API Wrapper] response.${key}:`, JSON.stringify(value).substring(0, 200));
+                  dbg(`[API Wrapper] response.${key}:`, JSON.stringify(value).substring(0, 200));
                 } else {
-                  console.log(`[API Wrapper] response.${key}:`, value);
+                  dbg(`[API Wrapper] response.${key}:`, value);
                 }
               } catch (e) {
-                console.log(`[API Wrapper] Could not access response.${key}:`, e.message);
+                dbg(`[API Wrapper] Could not access response.${key}:`, e.message);
               }
             });
           }
@@ -416,7 +415,7 @@ class ApiWrapperService {
         e.status = status;
         e.apiResponse = apiData;
         if (process.env.NODE_ENV === 'development') {
-          console.error('[ByteCrtrs] Search failed. Full API response:', apiData || err.response);
+          dbgError('[ByteCrtrs] Search failed. Full API response:', apiData || err.response);
         }
         throw e;
       }
@@ -425,7 +424,7 @@ class ApiWrapperService {
     } catch (error) {
       // If we get a CORS error (shouldn't happen in proxy mode, but handle it anyway)
       if (this._isCorsError(error)) {
-        console.warn('[API Wrapper] CORS error detected, this shouldn\'t happen in proxy mode');
+        dbgWarn('[API Wrapper] CORS error detected, this shouldn\'t happen in proxy mode');
         // Fallback to direct proxy call if needed
         return await this._searchTeaserViaProxy(query);
       }
@@ -710,7 +709,7 @@ class ApiWrapperService {
     try {
       const wrapper = await this.getWrapper();
       if (process.env.NODE_ENV === 'development') {
-        console.log('[BC Billing] Available billing methods:', Object.keys(wrapper.api?.billing || {}));
+        dbg('[BC Billing] Available billing methods:', Object.keys(wrapper.api?.billing || {}));
       }
       // BC library may expose this as getUserOrders or getOrders
       const fn = wrapper.api?.billing?.getUserOrders ?? wrapper.api?.billing?.getOrders;
@@ -719,7 +718,7 @@ class ApiWrapperService {
       }
       // IIFE is outdated and missing this method — fall back to direct proxy fetch.
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[BC Billing] getUserOrders/getOrders not found in IIFE; falling back to proxy fetch.');
+        dbgWarn('[BC Billing] getUserOrders/getOrders not found in IIFE; falling back to proxy fetch.');
       }
       return await this._getUserOrdersViaProxy();
     } catch (error) {
@@ -894,7 +893,7 @@ class ApiWrapperService {
         : Cls;
       return this.csrWrapper;
     } catch (e) {
-      console.log('[CsrWrapper] getInstance() failed:', e?.message);
+      dbg('[CsrWrapper] getInstance() failed:', e?.message);
       return null;
     }
   }
@@ -925,7 +924,7 @@ class ApiWrapperService {
         }
       }
     } catch (err) {
-      console.log(`[CsrWrapper] ${dotPath} threw, falling back: ${err?.message}`);
+      dbg(`[CsrWrapper] ${dotPath} threw, falling back: ${err?.message}`);
     }
     return await fallback();
   }
@@ -1016,13 +1015,13 @@ class ApiWrapperService {
       ];
       if (lastOrderId) strategies.forEach((s) => { s.body.lastId = lastOrderId; });
 
-      console.log(`[csrFindUserOrders] /commerceMgmt/userOrders → 404 for userId=${userId}; trying ${strategies.length + 1} /database/search variants`);
+      dbg(`[csrFindUserOrders] /commerceMgmt/userOrders → 404 for userId=${userId}; trying ${strategies.length + 1} /database/search variants`);
 
       for (const strat of strategies) {
         try {
           const raw = await this._csrPost('/database/search', strat.body);
           const orders = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-          console.log(`[csrFindUserOrders] strategy "${strat.name}": ${orders.length} order(s); response keys=${Object.keys(raw || {}).join(',')}`);
+          dbg(`[csrFindUserOrders] strategy "${strat.name}": ${orders.length} order(s); response keys=${Object.keys(raw || {}).join(',')}`);
           if (orders.length > 0) {
             return {
               orders,
@@ -1032,7 +1031,7 @@ class ApiWrapperService {
             };
           }
         } catch (sErr) {
-          console.log(`[csrFindUserOrders] strategy "${strat.name}" failed: ${sErr?.message}`);
+          dbg(`[csrFindUserOrders] strategy "${strat.name}" failed: ${sErr?.message}`);
         }
       }
 
@@ -1066,18 +1065,18 @@ class ApiWrapperService {
           const firstDocKeys = docs[0] ? Object.keys(docs[0]).slice(0, 12).join(',') : 'n/a';
           const firstDocBrand = docs[0]?.brandId || 'n/a';
           const firstDocPayer = docs[0]?.payerId || 'n/a';
-          console.log(`[csrFindUserOrders] probe ${JSON.stringify(probe)} → ${docs.length} doc(s); first.brandId=${firstDocBrand} first.payerId=${firstDocPayer} keys=[${firstDocKeys}]`);
+          dbg(`[csrFindUserOrders] probe ${JSON.stringify(probe)} → ${docs.length} doc(s); first.brandId=${firstDocBrand} first.payerId=${firstDocPayer} keys=[${firstDocKeys}]`);
           if (docs.length > 0) {
             workingProbe = { probe, firstPage: docs };
             break;
           }
         } catch (sErr) {
-          console.log(`[csrFindUserOrders] probe ${JSON.stringify(probe)} failed: ${sErr?.message}`);
+          dbg(`[csrFindUserOrders] probe ${JSON.stringify(probe)} failed: ${sErr?.message}`);
         }
       }
 
       if (!workingProbe) {
-        console.log('[csrFindUserOrders] no probe returned any commerceOrder docs — BC has no orders accessible to this session, or the schema differs from what we expect');
+        dbg('[csrFindUserOrders] no probe returned any commerceOrder docs — BC has no orders accessible to this session, or the schema differs from what we expect');
         return { orders: [], perPage: 0, noMoreDocs: true, _fallback: 'database-search:no-data' };
       }
 
@@ -1109,7 +1108,7 @@ class ApiWrapperService {
         const matched = aggregated.filter((o) => o?.payerId === userId);
         const oldestScanned = aggregated[aggregated.length - 1]?.createdAt;
         const newestScanned = aggregated[0]?.createdAt;
-        console.log(`[csrFindUserOrders] working probe scan: ${matched.length} match(es) of ${aggregated.length} scanned (range: ${newestScanned || '?'} → ${oldestScanned || '?'})`);
+        dbg(`[csrFindUserOrders] working probe scan: ${matched.length} match(es) of ${aggregated.length} scanned (range: ${newestScanned || '?'} → ${oldestScanned || '?'})`);
         if (matched.length > 0) {
           return {
             orders: matched,
@@ -1120,10 +1119,10 @@ class ApiWrapperService {
           };
         }
       } catch (sErr) {
-        console.log(`[csrFindUserOrders] working probe scan failed: ${sErr?.message}`);
+        dbg(`[csrFindUserOrders] working probe scan failed: ${sErr?.message}`);
       }
 
-      console.log(`[csrFindUserOrders] all fallback strategies returned empty for userId=${userId}`);
+      dbg(`[csrFindUserOrders] all fallback strategies returned empty for userId=${userId}`);
       return { orders: [], perPage: 0, noMoreDocs: true, _fallback: 'database-search:empty' };
     }
   }
@@ -1147,7 +1146,7 @@ class ApiWrapperService {
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[csrGetUserOrder] /commerceMgmt/getUserOrder unavailable, falling back to /database/search by _id');
+        dbgWarn('[csrGetUserOrder] /commerceMgmt/getUserOrder unavailable, falling back to /database/search by _id');
       }
       const { orderId } = params;
       if (!orderId) throw err;
@@ -1234,6 +1233,15 @@ class ApiWrapperService {
     return await this._csrPost('/database/search', body);
   }
 
+  // POST /database/search with collectionName=userContact and no targetUserId
+  // filter — returns ALL userContact docs (member-initiated messages, CSR
+  // outbound mail, internal notes). Used to populate the unified admin inbox
+  // alongside contactMessage docs. Pagination via lastId.
+  async csrFindAllUserContacts(params = {}) {
+    const body = { collectionName: 'userContact', ...params };
+    return await this._csrPost('/database/search', body);
+  }
+
   // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
   // params: { userId, message, contentType, attachments }
   // BC documented the new path on 2026-04-17; fall back to the old path if BC's
@@ -1249,14 +1257,14 @@ class ApiWrapperService {
       const fn = csr?.api?.message?.note?.createUserAdminNote;
       if (typeof fn === 'function') return await fn.call(csr.api.message.note, body);
     } catch (csrErr) {
-      console.log('[csrCreateAdminNote] CsrWrapper failed, falling back:', csrErr?.message);
+      dbg('[csrCreateAdminNote] CsrWrapper failed, falling back:', csrErr?.message);
     }
     try {
       return await this._csrPost('/message/admin/createNote', body);
     } catch (err) {
       if (err?.status === 404 || err?.status === 405) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[csrCreateAdminNote] new path not live; falling back to legacy /message/admin/user/note/create');
+          dbgWarn('[csrCreateAdminNote] new path not live; falling back to legacy /message/admin/user/note/create');
         }
         const legacyBody = { targetUserId: userId, message, contentType };
         if (attachments) legacyBody.attachments = attachments;
@@ -1285,14 +1293,14 @@ class ApiWrapperService {
       const fn = csr?.api?.message?.note?.updateAdminNote;
       if (typeof fn === 'function') return await fn.call(csr.api.message.note, params);
     } catch (csrErr) {
-      console.log('[csrUpdateAdminNote] CsrWrapper failed, falling back:', csrErr?.message);
+      dbg('[csrUpdateAdminNote] CsrWrapper failed, falling back:', csrErr?.message);
     }
     try {
       return await this._csrPost('/message/admin/updateNote', params);
     } catch (err) {
       if (err?.status === 404 || err?.status === 405) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[csrUpdateAdminNote] new path not live; falling back to legacy /message/admin/user/note/update');
+          dbgWarn('[csrUpdateAdminNote] new path not live; falling back to legacy /message/admin/user/note/update');
         }
         return await this._csrPost('/message/admin/user/note/update', params);
       }
@@ -1326,26 +1334,39 @@ class ApiWrapperService {
   // Falls back to the known-working /contactMessage/admin/find (no path param)
   // and filters client-side when BC's targetUserId variant is unavailable on
   // this deployment.
-  async csrFindUserContactMessages({ userId, lastId } = {}) {
-    if (!userId) throw new Error('userId is required');
-    try {
-      return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
-    } catch (err) {
-      if (err?.status !== 404 && err?.status !== 405) throw err;
-      console.log(`[csrFindUserContactMessages] /contactMessage/admin/find/${userId} → 404, falling back to inbox-wide GET + client-side targetUserId filter`);
-      const raw = await this.csrFindContactMessages(lastId ? { lastId } : {});
-      const docs = raw?.docs ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      const filtered = docs.filter((d) => {
-        const t = d?.content?.targetUserId || d?.targetUserId;
-        return t === userId;
-      });
-      console.log(`[csrFindUserContactMessages] fallback found ${filtered.length} ticket(s) of ${docs.length} scanned for userId=${userId}`);
-      return {
-        docs: filtered,
-        noMoreDocs: raw?.noMoreDocs ?? true,
-        _fallback: 'inbox-filter',
-      };
+  async csrFindUserContactMessages({ userId, userEmail, lastId } = {}) {
+    if (!userId && !userEmail) throw new Error('userId or userEmail is required');
+    // Try the targetUserId-keyed path first when we have an id. Most consumer
+    // contactMessage docs created via /contactMessage/create have no
+    // targetUserId set (BC doesn't auto-link from authed sessions on this
+    // deployment), so the fallback below is the primary discovery path.
+    if (userId) {
+      try {
+        return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
+      } catch (err) {
+        if (err?.status !== 404 && err?.status !== 405) throw err;
+        dbg(`[csrFindUserContactMessages] /contactMessage/admin/find/${userId} → 404, falling back to inbox-wide GET + client-side filter`);
+      }
     }
+    // Fallback: scan recent contactMessages and filter client-side. Match
+    // either targetUserId === userId (BC's intended link) OR sender email
+    // === userEmail (covers messages with no targetUserId set).
+    const raw = await this.csrFindContactMessages(lastId ? { lastId } : {});
+    const docs = raw?.docs ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+    const wantEmail = (userEmail || '').toLowerCase().trim();
+    const filtered = docs.filter((d) => {
+      const t = d?.content?.targetUserId || d?.targetUserId;
+      if (userId && t === userId) return true;
+      if (!wantEmail) return false;
+      const senderEmail = (d?.content?.input?.email || d?.content?.email || '').toLowerCase().trim();
+      return senderEmail === wantEmail;
+    });
+    dbg(`[csrFindUserContactMessages] filter matched ${filtered.length}/${docs.length} (userId=${userId || '∅'}, email=${wantEmail || '∅'})`);
+    return {
+      docs: filtered,
+      noMoreDocs: raw?.noMoreDocs ?? true,
+      _fallback: 'inbox-filter',
+    };
   }
 
   // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
@@ -1466,8 +1487,22 @@ class ApiWrapperService {
    * Returns a synthetic empty payload so callers (DashboardHome, AccountPage)
    * degrade gracefully until a replacement aggregate endpoint is available.
    */
-  async getUserContacts(_lastId) {
-    return { messages: [], docs: [], noMoreDocs: true };
+  async getUserContacts(lastId) {
+    // BC: POST /api/message/userContact/list. Body: { lastId? } flat.
+    // Returns { docs: [...], noMoreDocs: bool } per BC spec; we normalize.
+    const body = lastId ? { lastId } : {};
+    try {
+      const raw = await this._csrPost('/message/userContact/list', body);
+      const data = raw?.getData?.() ?? raw ?? {};
+      const docs = data.docs || data.messages || (Array.isArray(data) ? data : []);
+      const noMoreDocs = data.noMoreDocs ?? (docs.length === 0);
+      return { docs, messages: docs, noMoreDocs };
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') {
+        dbgWarn('[getUserContacts] failed:', err?.message);
+      }
+      return { docs: [], messages: [], noMoreDocs: true, _error: err?.message };
+    }
   }
 
   /**
@@ -1487,7 +1522,7 @@ class ApiWrapperService {
       }
     } catch (err) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[ApiWrapper] goToOptOutPage failed via IIFE:', err?.message);
+        dbgWarn('[ApiWrapper] goToOptOutPage failed via IIFE:', err?.message);
       }
     }
     // Fallback — library not available. Partner still needs a working opt-out
@@ -1514,7 +1549,7 @@ class ApiWrapperService {
     } catch (error) {
       // Non-fatal — compliance tracking should never break the user's flow.
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[Tracking] createTracking failed:', error?.message);
+        dbgWarn('[Tracking] createTracking failed:', error?.message);
       }
       return null;
     }
@@ -1560,7 +1595,7 @@ class ApiWrapperService {
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[BC message.contact.create] IIFE path threw; falling back to direct POST:', error?.message);
+          dbgWarn('[BC message.contact.create] IIFE path threw; falling back to direct POST:', error?.message);
         }
       }
     }
@@ -1656,7 +1691,7 @@ class ApiWrapperService {
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[BC user.createContact] IIFE path threw; falling back to direct POST:', error?.message);
+          dbgWarn('[BC user.createContact] IIFE path threw; falling back to direct POST:', error?.message);
         }
         if (error?.status || error?.data) throw error;
       }
@@ -1760,7 +1795,7 @@ class ApiWrapperService {
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn('[BC user.update] IIFE path threw; falling back to direct POST:', error?.message);
+        dbgWarn('[BC user.update] IIFE path threw; falling back to direct POST:', error?.message);
       }
       // If the IIFE returned a wrapper with .params.error, _unwrapBcResponse
       // already converted it to a thrown Error — propagate to the caller as a

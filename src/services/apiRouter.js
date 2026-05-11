@@ -8,6 +8,7 @@
 import { getEndpointConfig, isAvailableInNewAPI, isAvailableInMockAPI } from './apiEndpointRegistry';
 import apiWrapper from './apiWrapper';
 import { adaptTeaserResponse, adaptReportDetailResponse, adaptReportListResponse } from './apiAdapter';
+import { dbg, dbgWarn, dbgError } from './_debug';
 
 // Environment configuration
 const USE_NEW_API = process.env.REACT_APP_NEW_API_ENABLED === 'true';
@@ -124,7 +125,7 @@ async function callMockAPI(endpoint, params = {}) {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   } else if (process.env.NODE_ENV === 'development') {
-    console.warn(`[callMockAPI] No token provided for endpoint: ${endpoint}. Request may fail if authentication is required.`);
+    dbgWarn(`[callMockAPI] No token provided for endpoint: ${endpoint}. Request may fail if authentication is required.`);
   }
 
   const options = {
@@ -202,7 +203,7 @@ async function callMockAPI(endpoint, params = {}) {
     
     if (process.env.NODE_ENV === 'development') {
       // Use console.warn instead of console.error to avoid triggering React error overlay
-      console.warn(`[callMockAPI] Request failed for ${endpoint}:`, {
+      dbgWarn(`[callMockAPI] Request failed for ${endpoint}:`, {
         status: response.status,
         statusText: response.statusText,
         url: url.toString(),
@@ -279,6 +280,7 @@ export async function routeApiRequest(endpoint, params = {}) {
     'admin-phone-optout',
     'admin-phone-optout-delete',
     'admin-user-contacts',
+    'admin-find-all-user-contacts',
     'admin-create-order',
     'admin-create-note',
     'admin-create-contact-note',
@@ -316,7 +318,7 @@ export async function routeApiRequest(endpoint, params = {}) {
 
   // Log which API is being used (for debugging)
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[API Router] ${endpoint}:`, {
+    dbg(`[API Router] ${endpoint}:`, {
       USE_NEW_API,
       endpointAvailable: endpointConfig.newApi,
       featureFlag: FEATURE_FLAGS[endpoint],
@@ -356,9 +358,9 @@ export async function routeApiRequest(endpoint, params = {}) {
                          ));
       
       if (isCorsError) {
-        console.warn(`[API Router] CORS error detected for ${endpoint}. This is expected in development when the API server doesn't allow localhost. Falling back to mock API.`);
+        dbgWarn(`[API Router] CORS error detected for ${endpoint}. This is expected in development when the API server doesn't allow localhost. Falling back to mock API.`);
       } else {
-        console.warn(`[API Router] New API failed for ${endpoint}, falling back to mock API:`, error.message || error);
+        dbgWarn(`[API Router] New API failed for ${endpoint}, falling back to mock API:`, error.message || error);
       }
       
       // Fallback to mock API if new API fails (teaser-search excluded – force ByteCrtrs for debugging)
@@ -366,7 +368,7 @@ export async function routeApiRequest(endpoint, params = {}) {
         try {
           return await callMockAPI(endpoint, params);
         } catch (fallbackError) {
-          console.error(`[API Router] Both new API and mock API failed for ${endpoint}:`, fallbackError);
+          dbgError(`[API Router] Both new API and mock API failed for ${endpoint}:`, fallbackError);
           throw fallbackError;
         }
       }
@@ -388,8 +390,8 @@ export async function routeApiRequest(endpoint, params = {}) {
         limit: 20
       };
       if (process.env.NODE_ENV === 'development') {
-        console.log('[Mock API Search] Params sent to /search:', JSON.stringify(queryParams, null, 2));
-        console.log('[Mock API Search] Results-per-page (limit):', queryParams.limit);
+        dbg('[Mock API Search] Params sent to /search:', JSON.stringify(queryParams, null, 2));
+        dbg('[Mock API Search] Results-per-page (limit):', queryParams.limit);
       }
       return await callMockAPI(endpoint, {
         method: 'GET',
@@ -429,23 +431,23 @@ async function callNewAPI(endpoint, params) {
 
       // ── FULL RAW RESPONSE DUMP (dev only) ────────────────────────────────────
       if (process.env.NODE_ENV === 'development') {
-        console.log('[BC Login] ===== RAW IIFE RESPONSE =====');
-        console.log('[BC Login] typeof raw:', typeof raw);
-        console.log('[BC Login] raw keys:', raw ? Object.keys(raw) : 'null/undefined');
-        try { console.log('[BC Login] JSON.stringify(raw):', JSON.stringify(raw)?.substring(0, 2000)); } catch(e) { console.log('[BC Login] raw not serialisable:', e.message); }
+        dbg('[BC Login] ===== RAW IIFE RESPONSE =====');
+        dbg('[BC Login] typeof raw:', typeof raw);
+        dbg('[BC Login] raw keys:', raw ? Object.keys(raw) : 'null/undefined');
+        try { dbg('[BC Login] JSON.stringify(raw):', JSON.stringify(raw)?.substring(0, 2000)); } catch(e) { dbg('[BC Login] raw not serialisable:', e.message); }
         if (raw?.params) {
-          console.log('[BC Login] raw.params keys:', Object.keys(raw.params));
-          console.log('[BC Login] raw.params.response?.status:', raw.params.response?.status);
-          try { console.log('[BC Login] raw.params.response?.data:', JSON.stringify(raw.params.response?.data)?.substring(0, 2000)); } catch(e) {}
-          try { console.log('[BC Login] raw.params.error:', JSON.stringify(raw.params.error)?.substring(0, 500)); } catch(e) {}
+          dbg('[BC Login] raw.params keys:', Object.keys(raw.params));
+          dbg('[BC Login] raw.params.response?.status:', raw.params.response?.status);
+          try { dbg('[BC Login] raw.params.response?.data:', JSON.stringify(raw.params.response?.data)?.substring(0, 2000)); } catch(e) {}
+          try { dbg('[BC Login] raw.params.error:', JSON.stringify(raw.params.error)?.substring(0, 500)); } catch(e) {}
         }
         if (typeof raw?.getData === 'function') {
-          try { console.log('[BC Login] raw.getData():', JSON.stringify(raw.getData())?.substring(0, 2000)); } catch(e) {}
+          try { dbg('[BC Login] raw.getData():', JSON.stringify(raw.getData())?.substring(0, 2000)); } catch(e) {}
         }
         if (typeof raw?.getError === 'function') {
-          try { console.log('[BC Login] raw.getError():', JSON.stringify(raw.getError())?.substring(0, 500)); } catch(e) {}
+          try { dbg('[BC Login] raw.getError():', JSON.stringify(raw.getError())?.substring(0, 500)); } catch(e) {}
         }
-        console.log('[BC Login] ===== END RAW RESPONSE =====');
+        dbg('[BC Login] ===== END RAW RESPONSE =====');
       }
       // ─────────────────────────────────────────────────────────────────────────
 
@@ -465,8 +467,8 @@ async function callNewAPI(endpoint, params) {
       const d = raw?.getData?.() ?? raw?.data ?? raw ?? {};
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('[BC Login] Response keys:', Object.keys(d || {}));
-        console.log('[BC Login] accessToken present:', !!(d.accessToken || d.token || d.jwt || d.access_token));
+        dbg('[BC Login] Response keys:', Object.keys(d || {}));
+        dbg('[BC Login] accessToken present:', !!(d.accessToken || d.token || d.jwt || d.access_token));
       }
 
       const bcToken = d.accessToken || d.token || d.jwt || d.access_token || raw?.accessToken;
@@ -482,7 +484,7 @@ async function callNewAPI(endpoint, params) {
       // BC returns roles as an array; normalize to a single role string for ProtectedRoute.
       // BC uses 'csr' or 'admin' to denote admin-level users.
       if (process.env.NODE_ENV === 'development') {
-        console.log('[BC Login] rawUser:', JSON.stringify(rawUser));
+        dbg('[BC Login] rawUser:', JSON.stringify(rawUser));
       }
       const rolesArray = Array.isArray(rawUser.roles) ? rawUser.roles : [];
       const loginEmail = (loginBody.email || loginBody.username || '').toLowerCase().trim();
@@ -500,7 +502,7 @@ async function callNewAPI(endpoint, params) {
         rolesArray.includes('csr') || rolesArray.includes('admin');
 
       if (process.env.NODE_ENV === 'development') {
-        console.log('[BC Login] isAdmin:', isAdmin, '(allowlist:', isInAllowlist, ', roles:', rolesArray, ')');
+        dbg('[BC Login] isAdmin:', isAdmin, '(allowlist:', isInAllowlist, ', roles:', rolesArray, ')');
       }
 
       const bcUser = {
@@ -517,7 +519,7 @@ async function callNewAPI(endpoint, params) {
       //    The BC session cookie is now set (reports/billing will work).
       //    Create a synthetic session token for app-level route protection only.
       if (process.env.NODE_ENV === 'development') {
-        console.log('[BC Login] BC session established (cookie). Issuing synthetic session token for app routing.');
+        dbg('[BC Login] BC session established (cookie). Issuing synthetic session token for app routing.');
       }
       return {
         accessToken: createBcSessionToken(bcUser),
@@ -532,7 +534,7 @@ async function callNewAPI(endpoint, params) {
       } catch (err) {
         // BC logout failure should not block local session teardown.
         if (process.env.NODE_ENV === 'development') {
-          console.warn('[BC Logout] request failed (ignored):', err?.message);
+          dbgWarn('[BC Logout] request failed (ignored):', err?.message);
         }
         return { success: true };
       }
@@ -584,8 +586,8 @@ async function callNewAPI(endpoint, params) {
       delete query.pageSize;
       const isPaginationRequest = !!query.commerceContentId && query.page != null;
       if (process.env.NODE_ENV === 'development') {
-        console.log('[ByteCrtrs Search] All params sent to searchTeaser:', JSON.stringify(query, null, 2));
-        console.log('[ByteCrtrs Search] Pagination request (getMore):', isPaginationRequest);
+        dbg('[ByteCrtrs Search] All params sent to searchTeaser:', JSON.stringify(query, null, 2));
+        dbg('[ByteCrtrs Search] Pagination request (getMore):', isPaginationRequest);
       }
       const response = await apiWrapper.searchTeaser(query);
       const adapted = adaptTeaserResponse(response);
@@ -615,7 +617,7 @@ async function callNewAPI(endpoint, params) {
         err.upstreamResponse = rawData;
         err.httpStatus = httpStatus;
         if (process.env.NODE_ENV === 'development') {
-          console.error('[API Router] create-report failed — raw response:', JSON.stringify(rawData, null, 2));
+          dbgError('[API Router] create-report failed — raw response:', JSON.stringify(rawData, null, 2));
         }
         throw err;
       }
@@ -633,7 +635,7 @@ async function callNewAPI(endpoint, params) {
         const err = new Error('We couldn\'t load this report right now. Please try again in a moment.');
         err.upstreamResponse = rawData;
         if (process.env.NODE_ENV === 'development') {
-          console.error('[API Router] get-report failed — raw response:', JSON.stringify(rawData, null, 2));
+          dbgError('[API Router] get-report failed — raw response:', JSON.stringify(rawData, null, 2));
         }
         throw err;
       }
@@ -668,8 +670,8 @@ async function callNewAPI(endpoint, params) {
       // BC wraps responses; unwrap to get the actual data payload.
       const d = raw?.getData?.() ?? raw?.params?.response?.data ?? raw?.data ?? raw;
       if (process.env.NODE_ENV === 'development') {
-        console.log('[BC getUserOrders] raw keys:', Object.keys(raw || {}));
-        console.log('[BC getUserOrders] unwrapped data:', JSON.stringify(d)?.substring(0, 600));
+        dbg('[BC getUserOrders] raw keys:', Object.keys(raw || {}));
+        dbg('[BC getUserOrders] unwrapped data:', JSON.stringify(d)?.substring(0, 600));
       }
       // BC may return the orders array directly, or under { orders: [...] } / { raws: [...] }
       if (Array.isArray(d)) return d;
@@ -793,7 +795,7 @@ async function callNewAPI(endpoint, params) {
       } catch (err) {
         globalErr = err;
         diag.globalError = err?.message || 'failed';
-        console.log('[admin-purchases-global] global search failed:', err?.message);
+        dbg('[admin-purchases-global] global search failed:', err?.message);
       }
 
       // 2. Fan-out — pull recent customers, merge their orders.
@@ -836,7 +838,7 @@ async function callNewAPI(endpoint, params) {
         diag.fanoutOrderCount = merged.length;
         merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-        console.log('[admin-purchases-global] diagnostics:', diag);
+        dbg('[admin-purchases-global] diagnostics:', diag);
 
         return {
           data: merged.slice(0, limit),
@@ -857,7 +859,7 @@ async function callNewAPI(endpoint, params) {
         };
       } catch (fanoutErr) {
         diag.fanoutError = fanoutErr?.message || 'failed';
-        console.log('[admin-purchases-global] fan-out failed:', fanoutErr?.message, diag);
+        dbg('[admin-purchases-global] fan-out failed:', fanoutErr?.message, diag);
         throw globalErr || fanoutErr;
       }
     }
@@ -964,6 +966,13 @@ async function callNewAPI(endpoint, params) {
       const raw = await apiWrapper.csrFindUserContacts(params.queryParams || {});
       const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
       return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
+    }
+
+    // ALL userContact docs (across all users) for the unified admin inbox.
+    case 'admin-find-all-user-contacts': {
+      const raw = await apiWrapper.csrFindAllUserContacts(params.queryParams || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? (docs.length === 0) };
     }
 
     // Create admin note on a user — message.note.createUserAdminNote({ userId, message, contentType, attachments })
@@ -1085,11 +1094,13 @@ async function callNewAPI(endpoint, params) {
       return { data: docs, noMoreDocs: raw?.noMoreDocs ?? (docs.length === 0) };
     }
 
-    // CSR: find contact messages assigned to a specific user.
-    // csrWrapper.api.user.findUserContacts → POST /contactMessage/admin/find/:targetUserId
+    // CSR: find contact messages linked to a specific user — by targetUserId
+    // when set, or by sender email as fallback. Email is essential because BC
+    // doesn't auto-populate targetUserId on member-submitted contactMessages.
     case 'admin-find-user-contact-messages': {
       const raw = await apiWrapper.csrFindUserContactMessages({
         userId: params.userId || params.id,
+        userEmail: params.userEmail,
         lastId: params.lastId,
       });
       const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);

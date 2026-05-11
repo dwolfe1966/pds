@@ -92,6 +92,7 @@ export const API_ENDPOINTS = {
   'admin-phone-optout-delete': { newApi: true, mockApi: false },
   // User contacts (notes + csr mail) — findUserContacts requires userId
   'admin-user-contacts': { newApi: true, mockApi: false },
+  'admin-find-all-user-contacts': { newApi: true, mockApi: false },
   'admin-create-note': { newApi: true, mockApi: false },
   'admin-create-contact-note': { newApi: true, mockApi: false },
   'admin-update-note': { newApi: true, mockApi: false },

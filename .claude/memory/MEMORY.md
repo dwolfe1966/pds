@@ -18,3 +18,5 @@
 - [Feedback: subscription state authority](feedback_subscription_state_authority.md) — member paid status derives from BC `billing.getOrders()` only; no local `isPaid` flag
 - [Feedback: autonomous mode for launch sprint](feedback_autonomous_mode.md) — proceed on agreed work without per-step confirmation; pause only for destructive or genuinely ambiguous actions
 - [Feedback: search contextKey/teaserInput require extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time
+- [Feedback: never bake the BC captcha password into a bundle](feedback_no_secrets_in_bundle.md) — `.env.production` ships with empty captcha pass; never override via `.env.production.local` or `.env.local`
+- [BC contactMessage orderId required on general](reference_bc_contact_orderid_required.md) — must match `/^[a-zA-Z0-9]{8,24}$/`; consumer sends `NOORDERID0000` sentinel when no real order

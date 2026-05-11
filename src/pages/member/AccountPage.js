@@ -197,14 +197,12 @@ const AccountPage = () => {
     fetchMessages();
   }, [token, activeTab, messagesFetched]);
 
-  // BC's consumer surface has no "list my contact messages" endpoint —
-  // the IIFE only exposes contact.create. To still surface CSR replies
-  // in-app, we capture (contactMessageId, hash) on every submit and
-  // store the pair locally per-account. On each tab open we replay the
-  // refs through getContactHistories (BC's documented endpoint that
-  // returns the full thread when given id+hash) and merge the results.
-  // The local-mirror fallback below is kept for the moment between
-  // submit and BC's first round-trip.
+  // BC's staging has no consumer-side userContact list endpoint (404 on every
+  // documented variant 2026-05-11). To surface CSR replies in-app we capture
+  // (contactMessageId, hash) on every submit and replay them through
+  // getContactHistories — BC's documented endpoint that returns the full thread
+  // when given id+hash. The local-mirror fallback below covers the moment
+  // between submit and BC's first round-trip.
   const localMessagesKey = (user?.id || user?._id || user?.email)
     ? `accountMessages:${user?.id || user?._id || user?.email}`
     : null;
@@ -248,9 +246,7 @@ const AccountPage = () => {
     try {
       const refs = readLocalThreads();
       if (refs.length === 0) {
-        // No tracked threads yet — fall back to the local-mirror so the
-        // user still sees what they just submitted before the first
-        // round-trip captures a thread ref.
+        // No tracked threads yet — fall back to the local mirror.
         setMessages(readLocalMessages());
         setHasMoreMessages(false);
         setMessagesFetched(true);
@@ -268,8 +264,6 @@ const AccountPage = () => {
           const docs = data.docs || (Array.isArray(data) ? data : []);
           for (const d of docs) {
             const t = d.type;
-            // Map BC histories types to the rendering vocabulary the
-            // existing JSX understands (userContactCsrMail = support).
             const mappedType = t === 'csrReply' ? 'userContactCsrMail' : 'userContact';
             const subject = d?.content?.input?.topic || d?.content?.subject || '';
             const body = d?.content?.message || d?.content?.input?.description || '';
@@ -285,26 +279,14 @@ const AccountPage = () => {
               },
             });
           }
-        } catch (err) {
-          if (process.env.NODE_ENV === 'development') {
-            console.warn(`[AccountPage] getContactHistories failed for thread ${ref.contactMessageId}:`, err?.message);
-          }
-          // Skip this thread; keep going for the rest.
-        }
+        } catch { /* skip this thread, keep going */ }
       }
-      // Newest first.
       allDocs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      // If every thread fetch failed, fall back to the local mirror
-      // rather than presenting an empty inbox to a user who knows they
-      // sent messages.
       const finalMsgs = allDocs.length > 0 ? allDocs : readLocalMessages();
       setMessages(finalMsgs);
       setHasMoreMessages(false);
       setMessagesFetched(true);
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[AccountPage] Failed to fetch message threads:', err?.message);
-      }
       setMessagesError('');
       setMessages(readLocalMessages());
       setMessagesFetched(true);
@@ -337,6 +319,10 @@ const AccountPage = () => {
       const phone = userPhoneDigits.length >= 10 ? userPhoneDigits : '2125550100';
       const submittedSubject = composeSubject;
       const submittedMessage = composeMessage.trim();
+      // BC's staging does NOT expose /api/message/userContact for the consumer
+      // (404 on every variant probed 2026-05-11). Stay on the contactMessage
+      // path; UserDetailPage links to it via sender-email matching, not
+      // targetUserId. See csrFindUserContactMessages fallback.
       const created = await api.submitContact({
         category: 'general',
         topic: submittedSubject,
@@ -346,10 +332,8 @@ const AccountPage = () => {
         phone,
         orderId: subscription?.orderId || '',
       });
-      // BC's contact-create returns the new contactMessage doc with both
-      // _id and hash (per the 2026-04-17 spec). Capture the pair so we
-      // can reload this thread via /contactMessage/histories on later
-      // visits — that's how CSR replies become visible in-app.
+      // BC's contact-create returns the new contactMessage doc with _id and hash;
+      // capture both so the Messages tab can reload this thread via histories.
       const newThreadId = created?._id || created?.id || created?.docs?.[0]?._id || created?.docs?.[0]?.id || null;
       const newThreadHash = created?.hash || created?.docs?.[0]?.hash || null;
       if (newThreadId && newThreadHash) {
@@ -359,9 +343,8 @@ const AccountPage = () => {
         ];
         writeLocalThreads(nextRefs);
       }
-      // Mirror the just-submitted message into the visible list so the
-      // user sees instant feedback. The next tab open (or refresh) will
-      // replace this with the BC-side canonical doc fetched via
+      // Mirror the just-submitted message into the visible list for instant
+      // feedback. Next tab open replaces this with BC's canonical doc via
       // /contactMessage/histories.
       const localEntry = {
         _id: newThreadId || `local-${Date.now()}`,

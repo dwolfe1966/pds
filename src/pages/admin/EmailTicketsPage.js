@@ -141,17 +141,43 @@ const EmailTicketsPage = () => {
     setItemsError('');
     try {
       const params = cursorId ? { lastId: cursorId } : {};
-      const res = await api.adminFindContactMessages(params);
-      const docs = res?.data ?? res?.docs ?? (Array.isArray(res) ? res : []);
-      const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
+      // Unified inbox: contactMessage docs (visitor contact form) +
+      // userContact docs (logged-in member messages + CSR mail). The two live
+      // in separate BC collections, so fetch in parallel and merge by date.
+      // Pagination on the merged view is by contactMessage's lastId only
+      // for now — userContact's first page is always re-fetched on load more.
+      const [cmRes, ucRes] = await Promise.all([
+        api.adminFindContactMessages(params).catch(() => ({ data: [] })),
+        // userContact list isn't paginated on the inbox view (yet) — fetch
+        // most recent page each time. Filtering inbound-only here keeps the
+        // queue focused on items actually awaiting a CSR response.
+        api.adminFindAllUserContacts({}).catch(() => ({ data: [] })),
+      ]);
+      const cmDocs = cmRes?.data ?? cmRes?.docs ?? (Array.isArray(cmRes) ? cmRes : []);
+      const ucDocsRaw = ucRes?.data ?? ucRes?.docs ?? (Array.isArray(ucRes) ? ucRes : []);
+      // Inbox view: only inbound member messages (userContact) and outbound
+      // CSR mail (userContactCsrMail). Internal admin notes are hidden — they
+      // belong on the user-detail page, not in the support queue.
+      const ucDocs = ucDocsRaw.filter((d) => {
+        const t = (d?.type || '').toLowerCase();
+        return t === 'usercontact' || t === 'usercontactcsrmail';
+      });
+
+      const merged = [...cmDocs, ...ucDocs].sort(
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      );
+
+      const last = cmDocs.length > 0 ? resolveId(cmDocs[cmDocs.length - 1]) : null;
       if (cursorId) {
-        setAllItems((prev) => [...prev, ...docs]);
+        setAllItems((prev) => [...prev, ...merged]);
       } else {
-        // Cap to 10 on the initial page so the default view stays focused.
-        setAllItems(docs.slice(0, 10));
+        // Cap to a focused first-page view.
+        setAllItems(merged.slice(0, 20));
       }
       setLastId(last);
-      setNoMoreDocs(res?.noMoreDocs ?? docs.length === 0);
+      // Stop paginating once contactMessages are exhausted; userContact docs
+      // on the first page are always present.
+      setNoMoreDocs(cmRes?.noMoreDocs ?? cmDocs.length === 0);
     } catch (err) {
       setItemsError(err.message || 'Failed to load inbox.');
     } finally {
@@ -311,9 +337,17 @@ const EmailTicketsPage = () => {
           message: replyMessage.trim(),
           contentType: 'text/html',
         });
-      } else if (resolvedUser) {
+      } else {
+        // Reply to a userContact doc — works in both inbox mode (selected
+        // doc carries its own targetUserId) and user mode (resolvedUser).
+        const targetUserId =
+          selected?.content?.targetUserId ||
+          selected?.targetUserId ||
+          resolvedUser?._id ||
+          resolvedUser?.id;
+        if (!targetUserId) throw new Error('No target user for reply');
         await api.adminCreateCsrMail({
-          targetUserId: resolvedUser._id || resolvedUser.id,
+          targetUserId,
           subject,
           message: replyMessage.trim(),
           contentType: 'text',
