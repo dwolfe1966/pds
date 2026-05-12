@@ -105,6 +105,11 @@ const PaymentPage = () => {
   const [success, setSuccess] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
+  // Pre-checked affirmative consent for Visa subscription-disclosure compliance.
+  // Required-on-render (not just on submit) so the disclosure is always visible
+  // and the consent state is captured. Joe (payments) noted it's a risk-mitigation
+  // win even though Visa only mandates the checkbox for trial/negative-option flows.
+  const [agreeTerms, setAgreeTerms] = useState(true);
   // Populated on the happy path so the confirmation screen can link straight to
   // the report the user was trying to reach before the paywall (partner bug 22).
   const [confirmedReportId, setConfirmedReportId] = useState(null);
@@ -752,10 +757,38 @@ const PaymentPage = () => {
                     </div>
                   )}
 
+                  {/* Visa subscription-disclosure block — pricing, renewal, cancel.
+                      Must appear BEFORE the submit button so the cardholder reads
+                      the terms prior to authorizing the charge. */}
+                  <div className={styles.termsBlock}>
+                    <p className={styles.termsHeading}>
+                      <strong>Terms of Use and Pricing</strong>
+                    </p>
+                    <label className={styles.termsLabel}>
+                      <input
+                        type="checkbox"
+                        className={styles.termsCheckbox}
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                      />
+                      <span className={styles.termsBody}>
+                        By clicking <strong>{selectedPerson ? 'Unlock Report' : 'Subscribe Now'}</strong>{' '}
+                        below, you agree to {brand.name}'s{' '}
+                        <Link to="/terms">Terms of Use</Link> and{' '}
+                        <Link to="/privacy">Privacy Policy</Link>, and you authorize {brand.name} to
+                        charge your card <strong>$29.99 today</strong>. Your subscription will
+                        automatically renew every month at <strong>$29.99</strong> until you cancel.
+                        You may cancel at any time from your{' '}
+                        <Link to="/account">Account page</Link> or by{' '}
+                        <Link to="/contact">contacting support</Link>.
+                      </span>
+                    </label>
+                  </div>
+
                   {/* CTA */}
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !agreeTerms}
                     className={styles.submitBtn}
                   >
                     {loading ? (
@@ -764,14 +797,6 @@ const PaymentPage = () => {
                       </span>
                     ) : selectedPerson ? `Unlock Report — $29.99/mo` : 'Subscribe Now — $29.99/mo'}
                   </button>
-
-                  <p className={styles.cancelNote}>
-                    No lock-in. Cancel anytime from your account. Billed monthly.
-                  </p>
-
-                  <p className={styles.billingNote}>
-                    Your card will be charged $29.99 today. Plan auto-renews monthly.
-                  </p>
 
                   {process.env.NODE_ENV === 'development' && (
                     <p className={styles.devHint} role="status" aria-label="Testing options">

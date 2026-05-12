@@ -1,6 +1,6 @@
 ---
-name: BC's downstream provider IDIData needs production IPs whitelisted
-description: Search failures on www.idlookup.ai (412 / 401 loops on /idLookup/teaser/search) were caused by IDIData not having the production VPS IPs whitelisted, not by BC captcha. Likely re-surfaces on any new prod-side IP change.
+name: BC's downstream provider IDIData — whitelist AND privilege provisioning
+description: Search failures (412/401 loops, fulfilled+empty results, cloned subStatus) on idLookup teaser are almost always upstream IDI issues — either IP whitelist or BC's account privileges on IDI. Recurring on every new environment.
 type: project
 originSessionId: 99b4513c-d322-4f20-865d-5c6f0d43d17e
 ---
@@ -16,7 +16,19 @@ When `/api/idLookup/teaser/search` returns 412 (captcha) or 401 loops in product
 - `www.idlookup.ai` search → 412 four times then 401 — captcha verify returns 200 but each retry gets a NEW captcha challenge → looks like an unsolvable captcha loop
 - BC console showed the actual upstream failure once IDIData was checked
 
+**Additional symptom signature observed 2026-05-12:**
+- After IP whitelist was supposedly fixed, search returned `status: "fulfilled"`, `subStatus: "cloned"`, `transient.total: 16`, `transient.identities: []`
+- BC's cache layer was cloning earlier failed-IDI commerceContents instead of re-querying — empty identity payload propagated through "cloned" entries
+- Owner confirmed this was again an IDI side issue (privilege provisioning on the BC account at IDI). Two distinct IDI failure modes have hit us so far: (1) IP whitelist, (2) account privilege provisioning.
+
+**Pattern of "cloned empty teasers":** If BC returns `subStatus: "cloned"` with `transient.total > 0` but `transient.identities: []`, the chain is usually:
+1. Earlier search ran while IDI was failing (whitelist, auth, or privilege)
+2. BC stored an empty commerceContent for that query
+3. Cache cloning returned the empty result on subsequent calls
+4. Fixing IDI alone doesn't help — BC also needs to invalidate the stale empty cache entries (or skip cache when `identities.length === 0`)
+
 **How to apply:**
-- On any new prod environment / new VPS / new IP allocation: confirm with BC that IDIData has the source IP whitelisted before declaring "search is broken."
-- When a search call 412-loops only on production, ping BC with: "Is IDIData seeing requests from our prod IP? If not, please whitelist."
-- Don't conflate this with the genuine `password.v0` captcha issue on `/contactMessage/create` — that one is real and separate (see `reference_bc_contact_orderid_required.md` neighborhood).
+- Whenever search misbehaves (404s, 412 loops, empty identities, cloned subStatus), assume IDI first — whitelist, auth, or privilege provisioning. Don't burn cycles on consumer-side code first.
+- Tell BC: "Confirm IDI status — IP whitelist applied, account credentials valid, account has search/identity privileges, no rate limits. After fix, please clear/invalidate stale teaser commerceContents with empty identities."
+- Per-environment: dev and prod are separate IDI registrations. Fixing dev does not fix prod and vice versa.
+- Don't conflate IDI issues with the genuine `password.v0` captcha on `/contactMessage/create` — that one is real and separate.

@@ -120,7 +120,9 @@
       "Bash(pip3 list *)",
       "Bash(brew install *)",
       "Bash(pdftotext /Users/davidwolfe/Documents/GitHub/pds/docs/content/idlookup_privacy_policy_draft.pdf /tmp/privacy.txt)",
-      "Bash(pdftotext /Users/davidwolfe/Documents/GitHub/pds/docs/content/idlookup_terms_of_service_draft.pdf /tmp/tos.txt)"
+      "Bash(pdftotext /Users/davidwolfe/Documents/GitHub/pds/docs/content/idlookup_terms_of_service_draft.pdf /tmp/tos.txt)",
+      "Bash(textutil -convert txt -stdout \"/Users/davidwolfe/Documents/GitHub/pds/docs/checkout-feedback/Joe feedback about checkout page.docx\")",
+      "Bash(unzip -l \"/Users/davidwolfe/Documents/GitHub/pds/docs/checkout-feedback/Joe feedback about checkout page.docx\")"
     ]
   }
 }

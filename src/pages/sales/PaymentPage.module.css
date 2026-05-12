@@ -384,20 +384,46 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Reassurance copy ───────────────────────────────────────── */
-.cancelNote {
-  text-align: center;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #16a34a;
-  margin: 0 0 0.375rem;
+/* ── Visa subscription-disclosure block ─────────────────────── */
+.termsBlock {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+  padding: 0.875rem 1rem;
+  margin: 0 0 1rem;
 }
 
-.billingNote {
-  text-align: center;
+.termsHeading {
+  font-size: 0.85rem;
+  color: #111827;
+  margin: 0 0 0.5rem;
+}
+
+.termsLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  cursor: pointer;
+}
+
+.termsCheckbox {
+  flex: 0 0 auto;
+  margin-top: 0.2rem;
+  width: 1rem;
+  height: 1rem;
+  accent-color: #0d5d2f;
+  cursor: pointer;
+}
+
+.termsBody {
   font-size: 0.8rem;
-  color: #9ca3af;
-  margin: 0 0 0.75rem;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.termsBody a {
+  color: #0d5d2f;
+  text-decoration: underline;
 }
 
 .devHint {
