@@ -5,6 +5,7 @@ import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
+import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch } from '../../services/thinMatch';
 
 // BC offer charged at signup. s0 (1.01) is the initial charge; s1+ (39.01) is the monthly rebill.
@@ -422,6 +423,11 @@ const PaymentPage = () => {
       setSubscription?.(verifiedSubscription);
 
       track('payment_complete', { plan: 'pro', offer_key: SIGNUP_OFFER_KEY });
+      gtmSetTransaction({
+        orderId: verifiedOrder?._id || verifiedOrder?.id || resolvedReportId,
+        amount: SIGNUP_OFFER_S0_USD,
+        currency: 'USD',
+      });
       gtmPurchase({
         value: SIGNUP_OFFER_S0_USD,
         currency: 'USD',

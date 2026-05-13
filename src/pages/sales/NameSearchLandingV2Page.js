@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV2Page.module.css';
 import { useBrand } from '../../services/brand';
@@ -128,6 +129,13 @@ const NameSearchLandingV2Page = () => {
           source: 'name-landing-v2'
         };
 
+        gtmSetSearchInput({
+          firstName: searchParams.firstName,
+          lastName: searchParams.lastName,
+          middleName: searchParams.middleName,
+          city: searchParams.city,
+          state: searchParams.state,
+        });
         const response = await api.searchPeople(searchParams);
 
         if (isCancelled) {

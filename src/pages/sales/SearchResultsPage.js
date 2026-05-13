@@ -22,6 +22,9 @@ const SalesSearchResultsPage = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const query = params.get('q');
+  // SearchBar emits firstName + lastName directly; legacy callers still send `q`.
+  const firstNameParam = params.get('firstName') || '';
+  const lastNameParam = params.get('lastName') || '';
   const state = params.get('state');
   const error = params.get('error');
   
@@ -60,9 +63,9 @@ const SalesSearchResultsPage = () => {
         }
       }
 
-      // Fallback: fetch from query params (legacy flow)
-      if (!query && !error) return;
-      
+      // Fallback: fetch from query params (legacy + direct-link flow)
+      if (!query && !firstNameParam && !lastNameParam && !error) return;
+
       if (error) {
         setErrorMessage('An error occurred during the search. Please try again.');
         return;
@@ -70,11 +73,16 @@ const SalesSearchResultsPage = () => {
 
       setLoading(true);
       try {
-        // Parse query into firstName and lastName
-        const nameParts = query.trim().split(/\s+/);
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        
+        // Prefer explicit first/last params (new SearchBar contract). Fall back
+        // to whitespace-splitting the legacy `q` string for old links.
+        let firstName = firstNameParam.trim();
+        let lastName = lastNameParam.trim();
+        if (!firstName && !lastName && query) {
+          const nameParts = query.trim().split(/\s+/);
+          firstName = nameParts[0] || '';
+          lastName = nameParts.slice(1).join(' ') || '';
+        }
+
         if (!firstName || !lastName) {
           setErrorMessage('Please provide both first and last name');
           return;
@@ -110,7 +118,7 @@ const SalesSearchResultsPage = () => {
       }
     };
     fetchResults();
-  }, [query, state, error]);
+  }, [query, firstNameParam, lastNameParam, state, error]);
 
   // Partner feedback (bug 5): show exact count when BC knows ≤30 total,
   // collapse to "more than 30" otherwise so the UI pushes users to refine.
@@ -191,7 +199,11 @@ const SalesSearchResultsPage = () => {
             </p>
           )}
           <div style={{ maxWidth: '600px' }}>
-            <SearchBar initialQuery={query || `${searchQuery.firstName} ${searchQuery.lastName}`.trim()} />
+            <SearchBar
+              initialFirstName={searchQuery.firstName || ''}
+              initialLastName={searchQuery.lastName || ''}
+              initialQuery={query || ''}
+            />
           </div>
         </div>
 

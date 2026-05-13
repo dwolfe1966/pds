@@ -159,6 +159,13 @@ const NameSearchLandingV3Page = () => {
         if (city.trim()) searchParams.city = city.trim();
         if (state.trim()) searchParams.state = state.trim();
 
+        gtmSetSearchInput({
+          firstName: searchParams.firstName,
+          lastName: searchParams.lastName,
+          middleName: searchParams.middleName,
+          city: searchParams.city,
+          state: searchParams.state,
+        });
         const response = await api.searchPeople(searchParams);
 
         if (isCancelled) return;

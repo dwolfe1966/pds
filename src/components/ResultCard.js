@@ -5,6 +5,7 @@ import { setIdentityContext, getSearchContext } from '../services/searchContext'
 import { createReportForIdentity } from '../services/reportService';
 import { track } from '../services/trackingService';
 import { gtmSelectContent } from '../services/gtm';
+import { setSearchTarget as gtmSetSearchTarget } from '../services/gtmContext';
 import styles from './ResultCard.module.css';
 
 const ResultCard = ({ result, onClick, isMember = false }) => {
@@ -17,6 +18,18 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
 
     const ctx = (typeof getSearchContext === 'function' ? getSearchContext() : {}) || {};
     const searchType = ctx.teaserInput?.type || ctx.type || undefined;
+    // Capture the selected identity into the GTM dataLayer context BEFORE
+    // any push so target* fields populate the resulting select_content event.
+    gtmSetSearchTarget({
+      firstName: result.firstName,
+      lastName: result.lastName,
+      middleName: result.middleName,
+      city: result.city || result.address?.city,
+      state: result.state || result.address?.state,
+      age: result.age,
+      phone: result.phone || result.phones?.[0]?.number,
+      extId: result.extId || result.id,
+    });
     track('result_click', { resultId: result.id, personName: result.fullName, searchType });
     gtmSelectContent({ content_type: 'person', content_id: result.id, search_type: searchType });
 

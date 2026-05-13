@@ -299,7 +299,11 @@ const MemberSearchResultsPage = () => {
             : 'Search Results'}
         </h1>
         <div className={styles.searchBarWrap}>
-          <SearchBar initialQuery={query || ''} />
+          <SearchBar
+            initialFirstName={firstNameParam || ''}
+            initialLastName={lastNameParam || ''}
+            initialQuery={query || ''}
+          />
         </div>
       </div>
 

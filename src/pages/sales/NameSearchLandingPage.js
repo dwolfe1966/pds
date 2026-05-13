@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { track } from '../../services/trackingService';
+import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './NameSearchLandingPage.module.css';
 
 /**
@@ -82,6 +83,12 @@ const NameSearchLandingPage = () => {
     if (!state.trim()) next.state = 'Please select a state.';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
+
+    gtmSetSearchInput({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      state: state.trim(),
+    });
 
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());

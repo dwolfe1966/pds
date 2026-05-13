@@ -14,6 +14,8 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const q = params.get('q') || '';
+  const firstNameParam = params.get('firstName') || '';
+  const lastNameParam = params.get('lastName') || '';
   const state = params.get('state') || '';
 
   // If query parameter exists, redirect to search results
@@ -57,7 +59,11 @@ const LandingPage = () => {
             Search by name, phone, or email across 12 billion+ public records. Instant results. No hidden fees.
           </p>
           <div style={{ maxWidth: '600px', margin: '0 auto 2rem' }}>
-            <SearchBar initialQuery={q} />
+            <SearchBar
+              initialQuery={q}
+              initialFirstName={firstNameParam}
+              initialLastName={lastNameParam}
+            />
           </div>
           <div style={{
             display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center',

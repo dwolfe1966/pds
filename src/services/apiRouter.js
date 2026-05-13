@@ -9,6 +9,7 @@ import { getEndpointConfig, isAvailableInNewAPI, isAvailableInMockAPI } from './
 import apiWrapper from './apiWrapper';
 import { adaptTeaserResponse, adaptReportDetailResponse, adaptReportListResponse } from './apiAdapter';
 import { dbg, dbgWarn, dbgError } from './_debug';
+import { setBcAttributionFromResponse } from './gtmContext';
 
 // Environment configuration
 const USE_NEW_API = process.env.REACT_APP_NEW_API_ENABLED === 'true';
@@ -228,9 +229,17 @@ async function callMockAPI(endpoint, params = {}) {
 }
 
 /**
- * Route API request to appropriate API
+ * Route API request to appropriate API.
+ * Wrapper that captures BC shared-host attribution (shConId/shColId/brandId)
+ * from every response into the GTM dataLayer context.
  */
 export async function routeApiRequest(endpoint, params = {}) {
+  const response = await _routeApiRequestInner(endpoint, params);
+  try { setBcAttributionFromResponse(response); } catch { /* never block on telemetry */ }
+  return response;
+}
+
+async function _routeApiRequestInner(endpoint, params = {}) {
   const endpointConfig = getEndpointConfig(endpoint);
   // Check if feature flag is explicitly set to true (not just not false)
   const featureFlagEnabled = FEATURE_FLAGS[endpoint] === true;

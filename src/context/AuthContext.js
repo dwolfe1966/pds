@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { setTokenGetter, setLogoutHandler } from '../api';
+import {
+  setUser as gtmSetUser,
+  clearUser as gtmClearUser,
+  setTransaction as gtmSetTransaction,
+} from '../services/gtmContext';
 
 const AuthContext = createContext();
 
@@ -60,6 +65,10 @@ export const AuthProvider = ({ children }) => {
           cancelable: activeOrder.transient?.cancelable ?? false,
         };
         setSubscription(next);
+        // Persist orderId into the GTM dataLayer context so returning paid
+        // users carry it on every event, not just the one immediately after
+        // a fresh billing.sale.
+        gtmSetTransaction({ orderId: next.orderId });
         return next;
       }
       setSubscription(null);
@@ -94,7 +103,15 @@ export const AuthProvider = ({ children }) => {
     if (storedToken && storedUser) {
       try {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        gtmSetUser({
+          email: parsed.email,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+          phone: parsed.phone,
+          zip: parsed.zip,
+        });
       } catch (err) {
         console.error('Error parsing stored user:', err);
         localStorage.removeItem('accessToken');
@@ -114,6 +131,13 @@ export const AuthProvider = ({ children }) => {
 
       setToken(data.accessToken);
       setUser(userData);
+      gtmSetUser({
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        phone: userData.phone,
+        zip: userData.zip,
+      });
 
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('user', JSON.stringify(userData));
@@ -130,6 +154,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setToken(null);
     setUser(null);
+    gtmClearUser();
     setSubscription(null);
     setSubscriptionLoading(false);
     localStorage.removeItem('accessToken');

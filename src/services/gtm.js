@@ -86,11 +86,16 @@ function baseContext() {
   return ctx;
 }
 
+// Delegating push: routes through gtmContext so every event automatically
+// carries the 27 canonical fields alongside the legacy referral/user_status
+// context.
 function push(data) {
-  if (typeof window !== 'undefined') {
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ ...baseContext(), ...data });
-  }
+  if (typeof window === 'undefined') return;
+  const { event: eventName, ...rest } = data || {};
+  // Lazy import to keep this module side-effect-light if gtmContext fails to load.
+  // eslint-disable-next-line global-require
+  const { push: ctxPush } = require('./gtmContext');
+  ctxPush(eventName, { ...baseContext(), ...rest });
 }
 
 /** Virtual page view — call on every SPA route change */

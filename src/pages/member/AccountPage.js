@@ -4,6 +4,7 @@ import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
+import { setUser as gtmSetUser } from '../../services/gtmContext';
 import styles from './AccountPage.module.css';
 
 /**
@@ -438,6 +439,11 @@ const AccountPage = () => {
         setUser(nextUser);
         try { localStorage.setItem('user', JSON.stringify(nextUser)); } catch { /* non-fatal */ }
       }
+      gtmSetUser({
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+        phone: profileForm.phone,
+      });
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 4000);
     } catch (err) {

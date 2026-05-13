@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createReportForPhone } from '../../services/reportService';
 import DevBCSession from '../../components/DevBCSession';
+import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './MemberGeneralSearchPage.module.css';
 
 // Top US cities by population — used for City field typeahead (partner bug 23c).
@@ -161,6 +162,12 @@ const MemberGeneralSearchPage = () => {
       setError('Please select a state.');
       return;
     }
+    gtmSetSearchInput({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      state: state.trim().toUpperCase(),
+      city: nameCity.trim() || undefined,
+    });
     const params = new URLSearchParams({ firstName: firstName.trim(), lastName: lastName.trim() });
     params.set('state', state.trim().toUpperCase());
     if (nameCity.trim()) params.set('city', nameCity.trim());
