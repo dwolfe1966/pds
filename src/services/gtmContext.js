@@ -110,7 +110,9 @@ export function clearSearchTarget() {
 
 /**
  * Populated from a BC identity row (search result) when the user clicks it.
- * Identity shape varies; we accept any of the common field names.
+ * Identity shape varies; we accept any of the common field names. When the
+ * row only carries `fullName` (BC teaser results commonly do — split fields
+ * aren't always present), we whitespace-split it as a fallback.
  */
 export function setSearchTarget(identity = {}) {
   if (!identity) return;
@@ -121,14 +123,47 @@ export function setSearchTarget(identity = {}) {
     }
     return undefined;
   };
+  let firstName = get('firstName', 'fName', 'first_name');
+  let lastName = get('lastName', 'lName', 'last_name');
+  let middleName = get('middleName', 'mName', 'middle_name');
+  // Fallback: split fullName when split fields aren't present.
+  if (!firstName && !lastName) {
+    const full = get('fullName', 'full_name', 'name');
+    if (full) {
+      const parts = String(full).trim().split(/\s+/).filter(Boolean);
+      if (parts.length === 1) {
+        firstName = parts[0];
+      } else if (parts.length === 2) {
+        firstName = parts[0];
+        lastName = parts[1];
+      } else if (parts.length >= 3) {
+        firstName = parts[0];
+        middleName = middleName || parts.slice(1, -1).join(' ');
+        lastName = parts[parts.length - 1];
+      }
+    }
+  }
+  // Location often comes as "City, ST" in `location`/`address` — split if needed.
+  let city = get('city');
+  let stateField = get('state');
+  if (!city || !stateField) {
+    const loc = get('location', 'address');
+    if (typeof loc === 'string' && loc.includes(',')) {
+      const [c, s] = loc.split(',').map((x) => x.trim());
+      if (!city) city = c;
+      if (!stateField) stateField = s;
+    }
+  }
+  // Age sometimes comes as "35-40" — keep as-is; downstream tagging can parse.
+  const age = get('age', 'ageRange', 'age_range');
   merge({
-    targetFirstName: get('firstName', 'fName', 'first_name'),
-    targetLastName: get('lastName', 'lName', 'last_name'),
-    targetMiddleName: get('middleName', 'mName', 'middle_name'),
-    targetCity: get('city'),
-    targetState: get('state'),
-    targetAge: get('age'),
-    targetPhone: get('phone'),
+    targetFirstName: firstName,
+    targetLastName: lastName,
+    targetMiddleName: middleName,
+    targetCity: city,
+    targetState: stateField,
+    targetAge: age,
+    targetPhone: get('phone', 'phones'),
     targetExtId: get('extId', 'ext_id', 'externalId'),
   });
 }
@@ -146,6 +181,41 @@ export function setCampaign({ channel, name } = {}) {
     partnerChannel: channel || undefined,
     partnerName: name || undefined,
   });
+}
+
+/**
+ * Read BC attribution from the IIFE's ShapeCompiled object (the visitor-level
+ * shape returned by apiWrapper.api.shape.getShapeCompiled()).
+ *
+ * Confirmed key: `comp.brand.name` → shnName.
+ * shConId / shColId: BC hasn't documented the literal comp names yet, so we
+ * try a small set of likely keys. If none hit, the response-body walker
+ * (below) backfills them on the first BC response.
+ */
+export function setBcAttributionFromShape(shape) {
+  if (!shape || typeof shape.getShComp !== 'function') return;
+  const tryKey = (key) => {
+    try { return shape.getShComp(key); } catch { return undefined; }
+  };
+  const brandName = tryKey('comp.brand.name');
+  const shConId =
+    tryKey('comp.shConId') ||
+    tryKey('comp.partner.id') ||
+    tryKey('comp.connection.id') ||
+    tryKey('comp.adUnit.id');
+  const shColId =
+    tryKey('comp.shColId') ||
+    tryKey('comp.page.id') ||
+    tryKey('comp.collection.id');
+  const patch = {};
+  if (shConId !== undefined && shConId !== '' && shConId !== null) patch.shn = shConId;
+  if (shColId !== undefined && shColId !== '' && shColId !== null) patch.shl = shColId;
+  if (brandName !== undefined && brandName !== '' && brandName !== null) patch.shnName = brandName;
+  if (Object.keys(patch).length > 0) merge(patch);
+  if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
+    console.log('[gtmContext] shape attribution → ', patch, '(raw shape:', shape, ')');
+  }
 }
 
 /**

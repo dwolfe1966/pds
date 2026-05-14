@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useCampaign } from './context/CampaignContext';
 import { useBrand } from './services/brand';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -66,25 +67,10 @@ import AlertsPage from './pages/member/AlertsPage';
 import AccountPage from './pages/member/AccountPage';
 import LogoutPage from './pages/member/LogoutPage';
 import SearchHistoryPage from './pages/member/SearchHistoryPage';
-// Admin pages
-import MyDashboardPage from './pages/admin/MyDashboardPage';
-import UsersPage from './pages/admin/UsersPage';
-import UserDetailPage from './pages/admin/UserDetailPage';
-import SessionsPage from './pages/admin/SessionsPage';
-import PurchasesPage from './pages/admin/PurchasesPage';
-import PurchaseDetailPage from './pages/admin/PurchaseDetailPage';
-import DataRemovalPage from './pages/admin/DataRemovalPage';
-import AnalyticsPage from './pages/admin/AnalyticsPage';
-import CsRepManagementPage from './pages/admin/CsRepManagementPage';
 
-import UnsubscribePage from './pages/admin/UnsubscribePage';
-import NotesPage from './pages/admin/NotesPage';
-import EmailTicketsPage from './pages/admin/EmailTicketsPage';
-import MailActivityPage from './pages/admin/MailActivityPage';
-import OrdersPage from './pages/admin/OrdersPage';
-import PermissionsPage from './pages/admin/PermissionsPage';
-import ContentPage from './pages/admin/ContentPage';
-import OffersProductsPage from './pages/admin/OffersProductsPage';
+// Admin / CSR pages live in the separate admin bundle (src/AdminApp.js).
+// Consumer never mounts /admin/* routes — admins use the dedicated CSR app
+// build at dev.admin.www.bytecrtrs.com.
 
 // Protected route
 import ProtectedRoute from './pages/ProtectedRoute';
@@ -95,11 +81,20 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ApiTestPage from './pages/ApiTestPage';
 import SearchTestPage from './pages/SearchTestPage';
 
-// Component to redirect logged-in users from home to dashboard
+// Component to redirect logged-in users from home to dashboard, OR redirect
+// visitors with an active campaign config to the campaign-specific landing.
 const HomePageRedirect = () => {
   const { token } = useAuth();
+  const campaign = useCampaign();
   if (token) {
     return <Navigate to="/dashboard" replace />;
+  }
+  // Campaign-driven landing redirect: only fires when registry has a non-null
+  // landing route configured for the current shn/shl tuple. `default` keeps
+  // route: null → no redirect → HomePage stays.
+  const campaignRoute = campaign?.landing?.route;
+  if (campaignRoute && campaignRoute !== '/') {
+    return <Navigate to={campaignRoute} replace />;
   }
   return <HomePage />;
 };
@@ -284,162 +279,10 @@ const App = () => {
             }
           />
 
-          {/* Admin routes (authenticated & role=admin) */}
-          <Route
-            path="/admin/my-dashboard"
-            element={
-              <ProtectedRoute role="admin">
-                <MyDashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute role="admin">
-                <UsersPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/users/:id"
-            element={
-              <ProtectedRoute role="admin">
-                <UserDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/sessions"
-            element={
-              <ProtectedRoute role="admin">
-                <SessionsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/purchases"
-            element={
-              <ProtectedRoute role="admin">
-                <PurchasesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/purchases/:id"
-            element={
-              <ProtectedRoute role="admin">
-                <PurchaseDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/data-removal"
-            element={
-              <ProtectedRoute role="admin">
-                <DataRemovalPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/unsubscribe"
-            element={
-              <ProtectedRoute role="admin">
-                <UnsubscribePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/analytics"
-            element={
-              <ProtectedRoute role="admin">
-                <AnalyticsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/cs-reps"
-            element={
-              <ProtectedRoute role="admin">
-                <CsRepManagementPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/email-search"
-            element={<Navigate to="/admin/users" replace />}
-          />
-          <Route
-            path="/admin/phone-optout"
-            element={<Navigate to="/admin/data-removal" replace />}
-          />
-          <Route
-            path="/admin/orders"
-            element={
-              <ProtectedRoute role="admin">
-                <OrdersPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/payments"
-            element={<Navigate to="/admin/orders" replace />}
-          />
-          <Route
-            path="/admin/notes"
-            element={
-              <ProtectedRoute role="admin">
-                <NotesPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/tickets"
-            element={
-              <ProtectedRoute role="admin">
-                <EmailTicketsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/mail-log"
-            element={
-              <ProtectedRoute role="admin">
-                <MailActivityPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/timesheets"
-            element={<Navigate to="/admin/analytics" replace />}
-          />
-          <Route
-            path="/admin/permissions"
-            element={
-              <ProtectedRoute role="admin">
-                <PermissionsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/content"
-            element={
-              <ProtectedRoute role="admin">
-                <ContentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/offers"
-            element={
-              <ProtectedRoute role="admin">
-                <OffersProductsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/admin/logs" element={<Navigate to="/admin/sessions" replace />} />
-          <Route path="/admin/ux" element={<Navigate to="/admin/content" replace />} />
-          <Route path="/admin/uxc-history" element={<Navigate to="/admin/content" replace />} />
+          {/* Admin / CSR routes are NOT mounted in the consumer bundle.
+              Admins reach the CSR app via its own deploy (build-admin /
+              dev.admin.www.bytecrtrs.com). Any `/admin/*` URL on the
+              consumer domain falls through to the 404 catch-all below. */}
 
           {/* 404 catch-all */}
           <Route path="*" element={<NotFoundPage />} />

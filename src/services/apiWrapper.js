@@ -137,7 +137,14 @@ class ApiWrapperService {
       // In dev proxy mode: point to the local Express proxy.
       // In production: point directly to the BC API.
       const endpointUrl = this.useProxy ? this.proxyUrl : this.endpointUrl;
-      this.wrapper = window.ApiWrapper.getInstance({ endpointUrl });
+      // Pass attribution context (shn/shl) at IIFE init so BC resolves the
+      // ShapeCompiled cascade for the right partner/page combo. Values
+      // captured at app boot by CampaignContext and persisted to
+      // sessionStorage; first-touch wins.
+      const initialShParams = this._readShParamsFromSession();
+      const getInstanceConfig = { endpointUrl };
+      if (initialShParams) getInstanceConfig.initialShParams = initialShParams;
+      this.wrapper = window.ApiWrapper.getInstance(getInstanceConfig);
       this._installCaptchaAutofill();
       this.initialized = true;
       return this.wrapper;
@@ -145,6 +152,22 @@ class ApiWrapperService {
       dbgError('Failed to initialize ApiWrapper:', error);
       throw error;
     }
+  }
+
+  /** Read shn/shl from sessionStorage (first-touch attribution) and shape
+   *  into the `initialShParams` form BC expects. Returns null when neither
+   *  value is set so we don't pass an empty `initialShParams` to BC. */
+  _readShParamsFromSession() {
+    if (typeof sessionStorage === 'undefined') return null;
+    try {
+      const shn = sessionStorage.getItem('attribution.shn');
+      const shl = sessionStorage.getItem('attribution.shl');
+      if (!shn && !shl) return null;
+      const params = { cascade: true };
+      if (shn) params.shn = shn;
+      if (shl) params.shl = shl;
+      return params;
+    } catch { return null; }
   }
 
   /**

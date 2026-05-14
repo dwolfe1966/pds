@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { track } from '../services/trackingService';
 import { gtmEvent, gtmSignUp } from '../services/gtm';
+import { setUser as gtmSetUser } from '../services/gtmContext';
 import { recordLogin } from '../services/loginHistory';
 import { readLog as readVisitorSearchLog, clearLog as clearVisitorSearchLog } from '../services/visitorSearchLog';
 
@@ -109,6 +110,15 @@ export function useSignup() {
         localStorage.setItem('accessToken', response.accessToken);
         localStorage.setItem('user', JSON.stringify(userData));
         if (response.refreshToken) localStorage.setItem('refreshToken', response.refreshToken);
+        // Push user identity into the GTM dataLayer context so every
+        // subsequent event (including the gtmSignUp below) carries it.
+        gtmSetUser({
+          email: userData.email || email,
+          firstName: userData.firstName || extraPayload?.firstName,
+          lastName: userData.lastName || extraPayload?.lastName,
+          phone: userData.phone || extraPayload?.phone,
+          zip: userData.zip || extraPayload?.zip,
+        });
       }
 
       // Store password (encoded) so PaymentPage can call changePassword after billing.sale.

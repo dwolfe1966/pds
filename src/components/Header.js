@@ -2,20 +2,12 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import SalesNav from './SalesNav';
 import MemberNav from './MemberNav';
-import AdminNav from './AdminNav';
 import styles from './Header.module.css';
 
 const Header = () => {
-  const { token, user } = useAuth();
-  // Decide which navigation bar to render
-  let navComponent;
-  if (!token) {
-    navComponent = <SalesNav />;
-  } else if (user && user.role === 'admin') {
-    navComponent = <AdminNav />;
-  } else {
-    navComponent = <MemberNav />;
-  }
+  const { token } = useAuth();
+  // Consumer app never renders AdminNav — admins use the separate CSR app build.
+  const navComponent = token ? <MemberNav /> : <SalesNav />;
   return (
     <header className={styles.header}>
       {navComponent}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './NameSearchLandingPage.module.css';
 
 /**
@@ -110,6 +111,12 @@ const GeneralSearchPage = () => {
       setNameError('Please select a state.');
       return;
     }
+
+    gtmSetSearchInput({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      state: state.trim(),
+    });
 
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());

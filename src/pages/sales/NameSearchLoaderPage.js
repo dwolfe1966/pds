@@ -6,6 +6,7 @@ import { track } from '../../services/trackingService';
 import { gtmSearchSubmit } from '../../services/gtm';
 import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import { appendSearch } from '../../services/visitorSearchLog';
+import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './LoaderPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -47,6 +48,17 @@ const NameSearchLoaderPage = () => {
         navigate('/name/landing');
         return;
       }
+
+      // Defensive: populate the GTM search* fields from URL params in case
+      // the user landed on /name/loader directly (e.g. partner deep-link)
+      // without going through a wired search-submit handler.
+      gtmSetSearchInput({
+        firstName,
+        lastName,
+        middleName: middleName || undefined,
+        city: city || undefined,
+        state: state || undefined,
+      });
 
       try {
         // Simulate search progress

@@ -17,12 +17,13 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Redirect already-authenticated users away from the login page
+  // Redirect already-authenticated users away from the login page.
+  // Consumer app does not route by role — admins access the CSR app directly.
   useEffect(() => {
     if (!authLoading && token) {
-      navigate(user?.role === 'admin' ? '/admin/users' : '/dashboard', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
-  }, [token, user, authLoading, navigate]);
+  }, [token, authLoading, navigate]);
 
   if (authLoading) return null;
 
@@ -40,8 +41,9 @@ const LoginPage = () => {
       gtmLogin({ method: 'email' });
       recordLogin({ method: 'password', source: 'login_page', email: form.email });
       const redirectTo = searchParams.get('redirect');
-      const defaultDest = loggedInUser?.role === 'admin' ? '/admin/users' : '/dashboard';
-      navigate(redirectTo ? decodeURIComponent(redirectTo) : defaultDest);
+      // Consumer app always lands at /dashboard after login regardless of role.
+      // Admins use the separate CSR app build for admin access.
+      navigate(redirectTo ? decodeURIComponent(redirectTo) : '/dashboard');
     } catch (err) {
       track('login_error', { errorMessage: err.message });
       setError(err.message);

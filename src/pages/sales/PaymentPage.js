@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useCampaign } from '../../context/CampaignContext';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
@@ -83,6 +84,7 @@ const PLAN_FEATURES = [
 
 const PaymentPage = () => {
   const brand = useBrand();
+  const campaign = useCampaign();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription } = useAuth();
@@ -275,7 +277,9 @@ const PaymentPage = () => {
           },
         ],
         commerceOfferKeys: [
-          { key: 'comp.offer.signup.main', target: 'main', options: {} },
+          // Campaign-driven offer shmName when configured; otherwise BC's
+          // default signup offer. Set per partner+page via campaignRegistry.
+          { key: campaign?.offer?.shmName || 'comp.offer.signup.main', target: 'main', options: {} },
         ],
         // Reflect BC's teaser-time thin-match signal on the billing order so
         // the order history records the true match state. Flags default to

@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useCampaign } from '../../context/CampaignContext';
 import { createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext } from '../../services/searchContext';
 import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
 import { gtmTeaserView } from '../../services/gtm';
+import { setSearchTarget as gtmSetSearchTarget } from '../../services/gtmContext';
 import SearchDetailPreviewVariantA from './SearchDetailPreviewVariantA';
 import SearchDetailPreviewVariantB from './SearchDetailPreviewVariantB';
 import SearchDetailPreviewVariantC from './SearchDetailPreviewVariantC';
@@ -55,10 +57,14 @@ const SearchDetailPreviewPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryV = searchParams.get('v');
-  // Default is the new simple v1 layout. Marketing-test variants A–E still
-  // reachable via explicit ?v=a|b|c|d|e URL — kept for ongoing split tests.
+  const campaign = useCampaign();
+  // Default is the v1 layout, with the campaign config able to override per
+  // partner. Explicit `?v=a|b|c|d|e` URL wins over both.
   const MARKETING_VARIANTS = ['a', 'b', 'c', 'd', 'e'];
-  const variant = MARKETING_VARIANTS.includes(queryV) ? queryV : '1';
+  const campaignVariant = (campaign?.detail?.variant || '').toLowerCase();
+  const variant = MARKETING_VARIANTS.includes(queryV)
+    ? queryV
+    : (MARKETING_VARIANTS.includes(campaignVariant) ? campaignVariant : '1');
   const { token, isPaid } = useAuth();
 
   const [person, setPerson] = useState(null);
@@ -80,6 +86,10 @@ const SearchDetailPreviewPage = () => {
         try {
           const personData = JSON.parse(storedPerson);
           setPerson(personData);
+          // Refresh the GTM target* fields from the loaded person — covers the
+          // case where the user reached the teaser via a direct URL (back/share
+          // link) and didn't go through a ResultCard click.
+          gtmSetSearchTarget({ ...personData, extId: personData.extId || id });
           track('teaser_view', { personId: id });
           gtmTeaserView({ identity_id: id, search_type: personData?.searchType || undefined });
 
