@@ -112,12 +112,12 @@ const HomePage = () => {
             Ready to Get Started?
           </h2>
           <p className={styles.ctaSubtitle}>
-            Create a free account to unlock full access to detailed reports, search monitoring, 
-            and advanced features. No credit card required.
+            Create an account to unlock full access to detailed reports, search monitoring,
+            and advanced features.
           </p>
           <div className={styles.ctaButtons}>
             <Link to="/signup" className={styles.buttonPrimary}>
-              Sign Up Free
+              Sign Up
             </Link>
             <Link to="/name/landing" className={styles.buttonSecondary}>
               Start Searching

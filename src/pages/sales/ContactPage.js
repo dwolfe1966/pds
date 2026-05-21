@@ -646,7 +646,7 @@ const buildFaqItems = (brand) => [
     q: 'What will show up on my bank or credit card statement?',
     // Merchant descriptors are set by the payment processor and don't vary
     // by brand surface — leave as IDLOOKUP*… until billing reconfigures.
-    a: 'Charges may appear on your credit card statement as: IDLOOKUP*AI, IDL*SEARCH, or IDLOOKUP.AI followed by a phone number (e.g., 800-555-0100).',
+    a: `Charges may appear on your credit card statement as: IDLOOKUP*AI, IDL*SEARCH, or IDLOOKUP.AI followed by a phone number (e.g., ${brand.supportPhone}).`,
   },
 ];
 
@@ -731,26 +731,25 @@ const ContactPage = () => {
               </div>
             </section>
 
-            {/* Speak With Us — phone support card hidden until a real
-                support number is provisioned. Restore by uncommenting and
-                replacing the tel: target + display number. */}
-            {/*
+            {/* Speak With Us — driven by brand.supportPhone */}
             <section className={`${styles.card} ${styles.channelCard}`}>
               <div className={styles.channelIcon}>
                 <PhoneIcon />
               </div>
               <div className={styles.channelBody}>
-                <span className={styles.channelHours}>7AM - 5PM PT  MON - SUN</span>
+                <span className={styles.channelHours}>9AM - 5PM ET  MON - FRI</span>
                 <h2 className={styles.channelTitle}>Speak With Us</h2>
                 <p className={styles.channelDescription}>
                   Get assistance by phone from our team of experts.
                 </p>
-                <a href="tel:+1XXXXXXXXXX" className={styles.channelButton}>
-                  Call 1 (XXX) XXX-XXXX
+                <a
+                  href={`tel:+1${(brand.supportPhone || '').replace(/\D/g, '')}`}
+                  className={styles.channelButton}
+                >
+                  Call {brand.supportPhone}
                 </a>
               </div>
             </section>
-            */}
 
             {/* Email Us */}
             <section className={`${styles.card} ${styles.channelCard}`}>

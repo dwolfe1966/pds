@@ -38,17 +38,10 @@ if (fs.existsSync(htmlPath)) {
   );
   console.log('postbuild: updated index.html IIFE src → /libs/api-wrapper/index.iife.js');
 
-  // Inject GTM container ID from env var (or remove GTM snippet if not set)
-  const gtmId = process.env.REACT_APP_GTM_ID || '';
-  if (gtmId) {
-    html = html.replace(/%%GTM_ID%%/g, gtmId);
-    console.log(`postbuild: injected GTM container ID → ${gtmId}`);
-  } else {
-    // Remove the GTM script and noscript blocks entirely if no ID configured
-    html = html.replace(/<!-- Google Tag Manager -->[\s\S]*?<!-- End Google Tag Manager -->/g, '');
-    html = html.replace(/<!-- Google Tag Manager \(noscript\) -->[\s\S]*?<!-- End Google Tag Manager \(noscript\) -->/g, '');
-    console.log('postbuild: no REACT_APP_GTM_ID set — removed GTM snippets');
-  }
+  // GTM is now wired in public/index.html as an inline per-host loader
+  // (one bundle serves 4 brands → must pick the container at page load,
+  // not at build time). No env-var injection or comment-block stripping
+  // needed here.
 
   fs.writeFileSync(htmlPath, html);
 }

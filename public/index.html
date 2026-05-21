@@ -5,6 +5,34 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IDLookup.AI</title>
+  <!-- Google Tag Manager (per-host loader) -->
+  <!--
+       Same SPA bundle ships to idlookup.ai, peoplesearcher.ai,
+       inmatefinderhub.com, and dev.www.idlookup.ai. Each domain has its own
+       GTM container; this snippet picks the right one by hostname at page
+       load. Localhost / *.vercel.app / unknown hosts intentionally skip
+       GTM so dev sessions don't pollute analytics.
+       Keep this in sync with brand.js BRANDS keys. -->
+  <script>
+    (function () {
+      var host = (window.location.hostname || '').toLowerCase().replace(/^www\./, '');
+      var GTM_IDS = {
+        'idlookup.ai':         'GTM-THCSBJWN',
+        'dev.www.idlookup.ai': 'GTM-WV7N6WWP',
+        'peoplesearcher.ai':   'GTM-PBFRPKNX',
+        'inmatefinderhub.com': 'GTM-TF6NWS79'
+      };
+      var gtmId = GTM_IDS[host];
+      if (!gtmId) return;
+      window.dataLayer = window.dataLayer || [];
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer',gtmId);
+    })();
+  </script>
+  <!-- End Google Tag Manager -->
   <script src="https://cdn.jsdelivr.net/npm/axios@1.13.2/dist/axios.min.js"></script>
   <script src="https://dev.www.idlookup.ai/libs/api-wrapper/index.iife.js"></script>
 </head>

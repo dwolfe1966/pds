@@ -101,96 +101,79 @@ const NameSearchLandingV2Page = () => {
     };
   }, [step]);
 
-  useEffect(() => {
-    if (step !== 'final-search') {
-      return;
-    }
-
+  // Search invoked directly from handleConfirm — NOT a useEffect. See
+  // NameSearchLandingV5Page.js for explanation of why effect-based dispatch
+  // silently drops the search.
+  const runSearch = async () => {
     let progressTimer;
-    let isCancelled = false;
+    try {
+      setFinalStatus('Searching our database...');
+      setFinalProgress(10);
 
-    const runSearch = async () => {
-      try {
-        setFinalStatus('Searching our database...');
-        setFinalProgress(10);
+      progressTimer = setInterval(() => {
+        setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
+      }, 200);
 
-        progressTimer = setInterval(() => {
-          setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
-        }, 200);
+      const searchParams = {
+        type: 'name',
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        middleName: middleName.trim(),
+        age: age.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        source: 'name-landing-v2'
+      };
 
-        const searchParams = {
-          type: 'name',
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          middleName: middleName.trim(),
-          age: age.trim(),
-          city: city.trim(),
-          state: state.trim(),
-          source: 'name-landing-v2'
-        };
+      gtmSetSearchInput({
+        firstName: searchParams.firstName,
+        lastName: searchParams.lastName,
+        middleName: searchParams.middleName,
+        city: searchParams.city,
+        state: searchParams.state,
+      });
+      // Clear any prior search's results so the downstream results page
+      // can't render stale data if this search fails.
+      try { sessionStorage.removeItem('nameSearchResults'); } catch {}
 
-        gtmSetSearchInput({
-          firstName: searchParams.firstName,
-          lastName: searchParams.lastName,
-          middleName: searchParams.middleName,
-          city: searchParams.city,
-          state: searchParams.state,
-        });
-        const response = await api.searchPeople(searchParams);
+      const response = await api.searchPeople(searchParams);
+      if (progressTimer) clearInterval(progressTimer);
+      setFinalProgress(100);
+      setFinalStatus('Search complete!');
 
-        if (isCancelled) {
-          return;
-        }
+      const mappedResults = (response.data || []).map(result => ({
+        ...result,
+        id: result.id || result.extId,
+        extId: result.extId,
+        fullName: result.fullName || 'Unknown',
+        location: result.location || '',
+        ageRange: result.ageRange || '',
+        provider: result.provider
+      }));
 
-        clearInterval(progressTimer);
-        setFinalProgress(100);
-        setFinalStatus('Search complete!');
+      sessionStorage.setItem('nameSearchResults', JSON.stringify({
+        results: mappedResults,
+        query: { firstName, lastName, middleName, age, city, state },
+        searchContext: response.searchContext || {},
+        pagination: response.pagination || {}
+      }));
 
-        const mappedResults = (response.data || []).map(result => ({
-          ...result,
-          id: result.id || result.extId,
-          extId: result.extId,
-          fullName: result.fullName || 'Unknown',
-          location: result.location || '',
-          ageRange: result.ageRange || '',
-          provider: result.provider
-        }));
-
-        sessionStorage.setItem('nameSearchResults', JSON.stringify({
-          results: mappedResults,
-          query: { firstName, lastName, middleName, age, city, state },
-          searchContext: response.searchContext || {},
-          pagination: response.pagination || {}
-        }));
-
-        if (response.searchContext) {
-          setSearchContext(response.searchContext);
-        }
-
-        setTimeout(() => {
-          navigate('/name/search-result');
-        }, 400);
-      } catch (error) {
-        console.error('Search error:', error);
-        if (isCancelled) {
-          return;
-        }
-        setFinalStatus('Error occurred. Redirecting...');
-        setTimeout(() => {
-          navigate('/name/search-result?error=true');
-        }, 1500);
+      if (response.searchContext) {
+        setSearchContext(response.searchContext);
       }
-    };
 
-    runSearch();
-
-    return () => {
-      isCancelled = true;
-      if (progressTimer) {
-        clearInterval(progressTimer);
-      }
-    };
-  }, [step, firstName, lastName, middleName, age, city, state, navigate]);
+      setTimeout(() => {
+        navigate('/name/search-result');
+      }, 400);
+    } catch (error) {
+      if (progressTimer) clearInterval(progressTimer);
+      console.error('[V2 runSearch] error:', error);
+      setFinalStatus('Error occurred. Redirecting...');
+      setTimeout(() => {
+        navigate('/name/search-result?error=true');
+      }, 1500);
+    }
+  };
 
   const startSearch = (event) => {
     event.preventDefault();
@@ -224,6 +207,7 @@ const NameSearchLandingV2Page = () => {
       return;
     }
     setStep('final-search');
+    runSearch();
   };
 
   const stepLabel = (() => {

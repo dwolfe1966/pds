@@ -60,6 +60,11 @@ const NameSearchLoaderPage = () => {
         state: state || undefined,
       });
 
+      // Clear any previous search's results so the downstream results page
+      // can't render stale data if this search fails or is cancelled before
+      // the new payload is written below.
+      try { sessionStorage.removeItem('nameSearchResults'); } catch {}
+
       try {
         // Simulate search progress
         const progressInterval = setInterval(() => {

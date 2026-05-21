@@ -89,11 +89,21 @@ const HomePageRedirect = () => {
   if (token) {
     return <Navigate to="/dashboard" replace />;
   }
-  // Campaign-driven landing redirect: only fires when registry has a non-null
-  // landing route configured for the current shn/shl tuple. `default` keeps
-  // route: null → no redirect → HomePage stays.
+  // Campaign landing redirect is one-shot per landing — only fires when the
+  // URL had shn/shl params on the most recent boot. Without this gate, any
+  // future `/` visit in the same session would redirect again because shn/shl
+  // are persisted to sessionStorage for attribution. Read + clear the flag
+  // atomically so subsequent `/` visits stay on the homepage.
+  let shouldApply = false;
+  try {
+    if (sessionStorage.getItem('attribution.landingPending') === '1') {
+      sessionStorage.removeItem('attribution.landingPending');
+      shouldApply = true;
+    }
+  } catch {}
   const campaignRoute = campaign?.landing?.route;
-  if (campaignRoute && campaignRoute !== '/') {
+  /* APPJS_TESTMARKER_PARCEL_VERIFY_8a4f2d */
+  if (shouldApply && campaignRoute && campaignRoute !== '/') {
     return <Navigate to={campaignRoute} replace />;
   }
   return <HomePage />;

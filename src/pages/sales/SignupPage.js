@@ -89,19 +89,16 @@ const SignupPage = ({ source = 'direct' }) => {
             <div className={styles.personBanner}>
               <span className={styles.personBannerLock}>🔓</span>
               <span className={styles.personBannerText}>
-                Create a free account to unlock <strong>{selectedPerson.fullName}</strong>'s full report
+                Create an account to unlock <strong>{selectedPerson.fullName}</strong>'s full report
               </span>
             </div>
           )}
 
-          <h1 className={styles.title}>Create Your Free Account</h1>
+          <h1 className={styles.title}>Create Your Account</h1>
 
           {!selectedPerson && !success && (
             <p className={styles.subtitle}>
               Unlock full access to detailed reports.
-              <span style={{ display: 'block', marginTop: '0.25rem', fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
-                No credit card required.
-              </span>
             </p>
           )}
 
@@ -186,7 +183,7 @@ const SignupPage = ({ source = 'direct' }) => {
                 </div>
               )}
               <button type="submit" disabled={loading} className={styles.submitBtn}>
-                {loading ? 'Creating account…' : 'Create My Free Account'}
+                {loading ? 'Creating account…' : 'Create My Account'}
               </button>
               <p className={styles.loginLink}>
                 Already have an account? <Link to="/login">Log in</Link>

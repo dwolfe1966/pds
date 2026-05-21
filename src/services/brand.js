@@ -23,9 +23,20 @@ export const BRANDS = {
     id: 'idlookup',
     name: 'IDLookup.AI',
     domain: 'idlookup.ai',
-    supportEmail: 'support@idlookup.ai',
-    legalEmail: 'legal@idlookup.ai',
-    privacyEmail: 'privacy@idlookup.ai',
+    // Inbound support is routed through /contact — no public inbound email surfaces.
+    supportPhone: '833-861-9230',
+    // Pricing surfaced in checkout copy. BC's offer (findByShmName) is the
+    // server-side source of truth for what actually gets charged; these
+    // values are the marketing display + GTM transactionAmount. Keep in
+    // sync with BC's offer.commercePrice when BC ships price updates.
+    // TEMPORARY OVERRIDE (TRX approval): display $1.00 / $49.98 even though
+    // BC's commercePriceRules currently say $0.98 trial / $39.01 monthly.
+    // When BC updates its offer to match these values, this comment can be
+    // removed. The actual charge is BC's price, not these — keep this gap
+    // tight; current marketing display is 2¢ / $10.97 higher than BC charge.
+    trialPrice: 1.00,
+    trialDays: 7,
+    recurringPrice: 49.98,
     logoAsset: idlookupLogo,
     primaryColor: '#0d5d2f',
     accentColor: '#0d5d2f',
@@ -49,9 +60,16 @@ export const BRANDS = {
     id: 'peoplesearcher',
     name: 'PeopleSearcher.AI',
     domain: 'peoplesearcher.ai',
-    supportEmail: 'support@peoplesearcher.ai',
-    legalEmail: 'legal@peoplesearcher.ai',
-    privacyEmail: 'privacy@peoplesearcher.ai',
+    // Inbound support is routed through /contact — no public inbound email surfaces.
+    supportPhone: '833-958-3677',
+    // TEMPORARY OVERRIDE (TRX approval): display $1.00 / $49.98 even though
+    // BC's commercePriceRules currently say $0.98 trial / $39.01 monthly.
+    // When BC updates its offer to match these values, this comment can be
+    // removed. The actual charge is BC's price, not these — keep this gap
+    // tight; current marketing display is 2¢ / $10.97 higher than BC charge.
+    trialPrice: 1.00,
+    trialDays: 7,
+    recurringPrice: 49.98,
     logoAsset: null,
     primaryColor: '#1e3a8a',
     accentColor: '#f97316',
@@ -69,9 +87,16 @@ export const BRANDS = {
     id: 'inmatefinder',
     name: 'InmateFinderHub',
     domain: 'inmatefinderhub.com',
-    supportEmail: 'support@inmatefinderhub.com',
-    legalEmail: 'legal@inmatefinderhub.com',
-    privacyEmail: 'privacy@inmatefinderhub.com',
+    // Inbound support is routed through /contact — no public inbound email surfaces.
+    supportPhone: '833-632-7173',
+    // TEMPORARY OVERRIDE (TRX approval): display $1.00 / $49.98 even though
+    // BC's commercePriceRules currently say $0.98 trial / $39.01 monthly.
+    // When BC updates its offer to match these values, this comment can be
+    // removed. The actual charge is BC's price, not these — keep this gap
+    // tight; current marketing display is 2¢ / $10.97 higher than BC charge.
+    trialPrice: 1.00,
+    trialDays: 7,
+    recurringPrice: 49.98,
     logoAsset: null,
     primaryColor: '#334155',
     accentColor: '#d97706',

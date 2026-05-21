@@ -113,11 +113,10 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
       <div className={styles.signupFormCard} id="signup-form">
         <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
         <h2 className={styles.signupFormTitle}>
-          Create Your Free Account to Unlock
+          Create Your Account to Unlock
         </h2>
         <p className={styles.signupFormSubtitle}>
           Get instant access to the full report for <strong>{person.fullName}</strong>.
-          No credit card required.
         </p>
 
         {success ? (
@@ -169,9 +168,8 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
               className={styles.signupSubmitBtn}
               disabled={loading}
             >
-              {loading ? 'Creating account…' : 'Create My Free Account →'}
+              {loading ? 'Creating account…' : 'Create My Account →'}
             </button>
-            <p className={styles.noCardNote}>No credit card required to sign up</p>
             <p className={styles.loginLinkWrap}>
               Already have an account?{' '}
               <Link to="/login" className={styles.loginLink}>Sign in</Link>
@@ -192,7 +190,7 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
           className={styles.stickyMobileCtaLink}
           onClick={e => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }}
         >
-          🔓 Unlock Full Report — Create Free Account →
+          🔓 Unlock Full Report — Create Account →
         </a>
       </div>
     </main>

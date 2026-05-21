@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useBrand } from '../../services/brand';
 
 /**
@@ -93,11 +94,8 @@ const SuppressionListPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Questions?</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
-          If you have questions about the suppression list or need assistance, please contact us:
-        </p>
-        <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: {brand.supportEmail}<br />
-          Phone: [Your Support Phone Number]
+          If you have questions about the suppression list or need assistance,
+          please <Link to="/contact" style={{ color: '#0d5d2f' }}>submit a request through our contact form</Link>.
         </p>
       </section>
     </main>

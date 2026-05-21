@@ -207,7 +207,7 @@ const SearchDetailPreviewVariantC = ({ person, id }) => {
           This report may be removed from public access.
         </p>
         <p style={{ fontSize: '0.85rem', color: '#78756e', margin: '0 0 1.25rem', lineHeight: 1.6 }}>
-          Create a free account to secure your copy of {person.fullName}&rsquo;s background report.
+          Create an account to secure your copy of {person.fullName}&rsquo;s background report.
         </p>
         <button
           type="button"
@@ -282,7 +282,7 @@ const SearchDetailPreviewVariantC = ({ person, id }) => {
           textTransform: 'uppercase', fontWeight: 600, textAlign: 'center', marginBottom: '0.75rem',
           fontFamily: '"DM Mono", "IBM Plex Mono", monospace',
         }}>
-          Free Account Required
+          Account Required
         </div>
         <h2 style={{
           fontSize: '1.5rem', fontWeight: 700, color: '#ffffff', margin: '0 0 0.4rem',
@@ -347,9 +347,8 @@ const SearchDetailPreviewVariantC = ({ person, id }) => {
               className={styles.signupSubmitBtn}
               disabled={loading}
             >
-              {loading ? 'Creating account\u2026' : 'Create Free Account'}
+              {loading ? 'Creating account\u2026' : 'Create Account'}
             </button>
-            <p className={styles.noCardNote}>No credit card required</p>
             <p className={styles.loginLinkWrap}>
               Have an account?{' '}
               <Link to="/login" className={styles.loginLink}>Sign in</Link>
@@ -370,7 +369,7 @@ const SearchDetailPreviewVariantC = ({ person, id }) => {
           className={styles.stickyMobileCtaLink}
           onClick={scrollToSignup}
         >
-          Secure This Report &mdash; Create Free Account
+          Secure This Report &mdash; Create Account
         </a>
       </div>
     </main>

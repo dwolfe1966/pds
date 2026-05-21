@@ -66,14 +66,11 @@ const Footer = () => {
                   {link.label}
                 </Link>
               ))}
-              <a href={`mailto:${brand.supportEmail}`} className={styles.sectionLink}>
-                {brand.supportEmail}
-              </a>
             </div>
             <div className={styles.csSupportNote}>
-              Our customer support team is available Monday&ndash;Friday, 9am&ndash;5pm EST.
+              Our customer support team is available Monday&ndash;Friday, 9am&ndash;5pm ET.
               For account issues, billing questions, or data removal requests,
-              please email us or visit our <Link to="/contact" className={styles.csSupportLink}>contact page</Link>.
+              please visit our <Link to="/contact" className={styles.csSupportLink}>contact page</Link>.
             </div>
           </div>
         </div>

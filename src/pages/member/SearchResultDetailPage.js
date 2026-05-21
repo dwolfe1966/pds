@@ -20,9 +20,11 @@ const SearchResultDetailPage = () => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [errorDetails, setErrorDetails] = useState(null);
   const [creatingReport, setCreatingReport] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState('');
+  const [pdfErrorDetails, setPdfErrorDetails] = useState(null);
   const lastTrackedRef = useRef(null);
 
   useEffect(() => {
@@ -89,6 +91,23 @@ const SearchResultDetailPage = () => {
       } catch (err) {
         if (process.env.NODE_ENV === 'development') console.warn('Error fetching/creating report:', err);
         const isAuthError = err?.message?.includes('403') || err?.httpStatus === 403 || err?.status === 403;
+        // Capture diagnostic info: console.* is stripped in production, so
+        // surface the upstream response on window and (collapsed) in the UI
+        // so QA/BC can see what BC actually returned without dev console access.
+        const details = {
+          when: new Date().toISOString(),
+          requestId: id,
+          message: err?.message || String(err),
+          httpStatus: err?.httpStatus ?? err?.status ?? null,
+          upstreamResponse: err?.upstreamResponse ?? null,
+          originalError: err?.originalError?.message || null,
+        };
+        try {
+          if (typeof window !== 'undefined') {
+            window._lastReportError = { ...details, errorObject: err };
+          }
+        } catch {}
+        setErrorDetails(details);
         setError(
           isAuthError
             ? 'Your session has expired or needs to be refreshed. Please log out and log back in to view reports.'
@@ -120,10 +139,29 @@ const SearchResultDetailPage = () => {
     if (!commerceContentId) return;
     setPdfLoading(true);
     setPdfError('');
+    setPdfErrorDetails(null);
     try {
       await api.downloadPdfReport(commerceContentId);
       // BC library opens a native download popup — nothing more to do on success
     } catch (err) {
+      // Same diagnostic pattern as report-detail load — console.* is stripped
+      // in prod, so surface the upstream response on window and (collapsed) in
+      // the UI so QA can see what BC returned.
+      const details = {
+        when: new Date().toISOString(),
+        commerceContentId,
+        message: err?.message || String(err),
+        httpStatus: err?.httpStatus ?? err?.status ?? null,
+        isCorsError: !!err?.isCorsError,
+        upstreamResponse: err?.upstreamResponse ?? null,
+        originalError: err?.originalError?.message || null,
+      };
+      try {
+        if (typeof window !== 'undefined') {
+          window._lastPdfError = { ...details, errorObject: err };
+        }
+      } catch {}
+      setPdfErrorDetails(details);
       setPdfError(err?.message || 'PDF download failed. Please try again.');
     } finally {
       setPdfLoading(false);
@@ -157,6 +195,45 @@ const SearchResultDetailPage = () => {
             <button onClick={() => navigate('/people-search')} style={styles.btnSecondary}>Back to Search</button>
             <button onClick={() => navigate('/dashboard')} style={styles.btnPrimary}>Go to Dashboard</button>
           </div>
+          {errorDetails && (
+            <details style={{ marginTop: '1.5rem', fontSize: '0.8125rem', color: '#475569' }}>
+              <summary style={{ cursor: 'pointer', color: '#0d5d2f' }}>Show technical details</summary>
+              <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: '#f9fafb', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                <div><strong>When:</strong> {errorDetails.when}</div>
+                <div><strong>Report ID:</strong> {errorDetails.requestId}</div>
+                <div><strong>HTTP status:</strong> {errorDetails.httpStatus ?? 'n/a'}</div>
+                <div><strong>Message:</strong> {errorDetails.message}</div>
+                {errorDetails.originalError && (
+                  <div><strong>Original error:</strong> {errorDetails.originalError}</div>
+                )}
+                <div style={{ marginTop: '0.5rem' }}><strong>Upstream response:</strong></div>
+                <pre style={{
+                  margin: '0.25rem 0 0',
+                  padding: '0.5rem',
+                  background: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 4,
+                  maxHeight: 240,
+                  overflow: 'auto',
+                  fontSize: '0.75rem',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                }}>
+                  {(() => {
+                    try {
+                      const s = JSON.stringify(errorDetails.upstreamResponse, null, 2);
+                      return s && s.length > 4000 ? s.slice(0, 4000) + '\n…(truncated)' : (s || 'No upstream payload captured.');
+                    } catch {
+                      return String(errorDetails.upstreamResponse);
+                    }
+                  })()}
+                </pre>
+                <p style={{ marginTop: '0.5rem', color: '#6b7280' }}>
+                  This panel surfaces what BC returned for this request. In DevTools console, <code>window._lastReportError</code> has the full error object.
+                </p>
+              </div>
+            </details>
+          )}
         </div>
       </main>
     );
@@ -200,7 +277,49 @@ const SearchResultDetailPage = () => {
       </div>
 
       {pdfError && (
-        <div style={styles.pdfErrorBanner}>{pdfError}</div>
+        <div style={styles.pdfErrorBanner}>
+          <div>{pdfError}</div>
+          {pdfErrorDetails && (
+            <details style={{ marginTop: '0.5rem', fontSize: '0.8125rem' }}>
+              <summary style={{ cursor: 'pointer', color: '#0d5d2f' }}>Show technical details</summary>
+              <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: '#f9fafb', borderRadius: 6, border: '1px solid #e5e7eb', color: '#111827' }}>
+                <div><strong>When:</strong> {pdfErrorDetails.when}</div>
+                <div><strong>Report ID:</strong> {pdfErrorDetails.commerceContentId}</div>
+                <div><strong>HTTP status:</strong> {pdfErrorDetails.httpStatus ?? 'n/a'}</div>
+                <div><strong>CORS error:</strong> {pdfErrorDetails.isCorsError ? 'yes' : 'no'}</div>
+                <div><strong>Message:</strong> {pdfErrorDetails.message}</div>
+                {pdfErrorDetails.originalError && (
+                  <div><strong>Original error:</strong> {pdfErrorDetails.originalError}</div>
+                )}
+                <div style={{ marginTop: '0.5rem' }}><strong>Upstream response:</strong></div>
+                <pre style={{
+                  margin: '0.25rem 0 0',
+                  padding: '0.5rem',
+                  background: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 4,
+                  maxHeight: 200,
+                  overflow: 'auto',
+                  fontSize: '0.75rem',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                }}>
+                  {(() => {
+                    try {
+                      const s = JSON.stringify(pdfErrorDetails.upstreamResponse, null, 2);
+                      return s && s.length > 4000 ? s.slice(0, 4000) + '\n…(truncated)' : (s || 'No upstream payload captured.');
+                    } catch {
+                      return String(pdfErrorDetails.upstreamResponse);
+                    }
+                  })()}
+                </pre>
+                <p style={{ marginTop: '0.5rem', color: '#6b7280' }}>
+                  <code>window._lastPdfError</code> in DevTools console has the full error object.
+                </p>
+              </div>
+            </details>
+          )}
+        </div>
       )}
 
       {/* ── Summary bar ── */}

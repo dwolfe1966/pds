@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV5Page.module.css';
 import { useBrand } from '../../services/brand';
@@ -37,7 +38,9 @@ const BENEFIT_BULLETS = [
  * Professional blue/slate palette for networking and reconnection use case.
  * Same 4-step flow: Name → Location → Details → Confirm → Results.
  */
+const SEARCH_MARKER_TEST = 'SHOULD_APPEAR_IN_BUNDLE_TEST_8a4f2d';
 const NameSearchLandingV5Page = () => {
+  console.warn('TESTMARKER_UNIQUE_1778785505 V5 component mounted', SEARCH_MARKER_TEST);
   const brand = useBrand();
   useLandingTrack('name', 'v5');
   const navigate = useNavigate();
@@ -100,79 +103,87 @@ const NameSearchLandingV5Page = () => {
     return () => { if (timer) clearTimeout(timer); };
   }, [step]);
 
-  useEffect(() => {
-    if (step !== 'final-search') return;
-
+  // Note: previous implementation ran the search inside a useEffect keyed on
+  // [step, firstName, lastName, middleName, age, city, state, navigate]. Even
+  // benign re-renders (form-state updates from the progress timer setState,
+  // navigate hook changes) triggered effect re-runs whose cleanup set
+  // isCancelled=true on the in-flight promise — search HTTP either never
+  // dispatched or its response was silently dropped, with no console.error
+  // visible. Fix: trigger the search directly from handleConfirm so its
+  // lifecycle isn't tied to React's effect dependency tracking.
+  const runSearch = async () => {
+    console.warn('[V5 runSearch] ENTER', { firstName, lastName, state, middleName, age, city });
     let progressTimer;
-    let isCancelled = false;
+    try {
+      setFinalStatus('Searching our database...');
+      setFinalProgress(10);
 
-    const runSearch = async () => {
-      try {
-        setFinalStatus('Searching our database...');
-        setFinalProgress(10);
+      progressTimer = setInterval(() => {
+        setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
+      }, 200);
 
-        progressTimer = setInterval(() => {
-          setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
-        }, 200);
+      const searchParams = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        type: 'name',
+        source: 'name-landing-v5',
+      };
+      if (middleName.trim()) searchParams.middleName = middleName.trim();
+      if (age.trim()) searchParams.age = age.trim();
+      if (city.trim()) searchParams.city = city.trim();
+      if (state.trim()) searchParams.state = state.trim();
 
-        const searchParams = {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          type: 'name',
-          source: 'name-landing-v5',
-        };
-        if (middleName.trim()) searchParams.middleName = middleName.trim();
-        if (age.trim()) searchParams.age = age.trim();
-        if (city.trim()) searchParams.city = city.trim();
-        if (state.trim()) searchParams.state = state.trim();
+      gtmSetSearchInput({
+        firstName: searchParams.firstName,
+        lastName: searchParams.lastName,
+        middleName: searchParams.middleName,
+        city: searchParams.city,
+        state: searchParams.state,
+      });
+      try { sessionStorage.removeItem('nameSearchResults'); } catch {}
 
-        gtmSetSearchInput({
-          firstName: searchParams.firstName,
-          lastName: searchParams.lastName,
-          middleName: searchParams.middleName,
-          city: searchParams.city,
-          state: searchParams.state,
-        });
-        const response = await api.searchPeople(searchParams);
-        if (isCancelled) return;
-
-        clearInterval(progressTimer);
-        setFinalProgress(100);
-        setFinalStatus('Search complete!');
-
-        const mappedResults = (response.data || []).map((result) => ({
-          ...result,
-          id: result.id || result.extId,
-          extId: result.extId || result.id,
-          fullName: result.fullName || 'Unknown',
-          location: result.location || '',
-          ageRange: result.ageRange || '',
-          provider: result.provider,
-        }));
-
-        sessionStorage.setItem('nameSearchResults', JSON.stringify({
-          results: mappedResults,
-          query: { firstName, lastName, middleName, age, city, state },
-          searchContext: response.searchContext || {},
-          pagination: response.pagination || {},
-        }));
-
-        if (response.searchContext) setSearchContext(response.searchContext);
-        setTimeout(() => navigate('/name/search-result'), 400);
-      } catch (error) {
-        console.error('Search error:', error);
-        if (isCancelled) return;
-        setFinalStatus('Error occurred. Redirecting...');
-        setTimeout(() => navigate('/name/search-result?error=true'), 1500);
-      }
-    };
-
-    runSearch();
-    return () => {
-      isCancelled = true;
+      console.warn('[V5 runSearch] calling api.searchPeople', searchParams);
+      const response = await api.searchPeople(searchParams);
+      console.warn('[V5 runSearch] response received', { hasData: !!response?.data, count: response?.data?.length });
       if (progressTimer) clearInterval(progressTimer);
-    };
-  }, [step, firstName, lastName, middleName, age, city, state, navigate]);
+      setFinalProgress(100);
+      setFinalStatus('Search complete!');
+
+      const mappedResults = (response.data || []).map((result) => ({
+        ...result,
+        id: result.id || result.extId,
+        extId: result.extId || result.id,
+        fullName: result.fullName || 'Unknown',
+        location: result.location || '',
+        ageRange: result.ageRange || '',
+        provider: result.provider,
+      }));
+
+      sessionStorage.setItem('nameSearchResults', JSON.stringify({
+        results: mappedResults,
+        query: { firstName, lastName, middleName, age, city, state },
+        searchContext: response.searchContext || {},
+        pagination: response.pagination || {},
+      }));
+
+      if (response.searchContext) setSearchContext(response.searchContext);
+      setTimeout(() => navigate('/name/search-result'), 400);
+    } catch (error) {
+      if (progressTimer) clearInterval(progressTimer);
+      // babel-plugin-transform-remove-console strips console.* in prod,
+      // so attach the error to window for post-mortem inspection. Also
+      // surface the message in the UI so the user (and anyone debugging)
+      // can see WHY the search failed instead of getting a generic page.
+      try {
+        if (typeof window !== 'undefined') {
+          window._lastSearchError = { error, when: new Date().toISOString(), variant: 'v5' };
+        }
+      } catch {}
+      const msg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
+      setFinalStatus(`Search failed: ${msg}`);
+      setTimeout(() => navigate('/name/search-result?error=true'), 1500);
+    }
+  };
 
   const startSearch = (e) => {
     e.preventDefault();
@@ -193,9 +204,16 @@ const NameSearchLandingV5Page = () => {
   const continueFromDetails = () => setStep('confirm');
 
   const handleConfirm = () => {
+    console.warn('[V5 handleConfirm] clicked', { agree, firstName, lastName, state });
     setAgreeError('');
-    if (!agree) { setAgreeError('You must agree before continuing.'); return; }
+    if (!agree) {
+      console.warn('[V5 handleConfirm] BAILED — agree checkbox not checked');
+      setAgreeError('You must agree before continuing.');
+      return;
+    }
+    console.warn('[V5 handleConfirm] proceeding to runSearch');
     setStep('final-search');
+    runSearch();
   };
 
   return (

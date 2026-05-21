@@ -95,15 +95,11 @@ const CPCCPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Contact Us</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem' }}>
-          To exercise your California privacy rights or if you have questions about this notice, please contact us:
-        </p>
-        <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: {brand.privacyEmail}<br />
-          Phone: [Your Support Phone Number]<br />
-          Address: [Your Company Address]
+          To exercise your California privacy rights or if you have questions about this notice,
+          please <Link to="/contact" style={{ color: '#0d5d2f' }}>submit a request through our contact form</Link>.
         </p>
         <p style={{ color: '#6b7280', lineHeight: '1.6', marginTop: '1rem' }}>
-          You can also submit requests through our <Link to="/opt-out" style={{ color: '#0d5d2f' }}>opt-out page</Link>.
+          You can also submit opt-out requests through our <Link to="/opt-out" style={{ color: '#0d5d2f' }}>opt-out page</Link>.
         </p>
       </section>
       </div>

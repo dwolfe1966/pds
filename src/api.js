@@ -802,14 +802,25 @@ const api = {
       // BC's general-category 'orderId' is required by the doc but empty
       // string is rejected (likely with 403 or 400). Only include when we
       // actually have one so BC's _unwrapBcResponse strips empties before
-      // sending. Same for phone/zip/last4.
+      // sending. Same for zip/last4.
+      //
+      // Phone is special: BC ALWAYS requires a non-empty valid phone on
+      // /contactMessage/create general category ("input.phone must be a
+      // valid phone number"). The public contact form doesn't require
+      // phone, so when the visitor leaves it blank we send the same
+      // sentinel AccountPage uses for member-compose: 212-555-0100
+      // (NANP 212 area + 555-01XX fictional subscriber range). Passes
+      // libphonenumber. Remove this fallback once BC drops the phone
+      // requirement on this endpoint.
+      const phoneDigits = (body.phone || '').replace(/\D/g, '');
+      const phone = phoneDigits.length >= 10 ? phoneDigits : '2125550100';
       contactBody = {
         category: 'general',
         topic: body.topic || body.reason || body.subject || 'General inquiry',
         name: body.name || '',
         email: body.email || '',
         description: body.description || body.message || '',
-        ...(body.phone ? { phone: body.phone } : {}),
+        phone,
         // BC requires orderId on general-category per their 2026-04-17 spec
         // (must match /^[a-zA-Z0-9]{8,24}$/). Members without an active
         // subscription have no real orderId, so send a recognisable sentinel.

@@ -12,6 +12,7 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
   const navigate = useNavigate();
   const { token, isPaid } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
 
   const handleViewDetails = async (e) => {
     e.stopPropagation(); // Prevent parent onClick if present
@@ -71,6 +72,7 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           if (isValidId(extId)) {
             try {
               // Create report (API will return existing report if it already exists)
+              setCreateError('');
               const createResult = await createReportForIdentity(extId, { ...result, extId });
               if (createResult.success && createResult.commerceContentId) {
                 navigate(`/people/${createResult.commerceContentId}`);
@@ -78,15 +80,22 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
                 throw new Error('Failed to create report');
               }
             } catch (err) {
-              if (process.env.NODE_ENV === 'development') {
-                console.warn('[ResultCard] Failed to create report:', err);
-              }
-              // Paid users should not see payment form; go to detail page to show graceful error
-              if (isValidId(extId)) {
-                navigate(`/people/${extId}`);
-              } else {
-                navigate('/people-search');
-              }
+              // Stash the error for post-mortem inspection without dev console.
+              try {
+                if (typeof window !== 'undefined') {
+                  window._lastCreateReportError = { error: err, when: new Date().toISOString(), extId };
+                }
+              } catch {}
+              // Surface inline error on the card. Do NOT navigate to /people/{extId}:
+              // {extId} is a teaser id, not a real commerceContentId, so
+              // SearchResultDetailPage would 404 on /report/detail/{extId} and
+              // then loop right back into create. The inline message lets the
+              // user retry without bouncing through a misleading downstream URL.
+              setCreateError(
+                err?.message?.includes('412') || err?.httpStatus === 412
+                  ? "We couldn't open this report right now. Please try again in a moment."
+                  : err?.message || "Couldn't load this report. Please try again."
+              );
             }
           } else {
             // No extId, can't create report - send to search instead of payment
@@ -182,6 +191,23 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           {loading ? 'Loading...' : 'View Full Report →'}
         </button>
       </div>
+      {createError && (
+        <div
+          role="alert"
+          style={{
+            marginTop: '0.75rem',
+            padding: '0.625rem 0.75rem',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: 6,
+            color: '#991b1b',
+            fontSize: '0.875rem',
+            lineHeight: 1.5,
+          }}
+        >
+          {createError}
+        </div>
+      )}
     </div>
   );
 };

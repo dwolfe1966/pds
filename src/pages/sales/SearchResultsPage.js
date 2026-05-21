@@ -49,15 +49,35 @@ const SalesSearchResultsPage = () => {
       if (storedResults) {
         try {
           const data = JSON.parse(storedResults);
-          setResults(data.results || []);
-          setSearchQuery(data.query || {});
-          setTotalCount(data.pagination?.total || 0);
-          if (data.searchContext) {
-            setSearchContext(data.searchContext);
+          // Validate that stored results match the current URL query before
+          // rendering. Without this, a prior search's sessionStorage can leak
+          // into a new search if the new search failed to write its own
+          // payload (cancelled effect, BC error, etc.). Compare case-
+          // insensitively since BC and form casing diverge.
+          const norm = (s) => String(s || '').trim().toLowerCase();
+          const expectedF = norm(firstNameParam) ||
+            (query ? norm(query.split(/\s+/)[0]) : '');
+          const expectedL = norm(lastNameParam) ||
+            (query ? norm(query.split(/\s+/).slice(1).join(' ')) : '');
+          const storedF = norm(data.query?.firstName);
+          const storedL = norm(data.query?.lastName);
+          const queryMatches =
+            (!expectedF || expectedF === storedF) &&
+            (!expectedL || expectedL === storedL);
+          if (!queryMatches) {
+            // Stale stored data — wipe and fall through to fresh fetch.
+            try { sessionStorage.removeItem('nameSearchResults'); } catch {}
+          } else {
+            setResults(data.results || []);
+            setSearchQuery(data.query || {});
+            setTotalCount(data.pagination?.total || 0);
+            if (data.searchContext) {
+              setSearchContext(data.searchContext);
+            }
+            // Don't remove here: React Strict Mode double-mounts in dev, so the second
+            // mount would see empty storage and show no results. Next search overwrites.
+            return;
           }
-          // Don't remove here: React Strict Mode double-mounts in dev, so the second
-          // mount would see empty storage and show no results. Next search overwrites.
-          return;
         } catch (err) {
           console.error('Error parsing stored results:', err);
         }

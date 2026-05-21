@@ -244,7 +244,7 @@ const SearchDetailPreviewPage = () => {
   const signupFormJsx = (
     <div className={styles.signupFormCard} ref={signupFormRef} id="signup-form">
       <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
-      <h2 className={styles.signupFormTitle}>Create Your Free Account to Unlock</h2>
+      <h2 className={styles.signupFormTitle}>Create Your Account to Unlock</h2>
       <p className={styles.signupFormSubtitle}>
         Unlock the full report for <strong>{person.fullName}</strong> instantly.
       </p>
@@ -296,9 +296,8 @@ const SearchDetailPreviewPage = () => {
             className={styles.signupSubmitBtn}
             disabled={signupLoading}
           >
-            {signupLoading ? 'Creating account…' : 'Create My Free Account →'}
+            {signupLoading ? 'Creating account…' : 'Create My Account →'}
           </button>
-          <p className={styles.noCardNote}>No credit card required</p>
           <p className={styles.loginLinkWrap}>
             Already have an account?{' '}
             <Link to="/login" className={styles.loginLink}>Sign in</Link>
@@ -407,7 +406,7 @@ const SearchDetailPreviewPage = () => {
       {/* ── Sticky mobile CTA scrolls to inline signup ── */}
       <div className={styles.stickyMobileCta}>
         <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={scrollToSignup}>
-          🔓 Unlock Full Report — Create Free Account →
+          🔓 Unlock Full Report — Create Account →
         </a>
       </div>
     </main>

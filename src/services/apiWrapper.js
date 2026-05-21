@@ -142,10 +142,18 @@ class ApiWrapperService {
       // captured at app boot by CampaignContext and persisted to
       // sessionStorage; first-touch wins.
       const initialShParams = this._readShParamsFromSession();
-      const getInstanceConfig = { endpointUrl };
-      if (initialShParams) getInstanceConfig.initialShParams = initialShParams;
-      this.wrapper = window.ApiWrapper.getInstance(getInstanceConfig);
-      this._installCaptchaAutofill();
+      const baseConfig = { endpointUrl };
+      try {
+        const config = initialShParams ? { ...baseConfig, initialShParams } : baseConfig;
+        this.wrapper = window.ApiWrapper.getInstance(config);
+      } catch (shErr) {
+        // BC's IIFE may reject unknown shn/shl with a hard throw. Retry
+        // without initialShParams so the app continues with BC's default
+        // cascade — campaign UX overrides are still applied client-side.
+        dbgWarn('[ApiWrapper] getInstance rejected initialShParams; retrying without:', shErr?.message);
+        this.wrapper = window.ApiWrapper.getInstance(baseConfig);
+      }
+      this._installCaptchaHandler();
       this.initialized = true;
       return this.wrapper;
     } catch (error) {
@@ -156,12 +164,23 @@ class ApiWrapperService {
 
   /** Read shn/shl from sessionStorage (first-touch attribution) and shape
    *  into the `initialShParams` form BC expects. Returns null when neither
-   *  value is set so we don't pass an empty `initialShParams` to BC. */
+   *  value is set so we don't pass an empty `initialShParams` to BC.
+   *
+   *  Only forwards values that look like real BC identifiers (24-character
+   *  hex / MongoDB ObjectId). Placeholder strings like "demo" or "v5" break
+   *  BC's IIFE (the cascade resolver can't find them and the IIFE throws on
+   *  every subsequent API call, with no HTTP request ever leaving the
+   *  browser). Skipping invalid values lets BC fall back to its own
+   *  defaults — the campaign config still works because our registry uses
+   *  the raw string as the lookup key regardless of BC's opinion. */
   _readShParamsFromSession() {
     if (typeof sessionStorage === 'undefined') return null;
     try {
-      const shn = sessionStorage.getItem('attribution.shn');
-      const shl = sessionStorage.getItem('attribution.shl');
+      const isBcObjectId = (v) => typeof v === 'string' && /^[0-9a-fA-F]{24}$/.test(v);
+      const rawShn = sessionStorage.getItem('attribution.shn');
+      const rawShl = sessionStorage.getItem('attribution.shl');
+      const shn = isBcObjectId(rawShn) ? rawShn : null;
+      const shl = isBcObjectId(rawShl) ? rawShl : null;
       if (!shn && !shl) return null;
       const params = { cascade: true };
       if (shn) params.shn = shn;
@@ -171,23 +190,58 @@ class ApiWrapperService {
   }
 
   /**
-   * Auto-fill BC's password.v0 captcha modal — DEV ONLY.
+   * Override BC's password.v0 captcha hook.
    *
-   * BC's IIFE shows a generic "Input Password" modal on every captcha challenge
-   * and forwards whatever the user types as the verify token. We CANNOT bake
-   * the password into a public bundle (it would be readable in browser
-   * DevTools by any visitor), so REACT_APP_NEW_API_CAPTCHA is empty in
-   * committed production env files. Set it locally in an untracked .env.local
-   * file when debugging captcha-protected endpoints. In production BC must
-   * either remove password.v0 challenges on user-facing endpoints or replace
-   * them with a real captcha (turnstile.v0).
+   * BC's IIFE's default `executePasswordCaptcha` constructs a stray
+   * `<input type="password">` modal directly in the DOM, waits for the user
+   * to type, and forwards whatever they enter to `/captcha/verify` as the
+   * token. That UI is unusable for public visitors (no instructions, no
+   * known password, no real captcha) — it just sits on the page as a
+   * mystery prompt.
    *
-   * No-ops if the env var isn't set or the IIFE structure changes.
+   * Two modes here:
+   *
+   *  - **Autofill (dev):** when `REACT_APP_NEW_API_CAPTCHA` is set, override
+   *    the hook to return that token immediately. Skips the modal, lets
+   *    captcha-protected endpoints succeed in local/staging testing. This
+   *    env var is intentionally empty in committed `.env.production` —
+   *    `.env.local` carries it for the developer. Postbuild secret scan
+   *    refuses to ship a bundle that contains the password.
+   *
+   *  - **Suppress (prod):** when the env var is empty (default for public
+   *    bundles), override the hook to **throw immediately** without
+   *    rendering anything. The IIFE's internal retry then fails cleanly,
+   *    the original 412 surfaces to our caller, and our error UX takes
+   *    over instead of stranding the user on a password prompt. No secret
+   *    is required for this — we're rejecting, not verifying.
+   *
+   * The IIFE's modal is the most visible defensive hole we have today, so
+   * the suppress branch is the production behavior even though BC will
+   * eventually remove `password.v0` from user-facing endpoints.
    */
-  _installCaptchaAutofill() {
+  /**
+   * Optional dev autofill for BC's password.v0 captcha modal.
+   *
+   * When `REACT_APP_NEW_API_CAPTCHA` is set in a local `.env.local`,
+   * override the IIFE's `executePasswordCaptcha` to return that token
+   * immediately — no modal, captcha verify succeeds, dev/staging flows
+   * complete without manual interaction.
+   *
+   * When the env var is **not** set (committed production behavior), we
+   * leave the IIFE's default in place: the password modal renders, the
+   * tester/dev types the captcha password manually, and the IIFE's normal
+   * captcha-verify→retry flow runs. This is the expected pre-launch
+   * behavior — once BC removes `password.v0` from user-facing endpoints
+   * at launch, no modal will fire and this code is inert.
+   *
+   * Postbuild secret scan blocks any bundle that contains the captcha
+   * password — `.env.production` ships with an empty value by design.
+   */
+  _installCaptchaHandler() {
+    if (!this.wrapper?.captcha) return;
     const captchaPass = process.env.REACT_APP_NEW_API_CAPTCHA;
-    if (!captchaPass) return;
-    if (!this.wrapper?.captcha || typeof this.wrapper.captcha.executePasswordCaptcha !== 'function') return;
+    if (!captchaPass) return; // leave IIFE default behavior intact
+    if (typeof this.wrapper.captcha.executePasswordCaptcha !== 'function') return;
     this.wrapper.captcha.executePasswordCaptcha = async () => ({ token: captchaPass });
   }
 

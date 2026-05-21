@@ -35,15 +35,27 @@ export const CAMPAIGN_REGISTRY = {
     offer:   { shmName: null, trial: false },   // null = let BC pick default offer
   },
 
-  // ── Placeholders. Replace shConId/shColId values with real ones from BC
-  // as campaigns come online. Entries below are illustrative only and
-  // currently do not match any real partner.
-  // 'PARTNER_A:PAGE_1': {
-  //   landing: { route: '/name/landing/v5' },
-  //   search:  { type: 'name', perPage: 10 },
-  //   detail:  { variant: 'B' },
-  //   signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },
-  //   payment: { methods: ['card'] },
-  //   offer:   { shmName: 'membership.offer.default.1', trial: false },
-  // },
+  // ── Test placeholder. Hit `?shn=demo&shl=v5` to exercise the redirect +
+  // detail-variant + offer-shmName plumbing end-to-end. Three values differ
+  // from `default`, making each easy to spot during QA:
+  //   - landing.route → redirect from /  to /name/landing/v5
+  //   - detail.variant → SearchDetailPreviewPage renders variant B
+  //   - offer.shmName  → PaymentPage's billing.sale carries this key in
+  //     `commerceOfferKeys[0].key` (visible in Network panel). BC may
+  //     reject this specific shmName as unknown — that's expected for the
+  //     placeholder. Replace with a real BC-provisioned shmName when a
+  //     real partner campaign goes live.
+  'demo:v5': {
+    // Points at V1 (/name/landing) — the V2–V6 wizard variants have an inline
+    // runSearch path that's currently broken (search fails silently with no
+    // HTTP call, navigates to /name/search-result?error=true). V1 delegates
+    // to /name/loader which is the same path /search/all uses and is known
+    // to work. Restore to '/name/landing/v5' once the V5 wizard bug is fixed.
+    landing: { route: '/name/landing' },
+    search:  { type: 'name', perPage: 10 },
+    detail:  { variant: 'b' },
+    signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },
+    payment: { methods: ['card'] },
+    offer:   { shmName: 'membership.offer.default.1', trial: false },
+  },
 };

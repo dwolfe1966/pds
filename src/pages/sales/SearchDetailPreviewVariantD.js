@@ -222,7 +222,7 @@ const SearchDetailPreviewVariantD = ({ person, id }) => {
         display: 'flex', alignItems: 'center', gap: '0.4rem',
       }}>
         <span style={{ flexShrink: 0 }}>&#9432;</span>
-        Showing partial preview. Create a free account to unlock all data.
+        Showing partial preview. Create an account to unlock all data.
       </div>
 
       {/* Section: Phone Numbers */}
@@ -477,9 +477,8 @@ const SearchDetailPreviewVariantD = ({ person, id }) => {
             )}
 
             <button type="submit" className={styles.signupSubmitBtn} disabled={loading}>
-              {loading ? 'Creating account\u2026' : 'Create Free Account & Unlock'}
+              {loading ? 'Creating account\u2026' : 'Create Account & Unlock'}
             </button>
-            <p className={styles.noCardNote}>No credit card required</p>
             <p className={styles.loginLinkWrap}>
               Have an account?{' '}
               <Link to="/login" className={styles.loginLink}>Sign in</Link>
@@ -496,7 +495,7 @@ const SearchDetailPreviewVariantD = ({ person, id }) => {
       {/* Sticky mobile CTA */}
       <div className={styles.stickyMobileCta}>
         <a href="#vd-signup" className={styles.stickyMobileCtaLink} onClick={scrollToSignup}>
-          Unlock Full Report &mdash; Free Account
+          Unlock Full Report &mdash; Create Account
         </a>
       </div>
     </main>

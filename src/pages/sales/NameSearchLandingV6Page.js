@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
+import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV6Page.module.css';
 import { useBrand } from '../../services/brand';
@@ -100,79 +101,69 @@ const NameSearchLandingV6Page = () => {
     return () => { if (timer) clearTimeout(timer); };
   }, [step]);
 
-  useEffect(() => {
-    if (step !== 'final-search') return;
-
+  // Search invoked directly from handleConfirm — NOT a useEffect. See
+  // NameSearchLandingV5Page.js for explanation.
+  const runSearch = async () => {
     let progressTimer;
-    let isCancelled = false;
+    try {
+      setFinalStatus('Searching our database...');
+      setFinalProgress(10);
 
-    const runSearch = async () => {
-      try {
-        setFinalStatus('Searching our database...');
-        setFinalProgress(10);
+      progressTimer = setInterval(() => {
+        setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
+      }, 200);
 
-        progressTimer = setInterval(() => {
-          setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
-        }, 200);
+      const searchParams = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        type: 'name',
+        source: 'name-landing-v6',
+      };
+      if (middleName.trim()) searchParams.middleName = middleName.trim();
+      if (age.trim()) searchParams.age = age.trim();
+      if (city.trim()) searchParams.city = city.trim();
+      if (state.trim()) searchParams.state = state.trim();
 
-        const searchParams = {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          type: 'name',
-          source: 'name-landing-v6',
-        };
-        if (middleName.trim()) searchParams.middleName = middleName.trim();
-        if (age.trim()) searchParams.age = age.trim();
-        if (city.trim()) searchParams.city = city.trim();
-        if (state.trim()) searchParams.state = state.trim();
+      gtmSetSearchInput({
+        firstName: searchParams.firstName,
+        lastName: searchParams.lastName,
+        middleName: searchParams.middleName,
+        city: searchParams.city,
+        state: searchParams.state,
+      });
+      try { sessionStorage.removeItem('nameSearchResults'); } catch {}
 
-        gtmSetSearchInput({
-          firstName: searchParams.firstName,
-          lastName: searchParams.lastName,
-          middleName: searchParams.middleName,
-          city: searchParams.city,
-          state: searchParams.state,
-        });
-        const response = await api.searchPeople(searchParams);
-        if (isCancelled) return;
-
-        clearInterval(progressTimer);
-        setFinalProgress(100);
-        setFinalStatus('Search complete!');
-
-        const mappedResults = (response.data || []).map((result) => ({
-          ...result,
-          id: result.id || result.extId,
-          extId: result.extId || result.id,
-          fullName: result.fullName || 'Unknown',
-          location: result.location || '',
-          ageRange: result.ageRange || '',
-          provider: result.provider,
-        }));
-
-        sessionStorage.setItem('nameSearchResults', JSON.stringify({
-          results: mappedResults,
-          query: { firstName, lastName, middleName, age, city, state },
-          searchContext: response.searchContext || {},
-          pagination: response.pagination || {},
-        }));
-
-        if (response.searchContext) setSearchContext(response.searchContext);
-        setTimeout(() => navigate('/name/search-result'), 400);
-      } catch (error) {
-        console.error('Search error:', error);
-        if (isCancelled) return;
-        setFinalStatus('Error occurred. Redirecting...');
-        setTimeout(() => navigate('/name/search-result?error=true'), 1500);
-      }
-    };
-
-    runSearch();
-    return () => {
-      isCancelled = true;
+      const response = await api.searchPeople(searchParams);
       if (progressTimer) clearInterval(progressTimer);
-    };
-  }, [step, firstName, lastName, middleName, age, city, state, navigate]);
+      setFinalProgress(100);
+      setFinalStatus('Search complete!');
+
+      const mappedResults = (response.data || []).map((result) => ({
+        ...result,
+        id: result.id || result.extId,
+        extId: result.extId || result.id,
+        fullName: result.fullName || 'Unknown',
+        location: result.location || '',
+        ageRange: result.ageRange || '',
+        provider: result.provider,
+      }));
+
+      sessionStorage.setItem('nameSearchResults', JSON.stringify({
+        results: mappedResults,
+        query: { firstName, lastName, middleName, age, city, state },
+        searchContext: response.searchContext || {},
+        pagination: response.pagination || {},
+      }));
+
+      if (response.searchContext) setSearchContext(response.searchContext);
+      setTimeout(() => navigate('/name/search-result'), 400);
+    } catch (error) {
+      if (progressTimer) clearInterval(progressTimer);
+      console.error('[V6 runSearch] error:', error);
+      setFinalStatus('Error occurred. Redirecting...');
+      setTimeout(() => navigate('/name/search-result?error=true'), 1500);
+    }
+  };
 
   const startSearch = (e) => {
     e.preventDefault();
@@ -195,6 +186,7 @@ const NameSearchLandingV6Page = () => {
     setAgreeError('');
     if (!agree) { setAgreeError('You must agree before continuing.'); return; }
     setStep('final-search');
+    runSearch();
   };
 
   return (

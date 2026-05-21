@@ -369,7 +369,7 @@ const SearchDetailPreviewVariantE = ({ person, id }) => {
             fontSize: '0.85rem', color: '#6b6860', textAlign: 'center',
             margin: '0 0 1.5rem', lineHeight: 1.5,
           }}>
-            Create a free account to view the full 29-page report for {person.fullName}.
+            Create an account to view the full 29-page report for {person.fullName}.
           </p>
 
           {success ? (
@@ -455,11 +455,6 @@ const SearchDetailPreviewVariantE = ({ person, id }) => {
               <p style={{
                 textAlign: 'center', fontSize: '0.78rem', color: '#8a8578', margin: '0.6rem 0 0',
               }}>
-                No credit card required
-              </p>
-              <p style={{
-                textAlign: 'center', fontSize: '0.78rem', color: '#8a8578', margin: '0.4rem 0 0',
-              }}>
                 Already have an account?{' '}
                 <Link to="/login" style={{ color: '#0d5d2f', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
               </p>
@@ -480,7 +475,7 @@ const SearchDetailPreviewVariantE = ({ person, id }) => {
       {/* Sticky mobile CTA */}
       <div className={styles.stickyMobileCta}>
         <a href="#ve-signup" className={styles.stickyMobileCtaLink} onClick={scrollToSignup}>
-          Access Report &mdash; Create Free Account
+          Access Report &mdash; Create Account
         </a>
       </div>
     </main>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../../styles/contentContainer.css';
 import { useBrand } from '../../services/brand';
 
@@ -45,7 +46,7 @@ const RefundPage = () => {
         <div style={{ padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem', marginBottom: '1rem' }}>
           <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>How to Request a Refund</h3>
           <ol style={{ color: '#6b7280', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
-            <li>Contact our support team at <strong>{brand.supportEmail}</strong> or through our contact form</li>
+            <li>Submit your request through our <Link to="/contact" style={{ color: '#0d5d2f' }}>contact form</Link></li>
             <li>Provide your order number or transaction ID</li>
             <li>Explain the reason for your refund request</li>
             <li>Include any relevant documentation or screenshots</li>
@@ -79,12 +80,11 @@ const RefundPage = () => {
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Contact Us</h2>
         <p style={{ color: '#6b7280', lineHeight: '1.8' }}>
-          If you have questions about our refund policy or need assistance with a refund request, please contact us:
+          If you have questions about our refund policy or need assistance with a refund request,
+          please <Link to="/contact" style={{ color: '#0d5d2f' }}>submit a request through our contact form</Link>.
         </p>
-        <p style={{ color: '#0d5d2f', fontWeight: 'bold' }}>
-          Email: {brand.supportEmail}<br />
-          Phone: [Your Support Phone Number]<br />
-          Hours: Monday - Friday, 9:00 AM - 5:00 PM EST
+        <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
+          Support hours: Monday - Friday, 9:00 AM - 5:00 PM ET.
         </p>
       </section>
       </div>

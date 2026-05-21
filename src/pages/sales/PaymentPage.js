@@ -9,10 +9,10 @@ import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch } from '../../services/thinMatch';
 
-// BC offer charged at signup. s0 (1.01) is the initial charge; s1+ (39.01) is the monthly rebill.
-// See docs/new-api/bc client library-API.csv "Find Offer By Shm Name" for the full price structure.
+// BC offer key — the actual price charged is enforced by BC's offer config
+// (findByShmName). Display values come from `brand.trialPrice` /
+// `brand.recurringPrice`; keep BC and brand config in sync when prices change.
 const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
-const SIGNUP_OFFER_S0_USD = 1.01;
 import styles from './PaymentPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -88,6 +88,14 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription } = useAuth();
+
+  // Trial end date — computed at render time, expressed in the visitor's
+  // local format. Format e.g. "May 22, 2026". Used in the Terms of Use and
+  // Pricing disclosure so the cardholder sees an explicit cancel-by date.
+  const trialEndDate = new Date(Date.now() + brand.trialDays * 24 * 60 * 60 * 1000)
+    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const trialPriceStr = `$${brand.trialPrice.toFixed(2)}`;
+  const recurringPriceStr = `$${brand.recurringPrice.toFixed(2)}`;
 
   const [form, setForm] = useState({
     cardNumber: '',
@@ -429,11 +437,11 @@ const PaymentPage = () => {
       track('payment_complete', { plan: 'pro', offer_key: SIGNUP_OFFER_KEY });
       gtmSetTransaction({
         orderId: verifiedOrder?._id || verifiedOrder?.id || resolvedReportId,
-        amount: SIGNUP_OFFER_S0_USD,
+        amount: brand.trialPrice,
         currency: 'USD',
       });
       gtmPurchase({
-        value: SIGNUP_OFFER_S0_USD,
+        value: brand.trialPrice,
         currency: 'USD',
         offer_key: SIGNUP_OFFER_KEY,
         item_name: `${brand.name} Signup (S0 — 7-day access)`,
@@ -772,7 +780,7 @@ const PaymentPage = () => {
                       the terms prior to authorizing the charge. */}
                   <div className={styles.termsBlock}>
                     <p className={styles.termsHeading}>
-                      <strong>Terms of Use and Pricing</strong>
+                      <strong>*Terms of Use and Pricing Information</strong>
                     </p>
                     <label className={styles.termsLabel}>
                       <input
@@ -782,17 +790,34 @@ const PaymentPage = () => {
                         onChange={(e) => setAgreeTerms(e.target.checked)}
                       />
                       <span className={styles.termsBody}>
-                        By clicking <strong>{selectedPerson ? 'Unlock Report' : 'Subscribe Now'}</strong>{' '}
-                        below, you agree to {brand.name}'s{' '}
-                        <Link to="/terms">Terms of Use</Link> and{' '}
-                        <Link to="/privacy">Privacy Policy</Link>, and you authorize {brand.name} to
-                        charge your card <strong>$29.99 today</strong>. Your subscription will
-                        automatically renew every month at <strong>$29.99</strong> until you cancel.
-                        You may cancel at any time from your{' '}
-                        <Link to="/account">Account page</Link> or by{' '}
-                        <Link to="/contact">contacting support</Link>.
+                        By clicking the button below, you agree to {brand.name}'s{' '}
+                        <Link to="/terms">Terms of Use</Link>,{' '}
+                        <Link to="/privacy">Privacy Policy</Link> and you authorize {brand.name} to
+                        charge your card <strong>{trialPriceStr} today</strong> for your report.
+                        With your report, you get an Unlimited Search trial account for a full{' '}
+                        <strong>{brand.trialDays} Days</strong>. With Unlimited Search, you can
+                        search for as many reports as you want, and view and access up to 5 reports
+                        per day! If you cancel your trial before <strong>{trialEndDate}</strong>,
+                        there will be no further charges. If you like what you see and wish to
+                        search more reports on friends, relatives or anybody else in your life,
+                        simply do nothing and we will automatically start your Unlimited Search
+                        subscription and charge your card just <strong>{recurringPriceStr}</strong> at
+                        the end of the trial period and every 30 Days thereafter until you cancel.
+                        You may cancel at any time with our 100% hassle free cancellation. Just call
+                        us at <strong>{brand.supportPhone}</strong> or{' '}
+                        <Link to="/contact">visit our contact form</Link> anytime, 24 hours a day,
+                        7 days a week.
                       </span>
                     </label>
+                    <p className={styles.termsBody} style={{ marginTop: '0.75rem' }}>
+                      You also understand and agree that {brand.name} is not a "consumer reporting
+                      agency", as defined in the Fair Credit Reporting Act (15 U.S.C. § 1681, et seq.)
+                      ("FCRA") and does not provide "consumer reports", as defined in FCRA. You
+                      understand and represent that you are not purchasing and will not use{' '}
+                      {brand.name}'s products or services for any purpose in connection with
+                      determining a person's eligibility for credit, insurance, employment or for
+                      any other eligibility determination subject to FCRA.
+                    </p>
                   </div>
 
                   {/* CTA */}
@@ -805,7 +830,9 @@ const PaymentPage = () => {
                       <span className={styles.submitSpinner}>
                         <span className={styles.spinner} /> Processing…
                       </span>
-                    ) : selectedPerson ? `Unlock Report — $29.99/mo` : 'Subscribe Now — $29.99/mo'}
+                    ) : selectedPerson
+                      ? `Unlock Report — ${trialPriceStr} Today`
+                      : `Start Trial — ${trialPriceStr} Today`}
                   </button>
 
                   {process.env.NODE_ENV === 'development' && (
@@ -841,8 +868,8 @@ const PaymentPage = () => {
           <div className={styles.summaryCol}>
             <div className={styles.summaryCard}>
               <div className={styles.summaryHeader}>
-                <p className={styles.summaryPlanName}>Basic Plan</p>
-                <p className={styles.summaryPrice}>$29.99<span className={styles.summaryPer}>/mo</span></p>
+                <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
+                <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
               </div>
               <p className={styles.summaryInstant}>⚡ Instant access after payment</p>
               <ul className={styles.featureList}>
@@ -855,9 +882,11 @@ const PaymentPage = () => {
               </ul>
               <div className={styles.summaryTotal}>
                 <span>Today's charge</span>
-                <strong>$29.99</strong>
+                <strong>{trialPriceStr}</strong>
               </div>
-              <p className={styles.summaryCancel}>Cancel anytime. No hidden fees.</p>
+              <p className={styles.summaryCancel}>
+                Then {recurringPriceStr}/month after your {brand.trialDays}-day trial. Cancel anytime — no hidden fees.
+              </p>
             </div>
 
             <div className={styles.summaryTrustCard}>

@@ -28,8 +28,16 @@ try {
   const sp = url.searchParams;
   const urlShn = sp.get('shn') || sp.get('shConId');
   const urlShl = sp.get('shl') || sp.get('shColId');
+  // First-touch persistence: only set if not already present.
   if (urlShn && !sessionStorage.getItem('attribution.shn')) sessionStorage.setItem('attribution.shn', urlShn);
   if (urlShl && !sessionStorage.getItem('attribution.shl')) sessionStorage.setItem('attribution.shl', urlShl);
+  // One-shot landing-redirect flag — set ONLY when URL had attribution
+  // params on this load, cleared by HomePageRedirect after a single use.
+  // Without this, a stored shn/shl from a prior visit would keep
+  // redirecting `/` to the campaign landing forever.
+  if (urlShn || urlShl) {
+    sessionStorage.setItem('attribution.landingPending', '1');
+  }
   if (sp.has('shn') || sp.has('shl') || sp.has('shConId') || sp.has('shColId')) {
     ['shn', 'shl', 'shConId', 'shColId'].forEach((k) => sp.delete(k));
     const newSearch = sp.toString();

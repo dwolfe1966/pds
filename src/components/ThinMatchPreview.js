@@ -166,11 +166,8 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
           background: '#fff',
         }}>
           <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
-            Create a free account to unlock full results
+            Create an account to unlock full results
           </h3>
-          <p style={{ margin: '0 0 1rem', color: '#4b5563', fontSize: '0.9rem' }}>
-            No credit card required to sign up. Billing occurs only if you order a full report.
-          </p>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <input
               type="email" required autoComplete="email"

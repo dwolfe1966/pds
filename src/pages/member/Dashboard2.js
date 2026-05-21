@@ -104,12 +104,15 @@ function reportType(report) {
 
 // ─── Subscription tile ──────────────────────────────────────────────────────
 
-function SubscriptionTile({ subscription, orders, navigate }) {
+function SubscriptionTile({ subscription, orders, planDisplayName, navigate }) {
   const brand = getBrand();
   const order = (orders || []).find((o) => o.status === 'active' && !o?.transient?.canceled) || (orders || [])[0] || null;
   const renewal = order?.dueTimestamp ? new Date(order.dueTimestamp) : null;
   const status = subscription?.status === 'active' && !order?.transient?.canceled ? 'Active' : subscription?.status === 'active' ? 'Canceling' : 'Free';
-  const planLabel = subscription?.plan || order?.commerceOffers?.[0] || (status === 'Free' ? 'No plan' : `${brand.name} Membership`);
+  // Prefer the human-readable plan name from BC's offer (extName / product name).
+  // Fall back to a generic "{brand} Membership" label — never surface the raw
+  // commerceOffer ObjectId to the user.
+  const planLabel = planDisplayName || (status === 'Free' ? 'No plan' : `${brand.name} Membership`);
 
   return (
     <div style={{
@@ -398,7 +401,7 @@ function ActivityTimeline({ items, loading }) {
 // ─── Dashboard2 ─────────────────────────────────────────────────────────────
 
 const Dashboard2 = () => {
-  const { user, token, subscription } = useAuth();
+  const { user, token, subscription, isPaid } = useAuth();
   const navigate = useNavigate();
 
   const [reports, setReports] = useState([]);
@@ -410,6 +413,7 @@ const Dashboard2 = () => {
   const [orders, setOrders] = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [logins, setLogins] = useState([]);
+  const [planDisplayName, setPlanDisplayName] = useState('');
 
   const intent = useMemo(() => readSignupIntent(), []);
   const intentCopy = intent ? INTENT_COPY[intent] || INTENT_COPY.other : INTENT_COPY.other;
@@ -418,6 +422,32 @@ const Dashboard2 = () => {
   useEffect(() => {
     setLogins(readLoginHistory());
   }, []);
+
+  // Fetch human-readable plan name from BC's offer record. Mirrors
+  // AccountPage's lookup: the active subscription only stores the BC offer
+  // ObjectId, so without this we'd show the raw 24-hex id to the user. We
+  // currently ship one offer (comp.offer.signup.main); update this shmName
+  // if BC introduces tiered plans.
+  useEffect(() => {
+    if (!token || !isPaid) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const offer = await api.findOfferByShmName({ shmName: 'comp.offer.signup.main' });
+        if (cancelled) return;
+        const name =
+          offer?.extName ||
+          offer?.commerceProducts?.[0]?.extName ||
+          offer?.commerceProducts?.[0]?.name ||
+          offer?.name ||
+          '';
+        setPlanDisplayName(name);
+      } catch {
+        // Non-fatal — SubscriptionTile falls back to "{brand} Membership".
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, isPaid]);
 
   useEffect(() => {
     track('dashboard_view', { has_token: !!token });
@@ -631,7 +661,7 @@ const Dashboard2 = () => {
 
         {/* Subscription strip */}
         <div style={{ marginBottom: '1rem' }}>
-          <SubscriptionTile subscription={subscription} orders={orders} navigate={navigate} />
+          <SubscriptionTile subscription={subscription} orders={orders} planDisplayName={planDisplayName} navigate={navigate} />
         </div>
 
         {/* Stats row — all real counters */}
