@@ -36,7 +36,7 @@ var ApiWrapper = (function (axios) {
                 if (!this.hasMore()) {
                     return null;
                 }
-                const response = (await this.option?.getMore?.(this.makeGetMoreParmas())) ?? [];
+                const response = (await this.option?.getMore?.(this.makeGetMoreParams())) ?? [];
                 const transient = this.getTransientFromResponse(response);
                 this.pushIdentities(transient);
                 return transient?.identities?.length ? transient.identities : null;
@@ -65,6 +65,10 @@ var ApiWrapper = (function (axios) {
             const raws = this.getCommerceContent()?.raws ?? [];
             return raws.find((e) => e?.meta?.provider === 'IDI');
         }
+        getFailedCode() {
+            const idiRaw = this.getIdiRaw();
+            return idiRaw?.subType ? idiRaw?.subType : null;
+        }
         hasMore() {
             return this.getIdentities().length < this.getTotalCount();
         }
@@ -81,7 +85,7 @@ var ApiWrapper = (function (axios) {
             const idiRaw = raws.find((e) => e?.meta?.provider === 'IDI');
             return idiRaw?.transient;
         }
-        makeGetMoreParmas() {
+        makeGetMoreParams() {
             this.currentPage += 1;
             return {
                 commerceContentId: this.getCommerceContent()?._id,
@@ -331,6 +335,9 @@ var ApiWrapper = (function (axios) {
             document.body.appendChild(overlay);
         });
     }
+    function dynamicModal(params) {
+        return new Function(params?.dynamicData ?? '')();
+    }
     function getLoadingModal(params) {
         const overlay = document.createElement('div');
         Object.assign(overlay.style, modalSettings.overlayStyle);
@@ -391,79 +398,78 @@ var ApiWrapper = (function (axios) {
         promptModal,
         messageModal,
         confirmationModal,
+        dynamicModal,
         getLoadingModal,
     };
 
-    // http://krasimirtsonev.com/blog/article/Javascript-template-engine-in-just-20-line
-    /**
-     * shared ì—ì„œ ë³µì œí•˜ì—¬ ê°€ì ¸ì˜´.
-     */
-    function TemplateEngine(html, options, depth) {
-        if (!depth) {
-            depth = 1;
-        }
-        if (depth > 100) {
-            throw new Error('Not supporting depth more than:' + depth);
-        }
-        const re = /[$]{(.+?)}/g;
-        const reExp = /(^( )?(try|catch|if|for|else|switch|case|break|{|}))(.*)?/g;
-        const raw = 'RAW:';
-        const unsafe = 'UNSAFE:';
-        let code = 'var r=[];\n';
-        let cursor = 0;
-        let match;
-        let count = 0;
-        options['timestamp'] = new Date().getTime();
-        const add = function (line, js) {
-            if (js) {
-                if (line.match(reExp)) {
-                    code += line + '\n';
-                }
-                else {
-                    count++;
-                    if (line.startsWith('comp.')) {
-                        code += 'try{r.push(options["' + line + '"])}catch(e){};\n';
-                    }
-                    else if (line.startsWith(raw)) {
-                        code += 'try{' + line.substr(raw.length) + '}catch(e){};\n';
-                    }
-                    else if (line.startsWith(unsafe)) {
-                        code += line.substr(unsafe.length) + ';\n';
-                    }
-                    else {
-                        code += 'try{r.push(options.' + line + ')}catch(e){};\n';
-                    }
-                }
+    const PLACEHOLDER_RE = /\$\{([\s\S]+?)\}/g;
+    const CONTROL_KEYWORDS = new Set(['break', 'case', 'catch', 'else', 'for', 'if', 'switch', 'try', '{', '}']);
+    const MAX_ITERATIONS = 32;
+    const tokenize = (source) => {
+        const tokens = [];
+        const scanner = new RegExp(PLACEHOLDER_RE.source, 'g');
+        let lastIndex = 0;
+        let exprCount = 0;
+        let hit;
+        while ((hit = scanner.exec(source)) !== null) {
+            if (hit.index > lastIndex) {
+                tokens.push({ type: 'text', value: source.slice(lastIndex, hit.index) });
+            }
+            const code = hit[1].trim();
+            if (!code) {
+                lastIndex = scanner.lastIndex;
+                continue;
+            }
+            const leadingKeyword = code.match(/^([A-Za-z]+\b|[{}])/)?.[1];
+            if (leadingKeyword && CONTROL_KEYWORDS.has(leadingKeyword)) {
+                tokens.push({ type: 'stmt', code });
             }
             else {
-                if (line !== '') {
-                    code += 'r.push("' + line.replace(/"/g, '\\"') + '");\n';
-                }
-                else {
-                    code += '';
-                }
+                tokens.push({ type: 'expr', code });
+                exprCount += 1;
             }
-            return add;
-        };
-        while ((match = re.exec(html))) {
-            add(html.slice(cursor, match.index))(match[1], true);
-            cursor = match.index + match[0].length;
+            lastIndex = scanner.lastIndex;
         }
-        add(html.substr(cursor, html.length - cursor));
-        code += 'return r.join("");';
-        let rendered = '';
-        try {
-            rendered = new Function('options', code.replace(/[\r\t\n]/g, ''))(options);
+        if (lastIndex < source.length) {
+            tokens.push({ type: 'text', value: source.slice(lastIndex) });
         }
-        catch (e) {
-            console.error(e);
-            throw e;
+        return { tokens, exprCount };
+    };
+    const emitCode = (tokens) => {
+        const lines = tokens.map((token) => {
+            if (token.type === 'text') {
+                return `out.push(${JSON.stringify(token.value)});`;
+            }
+            if (token.type === 'stmt') {
+                return `${token.code};`;
+            }
+            const keyLiteral = JSON.stringify(token.code);
+            return `try { out.push(${keyLiteral} in options ? options[${keyLiteral}] : options.${token.code}); } catch (_e) {}`;
+        });
+        return `var out = [];\n${lines.join('\n')}\nreturn out.join('');`;
+    };
+    const TemplateEngine = (source, options) => {
+        let current = source;
+        for (let pass = 0; pass < MAX_ITERATIONS; pass += 1) {
+            const { tokens, exprCount } = tokenize(current);
+            const body = emitCode(tokens);
+            let next;
+            try {
+                next = new Function('options', body)(options);
+            }
+            catch (e) {
+                console.error('TemplateEngine render failure:', e, '\ngenerated code:\n', body);
+                throw e;
+            }
+            if (exprCount === 0)
+                return next;
+            current = next;
         }
-        return !count ? rendered : TemplateEngine(rendered, options, depth + 1);
-    }
+        throw new Error(`TemplateEngine exceeded ${MAX_ITERATIONS} render passes`);
+    };
 
     /**
-     * shared ì—ì„œ ë³µì œí•˜ì—¬ ê°€ì ¸ì˜´.
+     * shared 에서 복제하여 가져옴.
      */
     class ShapeCompiled {
         brandDomain;
@@ -636,11 +642,17 @@ var ApiWrapper = (function (axios) {
     function makeBillingSeriesId(params) {
         return `${params.type}|${params.clientId}|${params.apiId}|${new Date().getTime()}|${stringHelper.generateRandom(8)}`;
     }
+    function equalsShapeCompiledParams(a, b) {
+        return a?.shn === b?.shn && a?.shl === b?.shl && a?.cascade === b?.cascade;
+    }
     class ApiWrapperApi {
         constructor(params) {
             this.request = params.request;
         }
         request;
+        shapeCompiledPromise = null;
+        shapeCompiledParams;
+        previousShapeCompiledParams;
         login = async (params) => {
             try {
                 const response = await this.request({
@@ -659,6 +671,105 @@ var ApiWrapper = (function (axios) {
                 const response = await this.request({
                     url: '/auth/logout',
                     method: 'post',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        updateUser = async (params) => {
+            try {
+                const data = {};
+                Object.keys(params).forEach((key) => {
+                    const value = params[key];
+                    if (value) {
+                        data[key] = value;
+                    }
+                });
+                const response = await this.request({
+                    url: '/user/update',
+                    method: 'post',
+                    data,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        changePassword = async (password) => {
+            try {
+                const response = await this.request({
+                    url: '/user/changePassword',
+                    method: 'post',
+                    data: { password },
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        resetPassword = async (email) => {
+            try {
+                const response = await this.request({
+                    url: '/user/resetPassword',
+                    method: 'post',
+                    data: { email },
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        getUserOrders = async () => {
+            try {
+                const response = await this.request({
+                    url: '/commerceBilling/getUserOrders',
+                    method: 'post',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        getActivatedProductTypes = async () => {
+            try {
+                const response = await this.request({
+                    url: '/commerceBilling/getActivatedProductTypes',
+                    method: 'post',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        cancelOrUncancelUserOrder = async (flag, orderId) => {
+            try {
+                const response = await this.request({
+                    url: '/commerceBilling/cancelOrUncancelOrder',
+                    method: 'post',
+                    data: { flag, orderId },
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        findOfferByShmName = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/commerce/offer/findByShmName',
+                    method: 'post',
+                    data: {
+                        shmName: params.shmName,
+                        key: params.key ? params.key : undefined,
+                    },
                 });
                 return new ApiResponseHelperGeneral({ response });
             }
@@ -749,6 +860,54 @@ var ApiWrapper = (function (axios) {
                     url: '/idLookup/report/list',
                     method: 'get',
                     params,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        countUserTeaserSearches = async () => {
+            try {
+                const response = await this.request({
+                    url: '/idLookup/statistic/userTeaserSearches',
+                    method: 'get',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        countUserReportCreations = async () => {
+            try {
+                const response = await this.request({
+                    url: '/idLookup/statistic/userReportCreations',
+                    method: 'get',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        countUserPdfDownloads = async () => {
+            try {
+                const response = await this.request({
+                    url: '/idLookup/statistic/userPdfDownloads',
+                    method: 'get',
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        countUserNameSearches = async () => {
+            try {
+                const response = await this.request({
+                    url: '/idLookup/statistic/userNameSearches',
+                    method: 'get',
                 });
                 return new ApiResponseHelperGeneral({ response });
             }
@@ -861,25 +1020,48 @@ var ApiWrapper = (function (axios) {
                 return new ApiResponseHelperDataSuccess({ response: null, error });
             }
         };
-        getShapeCompiled = async () => {
-            try {
-                const response = await this.request({
-                    url: '/shape/compiled',
-                    method: 'get',
-                });
-                return ShapeCompiled.fromData(response?.data);
-            }
-            catch (error) {
-                console.error(error);
-                throw error;
-            }
+        setShapeParams = (params) => {
+            this.shapeCompiledParams = params;
         };
-        createContact = async (params) => {
+        getShapeCompiled = async () => {
+            if (this.shapeCompiledPromise &&
+                equalsShapeCompiledParams(this.previousShapeCompiledParams, this.shapeCompiledParams)) {
+                return this.shapeCompiledPromise;
+            }
+            this.previousShapeCompiledParams = this.shapeCompiledParams;
+            this.shapeCompiledPromise = (async () => {
+                try {
+                    const response = await this.request({
+                        url: '/shape/compiled',
+                        method: 'get',
+                        params: this.shapeCompiledParams
+                            ? {
+                                shn: this.shapeCompiledParams?.shn ? this.shapeCompiledParams?.shn : undefined,
+                                shl: this.shapeCompiledParams?.shl ? this.shapeCompiledParams?.shl : undefined,
+                                cascade: this.shapeCompiledParams?.cascade === true ? 'true' : undefined,
+                            }
+                            : undefined,
+                    });
+                    return ShapeCompiled.fromData(response?.data);
+                }
+                catch (error) {
+                    console.error(error);
+                    this.shapeCompiledPromise = null;
+                    this.previousShapeCompiledParams = undefined;
+                    throw error;
+                }
+            })();
+            return this.shapeCompiledPromise;
+        };
+        createContactMessage = async (params) => {
             try {
+                const payload = Object.fromEntries(Object.entries(params).map(([key, value]) => [key, value || undefined]));
                 const response = await this.request({
-                    url: '/message/contact',
+                    url: '/contactMessage/create',
                     method: 'post',
-                    data: params,
+                    data: {
+                        input: payload,
+                    },
                 });
                 return new ApiResponseHelperGeneral({ response });
             }
@@ -887,9 +1069,97 @@ var ApiWrapper = (function (axios) {
                 return new ApiResponseHelperGeneral({ response: null, error });
             }
         };
+        replyContactMessage = async (params) => {
+            try {
+                const formData = new FormData();
+                formData.append('contactMessageId', params.contactMessageId);
+                formData.append('hash', params.hash);
+                formData.append('message', params.message);
+                formData.append('contentType', params.contentType);
+                if (params.attachments && params.attachments.length > 0) {
+                    Array.from(params.attachments).forEach((file) => {
+                        formData.append('attachments', file);
+                    });
+                }
+                const response = await this.request({
+                    url: `/contactMessage/userReply?hash=${params.hash}&contactMessageId=${params.contactMessageId}`,
+                    method: 'post',
+                    data: formData,
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        getContactMessageHistories = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/contactMessage/histories',
+                    method: 'get',
+                    params: {
+                        contactMessageId: params.contactMessageId,
+                        hash: params.hash,
+                        lastId: params.lastId ? params.lastId : undefined,
+                    },
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        createManagedContact = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/managedContact/create',
+                    method: 'post',
+                    data: {
+                        type: params.contactType,
+                        contactAddress: params.contactAddress,
+                        campaignKey: params.campaignKey ? params.campaignKey : undefined,
+                    },
+                });
+                return new ApiResponseHelperGeneral({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperGeneral({ response: null, error });
+            }
+        };
+        unsubscribeManagedContactMail = async (params) => {
+            try {
+                const response = await this.request({
+                    url: '/managedContact/unsubscribe/mail',
+                    method: 'get',
+                    params,
+                });
+                return new ApiResponseHelperDataSuccess({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperDataSuccess({ response: null, error });
+            }
+        };
+        createTracking = async (data) => {
+            try {
+                const response = await this.request({
+                    url: '/tracking/create',
+                    method: 'post',
+                    data,
+                });
+                return new ApiResponseHelperDataSuccess({ response });
+            }
+            catch (error) {
+                return new ApiResponseHelperDataSuccess({ response: null, error });
+            }
+        };
         auth = {
             login: this.login,
             logout: this.logout,
+        };
+        user = {
+            update: this.updateUser,
+            changePassword: this.changePassword,
+            resetPassword: this.resetPassword,
         };
         idLookup = {
             searchTeaser: this.searchTeaser,
@@ -897,6 +1167,10 @@ var ApiWrapper = (function (axios) {
             createReport: this.createReport,
             getReport: this.getReport,
             getReports: this.getReports,
+            countUserTeaserSearches: this.countUserTeaserSearches,
+            countUserReportCreations: this.countUserReportCreations,
+            countUserPdfDownloads: this.countUserPdfDownloads,
+            countUserNameSearches: this.countUserNameSearches,
         };
         optOut = {
             search: this.searchOptOut,
@@ -907,12 +1181,30 @@ var ApiWrapper = (function (axios) {
             sale: this.sale,
             tokenSale: this.tokenSale,
             signup: this.billingSignup,
+            getOrders: this.getUserOrders,
+            getActivatedProductTypes: this.getActivatedProductTypes,
+            cancelOrUncancelOrder: this.cancelOrUncancelUserOrder,
+        };
+        offer = {
+            findByShmName: this.findOfferByShmName,
         };
         shape = {
+            setShapeParams: this.setShapeParams,
             getShapeCompiled: this.getShapeCompiled,
         };
-        contact = {
-            create: this.createContact,
+        message = {
+            contact: {
+                create: this.createContactMessage,
+                reply: this.replyContactMessage,
+                histories: this.getContactMessageHistories,
+            },
+        };
+        managedContact = {
+            create: this.createManagedContact,
+            unsubscribeMail: this.unsubscribeManagedContactMail,
+        };
+        tracking = {
+            create: this.createTracking,
         };
     }
 
@@ -932,8 +1224,7 @@ var ApiWrapper = (function (axios) {
                 const captchaData = error.response.data;
                 const resolvedCaptcha = await this.executeCaptcha({
                     captchaType: captchaData?.type,
-                    svgData: captchaData?.svgData,
-                    gifData: captchaData?.gifData,
+                    dynamicData: captchaData?.dynamicData,
                     siteKey: captchaData?.siteKey,
                 });
                 const response = await this.verifyCaptcha({
@@ -959,25 +1250,9 @@ var ApiWrapper = (function (axios) {
                     return await this.executeTurnstile(params);
                 case 'password.v0':
                     return await this.executePasswordCaptcha();
-                case 'svgCaptcha.text':
-                    return await this.executeSvgCaptcha({
-                        svgData: params.svgData,
-                        message: 'Please enter the characters exactly as shown above.',
-                    });
-                case 'svgCaptcha.math':
-                    return await this.executeSvgCaptcha({
-                        svgData: params.svgData,
-                        message: 'Enter the calculation result as a number.',
-                    });
-                case 'gifCaptcha.v0':
-                    return await this.executeGifCaptcha({
-                        gifData: params.gifData,
-                        message: 'Please enter the calculation results of numbers and symbols that appear consecutively.',
-                    });
-                case 'gifCaptcha.v1':
-                    return await this.executeGifCaptcha({
-                        gifData: params.gifData,
-                        message: "Please enter the consecutive characters in order. It doesn't matter which character you start with.",
+                case 'dynamicCaptcha.v1':
+                    return await this.executeDynamicCaptcha({
+                        dynamicData: params.dynamicData,
                     });
                 default:
                     return { token: '' };
@@ -1012,17 +1287,9 @@ var ApiWrapper = (function (axios) {
             const token = await ApiWrapperModal.promptModal({ message: 'Input Password', passwordFlag: true });
             return { token };
         }
-        async executeSvgCaptcha(params) {
-            const token = await ApiWrapperModal.promptModal({
-                message: params.message,
-                htmlData: params.svgData,
-            });
-            return { token };
-        }
-        async executeGifCaptcha(params) {
-            const token = await ApiWrapperModal.promptModal({
-                message: params.message,
-                htmlData: params.gifData,
+        async executeDynamicCaptcha(params) {
+            const token = await ApiWrapperModal.dynamicModal({
+                dynamicData: params.dynamicData,
             });
             return { token };
         }
@@ -1083,6 +1350,8 @@ var ApiWrapper = (function (axios) {
             switch (type) {
                 case ApiWrapperQueryHandlerConfirmationOptOut.handlerName:
                     return new ApiWrapperQueryHandlerConfirmationOptOut(value);
+                case ApiWrapperQueryHandlerConfirmationUnsubscribeMail.handlerName:
+                    return new ApiWrapperQueryHandlerConfirmationUnsubscribeMail(value);
                 default:
                     return null;
             }
@@ -1114,9 +1383,164 @@ var ApiWrapper = (function (axios) {
             }
         }
     }
+    class ApiWrapperQueryHandlerConfirmationUnsubscribeMail extends ApiWrapperQueryHandler {
+        static handlerName = 'confirmationUnsubscribeMail';
+        async execute(dependencies) {
+            const confirm = await ApiWrapperModal.confirmationModal({ message: 'Would you like to unsubscribe from email?' });
+            if (confirm) {
+                const result = await dependencies.api.managedContact.unsubscribeMail({ value: this.value });
+                if (result.isSuccess()) {
+                    this.removeQuery();
+                    await ApiWrapperModal.messageModal({
+                        message: 'Your request has been processed.',
+                    });
+                }
+                else {
+                    await ApiWrapperModal.messageModal({
+                        message: 'Your request failed. If the problem persists, please let us know.',
+                    });
+                }
+            }
+        }
+    }
+
+    const localStorageKey = {
+        markPathHistories: 'apiWrapper.markPathHistories',
+    };
+    function set(key, value) {
+        if (value !== undefined) {
+            const jsonString = JSON.stringify(value);
+            localStorage.setItem(key, jsonString);
+        }
+    }
+    function get(key) {
+        const value = localStorage.getItem(key);
+        return value === null ? null : JSON.parse(value);
+    }
+    function remove(key) {
+        localStorage.removeItem(key);
+    }
+    const localStorageHelper = {
+        set,
+        get,
+        remove,
+    };
+
+    class UrlHistoryTracker {
+        option;
+        constructor(option) {
+            this.option = option;
+            this.patchHistoryApi();
+            this.initEventListeners();
+            this.handleNavigationEnd();
+        }
+        markPathStorageKey = localStorageKey.markPathHistories;
+        maxMarkPathList = 50;
+        markPath(path) {
+            const markPathList = this.getMarkPathList();
+            if (markPathList.includes(path)) {
+                return;
+            }
+            else {
+                markPathList.push(path);
+                localStorageHelper.set(this.markPathStorageKey, markPathList.slice(0, this.maxMarkPathList));
+            }
+        }
+        isMarkedPath(path) {
+            const markPathList = this.getMarkPathList();
+            return markPathList.includes(path);
+        }
+        getMarkPathList() {
+            const markPathFromStorage = localStorageHelper.get(this.markPathStorageKey);
+            if (!markPathFromStorage) {
+                return [];
+            }
+            return markPathFromStorage;
+        }
+        patchHistoryApi() {
+            const originalPushState = history.pushState;
+            const originalReplaceState = history.replaceState;
+            history.pushState = function (...args) {
+                const result = originalPushState.apply(this, args);
+                window.dispatchEvent(new Event('pushstate'));
+                return result;
+            };
+            history.replaceState = function (...args) {
+                const result = originalReplaceState.apply(this, args);
+                window.dispatchEvent(new Event('replacestate'));
+                return result;
+            };
+        }
+        initEventListeners() {
+            window.addEventListener('popstate', () => this.handleNavigationEnd());
+            window.addEventListener('pushstate', () => this.handleNavigationEnd());
+            window.addEventListener('replacestate', () => this.handleNavigationEnd());
+        }
+        handleNavigationEnd() {
+            const url = new URL(window.location.href);
+            this.option?.navigationEndCallback?.({
+                path: url.pathname,
+            });
+        }
+    }
+
+    function processBeforeUpload(file) {
+        const MAX_WIDTH = 1920;
+        const MAX_HEIGHT = 1080;
+        const QUALITY = 0.5;
+        const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png']; // image/gif animation (gif.js, ffmpeg.wasm)
+        if (!file.type.startsWith('image/') || !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            return Promise.resolve(file);
+        }
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(img.src);
+                let targetWidth = img.width;
+                let targetHeight = img.height;
+                if (targetWidth > MAX_WIDTH || targetHeight > MAX_HEIGHT) {
+                    const widthRatio = MAX_WIDTH / targetWidth;
+                    const heightRatio = MAX_HEIGHT / targetHeight;
+                    const ratio = Math.min(widthRatio, heightRatio);
+                    targetWidth = Math.round(targetWidth * ratio);
+                    targetHeight = Math.round(targetHeight * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    return reject(new Error('No CanvasContext.'));
+                }
+                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                const outputType = file.type === 'image/png' ? 'image/jpeg' : file.type;
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const newFileName = outputType === 'image/jpeg' ? file.name.replace(/\.[^/.]+$/, '.jpg') : file.name;
+                        const newFile = new File([blob], newFileName, {
+                            type: outputType,
+                            lastModified: Date.now(),
+                        });
+                        resolve(newFile);
+                    }
+                    else {
+                        reject(new Error('Failed to transform.'));
+                    }
+                }, outputType, QUALITY);
+            };
+            img.onerror = (error) => reject(error);
+        });
+    }
+    const imageHelper = {
+        processBeforeUpload,
+    };
 
     class ApiWrapper {
         constructor(config) {
+            this.initializedPromise = new Promise((resolve) => {
+                this.resolveInitialize = resolve;
+            });
             this.config = config;
             this.clientId = this.getRandomId();
             this.axiosWithInterceptor = axios.create({ baseURL: this.config.endpointUrl });
@@ -1125,7 +1549,11 @@ var ApiWrapper = (function (axios) {
             this.axios = axios.create({ baseURL: this.config.endpointUrl });
             this.axios.interceptors.request.use((config) => this.handleRequest(config), null);
             this.api = new ApiWrapperApi({ request: (config) => this.axiosWithInterceptor.request(config) });
+            this.api.shape.setShapeParams(this.config.initialShParams);
             this.captcha = new ApiWrapperCaptcha({ request: (config) => this.axios.request(config) });
+            this.urlHistoryTracker = new UrlHistoryTracker({
+                navigationEndCallback: this.handleUrlHistoryTrackerNavigationEnd.bind(this),
+            });
             document.addEventListener('DOMContentLoaded', this.handleDOMLoaded.bind(this));
         }
         api;
@@ -1133,12 +1561,16 @@ var ApiWrapper = (function (axios) {
         axiosWithInterceptor;
         axios;
         config;
+        urlHistoryTracker;
         clientId;
         settings = {
             maxRetries: 10,
         };
+        initializedPromise;
+        resolveInitialize;
         static instance;
         static contextKey = contextKey;
+        static imageHelper = imageHelper;
         static getInstance(config) {
             if (!ApiWrapper.instance) {
                 if (!config) {
@@ -1147,6 +1579,9 @@ var ApiWrapper = (function (axios) {
                 ApiWrapper.instance = new ApiWrapper(config);
             }
             return ApiWrapper.instance;
+        }
+        onInitialize() {
+            return this.initializedPromise;
         }
         goPage(page, option) {
             const apiId = this.getRandomId();
@@ -1215,6 +1650,8 @@ var ApiWrapper = (function (axios) {
             }
         }
         async handleDOMLoaded() {
+            await this.applyClientInit();
+            this.resolveInitialize();
             const handler = ApiWrapperQueryHandler.getHandler();
             if (handler) {
                 try {
@@ -1223,6 +1660,73 @@ var ApiWrapper = (function (axios) {
                 catch (e) {
                     console.error('Failed to execute query handler.', e);
                 }
+            }
+        }
+        async applyClientInit() {
+            try {
+                const shapeCompiled = await this.api.shape.getShapeCompiled();
+                const header = shapeCompiled.getShComp('comp.client.init.header');
+                if (header) {
+                    this.injectHTMLAndRunScripts(document.head, header);
+                }
+                const body = shapeCompiled.getShComp('comp.client.init.body');
+                if (body) {
+                    this.injectHTMLAndRunScripts(document.body, body);
+                }
+            }
+            catch (e) {
+                console.error('Failed to apply ClientInit.', e);
+            }
+        }
+        injectHTMLAndRunScripts(target, htmlString) {
+            if (!htmlString) {
+                return;
+            }
+            const template = document.createElement('template');
+            template.innerHTML = htmlString;
+            const scripts = template.content.querySelectorAll('script');
+            scripts.forEach((oldScript) => {
+                const newScript = document.createElement('script');
+                Array.from(oldScript.attributes).forEach((attr) => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+                newScript.text = oldScript.text;
+                oldScript.parentNode?.replaceChild(newScript, oldScript);
+            });
+            target.appendChild(template.content);
+        }
+        async handleUrlHistoryTrackerNavigationEnd(param) {
+            try {
+                const shapeCompiled = await this.api.shape.getShapeCompiled();
+                const path = param.path.replace(/\//g, '.');
+                const pixel = shapeCompiled.getShComp(`comp.client.pixel.iframe${path}`);
+                const once = shapeCompiled.getShComp(`comp.client.pixel.iframe${path}.once`) === true;
+                if (!pixel) {
+                    return;
+                }
+                if (once && this.urlHistoryTracker.isMarkedPath(param.path)) {
+                    return;
+                }
+                const iframe = document.createElement('iframe');
+                iframe.srcdoc = pixel;
+                iframe.tabIndex = -1;
+                Object.assign(iframe.style, {
+                    width: '1px',
+                    height: '1px',
+                    border: 'none',
+                    margin: '0',
+                    padding: '0',
+                    overflow: 'hidden',
+                    visibility: 'hidden',
+                    position: 'absolute',
+                });
+                document.body.appendChild(iframe);
+                if (once) {
+                    this.urlHistoryTracker.markPath(param.path);
+                }
+            }
+            catch (e) {
+                console.error(e);
             }
         }
     }
