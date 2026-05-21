@@ -7,8 +7,8 @@ import { useBrand } from '../../services/brand';
  * Terms of Service — brand-aware. Placeholders ([brand], [phone], [price],
  * [domain], [website/contact], [address]) resolved at render time from
  * brand config (name, domain, supportPhone, recurringPrice, trialDays,
- * trialPrice). The SMS short code is a literal `[SMS short code TBD]`
- * placeholder pending provisioning.
+ * trialPrice). SMS HELP/STOP route to the same brand.supportPhone
+ * 10DLC number provisioned via SlickText.
  */
 const TermsPage = () => {
   const brand = useBrand();
@@ -32,7 +32,6 @@ const TermsPage = () => {
   const trialPriceStr = `$${(brand.trialPrice ?? 1).toFixed(2)}`;
   const recurringPriceStr = `$${(brand.recurringPrice ?? 49.98).toFixed(2)}`;
   const trialDays = brand.trialDays ?? 7;
-  const SMS_SHORTCODE = '[SMS short code TBD]';
   const MAIL_ADDRESS_LINES = [
     'People Data Systems LLC',
     '2803 Philadelphia Pike, Suite B #237',
@@ -247,8 +246,8 @@ const TermsPage = () => {
           </p>
           <ul style={UL}>
             <li><strong>Contact:</strong> Reach us using our <Link to="/contact" style={LINK}>Contact Us</Link> page.</li>
-            <li><strong>Help:</strong> Text HELP to {SMS_SHORTCODE} or call {brand.supportPhone}.</li>
-            <li><strong>Opt-Out:</strong> Text STOP to {SMS_SHORTCODE} to end SMS services.</li>
+            <li><strong>Help:</strong> Text HELP to {brand.supportPhone} or call {brand.supportPhone}.</li>
+            <li><strong>Opt-Out:</strong> Text STOP to {brand.supportPhone} to end SMS services.</li>
             <li><strong>Frequency:</strong> Alerts are delivered at a rate of roughly 1 message per day. Carriers are not liable for undelivered or delayed messages.</li>
           </ul>
         </section>
