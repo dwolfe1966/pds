@@ -109,15 +109,19 @@ function SubscriptionTile({ subscription, orders, planDisplayName, navigate }) {
   const order = (orders || []).find((o) => o.status === 'active' && !o?.transient?.canceled) || (orders || [])[0] || null;
   const renewal = order?.dueTimestamp ? new Date(order.dueTimestamp) : null;
   const status = subscription?.status === 'active' && !order?.transient?.canceled ? 'Active' : subscription?.status === 'active' ? 'Canceling' : 'Free';
+  const isFree = status === 'Free';
   // Prefer the human-readable plan name from BC's offer (extName / product name).
   // Fall back to a generic "{brand} Membership" label — never surface the raw
   // commerceOffer ObjectId to the user.
-  const planLabel = planDisplayName || (status === 'Free' ? 'No plan' : `${brand.name} Membership`);
+  const planLabel = planDisplayName || (isFree ? 'No plan' : `${brand.name} Membership`);
 
   return (
     <div style={{
-      background: PAGE.card,
-      border: `1px solid ${PAGE.border}`,
+      // Unsubscribed members get a brand-accented banner instead of the neutral
+      // card surface — turns the tile into a conversion CTA rather than a
+      // passive status indicator.
+      background: isFree ? '#f0fdf4' : PAGE.card,
+      border: `1px solid ${isFree ? PAGE.brand : PAGE.border}`,
       borderRadius: '0.75rem',
       padding: '1rem 1.25rem',
       display: 'flex',
@@ -136,16 +140,30 @@ function SubscriptionTile({ subscription, orders, planDisplayName, navigate }) {
           Status: <strong style={{ color: status === 'Active' ? PAGE.brand : status === 'Canceling' ? PAGE.warn : PAGE.textSubtle }}>{status}</strong>
           {renewal && ` · Renews ${formatDate(renewal)}`}
         </div>
+        {isFree && (
+          <div style={{ fontSize: '0.85rem', color: PAGE.text, marginTop: '0.5rem', lineHeight: 1.4 }}>
+            Unlock unlimited searches and full reports.
+          </div>
+        )}
       </div>
       <button
         type="button"
-        onClick={() => navigate('/account')}
+        // Free members get routed into the search funnel — start a search,
+        // pick a person, hit /payment with that target. Subscribed members
+        // keep the original "Manage subscription" affordance.
+        onClick={() => navigate(isFree ? '/people-search' : '/account')}
         style={{
-          background: PAGE.card, color: PAGE.brand, border: `1px solid ${PAGE.brand}`,
-          padding: '0.5rem 0.875rem', borderRadius: '0.375rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+          background: isFree ? PAGE.brand : PAGE.card,
+          color: isFree ? '#fff' : PAGE.brand,
+          border: `1px solid ${PAGE.brand}`,
+          padding: '0.5rem 0.875rem',
+          borderRadius: '0.375rem',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          cursor: 'pointer',
         }}
       >
-        Manage subscription
+        {isFree ? 'Subscribe Now' : 'Manage subscription'}
       </button>
     </div>
   );
@@ -453,10 +471,17 @@ const Dashboard2 = () => {
     track('dashboard_view', { has_token: !!token });
   }, [token]);
 
-  // Reports
+  // Reports — only fire when user has an active subscription. Unsubscribed
+  // users 403 on report/list by design (no entitlement to view reports), so
+  // skipping the call cleans up console noise on the unsubscribed dashboard.
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (!isPaid) {
+        setReports([]);
+        setReportsLoading(false);
+        return;
+      }
       setReportsLoading(true);
       try {
         const res = await getReportList({ token });
@@ -468,18 +493,24 @@ const Dashboard2 = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, isPaid]);
 
-  // Stats — all real BC counters + searches/me from mock server for activity
+  // Stats — paid-only BC counters + searches/me from mock + orders.
+  // Counters 403 for unsubscribed users (no entitlement), so we only call
+  // them when isPaid. getUserOrders still fires regardless since it is the
+  // source of truth for paid state — the IIFE 403 is caught by `settle`
+  // and we just treat it as "no orders".
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setStatsLoading(true);
       const settle = (promise) => promise.then((v) => v).catch(() => null);
+      const counterCall = (fn) =>
+        isPaid && typeof fn === 'function' ? settle(fn()) : Promise.resolve(null);
       const [s, r, p, sm, ord] = await Promise.all([
-        settle(api.countUserTeaserSearches?.() ?? Promise.resolve(null)),
-        settle(api.countUserReportCreations?.() ?? Promise.resolve(null)),
-        settle(api.countUserPdfDownloads?.() ?? Promise.resolve(null)),
+        counterCall(api.countUserTeaserSearches),
+        counterCall(api.countUserReportCreations),
+        counterCall(api.countUserPdfDownloads),
         settle(api.get?.('/searches/me', { token }) ?? Promise.resolve(null)),
         settle(api.getUserOrders?.() ?? Promise.resolve(null)),
       ]);
@@ -494,7 +525,7 @@ const Dashboard2 = () => {
       setStatsLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [token]);
+  }, [token, isPaid]);
 
   const handlePdfDownload = (commerceContentId) => {
     if (!commerceContentId) return;

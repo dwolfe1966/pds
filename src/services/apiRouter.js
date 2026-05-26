@@ -259,8 +259,10 @@ async function _routeApiRequestInner(endpoint, params = {}) {
     'count-pdf-downloads',
     // Activated product types — BC only
     'get-activated-product-types',
-    // Member self-serve profile update + offer lookup — BC only
+    // Member self-serve profile update + password change + cancel + offer lookup — BC only
     'update-profile',
+    'change-password',
+    'cancel-subscription',
     'find-offer',
     // Admin (CSR) endpoints — BC only, no mock fallback
     'admin-users',
@@ -706,6 +708,23 @@ async function callNewAPI(endpoint, params) {
     case 'update-profile': {
       const body = params.body || {};
       return await apiWrapper.userUpdate(body);
+    }
+
+    // POST /api/user/changePassword via wrapper.api.user.changePassword
+    // AccountPage sends { currentPassword, newPassword }; BC only needs the new one.
+    case 'change-password': {
+      const body = params.body || {};
+      return await apiWrapper.changePassword({ newPassword: body.newPassword });
+    }
+
+    // POST /api/commerceBilling/cancelOrUncancelOrder via wrapper.api.commerceBilling
+    // Accepts { orderId, flag } where flag=true cancels, flag=false reactivates.
+    case 'cancel-subscription': {
+      const body = params.body || params || {};
+      return await apiWrapper.cancelOrder({
+        orderId: body.orderId,
+        flag: body.flag === undefined ? true : body.flag,
+      });
     }
 
     // Look up a commerce offer by shmName (e.g. 'comp.offer.signup.main').

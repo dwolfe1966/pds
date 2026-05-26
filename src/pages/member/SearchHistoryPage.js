@@ -1,41 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../api';
+import {
+  getSearchHistory,
+  deleteSearchHistoryItem,
+} from '../../utils/searchHistory';
 
 const SearchHistoryPage = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // error state retained for future server-backed reads; unused with the
+  // localStorage source since reads can't fail.
+  const [error] = useState('');
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await api.get('/searches/me', { token });
-        setHistory(response?.data || []);
-      } catch (err) {
-        setError(err?.message || 'Unable to load search history.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistory();
+    // localStorage-backed history (see utils/searchHistory.js). BC doesn't
+    // have a user-facing history endpoint yet; when it ships, swap this to
+    // an API call and treat localStorage as a fallback / offline cache.
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    setHistory(getSearchHistory());
+    setLoading(false);
   }, [token]);
 
-  const handleDelete = async (id) => {
-    try {
-      await api.delete(`/searches/${id}`, { token });
-      setHistory(prev => prev.filter(item => item.id !== id));
-    } catch (err) {
-      setError(err?.message || 'Failed to delete search record.');
-    }
+  const handleDelete = (id) => {
+    deleteSearchHistoryItem(id);
+    setHistory(prev => prev.filter(item => item.id !== id));
   };
 
   const handleReRun = (item) => {

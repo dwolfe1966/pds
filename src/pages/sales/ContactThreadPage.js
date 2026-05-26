@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../../styles/designSystem';
 
 /**
@@ -180,10 +181,38 @@ const s = {
 const ContactThreadPage = () => {
   const { threadId } = useParams();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   // BC reply-link format: ?contactMessageId=X&hash=Y (type=contact ignored)
   const bcContactMessageId = searchParams.get('contactMessageId');
   const bcHash = searchParams.get('hash');
   const useBc = !!(bcContactMessageId && bcHash);
+
+  // When an authenticated user lands here via a BC reply email link, backfill
+  // the (contactMessageId, hash) ref into accountThreads:<userId> localStorage.
+  // That's the only path for /account → Messages to discover threads composed
+  // on a different device or browser — BC removed userContact/list 2026-04-17
+  // so we have no server-side list. Captures here mean the next visit to
+  // /account → Messages includes this thread via getContactHistories.
+  useEffect(() => {
+    if (!useBc || !user) return;
+    const userKey = user.id || user._id || user.email;
+    if (!userKey) return;
+    const storageKey = `accountThreads:${userKey}`;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const existing = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(existing)) return;
+      // Skip if we already have this thread tracked.
+      if (existing.some((r) => r?.contactMessageId === bcContactMessageId)) return;
+      const next = [
+        { contactMessageId: bcContactMessageId, hash: bcHash, createdAt: new Date().toISOString(), subject: '' },
+        ...existing,
+      ].slice(0, 100);
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      // localStorage unavailable / quota — non-fatal; user still sees this thread now.
+    }
+  }, [useBc, bcContactMessageId, bcHash, user]);
 
   const [thread, setThread] = useState(null);
   const [loading, setLoading] = useState(true);

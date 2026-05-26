@@ -490,9 +490,20 @@ const AccountPage = () => {
       setCancelError('Not authenticated');
       return;
     }
+    // Find the user's currently-active order to target with the cancel call.
+    // BC's cancelOrUncancelOrder requires an explicit orderId; we resolve it
+    // from the orders state already loaded by the billing-history fetch.
+    const activeOrder = (orders || []).find(
+      (o) => o.status === 'active' && !o?.transient?.canceled
+    );
+    if (!activeOrder?._id && !activeOrder?.id) {
+      setCancelError('No active subscription found to cancel.');
+      setShowCancelModal(false);
+      return;
+    }
     setShowCancelModal(false);
     try {
-      await api.delete('/subscription', { token });
+      await api.cancelSubscription(activeOrder._id || activeOrder.id);
       refreshSubscription();
       setCancelError('');
     } catch (err) {
@@ -1378,9 +1389,12 @@ const AccountPage = () => {
             <p className={styles.errorText}>{messagesError}</p>
           ) : messages.length === 0 ? (
             <div className={styles.emptyState}>
-              <p><strong>Contact our support team below.</strong></p>
+              <p><strong>No conversations to show here yet.</strong></p>
               <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
-                Replies from our team are sent to your account email. Use the <strong>New Message</strong> button above to start a conversation.
+                If our support team has replied to you, look for the link in their email — that opens your conversation directly. Sign up for a new conversation with the <strong>New Message</strong> button above.
+              </p>
+              <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                Messages you sent from a different device or browser may not appear here. We're working on cross-device sync.
               </p>
             </div>
           ) : (

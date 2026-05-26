@@ -1890,6 +1890,73 @@ class ApiWrapperService {
   }
 
   /**
+   * Cancel (or reactivate) the logged-in user's subscription order.
+   * POST /api/commerceBilling/cancelOrUncancelOrder via
+   * apiWrapper.api.commerceBilling.cancelOrUncancelOrder(flag, orderId).
+   *
+   *   flag === true  → cancel (sets transient.canceled, schedules end-of-period termination)
+   *   flag === false → reactivate (uncancel before period end)
+   *
+   * Callers must pass the BC orderId (e.g., active order from getOrders()).
+   */
+  async cancelOrder({ orderId, flag = true } = {}) {
+    if (!orderId) throw new Error('orderId is required');
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.commerceBilling?.cancelOrUncancelOrder === 'function') {
+        return _unwrapBcResponse(await wrapper.api.commerceBilling.cancelOrUncancelOrder(flag, orderId));
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        dbgWarn('[BC commerceBilling.cancelOrUncancelOrder] IIFE path threw; falling back to direct POST:', error?.message);
+      }
+      if (error?.status || error?.data) throw error;
+    }
+    try {
+      return await this._csrPost('/commerceBilling/cancelOrUncancelOrder', { flag, orderId });
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Cancel order failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
+   * Change the logged-in user's password.
+   * POST /api/user/changePassword
+   * apiWrapper.api.user.changePassword(password) — takes the new password
+   * as a positional string arg and posts { password } to the endpoint.
+   *
+   * NOTE: BC's endpoint does NOT require the current password; it just sets
+   * a new one. The AccountPage UI still collects currentPassword for UX
+   * (user expectation), but we only forward newPassword to BC. If a future
+   * BC version adds current-password verification, update the call shape.
+   */
+  async changePassword({ newPassword } = {}) {
+    if (!newPassword) throw new Error('newPassword is required');
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper.api?.user?.changePassword === 'function') {
+        return _unwrapBcResponse(await wrapper.api.user.changePassword(newPassword));
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        dbgWarn('[BC user.changePassword] IIFE path threw; falling back to direct POST:', error?.message);
+      }
+      if (error?.status || error?.data) throw error;
+    }
+    try {
+      return await this._csrPost('/user/changePassword', { password: newPassword });
+    } catch (error) {
+      const enhancedError = new Error(error.message || 'Password change failed');
+      enhancedError.originalError = error;
+      enhancedError.isCorsError = this._isCorsError(error);
+      throw enhancedError;
+    }
+  }
+
+  /**
    * Look up a commerce offer by its shmName (e.g. 'comp.offer.signup.main').
    * POST /commerce/offer/findByShmName
    * Returns offer with extName (human-readable) and transient.priceInfo.s0/s1.

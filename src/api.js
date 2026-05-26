@@ -6,6 +6,7 @@
 import { routeApiRequest, setTokenGetter as setRouterTokenGetter, setLogoutHandler as setRouterLogoutHandler, getMockAPIPath } from './services/apiRouter';
 import { setSearchContext } from './services/searchContext';
 import { adaptIdentity } from './services/apiAdapter';
+import { recordSearch as recordSearchToHistory } from './utils/searchHistory';
 
 // Direct mock API base URL (used for endpoints that bypass the hybrid router)
 const MOCK_API_URL = process.env.REACT_APP_API_URL ||
@@ -302,7 +303,10 @@ const api = {
       setSearchContext(response.searchContext);
     }
 
-    // Record search history for authenticated users (best-effort)
+    // Record search history client-side (best-effort).
+    // BC doesn't expose a user-facing history-read endpoint, so we maintain
+    // a localStorage ring buffer scoped per-user. See utils/searchHistory.js
+    // — swap to a server endpoint when BC ships one.
     try {
       const token = getToken();
       if (token) {
@@ -318,17 +322,11 @@ const api = {
         } else if (type === 'email') {
           queryPayload = { email };
         }
-
-        await routeApiRequest('create-search', {
-          method: 'POST',
-          path: '/searches',
-          body: {
-            type,
-            query: queryPayload,
-            resultCount: response.data?.length || 0,
-            source: source || 'searchPeople'
-          },
-          token
+        recordSearchToHistory({
+          type,
+          query: queryPayload,
+          resultCount: response.data?.length || 0,
+          source: source || 'searchPeople',
         });
       }
     } catch (err) {
@@ -560,6 +558,15 @@ const api = {
       body,
       token: token || getToken(),
     });
+  },
+
+  /**
+   * Cancel an active subscription order. Forwards to BC's
+   * commerceBilling.cancelOrUncancelOrder(flag, orderId).
+   * Pass flag=false to reactivate a canceled order before its period ends.
+   */
+  cancelSubscription: async (orderId, { flag = true } = {}) => {
+    return await routeApiRequest('cancel-subscription', { body: { orderId, flag } });
   },
 
   /**
