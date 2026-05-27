@@ -2167,6 +2167,9 @@ const UserDetailPage = () => {
         <RefundEmailModal
           userId={id}
           userEmail={user?.email || ''}
+          userName={[user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || ''}
+          userPhone={user?.phone || ''}
+          orderId={(orders.find((o) => o.status === 'active') || orders[0])?._id || ''}
           onClose={() => setShowRefundEmail(false)}
         />
       )}

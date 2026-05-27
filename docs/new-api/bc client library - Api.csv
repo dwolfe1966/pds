@@ -1,0 +1,1381 @@
+Desc,path,method,example,param,return,misc
+"Login
+
+apiWrapper.api.auth.login",/api/auth/login,post,"apiWrapper.api.auth.login({ username: 'user@email.com', password: 'password' });
+
+Calling login without username or password will check if the user's session is already logged in on the server.",,,
+"Logout
+
+apiWrapper.api.auth.logout",/api/auth/logout,post,apiWrapper.api.auth.logout();,,{ success: true },
+"Teaser search
+
+apiWrapper.api.idLookup.searchTeaser",/api/idLookup/teaser/search,post,"1) name teaser search
+
+apiWrapper.api.idLookup.searchTeaser({
+  state: 'FL',
+  fName: 'tim',
+  lName: 'chin',
+  type: 'name',
+  contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
+});
+
+
+2) phone teaser search
+
+apiWrapper.api.idLookup.searchTeaser({
+  phone: '8054320540',
+  type: 'phone',
+  contextKey: window.ApiWrapper.contextKey.sale.phone.teaser, // sale.phone.teaser
+});
+
+
+3) email teaser search
+
+apiWrapper.api.idLookup.searchTeaser({
+  email: 'chin19691@gmail.com',
+  type: 'email',
+  contextKey: window.ApiWrapper.contextKey.sale.email.teaser, // sale.email.teaser
+});
+
+
+LoadMore) pagination for name, phone and email teaser search
+
+You can retrieve the next page using hasMore() and getMore() in the searchTeaser response object.
+
+const response = await apiWrapper.api.idLookup.searchTeaser({
+  state: 'FL',
+  fName: 'tim',
+  lName: 'chin',
+  type: 'name',
+  contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
+});
+
+const identitiesOfFirstPage = response.getIdentities();
+
+// Called when the user clicks a button like LoadMore.
+const identitiesOfNextPage = await response.getMore();
+
+Get Failed Code
+response.getFailedCode(); // TooManyMatches or null
+","state
+
+Alabama : AL
+Alaska : AK
+Arizona : AZ
+Arkansas : AR
+California : CA
+Colorado : CO
+Connecticut : CT
+Delaware : DE
+District Of Columbia : DC
+Florida : FL
+Georgia : GA
+Hawaii : HI
+Idaho : ID
+Illinois : IL
+Indiana : IN
+Iowa : IA
+Kansas : KS
+Kentucky : KY
+Louisiana : LA
+Maine : ME
+Maryland : MD
+Massachusetts : MA
+Michigan : MI
+Minnesota : MN
+Mississippi : MS
+Missouri : MO
+Montana : MT
+Nebraska : NE
+Nevada : NV
+New Hampshire : NH
+New Jersey : NJ
+New Mexico : NM
+New York : NY
+North Carolina : NC
+North Dakota : ND
+Ohio : OH
+Oklahoma : OK
+Oregon : OR
+Pennsylvania : PA
+Rhode Island : RI
+South Carolina : SC
+South Dakota : SD
+Tennessee : TN
+Texas : TX
+Utah : UT
+Vermont : VT
+Virginia : VA
+Washington : WA
+West Virginia : WV
+Wisconsin : WI
+Wyoming : WY","raws.0.transient.identities : Search results array
+
+raws.0.transient.total : Total number
+
+raws.0.transient.perPage : Number of results per page",
+"Report search
+
+ApiWrapper.api.idLookup.createReport",/api/idLookup/report/create,post,"apiWrapper.api.idLookup.createReport({
+  type: 'extId',
+  extId: identity.extId,
+  contextKey: window.ApiWrapper.contextKey.sale.name.report, // sale.name.report
+  teaserInput: teaserResponse.getTeaserInput(),
+});
+
+extId can be passed by passing the extId property value of each element in the identities array received after searching for teaser.
+
+
+You can pass contextKey as the appropriate value based on name, phone, and email.
+
+name : window.ApiWrapper.contextKey.sale.name.report // sale.name.report
+phone : window.ApiWrapper.contextKey.sale.phone.report // sale.phone.report
+email : window.ApiWrapper.contextKey.sale.email.report // sale.email.report
+
+The teaserInput value can be obtained by calling the getTeaserInput() method as a response object after searching for the teaser.
+
+const teaserResponse = await apiWrapper.api.idLookup.searchTeaser({
+  state: 'FL',
+  fName: 'tim',
+  lName: 'chin',
+  type: 'name',
+  contextKey: window.ApiWrapper.contextKey.sale.name.teaser, // sale.name.teaser
+});
+
+teaserResponse.getTeaserInput();
+
+","1) extId case
+type: 'extId'
+extId: 'extId number'
+
+2) reversePhone case
+type: 'reversePhone'
+phone: 'phone number'","raws.0.transient.identities : Search results array
+
+raws.1.transient.fullContact : FullContact Results
+
+raws.2.transient.familyWatchdog.offenders : A list of criminals around the zip code at the front of the list for the property or address being searched.",
+"Get Report
+
+ApiWrapper.api.idLookup.getReport",/api/idLookup/report/detail/:commerceContentId,get,"Get report details
+
+You can use getReports to get an array of saved reports that the user has previously retrieved and pass the _id value of each element to commerceContentId .
+
+apiWrapper.api.idLookup.getReport({ commerceContentId: e._id });","commerceContentId
+(The _id value in the commerceContents array of Get Reports)",Same as Report search results,
+"Get Reports
+
+ApiWrapper.api.idLookup.getReports",/api/idLookup/report/list?lastId={lastCommerceContentId},get,"Retrieves the saved reports of the logged in user.
+
+const response = await apiWrapper.api.idLookup.getReports();
+
+response.commerceContents is an array of saved report information.
+
+commerceContent.data.teaserInput is the search information searched by the user.
+{
+  ""type"": ""name"",
+  ""contextKey"": ""sale.name.teaser"",
+  ""fName"": ""tim"",
+  ""lName"": ""chin"",
+  ""state"": ""FL""
+}
+
+Passing the last ID of the first loaded report will retrieve the saved report for the next page.
+
+response.commerceContents
+
+apiWrapper.api.idLookup.getReports({lastId: 'last commerceContent._id'});
+","lastId: lastCommerceContentId
+(The first page is called without lastId. The next page is called with lastId including the last commerceContent._id of the previous page.)","perPage: number
+
+commerceContents : An array of reports previously created by the user
+
+data.teaserInput : Teaser information searched by users when generating reports",
+"getUserSearchHistory Added on 2026-05-27
+
+apiWrapper.api.idLookup.getUserSearchHistory",/api/idLookup/userSearchHistory,get,"apiWrapper.api.idLookup.getUserSearchHistory({ lastId });
+
+params
+- lastId: (optional)",,"{
+    ""items"": [
+        {
+            ""_id"": ""6a1629aa25b6a60930527b34"",
+            ""input"": {
+                ""type"": ""email"",
+                ""contextKey"": ""sale.name.teaser"",
+                ""email"": ""chin19691@gmail.com"",
+                ""searchQuery"": ""email:chin19691@gmail.com|type:email""
+            },
+            ""resultCount"": 1,
+            ""timestamp"": 1779837354400
+        },
+        {
+            ""_id"": ""6a16298e25b6a60930527ac1"",
+            ""input"": {
+                ""type"": ""phone"",
+                ""contextKey"": ""sale.name.teaser"",
+                ""phone"": ""8054320540"",
+                ""searchQuery"": ""phone:8054320540|type:phone""
+            },
+            ""resultCount"": 2,
+            ""timestamp"": 1779837326198
+        },
+        {
+            ""_id"": ""6a162129dc78a007303779d0"",
+            ""input"": {
+                ""type"": ""name"",
+                ""contextKey"": ""sale.name.teaser"",
+                ""fName"": ""tim"",
+                ""lName"": ""chin"",
+                ""state"": ""fl"",
+                ""searchQuery"": ""fName:tim|lName:chin|state:fl|type:name""
+            },
+            ""resultCount"": 16,
+            ""timestamp"": 1779835177818
+        }
+    ],
+    ""perPage"": 10
+}",
+"Download PDF
+
+ApiWrapper.api.idLookup.downloadPdfReport",,,"apiWrapper.api.idLookup.downloadPdfReport({
+  commerceContentId: e._id,
+});
+
+commerceContentId is only valid for detail reports already created with Report search, such as the results of Get Reports. (CommerceContentId searched with Teaser search cannot be downloaded as a PDF.)
+
+When you call the downloadPdfReport method as above, a PDF download pop-up window will open, and you can download the PDF by clicking the Confirm button.",,,
+"Commerce billing
+
+ApiWrapper.api.billing.sale",/commerceBilling/sale,post,"apiWrapper.api.billing.sale({
+  userInfo: {
+    email: 'user@email.com',
+    firstName: 'firstName',
+    lastName: 'lastName',
+    optin: true,
+  },
+  billings: [
+    {
+      billingType: 'creditCard',
+      creditCard: {
+        pan: '4111111111111111',
+        expYear: '30',
+        expMonth: '12',
+        cvv: '123',
+      },
+      billingAddress: {
+        firstName: 'billingFirstName',
+        lastName: 'billingLastName',
+        street1: '123 main',
+        zip: '10001',
+        bogusFields: {
+          firstName: false,
+          lastName: false,
+          street1: true,
+          street2: true,
+          city: true,
+          state: true,
+          zip: false,
+          country: true,
+        },
+      },
+    },
+  ],
+  commerceOfferKeys: [
+    {
+      key: 'comp.offer.signup.main',
+      target: 'main',
+      options: {},
+    },
+  ],
+  sequenceOption: {
+    thinMatch: false,
+    thinMatchDataProviderDown: false,
+    thinMatchTooManyResults: false,
+    thinMatchNoResults: false,
+    thinMatchGeographic: false,
+  },
+  queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
+});","queryString is a query string value included in the url when a user accesses from an external link, in the format refer_partnerId=p1&refer_afid=af1&refer_abc=bcd.",,
+"Commerce billing
+
+apiWrapper.api.billing.tokenSale",/commerceBilling/tokenSale,post,"apiWrapper.api.billing.tokenSale({
+  commerceOfferKeys: [
+    {
+      key: 'comp.offer.updateCard.main',
+      target: 'main',
+      options: {},
+    },
+  ],
+  sequenceOption: {
+    thinMatch: false,
+    thinMatchDataProviderDown: false,
+    thinMatchTooManyResults: false,
+    thinMatchNoResults: false,
+    thinMatchGeographic: false,
+  },
+  queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
+});","queryString is a query string value included in the url when a user accesses from an external link, in the format refer_partnerId=p1&refer_afid=af1&refer_abc=bcd.",,
+"Commerce billing
+
+apiWrapper.api.billing.signup",/commerceBilling/signup,post,"apiWrapper.api.billing.signup({
+  userInfo: {
+    email: billingEmail,
+    firstName: billingFirstName,
+    lastName: billingLastName,
+    optin: true,
+  },
+  queryString: 'refer_partnerId=p1&refer_afid=af1&refer_abc=bcd',
+});","queryString is a query string value included in the url when a user accesses from an external link, in the format refer_partnerId=p1&refer_afid=af1&refer_abc=bcd.",,
+a,/commerce/offer/findByShmName,post,"apiWrapper.api.offer.findByShmName({ shmName, key });
+
+params
+ - shmName: The name of shComp starting with comp.
+ - key: (optional) : The key of the shComp. e.g.) main (if no value is found, main is the default)
+
+return
+ - commerceProducts : You can get the name of the product included in the offer
+ - transient : You can obtain the priceInfo value containing the s0, s1 price and s1 period.
+",,"{
+    ""_id"": ""6913e0e0a4b8675e90771be7"",
+    ""index"": [],
+    ""status"": ""active"",
+    ""referenceIds"": [],
+    ""permissionIds"": [],
+    ""name"": ""membership.offer.default.1"",
+    ""description"": ""default offer"",
+    ""extName"": ""DEFAULT OFFER 1"",
+    ""commerceProductDetail"": [
+        {
+            ""commerceProduct"": ""6913e0c3a4b8675e90771bd6"",
+            ""commerceStockDetail"": {
+                ""commerceStock"": ""6913e0aea4b8675e90771bcb"",
+                ""quantity"": 50,
+                ""period"": {
+                    ""quantity"": 1,
+                    ""unit"": ""y""
+                }
+            }
+        },
+        {
+            ""commerceProduct"": ""6913e12fa4b8675e90771bf2"",
+            ""commerceStockDetail"": {
+                ""commerceStock"": ""6913e0aea4b8675e90771bcb"",
+                ""quantity"": 10,
+                ""period"": {
+                    ""quantity"": 1,
+                    ""unit"": ""d""
+                }
+            }
+        },
+        {
+            ""commerceProduct"": ""699fbb9f26a1804895701500"",
+            ""commerceStockDetail"": {
+                ""commerceStock"": ""6913e0aea4b8675e90771bcb"",
+                ""quantity"": 100,
+                ""period"": {
+                    ""quantity"": 1,
+                    ""unit"": ""d""
+                }
+            }
+        }
+    ],
+    ""commercePrice"": {
+        ""prices"": [
+            {
+                ""amount"": 1.99,
+                ""code"": """",
+                ""sequence"": ""v.s == 0"",
+                ""period"": {
+                    ""quantity"": 7,
+                    ""unit"": ""d""
+                },
+                ""options"": {
+                    ""test"": 123
+                }
+            },
+            {
+                ""amount"": 39.99,
+                ""code"": """",
+                ""sequence"": ""v.s > 0"",
+                ""period"": {
+                    ""quantity"": 1,
+                    ""unit"": ""m""
+                }
+            },
+            {
+                ""amount"": 0,
+                ""code"": """",
+                ""sequence"": ""v.s > 0"",
+                ""period"": {
+                    ""quantity"": 1,
+                    ""unit"": ""m""
+                }
+            }
+        ]
+    },
+    ""provides"": [],
+    ""__v"": 54,
+    ""createdAt"": ""2025-11-12T01:20:32.953Z"",
+    ""updatedAt"": ""2026-04-21T21:08:47.850Z"",
+    ""currentRevisionId"": ""69e7e75f35dae3f537607a90"",
+    ""commercePriceRules"": [
+        {
+            ""_DESC_"": ""S0"",
+            ""priority"": 1,
+            ""conditions"": [
+                {
+                    ""sequence"": 0
+                }
+            ],
+            ""candidates"": [
+                {
+                    ""id"": {
+                        ""amount"": 1.01,
+                        ""code"": ""usd"",
+                        ""period"": {
+                            ""quantity"": 7,
+                            ""unit"": ""d""
+                        }
+                    },
+                    ""weight"": 1
+                }
+            ]
+        },
+        {
+            ""_DESC_"": ""S1+"",
+            ""priority"": 2,
+            ""conditions"": [
+                {
+                    ""sequence"": ""v > 0""
+                }
+            ],
+            ""candidates"": [
+                {
+                    ""id"": {
+                        ""amount"": 39.01,
+                        ""code"": ""usd"",
+                        ""period"": {
+                            ""quantity"": 30,
+                            ""unit"": ""d""
+                        }
+                    },
+                    ""weight"": 1
+                }
+            ]
+        }
+    ],
+    ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+    ""option"": {
+        ""nonMemberOnly"": true
+    },
+    ""extDesc"": ""11"",
+    ""optionString"": ""{\n  \""nonMemberOnly\"": true\n}"",
+    ""commerceProducts"": [
+        {
+            ""_id"": ""6913e0c3a4b8675e90771bd6"",
+            ""name"": ""nameSearch"",
+            ""id"": ""6913e0c3a4b8675e90771bd6""
+        },
+        {
+            ""_id"": ""6913e12fa4b8675e90771bf2"",
+            ""name"": ""phoneSearch"",
+            ""id"": ""6913e12fa4b8675e90771bf2""
+        },
+        {
+            ""_id"": ""699fbb9f26a1804895701500"",
+            ""name"": ""pdf"",
+            ""id"": ""699fbb9f26a1804895701500""
+        }
+    ],
+    ""id"": ""6913e0e0a4b8675e90771be7"",
+    ""transient"": {
+        ""priceInfo"": {
+            ""s0"": {
+                ""amount"": 1.01,
+                ""code"": ""usd""
+            },
+            ""s1"": {
+                ""amount"": 39.01,
+                ""code"": ""usd""
+            },
+            ""s1Period"": {
+                ""amount"": 39.01,
+                ""code"": ""usd"",
+                ""period"": {
+                    ""quantity"": 30,
+                    ""unit"": ""d""
+                }
+            }
+        }
+    }
+}",
+"Open OptOut Page
+
+ApiWrapper.goPage('optOut', { newPage: true });",,,"ApiWrapper.goPage('optOut', { newPage: true });
+
+Calling it as above will open the optOut page in a new window. Calling newPage with false will redirect the current page to the optOut page.",,,
+"Create Contact
+
+apiWrapper.api.contact.create
+
+Edited on 2026-04-17
+apiWrapper.api.message.contact.create",/api/contactMessage/create,post,"[Create Contact]
+
+Edited on 2026-04-17
+params:
+  {
+      category: 'billing';
+      date: Date[];
+      name: string;
+      email: string;
+      zip: string;
+      last4: string;
+      phone?: string;
+      orderId?: string;
+  }
+  | 
+  {
+    category: 'general';
+    topic: string;
+    name: string;
+    email: string;
+    phone: string;
+    description: string;
+    orderId: string;
+    zip?: string;
+    last4?: string;
+  }
+
+apiWrapper.api.message.contact.create(param);
+
+Added on 2026-03-31 (Removed)
+attachments: (optional) File[]
+- You can add attachments to the request value.
+contentType
+ - contentType: text/plain or text/html",,"{
+    ""success"": true,
+    ""messageResult"": {
+        ""index"": [],
+        ""type"": ""contact"",
+        ""ownerHash"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+        ""referenceIds"": [],
+        ""permissionIds"": [],
+        ""hash"": ""c3c54e5db1cfb633ce9a35728d175da5"",
+        ""content"": {
+            ""category"": ""billing"",
+            ""input"": {
+                ""date"": [
+                    ""2026-04-17T21:16:29.466Z""
+                ],
+                ""name"": ""Tim Chin"",
+                ""email"": ""test123Q@bytecrtrs.com"",
+                ""zip"": ""90000"",
+                ""last4"": ""1111""
+            }
+        },
+        ""attachments"": [],
+        ""_id"": ""69e2a32d83d366d4bf6e2f69"",
+        ""createdAt"": ""2026-04-17T21:16:29.965Z"",
+        ""updatedAt"": ""2026-04-17T21:16:29.977Z"",
+        ""createdTimestamp"": 1776460589965,
+        ""updatedTimestamp"": 1776460589965,
+        ""brandId"": ""idlookup"",
+        ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+        ""shColId"": ""69aa41b648af3b202e7fb065"",
+        ""shTimestamp"": 1776458031094,
+        ""__v"": 1,
+        ""currentRevisionId"": ""69e2a32d83d366d4bf6e2f6b"",
+        ""id"": ""69e2a32d83d366d4bf6e2f69""
+    },
+    ""mailResult"": {
+        ""provider"": ""smtp01Mailer"",
+        ""success"": true,
+        ""response"": {
+            ""accepted"": [
+                ""dev@forserver.net""
+            ],
+            ""rejected"": [],
+            ""ehlo"": [
+                ""PIPELINING"",
+                ""SIZE 10240000"",
+                ""VRFY"",
+                ""ETRN"",
+                ""AUTH PLAIN LOGIN"",
+                ""AUTH=PLAIN LOGIN"",
+                ""ENHANCEDSTATUSCODES"",
+                ""8BITMIME"",
+                ""DSN"",
+                ""SMTPUTF8"",
+                ""CHUNKING""
+            ],
+            ""envelopeTime"": 230,
+            ""messageTime"": 228,
+            ""messageSize"": 581,
+            ""response"": ""250 2.0.0 Ok: queued as 89CE240425"",
+            ""envelope"": {
+                ""from"": """",
+                ""to"": [
+                    ""dev@forserver.net""
+                ]
+            },
+            ""messageId"": ""<d77693bd-b24b-eab9-858d-86e34f19d6ee@localhost>""
+        }
+    }
+}",
+"Reply ContactMessage Added on 2026-04-17
+
+apiWrapper.api.message.contact.reply",/api/contactMessage/userReply,post,"[Reply ContactMessage]
+After creating a Contact (Create Contact), if the CSR creates [Create Csr Reply], the user can create this Reply ContactMessage. 
+If the last thread of the Contact is [Create Csr Reply], this [Reply ContactMessage] can be created once for this response.
+
+apiWrapper.api.message.contact.reply({ contactMessageId, hash, message, contentType, attachments })
+
+params
+ - contactMessageId: string; // You need to retrieve the value using the queryString of the reply link and pass it.
+ - hash: string; // You need to retrieve the value using the queryString of the reply link and pass it.
+ - message: string;
+ - contentType: 'text/plain' | 'text/html';
+ - attachments?: FileList | File[];
+
+Reply Link example)
+https://dev1002.dev.www.idlookup.ai/test/development.html?type=contact&hash=a7d4abd1daa761066bce6002af986449&contactMessageId=69e29eea70d9834df6aac8b8",,,
+"Get Contact Message Histories
+Addon on 2026-04-17
+
+apiWrapper.api.message.contact.histories",/api/contactMessage/histories,get,"apiWrapper.api.message.contact.histories({ contactMessageId, hash, lastId })
+
+params
+ - contactMessageId : You need to retrieve the value using the queryString of the reply link and pass it.
+ - hash : // You need to retrieve the value using the queryString of the reply link and pass it.
+ - lastId : (optional) You can pass it to get the list on the next page.
+
+response
+ - docs : The initially created contactMessage and reply(user, csr) records
+ - anyFile : Whether to enforce the upload attachment file type.",,"{
+    ""docs"": [
+        {
+            ""_id"": ""69e29eea70d9834df6aac8b8"",
+            ""index"": [],
+            ""type"": ""contact"",
+            ""ownerHash"": ""59ByuGKm1QCoSpi2WBy66shjG5f50IXf"",
+            ""referenceIds"": [],
+            ""permissionIds"": [],
+            ""hash"": ""a7d4abd1daa761066bce6002af986449"",
+            ""content"": {
+                ""category"": ""general"",
+                ""input"": {
+                    ""topic"": ""Test topic"",
+                    ""name"": ""Tim Chin"",
+                    ""email"": ""test123Q@gmail.com"",
+                    ""phone"": ""8054320540"",
+                    ""description"": ""description"",
+                    ""orderId"": ""6927a03adc1ab27a35dd07d3""
+                }
+            },
+            ""attachments"": [],
+            ""createdAt"": ""2026-04-17T20:58:18.087Z"",
+            ""updatedAt"": ""2026-04-17T20:58:18.096Z"",
+            ""createdTimestamp"": 1776459498087,
+            ""updatedTimestamp"": 1776459498087,
+            ""brandId"": ""idlookup"",
+            ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+            ""shColId"": ""69aa41b648af3b202e7fb065"",
+            ""shTimestamp"": 1776458031094,
+            ""__v"": 1,
+            ""currentRevisionId"": ""69e29eea70d9834df6aac8ba"",
+            ""id"": ""69e29eea70d9834df6aac8b8""
+        }
+    ],
+    ""noMoreDocs"": true,
+    ""anyFile"": false
+}",
+"Removed on 2026-04-17
+Create User Contact Added on 2026-03-27
+
+apiWrapper.api.user.createContact",/api/message/userContact,post,"[Create User Contact]
+A logged-in user composes a contact message. This applies to messages written via the Reply link within the email when the CSR sends an email to the User.
+
+apiWrapper.api.user.createContact({ message, parentCsrMessageId, contentType });
+
+Added on 2026-03-31
+attachments: (optional) File[]
+- You can add attachments to the request value.
+contentType
+ - contentType: text/plain or text/html
+
+Added on 2026-04-13
+parentCsrMessageId: If createCsrMail is created for the user in CSR, when the user clicks reply to the email, the page is accessed including the parentCsrMessageId value in the QueryString. This parentCsrMessageId must be passed.",,,
+"Removed on 2026-04-17
+Get User Contacts Added on 2026-04-13
+
+apiWrapper.api.user.getContacts",/api/message/userContact/list,post,"apiWrapper.api.user.getContacts({ lastId })
+
+Ten [Create User Contact] entries created by the user or [Create Csr Mail] entries created by Csr to the user are returned. The next page can be retrieved by passing the lastId (_id).
+
+params
+- lastId: (optional)",,"{
+    ""messages"": [
+        {
+            ""_id"": ""69dd75a590dfdabfe96c37f5"",
+            ""index"": [],
+            ""type"": ""userContact"",
+            ""status"": ""requested"",
+            ""ownerId"": ""69d9acbc7c4fc440d9ca5d1a"",
+            ""referenceIds"": [],
+            ""permissionIds"": [],
+            ""content"": {
+                ""message"": ""contact test message."",
+                ""contentType"": ""text/html"",
+                ""parentCsrMessageId"": ""69dd757390dfdabfe96c3794"",
+                ""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a""
+            },
+            ""attachments"": [],
+            ""createdAt"": ""2026-04-13T23:00:53.232Z"",
+            ""updatedAt"": ""2026-04-13T23:00:53.253Z"",
+            ""createdTimestamp"": 1776121253233,
+            ""updatedTimestamp"": 1776121253233,
+            ""brandId"": ""idlookup"",
+            ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+            ""shColId"": ""69aa41b648af3b202e7fb065"",
+            ""shTimestamp"": 1776121203822,
+            ""updaterId"": ""69d9acbc7c4fc440d9ca5d1a"",
+            ""__v"": 1,
+            ""currentRevisionId"": ""69dd75a590dfdabfe96c37f8"",
+            ""id"": ""69dd75a590dfdabfe96c37f5""
+        },
+        {
+            ""_id"": ""69dd757390dfdabfe96c3794"",
+            ""index"": [],
+            ""type"": ""userContactCsrMail"",
+            ""status"": ""fulfilled"",
+            ""ownerId"": ""6943179e90625d3dbeadf6f7"",
+            ""referenceIds"": [],
+            ""permissionIds"": [],
+            ""content"": {
+                ""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a"",
+                ""subject"": ""test csr mail 2"",
+                ""message"": ""<div>dfsdfsdfdsfs</div>\n<p><a href=\""https://dev1002.dev.www.idlookup.ai/api/auth/loginLink?loginHash=69dd705abd97ce4d4cf385058f0972bb0216413dce1ede26bef73c90L3Rlc3QvZGV2ZWxvcG1lbnQuaHRtbD9wYXJlbnRDc3JNZXNzYWdlSWQ9NjlkZDc1NzM5MGRmZGFiZmU5NmMzNzk0&amp;clientId=dgDKgCwkVlndNexXtvUaNpZUiQLHWSzK&amp;apiId=AO6RMkGLzfcH2lAfzi18hPr49kXbuE4o\"">Reply</a></p>"",
+                ""contentType"": ""text/html""
+            },
+            ""attachments"": [],
+            ""createdAt"": ""2026-04-13T23:00:03.957Z"",
+            ""updatedAt"": ""2026-04-13T23:00:03.967Z"",
+            ""createdTimestamp"": 1776121203958,
+            ""updatedTimestamp"": 1776121203958,
+            ""brandId"": ""bytecrtrs"",
+            ""shConId"": ""69129afbeee8fa241c86c9c2"",
+            ""shColId"": ""69431f043a915bc1be68b4bc"",
+            ""shTimestamp"": 1776121203619,
+            ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+            ""__v"": 1,
+            ""currentRevisionId"": ""69dd757390dfdabfe96c37a7"",
+            ""id"": ""69dd757390dfdabfe96c3794""
+        },
+        {
+            ""_id"": ""69dd707dbd97ce4d4cf3856e"",
+            ""index"": [],
+            ""type"": ""userContact"",
+            ""status"": ""requested"",
+            ""ownerId"": ""69d9acbc7c4fc440d9ca5d1a"",
+            ""referenceIds"": [],
+            ""permissionIds"": [],
+            ""content"": {
+                ""message"": ""contact test message."",
+                ""contentType"": ""text/html"",
+                ""parentCsrMessageId"": ""69dd705abd97ce4d4cf38504"",
+                ""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a""
+            },
+            ""attachments"": [],
+            ""createdAt"": ""2026-04-13T22:38:53.011Z"",
+            ""updatedAt"": ""2026-04-13T22:38:53.020Z"",
+            ""createdTimestamp"": 1776119933011,
+            ""updatedTimestamp"": 1776119933011,
+            ""brandId"": ""idlookup"",
+            ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+            ""shColId"": ""69aa41b648af3b202e7fb065"",
+            ""shTimestamp"": 1776119834020,
+            ""updaterId"": ""69d9acbc7c4fc440d9ca5d1a"",
+            ""__v"": 1,
+            ""currentRevisionId"": ""69dd707dbd97ce4d4cf38570"",
+            ""id"": ""69dd707dbd97ce4d4cf3856e""
+        },
+        {
+            ""_id"": ""69dd705abd97ce4d4cf38504"",
+            ""index"": [],
+            ""type"": ""userContactCsrMail"",
+            ""status"": ""fulfilled"",
+            ""ownerId"": ""6943179e90625d3dbeadf6f7"",
+            ""referenceIds"": [],
+            ""permissionIds"": [],
+            ""content"": {
+                ""targetUserId"": ""69d9acbc7c4fc440d9ca5d1a"",
+                ""subject"": ""test csr mail"",
+                ""message"": ""<div>sdfsdfsdfsdfs</div>\n<p><a href=\""https://dev1002.dev.www.idlookup.ai/api/auth/loginLink?loginHash=69dd705abd97ce4d4cf385058f0972bb0216413dce1ede26bef73c90L3Rlc3QvZGV2ZWxvcG1lbnQuaHRtbD9wYXJlbnRDc3JNZXNzYWdlSWQ9NjlkZDcwNWFiZDk3Y2U0ZDRjZjM4NTA0&amp;clientId=CNcHUvxQgaYeNQG3wJEcz9vVDt0lfvLZ&amp;apiId=1SPvOqJlIiJ7OK7YztLvJpgchy0M4H0V\"">Reply</a></p>"",
+                ""contentType"": ""text/html""
+            },
+            ""attachments"": [],
+            ""createdAt"": ""2026-04-13T22:38:18.601Z"",
+            ""updatedAt"": ""2026-04-13T22:38:18.611Z"",
+            ""createdTimestamp"": 1776119898602,
+            ""updatedTimestamp"": 1776119898602,
+            ""brandId"": ""bytecrtrs"",
+            ""shConId"": ""69129afbeee8fa241c86c9c2"",
+            ""shColId"": ""69431f043a915bc1be68b4bc"",
+            ""shTimestamp"": 1776119833870,
+            ""updaterId"": ""6943179e90625d3dbeadf6f7"",
+            ""__v"": 1,
+            ""currentRevisionId"": ""69dd705abd97ce4d4cf38509"",
+            ""id"": ""69dd705abd97ce4d4cf38504""
+        }
+    ],
+    ""noMoreDocs"": true
+}",
+Count User Teaser Searches,/api/idLookup/statistic/userTeaserSearches,get,apiWrapper.api.idLookup.countUserTeaserSearches();,,"{
+    ""count"": 5
+}",
+Count User Report Creations,/api/idLookup/statistic/userReportCreations,get,apiWrapper.api.idLookup.countUserReportCreations();,,"{
+    ""count"": 2
+}",
+Count User Pdf Downloads,/api/idLookup/statistic/userPdfDownloads,get,apiWrapper.api.idLookup.countUserPdfDownloads();,,"{
+    ""count"": 2
+}",
+Get Activated Product Types,/api/commerceBilling/getActivatedProductTypes,post,apiWrapper.api.billing.getActivatedProductTypes();,,"{
+    ""productTypes"": [
+        ""nameSearch"",
+        ""phoneSearch"",
+        ""pdf""
+    ]
+}",
+Get User Orders,/api/commerceBilling/getUserOrders,post,"apiWrapper.api.billing.getOrders();
+
+// For each order, you can check whether to cancel using the attribute below.
+""transient"": {
+  ""canceled"": false,
+  ""cancelable"": true,
+  ""uncancelable"": false
+ }",,"[
+    {
+        ""index"": [],
+        ""_id"": ""69bdb6a944e3208497ccce1c"",
+        ""status"": ""active"",
+        ""referenceIds"": [],
+        ""permissionIds"": [],
+        ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+        ""shColId"": ""69aa41b648af3b202e7fb065"",
+        ""shTimestamp"": 1773690170207,
+        ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+        ""payerId"": ""69bdb6a944e3208497cccdfe"",
+        ""commerceTokens"": [
+            ""69bdb6a944e3208497ccce13""
+        ],
+        ""commerceOffers"": [
+            ""6913e0e0a4b8675e90771be7"",
+            ""697d50ef5806577558218df1""
+        ],
+        ""commerceOfferRevisions"": [
+            ""69bd9a507bf6bc90f9217a82"",
+            ""69bd9a3f7bf6bc90f9217a42""
+        ],
+        ""commerceOfferInfos"": [
+            {
+                ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
+                ""commerceOfferRevisionId"": ""69bd9a507bf6bc90f9217a82"",
+                ""commerceProductInfos"": [
+                    {
+                        ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
+                        ""commerceProductRevisionId"": ""69af70d89e31767f06cde687"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce18"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    },
+                    {
+                        ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
+                        ""commerceProductRevisionId"": ""69af70e89e31767f06cde6b1"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce19"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    },
+                    {
+                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
+                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce1a"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    }
+                ],
+                ""options"": null
+            },
+            {
+                ""commerceOfferId"": ""697d50ef5806577558218df1"",
+                ""commerceOfferRevisionId"": ""69bd9a3f7bf6bc90f9217a42"",
+                ""commerceProductInfos"": [
+                    {
+                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
+                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce1b"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    }
+                ],
+                ""options"": null
+            }
+        ],
+        ""commercePriceRules"": [
+            {
+                ""_DESC_"": ""S0"",
+                ""priority"": 1,
+                ""conditions"": [
+                    {
+                        ""sequence"": 0
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 1.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 7,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            },
+            {
+                ""_DESC_"": ""S1+"",
+                ""priority"": 2,
+                ""conditions"": [
+                    {
+                        ""sequence"": ""v > 0""
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 39.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 30,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            },
+            {
+                ""_DESC_"": ""S0"",
+                ""priority"": 1,
+                ""conditions"": [
+                    {
+                        ""sequence"": 0
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 1.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 30,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            },
+            {
+                ""_DESC_"": ""S1+"",
+                ""priority"": 2,
+                ""conditions"": [
+                    {
+                        ""sequence"": ""v > 0""
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 1.02,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 30,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            }
+        ],
+        ""sequenceOption"": {
+            ""thinMatch"": false,
+            ""thinMatchDataProviderDown"": false,
+            ""thinMatchTooManyResults"": false,
+            ""thinMatchNoResults"": false,
+            ""thinMatchGeographic"": false
+        },
+        ""ipAddress"": ""110.47.168.218"",
+        ""refer"": {
+            ""partnerId"": ""p1"",
+            ""afid"": ""af1"",
+            ""abc"": ""bcd""
+        },
+        ""sessionDuration"": 31695,
+        ""orderTimestamp"": 1774040745096,
+        ""nonMemberOnly"": true,
+        ""immediateRetry"": false,
+        ""immediateRetryCount"": 0,
+        ""createdAt"": ""2026-03-20T21:05:45.135Z"",
+        ""updatedAt"": ""2026-03-23T20:15:21.029Z"",
+        ""createdTimestamp"": 1774040745135,
+        ""updatedTimestamp"": 1774040745135,
+        ""brandId"": ""idlookup"",
+        ""__v"": 19,
+        ""currentRevisionId"": ""69c19f599a1871e047ab263b"",
+        ""dueTimestamp"": 1776580245096,
+        ""statusReason"": ""SuccessfulTx"",
+        ""updaterId"": ""69bdb6a944e3208497cccdfe"",
+        ""id"": ""69bdb6a944e3208497ccce1c"",
+        ""transient"": {
+            ""canceled"": false,
+            ""cancelable"": true,
+            ""uncancelable"": false
+        }
+    }
+]",
+Update User,/api/user/update,post,"apiWrapper.api.user.update({ firstName, lastName, phone });
+
+firstName, lastName, and phone are optional.",,"{
+    ""_id"": ""69bdb6a944e3208497cccdfe"",
+    ""uniqueId"": ""idlookup|aaaa111111@bc.dev.none"",
+    ""index"": [
+        ""em:aaaa111111@bc.dev.none"",
+        ""fn:testfname"",
+        ""ln:testlname"",
+        ""l4:1111"",
+        ""bn:411111"",
+        ""ph:8054320541"",
+        ""fn:tim"",
+        ""ln:chin""
+    ],
+    ""status"": ""active"",
+    ""referenceIds"": [],
+    ""permissionIds"": [],
+    ""brandId"": ""idlookup"",
+    ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+    ""shColId"": ""69aa41b648af3b202e7fb065"",
+    ""shTimestamp"": 1773690170207,
+    ""email"": ""aaaa111111@bc.dev.none"",
+    ""firstName"": ""tim"",
+    ""lastName"": ""chin"",
+    ""roles"": [],
+    ""prevShape"": [],
+    ""createdAt"": ""2026-03-20T21:05:45.013Z"",
+    ""updatedAt"": ""2026-03-23T21:27:02.266Z"",
+    ""createdTimestamp"": 1774040745013,
+    ""updatedTimestamp"": 1774040745013,
+    ""__v"": 103,
+    ""currentRevisionId"": ""69c1b0260c12c8fab0c39b1c"",
+    ""updaterId"": ""69bdb6a944e3208497cccdfe"",
+    ""phone"": ""8054320541"",
+    ""id"": ""69bdb6a944e3208497cccdfe""
+}",
+Change Password,/api/user/changePassword,post,apiWrapper.api.user.changePassword(password);,,"{
+    ""_id"": ""69bdb6a944e3208497cccdfe"",
+    ""uniqueId"": ""idlookup|aaaa111111@bc.dev.none"",
+    ""index"": [
+        ""em:aaaa111111@bc.dev.none"",
+        ""fn:testfname"",
+        ""ln:testlname"",
+        ""l4:1111"",
+        ""bn:411111"",
+        ""ph:8054320541"",
+        ""fn:tim"",
+        ""ln:chin""
+    ],
+    ""status"": ""active"",
+    ""referenceIds"": [],
+    ""permissionIds"": [],
+    ""brandId"": ""idlookup"",
+    ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+    ""shColId"": ""69aa41b648af3b202e7fb065"",
+    ""shTimestamp"": 1773690170207,
+    ""email"": ""aaaa111111@bc.dev.none"",
+    ""firstName"": ""tim"",
+    ""lastName"": ""chin"",
+    ""roles"": [],
+    ""prevShape"": [],
+    ""createdAt"": ""2026-03-20T21:05:45.013Z"",
+    ""updatedAt"": ""2026-03-23T21:33:12.888Z"",
+    ""createdTimestamp"": 1774040745013,
+    ""updatedTimestamp"": 1774040745013,
+    ""__v"": 106,
+    ""currentRevisionId"": ""69c1b1980c12c8fab0c39c67"",
+    ""updaterId"": ""69bdb6a944e3208497cccdfe"",
+    ""phone"": ""8054320541"",
+    ""id"": ""69bdb6a944e3208497cccdfe""
+}",
+Reset Password,/api/user/resetPassword,post,"apiWrapper.api.user.resetPassword(email);
+
+An email with a login link will be sent to your email address. You can change your password after logging in.",,"{
+    ""success"": true
+}",
+Cancel Or Uncancel Order,/api/commerceBilling/cancelOrUncancelOrder,post,"apiWrapper.api.billing.cancelOrUncancelOrder(flag, orderId);
+
+flag: true(cancel) or false(uncancel)",,"{
+    ""success"": true,
+    ""commerceOrder"": {
+        ""_id"": ""69bdb6a944e3208497ccce1c"",
+        ""index"": [],
+        ""status"": ""active"",
+        ""referenceIds"": [],
+        ""permissionIds"": [],
+        ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+        ""shColId"": ""69aa41b648af3b202e7fb065"",
+        ""shTimestamp"": 1773690170207,
+        ""payeeId"": ""6943179e90625d3dbeadf6f7"",
+        ""payerId"": ""69bdb6a944e3208497cccdfe"",
+        ""commerceTokens"": [
+            ""69bdb6a944e3208497ccce13""
+        ],
+        ""commerceOffers"": [
+            ""6913e0e0a4b8675e90771be7"",
+            ""697d50ef5806577558218df1""
+        ],
+        ""commerceOfferRevisions"": [
+            ""69bd9a507bf6bc90f9217a82"",
+            ""69bd9a3f7bf6bc90f9217a42""
+        ],
+        ""commerceOfferInfos"": [
+            {
+                ""commerceOfferId"": ""6913e0e0a4b8675e90771be7"",
+                ""commerceOfferRevisionId"": ""69bd9a507bf6bc90f9217a82"",
+                ""commerceProductInfos"": [
+                    {
+                        ""commerceProductId"": ""6913e0c3a4b8675e90771bd6"",
+                        ""commerceProductRevisionId"": ""69af70d89e31767f06cde687"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce18"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    },
+                    {
+                        ""commerceProductId"": ""6913e12fa4b8675e90771bf2"",
+                        ""commerceProductRevisionId"": ""69af70e89e31767f06cde6b1"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce19"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    },
+                    {
+                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
+                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce1a"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    }
+                ],
+                ""options"": null
+            },
+            {
+                ""commerceOfferId"": ""697d50ef5806577558218df1"",
+                ""commerceOfferRevisionId"": ""69bd9a3f7bf6bc90f9217a42"",
+                ""commerceProductInfos"": [
+                    {
+                        ""commerceProductId"": ""699fbb9f26a1804895701500"",
+                        ""commerceProductRevisionId"": ""69af70e39e31767f06cde6a3"",
+                        ""commerceStockInfo"": {
+                            ""commerceStockId"": ""69bdb6a944e3208497ccce1b"",
+                            ""commerceStockRevisionId"": null,
+                            ""options"": null
+                        },
+                        ""options"": null
+                    }
+                ],
+                ""options"": null
+            }
+        ],
+        ""commercePriceRules"": [
+            {
+                ""_DESC_"": ""S0"",
+                ""priority"": 1,
+                ""conditions"": [
+                    {
+                        ""sequence"": 0
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 1.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 7,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            },
+            {
+                ""_DESC_"": ""S1+"",
+                ""priority"": 2,
+                ""conditions"": [
+                    {
+                        ""sequence"": ""v > 0""
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 39.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 30,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            },
+            {
+                ""_DESC_"": ""S0"",
+                ""priority"": 1,
+                ""conditions"": [
+                    {
+                        ""sequence"": 0
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 1.01,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 30,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            },
+            {
+                ""_DESC_"": ""S1+"",
+                ""priority"": 2,
+                ""conditions"": [
+                    {
+                        ""sequence"": ""v > 0""
+                    }
+                ],
+                ""candidates"": [
+                    {
+                        ""id"": {
+                            ""amount"": 1.02,
+                            ""code"": ""usd"",
+                            ""period"": {
+                                ""quantity"": 30,
+                                ""unit"": ""d""
+                            }
+                        },
+                        ""weight"": 1
+                    }
+                ]
+            }
+        ],
+        ""sequenceOption"": {
+            ""thinMatch"": false,
+            ""thinMatchDataProviderDown"": false,
+            ""thinMatchTooManyResults"": false,
+            ""thinMatchNoResults"": false,
+            ""thinMatchGeographic"": false
+        },
+        ""ipAddress"": ""110.47.168.218"",
+        ""refer"": {
+            ""partnerId"": ""p1"",
+            ""afid"": ""af1"",
+            ""abc"": ""bcd""
+        },
+        ""sessionDuration"": 31695,
+        ""orderTimestamp"": 1774040745096,
+        ""nonMemberOnly"": true,
+        ""immediateRetry"": false,
+        ""immediateRetryCount"": 0,
+        ""createdAt"": ""2026-03-20T21:05:45.135Z"",
+        ""updatedAt"": ""2026-03-23T21:33:58.365Z"",
+        ""createdTimestamp"": 1774040745135,
+        ""updatedTimestamp"": 1774040745135,
+        ""brandId"": ""idlookup"",
+        ""__v"": 21,
+        ""currentRevisionId"": ""69c1b1c60c12c8fab0c39cd9"",
+        ""dueTimestamp"": 1776580245096,
+        ""statusReason"": ""SuccessfulTx"",
+        ""updaterId"": ""69bdb6a944e3208497cccdfe"",
+        ""subStatus"": ""canceled"",
+        ""id"": ""69bdb6a944e3208497ccce1c""
+    }
+}",
+Create ManagedContact,/api/managedContact/create,post,"apiWrapper.api.managedContact.create({ type, contactAddress, campaignKey });
+
+type: 'email' or 'phone'
+contactAddress: emailAddress(contactType:email) or phoneNumber(contactType:phone)
+campaignKey: (optional) You can provide a campaign name (such as guest).
+
+Edited On 2026-03-30 
+- contactType > type",,"{
+    ""_id"": ""69c5ca2c2fd61fb4563532c6"",
+    ""uniqueId"": ""phone|idlookup|8054320540"",
+    ""__v"": 0,
+    ""brandId"": ""idlookup"",
+    ""contactAddress"": ""8054320540"",
+    ""contactType"": ""phone"",
+    ""createdAt"": ""2026-03-27T00:07:08.334Z"",
+    ""hash"": ""bd557affe8a9e01bf83c86a32a596e98"",
+    ""index"": [],
+    ""permissionIds"": [],
+    ""referenceIds"": [],
+    ""sessionId"": ""ybVaualKEWgT8To0TrCwmzsTGzzH4d49"",
+    ""shColId"": ""69aa41b648af3b202e7fb065"",
+    ""shConId"": ""69a2380b53ecf9b049d01fbb"",
+    ""status"": ""active"",
+    ""updatedAt"": ""2026-03-27T00:07:08.334Z"",
+    ""campaigns"": [],
+    ""id"": ""69c5ca2c2fd61fb4563532c6""
+}",
+"Create Tracking Addon 2026-04-17
+
+apiWrapper.api.tracking.create",/api/tracking/create,post,"apiWrapper.api.tracking.create(data)
+
+data: Record<string, any>
+ - You can pass data to be stored in tracking as an object.
+
+example)
+const data = {
+  type: 'agreement',
+  date: '2026-04-17'
+};",,,

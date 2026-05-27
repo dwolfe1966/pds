@@ -175,7 +175,7 @@ const REASONS = [
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-const RefundEmailModal = ({ userId, userEmail, orderId, amount, onClose }) => {
+const RefundEmailModal = ({ userId, userEmail, userName, userPhone, orderId, amount, onClose }) => {
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
   const [agentNotes, setAgentNotes] = useState('');
@@ -233,6 +233,14 @@ const RefundEmailModal = ({ userId, userEmail, orderId, amount, onClose }) => {
         subject,
         message: formattedMessage,
         contentType: 'text/plain',
+        // Required by the new BC two-step flow (F8): the underlying
+        // implementation creates a contactMessage on the user's behalf
+        // then replies to it. BC's create endpoint needs name/email/
+        // phone/orderId; phone gets the 212-555-0100 sentinel if blank.
+        userName,
+        userEmail,
+        userPhone,
+        orderId,
       });
       setSuccess(true);
     } catch (err) {

@@ -1397,11 +1397,82 @@ class ApiWrapperService {
     }
   }
 
-  // csrWrapper.api.user.createCsrMail — POST /message/admin/user/csrMail/create
-  // params: { targetUserId, subject, message }
+  // csrWrapper.api.message.contact.create — POST /api/contactMessage/admin/create
+  // CSR-composed contactMessage (creates a thread as if the user submitted it).
+  // params: { topic, name, email, phone, description, orderId, zip?, last4?, actorId?, attachments? }
+  // Returns the created thread with { _id, hash, ... } so callers can reply via
+  // csrCreateCsrReply or share the replyLinkUrl with the user.
+  async csrCreateContactMessage(params = {}) {
+    return await this._viaCsr('api.message.contact.create', params,
+      () => this._csrPost('/contactMessage/admin/create', params));
+  }
+
+  // csrWrapper.api.user.createCsrMail — DEPRECATED 2026-04-17
+  //
+  // BC's old `/api/message/admin/user/csrMail/create` route returns 404
+  // ("Cannot POST") on `dev.www.bytecrtrs.com`. The replacement is the
+  // contact.createCsrReply path (`/contactMessage/admin/csrReply`), but
+  // that endpoint requires an existing `contactMessageId` to reply to —
+  // it's a thread-reply, not a standalone outbound mail.
+  //
+  // To preserve the "Request billing action" UX (CSR-initiated outbound
+  // mail to finance with no prior user thread), we do a two-step flow:
+  //
+  //   1. csrCreateContactMessage — creates a new contactMessage thread on
+  //      the user's behalf (BC stores it as if the user had submitted).
+  //   2. csrCreateCsrReply — replies to that thread with the actual
+  //      billing-action content. BC then handles the email + thread.
+  //
+  // The final thread is visible in /csr/tickets for follow-up. Callers
+  // must pass enough user context (name, email, phone, orderId) to
+  // satisfy the create endpoint's validators (same as the consumer-side
+  // contactMessage/create body — phone must be a valid number; orderId
+  // must match /^[a-zA-Z0-9]{8,24}$/).
+  //
+  // params:
+  //   { targetUserId, subject, message, contentType?, attachments?,
+  //     // additional fields required to bootstrap the new thread:
+  //     userName, userEmail, userPhone, orderId }
   async csrCreateCsrMail(params = {}) {
-    return await this._viaCsr('api.user.createCsrMail', params,
-      () => this._csrPost('/message/admin/user/csrMail/create', params));
+    const {
+      targetUserId, subject, message,
+      contentType = 'text/plain', attachments,
+      userName, userEmail, userPhone, orderId,
+    } = params;
+
+    if (!userEmail) throw new Error('userEmail is required to seed the contactMessage thread');
+
+    // Step 1: create the contactMessage on the user's behalf. Use the
+    // CSR subject as the thread topic so the new thread is recognizable.
+    const phoneDigits = String(userPhone || '').replace(/\D/g, '');
+    const phone = phoneDigits.length >= 10 ? phoneDigits : '2125550100'; // same sentinel consumer uses
+    const created = await this.csrCreateContactMessage({
+      topic: subject || 'Billing action requested by CSR',
+      name: userName || 'Member',
+      email: userEmail,
+      phone,
+      description: subject || 'Billing action requested by CSR',
+      orderId: orderId && /^[a-zA-Z0-9]{8,24}$/.test(orderId) ? orderId : 'NOORDERID0000',
+    });
+
+    // BC returns the new contactMessage doc; pull its id.
+    const data = created?.getData?.() ?? created;
+    const newThread = data?.contactMessage || data?.doc || data?.docs?.[0] || data;
+    const contactMessageId = newThread?._id || newThread?.id;
+    if (!contactMessageId) {
+      const err = new Error('CSR contact-message create returned no id; cannot reply.');
+      err.createResponse = created;
+      throw err;
+    }
+
+    // Step 2: post the actual billing-action body as a CSR reply.
+    return await this.csrCreateCsrReply({
+      contactMessageId,
+      subject,
+      message,
+      contentType,
+      ...(attachments ? { attachments } : {}),
+    });
   }
 
   // csrWrapper.api.message.contact.find — GET /api/contactMessage/admin/find

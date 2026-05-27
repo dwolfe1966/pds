@@ -1,7 +1,9 @@
 - [User context & dual-machine setup](user_context.md) — Mac + Windows, sync via git
 - [Cross-machine memory sync](reference_memory_sync.md) — `.claude/memory/` is committed; symlink/junction the per-project memory path on each machine
+- [BC is internal, not third-party vendor](project_bc_org_relationship.md) — same company; frame as internal coordination, propose specific fixes, not vendor escalation
 - [ByteCrtrs API reference](bytecrtrs_api_reference.md) — full method signatures on `window.ApiWrapper`
 - [BC Admin API reference (csrWrapper)](bc_admin_api_reference.md) — admin-side endpoints for the separate Admin App build
+- [BC API docs CSV locations](reference_bc_api_docs_location.md) — `docs/new-api/bc client library - {Api,csrApi,HowTo}.csv` are the source of truth; grep these before guessing endpoints
 - [BC integration boundary](project_bc_integration_boundary.md) — IIFE only exposes auth/idLookup/optOut/billing; profile/sub/alerts/notif/pwd stay mock until BC expands
 - [Architecture decisions](project_architecture_decisions.md) — finalized decisions for tracking, email, deployment
 - [Production deployment architecture](project_production_architecture.md) — production may ship as pure React SPA; `/server` is dev mock only
@@ -19,4 +21,8 @@
 - [Feedback: autonomous mode for launch sprint](feedback_autonomous_mode.md) — proceed on agreed work without per-step confirmation; pause only for destructive or genuinely ambiguous actions
 - [Feedback: search contextKey/teaserInput require extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time
 - [Feedback: never bake the BC captcha password into a bundle](feedback_no_secrets_in_bundle.md) — `.env.production` ships with empty captcha pass; never override via `.env.production.local` or `.env.local`
+- [Feedback: console.* stripped in prod](feedback_console_stripped_in_prod.md) — babel-plugin-transform-remove-console wipes all console.* in prod; "look at console" doesn't work on deployed bundle
+- [Feedback: silent ReferenceError in runSearch](feedback_silent_referenceerror.md) — wizard "search failed" with no network call usually = missing import inside try block, masked by catch + console strip
+- [Feedback: NEVER suppress the BC captcha modal](feedback_never_block_bc_captcha_modal.md) — overriding executePasswordCaptcha/makeCaptchaRetryRequest unravels every downstream BC call; leave the IIFE alone
 - [BC contactMessage orderId required on general](reference_bc_contact_orderid_required.md) — must match `/^[a-zA-Z0-9]{8,24}$/`; consumer sends `NOORDERID0000` sentinel when no real order
+- [BC getUserOrders 403 = no orders](reference_bc_getuserorders_403.md) — treat 403 on this endpoint as "unpaid", not auth failure
