@@ -217,8 +217,8 @@
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | ❌ blocked by F4 | BC returns HTTP 500 Internal Server Error from PDF endpoint. Our client gracefully shows "Download failed. Please try again later." See F4 below. |
-| Prod | TBD | Must validate after BC fixes PDF endpoint |
+| Dev (idlookup) | ✅ | 2026-05-26 — F4 closed; BC re-added missing PDF library to all envs; PDF download works end-to-end |
+| Prod | TBD | |
 
 #### C19 — Profile update
 
@@ -275,8 +275,8 @@
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | ❌ blocked by F4 | Same BC PDF endpoint failure as C18. Same downstream remediation. |
-| Prod | TBD | Validate after BC fixes F4 |
+| Dev (idlookup) | ✅ | 2026-05-26 — F4 closed; works with PDF library fix |
+| Prod | TBD | |
 
 #### C25 — Search history
 
@@ -428,6 +428,19 @@ Tested against the deployed bundle at **`https://dev.www.bytecrtrs.com/csr/...`*
 
 **Implication for our test pass:** Decline-UX validation (C6) cannot complete until BC flips TRX to live mode. Add to launch checklist: smoke test C6 on production immediately after TRX cutover with a real known-decline card.
 
+### F10 — Web report missing most of the data BC returns ✅ RESOLVED
+
+**Discovered:** 2026-05-26. The BC-generated PDF showed property details, criminal/court records, financial records (liens/bankruptcies/judgments/foreclosures), professional licences, etc. The consumer web report at `/people/<id>` showed only ~30% of the data BC actually returns. Diagnostic via `window._lastReportRaw.rawTransientKeys` confirmed BC sends ~40 lists on `identities[0]`; our extractor previously only consumed 8.
+
+**Resolution (bundle `96c5fbe3`, 2026-05-26):**
+- Extended `src/utils/reportExtract.js` to extract every list we have a schema for (criminal, lien, judgment, foreclosure, bankruptcy, property, professional licence, driver licence, veteran, business, sanctions, fraud, arrests, arrest watch, death, etc.) plus all summary count fields BC provides directly.
+- Added sections 9–15 to `src/pages/member/SearchResultDetailPage.js`: Property Records, Professional Licences, Legal & Court Records, Arrests & Watchlist Records, Financial Records, Other Public Records, Sanctions & Fraud Watchlist Checks. Each conditionally renders only when populated — empty sections auto-hide; new BC data appears automatically when present.
+- New sub-components: `PropertyCard`, `LicenseRow`, `CriminalCard`, `FinancialRecordCard`.
+
+Verified 2026-05-26 against David Wolfe record — 8 criminal records + 3 liens render correctly.
+
+---
+
 ### F9 — Consumer can't see CSR replies in /account unless compose happened on same device
 
 **Discovered:** 2026-05-23 after A7 (CSR reply succeeded but reply didn't surface in consumer's /account → Messages tab on `dev.www.idlookup.ai`).
@@ -524,7 +537,7 @@ Also noted but NOT blocking:
 
 ---
 
-### F4 — BC PDF download endpoint returns 500 (LAUNCH BLOCKER)
+### F4 — BC PDF download endpoint returns 500 ✅ RESOLVED
 
 **Discovered:** 2026-05-21 during C18.
 
@@ -537,10 +550,7 @@ Also noted but NOT blocking:
 
 **Status:** BC-side failure. Our error UX handles it cleanly.
 
-**Action items:**
-1. **BC ticket:** open with the 500 response payload + a known commerceContentId that triggers it.
-2. **Scope test:** confirm whether failure is reproducible across multiple reports or specific to one. Result will tell BC if it's pipeline-wide vs data-specific.
-3. **Launch blocker:** PDF download is a marketed feature of the membership; cannot launch without working PDFs.
+**Resolution (2026-05-26):** BC reported the PDF rendering library was missing on dev and added it to all environments (dev + prod). Retested 2026-05-26 — PDF download works end-to-end (BC popup opens, PDF saves). C18 + C24 both pass.
 
 ---
 

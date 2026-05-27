@@ -502,14 +502,136 @@ const SearchResultDetailPage = () => {
           </Section>
         )}
 
-        {/* Section 9 — Family Watchdog */}
-        <Section number="9" title="Sex Offender Registry Check" fullWidth>
+        {/* Section 9 — Property Records */}
+        {data.properties && data.properties.length > 0 && (
+          <Section number="9" title={`Property Records (${data.properties.length})`} fullWidth>
+            {data.properties.map((p) => <PropertyCard key={p.id} property={p} />)}
+          </Section>
+        )}
+
+        {/* Section 10 — Professional Licences */}
+        {data.professionalLicenses && data.professionalLicenses.length > 0 && (
+          <Section number="10" title={`Professional Licences (${data.professionalLicenses.length})`}>
+            {data.professionalLicenses.map((l) => <LicenseRow key={l.id} license={l} />)}
+          </Section>
+        )}
+
+        {/* Section 11 — Legal & Court Records (criminal) */}
+        {data.criminalRecords && data.criminalRecords.length > 0 && (
+          <Section number="11" title={`Legal & Court Records (${data.criminalRecords.length})`} fullWidth>
+            {data.criminalRecords.map((c) => <CriminalCard key={c.id} record={c} />)}
+          </Section>
+        )}
+
+        {/* Section 12 — Arrests & Watchlists (arrests + arrestWatch) */}
+        {((data.arrests && data.arrests.length > 0) || (data.arrestWatch && data.arrestWatch.length > 0)) && (
+          <Section number="12" title={`Arrests & Watchlist Records (${(data.arrests?.length || 0) + (data.arrestWatch?.length || 0)})`} fullWidth>
+            {data.arrests?.map((a) => (
+              <div key={a.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>{a.charge || 'Arrest record'}</p>
+                <p style={styles.listItemSub}>
+                  {[a.date, a.sourceState, a.sourceName].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            ))}
+            {data.arrestWatch?.map((a) => (
+              <div key={a.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>{a.description || 'Watchlist hit'}</p>
+                {a.date && <p style={styles.listItemSub}>{a.date}</p>}
+              </div>
+            ))}
+          </Section>
+        )}
+
+        {/* Section 13 — Financial Records (liens, judgments, foreclosures, bankruptcies) */}
+        {((data.liens?.length || 0) + (data.judgments?.length || 0) + (data.foreclosures?.length || 0) + (data.bankruptcies?.length || 0)) > 0 && (
+          <Section
+            number="13"
+            title={`Financial Records (${(data.liens?.length || 0) + (data.judgments?.length || 0) + (data.foreclosures?.length || 0) + (data.bankruptcies?.length || 0)})`}
+            fullWidth
+          >
+            {[...(data.liens || []), ...(data.judgments || []), ...(data.foreclosures || []), ...(data.bankruptcies || [])].map((rec) => (
+              <FinancialRecordCard key={rec.id} record={rec} />
+            ))}
+          </Section>
+        )}
+
+        {/* Section 14 — Other Public Records (driver, veteran, business, death) */}
+        {((data.driverLicenses?.length || 0) + (data.veteranRecords?.length || 0) + (data.businesses?.length || 0) + (data.deaths?.length || 0)) > 0 && (
+          <Section
+            number="14"
+            title="Other Public Records"
+            fullWidth
+          >
+            {data.driverLicenses?.map((d) => (
+              <div key={d.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>Driver's Licence {d.state ? `(${d.state})` : ''}</p>
+                <p style={styles.listItemSub}>
+                  {[d.number && `# ${d.number}`, d.issued && `Issued ${d.issued}`, d.expires && `Expires ${d.expires}`].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            ))}
+            {data.veteranRecords?.map((v) => (
+              <div key={v.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>Veteran Record</p>
+                <p style={styles.listItemSub}>
+                  {[v.branch, v.rank, v.serviceDates].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            ))}
+            {data.businesses?.map((b) => (
+              <div key={b.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>{b.name || 'Business affiliation'}</p>
+                <p style={styles.listItemSub}>
+                  {[b.role, b.address, b.state].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            ))}
+            {data.deaths?.map((d) => (
+              <div key={d.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>Death Record</p>
+                <p style={styles.listItemSub}>
+                  {[d.date, d.state, d.sourceName].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            ))}
+          </Section>
+        )}
+
+        {/* Section 15 — Watchlist Checks (sanctions, fraud) */}
+        {((data.sanctions?.length || 0) + (data.fraudFlags?.length || 0)) > 0 && (
+          <Section
+            number="15"
+            title="Sanctions & Fraud Watchlist Checks"
+            fullWidth
+          >
+            {data.sanctions?.map((s) => (
+              <div key={s.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>{s.list || 'Sanctions list match'}</p>
+                <p style={styles.listItemSub}>
+                  {[s.program, s.date].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            ))}
+            {data.fraudFlags?.map((f) => (
+              <div key={f.id} style={styles.listItem}>
+                <p style={styles.listItemTitle}>{f.flag || 'Fraud flag'}</p>
+                <p style={styles.listItemSub}>
+                  {[f.source, f.date].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            ))}
+          </Section>
+        )}
+
+        {/* Section 16 — Sex Offender Registry Check (always shown) */}
+        <Section number="16" title="Sex Offender Registry Check" fullWidth>
           <FamilyWatchdogSection offenders={data.offenders} />
         </Section>
 
-        {/* Section 10 — Secondary Identities */}
+        {/* Section 17 — Secondary Identities */}
         {data.secondaryIdentities.length > 0 && (
-          <Section number="10" title={`Additional Identities (${data.secondaryIdentities.length})`} fullWidth>
+          <Section number="17" title={`Additional Identities (${data.secondaryIdentities.length})`} fullWidth>
             <p style={{ margin: '0.5rem 1.25rem 1rem', fontSize: '0.8125rem', color: '#6b7280' }}>
               Other records associated with this person's identity.
             </p>
@@ -642,6 +764,94 @@ const FamilyWatchdogSection = ({ offenders }) => {
 };
 
 /* ─── Secondary Identity Card ──────────────────────────────────────────── */
+
+/* ─── PropertyCard ─────────────────────────────────────────────────────── */
+const PropertyCard = ({ property }) => {
+  const p = property;
+  const addressLine = [p.address, p.city, p.state, p.zip].filter(Boolean).join(', ');
+  return (
+    <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
+      <p style={styles.listItemTitle}>{addressLine || 'Property record'}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.5rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
+        {p.ownerType && <div><strong>Type:</strong> {p.ownerType}</div>}
+        {p.apn && <div><strong>APN:</strong> {p.apn}</div>}
+        {p.purchasePrice && <div><strong>Purchase:</strong> ${Number(p.purchasePrice).toLocaleString()} {p.purchaseDate && `(${p.purchaseDate})`}</div>}
+        {p.assessedValue && <div><strong>Assessed:</strong> ${Number(p.assessedValue).toLocaleString()} {p.assessedYear && `(${p.assessedYear})`}</div>}
+        {p.bedCount && <div><strong>Beds:</strong> {p.bedCount}</div>}
+        {p.bathCount && <div><strong>Baths:</strong> {p.bathCount}</div>}
+        {p.coOwner && <div><strong>Co-owner:</strong> {p.coOwner}</div>}
+      </div>
+    </div>
+  );
+};
+
+/* ─── LicenseRow ──────────────────────────────────────────────────────── */
+const LicenseRow = ({ license }) => {
+  const l = license;
+  return (
+    <div style={styles.listItem}>
+      <p style={styles.listItemTitle}>
+        {l.profession || 'Professional Licence'} {l.state && `(${l.state})`}
+      </p>
+      <p style={styles.listItemSub}>
+        {[
+          l.licenseNumber && `# ${l.licenseNumber}`,
+          l.issued && `Issued ${l.issued}`,
+          l.expires && `Expires ${l.expires}`,
+          l.status,
+        ].filter(Boolean).join(' · ')}
+      </p>
+    </div>
+  );
+};
+
+/* ─── CriminalCard ────────────────────────────────────────────────────── */
+const CriminalCard = ({ record }) => {
+  const r = record;
+  return (
+    <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
+      <p style={styles.listItemTitle}>
+        {r.description || r.offenseCode || 'Court record'}
+        {r.counts && <span style={{ fontWeight: 400, color: '#6b7280' }}> · count {r.counts}</span>}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
+        {r.caseNumber && <div><strong>Case #:</strong> {r.caseNumber}</div>}
+        {r.offenseDate && <div><strong>Offense:</strong> {r.offenseDate}</div>}
+        {r.chargesFiledDate && <div><strong>Charges filed:</strong> {r.chargesFiledDate}</div>}
+        {r.disposition && (
+          <div style={{ gridColumn: 'span 2' }}>
+            <strong>Disposition:</strong> {r.disposition}
+            {r.dispositionDate && ` (${r.dispositionDate})`}
+          </div>
+        )}
+        {r.sourceName && <div style={{ gridColumn: 'span 2' }}><strong>Source:</strong> {r.sourceName}</div>}
+      </div>
+    </div>
+  );
+};
+
+/* ─── FinancialRecordCard (liens, judgments, foreclosures, bankruptcies) ── */
+const FinancialRecordCard = ({ record }) => {
+  const r = record;
+  return (
+    <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
+      <p style={styles.listItemTitle}>
+        {r.description || r.type}
+        <span style={{ marginLeft: '0.5rem', padding: '0.125rem 0.5rem', fontSize: '0.7rem', fontWeight: 600, color: '#fff', background: '#6b7280', borderRadius: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          {r.type}
+        </span>
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
+        {r.recordingDate && <div><strong>Recorded:</strong> {r.recordingDate}</div>}
+        {r.documentNumber && <div><strong>Doc #:</strong> {r.documentNumber}</div>}
+        {r.county && <div><strong>County:</strong> {r.county}{r.state ? `, ${r.state}` : ''}</div>}
+        {r.creditor && <div><strong>Creditor:</strong> {r.creditor}</div>}
+        {r.issuingAgency && <div style={{ gridColumn: 'span 2' }}><strong>Issuing agency:</strong> {r.issuingAgency}</div>}
+        {r.debtorName && <div style={{ gridColumn: 'span 2' }}><strong>Debtor:</strong> {r.debtorName}{r.debtorAddress && ` — ${r.debtorAddress}`}</div>}
+      </div>
+    </div>
+  );
+};
 
 const SecondaryIdentityCard = ({ identity }) => {
   const name = identity.nameList?.[0]?.data || 'Unknown';
