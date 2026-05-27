@@ -360,11 +360,11 @@ Tested against the deployed bundle at **`https://dev.www.bytecrtrs.com/csr/...`*
 
 #### A8 — Orders list
 
-**Steps:** `/admin/orders` → list renders
+**Steps:** `/csr/orders` → list renders
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | TBD | |
+| Dev (bytecrtrs) | 🟡 partial | 2026-05-26 — list renders fine. Clicking "View" on a row from the global list (no user filter) fails — see F11 below. |
 | Prod | TBD | |
 
 #### A9 — Order cancel
@@ -373,7 +373,7 @@ Tested against the deployed bundle at **`https://dev.www.bytecrtrs.com/csr/...`*
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | TBD | |
+| Dev (bytecrtrs) | ⏸ blocked | Cannot reach detail page from global orders list — see F11. Fix shipped in build-admin/ but requires BC redeploy of admin bundle. Retest after redeploy. |
 | Prod | TBD | |
 
 ### 🟡 Important admin surfaces
@@ -382,7 +382,7 @@ Tested against the deployed bundle at **`https://dev.www.bytecrtrs.com/csr/...`*
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | TBD | |
+| Dev (bytecrtrs) | 🟡 partial | 2026-05-26 — note creation works (after meeting BC's ≥10-char rule). Display was broken (wrong read endpoint — F12). Fix in build-admin/admin.3e5156de.js; awaiting redeploy. |
 | Prod | TBD | |
 
 #### A11 — Create CSR
@@ -391,21 +391,21 @@ Tested against the deployed bundle at **`https://dev.www.bytecrtrs.com/csr/...`*
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | TBD | |
+| Dev (bytecrtrs) | ⏭ not implemented | Feature doesn't exist in current admin UI yet. Defer until needed; no launch blocker. |
 | Prod | TBD | |
 
 #### A12 — Mail activity
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | TBD | |
+| Dev (bytecrtrs) | ✅ | 2026-05-26 — mail activity list renders |
 | Prod | TBD | |
 
 #### A13 — Edit user profile (CSR-side)
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | TBD | |
+| Dev (bytecrtrs) | ✅ | 2026-05-26 — CSR edit saves to BC successfully. Consumer-side staleness noted as F13 below. |
 | Prod | TBD | |
 
 ---
@@ -427,6 +427,47 @@ Tested against the deployed bundle at **`https://dev.www.bytecrtrs.com/csr/...`*
 **Status:** Not a bug. David is notifying BC that the sandbox is letting test cards through (so they can prioritize the live upgrade or configure a sandbox decline scenario for testing).
 
 **Implication for our test pass:** Decline-UX validation (C6) cannot complete until BC flips TRX to live mode. Add to launch checklist: smoke test C6 on production immediately after TRX cutover with a real known-decline card.
+
+### F13 — Consumer /account shows stale profile after CSR edit
+
+**Discovered:** 2026-05-26 during A13. CSR updates a user's firstName/lastName/phone successfully on the admin side; consumer's `/account → Profile` tab continues showing the pre-edit values until the user logs out and logs back in.
+
+**Root cause:** `AuthContext` reads the user object from the JWT login response and caches it in localStorage. There's no proactive refresh from `/me` (or equivalent) on `/account` mount, so admin-initiated changes don't appear until next login.
+
+**Impact:** Low-to-moderate. Mostly affects scenarios where CSR fixes a user's profile while they're actively logged in. User can still see the right data by logging out + back in, but it's bad UX.
+
+**Action items (post-launch):**
+1. Refresh `AuthContext.user` from BC on `/account` mount — call something like `apiWrapper.api.user.getProfile()` (or whatever read endpoint exists) and merge into context state.
+2. Alternatively, expose a "Refresh profile" button on the account page as a stopgap.
+3. Longer-term: BC could push a session-invalidate signal so the consumer reloads automatically.
+
+Not blocking launch — manual workaround exists.
+
+### F12 — Admin notes save but don't display (wrong read endpoint) ✅ RESOLVED (pending admin redeploy)
+
+**Discovered:** 2026-05-26 during A10 testing.
+
+**Symptom:** New admin note created successfully via `POST /api/message/admin/createNote` (after BC's 10-char minimum rejected the first attempt with 400), but the notes list on the user's detail page didn't include it after refresh.
+
+**Root cause:** Note creation hits BC's new endpoint `/message/admin/createNote` (2026-04-17 update). The read path in `NotesPage.fetchNotes` was still using `api.adminFindUserContacts` → `POST /database/search collectionName=userContact targetUserId=X` filtering by `type === 'userContactAdminNote'`. After BC restructured admin notes into a separate collection, this database-search query no longer returns them.
+
+**Resolution (build-admin/admin.3e5156de.js, 2026-05-26):**
+- New wrapper `apiWrapper.csrFindUserAdminNotes({ userId, lastId })` calling BC's dedicated `GET /message/admin/findNotes?userId=<id>`.
+- New apiRouter case `admin-find-user-notes` + entry in FORCE_NEW_API_ENDPOINTS.
+- New api helper `api.adminFindUserAdminNotes`.
+- `NotesPage.fetchNotes` switched to the new helper; removed the now-redundant `type === 'userContactAdminNote'` filter (the dedicated endpoint returns notes only).
+
+Awaiting BC redeploy of the admin app to validate end-to-end.
+
+### F11 — Admin global-orders "View" sends userId=null to BC ✅ RESOLVED (pending admin redeploy)
+
+**Discovered:** 2026-05-26 during A8 testing on `dev.www.bytecrtrs.com/csr/orders`.
+
+**Symptom:** Clicking "View" on any row in the global orders list (no user filter) → `POST /api/commerceMgmt/getUserOrder` → 400 `{"message":["userId must be a mongodb id"],"error":"Bad Request","statusCode":400}`. The URL was `/purchases/<orderId>?userId=null` because `resolvedUserId` is null in the global view.
+
+**Resolution:** Fixed `OrdersPage.js` and `PurchasesPage.js` to fall back to `order.payerId || order.updaterId || order.userId` when `resolvedUserId` is missing. New admin bundle: `build-admin/admin.33061fa1.js`. Awaiting BC redeploy of the admin app to `dev.www.bytecrtrs.com` to validate end-to-end.
+
+---
 
 ### F10 — Web report missing most of the data BC returns ✅ RESOLVED
 

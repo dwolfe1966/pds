@@ -149,10 +149,14 @@ const NotesPage = () => {
     setLoadingNotes(true);
     setNotesError('');
     try {
+      // Switched 2026-05-26 from api.adminFindUserContacts (which queried
+      // /database/search collectionName=userContact and filtered by type) to
+      // api.adminFindUserAdminNotes (BC's dedicated GET /message/admin/findNotes
+      // endpoint). The old path stopped returning newly-created notes after
+      // BC restructured admin notes 2026-04-17.
       const params = { userId, ...(cursorId ? { lastId: cursorId } : {}) };
-      const res = await api.adminFindUserContacts(params);
+      const res = await api.adminFindUserAdminNotes(params);
       const all = (res?.data ?? res?.docs ?? [])
-        .filter((d) => d.type === 'userContactAdminNote')
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       // Default view on first page: 10 most-recent notes. Follow-up pages append.
       const docs = cursorId ? all : all.slice(0, 10);

@@ -357,6 +357,10 @@ const PurchasesPage = () => {
               ) : (
                 filteredOrders.map((order) => {
                   const pid = order._id || order.id;
+                  // Fall back to the order's payerId when there's no
+                  // user-scoped context (global view) so the detail page
+                  // can satisfy BC's getUserOrder userId requirement.
+                  const orderUserId = resolvedUserId || order.payerId || order.updaterId || order.userId || '';
                   const truncId = pid
                     ? pid.length > 12 ? pid.slice(0, 12) + '\u2026' : pid
                     : '—';
@@ -371,7 +375,7 @@ const PurchasesPage = () => {
                       <td>{formatDate(order.createdAt)}</td>
                       <td>
                         <Link
-                          to={`/purchases/${pid}?userId=${resolvedUserId}`}
+                          to={`/purchases/${pid}?userId=${orderUserId}`}
                           className={styles.viewBtn}
                         >
                           View

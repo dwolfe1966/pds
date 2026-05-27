@@ -1319,6 +1319,18 @@ class ApiWrapperService {
     return await this._csrPost('/database/search', body);
   }
 
+  // csrWrapper.api.user.findUserAdminNotes — GET /message/admin/findNotes
+  // BC's dedicated read endpoint for admin notes. Replaces the older
+  // /database/search collectionName=userContact path which queries the wrong
+  // collection after BC restructured admin notes 2026-04-17.
+  // Returns { docs: [...], noMoreDocs } per BC convention.
+  async csrFindUserAdminNotes({ userId, lastId } = {}) {
+    if (!userId) throw new Error('userId is required');
+    const qs = new URLSearchParams({ userId });
+    if (lastId) qs.set('lastId', lastId);
+    return await this._csrGet(`/message/admin/findNotes?${qs.toString()}`);
+  }
+
   // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
   // params: { userId, message, contentType, attachments }
   // BC documented the new path on 2026-04-17; fall back to the old path if BC's

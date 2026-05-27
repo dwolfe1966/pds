@@ -654,6 +654,13 @@ const api = {
     return await routeApiRequest('admin-user-contacts', { queryParams: params });
   },
 
+  // CSR: BC's dedicated admin-notes read endpoint (GET /message/admin/findNotes).
+  // Replaces the /database/search collectionName=userContact path which queries
+  // the wrong collection after BC restructured 2026-04-17. Returns notes only.
+  adminFindUserAdminNotes: async ({ userId, lastId } = {}) => {
+    return await routeApiRequest('admin-find-user-notes', { queryParams: { userId, ...(lastId ? { lastId } : {}) } });
+  },
+
   // CSR: list ALL userContact docs (across all users) for the unified inbox
   // — paginated via lastId.
   adminFindAllUserContacts: async ({ lastId } = {}) => {

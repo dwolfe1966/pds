@@ -464,6 +464,11 @@ const OrdersPage = () => {
                     ) : (
                       filtered.map((order) => {
                         const pid = order._id || order.id;
+                        // Global view has no resolvedUserId — fall back to the
+                        // order's own payerId/updaterId so the detail page
+                        // can pass userId to BC's getUserOrder (it rejects
+                        // missing/"null" with `userId must be a mongodb id`).
+                        const orderUserId = resolvedUserId || order.payerId || order.updaterId || order.userId || '';
                         return (
                           <tr key={pid} className={styles.tr}>
                             <td className={styles.td}>
@@ -477,7 +482,7 @@ const OrdersPage = () => {
                             <td className={styles.td}>{formatDate(order.createdAt)}</td>
                             <td className={styles.td}>
                               <Link
-                                to={`/purchases/${pid}?userId=${resolvedUserId}`}
+                                to={`/purchases/${pid}?userId=${orderUserId}`}
                                 className={styles.viewBtn}
                               >
                                 View

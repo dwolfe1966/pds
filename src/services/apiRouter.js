@@ -291,6 +291,7 @@ async function _routeApiRequestInner(endpoint, params = {}) {
     'admin-phone-optout',
     'admin-phone-optout-delete',
     'admin-user-contacts',
+    'admin-find-user-notes',
     'admin-find-all-user-contacts',
     'admin-create-order',
     'admin-create-note',
@@ -994,6 +995,13 @@ async function callNewAPI(endpoint, params) {
       const raw = await apiWrapper.csrFindUserContacts(params.queryParams || {});
       const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
       return { data: docs, noMoreDocs: raw?.noMoreDocs ?? true };
+    }
+
+    // BC's dedicated read endpoint for admin notes (GET /message/admin/findNotes).
+    case 'admin-find-user-notes': {
+      const raw = await apiWrapper.csrFindUserAdminNotes(params.queryParams || {});
+      const docs = raw?.docs ?? (Array.isArray(raw) ? raw : []);
+      return { data: docs, noMoreDocs: raw?.noMoreDocs ?? (docs.length === 0) };
     }
 
     // ALL userContact docs (across all users) for the unified admin inbox.
