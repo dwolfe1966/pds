@@ -914,17 +914,13 @@ const DashboardHome = () => {
         errors.profileViews = true;
       }
 
-      // Messages — best-effort. user.getContacts was removed by BC 2026-04-17;
-      // apiWrapper.getUserContacts returns empty gracefully until a replacement
-      // aggregate endpoint is available.
-      try {
-        const msgResult = await api.getUserContacts();
-        const msgData = msgResult?.getData?.() ?? msgResult?.data ?? msgResult ?? {};
-        const msgs = msgData.messages || msgData.docs || (Array.isArray(msgData) ? msgData : []);
-        setRecentMessages(msgs.slice(0, 3));
-      } catch {
-        // Silently ignore — the stubbed getUserContacts should never throw, but guard anyway.
-      }
+      // Messages — BC's consumer model has no aggregate-inbox endpoint;
+      // apiWrapper.api.message.contact.histories(id, hash) is the only path.
+      // The Recent Messages panel needs an aggregate view to be useful, so
+      // it stays empty until/unless we build a client-side aggregator from
+      // localStorage-tracked thread refs. Members access full threads via
+      // the Account → Messages tab.
+      setRecentMessages([]);
 
       setApiErrors(errors);
       setLoading(false);
@@ -1119,7 +1115,7 @@ const DashboardHome = () => {
                 navigate('/payment');
               }}
             >
-              Upgrade to Pro — $29.99/mo
+              Upgrade to Pro
             </button>
           </div>
         )

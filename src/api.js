@@ -379,22 +379,13 @@ const api = {
   },
 
   /**
-   * Opt-Out
+   * Opt-Out — BC hosts the full search/request/verification flow. Our only
+   * server-side endpoint is the confirmation handler hit from the email
+   * deep-link. The search and request submission live on BC's hosted page,
+   * which we open via ApiWrapper.goPage (see openBcOptOutPage below).
    */
-  requestOptOut: async (body) => {
-    return await routeApiRequest('opt-out-request', { body });
-  },
-
   confirmOptOut: async (params) => {
     return await routeApiRequest('opt-out-confirmation', params);
-  },
-
-  /**
-   * Search opt-out status (ByteCrtrs API)
-   * Check if a record is already opted out before submitting request
-   */
-  searchOptOut: async (params) => {
-    return await routeApiRequest('opt-out-search', { body: params });
   },
 
   /**
@@ -811,6 +802,12 @@ const api = {
         last4: body.last4 || '',
         ...(body.phone ? { phone: body.phone } : {}),
         ...(body.orderId ? { orderId: body.orderId } : {}),
+        // Empirical test: pass targetUserId so BC's getUserContacts
+        // (added 2026-05-28) can surface this thread for the member.
+        // BC's contact.create doesn't auto-link member-submitted threads
+        // to the authenticated user's _id. If BC strips or rejects this
+        // field, see docs/BC_GETUSERCONTACTS_SCOPE.md for next ask.
+        ...(body.targetUserId ? { targetUserId: body.targetUserId } : {}),
       };
     } else {
       // BC's general-category 'orderId' is required by the doc but empty
@@ -842,6 +839,12 @@ const api = {
         orderId: body.orderId || 'NOORDERID0000',
         ...(body.zip ? { zip: body.zip } : {}),
         ...(body.last4 ? { last4: body.last4 } : {}),
+        // Empirical test: pass targetUserId so BC's getUserContacts
+        // (added 2026-05-28) can surface this thread for the member.
+        // BC's contact.create doesn't auto-link member-submitted threads
+        // to the authenticated user's _id. If BC strips or rejects this
+        // field, see docs/BC_GETUSERCONTACTS_SCOPE.md for next ask.
+        ...(body.targetUserId ? { targetUserId: body.targetUserId } : {}),
       };
     }
 

@@ -27,16 +27,15 @@ function encodePw(pw) {
 }
 
 /**
- * Validate password meets BC complexity requirements:
- * min 8 chars, uppercase, lowercase, number, special character.
+ * Validate password — minimum 8 characters. Per bug #28 (2026-05-29),
+ * stripped the uppercase/lowercase/number/special requirements because
+ * they were causing 3-click signup friction with no real security gain
+ * for a people-search consumer product. If BC rejects on the wire we'll
+ * surface that error and revisit.
  * Returns null if valid, or an error message string.
  */
 export function validatePassword(pw) {
   if (!pw || pw.length < 8) return 'Password must be at least 8 characters.';
-  if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter.';
-  if (!/[a-z]/.test(pw)) return 'Password must contain at least one lowercase letter.';
-  if (!/[0-9]/.test(pw)) return 'Password must contain at least one number.';
-  if (!/[^A-Za-z0-9]/.test(pw)) return 'Password must contain at least one special character.';
   return null;
 }
 

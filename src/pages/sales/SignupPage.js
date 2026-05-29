@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
+import { isValidEmail } from '../../utils/email';
 import '../../styles/contentContainer.css';
 import styles from './SignupPage.module.css';
 
@@ -19,6 +20,7 @@ const SignupPage = ({ source = 'direct' }) => {
 
   const [form, setForm] = useState({ email: '', password: '', optin: false });
   const [selectedPerson, setSelectedPerson] = useState(null);
+  const [emailError, setEmailError] = useState('');
 
   // Track page entry
   useEffect(() => {
@@ -54,20 +56,24 @@ const SignupPage = ({ source = 'direct' }) => {
     setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  // Live password requirement checks (partner bug 16: show pre-reqs as user types).
-  // Mirrors the server-side rules enforced in hooks/useSignup.js `validatePassword`.
+  // Live password requirement — bug #28 (2026-05-29): dropped to 8-char min
+  // only. Uppercase/number/special churn caused 3-click signup friction with
+  // no real security benefit for this product.
   const passwordChecks = [
-    { label: 'At least 8 characters',     ok: form.password.length >= 8 },
-    { label: 'One uppercase letter',      ok: /[A-Z]/.test(form.password) },
-    { label: 'One lowercase letter',      ok: /[a-z]/.test(form.password) },
-    { label: 'One number',                ok: /[0-9]/.test(form.password) },
-    { label: 'One special character',     ok: /[^A-Za-z0-9]/.test(form.password) },
+    { label: 'At least 8 characters', ok: form.password.length >= 8 },
   ];
   const passwordTouched = form.password.length > 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Use location.search (React Router) consistently — avoids mixing with window.location.search.
+    setEmailError('');
+    // Bug #52 (2026-05-29): block submit on obvious garbage (no @, no TLD).
+    // HTML5 type=email is too lenient; this catches the original repro
+    // `testingreg052826c` before we burn a BC round-trip.
+    if (!isValidEmail(form.email)) {
+      setEmailError('Please enter a valid email address (e.g., name@example.com).');
+      return;
+    }
     const params = new URLSearchParams(location.search);
     submit({
       email: form.email,
@@ -120,12 +126,18 @@ const SignupPage = ({ source = 'direct' }) => {
                   type="email"
                   name="email"
                   value={form.email}
-                  onChange={handleChange}
+                  onChange={(e) => { setEmailError(''); handleChange(e); }}
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
                   className={styles.input}
+                  style={emailError ? { borderColor: '#dc2626' } : undefined}
                 />
+                {emailError && (
+                  <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem', color: '#dc2626' }}>
+                    {emailError}
+                  </p>
+                )}
                 <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.45 }}>
                   We'll only use your email for login, receipts, and account alerts.
                   Never sold, shared, or used for marketing without your consent.

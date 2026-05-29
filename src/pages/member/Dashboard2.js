@@ -193,6 +193,103 @@ function StatTile({ label, value, sublabel, loading }) {
   );
 }
 
+// ─── Inline name search — primary CTA (bug #48) ──────────────────────────
+// Three required fields (first, last, state) submitted to /people-search via
+// URL params — MemberGeneralSearchPage already reads these on mount, so
+// landing on that page with prefilled state lets the user fire the search
+// with one more click. Two-letter state matches the rest of the funnel.
+
+function InlineNameSearch({ navigate }) {
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [stateAbbr, setStateAbbr] = React.useState('');
+  const [error, setError] = React.useState('');
+
+  const submit = (e) => {
+    e.preventDefault();
+    const fn = firstName.trim();
+    const ln = lastName.trim();
+    const st = stateAbbr.trim().toUpperCase();
+    if (!fn || !ln) { setError('Enter both a first and last name.'); return; }
+    if (!/^[A-Z]{2}$/.test(st)) { setError('Enter a 2-letter state (e.g., CA).'); return; }
+    track('dashboard_inline_search_submit', {});
+    const qs = new URLSearchParams({ firstName: fn, lastName: ln, state: st });
+    navigate(`/people-search?${qs.toString()}`);
+  };
+
+  return (
+    <form
+      onSubmit={submit}
+      style={{
+        background: PAGE.card,
+        border: `1px solid ${PAGE.borderStrong}`,
+        borderRadius: '0.75rem',
+        padding: '1rem 1.25rem',
+        marginBottom: '1rem',
+      }}
+    >
+      <div style={{
+        fontSize: '0.72rem', color: PAGE.textMuted, textTransform: 'uppercase',
+        letterSpacing: '0.06em', fontWeight: 700, marginBottom: '0.5rem',
+      }}>
+        Run a new search
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <input
+          type="text"
+          value={firstName}
+          onChange={(e) => { setError(''); setFirstName(e.target.value); }}
+          placeholder="First name"
+          autoComplete="given-name"
+          style={{
+            flex: '1 1 140px', minWidth: 120,
+            padding: '0.55rem 0.7rem', fontSize: '0.9rem',
+            border: `1px solid ${PAGE.border}`, borderRadius: '0.375rem',
+          }}
+        />
+        <input
+          type="text"
+          value={lastName}
+          onChange={(e) => { setError(''); setLastName(e.target.value); }}
+          placeholder="Last name"
+          autoComplete="family-name"
+          style={{
+            flex: '1 1 140px', minWidth: 120,
+            padding: '0.55rem 0.7rem', fontSize: '0.9rem',
+            border: `1px solid ${PAGE.border}`, borderRadius: '0.375rem',
+          }}
+        />
+        <input
+          type="text"
+          value={stateAbbr}
+          onChange={(e) => { setError(''); setStateAbbr(e.target.value.toUpperCase().slice(0, 2)); }}
+          placeholder="ST"
+          maxLength={2}
+          style={{
+            width: 70,
+            padding: '0.55rem 0.7rem', fontSize: '0.9rem',
+            textTransform: 'uppercase',
+            border: `1px solid ${PAGE.border}`, borderRadius: '0.375rem',
+          }}
+        />
+        <button
+          type="submit"
+          style={{
+            background: PAGE.brand, color: '#fff', border: 'none',
+            padding: '0.55rem 1rem', borderRadius: '0.375rem',
+            fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          🔍 Search
+        </button>
+      </div>
+      {error && (
+        <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: '#dc2626' }}>{error}</div>
+      )}
+    </form>
+  );
+}
+
 // ─── Reports library — hero ────────────────────────────────────────────────
 
 function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
@@ -690,10 +787,9 @@ const Dashboard2 = () => {
           </div>
         </section>
 
-        {/* Subscription strip */}
-        <div style={{ marginBottom: '1rem' }}>
-          <SubscriptionTile subscription={subscription} orders={orders} planDisplayName={planDisplayName} navigate={navigate} />
-        </div>
+        {/* Bug #46 (2026-05-29): SubscriptionTile moved out of the top
+            position — it was encouraging cancel taps before users engaged
+            with the product. Now rendered below the reports/activity grid. */}
 
         {/* Stats row — all real counters */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -726,26 +822,19 @@ const Dashboard2 = () => {
           />
         </div>
 
-        {/* Quick actions */}
+        {/* Inline search — bug #48 (2026-05-29): the previous CTA was a
+            single button that hid the search behind a click. Surfacing
+            first/last/state as the primary action makes the search the
+            dashboard's center of gravity. */}
+        <InlineNameSearch navigate={navigate} />
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => { track('dashboard_cta_click', { target: 'search' }); navigate('/people-search'); }}
-            style={{
-              background: PAGE.brand, color: '#fff', border: 'none',
-              padding: '0.6rem 1rem', borderRadius: '0.375rem',
-              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            🔍  Run a new search
-          </button>
           <button
             type="button"
             onClick={() => { track('dashboard_cta_click', { target: 'account' }); navigate('/account'); }}
             style={{
               background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
-              padding: '0.6rem 1rem', borderRadius: '0.375rem',
-              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
+              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
             }}
           >
             Account & billing
@@ -755,8 +844,8 @@ const Dashboard2 = () => {
             onClick={() => { track('dashboard_cta_click', { target: 'support' }); navigate('/contact'); }}
             style={{
               background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
-              padding: '0.6rem 1rem', borderRadius: '0.375rem',
-              fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
+              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
             }}
           >
             Contact support
@@ -777,6 +866,12 @@ const Dashboard2 = () => {
             navigate={navigate}
           />
           <ActivityTimeline items={activity} loading={reportsLoading || statsLoading} />
+        </div>
+
+        {/* Subscription strip — moved down so it's reachable but not the
+            first call to action (#46). */}
+        <div style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>
+          <SubscriptionTile subscription={subscription} orders={orders} planDisplayName={planDisplayName} navigate={navigate} />
         </div>
 
         {/* Honest disclosure footer */}

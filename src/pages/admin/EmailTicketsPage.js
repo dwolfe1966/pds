@@ -88,6 +88,11 @@ const EmailTicketsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'awaiting' | 'replied'
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'billing' | 'general'
+  // Resolution filter — defaults to 'open' so resolved threads drop out of the
+  // queue. BC has no native status field on contactMessage; we use a reserved
+  // 'resolved' tag (csrSetContactTags) as the marker.
+  const [resolutionFilter, setResolutionFilter] = useState('open'); // 'open' | 'resolved' | 'all'
+  const [resolving, setResolving] = useState(false);
   const [myAssignedOnly, setMyAssignedOnly] = useState(false);
 
   // Tag editor (per-thread)
@@ -208,6 +213,11 @@ const EmailTicketsPage = () => {
   const hasReply = (item) => Boolean(item?.latestReply || (Array.isArray(item?.referenceIds) && item.referenceIds.length > 0));
   const itemCategory = (item) => item?.content?.category || item?.content?.input?.category || null;
   const isAssignedTo = (item, csrId) => Boolean(csrId) && item?.content?.actorId === csrId;
+  // Reserved tag — BC has no native status field on contactMessage, so we
+  // mark resolution via index/tags. csrSetContactTags persists across devices
+  // and is durable in BC's audit trail.
+  const RESOLVED_TAG = 'resolved';
+  const isResolved = (item) => Array.isArray(item?.index) && item.index.includes(RESOLVED_TAG);
 
   const listItems = useMemo(() => {
     if (mode === 'user') {
@@ -223,11 +233,13 @@ const EmailTicketsPage = () => {
     if (statusFilter === 'awaiting') items = items.filter((i) => !hasReply(i));
     if (statusFilter === 'replied')  items = items.filter(hasReply);
     if (categoryFilter !== 'all')   items = items.filter((i) => itemCategory(i) === categoryFilter);
+    if (resolutionFilter === 'open')      items = items.filter((i) => !isResolved(i));
+    if (resolutionFilter === 'resolved')  items = items.filter(isResolved);
     if (myAssignedOnly)             items = items.filter((i) => isAssignedTo(i, adminUserId));
     if (searchQuery.trim())         items = items.filter((i) => matchesSearch(i, searchQuery.trim()));
     return items;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allItems, filterDir, mode, statusFilter, categoryFilter, myAssignedOnly, searchQuery, adminUserId]);
+  }, [allItems, filterDir, mode, statusFilter, categoryFilter, resolutionFilter, myAssignedOnly, searchQuery, adminUserId]);
 
   const selected = useMemo(() => {
     if (!selectedId) return null;
@@ -412,6 +424,31 @@ const EmailTicketsPage = () => {
     setFilterDir('all');
   };
 
+  // Build the consumer paste-link format for a contactMessage thread. BC's
+  // CSR find response includes the per-thread `hash` on contactMessage docs
+  // (csrApi.csv:413), so we can construct the same value a reply email would
+  // surface. Tester pastes this into the consumer Account → Messages
+  // "Have a reply link?" box to bind the thread without email round-trip.
+  const buildPasteLink = (item) => {
+    const id = resolveId(item);
+    const hash = item?.hash;
+    if (!id || !hash) return null;
+    return `${id}:${hash}`;
+  };
+
+  const handleCopyPasteLink = async (item, ev) => {
+    if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    const value = buildPasteLink(item);
+    if (!value) { showToast('No hash on this thread — cannot build paste-link.'); return; }
+    try {
+      await navigator.clipboard.writeText(value);
+      showToast('Paste-link copied. Paste into consumer Messages → Have a reply link.');
+    } catch {
+      // Older browsers / non-secure contexts — prompt() as a manual fallback.
+      window.prompt('Copy this paste-link (id:hash):', value);
+    }
+  };
+
   const handleAssignToMe = async () => {
     if (!selected || !isContactMessage(selected.type)) return;
     try {
@@ -502,6 +539,27 @@ const EmailTicketsPage = () => {
     const existing = Array.isArray(selected.index) ? selected.index : [];
     setTagDraft(existing.join(', '));
     setEditingTags(true);
+  };
+
+  const handleToggleResolved = async () => {
+    if (!selected || !isContactMessage(selected.type)) return;
+    setResolving(true);
+    try {
+      const existing = Array.isArray(selected.index) ? selected.index : [];
+      const next = isResolved(selected)
+        ? existing.filter((t) => t !== RESOLVED_TAG)
+        : (existing.includes(RESOLVED_TAG) ? existing : [...existing, RESOLVED_TAG]);
+      await api.adminSetContactTags({
+        contactMessageId: resolveId(selected),
+        tags: next,
+      });
+      showToast(isResolved(selected) ? 'Ticket reopened.' : 'Ticket marked resolved.');
+      await fetchInbox(null);
+    } catch (err) {
+      showToast(err.message || 'Failed to update ticket.');
+    } finally {
+      setResolving(false);
+    }
   };
 
   const handleSaveTags = async () => {
@@ -652,6 +710,7 @@ const EmailTicketsPage = () => {
               setFilterDir('all');
               setStatusFilter('all');
               setCategoryFilter('all');
+              setResolutionFilter('all');
               setMyAssignedOnly(false);
             }}
           >
@@ -688,6 +747,16 @@ const EmailTicketsPage = () => {
             {filterOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
+          </select>
+          <select
+            className={styles.select}
+            value={resolutionFilter}
+            onChange={(e) => setResolutionFilter(e.target.value)}
+            aria-label="Resolution"
+          >
+            <option value="open">Open</option>
+            <option value="resolved">Resolved</option>
+            <option value="all">Open + Resolved</option>
           </select>
           <select
             className={styles.select}
@@ -856,6 +925,14 @@ const EmailTicketsPage = () => {
                     >
                       <div className={styles.ticketItemTop}>
                         <DirectionBadge type={item.type} />
+                        {isResolved(item) && (
+                          <span
+                            className={styles.badge}
+                            style={{ background: '#dcfce7', color: '#166534', marginLeft: 4 }}
+                          >
+                            Resolved
+                          </span>
+                        )}
                         <span className={styles.ticketDate}>{shortDate(item.createdAt)}</span>
                       </div>
                       <div className={styles.ticketSubject}>{subject}</div>
@@ -917,6 +994,36 @@ const EmailTicketsPage = () => {
                       {isContactMessage(selected.type) && selected.content?.actorId === adminUserId && (
                         <span className={`${styles.badge} ${styles.badgeStatus}`} style={{ background: '#dbeafe', color: '#1e40af' }}>
                           Assigned to you
+                        </span>
+                      )}
+                      {isContactMessage(selected.type) && (
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={handleToggleResolved}
+                          disabled={resolving}
+                          style={isResolved(selected)
+                            ? { background: '#dcfce7', color: '#166534', borderColor: '#86efac' }
+                            : undefined}
+                        >
+                          {resolving
+                            ? 'Working…'
+                            : isResolved(selected) ? 'Reopen' : 'Mark resolved'}
+                        </button>
+                      )}
+                      {isContactMessage(selected.type) && selected?.hash && (
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={(e) => handleCopyPasteLink(selected, e)}
+                          title="Copy contactMessageId:hash so a tester can bind this thread on the consumer Messages tab without email"
+                        >
+                          Copy paste-link
+                        </button>
+                      )}
+                      {isContactMessage(selected.type) && isResolved(selected) && (
+                        <span className={`${styles.badge} ${styles.badgeStatus}`} style={{ background: '#dcfce7', color: '#166534' }}>
+                          Resolved
                         </span>
                       )}
                     </div>

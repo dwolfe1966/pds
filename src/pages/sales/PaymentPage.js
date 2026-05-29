@@ -42,9 +42,18 @@ function formatCardNumber(value, cardType) {
   return trimmed.replace(/(\d{4})/g, '$1 ').trim();
 }
 
-// Format expiry as MM/YY
+// Format expiry as MM/YY.
+// Bug #31 (2026-05-29): smart-prefix. If the first digit typed is 2-9,
+// auto-prefix "0" — only months 01-09 start with 0 and 10-12 start with 1,
+// so any 2-9 lead is unambiguously a single-digit month. Lets the user
+// type 9-2-6 to get "09/26" without backspace. Also handles pastes like
+// "926" → "09/26".
 function formatExpiry(value) {
-  const digits = value.replace(/\D/g, '').slice(0, 4);
+  let digits = value.replace(/\D/g, '');
+  if (digits.length >= 1 && /[2-9]/.test(digits[0])) {
+    digits = `0${digits}`;
+  }
+  digits = digits.slice(0, 4);
   if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
   return digits;
 }
@@ -186,6 +195,11 @@ const PaymentPage = () => {
         const maxLen = detectCardType(prev.cardNumber) === 'amex' ? 4 : 3;
         return { ...prev, cvv: value.replace(/\D/g, '').slice(0, maxLen) };
       }
+      if (name === 'billingZip') {
+        // Bug #54: cap at 5 digits, strip anything else so paste/IME garbage
+        // can't sneak in. ZIP+4 isn't needed by TRX or BC validators.
+        return { ...prev, billingZip: value.replace(/\D/g, '').slice(0, 5) };
+      }
       return { ...prev, [name]: value };
     });
   }, []);
@@ -218,19 +232,25 @@ const PaymentPage = () => {
     cardNumber: cardDigits.length === expectedLen && luhnCheck(form.cardNumber),
     expiry: expiryValid,
     cvv: cardType === 'amex' ? form.cvv.length === 4 : form.cvv.length === 3,
+    billingFirstName: form.billingFirstName.trim().length > 0,
+    billingLastName: form.billingLastName.trim().length > 0,
+    billingZip: /^\d{5}$/.test(form.billingZip.trim()),
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
-    if (!form.billingFirstName.trim()) { setError('Please enter your first name.'); return; }
-    if (!form.billingLastName.trim()) { setError('Please enter your last name.'); return; }
+    // Bug #37 (2026-05-29): mark touched on submit-fail so the red border
+    // appears on the specific field that's missing/invalid. Banner error
+    // still fires for clarity, but the visual cue points at the offender.
+    if (!validation.billingFirstName) { setError('Please enter your first name.'); setTouched(t => ({ ...t, billingFirstName: true })); return; }
+    if (!validation.billingLastName) { setError('Please enter your last name.'); setTouched(t => ({ ...t, billingLastName: true })); return; }
     if (!validation.cardNumber) { setError('Please enter a valid card number.'); setTouched(t => ({ ...t, cardNumber: true })); return; }
     if (!validation.expiry) { setError('Please enter a valid expiration date (MM/YY, not in the past).'); setTouched(t => ({ ...t, expiry: true })); return; }
     if (!validation.cvv) { setError('Please enter a valid CVV.'); setTouched(t => ({ ...t, cvv: true })); return; }
     // Partner bug 17: copy previously said "we use your billing address on file"
     // even though it wasn't collected. ZIP is now explicitly required.
-    if (!form.billingZip.trim()) { setError('Please enter your billing ZIP code.'); setBillingOpen(true); return; }
+    if (!validation.billingZip) { setError('Please enter a valid 5-digit ZIP code.'); setTouched(t => ({ ...t, billingZip: true })); setBillingOpen(true); return; }
     setError('');
     setLoading(true);
     setPaying(true);
@@ -359,7 +379,7 @@ const PaymentPage = () => {
 
       if (!paymentSuccess) {
         if (saleError) throw saleError;
-        throw new Error('Your card was declined. Please check your card details and try again, or use a different card.');
+        throw new Error("We couldn't complete your subscription. Please try again, or contact support if this keeps happening.");
       }
 
       // BC `getUserOrders` is the single source of truth for subscription state.
@@ -433,6 +453,10 @@ const PaymentPage = () => {
       else if (reportFailed) setReportProvisioning(true);
       setSuccess(true);
       setSubscription?.(verifiedSubscription);
+      // Bug #38 (2026-05-29): the success screen is much shorter than the
+      // payment form, so without this the user lands on the page footer.
+      // Scroll to top so the confirmation is what they see.
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* SSR / non-DOM */ }
 
       track('payment_complete', { plan: 'pro', offer_key: SIGNUP_OFFER_KEY });
       gtmSetTransaction({
@@ -457,13 +481,30 @@ const PaymentPage = () => {
       // the user should see the confirmation, read it, and choose to view their
       // report or head to the dashboard on their own.
     } catch (err) {
-      const isUnauthorized = err?.status === 401;
-      const errorType = isUnauthorized ? 'unauthorized' : 'payment_failed';
-      track('payment_error', { errorType, errorMessage: err?.message });
+      // Classify on HTTP status first (reliable), then fall back to BC message
+      // patterns. Goal: never show "card declined" for what is actually a
+      // session/account-state error (bug #55).
+      const status = err?.status;
+      const rawMsg = err?.data?.error?.message || err?.data?.message || err?.message || '';
+      let errorType = 'payment_failed';
+      let message;
+      if (status === 401 || status === 403 || /session|expired|unauth/i.test(rawMsg)) {
+        errorType = 'unauthorized';
+        message = 'Your session has expired. Please sign in and try again.';
+      } else if (status === 409 || /already exists|already registered|duplicate|in use|exists/i.test(rawMsg)) {
+        errorType = 'account_exists';
+        message = 'An account with this email already exists. Please sign in instead.';
+      } else if (status === 402 || /declin|insufficient|cvv|expired card|invalid card|card number/i.test(rawMsg)) {
+        errorType = 'card_declined';
+        message = 'Your card was declined. Please check your card details and try again, or use a different card.';
+      } else if (status >= 500) {
+        errorType = 'server_error';
+        message = "We're having trouble processing payments right now. Please try again in a moment.";
+      } else {
+        message = rawMsg || "We couldn't complete your subscription. Please try again, or contact support if this keeps happening.";
+      }
+      track('payment_error', { errorType, errorMessage: err?.message, errorStatus: status });
       gtmEvent('payment_error', { error_type: errorType });
-      const message = isUnauthorized
-        ? 'Please sign in or create an account first.'
-        : (err?.data?.error?.message || err?.message || 'Payment failed. Please check your card details and try again.');
       setError(message);
     } finally {
       setLoading(false);
@@ -593,7 +634,7 @@ const PaymentPage = () => {
                         required
                         placeholder="First"
                         autoComplete="given-name"
-                        className={styles.input}
+                        className={`${styles.input} ${touched.billingFirstName && !validation.billingFirstName ? styles.inputError : ''}`}
                       />
                     </div>
                     <div className={styles.fieldGroup}>
@@ -607,7 +648,7 @@ const PaymentPage = () => {
                         required
                         placeholder="Last"
                         autoComplete="family-name"
-                        className={styles.input}
+                        className={`${styles.input} ${touched.billingLastName && !validation.billingLastName ? styles.inputError : ''}`}
                       />
                     </div>
                   </div>
@@ -752,8 +793,8 @@ const PaymentPage = () => {
                           placeholder="12345"
                           inputMode="numeric"
                           autoComplete="billing postal-code"
-                          maxLength="10"
-                          className={styles.input}
+                          maxLength="5"
+                          className={`${styles.input} ${touched.billingZip && !validation.billingZip ? styles.inputError : ''}`}
                         />
                       </div>
                     </div>
@@ -791,8 +832,8 @@ const PaymentPage = () => {
                       />
                       <span className={styles.termsBody}>
                         By clicking the button below, you agree to {brand.name}'s{' '}
-                        <Link to="/terms">Terms of Use</Link>,{' '}
-                        <Link to="/privacy">Privacy Policy</Link> and you authorize {brand.name} to
+                        <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</Link>,{' '}
+                        <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link> and you authorize {brand.name} to
                         charge your card <strong>{trialPriceStr} today</strong> for your report.
                         With your report, you get an Unlimited Search trial account for a full{' '}
                         <strong>{brand.trialDays} Days</strong>. With Unlimited Search, you can
@@ -805,7 +846,7 @@ const PaymentPage = () => {
                         the end of the trial period and every 30 Days thereafter until you cancel.
                         You may cancel at any time with our 100% hassle free cancellation. Just call
                         us at <strong>{brand.supportPhone}</strong> or{' '}
-                        <Link to="/contact">visit our contact form</Link> anytime, 24 hours a day,
+                        <Link to="/contact" target="_blank" rel="noopener noreferrer">visit our contact form</Link> anytime, 24 hours a day,
                         7 days a week.
                       </span>
                     </label>
@@ -850,15 +891,21 @@ const PaymentPage = () => {
                 <span className={styles.trustItem}>🔐 Encrypted</span>
               </div>
 
-              <p className={styles.skipLink}>
-                <button
-                  type="button"
-                  onClick={() => navigate('/dashboard')}
-                  className={styles.skipBtn}
-                >
-                  I'll upgrade later — go to my dashboard
-                </button>
-              </p>
+              {/* Only meaningful for an authenticated upgrader (e.g. clicked
+                  "Upgrade to Pro" from AccountPage/DashboardHome). Hide for
+                  unauthenticated signup funnel — bug #36: the link confused
+                  users since /dashboard would just bounce them back. */}
+              {token && (
+                <p className={styles.skipLink}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/dashboard')}
+                    className={styles.skipBtn}
+                  >
+                    I'll upgrade later — go to my dashboard
+                  </button>
+                </p>
+              )}
             </>
           )}
         </div>

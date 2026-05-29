@@ -71,6 +71,14 @@ const AccountPage = () => {
   const [composeSuccess, setComposeSuccess] = useState(false);
   const [composeError, setComposeError] = useState('');
 
+  // Diagnostic counts from the most recent histories walk. Visible inline so
+  // we can see — without devtools — whether BC's histories endpoint is
+  // returning the initial 'contact' doc or only the replies.
+  const [msgDiag, setMsgDiag] = useState(null); // { threadCount, contact, csrReply, userReply, other }
+  // Diag line is QA-only — visible when the URL has ?debug=1.
+  const showMsgDiag = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debug') === '1';
+
   // ─── Fetch: profile ──────────────────────────────────────────────────────────
   // BC has no consumer GET /me equivalent — seed from the AuthContext user
   // populated at login. We still try /me as a best-effort to pick up any extra
@@ -198,18 +206,27 @@ const AccountPage = () => {
     fetchMessages();
   }, [token, activeTab, messagesFetched]);
 
-  // BC's staging has no consumer-side userContact list endpoint (404 on every
-  // documented variant 2026-05-11). To surface CSR replies in-app we capture
-  // (contactMessageId, hash) on every submit and replay them through
-  // getContactHistories — BC's documented endpoint that returns the full thread
-  // when given id+hash. The local-mirror fallback below covers the moment
-  // between submit and BC's first round-trip.
-  const localMessagesKey = (user?.id || user?._id || user?.email)
-    ? `accountMessages:${user?.id || user?._id || user?.email}`
-    : null;
-  const localThreadsKey = (user?.id || user?._id || user?.email)
-    ? `accountThreads:${user?.id || user?._id || user?.email}`
-    : null;
+  // Canonical key is the lowercased email. Earlier we keyed on
+  // (user.id || user._id || user.email) but BC's signup response sometimes
+  // omits user.id, so writes during the post-signup session landed under
+  // accountThreads:<email> while reads after the next login landed under
+  // accountThreads:<bc-user-id> — different keys, message vanished.
+  // Email is present in both post-signup fallback and post-login responses,
+  // so it's the stable identifier.
+  const emailKey = (user?.email || '').trim().toLowerCase();
+  const localMessagesKey = emailKey ? `accountMessages:${emailKey}` : null;
+  const localThreadsKey = emailKey ? `accountThreads:${emailKey}` : null;
+
+  // Read with one-time migration: if data only exists under a legacy
+  // (id/_id) key, fold it into the canonical email key and delete the
+  // legacy entry so future reads land in the right place.
+  const legacyThreadKeys = () => {
+    const out = [];
+    const ids = [user?.id, user?._id].filter((v) => v && v !== emailKey);
+    for (const id of ids) out.push(`accountThreads:${id}`);
+    return out;
+  };
+
   const readLocalMessages = () => {
     if (!localMessagesKey) return [];
     try {
@@ -222,11 +239,48 @@ const AccountPage = () => {
     try { sessionStorage.setItem(localMessagesKey, JSON.stringify(next)); }
     catch { /* storage may be unavailable — non-fatal */ }
   };
+  // BC's contactMessageIds and hashes are 24-hex MongoDB ObjectId strings.
+  // Anything else is junk (placeholder text from a misused DevTools snippet,
+  // URL-encoded brackets, etc.) — drop it on read so a bad ref can't keep
+  // hammering histories with 400s. Self-heals existing caches.
+  const isValidRef = (r) =>
+    r &&
+    typeof r.contactMessageId === 'string' &&
+    typeof r.hash === 'string' &&
+    /^[a-f0-9]{24}$/i.test(r.contactMessageId) &&
+    /^[a-f0-9]{24,}$/i.test(r.hash);
+
   const readLocalThreads = () => {
     if (!localThreadsKey) return [];
     try {
-      const raw = localStorage.getItem(localThreadsKey);
-      return raw ? JSON.parse(raw) : [];
+      const canonicalRaw = localStorage.getItem(localThreadsKey);
+      const canonical = canonicalRaw ? JSON.parse(canonicalRaw) : [];
+      const canonicalArr = Array.isArray(canonical) ? canonical : [];
+      let merged = canonicalArr;
+      let didMigrate = false;
+      for (const k of legacyThreadKeys()) {
+        const legacyRaw = localStorage.getItem(k);
+        if (!legacyRaw) continue;
+        try {
+          const legacy = JSON.parse(legacyRaw);
+          const legacyArr = Array.isArray(legacy) ? legacy : [];
+          const haveIds = new Set(merged.map((r) => r?.contactMessageId).filter(Boolean));
+          const additions = legacyArr.filter((r) => r?.contactMessageId && !haveIds.has(r.contactMessageId));
+          if (additions.length > 0) {
+            merged = [...additions, ...merged].slice(0, 100);
+            didMigrate = true;
+          }
+          localStorage.removeItem(k);
+        } catch {
+          // Bad legacy data — drop it.
+          localStorage.removeItem(k);
+        }
+      }
+      const cleaned = merged.filter(isValidRef);
+      if (didMigrate || cleaned.length !== merged.length) {
+        try { localStorage.setItem(localThreadsKey, JSON.stringify(cleaned)); } catch { /* non-fatal */ }
+      }
+      return cleaned;
     } catch { return []; }
   };
   const writeLocalThreads = (next) => {
@@ -235,27 +289,53 @@ const AccountPage = () => {
     catch { /* storage may be unavailable — non-fatal */ }
   };
 
-  // Flatten BC histories docs from all stored threads into a single
-  // newest-first list. Each contactMessage thread returns docs of type
-  // 'contact' (original), 'csrReply' (support), and 'userReply' (user).
-  // We translate to the existing rendering vocabulary on the way out so
-  // the message-list JSX below doesn't need to learn new types.
+  // Two-stage fetch:
+  //  1. Enumerate via BC's getUserContacts (added 2026-05-28) — returns every
+  //     contactMessage thread where the user is the targetUserId (own
+  //     submissions + CSR-initiated F8 threads), each with `hash` inline.
+  //     We merge any new (id, hash) refs into accountThreads:<email> so the
+  //     cache stays consistent across devices.
+  //  2. Walk all refs (BC-enumerated + anon-migrated from pendingContactThreads)
+  //     and call histories(id, hash) per thread to render the full
+  //     conversation. BC remains source of truth for thread content.
   const fetchMessages = async () => {
     if (!token) return;
     setMessagesLoading(true);
     setMessagesError('');
+    setMsgDiag(null);
     try {
-      const refs = readLocalThreads();
-      if (refs.length === 0) {
-        // No tracked threads yet — fall back to the local mirror.
-        setMessages(readLocalMessages());
-        setHasMoreMessages(false);
-        setMessagesFetched(true);
-        return;
+      // Stage 1: enumerate via BC and merge into local ref cache.
+      try {
+        const list = await api.getUserContacts();
+        const listDocs = list?.docs || [];
+        if (listDocs.length > 0) {
+          const existing = readLocalThreads();
+          const haveIds = new Set(existing.map((r) => r?.contactMessageId).filter(Boolean));
+          const additions = listDocs
+            .filter((d) => (d._id || d.id) && d.hash && !haveIds.has(d._id || d.id))
+            .map((d) => ({
+              contactMessageId: d._id || d.id,
+              hash: d.hash,
+              createdAt: d.createdAt || new Date().toISOString(),
+              subject: d?.content?.input?.topic || '',
+            }));
+          if (additions.length > 0) {
+            const next = [...additions, ...existing].slice(0, 100);
+            writeLocalThreads(next);
+          }
+        }
+      } catch {
+        // BC enumeration failed — fall through to whatever refs we have
+        // locally (anon-migrated + any from a previous successful call).
       }
-      const allDocs = [];
-      for (const ref of refs) {
+
+      // Stage 2: walk all refs and call histories.
+      const byId = new Map();
+      const diag = { threadCount: 0, contact: 0, csrReply: 0, userReply: 0, other: 0 };
+
+      for (const ref of readLocalThreads()) {
         if (!ref?.contactMessageId || !ref?.hash) continue;
+        diag.threadCount += 1;
         try {
           const result = await api.getContactHistories({
             contactMessageId: ref.contactMessageId,
@@ -264,17 +344,31 @@ const AccountPage = () => {
           const data = result?.getData?.() ?? result ?? {};
           const docs = data.docs || (Array.isArray(data) ? data : []);
           for (const d of docs) {
-            const t = d.type;
-            const mappedType = t === 'csrReply' ? 'userContactCsrMail' : 'userContact';
+            const id = d._id || d.id;
+            if (!id) continue;
+            // BC's stored type is `contactCsrReply` / `contactUserReply` (see
+            // csrApi.csv:566) — older docs mention bare `csrReply` /
+            // `userReply` interchangeably. Lowercase + suffix match keeps us
+            // resilient to either form.
+            const tRaw = d.type || '';
+            const tLow = tRaw.toLowerCase();
+            const isContact   = tLow === 'contact';
+            const isCsrReply  = tLow.endsWith('csrreply');
+            const isUserReply = tLow.endsWith('userreply');
+            if (isContact) diag.contact += 1;
+            else if (isCsrReply) diag.csrReply += 1;
+            else if (isUserReply) diag.userReply += 1;
+            else diag.other += 1;
+            const mappedType = isCsrReply ? 'userContactCsrMail' : 'userContact';
             const subject = d?.content?.input?.topic || d?.content?.subject || '';
             const body = d?.content?.message || d?.content?.input?.description || '';
             const contentType = d?.content?.contentType || 'text/plain';
-            allDocs.push({
-              _id: d._id || d.id,
+            byId.set(id, {
+              _id: id,
               type: mappedType,
               createdAt: d.createdAt,
               content: {
-                subject: t === 'contact' ? subject : '',
+                subject: isContact ? subject : '',
                 message: body,
                 contentType,
               },
@@ -282,9 +376,12 @@ const AccountPage = () => {
           }
         } catch { /* skip this thread, keep going */ }
       }
-      allDocs.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      const finalMsgs = allDocs.length > 0 ? allDocs : readLocalMessages();
+
+      const merged = Array.from(byId.values())
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      const finalMsgs = merged.length > 0 ? merged : readLocalMessages();
       setMessages(finalMsgs);
+      setMsgDiag(diag);
       setHasMoreMessages(false);
       setMessagesFetched(true);
     } catch (err) {
@@ -320,10 +417,11 @@ const AccountPage = () => {
       const phone = userPhoneDigits.length >= 10 ? userPhoneDigits : '2125550100';
       const submittedSubject = composeSubject;
       const submittedMessage = composeMessage.trim();
-      // BC's staging does NOT expose /api/message/userContact for the consumer
-      // (404 on every variant probed 2026-05-11). Stay on the contactMessage
-      // path; UserDetailPage links to it via sender-email matching, not
-      // targetUserId. See csrFindUserContactMessages fallback.
+      // Explicitly send targetUserId so BC's getUserContacts (2026-05-28)
+      // can surface this thread on subsequent loads. BC's contact.create
+      // doesn't auto-set content.targetUserId for member-submitted threads —
+      // testing whether BC honors the explicit field. If BC strips it, we
+      // need either auto-linking or an ownerId clause on getUserContacts.
       const created = await api.submitContact({
         category: 'general',
         topic: submittedSubject,
@@ -332,11 +430,20 @@ const AccountPage = () => {
         email: user?.email || '',
         phone,
         orderId: subscription?.orderId || '',
+        ...(user?.id || user?._id ? { targetUserId: user?.id || user?._id } : {}),
       });
-      // BC's contact-create returns the new contactMessage doc with _id and hash;
-      // capture both so the Messages tab can reload this thread via histories.
-      const newThreadId = created?._id || created?.id || created?.docs?.[0]?._id || created?.docs?.[0]?.id || null;
-      const newThreadHash = created?.hash || created?.docs?.[0]?.hash || null;
+      // BC's contact.create returns { messageResult: { _id, hash, ... }, mailResult }
+      // (Api.csv:550). Extractor must check messageResult before falling through
+      // to flat or docs[] shapes — older paths kept for resilience but
+      // messageResult is the documented contract.
+      const newThreadId =
+        created?.messageResult?._id || created?.messageResult?.id ||
+        created?._id || created?.id ||
+        created?.docs?.[0]?._id || created?.docs?.[0]?.id || null;
+      const newThreadHash =
+        created?.messageResult?.hash ||
+        created?.hash ||
+        created?.docs?.[0]?.hash || null;
       if (newThreadId && newThreadHash) {
         const nextRefs = [
           { contactMessageId: newThreadId, hash: newThreadHash, createdAt: new Date().toISOString(), subject: submittedSubject },
@@ -344,34 +451,17 @@ const AccountPage = () => {
         ];
         writeLocalThreads(nextRefs);
       }
-      // Mirror the just-submitted message into the visible list for instant
-      // feedback. Next tab open replaces this with BC's canonical doc via
-      // /contactMessage/histories.
-      const localEntry = {
-        _id: newThreadId || `local-${Date.now()}`,
-        type: 'userContact',
-        createdAt: new Date().toISOString(),
-        content: {
-          subject: submittedSubject,
-          message: submittedMessage,
-          contentType: 'text/plain',
-        },
-      };
-      const nextLocal = [localEntry, ...readLocalMessages()];
-      writeLocalMessages(nextLocal);
-      setMessages((prev) => [localEntry, ...prev]);
       setComposeSuccess(true);
       setComposeMessage('');
       setComposeSubject('General inquiry');
-      setMessagesFetched(true);
-      // Reset the fetched flag so the next tab visit re-runs fetchMessages
-      // with the freshly-stored thread ref. We don't need to re-fetch right
-      // now because BC's reply latency is human-scale; the local mirror
-      // shows the user's outbound copy instantly.
+      // Principle: always go to BC for canonical state. Trigger an immediate
+      // re-fetch instead of optimistically mirroring the local entry — this
+      // catches BC validation/normalization (e.g., subject rewrites, hash
+      // assignment) and surfaces any create-time errors that didn't throw.
+      setMessagesFetched(false);
       setTimeout(() => {
         setShowCompose(false);
         setComposeSuccess(false);
-        setMessagesFetched(false);
       }, 2000);
     } catch (err) {
       // Surface BC's response body so we can see exactly what was rejected
@@ -508,6 +598,25 @@ const AccountPage = () => {
       setCancelError('');
     } catch (err) {
       setCancelError(err?.message || err?.data?.error?.message || 'Failed to cancel subscription');
+    }
+  };
+
+  // Reactivate a cancelled-but-still-in-period order. BC's
+  // cancelOrUncancelOrder(flag=false, orderId) revives the auto-renew.
+  // Direct fix for #50 (cancel→reactivate previously routed to /payment,
+  // which BC rejected with nonMemberOnlyCommerceOffer because the offer
+  // is non-member-only).
+  const handleReactivate = async () => {
+    if (!subscription?.orderId) {
+      setCancelError('No subscription to reactivate.');
+      return;
+    }
+    try {
+      await api.cancelSubscription(subscription.orderId, { flag: false });
+      refreshSubscription();
+      setCancelError('');
+    } catch (err) {
+      setCancelError(err?.message || err?.data?.error?.message || 'Failed to reactivate subscription');
     }
   };
 
@@ -968,9 +1077,15 @@ const AccountPage = () => {
                   <span>
                     <strong>Plan:</strong> {planDisplayName || 'Subscription'}
                   </span>
-                  <span className={`${styles.subscriptionBadge} ${styles.active}`}>Active</span>
+                  {subscription.subStatus === 'canceled' ? (
+                    <span className={styles.subscriptionBadge} style={{ background: '#fef3c7', color: '#92400e' }}>
+                      Canceling
+                    </span>
+                  ) : (
+                    <span className={`${styles.subscriptionBadge} ${styles.active}`}>Active</span>
+                  )}
                   <span>
-                    <strong>Renewal date:</strong>{' '}
+                    <strong>{subscription.subStatus === 'canceled' ? 'Access until:' : 'Renewal date:'}</strong>{' '}
                     {subscription.dueDate
                       ? (() => {
                           try { return new Date(subscription.dueDate).toLocaleDateString(); }
@@ -991,9 +1106,27 @@ const AccountPage = () => {
                     <li>Priority support</li>
                   </ul>
                 </div>
-                <button className={styles.cancelBtn} onClick={() => setShowCancelModal(true)}>
-                  Cancel Subscription
-                </button>
+                {subscription.subStatus === 'canceled' ? (
+                  <button
+                    onClick={handleReactivate}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: '#0d5d2f',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Reactivate Subscription
+                  </button>
+                ) : (
+                  <button className={styles.cancelBtn} onClick={() => setShowCancelModal(true)}>
+                    Cancel Subscription
+                  </button>
+                )}
               </div>
             ) : (
               <div>
@@ -1011,7 +1144,7 @@ const AccountPage = () => {
                     fontSize: '0.9rem',
                   }}
                 >
-                  Upgrade to Pro &mdash; $29.99/month
+                  Upgrade to Pro
                 </Link>
               </div>
             )}
@@ -1029,16 +1162,42 @@ const AccountPage = () => {
             ) : ordersError ? (
               <p className={styles.errorText}>{ordersError}</p>
             ) : (() => {
+              // BC's consumer getUserOrders returns the order shell but doesn't
+              // always populate commercePayments[] (especially right after a
+              // fresh signup). When it's empty for an order that clearly
+              // transacted, synthesize a single sale row from the order's
+              // own orderTimestamp + S0 price rule so the user can see their
+              // trial charge. Real commercePayments take over once BC fills them.
               const payments = orders
-                .flatMap((o) => Array.isArray(o.commercePayments) ? o.commercePayments : [])
-                .map((p) => ({
-                  id: p._id || p.id,
-                  ts: p.paymentTimestamp || (p.createdAt ? new Date(p.createdAt).getTime() : 0),
-                  amount: p.totalPrice?.amount,
-                  currency: (p.totalPrice?.code || 'usd').toUpperCase(),
-                  type: p.type || 'sale',
-                  status: p.status || 'unknown',
-                }))
+                .flatMap((o) => {
+                  const real = Array.isArray(o.commercePayments) ? o.commercePayments : [];
+                  if (real.length > 0) {
+                    return real.map((p) => ({
+                      id: p._id || p.id,
+                      ts: p.paymentTimestamp || (p.createdAt ? new Date(p.createdAt).getTime() : 0),
+                      amount: p.totalPrice?.amount,
+                      currency: (p.totalPrice?.code || 'usd').toUpperCase(),
+                      type: p.type || 'sale',
+                      status: p.status || 'unknown',
+                    }));
+                  }
+                  const trialRule = Array.isArray(o.commercePriceRules)
+                    ? o.commercePriceRules.find((r) => r?._DESC_ === 'S0')
+                    : null;
+                  const trialPrice = trialRule?.candidates?.[0]?.id;
+                  const ts = o.orderTimestamp
+                    || (o.createdAt ? new Date(o.createdAt).getTime() : 0)
+                    || (o.createdTimestamp || 0);
+                  if (!ts || trialPrice?.amount == null) return [];
+                  return [{
+                    id: `synth-${o._id || o.id || ts}`,
+                    ts,
+                    amount: trialPrice.amount,
+                    currency: (trialPrice.code || 'usd').toUpperCase(),
+                    type: 'sale',
+                    status: 'paid',
+                  }];
+                })
                 .sort((a, b) => (b.ts || 0) - (a.ts || 0));
               if (payments.length === 0) {
                 return <p className={styles.emptyState}>No billing history found.</p>;
@@ -1391,11 +1550,13 @@ const AccountPage = () => {
             <div className={styles.emptyState}>
               <p><strong>No conversations to show here yet.</strong></p>
               <p style={{ fontSize: '0.9rem', color: '#555', marginTop: '0.5rem' }}>
-                If our support team has replied to you, look for the link in their email — that opens your conversation directly. Sign up for a new conversation with the <strong>New Message</strong> button above.
+                When support replies, you&apos;ll get an email with a link to your conversation — clicking it opens the full thread here. Start a new conversation any time with the <strong>New Message</strong> button above.
               </p>
-              <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                Messages you sent from a different device or browser may not appear here. We're working on cross-device sync.
-              </p>
+              {showMsgDiag && msgDiag && msgDiag.threadCount > 0 && (
+                <p style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: '0.75rem', fontFamily: 'monospace' }}>
+                  diag: bound {msgDiag.threadCount} thread{msgDiag.threadCount === 1 ? '' : 's'} · fetched 0 docs (BC histories returned empty)
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -1482,6 +1643,14 @@ const AccountPage = () => {
                     All messages loaded
                   </p>
                 )
+              )}
+              {showMsgDiag && msgDiag && msgDiag.threadCount > 0 && (
+                <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: '0.75rem', marginTop: '0.5rem', fontFamily: 'monospace' }}>
+                  diag: bound {msgDiag.threadCount} thread{msgDiag.threadCount === 1 ? '' : 's'} ·
+                  fetched {msgDiag.contact + msgDiag.csrReply + msgDiag.userReply + msgDiag.other} docs
+                  ({msgDiag.contact} contact, {msgDiag.csrReply} csrReply, {msgDiag.userReply} userReply
+                  {msgDiag.other > 0 ? `, ${msgDiag.other} other` : ''})
+                </p>
               )}
             </>
           )}

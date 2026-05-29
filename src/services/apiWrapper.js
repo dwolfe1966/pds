@@ -679,45 +679,16 @@ class ApiWrapperService {
   }
 
   /**
-   * Opt-Out endpoints
+   * Opt-out confirmation — hit when BC's confirmation email lands the
+   * user on /opt-out?awqh[type]=confirmationRequestOptOut&awqh[optOutRequestId]=X.
+   * The full search/request flow lives on BC's hosted page (goPage('optOut')).
    */
-  async requestOptOut(body) {
-    try {
-      const wrapper = await this.getWrapper();
-      return await wrapper.api.optOut.request(body);
-    } catch (error) {
-      const enhancedError = new Error(error.message || 'Opt-out request failed');
-      enhancedError.originalError = error;
-      enhancedError.isCorsError = this._isCorsError(error);
-      throw enhancedError;
-    }
-  }
-
   async confirmOptOut(params) {
     try {
       const wrapper = await this.getWrapper();
       return await wrapper.api.optOut.confirmation(params);
     } catch (error) {
       const enhancedError = new Error(error.message || 'Opt-out confirmation failed');
-      enhancedError.originalError = error;
-      enhancedError.isCorsError = this._isCorsError(error);
-      throw enhancedError;
-    }
-  }
-
-  /**
-   * Search opt-out status before submitting request
-   * POST /optOut/search - Check if a record is already opted out
-   */
-  async searchOptOut(params) {
-    try {
-      const wrapper = await this.getWrapper();
-      if (typeof wrapper.api?.optOut?.search === 'function') {
-        return await wrapper.api.optOut.search(params);
-      }
-      throw new Error('Opt-out search not available in ApiWrapper');
-    } catch (error) {
-      const enhancedError = new Error(error.message || 'Opt-out search failed');
       enhancedError.originalError = error;
       enhancedError.isCorsError = this._isCorsError(error);
       throw enhancedError;
@@ -1455,9 +1426,11 @@ class ApiWrapperService {
       orderId: orderId && /^[a-zA-Z0-9]{8,24}$/.test(orderId) ? orderId : 'NOORDERID0000',
     });
 
-    // BC returns the new contactMessage doc; pull its id.
+    // BC returns the new contactMessage as { success, messageResult: { _id, id, ... }, mailResult }.
+    // Extract the new thread id from messageResult (primary), falling back
+    // to other shapes the IIFE may emit for older deployments.
     const data = created?.getData?.() ?? created;
-    const newThread = data?.contactMessage || data?.doc || data?.docs?.[0] || data;
+    const newThread = data?.messageResult || data?.contactMessage || data?.doc || data?.docs?.[0] || data;
     const contactMessageId = newThread?._id || newThread?.id;
     if (!contactMessageId) {
       const err = new Error('CSR contact-message create returned no id; cannot reply.');
@@ -1641,20 +1614,38 @@ class ApiWrapperService {
   }
 
   /**
-   * Get user's support messages (contacts/CSR mail).
-   * REMOVED by BC on 2026-04-17. The new message.contact.* flow uses per-thread
-   * reply links (contactMessageId + hash) instead of a user-scoped inbox.
-   * Returns a synthetic empty payload so callers (DashboardHome, AccountPage)
-   * degrade gracefully until a replacement aggregate endpoint is available.
+   * Enumerate the logged-in user's contactMessage threads.
+   * BC: apiWrapper.api.message.contact.getUserContacts({ lastId })
+   *     → GET /api/contactMessage/getUserContacts
+   * Added 2026-05-28 (Api.csv). Returns threads where the user is the
+   * targetUserId — covers both user-submitted threads and CSR-initiated
+   * threads (e.g. F8 billing-action). Each doc includes `hash` inline so
+   * the consumer can immediately call histories(id, hash) without a
+   * separate round-trip.
    */
   async getUserContacts(lastId) {
-    // BC: POST /api/message/userContact/list. Body: { lastId? } flat.
-    // Returns { docs: [...], noMoreDocs: bool } per BC spec; we normalize.
-    const body = lastId ? { lastId } : {};
+    const params = lastId ? { lastId } : {};
+    const wrapper = await this.getWrapper().catch(() => null);
+    if (wrapper?.api?.message?.contact?.getUserContacts) {
+      try {
+        const raw = await wrapper.api.message.contact.getUserContacts(params);
+        const data = _unwrapBcResponse(raw) ?? {};
+        const docs = data.docs || (Array.isArray(data) ? data : []);
+        const noMoreDocs = data.noMoreDocs ?? (docs.length === 0);
+        return { docs, messages: docs, noMoreDocs };
+      } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+          dbgWarn('[getUserContacts] IIFE returned error, falling back to direct GET:', err?.message);
+        }
+      }
+    }
     try {
-      const raw = await this._csrPost('/message/userContact/list', body);
+      const qs = new URLSearchParams();
+      if (lastId) qs.set('lastId', lastId);
+      const path = `/contactMessage/getUserContacts${qs.toString() ? `?${qs.toString()}` : ''}`;
+      const raw = await this._csrGet(path);
       const data = raw?.getData?.() ?? raw ?? {};
-      const docs = data.docs || data.messages || (Array.isArray(data) ? data : []);
+      const docs = data.docs || (Array.isArray(data) ? data : []);
       const noMoreDocs = data.noMoreDocs ?? (docs.length === 0);
       return { docs, messages: docs, noMoreDocs };
     } catch (err) {

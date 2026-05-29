@@ -5,6 +5,7 @@
 - [BC Admin API reference (csrWrapper)](bc_admin_api_reference.md) — admin-side endpoints for the separate Admin App build
 - [BC API docs CSV locations](reference_bc_api_docs_location.md) — `docs/new-api/bc client library - {Api,csrApi,HowTo}.csv` are the source of truth; grep these before guessing endpoints
 - [BC integration boundary](project_bc_integration_boundary.md) — IIFE only exposes auth/idLookup/optOut/billing; profile/sub/alerts/notif/pwd stay mock until BC expands
+- [BC consumer support model](project_bc_consumer_message_model.md) — enumeration via `message.contact.getUserContacts` (added 2026-05-28) + per-thread `histories(id, hash)`; localStorage is cache, BC is source of truth
 - [Architecture decisions](project_architecture_decisions.md) — finalized decisions for tracking, email, deployment
 - [Production deployment architecture](project_production_architecture.md) — production may ship as pure React SPA; `/server` is dev mock only
 - [BC hosting cert + URL quirks](project_bc_hosting_quirks.md) — cert only covers `dev.admin.www.bytecrtrs.com`/`dev.gwhubadmin.www.bytecrtrs.com`; use relative `/api`
@@ -18,6 +19,9 @@
 - [Team roles](team_roles.md) — Lead, Developer, Tester, Designer, Analyst/Report Developer
 - [Feedback: narrow paywall to /people/:id](feedback_narrow_paywall.md) — do NOT guard /search or /alerts
 - [Feedback: subscription state authority](feedback_subscription_state_authority.md) — member paid status derives from BC `billing.getOrders()` only; no local `isPaid` flag
+- [Feedback: BC is source of truth](feedback_bc_is_source_of_truth.md) — always go to BC for display state; localStorage may store refs but not content; no BFF/tracking-api before launch
+- [Feedback: innovate around BC, don't wait](feedback_innovate_dont_wait_for_bc.md) — owner 2026-05-29; file BC asks in parallel, ship client-side workaround now; time-box BC-blocked items
+- [Bug triage execution status 2026-05-29](project_bug_triage_status_2026_05_29.md) — live tracker for the bug-list run; what's shipped, what's next, current bundle hashes, BC asks in flight
 - [Feedback: autonomous mode for launch sprint](feedback_autonomous_mode.md) — proceed on agreed work without per-step confirmation; pause only for destructive or genuinely ambiguous actions
 - [Feedback: search contextKey/teaserInput require extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time
 - [Feedback: never bake the BC captcha password into a bundle](feedback_no_secrets_in_bundle.md) — `.env.production` ships with empty captcha pass; never override via `.env.production.local` or `.env.local`

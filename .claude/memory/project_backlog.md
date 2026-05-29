@@ -18,6 +18,17 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 
 ## Known gaps (not tied to a single track)
 
+- **Bug #35 — payment submit-button compliance copy (deferred, 2026-05-29).** Bug submitter asked the submit CTA to read `"I AGREE. VIEW REPORT NOW!"` so it's clearer the click is acceptance of the terms above. Today `PaymentPage.js:875-876` reads `"Unlock Report — $1 Today"` / `"Start Trial — $1 Today"`. **Owner concern (2026-05-29):** worried the compliance copy would tank conversion — we may need to **revert the CTA** if we ship it and metrics drop. **How to apply:** if revisited, A/B test (variant: current price-led CTA vs compliance-led CTA) rather than a global swap. Get a measurable read before committing.
+
+- **Bug #34 — optional pre-checked SUP affirmative-consent checkbox (deferred, 2026-05-29).** Submitter wants the SUP affirmative-consent checkbox to be optional for affiliate-shN traffic, required only on default shN. **Why deferred:** same risk class as #35 — going less-compliant on a high-volume traffic channel is a directional call, not a polish item. **How to apply:** if revisited, scope a per-shN feature flag readable from BC's response; do not blanket-remove the checkbox.
+
+- **Bug #42 — remove "Address" search type from member homepage (deferred, 2026-05-29).** Submitter says address search "looks like search by City/State/Zip" and is confusing. Removing a search type is a feature decision, not a copy fix. **How to apply:** before removing, pull usage from `tracking-api` (`landing_view` / `srp_view` by `searchType=address`) to see whether anyone uses it. If <1% of searches, safe to remove. Otherwise rename and clarify the input rather than killing the feature.
+
+- **Bug #51 — thin-match flow not built (deferred, 2026-05-29).** Submitter: default shN should say "no records found" but other (paid) traffic should show a "thin match" preview/upsell experience. Today both paths render `ZeroResultsPanel`. Real fix is a meaningful feature build — branch the SRP zero-state on shN identity and show a thin-match teaser for non-default traffic. **How to apply:** scoped from `useShnIdentity` (`apiWrapper`-derived); show `ThinMatchPreview` component (already exists at `src/components/ThinMatchPreview.js`) on non-default paths; keep current `ZeroResultsPanel` on default.
+
+- **CSR ticket list — richer sorting & filtering (backlog, 2026-05-27).** Today `EmailTicketsPage.js` has audience / status (awaiting/replied) / category / resolution (open/resolved) / my-tickets / free-text search filters and sorts by `createdAt` desc only. **Wanted:** sort by last-activity (latest reply across thread) instead of createdAt; sort by age of oldest unanswered; group by assignee; save filter presets; "stale > N days" highlight; per-tag filter chips (not just free-text search); export to CSV. Why: as ticket volume grows, the queue needs better triage tooling than chronological + tags. How to apply: don't pre-build all of these — pick the top one or two when CSR feedback lands.
+
+
 - **CI/CD:** No `.github/workflows/`. `vercel.json` is deploy-config only.
 - **Toast notifications:** Still inline `useState + setTimeout` patterns (e.g., `NotesPage.js`). No shared toast component / context.
 - **`perPage: 5`** in `apiRouter.js` for history endpoints — verify BC handles >5 cleanly before raising.

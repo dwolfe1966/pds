@@ -612,7 +612,9 @@
   margin: 0;
   padding: 0.625rem 1.5rem 1rem;
   font-size: 0.775rem;
-  color: #9ca3af;
+  /* Was #9ca3af — WCAG AA fail (~2.6:1 on white). #4b5563 ≈ 6.3:1, passes AA.
+     Partner bug #29: billing disclosure too grey on top of SUP. */
+  color: #4b5563;
   text-align: center;
 }
 
@@ -677,11 +679,18 @@
   }
 
   .formCard {
-    padding: 1.5rem;
+    padding: 1.25rem;
+  }
+
+  /* Tighten vertical rhythm on mobile — desktop margins felt loose
+     (partner bug #30: "So much space between fields on mobile"). */
+  .fieldGroup {
+    margin-bottom: 0.75rem;
   }
 
   .fieldRow {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
   .submitBtn {

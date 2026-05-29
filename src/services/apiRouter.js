@@ -59,9 +59,7 @@ const FEATURE_FLAGS = {
   'create-report': process.env.REACT_APP_USE_NEW_API_REPORTS === 'true',
   'get-report': process.env.REACT_APP_USE_NEW_API_REPORTS === 'true',
   'report-list': process.env.REACT_APP_USE_NEW_API_REPORTS === 'true',
-  'opt-out-request': process.env.REACT_APP_USE_NEW_API_OPTOUT === 'true',
   'opt-out-confirmation': process.env.REACT_APP_USE_NEW_API_OPTOUT === 'true',
-  'opt-out-search': true, // Always use new API when available
   'commerce-billing-sale': true, // Always use new API when available
   'commerce-billing-signup': true, // Always use new API when available
   'login': process.env.REACT_APP_USE_NEW_API_AUTH === 'true',
@@ -246,7 +244,7 @@ async function _routeApiRequestInner(endpoint, params = {}) {
   // Force new API – no mock fallback for these endpoints
   const FORCE_NEW_API_ENDPOINTS = new Set([
     'create-report', 'get-report', 'report-list',
-    'opt-out-search', 'commerce-billing-sale', 'commerce-billing-signup',
+    'commerce-billing-sale', 'commerce-billing-signup',
     'download-pdf-report',
     'get-shape-compiled',
     // Auth & user creation — BC is the production user DB
@@ -661,15 +659,10 @@ async function callNewAPI(endpoint, params) {
       return adaptReportListResponse(response);
     }
     
-    case 'opt-out-request':
-      return await apiWrapper.requestOptOut(params.body || params);
-    
     case 'opt-out-confirmation':
       return await apiWrapper.confirmOptOut(params);
-    
-    case 'opt-out-search':
-      return await apiWrapper.searchOptOut(params.body || params);
-    
+
+
     case 'commerce-billing-sale':
       return await apiWrapper.sale(params.body || params);
 

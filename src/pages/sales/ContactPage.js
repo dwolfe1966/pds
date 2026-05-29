@@ -5,6 +5,53 @@ import { useAuth } from '../../context/AuthContext';
 import styles from './ContactPage.module.css';
 import { useBrand } from '../../services/brand';
 
+// When a member submits a contact form, BC returns the new contactMessage
+// doc with _id + hash. Persist those locally so Account → Messages can
+// resolve the thread via getContactHistories on next visit — BC has no
+// consumer-side enumeration, so we must capture refs at create time.
+//
+// Single canonical bucket keyed on lowercased email so writes during
+// post-signup (where user.id may not yet be populated) match reads after
+// the next login (where user.id IS populated). Logged-out submissions
+// land in a pending bucket migrated by AuthContext on next login.
+const persistContactThreadRef = (user, result, submittedEmail, subject) => {
+  if (!result) return;
+  // BC's contact.create response wraps the new doc in messageResult
+  // ({ messageResult: { _id, hash, ... }, mailResult }). Check that first;
+  // fall through to flat / docs[] shapes for resilience.
+  const threadId =
+    result?.messageResult?._id || result?.messageResult?.id ||
+    result?._id || result?.id ||
+    result?.docs?.[0]?._id || result?.docs?.[0]?.id;
+  const threadHash =
+    result?.messageResult?.hash ||
+    result?.hash ||
+    result?.docs?.[0]?.hash;
+  if (!threadId || !threadHash) return;
+  const userEmail = (user?.email || '').trim().toLowerCase();
+  const formEmail = (submittedEmail || '').trim().toLowerCase();
+  const storageKey = userEmail
+    ? `accountThreads:${userEmail}`
+    : formEmail
+      ? `pendingContactThreads:${formEmail}`
+      : null;
+  if (!storageKey) return;
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    const existing = Array.isArray(parsed) ? parsed : [];
+    const filtered = existing.filter((r) => r?.contactMessageId !== threadId);
+    const next = [
+      { contactMessageId: threadId, hash: threadHash, createdAt: new Date().toISOString(), subject: subject || '' },
+      ...filtered,
+    ].slice(0, 100);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  } catch {
+    // localStorage may be unavailable; non-fatal — member just won't see this
+    // thread in /account → Messages until they click a CSR reply link.
+  }
+};
+
 /* ------------------------------------------------------------------ */
 /* Inline SVG icons                                                    */
 /* ------------------------------------------------------------------ */
@@ -185,6 +232,7 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
       };
       if (user) body.userId = user.id || user._id;
       const result = await api.submitContact(body);
+      persistContactThreadRef(user, result, form.email, form.reason);
       setSuccess(true);
       if (result?.threadId) {
         setThreadUrl(`${window.location.origin}/contact/thread/${result.threadId}`);
@@ -472,6 +520,7 @@ const BillingQuestionModal = ({ isOpen, onClose, user, token }) => {
       };
       if (user) body.userId = user.id || user._id;
       const result = await api.submitContact(body);
+      persistContactThreadRef(user, result, form.email, 'Billing Question');
       setSuccess(true);
       if (result?.threadId) {
         setThreadUrl(`${window.location.origin}/contact/thread/${result.threadId}`);

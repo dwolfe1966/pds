@@ -439,9 +439,13 @@ const MemberSearchResultsPage = () => {
         </div>
       ) : !loading ? (
         <div className={styles.emptyState}>
-          <p className={styles.emptyStateTitle}>No results found</p>
+          <p className={styles.emptyStateTitle}>No results to display</p>
           <p className={styles.emptyStateText}>
-            Try adjusting your search terms or removing a state filter.
+            Common names with broad filters can return too many matches to show
+            (e.g. <em>John Smith</em> nationwide). Try narrowing your search —
+            add a middle initial, pick a specific state, or include a city or
+            ZIP. If you already have a phone or email for the person, those
+            searches tend to land more directly.
           </p>
         </div>
       ) : null}

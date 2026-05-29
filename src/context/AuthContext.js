@@ -32,6 +32,43 @@ export const AuthProvider = ({ children }) => {
     setLogoutHandler(logout);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Promote any logged-out contact-thread refs (captured under
+  // pendingContactThreads:<email>) into the authenticated user's bucket
+  // (accountThreads:<email>) so /account → Messages can resolve them.
+  // BC has no consumer enumeration — refs captured at create time are the
+  // only way to surface threads in-app. Without this migration, a user who
+  // submitted /contact while logged out would lose their thread visibility
+  // even after signing up with the same email.
+  useEffect(() => {
+    if (!user) return;
+    const email = (user.email || '').trim().toLowerCase();
+    if (!email) return;
+    const pendingKey = `pendingContactThreads:${email}`;
+    const targetKey = `accountThreads:${email}`;
+    try {
+      const raw = localStorage.getItem(pendingKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const pending = Array.isArray(parsed) ? parsed : [];
+      if (pending.length === 0) {
+        localStorage.removeItem(pendingKey);
+        return;
+      }
+      const existingRaw = localStorage.getItem(targetKey);
+      const existingParsed = existingRaw ? JSON.parse(existingRaw) : [];
+      const existing = Array.isArray(existingParsed) ? existingParsed : [];
+      const haveIds = new Set(existing.map((r) => r?.contactMessageId).filter(Boolean));
+      const additions = pending.filter((r) => r?.contactMessageId && !haveIds.has(r.contactMessageId));
+      if (additions.length > 0) {
+        const merged = [...additions, ...existing].slice(0, 100);
+        localStorage.setItem(targetKey, JSON.stringify(merged));
+      }
+      localStorage.removeItem(pendingKey);
+    } catch {
+      // Storage parse failure — nothing actionable; leave both keys alone.
+    }
+  }, [user]);
+
   // Fetch subscription state from BC. Returns the active subscription (or null) so
   // callers like PaymentPage can poll until BC has provisioned the order.
   const refreshSubscription = useCallback(async (currentToken) => {
@@ -49,20 +86,32 @@ export const AuthProvider = ({ children }) => {
     setSubscriptionLoading(true);
     try {
       const orders = await api.getUserOrders();
-      const activeOrder = Array.isArray(orders)
-        ? orders.find(o =>
-            o.status === 'active' &&
-            !o.transient?.canceled &&
-            o.subStatus !== 'canceled'
-          )
+      // An "operative" order grants access right now. Two cases:
+      //   1) Fully active (subStatus undefined/null) — auto-renews.
+      //   2) Cancelled but still in period (subStatus === 'canceled' AND
+      //      dueTimestamp > now) — paid through to dueTimestamp; no renew.
+      // Including (2) fixes #59 (cancelled trial users keep search access
+      // through the paid window) and #50 (cancelled users see Reactivate,
+      // not "Upgrade to Pro" → which BC rejects with nonMemberOnlyCommerceOffer).
+      const now = Date.now();
+      const operativeOrder = Array.isArray(orders)
+        ? orders.find(o => {
+            if (o.status !== 'active') return false;
+            if (o.transient?.canceled) return false;
+            if (o.subStatus === 'canceled') {
+              return !!(o.dueTimestamp && o.dueTimestamp > now);
+            }
+            return true;
+          })
         : null;
-      if (activeOrder) {
+      if (operativeOrder) {
         const next = {
           status: 'active',
-          plan: activeOrder.commerceOffers?.[0] || 'subscriber',
-          dueDate: activeOrder.dueTimestamp ? new Date(activeOrder.dueTimestamp).toISOString() : null,
-          orderId: activeOrder._id || activeOrder.id,
-          cancelable: activeOrder.transient?.cancelable ?? false,
+          subStatus: operativeOrder.subStatus || null, // 'canceled' = cancel pending
+          plan: operativeOrder.commerceOffers?.[0] || 'subscriber',
+          dueDate: operativeOrder.dueTimestamp ? new Date(operativeOrder.dueTimestamp).toISOString() : null,
+          orderId: operativeOrder._id || operativeOrder.id,
+          cancelable: operativeOrder.transient?.cancelable ?? false,
         };
         setSubscription(next);
         // Persist orderId into the GTM dataLayer context so returning paid

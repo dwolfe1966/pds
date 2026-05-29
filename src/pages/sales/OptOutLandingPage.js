@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
-import { useBrand } from '../../services/brand';
 
 /**
- * Opt-out landing page. Serves two purposes:
- * 1. Normal visitors: search form to find and request opt-out (existing flow)
- * 2. Email confirmation links: automatically confirms opt-out when URL contains
- *    awqh[type]=confirmationRequestOptOut&awqh[optOutRequestId]=<id>
+ * Opt-out landing page. Two surfaces:
+ *
+ * 1. Email confirmation deep-link: when BC's confirmation email lands the
+ *    user here with `awqh[type]=confirmationRequestOptOut&awqh[optOutRequestId]=<id>`,
+ *    we call api.confirmOptOut and show the result.
+ *
+ * 2. Normal visit: explainer copy + CTA that hands off to BC's hosted
+ *    opt-out portal via ApiWrapper.goPage('optOut', { newPage }). BC owns
+ *    the full search → request → verification flow; we don't duplicate it.
  */
 const OptOutLandingPage = () => {
   const navigate = useNavigate();
-  const brand = useBrand();
   const [searchParams] = useSearchParams();
 
-  // Opt-out confirmation state (for email link flow)
   const awqhType = searchParams.get('awqh[type]');
   const awqhOptOutRequestId = searchParams.get('awqh[optOutRequestId]');
   const isConfirmationFlow = awqhType === 'confirmationRequestOptOut' && awqhOptOutRequestId;
@@ -23,20 +25,10 @@ const OptOutLandingPage = () => {
     isConfirmationFlow ? 'loading' : null
   ); // null | 'loading' | 'success' | 'error'
 
-  const [form, setForm] = useState({
-    firstName: searchParams.get('firstName') || '',
-    lastName: searchParams.get('lastName') || '',
-    state: searchParams.get('state') || '',
-    zip: searchParams.get('zip') || ''
-  });
-  const [error, setError] = useState('');
-
-  // Handle opt-out confirmation from email link
   useEffect(() => {
     if (!isConfirmationFlow) return;
-
     let cancelled = false;
-    const confirmOptOut = async () => {
+    (async () => {
       try {
         await api.confirmOptOut({ optOutRequestId: awqhOptOutRequestId });
         if (!cancelled) setConfirmationStatus('success');
@@ -44,48 +36,14 @@ const OptOutLandingPage = () => {
         console.error('[OptOut] Confirmation failed:', err);
         if (!cancelled) setConfirmationStatus('error');
       }
-    };
-
-    confirmOptOut();
+    })();
     return () => { cancelled = true; };
   }, [isConfirmationFlow, awqhOptOutRequestId]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleOpenPortal = (newPage) => {
+    api.openBcOptOutPage({ newPage });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    try {
-      const firstName = form.firstName.trim();
-      const lastName = form.lastName.trim();
-      const state = form.state.trim().toUpperCase();
-
-      if (!firstName || !lastName) {
-        throw new Error('Please provide both first and last name.');
-      }
-      if (!state || state.length !== 2) {
-        throw new Error('State is required (2-letter abbreviation).');
-      }
-
-      const params = new URLSearchParams({
-        q: `${firstName} ${lastName}`.trim(),
-        state,
-      });
-
-      if (form.zip.trim()) {
-        params.set('zip', form.zip.trim());
-      }
-
-      navigate(`/opt-out-results?${params.toString()}`);
-    } catch (err) {
-      setError(err.message || 'An error occurred. Please try again.');
-    }
-  };
-
-  // Confirmation flow UI (email link handler)
   if (confirmationStatus) {
     return (
       <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -173,143 +131,78 @@ const OptOutLandingPage = () => {
   }
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0d5d2f', marginBottom: '1rem' }}>Opt Out of Public Records</h1>
-      <p style={{ marginBottom: '1.25rem', color: '#6b7280', lineHeight: '1.6' }}>
-        Search for your record to begin the opt-out process.
+    <main style={{ padding: '2.5rem 1.5rem', maxWidth: '640px', margin: '0 auto' }}>
+      <h1 style={{ color: '#0d5d2f', marginBottom: '0.75rem', fontSize: '1.75rem' }}>
+        Opt Out of Public Records
+      </h1>
+      <p style={{ marginBottom: '1.5rem', color: '#374151', lineHeight: 1.6 }}>
+        Remove your information from our index by searching for your record and submitting an opt-out request.
+        The full process — search, verification, and confirmation — runs in our secure opt-out portal.
       </p>
 
-      {/* Partner bug 24: link to BC's hosted opt-out page per new API docs
-          (ApiWrapper.goPage('optOut', { newPage: true })). Our built-in form
-          below still works for users who prefer an in-app flow. */}
       <div style={{
-        marginBottom: '2rem',
-        padding: '1rem 1.25rem',
-        background: '#ecfdf5',
+        padding: '1.25rem 1.5rem',
+        background: '#f0fdf4',
         border: '1px solid #bbf7d0',
         borderRadius: '0.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem',
-        flexWrap: 'wrap',
+        marginBottom: '1.5rem',
       }}>
-        <span style={{ fontSize: '0.9rem', color: '#065f46', lineHeight: 1.5 }}>
-          Already submitted an opt-out or want the full management page?
-        </span>
+        <h2 style={{ fontSize: '1rem', color: '#065f46', margin: '0 0 0.5rem', fontWeight: 700 }}>
+          What you'll need
+        </h2>
+        <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#065f46', fontSize: '0.9rem', lineHeight: 1.7 }}>
+          <li>Your first and last name</li>
+          <li>The state where you currently live (or recently lived)</li>
+          <li>An email address to receive the confirmation link</li>
+        </ul>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
         <button
           type="button"
-          onClick={() => api.openBcOptOutPage({ newPage: true })}
-          style={{
-            background: '#0d5d2f', color: '#fff', border: 'none',
-            padding: '0.55rem 1rem', borderRadius: '0.375rem',
-            fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Open opt-out portal →
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-            First Name *
-          </label>
-          <input
-            type="text"
-            name="firstName"
-            value={form.firstName}
-            onChange={handleChange}
-            required
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-            Last Name *
-          </label>
-          <input
-            type="text"
-            name="lastName"
-            value={form.lastName}
-            onChange={handleChange}
-            required
-            style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-          />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-              State *
-            </label>
-            <input
-              type="text"
-              name="state"
-              value={form.state}
-              onChange={handleChange}
-              required
-              maxLength="2"
-              placeholder="XX"
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', textTransform: 'uppercase' }}
-            />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#111827', fontWeight: 'bold' }}>
-              ZIP Code
-            </label>
-            <input
-              type="text"
-              name="zip"
-              value={form.zip}
-              onChange={handleChange}
-              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', border: '1px solid #d1d5db', borderRadius: '0.375rem' }}
-            />
-          </div>
-        </div>
-
-        {error && (
-          <div style={{ padding: '1rem', backgroundColor: '#fee', color: '#c00', borderRadius: '0.375rem', marginBottom: '1rem' }}>
-            <p style={{ margin: 0 }}>{error}</p>
-          </div>
-        )}
-
-        <button
-          type="submit"
+          onClick={() => handleOpenPortal(false)}
           style={{
             width: '100%',
-            padding: '0.75rem',
-            backgroundColor: '#0d5d2f',
+            padding: '0.95rem 1.25rem',
+            background: '#0d5d2f',
             color: '#fff',
             border: 'none',
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
+            borderRadius: '0.5rem',
             fontSize: '1rem',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-            transition: 'all 0.2s ease',
+            fontWeight: 700,
+            cursor: 'pointer',
           }}
         >
-          Search Records
+          Open Opt-Out Portal
         </button>
-      </form>
-
-      <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f9fafb', borderRadius: '0.375rem' }}>
-        <h3 style={{ color: '#0d5d2f', marginTop: 0 }}>About Opt-Out</h3>
-        <p style={{ color: '#6b7280', lineHeight: '1.6', marginBottom: '1rem' }}>
-          We respect your privacy. Search for your record and submit an opt-out request. Once verified, we will remove
-          your information from our search results.
-        </p>
-        <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
-          <strong>Note:</strong> The opt-out process requires verification to ensure the request is legitimate. 
-          This helps protect against fraudulent removal requests.
-        </p>
+        <button
+          type="button"
+          onClick={() => handleOpenPortal(true)}
+          style={{
+            width: '100%',
+            padding: '0.7rem 1.25rem',
+            background: '#fff',
+            color: '#0d5d2f',
+            border: '1px solid #0d5d2f',
+            borderRadius: '0.5rem',
+            fontSize: '0.92rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Open in a new tab instead
+        </button>
       </div>
+
+      <p style={{ fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5, marginBottom: '0.75rem' }}>
+        After submitting, you'll receive a confirmation email. Click the link in that email to complete your opt-out
+        — your information will be removed within 48 hours of confirmation.
+      </p>
+      <p style={{ fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5 }}>
+        Need help? <Link to="/contact" style={{ color: '#0d5d2f' }}>Contact support</Link>.
+      </p>
     </main>
   );
 };
 
 export default OptOutLandingPage;
-

@@ -138,13 +138,15 @@
 | Local | ✅ | Verified earlier this session |
 | Prod | TBD | |
 
-#### C11 — Opt-out request
+#### C11 — Opt-out portal handoff
 
-**Steps:** `/opt-out` → search for "Tim Chin FL" → select record → submit removal
+**Steps:** `/opt-out` → read explainer → click **"Open Opt-Out Portal"** (or the secondary "Open in new tab")
+
+**Expected:** Page renders the explainer copy + the green primary CTA + the outlined "new tab" CTA. Clicking either calls `ApiWrapper.goPage('optOut', { newPage })` and lands the user on BC's hosted opt-out portal — same tab (newPage:false) or new tab (newPage:true). The in-app search/info-input form is gone (replaced as of 2026-05-28: bundle `731f9900`); BC owns the full flow.
 
 | Env | Status | Notes |
 |---|---|---|
-| Local | ✅ | 2026-05-21 — opt-out search returns results; portal link works |
+| Local | TBD on new bundle | Previously ✅ for the in-app form (2026-05-21). New CTA-only surface needs a single visual + click verification. |
 | Prod | TBD | |
 
 #### C12 — Opt-out confirmation link
@@ -337,8 +339,18 @@ Tested against the deployed bundle at **`https://dev.www.bytecrtrs.com/csr/...`*
 
 | Env | Status | Notes |
 |---|---|---|
-| Dev (bytecrtrs) | ❌ blocked by F8 | BC returns 404 (Cannot POST /api/message/admin/user/csrMail/create) — endpoint moved/removed |
+| Dev (bytecrtrs) | ✅ shipped, awaiting BC admin redeploy | F8 fix landed in admin source — two-step flow + messageResult extractor. Retest steps below. |
 | Prod | TBD | |
+
+**Retest checklist after BC redeploys the admin bundle:**
+1. Open `dev.www.bytecrtrs.com/csr/` → search for a real test user → User Detail page.
+2. Click **"Request billing action"** → fill the modal → submit.
+3. Watch the Network panel for two sequential POSTs:
+   - `POST /api/contactMessage/admin/create` → 200/201 with `{ messageResult: { _id, hash }, mailResult }`
+   - `POST /api/contactMessage/admin/csrReply` → 200/201
+4. Confirm the modal shows the success state ("Request sent. Finance will respond within 1 business day.").
+5. Open the same user in **CSR EmailTickets** → the new thread should appear with the CSR reply already on it.
+6. If both POSTs succeed → flip Dev row to ✅, mark F8 fully closed.
 
 #### A6 — CSR tickets list
 
@@ -482,42 +494,46 @@ Verified 2026-05-26 against David Wolfe record — 8 criminal records + 3 liens 
 
 ---
 
-### F9 — Consumer can't see CSR replies in /account unless compose happened on same device
+### F9 — Consumer can't see CSR replies in /account unless compose happened on same device ✅ RESOLVED
 
-**Discovered:** 2026-05-23 after A7 (CSR reply succeeded but reply didn't surface in consumer's /account → Messages tab on `dev.www.idlookup.ai`).
+**Discovered:** 2026-05-23 after A7. **Resolved:** 2026-05-28 by BC adding `apiWrapper.api.message.contact.getUserContacts({ lastId })` at `GET /api/contactMessage/getUserContacts`.
 
-**Symptom:** `/account → Messages` tab fired no `/contactMessage/histories` call. localStorage `accountThreads:` was empty for the user on `dev.www.idlookup.ai`. `fetchMessages` bailed early because there were no thread refs to query.
+**Original symptom:** `/account → Messages` tab fired no `/contactMessage/histories` call when localStorage `accountThreads:` was empty. `fetchMessages` had nothing to query.
 
-**Root cause:** BC exposes only two contact-message read endpoints — `/contactMessage/histories?contactMessageId=X&hash=Y` (single thread) and the admin-side `/contactMessage/admin/find` (CSR-only). **No `/message/userContact/list` for consumers.** We rely on client-side capture of `(contactMessageId, hash)` at compose time — which is per-domain and per-device.
+**Original root cause:** BC's old consumer surface had no aggregate-inbox endpoint. We relied on client-side `(contactMessageId, hash)` capture, which broke for cross-device, fresh-browser, and CSR-initiated (F8) threads.
 
-**Functional gaps:**
-- User composes on device A → CSR replies → user logs in on device B → reply invisible in /account
-- User composes on `localhost:3000` for testing → logs in on `dev.www.idlookup.ai` → reply invisible (different domain = different localStorage)
-- User clears browser storage → all historical replies invisible
+**Resolution (bundle `fef6ef99`, 2026-05-28):**
+- `apiWrapper.getUserContacts(lastId)` rewired from a no-op stub to the new BC endpoint — IIFE primary (`wrapper.api.message.contact.getUserContacts`) with a `_csrGet('/contactMessage/getUserContacts')` fallback.
+- `AccountPage.fetchMessages` now has a Stage 1 enumeration step: call `getUserContacts`, merge each returned doc's `(id, hash)` into `accountThreads:<email>` localStorage (dedupe by id), then proceed to the existing Stage 2 histories walk. BC stays source of truth for enumeration; localStorage is the cache.
+- BC's endpoint returns threads where the user is `targetUserId` — covers both user-submitted threads and CSR-initiated F8 threads.
+- Anonymous → signup migration (`pendingContactThreads:<email>`) stays in place for the one case BC's endpoint can't cover (no targetUserId on anonymous submissions).
 
-**Supported flow (works today):** BC sends user an email when CSR replies (the link path through `/contact/thread/<id>?h=<hash>` → `ContactThreadPage`). That's domain-independent.
-
-**Action items:**
-1. **BC ticket addition:** "Please expose `POST /api/message/userContact/list` (or equivalent) returning all contactMessage threads for the authenticated user — `{ contactMessageId, hash, latestReply, subject, status }[]`. Today the consumer can only see CSR replies via the per-message email link we send."
-2. **Client-side stopgap (optional):** when /account → Messages tab loads with zero local thread refs, render a helpful empty state: *"Click the link in our email to view recent replies from support."* — instead of a blank tab.
+**Verification:** confirmed against BC's spec example — `docs[]` includes `_id`, `hash`, `content.input.{topic, description}` for the initial contact docs. Each thread is then expanded via histories(id, hash) to surface replies. Retest steps:
+1. Log into `dev.www.idlookup.ai` on Device A → compose a message → BC accepts.
+2. On Device B with cleared localStorage, log in as same user → `/account → Messages` → message + any CSR reply should appear (enumerated via `getUserContacts`, expanded via histories).
+3. For F8: CSR opens a billing-action thread on the user's behalf → user logs in → thread should appear without any email click required.
 
 ---
 
-### F8 — CSR "Request billing action" endpoint returns 404 (admin launch blocker)
+### F8 — CSR "Request billing action" endpoint returns 404 ✅ RESOLVED (pending admin redeploy)
 
 **Discovered:** 2026-05-22 during A5 on `dev.www.bytecrtrs.com/csr/`.
 
 **Symptom:** Clicking **"Request billing action"** on the User Detail page → fills the modal → submit → BC server responds with `Cannot POST /api/message/admin/user/csrMail/create?clientId=...&apiId=...` (HTTP 404). The "Cannot POST" prefix is the express/koa default — the route literally does not exist on BC's deployment.
 
-**Likely cause:** BC has renamed, moved, or removed this admin endpoint. Our local API reference (memory: `bc_admin_api_reference.md`, 2026-05-07) documents `POST /api/message/admin/user/csrMail/create` as the CSR mail creation path, but BC's `dev.www.bytecrtrs.com` no longer serves it.
+**Root cause:** BC restructured CSR mail in 2026-04-17. The old single-step `/api/message/admin/user/csrMail/create` was removed; the new flow is two-step:
+1. `POST /api/contactMessage/admin/create` — creates the thread on the member's behalf (returns `{ messageResult: { _id, hash }, mailResult }`)
+2. `POST /api/contactMessage/admin/csrReply` — sends the CSR's actual reply on that thread
 
-**Impact:**
-- CSRs cannot send refund/billing emails to finance via the admin app
-- Blocks customer-service operations at launch unless we route around or BC restores the path
+Documented in `docs/new-api/bc client library - csrApi.csv:451` (create) and `:545` (csrReply).
 
-**Action items:**
-1. **BC ticket:** "What's the current CSR endpoint for `createCsrReply` / `createCsrMail` on `dev.www.bytecrtrs.com`? The previously-documented `POST /api/message/admin/user/csrMail/create` returns 404."
-2. **Client side once BC clarifies:** update `apiWrapper.csrCreateCsrMail` + `csrCreateCsrReply` paths to match.
+**Resolution (admin source 2026-05-27, latest `build-admin/admin.b1b944ee.js` and later):**
+- `apiWrapper.csrCreateContactMessage(params)` — new wrapper for the create step (`/contactMessage/admin/create`).
+- `apiWrapper.csrCreateCsrMail(params)` — rewritten as two-step orchestrator: create → extract `messageResult._id`/`hash` → reply.
+- `RefundEmailModal` passes `userName`, `userEmail`, `userPhone`, `orderId` so the create step satisfies BC's validators (phone sentinel `2125550100` and orderId sentinel `NOORDERID0000` when blank).
+- ID extractor at the orchestrator boundary handles BC's `{ messageResult: { _id, hash } }` response shape (initial bug where extractor missed `messageResult` is fixed).
+
+**Status:** Source fix is in. Awaiting BC redeploy of the admin bundle to `dev.www.bytecrtrs.com` to validate end-to-end. Retest checklist on A5 above.
 
 Also noted but NOT blocking:
 - `GET /contactMessage/admin/find/<userId>` returns 404 — already handled by client fallback to `/contactMessage/admin/find` (no path param) per `csrFindUserContactMessages`. Just noisy in console.

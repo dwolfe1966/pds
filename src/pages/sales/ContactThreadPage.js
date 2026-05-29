@@ -195,9 +195,9 @@ const ContactThreadPage = () => {
   // /account → Messages includes this thread via getContactHistories.
   useEffect(() => {
     if (!useBc || !user) return;
-    const userKey = user.id || user._id || user.email;
-    if (!userKey) return;
-    const storageKey = `accountThreads:${userKey}`;
+    const emailKey = (user.email || '').trim().toLowerCase();
+    if (!emailKey) return;
+    const storageKey = `accountThreads:${emailKey}`;
     try {
       const raw = localStorage.getItem(storageKey);
       const existing = raw ? JSON.parse(raw) : [];
