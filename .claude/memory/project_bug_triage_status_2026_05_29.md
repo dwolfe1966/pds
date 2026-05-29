@@ -45,7 +45,7 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
 
 ## Latest bundle hashes
 
-- **Consumer:** `build/public.dcb7445f.js` + css `public.c445a384.css` (2026-05-29 late, after #40 contextKey fix)
+- **Consumer:** `build/public.a4cbbaf2.js` + css `public.c445a384.css` (2026-05-29 late, after `.env.production` OPTOUT flip)
 - **Admin:** `build-admin/admin.5db1e886.js` (from earlier in the same session, F8 retest checklist + admin notes fix awaiting BC redeploy)
 
 ## Top-10 execution order (still in flight)
