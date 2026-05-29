@@ -248,9 +248,11 @@ export async function createReportForIdentity(extId, identity = null) {
  * @returns {Promise<{success: boolean, commerceContentId: string|null, reportData: Object}>}
  */
 export async function createReportForPhone(phone) {
-  // API docs: reversePhone only requires type + phone.
-  // Do not pass a searchContextKey — there is no verified phone.report context key.
-  const params = { type: 'reversePhone', phone };
+  const params = {
+    type: 'reversePhone',
+    phone,
+    contextKey: typeof window !== 'undefined' ? window.ApiWrapper?.contextKey?.sale?.phone?.report : undefined,
+  };
 
   try {
     const response = await api.createReport(params);

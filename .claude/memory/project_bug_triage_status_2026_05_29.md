@@ -41,10 +41,11 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
 | #43 | Replaced member SRP empty-state copy at SearchResultsPage.js:441-446. Was "No results found / Try adjusting…"; now "No results to display / Common names with broad filters can return too many matches… narrow with middle initial, state, city, or ZIP… phone/email tend to land more directly." Trusts bug submitter's hypothesis that BC is over-matching, not under-matching. **Verification gap:** owner should re-run "John Smith CA" with dev console open to confirm BC actually returns empty (vs filtered/erroring). | consumer `47d260d0` |
 | #57 | **Closed as already-fixed.** AccountPage.js:1109-1124 shows "Reactivate Subscription" whenever `subscription.subStatus === 'canceled'`. The #59 work made cancelled-but-in-period operative and exposed `subStatus`, so the button appears in exactly the state #57 describes. | n/a |
 | #39 / #41 | **Closed as already-fixed** — covered by the 2026-05-26 web-report parity push (commit `345530b`). Owner has visual ack of post-parity report (per #44 confirmation). | n/a |
+| #40 | Owner ran `(909) 663-7878` in dev — BC returned `412 → 400` on `/api/idLookup/report/create`. Bug was `createReportForPhone` not sending `contextKey`. Stale comment "no verified phone.report context key" was wrong; IIFE exposes `window.ApiWrapper.contextKey.sale.phone.report` and BC docs list it. Added contextKey to params; deleted the stale comment. Verify by re-running same number. | consumer `dcb7445f` |
 
 ## Latest bundle hashes
 
-- **Consumer:** `build/public.47d260d0.js` + css `public.c445a384.css` (2026-05-29 late, after #29 + #43 conservative-route batch)
+- **Consumer:** `build/public.dcb7445f.js` + css `public.c445a384.css` (2026-05-29 late, after #40 contextKey fix)
 - **Admin:** `build-admin/admin.5db1e886.js` (from earlier in the same session, F8 retest checklist + admin notes fix awaiting BC redeploy)
 
 ## Top-10 execution order (still in flight)

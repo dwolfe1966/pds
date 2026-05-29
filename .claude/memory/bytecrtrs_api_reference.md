@@ -31,10 +31,12 @@ Our app accesses them via `apiWrapper.js` which wraps the instance.
 **Create Report** — `wrapper.api.idLookup.createReport(params)`
 - POST `/api/idLookup/report/create`
 - By extId: `{ type: 'extId', extId: identity.extId, contextKey: window.ApiWrapper.contextKey.sale.name.report, teaserInput: teaserResponse.getTeaserInput() }`
-- By phone: `{ type: 'reversePhone', phone }`
+- By phone: `{ type: 'reversePhone', phone, contextKey: window.ApiWrapper.contextKey.sale.phone.report }`
+  - Verified 2026-05-29: BC returns 400 without `contextKey` even though older docs implied only `type + phone` was required. `sale.phone.report` resolves on the live IIFE.
 - contextKey values: `sale.name.report`, `sale.phone.report`, `sale.email.report`
-- **`teaserInput` is required** — call `teaserResponse.getTeaserInput()` from the searchTeaser response
-- **`contextKey` is required**
+- **`teaserInput` is required for extId case** — call `teaserResponse.getTeaserInput()` from the searchTeaser response
+- **`teaserInput` is NOT required for reversePhone case** — phone bypasses the teaser step
+- **`contextKey` is required for ALL cases**
 
 **Get Report (detail)** — `wrapper.api.idLookup.getReport({ commerceContentId })`
 - GET `/api/idLookup/report/detail/:commerceContentId`
