@@ -21,6 +21,7 @@ const MemberNav = () => {
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/people-search', label: 'Search' },
+    { path: '/search-history', label: 'History' },
     { path: '/alerts', label: 'Alerts' },
     { path: '/who-is-searching', label: "Who's Searching" },
     { path: '/account', label: 'Account' },
