@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import styles from './EmailTicketsPage.module.css';
@@ -80,6 +81,7 @@ function DirectionBadge({ type }) {
 const EmailTicketsPage = () => {
   const { user: adminUser } = useAuth();
   const adminUserId = adminUser?._id || adminUser?.id || null;
+  const [searchParams] = useSearchParams();
 
   // Mode: 'inbox' (all contactMessages) or 'user' (per-user search view)
   const [mode, setMode] = useState('inbox');
@@ -121,8 +123,15 @@ const EmailTicketsPage = () => {
   const [threadItems, setThreadItems] = useState([]);
   const [loadingThread, setLoadingThread] = useState(false);
 
-  // Selection & compose
-  const [selectedId, setSelectedId] = useState(null);
+  // Selection & compose. Initial value honors a `?contactMessageId=…` URL
+  // param so deep-links (e.g. from UserDetailPage's Notes tab) open the
+  // intended ticket. Effect runs once on mount; thereafter user selection
+  // owns the state.
+  const [selectedId, setSelectedId] = useState(() => searchParams.get('contactMessageId') || null);
+  useEffect(() => {
+    if (searchParams.get('contactMessageId')) setMode('inbox');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [replySubject, setReplySubject] = useState('');
   const [replyMessage, setReplyMessage] = useState('');
   const [sending, setSending] = useState(false);

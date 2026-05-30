@@ -156,23 +156,29 @@ const UsersPage = () => {
     setZipCode('');
     setLast4cc('');
 
+    if (!isEmail && !isPhone && !isZip) {
+      // Likely a name. BC's csrFindUsers has no name filter, so falling back
+      // to `email=<name>` returns empty silently and looks like the user
+      // doesn't exist. Surface a clear message and don't fire a wasted query.
+      setError('Name search isn’t supported yet. Try email, phone, ZIP code, or last 4 of card.');
+      setActiveFilters({});
+      setAdvancedOpen(true);
+      setSearchParams({}, { replace: true });
+      return;
+    }
+
     if (isEmail) {
       setEmailFilter(trimmed);
     } else if (isZip) {
       setZipCode(trimmed);
-    } else if (isPhone) {
-      setPhoneFilter(trimmed.replace(/[\s\-().+]/g, ''));
     } else {
-      // Default: try as email (BC does partial match)
-      setEmailFilter(trimmed);
+      setPhoneFilter(trimmed.replace(/[\s\-().+]/g, ''));
     }
 
-    // Build the active filter from detected type
     const filters = {};
     if (isEmail) filters.email = trimmed;
     else if (isZip) filters.zip = trimmed;
-    else if (isPhone) filters.phone = trimmed.replace(/[\s\-().+]/g, '');
-    else filters.email = trimmed;
+    else filters.phone = trimmed.replace(/[\s\-().+]/g, '');
     setActiveFilters(filters);
 
     setAllUsers([]);

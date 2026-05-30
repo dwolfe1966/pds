@@ -368,34 +368,57 @@ const UserDetailPage = () => {
 
   // ── Fetch notes & messages (all user contacts: notes, CSR mail, user replies) ──
   const fetchNotes = useCallback(async () => {
-    try {
-      const res = await api.adminFindUserContacts({ userId: id });
-      const docs = res?.docs || res?.data || (Array.isArray(res) ? res : []);
-      const mapped = docs.map(d => {
-        const t = d.type || '';
-        let kind = 'note';
-        let direction = 'internal';
-        if (t === 'userContactCsrMail') { kind = 'csrMail'; direction = 'outbound'; }
-        else if (t === 'userContact') { kind = 'userReply'; direction = 'inbound'; }
-        return {
-          id: d._id || d.id,
-          kind,
-          direction,
-          type: t,
-          subject: d.content?.subject || '',
-          text: d.content?.message || '',
-          contentType: d.content?.contentType || 'text/plain',
-          createdAt: d.createdAt,
-          author: d.owner ? `${d.owner.firstName || ''} ${d.owner.lastName || ''}`.trim() : '',
-          attachments: d.attachments || [],
-        };
-      });
-      // Sort newest first
-      mapped.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-      setNotes(mapped);
-    } catch {
-      setNotes([]);
-    }
+    // BC restructured admin notes 2026-04-17 into a separate collection served
+    // by /message/admin/findNotes. The legacy userContact collection still
+    // holds CSR mails + user replies — keep that fetch for the inbound/outbound
+    // thread, AND merge in admin notes so a CSR sees the note they just wrote.
+    const [legacyRes, adminNotesRes] = await Promise.allSettled([
+      api.adminFindUserContacts({ userId: id }),
+      api.adminFindUserAdminNotes({ userId: id }),
+    ]);
+
+    const legacyDocs = legacyRes.status === 'fulfilled'
+      ? (legacyRes.value?.docs || legacyRes.value?.data || (Array.isArray(legacyRes.value) ? legacyRes.value : []))
+      : [];
+    const legacyMapped = legacyDocs.map(d => {
+      const t = d.type || '';
+      let kind = 'note';
+      let direction = 'internal';
+      if (t === 'userContactCsrMail') { kind = 'csrMail'; direction = 'outbound'; }
+      else if (t === 'userContact') { kind = 'userReply'; direction = 'inbound'; }
+      return {
+        id: d._id || d.id,
+        kind,
+        direction,
+        type: t,
+        subject: d.content?.subject || '',
+        text: d.content?.message || '',
+        contentType: d.content?.contentType || 'text/plain',
+        createdAt: d.createdAt,
+        author: d.owner ? `${d.owner.firstName || ''} ${d.owner.lastName || ''}`.trim() : '',
+        attachments: d.attachments || [],
+      };
+    });
+
+    const adminNoteDocs = adminNotesRes.status === 'fulfilled'
+      ? (adminNotesRes.value?.data || adminNotesRes.value?.docs || (Array.isArray(adminNotesRes.value) ? adminNotesRes.value : []))
+      : [];
+    const adminNotesMapped = adminNoteDocs.map(d => ({
+      id: d._id || d.id,
+      kind: 'note',
+      direction: 'internal',
+      type: 'adminNote',
+      subject: d.content?.subject || '',
+      text: d.content?.message || '',
+      contentType: d.content?.contentType || 'text/plain',
+      createdAt: d.createdAt,
+      author: d.owner ? `${d.owner.firstName || ''} ${d.owner.lastName || ''}`.trim() : '',
+      attachments: d.attachments || [],
+    }));
+
+    const merged = [...legacyMapped, ...adminNotesMapped]
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    setNotes(merged);
   }, [id]);
 
   // ── Fetch login tracking ──────────────────────────────────
@@ -977,21 +1000,29 @@ const UserDetailPage = () => {
   // BC has no CSR-side endpoint to file an optOutRequest on behalf of a user.
   // The fallback is a CSR mail to ops + an internal note so the request is
   // tracked and actionable. Real removal happens off-platform via the partner.
+  // Both side-effects (audit note + ops mail) used to swallow errors silently
+  // — if both failed, CSR saw "filed." with nothing actually filed. Track each
+  // and surface partial-success so the CSR knows to escalate manually.
   const handleRequestDataRemoval = async (e) => {
     e?.preventDefault?.();
     if (!dataRemovalReason.trim()) return;
     setOptOutBusy('data');
     try {
       const reason = dataRemovalReason.trim();
-      // Audit note on the user record
+      let noteOk = false;
+      let mailOk = false;
       try {
         await api.adminCreateNote({
           userId: id,
           message: `CSR DATA-REMOVAL REQUEST: ${reason}`,
           contentType: 'text/plain',
         });
-      } catch {}
-      // Email summary to ops/finance via the same channel as RefundEmailModal.
+        noteOk = true;
+      } catch (noteErr) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[UserDetail] data-removal audit note failed:', noteErr?.message);
+        }
+      }
       try {
         await api.adminCreateCsrMail({
           targetUserId: id,
@@ -999,8 +1030,21 @@ const UserDetailPage = () => {
           message: `<p><strong>User:</strong> ${user?.firstName || ''} ${user?.lastName || ''} (${user?.email || ''})</p><p><strong>User ID:</strong> ${id}</p><p><strong>Reason:</strong> ${reason}</p><p>Please process per data-removal SOP.</p>`,
           contentType: 'text/html',
         });
-      } catch {}
-      showToast('Data-removal request filed.', 'success');
+        mailOk = true;
+      } catch (mailErr) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[UserDetail] data-removal ops mail failed:', mailErr?.message);
+        }
+      }
+
+      if (noteOk && mailOk) {
+        showToast('Data-removal request filed.', 'success');
+      } else if (noteOk || mailOk) {
+        const which = noteOk ? 'audit note saved, ops email FAILED' : 'ops email sent, audit note FAILED';
+        showToast(`Partial success: ${which}. Please escalate manually.`, 'error');
+      } else {
+        showToast('Both audit note and ops email failed. Please escalate manually.', 'error');
+      }
       setDataRemovalReason('');
       setShowDataRemoval(false);
     } catch (err) {

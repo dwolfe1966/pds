@@ -50,7 +50,7 @@ const AdminNav = () => {
         <input
           type="text"
           className={styles.navSearchInput}
-          placeholder="Search by ID, email…"
+          placeholder="ID, email, phone, or ZIP…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           aria-label="Search customers"
@@ -88,7 +88,7 @@ const AdminNav = () => {
             <input
               type="text"
               className={styles.navSearchInput}
-              placeholder="Search by ID, email…"
+              placeholder="ID, email, phone, or ZIP…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
