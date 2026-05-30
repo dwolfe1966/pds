@@ -43,10 +43,18 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
 | #39 / #41 | **Closed as already-fixed** — covered by the 2026-05-26 web-report parity push (commit `345530b`). Owner has visual ack of post-parity report (per #44 confirmation). | n/a |
 | #40 | Owner ran `(909) 663-7878` in dev — BC returned `412 → 400` on `/api/idLookup/report/create`. Bug was `createReportForPhone` not sending `contextKey`. Stale comment "no verified phone.report context key" was wrong; IIFE exposes `window.ApiWrapper.contextKey.sale.phone.report` and BC docs list it. Added contextKey to params; deleted the stale comment. Verify by re-running same number. | consumer `dcb7445f` |
 
-## Latest bundle hashes
+## Latest bundle hashes (2026-05-30 EOD)
 
-- **Consumer:** `build/public.a4cbbaf2.js` + css `public.c445a384.css` (2026-05-29 late, after `.env.production` OPTOUT flip)
-- **Admin:** `build-admin/admin.5db1e886.js` (from earlier in the same session, F8 retest checklist + admin notes fix awaiting BC redeploy)
+- **Consumer:** `build/public.e46c7124.js` + css `public.c445a384.css`
+  Includes: full bug-list pass, OPTOUT flip, opt-out portal handoff fix
+  (sync gesture + correct receiver), pre-deploy hygiene (test markers
+  stripped, dead routes/pages dropped, brand-driven prices in VariantB),
+  and `/search-history` re-added to MemberNav as "History".
+
+- **Admin:** `build-admin/admin.51fea1e8.js` + css `admin.de3592b0.css`
+  Includes: launch-gap audit items 8-11 (UserDetail Notes tab merge,
+  EmailTickets ?contactMessageId= deep-link, UsersPage name-search
+  guard, data-removal partial-failure visibility).
 
 ## Top-10 execution order (still in flight)
 
@@ -76,13 +84,26 @@ Top-10 + initial extensions all addressed. Remaining open in `bc client library 
 - **#61** Admin direct links finicky (only the csr-login URL works)
 - **#62** Same as #61 — symptom of router/SPA serving issue
 
-## What to do on resume
+## What to do on resume (snapshot 2026-05-30 EOD)
 
-The full CSV is now either shipped, closed-as-fixed, BC-asked, or explicitly backlog'd with reasons. Remaining open work:
-1. **Admin trio (#60/#61/#62)** — verify after next BC admin redeploy. Spawn `deploy-verifier` agent to compare deployed admin bundle against local `build-admin/`.
-2. **#40 (member phone search)** — still deferred; need 5-min repro to determine BC-side vs us-side.
-3. **#43 verification** — owner should re-run "John Smith CA" with dev console open; confirm BC truly returns empty (vs filtered/erroring). If error masquerading as empty, revisit copy and add error-state branch.
-4. **Backlog items (#34, #35, #42, #51)** — owner direction needed before any code change; tracked in `project_backlog.md`.
+State of play: bug-list CSV fully addressed (shipped / closed-as-fixed / BC-asked / backlog'd). Two follow-up audits ran this session — pre-deploy hygiene (items 1-6) and admin items 8-11 — both shipped. Only the LAUNCH-GAP AUDIT item 7 was deferred at session end.
+
+**Outstanding items, in order of priority:**
+
+1. **Audit item 7 — admin.html absolute script URLs.** `public/admin.html:11,15` loads `api-wrapper` from `https://dev.www.idlookup.ai/...` and `csr-wrapper` from `https://dev1.dev.www.bytecrtrs.com/...`. Per `project_bc_hosting_quirks`, the cert covers only `dev.admin.www.bytecrtrs.com` / `dev.gwhubadmin.www.bytecrtrs.com`. Works in current dev — but on deploy, if the host changes, CsrWrapper fails to load and the admin app dies silently with `window.CsrWrapper` undefined. **30-second fix:** swap both `<script src>` to relative `/libs/...` and let the deploy host serve them. Verify post-deploy that `window.CsrWrapper` is populated.
+
+2. **Owner verifications outstanding** (against current bundles above):
+   - **#40** — re-run `(909) 663-7878` member phone search. Expect: jumps straight to a report (contextKey now sent). If still errors, paste the new `[API Router] create-report failed — raw response:` line.
+   - **#43** — re-run "John Smith CA" member search. Expect: new empty-state copy ("Common names with broad filters…"). If BC's raw response shows results being filtered out vs BC returning empty, that's a different bug — paste the dev console.
+   - **#58** — fresh signup → AccountPage billing history should show the synthesized $1 trial line (built from `commercePriceRules.find(_DESC_==='S0')`).
+   - **OPTOUT live flow** — `.env.production REACT_APP_USE_NEW_API_OPTOUT=true` is now live. Test the BC-hosted portal end-to-end (open portal works; confirmation deep-link `?awqh[...]=` still needs prod-side verification when BC sends the email).
+   - **Opt-out portal styling** — BC ask filed (`BC_OPTOUT_FORM_STYLING.md`); cosmetic only, not a verifier task.
+
+3. **Admin trio (#60 / #61 / #62)** — verify after next BC admin redeploy. Spawn `deploy-verifier` agent to compare deployed admin bundle against local `build-admin/admin.51fea1e8.js`.
+
+4. **Backlog items (#34, #35, #42, #51)** — owner direction needed before any code change; tracked in `project_backlog.md` with rationale.
+
+5. **Dependabot vulns** — all 4 are dev/optional-service scope (qs in `server/` and `tracking-api/` node_modules; ws + babel-systemjs in dev tooling). None ships in consumer bundle. Update on next dep refresh, post-launch.
 
 ## Open BC asks from this session
 
@@ -94,13 +115,33 @@ The full CSV is now either shipped, closed-as-fixed, BC-asked, or explicitly bac
 
 ## Key code locations touched this session
 
+Consumer:
 - `src/context/AuthContext.js` → `refreshSubscription` operative-order logic
-- `src/pages/member/AccountPage.js` → `handleReactivate`, Reactivate button, "Canceling" badge, paste-link UI removed earlier, debug aids gated behind `?debug=1`
-- `src/pages/member/Dashboard2.js` → SubscriptionTile relocated, `InlineNameSearch` component added
-- `src/pages/sales/PaymentPage.js` → billing validation entries, smart expiry, 5-digit ZIP, scroll-to-top on success
+- `src/pages/member/AccountPage.js` → `handleReactivate`, Reactivate button, "Canceling" badge, synthesized billing-history row (#58)
+- `src/pages/member/Dashboard2.js` → SubscriptionTile relocated, `InlineNameSearch` component
+- `src/pages/member/DashboardHome.js` → Upgrade-to-Pro CTA cleanup
+- `src/pages/member/SearchResultsPage.js` → SRP empty-state copy (#43)
+- `src/pages/sales/PaymentPage.js` → billing validation, smart expiry, 5-digit ZIP, scroll-to-top, status-first error classifier (#55), SUP link targets (#33 #32), conditional skip-link (#36), mobile rhythm (#30)
 - `src/pages/sales/SignupPage.js` → email validation + reduced password rules
-- `src/hooks/useSignup.js` → `validatePassword` simplified to 8-char min
-- `src/utils/email.js` → new strict-regex validator
-- `src/services/apiWrapper.js` → `getUserContacts` wired to new BC endpoint
-- `src/pages/sales/OptOutLandingPage.js` → fully rewritten as BC-hosted-portal handoff
-- Deleted: `OptOutSearchResultsPage.js`, `OptOutInfoInputPage.js`
+- `src/pages/sales/OptOutLandingPage.js` → BC-hosted-portal handoff (sync gesture + correct receiver, 2026-05-30)
+- `src/pages/sales/SearchDetailPreviewVariantB.js` → brand-driven prices (audit item 3)
+- `src/pages/sales/NameSearchLandingV5Page.js` → debug markers stripped (audit item 1)
+- `src/services/reportService.js` → `createReportForPhone` contextKey (#40)
+- `src/services/apiWrapper.js` → `getUserContacts` wired; `goToOptOutPage` receiver fixed
+- `src/components/MemberNav.js` → "History" nav entry
+- `src/components/Footer.js` → AddonPage link removed
+- `src/utils/email.js` (new) → strict-regex validator
+- `src/App.js` → dropped /addon /cpcc /phone-search* /phone-search-loading /phone-search-results; test marker stripped
+- `.env.production` → `REACT_APP_USE_NEW_API_OPTOUT=true`
+- Deleted: `OptOutSearchResultsPage.js`, `OptOutInfoInputPage.js`, `AddonPage.js`, `PhoneSearchLandingPage.js`, `CPCCPage.js`
+
+Admin:
+- `src/pages/admin/UserDetailPage.js` → Notes tab merges adminFindUserAdminNotes (#8); data-removal partial-failure visibility (#11)
+- `src/pages/admin/EmailTicketsPage.js` → ?contactMessageId= deep-link (#9)
+- `src/pages/admin/UsersPage.js` → name-search guard (#10)
+- `src/components/AdminNav.js` → placeholder tightened (#10)
+
+Docs (BC asks filed this session):
+- `docs/BC_PDF_DISCLAIMER.md`, `docs/BC_OPTOUT_FORM_STYLING.md`
+
+Final commit before session end: `b0308a8 fix(admin): launch-gap audit items 8-11`. All pushed to origin/main.

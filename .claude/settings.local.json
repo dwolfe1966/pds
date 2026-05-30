@@ -142,7 +142,9 @@
       "Bash(awk -F',' 'NR==1 || /^55,|^58,|^47,|^44,|^45,|^35,/' \"/Users/davidwolfe/Documents/GitHub/pds/docs/qa/bc client library - Bugs.csv\")",
       "Bash(awk 'NR>=850 && NR<=1062' \"/Users/davidwolfe/Documents/GitHub/pds/docs/new-api/bc client library - Api.csv\")",
       "Bash(git *)",
-      "Bash(awk -F',' 'NR>1 && $5==\"\" {print $1\": \"$3\" \\(\"$4\"\\)\"}' \"/Users/davidwolfe/Documents/GitHub/pds/docs/qa/bc client library - Bugs.csv\")"
+      "Bash(awk -F',' 'NR>1 && $5==\"\" {print $1\": \"$3\" \\(\"$4\"\\)\"}' \"/Users/davidwolfe/Documents/GitHub/pds/docs/qa/bc client library - Bugs.csv\")",
+      "Bash(npm ls *)",
+      "Bash(awk '/^class ApiWrapper/,/^};/' /Users/davidwolfe/Documents/GitHub/pds/public/libs/api-wrapper/index.iife.js)"
     ]
   }
 }
