@@ -40,8 +40,22 @@ const OptOutLandingPage = () => {
     return () => { cancelled = true; };
   }, [isConfirmationFlow, awqhOptOutRequestId]);
 
+  const [portalError, setPortalError] = useState('');
   const handleOpenPortal = (newPage) => {
-    api.openBcOptOutPage({ newPage });
+    // Direct, synchronous call — must stay inside the click handler so the
+    // browser keeps the user-gesture context for window.open. Any async hop
+    // (await, dynamic import) severs the gesture and the popup gets blocked.
+    // `goPage` is an instance method on the IIFE singleton, not a static —
+    // hence `.instance?.goPage`, not `.goPage`.
+    const inst = typeof window !== 'undefined' ? window.ApiWrapper?.instance : null;
+    if (inst && typeof inst.goPage === 'function') {
+      inst.goPage('optOut', { newPage });
+      setPortalError('');
+    } else {
+      setPortalError(
+        "We couldn't open the opt-out portal. Please refresh the page and try again, or contact support if this persists.",
+      );
+    }
   };
 
   if (confirmationStatus) {
@@ -193,6 +207,23 @@ const OptOutLandingPage = () => {
           Open in a new tab instead
         </button>
       </div>
+
+      {portalError && (
+        <div
+          role="alert"
+          style={{
+            padding: '0.75rem 1rem',
+            marginBottom: '1.25rem',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '0.5rem',
+            color: '#b91c1c',
+            fontSize: '0.9rem',
+          }}
+        >
+          {portalError}
+        </div>
+      )}
 
       <p style={{ fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.5, marginBottom: '0.75rem' }}>
         After submitting, you'll receive a confirmation email. Click the link in that email to complete your opt-out

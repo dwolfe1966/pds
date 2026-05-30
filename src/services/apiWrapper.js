@@ -1665,10 +1665,15 @@ class ApiWrapperService {
    * built-in /opt-out route so the user still gets a functional destination.
    */
   async goToOptOutPage({ newPage = true } = {}) {
+    // Click handlers should call window.ApiWrapper.instance.goPage(...) directly
+    // (synchronous, preserves the user-gesture so popup blockers don't fire).
+    // This helper exists for non-click code paths (deep links, programmatic
+    // redirects). `goPage` is an instance method, not static — call on .instance.
     try {
       await this.getWrapper();
-      if (typeof window !== 'undefined' && window.ApiWrapper && typeof window.ApiWrapper.goPage === 'function') {
-        window.ApiWrapper.goPage('optOut', { newPage });
+      const inst = typeof window !== 'undefined' ? window.ApiWrapper?.instance : null;
+      if (inst && typeof inst.goPage === 'function') {
+        inst.goPage('optOut', { newPage });
         return { success: true };
       }
     } catch (err) {
@@ -1676,13 +1681,7 @@ class ApiWrapperService {
         dbgWarn('[ApiWrapper] goToOptOutPage failed via IIFE:', err?.message);
       }
     }
-    // Fallback — library not available. Partner still needs a working opt-out
-    // destination, so route to our in-app custom flow instead.
-    if (typeof window !== 'undefined') {
-      if (newPage) window.open('/opt-out', '_blank');
-      else window.location.assign('/opt-out');
-    }
-    return { success: true, fallback: true };
+    return { success: false, reason: 'iife-unavailable' };
   }
 
   /**
