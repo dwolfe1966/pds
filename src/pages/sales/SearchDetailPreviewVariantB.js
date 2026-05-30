@@ -395,7 +395,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
                 <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Step 2 — Payment
                 </p>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0d5d2f' }}>$29.99/mo</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0d5d2f' }}>${brand.recurringPrice.toFixed(2)}/mo</span>
               </div>
 
               {/* Name row */}
@@ -476,7 +476,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <strong>Basic Plan</strong>
-                <strong>$29.99/mo</strong>
+                <strong>${brand.recurringPrice.toFixed(2)}/mo</strong>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                 {PLAN_FEATURES.map((f, i) => (
@@ -514,7 +514,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
                 boxShadow: '0 2px 8px rgba(245, 158, 11, 0.35)',
               }}
             >
-              {loading ? 'Processing…' : `Create Account & Unlock — $29.99/mo`}
+              {loading ? 'Processing…' : `Create Account & Unlock — $${brand.recurringPrice.toFixed(2)}/mo`}
             </button>
 
             <p style={{ textAlign: 'center', fontSize: '0.78rem', color: '#9ca3af', margin: '0.6rem 0 0' }}>

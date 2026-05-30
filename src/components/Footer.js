@@ -45,7 +45,6 @@ const Footer = () => {
                 { to: '/opt-out', label: 'Opt Out' },
                 { to: '/suppression-list', label: 'Suppression List' },
                 { to: '/partner', label: 'Partner With Us' },
-                { to: '/addon', label: 'Add-On Services' },
               ].map((link) => (
                 <Link key={link.to} to={link.to} className={styles.sectionLink}>
                   {link.label}

@@ -38,9 +38,7 @@ const BENEFIT_BULLETS = [
  * Professional blue/slate palette for networking and reconnection use case.
  * Same 4-step flow: Name → Location → Details → Confirm → Results.
  */
-const SEARCH_MARKER_TEST = 'SHOULD_APPEAR_IN_BUNDLE_TEST_8a4f2d';
 const NameSearchLandingV5Page = () => {
-  console.warn('TESTMARKER_UNIQUE_1778785505 V5 component mounted', SEARCH_MARKER_TEST);
   const brand = useBrand();
   useLandingTrack('name', 'v5');
   const navigate = useNavigate();
@@ -112,7 +110,6 @@ const NameSearchLandingV5Page = () => {
   // visible. Fix: trigger the search directly from handleConfirm so its
   // lifecycle isn't tied to React's effect dependency tracking.
   const runSearch = async () => {
-    console.warn('[V5 runSearch] ENTER', { firstName, lastName, state, middleName, age, city });
     let progressTimer;
     try {
       setFinalStatus('Searching our database...');
@@ -142,9 +139,7 @@ const NameSearchLandingV5Page = () => {
       });
       try { sessionStorage.removeItem('nameSearchResults'); } catch {}
 
-      console.warn('[V5 runSearch] calling api.searchPeople', searchParams);
       const response = await api.searchPeople(searchParams);
-      console.warn('[V5 runSearch] response received', { hasData: !!response?.data, count: response?.data?.length });
       if (progressTimer) clearInterval(progressTimer);
       setFinalProgress(100);
       setFinalStatus('Search complete!');
@@ -204,14 +199,11 @@ const NameSearchLandingV5Page = () => {
   const continueFromDetails = () => setStep('confirm');
 
   const handleConfirm = () => {
-    console.warn('[V5 handleConfirm] clicked', { agree, firstName, lastName, state });
     setAgreeError('');
     if (!agree) {
-      console.warn('[V5 handleConfirm] BAILED — agree checkbox not checked');
       setAgreeError('You must agree before continuing.');
       return;
     }
-    console.warn('[V5 handleConfirm] proceeding to runSearch');
     setStep('final-search');
     runSearch();
   };

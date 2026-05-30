@@ -27,7 +27,6 @@ import SignupPageStepped from './pages/sales/SignupPageStepped';
 import LoginPage from './pages/sales/LoginPage';
 import ForgotPasswordPage from './pages/sales/ForgotPasswordPage';
 import PaymentPage from './pages/sales/PaymentPage';
-import PhoneSearchLandingPage from './pages/sales/PhoneSearchLandingPage';
 import PhoneLandingPage from './pages/sales/PhoneLandingPage';
 import PhoneLandingV2Page from './pages/sales/PhoneSearchLandingV2Page';
 import PhoneLandingV3Page from './pages/sales/PhoneSearchLandingV3Page';
@@ -50,8 +49,6 @@ import PrivacyPage from './pages/sales/PrivacyPage';
 import TermsPage from './pages/sales/TermsPage';
 import RefundPage from './pages/sales/RefundPage';
 import SuppressionListPage from './pages/sales/SuppressionListPage';
-import CPCCPage from './pages/sales/CPCCPage';
-import AddonPage from './pages/sales/AddonPage';
 import ContactThreadPage from './pages/sales/ContactThreadPage';
 // Member pages
 import Dashboard2 from './pages/member/Dashboard2';
@@ -100,7 +97,6 @@ const HomePageRedirect = () => {
     }
   } catch {}
   const campaignRoute = campaign?.landing?.route;
-  /* APPJS_TESTMARKER_PARCEL_VERIFY_8a4f2d */
   if (shouldApply && campaignRoute && campaignRoute !== '/') {
     return <Navigate to={campaignRoute} replace />;
   }
@@ -156,9 +152,6 @@ const App = () => {
           <Route path="/phone/loader" element={<PhoneLoaderPage />} />
           <Route path="/phone/search-result" element={<PhoneSearchResultsPage />} />
           {/* Legacy phone search routes */}
-          <Route path="/phone-search" element={<PhoneSearchLandingPage />} />
-          <Route path="/phone-search-loading" element={<PhoneLoaderPage />} />
-          <Route path="/phone-search-results" element={<PhoneSearchResultsPage />} />
           {/* Email search routes */}
           <Route path="/email/landing" element={<EmailLandingPage />} />
           <Route path="/email/landing/v2" element={<EmailLandingV2Page />} />
@@ -176,8 +169,6 @@ const App = () => {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/refund" element={<RefundPage />} />
           <Route path="/suppression-list" element={<SuppressionListPage />} />
-          <Route path="/cpcc" element={<CPCCPage />} />
-          <Route path="/addon" element={<AddonPage />} />
           {/* Development-only routes — not registered in production builds. */}
           {process.env.NODE_ENV === 'development' && (
             <>
