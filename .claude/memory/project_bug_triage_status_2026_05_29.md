@@ -90,6 +90,7 @@ The full CSV is now either shipped, closed-as-fixed, BC-asked, or explicitly bac
 - `docs/BC_GETUSERCONTACTS_SCOPE.md` — `getUserContacts` returns empty for member-submitted threads because `contact.create` doesn't auto-set `content.targetUserId`. We're shipping explicit `targetUserId` in the create body (consumer build had this in `3ea0db57`, carried forward). Three fix options proposed; awaiting BC reply.
 - `docs/BC_SIGNUP_WELCOME_EMAIL.md` — please trigger welcome email on `commerceBilling/signup`. Low priority, launch-acceptable gap.
 - `docs/BC_PDF_DISCLAIMER.md` — "fictional data" disclaimer prefix on `downloadPdfReport` output. Question whether dev-only or unconditional. Soft-disable PDF CTA is the launch fallback.
+- `docs/BC_OPTOUT_FORM_STYLING.md` (filed 2026-05-30) — BC's hosted opt-out form at `/api/optOut/view/search` doesn't match the idlookup brand. Sent brand tokens (primary `#0d5d2f`, gray scale, radii, font stack). Launch posture: acceptable gap.
 
 ## Key code locations touched this session
 
