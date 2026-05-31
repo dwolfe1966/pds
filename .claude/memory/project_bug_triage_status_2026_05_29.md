@@ -67,8 +67,16 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
   EmailTickets ?contactMessageId= deep-link, UsersPage name-search
   guard, data-removal partial-failure visibility).
 
-- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.4642ae89.js` + css `admin.de3592b0.css`
-  Includes both 2026-05-31 admin fixes:
+- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.389ddd78.js` + css `admin.de3592b0.css`
+  Rolls up three 2026-05-31 admin fixes:
+  - **UserDetail white page** (pre-existing). `latestPaymentInfo` sort used
+    `(b.paymentTimestamp || b.createdAt || '').localeCompare(...)` but BC's
+    `paymentTimestamp` is a numeric Unix-ms — `Number.prototype.localeCompare`
+    doesn't exist, throws TypeError, React unmounts. Crashed UserDetail for
+    user `6a1bb9d068c31e075cae9af6` (test1@gmail.com). Fixed by normalizing
+    to epoch via `new Date(v).getTime()` before subtracting.
+
+  Earlier 2026-05-31 fixes (also rolled into this bundle):
   - **CSR Collected sum** (was admin.084c1f38) — now reads from
     `commercePayments[].status === 'fulfilled'` instead of trusting BC's
     pre-summed `transient.amount.collected` (which included rejected
