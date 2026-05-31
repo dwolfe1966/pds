@@ -1295,11 +1295,19 @@ class ApiWrapperService {
   // /database/search collectionName=userContact path which queries the wrong
   // collection after BC restructured admin notes 2026-04-17.
   // Returns { docs: [...], noMoreDocs } per BC convention.
+  //
+  // IIFE-first: BC's deployed backend started returning 400 on the direct GET
+  // (2026-05-31). Going through csrWrapper.api.user.findUserAdminNotes lets
+  // the IIFE attach whatever csr-side auth field BC now requires. Direct GET
+  // stays as a fallback in case the IIFE method isn't on this deployment.
   async csrFindUserAdminNotes({ userId, lastId } = {}) {
     if (!userId) throw new Error('userId is required');
-    const qs = new URLSearchParams({ userId });
-    if (lastId) qs.set('lastId', lastId);
-    return await this._csrGet(`/message/admin/findNotes?${qs.toString()}`);
+    const args = lastId ? { userId, lastId } : { userId };
+    return await this._viaCsr('api.user.findUserAdminNotes', args, async () => {
+      const qs = new URLSearchParams({ userId });
+      if (lastId) qs.set('lastId', lastId);
+      return await this._csrGet(`/message/admin/findNotes?${qs.toString()}`);
+    });
   }
 
   // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
@@ -1469,11 +1477,23 @@ class ApiWrapperService {
   // this deployment.
   async csrFindUserContactMessages({ userId, userEmail, lastId } = {}) {
     if (!userId && !userEmail) throw new Error('userId or userEmail is required');
-    // Try the targetUserId-keyed path first when we have an id. Most consumer
-    // contactMessage docs created via /contactMessage/create have no
-    // targetUserId set (BC doesn't auto-link from authed sessions on this
-    // deployment), so the fallback below is the primary discovery path.
+    // Try the IIFE method first — it knows the canonical path and attaches
+    // any csr-side auth fields BC requires. If absent / errors, fall through
+    // to direct POST, then to inbox-wide scan + client-side filter.
     if (userId) {
+      try {
+        const csr = await this.getCsrWrapper();
+        const fn = csr?.api?.user?.findUserContacts;
+        if (typeof fn === 'function') {
+          const args = lastId ? { userId, lastId } : { userId };
+          const raw = await fn.call(csr.api.user, args);
+          const unwrapped = _unwrapBcResponse(raw);
+          // BC wraps in { docs, noMoreDocs }; pass through unchanged.
+          if (unwrapped) return unwrapped;
+        }
+      } catch (csrErr) {
+        dbg(`[csrFindUserContactMessages] IIFE findUserContacts failed: ${csrErr?.message}, trying direct POST`);
+      }
       try {
         return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
       } catch (err) {
