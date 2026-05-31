@@ -432,12 +432,15 @@ const UserDetailPage = () => {
     try {
       const res = await api.adminFindUserTracking('USER:login', lastId || undefined, id);
       const docs = res?.docs || [];
-      // Filter to this user by updaterId (server-side filter may not be supported, so also filter client-side)
-      const userLogins = docs.filter(d => d.updaterId === id);
+      // BC's /database/search already filters server-side via query.updaterId
+      // (csrFindUserTracking passes it in the body). The previous client-side
+      // `docs.filter(d => d.updaterId === id)` was broken — BC's response
+      // displayFields excludes updaterId, so d.updaterId is undefined on every
+      // doc and the filter wiped them all out. Trust the server filter.
       if (lastId) {
-        setLogins(prev => [...prev, ...userLogins]);
+        setLogins(prev => [...prev, ...docs]);
       } else {
-        setLogins(userLogins);
+        setLogins(docs);
       }
       const last = docs[docs.length - 1];
       setLoginsLastId(last?._id || null);
@@ -457,12 +460,13 @@ const UserDetailPage = () => {
     try {
       const res = await api.adminFindUserTracking(TRACKING_ACTIVITY_TYPES, lastId || undefined, id);
       const docs = res?.docs || [];
-      // Filter to this user by updaterId (server-side filter may not be supported, so also filter client-side)
-      const userActivity = docs.filter(d => d.updaterId === id);
+      // BC's /database/search already filters server-side via query.updaterId
+      // (csrFindUserTracking passes it). See fetchLogins above for the full
+      // story on why the prior client-side filter wiped every doc.
       if (lastId) {
-        setActivities(prev => [...prev, ...userActivity]);
+        setActivities(prev => [...prev, ...docs]);
       } else {
-        setActivities(userActivity);
+        setActivities(docs);
       }
       const last = docs[docs.length - 1];
       setActivityLastId(last?._id || null);
