@@ -35,6 +35,8 @@ jest.mock('../context/AuthContext', () => ({
 const mockApi = {
   billingSale: jest.fn(),
   updateSubscription: jest.fn(),
+  getUserOrders: jest.fn(),
+  createTracking: jest.fn().mockResolvedValue({}),
 };
 
 jest.mock('../api', () => ({ __esModule: true, default: mockApi }));
@@ -60,6 +62,16 @@ beforeEach(() => {
   mockSetUser.mockClear();
   mockApi.billingSale.mockClear();
   mockApi.updateSubscription.mockClear();
+  mockApi.getUserOrders.mockReset();
+  // Default: BC returns an active order on first poll so PaymentPage's
+  // verification loop exits immediately. Individual tests override as needed.
+  mockApi.getUserOrders.mockResolvedValue([{
+    _id: 'order_test',
+    status: 'active',
+    dueTimestamp: Date.now() + 7 * 86400000,
+    commerceOffers: ['comp.offer.signup.main'],
+  }]);
+  mockApi.createTracking.mockClear();
   sessionStorage.clear();
   jest.useFakeTimers();
   mockAuthState = {
@@ -126,9 +138,9 @@ describe('PaymentPage — form rendering', () => {
     expect(container.querySelector('input[name="billingZip"]')).not.toBeNull();
   });
 
-  test('shows plan price $29.99/mo', () => {
+  test('shows recurring plan price from brand', () => {
     render();
-    expect(container.textContent).toContain('$29.99/mo');
+    expect(container.textContent).toContain('$49.98/month');
   });
 
   test('shows all three trust badges', () => {
@@ -138,9 +150,9 @@ describe('PaymentPage — form rendering', () => {
     expect(container.textContent).toContain('Encrypted');
   });
 
-  test('shows Subscribe Now button with price', () => {
+  test('shows trial CTA with trial price', () => {
     render();
-    expect(container.textContent).toContain('Subscribe Now — $29.99/mo');
+    expect(container.textContent).toContain('Start Trial — $1.00 Today');
   });
 
   test('shows authenticated user email', () => {
@@ -193,6 +205,37 @@ describe('PaymentPage — payment submission', () => {
     );
   });
 
+  test('billingSale payload exposes credit card in BC shape (pan/expMonth/expYear/cvv)', async () => {
+    mockApi.billingSale.mockResolvedValue({ success: true });
+    render();
+    fillValidPaymentForm();
+    await act(async () => { submitForm(); });
+    const callArg = mockApi.billingSale.mock.calls[0][0];
+    expect(callArg.billings).toHaveLength(1);
+    expect(callArg.billings[0]).toMatchObject({
+      billingType: 'creditCard',
+      creditCard: expect.objectContaining({
+        pan: '4111111111111111',
+        expMonth: '12',
+        expYear: '30',
+        cvv: '123',
+      }),
+    });
+  });
+
+  test('billingSale payload includes billingAddress with form first/last name + ZIP', async () => {
+    mockApi.billingSale.mockResolvedValue({ success: true });
+    render();
+    fillValidPaymentForm();
+    await act(async () => { submitForm(); });
+    const billingAddress = mockApi.billingSale.mock.calls[0][0].billings[0].billingAddress;
+    expect(billingAddress).toMatchObject({
+      firstName: 'Jane',
+      lastName: 'Doe',
+      zip: '10001',
+    });
+  });
+
   test('shows "You\'re in!" success panel after billingSale resolves', async () => {
     mockApi.billingSale.mockResolvedValue({ success: true });
     render();
@@ -214,12 +257,15 @@ describe('PaymentPage — payment submission', () => {
     expect(container.textContent).toContain('Go to my dashboard');
   });
 
-  test('shows error message when billingSale throws', async () => {
-    mockApi.billingSale.mockRejectedValue(new Error('Card declined'));
+  test('shows friendly card-declined message when billingSale throws decline', async () => {
+    const declineErr = new Error('card declined');
+    declineErr.status = 402;
+    mockApi.billingSale.mockRejectedValue(declineErr);
     render();
     fillValidPaymentForm();
     await act(async () => { submitForm(); });
-    expect(container.textContent).toContain('Card declined');
+    // Bug #55 classifier maps 402/decline-words to a friendly user-facing string.
+    expect(container.textContent).toContain('Your card was declined');
   });
 
   test('does not show success when payment fails', async () => {

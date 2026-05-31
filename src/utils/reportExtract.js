@@ -186,16 +186,28 @@ function extractAll(result) {
   ].filter(e => e.address);
   const emails = dedup(rawEmails, e => e.address.toLowerCase());
 
-  // Relatives + associates — BC stores most in relationshipList with rich
-  // nested name/dob/phone. relativesList and associatesList are the legacy
-  // flat lists; merge all three into one categorized array.
+  // Relatives + associates. BC's actual response (per docs/BC_REPORT_RESPONSE_STRUCTURE.md)
+  // uses `relationList` with a flat shape: { name, relationship, age, city, state }.
+  // Earlier code read `relationshipList` and never matched real data — all relatives
+  // were silently empty on consumer reports until this was caught by reportExtract.test.
+  // The other paths (relationshipList nested, relativesList, associatesList, fullContact)
+  // remain as defensive fallbacks for legacy / alternate BC shapes.
+  const locOf = (r) => [r.city, r.state].filter(Boolean).join(', ');
   const rawRelatives = [
+    ...(primary.relationList || []).map(r => ({
+      name: r.name || '',
+      relationship: r.relationship || r.relation || r.type || '',
+      age: r.age || '',
+      location: locOf(r),
+      phones: [],
+    })),
     ...(primary.relationshipList || []).map(r => ({
       name: r.name?.data || r.name?.fullName || [r.name?.first, r.name?.middle, r.name?.last].filter(Boolean).join(' ') || '',
       relationship: r.relationshipName || r.relation || r.relationship || r.type || '',
       relationshipType: r.type || '',
       relationshipSubType: r.subType || '',
       age: r.dob?.age || r.age || '',
+      location: locOf(r),
       phones: Array.isArray(r.phone) ? r.phone.map(p => ({
         number: p.number || p.phone || '',
         type: p.type || '',
@@ -206,18 +218,21 @@ function extractAll(result) {
       name: r.name || r.fullName || r.data || '',
       relationship: r.relation || r.relationship || r.type || 'Relative',
       age: r.age || '',
+      location: locOf(r),
       phones: [],
     }))),
     ...((primary.associatesList || []).map(r => ({
       name: r.name || r.fullName || r.data || '',
       relationship: r.relation || r.relationship || r.type || 'Associate',
       age: r.age || '',
+      location: locOf(r),
       phones: [],
     }))),
     ...((fullContact?.relatives || fullContact?.associates || []).map(r => ({
       name: r.name || r.fullName || '',
       relationship: r.relationship || r.type || '',
       age: r.age || '',
+      location: locOf(r),
       phones: [],
     }))),
   ].filter(r => r.name);

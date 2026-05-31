@@ -16,7 +16,7 @@
  * the IDLookup brand.
  */
 
-const idlookupLogo = new URL('../assets/idlookup_icon_transparent.png', import.meta.url).href;
+import idlookupLogo from '../assets/idlookup_icon_transparent.png';
 
 export const BRANDS = {
   'idlookup.ai': {
