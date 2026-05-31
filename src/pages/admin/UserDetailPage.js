@@ -1104,13 +1104,21 @@ const UserDetailPage = () => {
   // Extract device & IP from most recent order's commercePayments
   const latestPaymentInfo = (() => {
     if (!orders || orders.length === 0) return { device: null, ip: null };
+    // BC's `paymentTimestamp` is a numeric Unix-ms; `createdAt` is an ISO
+    // string. Normalize to a comparable epoch so .sort never trips over
+    // `(123).localeCompare(...)` (crashed UserDetailPage with a white screen
+    // for any user whose commercePayments had paymentTimestamp set).
+    const epoch = (p) => {
+      const v = p?.paymentTimestamp ?? p?.createdAt;
+      if (v == null) return 0;
+      if (typeof v === 'number') return v;
+      const t = new Date(v).getTime();
+      return Number.isFinite(t) ? t : 0;
+    };
     for (const order of orders) {
       const cpArray = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
       if (cpArray.length > 0) {
-        // Find the most recent payment with device/IP info
-        const sorted = [...cpArray].sort((a, b) =>
-          (b.paymentTimestamp || b.createdAt || '').localeCompare(a.paymentTimestamp || a.createdAt || '')
-        );
+        const sorted = [...cpArray].sort((a, b) => epoch(b) - epoch(a));
         for (const p of sorted) {
           if (p.device || p.ipAddress) {
             return { device: p.device || null, ip: p.ipAddress || null };
