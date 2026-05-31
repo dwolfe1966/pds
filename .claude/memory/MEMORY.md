@@ -30,3 +30,5 @@
 - [Feedback: NEVER suppress the BC captcha modal](feedback_never_block_bc_captcha_modal.md) — overriding executePasswordCaptcha/makeCaptchaRetryRequest unravels every downstream BC call; leave the IIFE alone
 - [BC contactMessage orderId required on general](reference_bc_contact_orderid_required.md) — must match `/^[a-zA-Z0-9]{8,24}$/`; consumer sends `NOORDERID0000` sentinel when no real order
 - [BC getUserOrders 403 = no orders](reference_bc_getuserorders_403.md) — treat 403 on this endpoint as "unpaid", not auth failure
+- [Jest static-asset imports](reference_jest_static_asset_imports.md) — moduleNameMapper + fileMock pattern for src files that import .png/.svg/etc.; don't reach for babel plugins
+- [AuthContext test pattern](reference_authcontext_test_pattern.md) — `AuthContext` object isn't exported, use `useAuth()`; `flushAsync` needs TWO promise ticks

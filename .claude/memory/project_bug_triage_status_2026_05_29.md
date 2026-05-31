@@ -45,11 +45,20 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
 
 ## Latest bundle hashes (2026-05-30 EOD)
 
-- **Consumer:** `build/public.e46c7124.js` + css `public.c445a384.css`
+- **Consumer:** `build/public.e46c7124.js` + css `public.c445a384.css` *(currently live on BC's VPS as of 2026-05-30 EOD)*
   Includes: full bug-list pass, OPTOUT flip, opt-out portal handoff fix
   (sync gesture + correct receiver), pre-deploy hygiene (test markers
   stripped, dead routes/pages dropped, brand-driven prices in VariantB),
   and `/search-history` re-added to MemberNav as "History".
+
+- **Consumer (newer, NOT YET DEPLOYED):** `build/public.88b26763.js` + css `public.c445a384.css`
+  Adds: real-production fix to `src/utils/reportExtract.js` so Relatives section
+  populates from BC's `relationList` (was silently empty on every report).
+  Also includes the test-infra refactor of `src/services/brand.js` (import.meta.url
+  → static asset import — runtime behavior identical, just forces a new hash).
+  **Owner can defer the re-upload** until #40/#43/#58/OPTOUT verifications land
+  against `e46c7124` — only the relatives fix is user-visible; everything else
+  is test infrastructure.
 
 - **Admin:** `build-admin/admin.51fea1e8.js` + css `admin.de3592b0.css`
   Includes: launch-gap audit items 8-11 (UserDetail Notes tab merge,
@@ -90,7 +99,7 @@ State of play: bug-list CSV fully addressed (shipped / closed-as-fixed / BC-aske
 
 **Outstanding items, in order of priority:**
 
-1. **Audit item 7 — admin.html absolute script URLs.** `public/admin.html:11,15` loads `api-wrapper` from `https://dev.www.idlookup.ai/...` and `csr-wrapper` from `https://dev1.dev.www.bytecrtrs.com/...`. Per `project_bc_hosting_quirks`, the cert covers only `dev.admin.www.bytecrtrs.com` / `dev.gwhubadmin.www.bytecrtrs.com`. Works in current dev — but on deploy, if the host changes, CsrWrapper fails to load and the admin app dies silently with `window.CsrWrapper` undefined. **30-second fix:** swap both `<script src>` to relative `/libs/...` and let the deploy host serve them. Verify post-deploy that `window.CsrWrapper` is populated.
+1. ~~**Audit item 7 — admin.html absolute script URLs.**~~ **Closed as non-issue (2026-05-30 resume).** Source `public/admin.html:11,15` keeps absolute URLs for local dev convenience, but `scripts/postbuild-admin.js` rewrites both `<script src>` to root-relative `/libs/api-wrapper/index.iife.js` and `/libs/csr-wrapper/index.iife.js` at build time. Confirmed in current `build-admin/index.html`. Equivalent consumer rewrite handled by `scripts/postbuild.js` — built `build/index.html` also uses `/libs/...`. No code change needed; do NOT edit the source `public/admin.html` to be relative (would 404 in `npm start` dev — BC's CDN serves the live IIFE there).
 
 2. **Owner verifications outstanding** (against current bundles above):
    - **#40** — re-run `(909) 663-7878` member phone search. Expect: jumps straight to a report (contextKey now sent). If still errors, paste the new `[API Router] create-report failed — raw response:` line.
@@ -98,8 +107,9 @@ State of play: bug-list CSV fully addressed (shipped / closed-as-fixed / BC-aske
    - **#58** — fresh signup → AccountPage billing history should show the synthesized $1 trial line (built from `commercePriceRules.find(_DESC_==='S0')`).
    - **OPTOUT live flow** — `.env.production REACT_APP_USE_NEW_API_OPTOUT=true` is now live. Test the BC-hosted portal end-to-end (open portal works; confirmation deep-link `?awqh[...]=` still needs prod-side verification when BC sends the email).
    - **Opt-out portal styling** — BC ask filed (`BC_OPTOUT_FORM_STYLING.md`); cosmetic only, not a verifier task.
+   - **Relatives section (NEW 2026-05-31)** — only triggers on the *new* consumer bundle `public.88b26763.js`, NOT the currently-deployed `public.e46c7124.js`. After uploading the new bundle: open any report → scroll to "Relatives & Associates" Section 5. Expect: populated rows for any record where BC returns `relationList`. Previously every report rendered an empty Relatives section due to a key-name bug in `src/utils/reportExtract.js` (was reading `relationshipList`, BC actually returns `relationList`). The stats card "Relatives" count will also flip from always-0 to the real number.
 
-3. **Admin trio (#60 / #61 / #62)** — verify after next BC admin redeploy. Spawn `deploy-verifier` agent to compare deployed admin bundle against local `build-admin/admin.51fea1e8.js`.
+3. **Admin trio (#60 / #61 / #62)** — **BC redeployed 2026-05-30 23:25 GMT** (verified by deploy-verifier 2026-05-31). Deployed bundle hashes at `dev.admin.www.bytecrtrs.com/csr/` match local `admin.51fea1e8.js` + `admin.de3592b0.css` byte-for-byte. **Ready for owner verification:** #60 (CSR search), #61 (admin direct links), #62 (same routing class as #61).
 
 4. **Backlog items (#34, #35, #42, #51)** — owner direction needed before any code change; tracked in `project_backlog.md` with rationale.
 
