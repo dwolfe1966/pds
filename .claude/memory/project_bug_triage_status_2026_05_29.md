@@ -42,6 +42,7 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
 | #57 | **Closed as already-fixed.** AccountPage.js:1109-1124 shows "Reactivate Subscription" whenever `subscription.subStatus === 'canceled'`. The #59 work made cancelled-but-in-period operative and exposed `subStatus`, so the button appears in exactly the state #57 describes. | n/a |
 | #39 / #41 | **Closed as already-fixed** — covered by the 2026-05-26 web-report parity push (commit `345530b`). Owner has visual ack of post-parity report (per #44 confirmation). | n/a |
 | #40 | Owner ran `(909) 663-7878` in dev — BC returned `412 → 400` on `/api/idLookup/report/create`. Bug was `createReportForPhone` not sending `contextKey`. Stale comment "no verified phone.report context key" was wrong; IIFE exposes `window.ApiWrapper.contextKey.sale.phone.report` and BC docs list it. Added contextKey to params; deleted the stale comment. Verify by re-running same number. | consumer `dcb7445f` |
+| CSR-Collected-sum | PurchaseDetail / OrdersPage / UserDetail were reading BC's `transient.amount.collected`, which sums rejected payment attempts. Fixed by computing from `commercePayments[].status === 'fulfilled'` (with `type === 'sale'`) via new `src/utils/orderFinancials.js`. Refund modal pre-fill also fixed. Test pins the exact regression. | admin `084c1f38` |
 
 ## Latest bundle hashes (2026-05-30 EOD)
 
@@ -60,10 +61,19 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
   against `e46c7124` — only the relatives fix is user-visible; everything else
   is test infrastructure.
 
-- **Admin:** `build-admin/admin.51fea1e8.js` + css `admin.de3592b0.css`
+- **Admin (currently live):** `build-admin/admin.51fea1e8.js` + css `admin.de3592b0.css`
   Includes: launch-gap audit items 8-11 (UserDetail Notes tab merge,
   EmailTickets ?contactMessageId= deep-link, UsersPage name-search
   guard, data-removal partial-failure visibility).
+
+- **Admin (newer, NOT YET DEPLOYED):** `build-admin/admin.084c1f38.js` + css `admin.de3592b0.css`
+  Adds CSR-tool fix for the "Collected" sum on order detail / orders list /
+  user detail: now computed from `commercePayments[].status === 'fulfilled'`
+  instead of trusting BC's pre-summed `transient.amount.collected` (which
+  included rejected attempts). Bug reported 2026-05-31 on order
+  `6a1bb9d068c31e075cae9b12` (test1@gmail.com) — showed $100.96 collected
+  on an order that only ever collected $49.98. Refund modal pre-fill also
+  fixed (was offering CSRs a phantom-amount refund button).
 
 ## Top-10 execution order (still in flight)
 
