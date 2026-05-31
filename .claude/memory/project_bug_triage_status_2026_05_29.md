@@ -67,8 +67,15 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
   EmailTickets ?contactMessageId= deep-link, UsersPage name-search
   guard, data-removal partial-failure visibility).
 
-- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.389ddd78.js` + css `admin.de3592b0.css`
-  Rolls up three 2026-05-31 admin fixes:
+- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.aec3021e.js` + css `admin.de3592b0.css`
+  Rolls up four 2026-05-31 admin fixes:
+  - **Notes & Messages tab empty.** BC's deployed CSR backend started
+    returning 400 on `GET /message/admin/findNotes` and 404 on
+    `POST /contactMessage/admin/find/:userId`. The IIFE methods documented
+    in csrApi.csv (`csrWrapper.api.user.findUserAdminNotes` /
+    `findUserContacts`) attach whatever csr-side auth fields BC now
+    requires. Switched both helpers to IIFE-first with direct REST as
+    fallback. (Surfaced on test1@gmail.com user detail.)
   - **UserDetail white page** (pre-existing). `latestPaymentInfo` sort used
     `(b.paymentTimestamp || b.createdAt || '').localeCompare(...)` but BC's
     `paymentTimestamp` is a numeric Unix-ms — `Number.prototype.localeCompare`
