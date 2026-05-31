@@ -32,3 +32,4 @@
 - [BC getUserOrders 403 = no orders](reference_bc_getuserorders_403.md) — treat 403 on this endpoint as "unpaid", not auth failure
 - [Jest static-asset imports](reference_jest_static_asset_imports.md) — moduleNameMapper + fileMock pattern for src files that import .png/.svg/etc.; don't reach for babel plugins
 - [AuthContext test pattern](reference_authcontext_test_pattern.md) — `AuthContext` object isn't exported, use `useAuth()`; `flushAsync` needs TWO promise ticks
+- [Feedback: never client-filter BC /database/search response](feedback_no_clientside_filter_on_bc_database_search.md) — displayFields trims the response; `docs.filter(d => d.xxxId === id)` wipes every row when the field isn't displayed. Trust `query.xxxId` server-side; regressed twice already.
