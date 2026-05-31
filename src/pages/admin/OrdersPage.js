@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { getOrderCollected } from '../../utils/orderFinancials';
 import styles from './OrdersPage.module.css';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -16,8 +17,9 @@ function formatDate(value) {
 }
 
 function resolveAmount(order) {
-  const collected = order?.transient?.amount?.collected;
-  if (collected != null) return collected;
+  // Trust per-payment status over BC's `transient.amount.collected`, which
+  // sums rejected attempts too. See src/utils/orderFinancials.js.
+  if (Array.isArray(order?.commercePayments)) return getOrderCollected(order);
   const amt = order?.amount;
   if (amt != null) return typeof amt === 'object' ? (amt.collected ?? null) : amt;
   return order?.total ?? null;

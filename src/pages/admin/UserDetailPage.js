@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { getOrderCollected } from '../../utils/orderFinancials';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
 
@@ -52,8 +53,11 @@ function formatDateTime(iso) {
 }
 
 function getAmount(order) {
-  const collected = order?.transient?.amount?.collected;
-  if (collected != null) return `$${collected.toFixed(2)}`;
+  // Per-payment truth — see src/utils/orderFinancials.js for why
+  // transient.amount.collected can't be trusted.
+  if (Array.isArray(order?.commercePayments)) {
+    return `$${getOrderCollected(order).toFixed(2)}`;
+  }
   const amount = order?.amount ?? order?.total;
   if (amount != null) return `$${Number(amount).toFixed(2)}`;
   return '—';

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api';
+import { getOrderCollected, getOrderRefunded } from '../../utils/orderFinancials';
 import styles from './PurchaseDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
 
@@ -170,8 +171,11 @@ const PurchaseDetailPage = () => {
     }
   };
 
-  const collected = order?.transient?.amount?.collected;
-  const refunded  = order?.transient?.amount?.refunded;
+  // Compute from commercePayments rather than trusting BC's pre-summed
+  // transient.amount.collected — that field includes rejected attempts.
+  // See src/utils/orderFinancials.js for the full reasoning.
+  const collected = order ? getOrderCollected(order) : null;
+  const refunded  = order ? getOrderRefunded(order) : 0;
   const canceled  = order?.transient?.canceled;
   const backHref  = userId ? `/users/${userId}` : '/orders';
 
@@ -211,7 +215,7 @@ const PurchaseDetailPage = () => {
                     </div>
                     <div className={styles.amountLabel}>Collected</div>
                   </div>
-                  {refunded != null && refunded > 0 && (
+                  {refunded > 0 && (
                     <div className={styles.amountItem}>
                       <div className={`${styles.amountValue} ${styles.refunded}`}>
                         −${Number(refunded).toFixed(2)}
