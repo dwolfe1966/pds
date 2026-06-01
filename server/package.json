@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node index.js"
   },
+  "overrides": {
+    "qs": "6.15.2"
+  },
   "dependencies": {
     "axios": "^1.13.2",
     "cookie-parser": "^1.4.7",

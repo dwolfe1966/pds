@@ -53,7 +53,12 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
   stripped, dead routes/pages dropped, brand-driven prices in VariantB),
   and `/search-history` re-added to MemberNav as "History".
 
-- **Consumer (newer, NOT YET DEPLOYED):** `build/public.88b26763.js` + css `public.c445a384.css`
+- **Consumer (newer, NOT YET DEPLOYED):** `build/public.aea02ad1.js` + css `public.c445a384.css`
+  (was `88b26763`; rebuilt 2026-06-01 — the shared `apiWrapper.js` Messages fix
+  `a025577` bakes into the consumer bundle too. Difference vs `88b26763` is
+  INERT for consumers: `csrFindUserContactMessages` is CSR-only, never called
+  here. Re-upload optional — no consumer-facing change. `88b26763` is what's
+  currently live on the consumer host.)
   Adds: real-production fix to `src/utils/reportExtract.js` so Relatives section
   populates from BC's `relationList` (was silently empty on every report).
   Also includes the test-infra refactor of `src/services/brand.js` (import.meta.url
