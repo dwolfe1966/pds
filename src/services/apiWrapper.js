@@ -1477,23 +1477,18 @@ class ApiWrapperService {
   // this deployment.
   async csrFindUserContactMessages({ userId, userEmail, lastId } = {}) {
     if (!userId && !userEmail) throw new Error('userId or userEmail is required');
-    // Try the IIFE method first — it knows the canonical path and attaches
-    // any csr-side auth fields BC requires. If absent / errors, fall through
-    // to direct POST, then to inbox-wide scan + client-side filter.
+    // Try the targetUserId-keyed REST path first when we have an id, then fall
+    // through to the inbox-wide scan + client-side filter below.
+    //
+    // Deliberately NOT routed through the IIFE's findUserContacts. Like its
+    // sibling api.message.contact.find (see csrFindContactMessages, which is
+    // "Direct only" for the same reason), findUserContacts returns a different
+    // envelope shape than our parsers expect: _unwrapBcResponse yields a
+    // truthy object with no docs[] array, which short-circuits this method and
+    // renders an EMPTY Messages list on UserDetailPage. (Regressed by f156c11
+    // when the IIFE-first pattern was applied to messages as well as notes;
+    // the notes read csrFindUserAdminNotes keeps the IIFE — messages do not.)
     if (userId) {
-      try {
-        const csr = await this.getCsrWrapper();
-        const fn = csr?.api?.user?.findUserContacts;
-        if (typeof fn === 'function') {
-          const args = lastId ? { userId, lastId } : { userId };
-          const raw = await fn.call(csr.api.user, args);
-          const unwrapped = _unwrapBcResponse(raw);
-          // BC wraps in { docs, noMoreDocs }; pass through unchanged.
-          if (unwrapped) return unwrapped;
-        }
-      } catch (csrErr) {
-        dbg(`[csrFindUserContactMessages] IIFE findUserContacts failed: ${csrErr?.message}, trying direct POST`);
-      }
       try {
         return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
       } catch (err) {
