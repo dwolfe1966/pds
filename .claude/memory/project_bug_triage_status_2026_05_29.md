@@ -72,8 +72,12 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
   EmailTickets ?contactMessageId= deep-link, UsersPage name-search
   guard, data-removal partial-failure visibility).
 
-- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.93d93b68.js` + css `admin.de3592b0.css`
-  (supersedes `aec3021e`; commit `a025577` on `main`, 2026-06-01)
+- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.844a2f72.js` + css `admin.de3592b0.css`
+  (supersedes `93d93b68`/`aec3021e`. `844a2f72` = `93d93b68` + a behavior-
+  preserving test refactor: `latestPaymentInfo` device/IP logic extracted to
+  `orderFinancials.getLatestPaymentDeviceInfo` so the paymentTimestamp-epoch
+  sort is unit-tested. INERT vs the staging-verified `93d93b68` — re-upload
+  optional. Staging currently runs `93d93b68`. Commits a025577 + test commits.)
   - **Messages tab regression FIXED (2026-06-01).** The aec3021e IIFE-first
     change (commit f156c11) fixed Notes but BROKE Messages: routing
     `csrFindUserContactMessages` through `csrWrapper.api.user.findUserContacts`

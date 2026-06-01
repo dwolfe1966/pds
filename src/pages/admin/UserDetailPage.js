@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { getOrderCollected } from '../../utils/orderFinancials';
+import { getOrderCollected, getLatestPaymentDeviceInfo } from '../../utils/orderFinancials';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
 
@@ -1101,33 +1101,11 @@ const UserDetailPage = () => {
   const allPhones = user?.phones?.length ? user.phones : (user?.phone ? [user.phone] : []);
   const lastActive = user?.lastLogin || user?.transient?.lastLogin || null;
 
-  // Extract device & IP from most recent order's commercePayments
-  const latestPaymentInfo = (() => {
-    if (!orders || orders.length === 0) return { device: null, ip: null };
-    // BC's `paymentTimestamp` is a numeric Unix-ms; `createdAt` is an ISO
-    // string. Normalize to a comparable epoch so .sort never trips over
-    // `(123).localeCompare(...)` (crashed UserDetailPage with a white screen
-    // for any user whose commercePayments had paymentTimestamp set).
-    const epoch = (p) => {
-      const v = p?.paymentTimestamp ?? p?.createdAt;
-      if (v == null) return 0;
-      if (typeof v === 'number') return v;
-      const t = new Date(v).getTime();
-      return Number.isFinite(t) ? t : 0;
-    };
-    for (const order of orders) {
-      const cpArray = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
-      if (cpArray.length > 0) {
-        const sorted = [...cpArray].sort((a, b) => epoch(b) - epoch(a));
-        for (const p of sorted) {
-          if (p.device || p.ipAddress) {
-            return { device: p.device || null, ip: p.ipAddress || null };
-          }
-        }
-      }
-    }
-    return { device: null, ip: null };
-  })();
+  // Extract device & IP from most recent order's commercePayments.
+  // Logic extracted to orderFinancials.getLatestPaymentDeviceInfo so the
+  // paymentTimestamp-epoch normalization (the localeCompare white-screen fix)
+  // is unit-tested rather than buried in render.
+  const latestPaymentInfo = getLatestPaymentDeviceInfo(orders);
 
   // Fallback chain: order payment data > user object fields
   const deviceType = latestPaymentInfo.device || user?.deviceType || user?.transient?.deviceType || user?.deviceInfo || null;

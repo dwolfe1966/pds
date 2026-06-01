@@ -47,3 +47,44 @@ export function getOrderRefunded(order) {
   const fallback = order?.transient?.amount?.refunded;
   return fallback != null ? Number(fallback) : 0;
 }
+
+/**
+ * Normalize a commercePayment's timestamp to a comparable epoch (ms).
+ *
+ * BC's `paymentTimestamp` is a numeric Unix-ms; `createdAt` is an ISO string.
+ * Coercing both to a number lets `.sort` compare with subtraction and never
+ * trip over `(123).localeCompare(...)` — calling a String method on a Number
+ * threw a TypeError that white-screened UserDetailPage for any user whose
+ * commercePayments had `paymentTimestamp` set (fixed 2026-05-31).
+ */
+export function paymentEpoch(p) {
+  const v = p?.paymentTimestamp ?? p?.createdAt;
+  if (v == null) return 0;
+  if (typeof v === 'number') return v;
+  const t = new Date(v).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+/**
+ * Device + IP from the most recent payment across a user's orders.
+ *
+ * Sorts each order's `commercePayments` newest-first via `paymentEpoch` and
+ * returns the first entry carrying a `device` or `ipAddress`. Returns
+ * `{ device: null, ip: null }` when there are no orders/payments or none carry
+ * device/IP. Pure — safe to call during render.
+ */
+export function getLatestPaymentDeviceInfo(orders) {
+  if (!Array.isArray(orders) || orders.length === 0) return { device: null, ip: null };
+  for (const order of orders) {
+    const cpArray = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
+    if (cpArray.length > 0) {
+      const sorted = [...cpArray].sort((a, b) => paymentEpoch(b) - paymentEpoch(a));
+      for (const p of sorted) {
+        if (p.device || p.ipAddress) {
+          return { device: p.device || null, ip: p.ipAddress || null };
+        }
+      }
+    }
+  }
+  return { device: null, ip: null };
+}

@@ -206,3 +206,54 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
     await expect(apiWrapper.csrFindUserAdminNotes({})).rejects.toThrow(/userId is required/);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tracking tab (Searches / Reports / Logins). The bug (pre-existing, surfaced
+// 2026-05-31): the page applied `docs.filter(d => d.updaterId === id)` to BC's
+// /database/search response, but BC's displayFields EXCLUDES updaterId from
+// returned docs — so d.updaterId is undefined on every row and the filter
+// wiped them all. Fix: scope SERVER-SIDE via query.updaterId and trust the
+// response. See feedback memory `no_clientside_filter_on_bc_database_search`.
+describe('csrFindUserTracking — scopes server-side, never client-filters', () => {
+  test('passes updaterId into the /database/search query (server-side scoping)', async () => {
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
+
+    await apiWrapper.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
+
+    expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
+      collectionName: 'trackings',
+      query: { 'data.type': 'USER:login', updaterId: 'u1' },
+    });
+  });
+
+  test('returns BC docs VERBATIM even though they carry no updaterId field', async () => {
+    // This is the exact condition that broke the old client filter: the docs
+    // are correctly scoped server-side but have no `updaterId` property. The
+    // wrapper must NOT drop them.
+    const body = {
+      docs: [
+        { _id: 't1', data: { type: 'USER:login' } }, // note: no updaterId field
+        { _id: 't2', data: { type: 'USER:login' } },
+      ],
+      noMoreDocs: true,
+    };
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue(body);
+
+    const res = await apiWrapper.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
+
+    expect(res).toBe(body);
+    expect(res.docs).toHaveLength(2);
+  });
+
+  test('forwards lastId for pagination and omits empty query keys', async () => {
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
+
+    await apiWrapper.csrFindUserTracking({ lastId: 'cursor9' });
+
+    expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
+      collectionName: 'trackings',
+      query: {},
+      lastId: 'cursor9',
+    });
+  });
+});
