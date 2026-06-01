@@ -126,27 +126,67 @@ Top-10 + initial extensions all addressed. Remaining open in `bc client library 
 - **#61** Admin direct links finicky (only the csr-login URL works)
 - **#62** Same as #61 — symptom of router/SPA serving issue
 
-## What to do on resume (snapshot 2026-05-30 EOD)
+## What to do on resume (snapshot 2026-05-31 EOD)
 
-State of play: bug-list CSV fully addressed (shipped / closed-as-fixed / BC-asked / backlog'd). Two follow-up audits ran this session — pre-deploy hygiene (items 1-6) and admin items 8-11 — both shipped. Only the LAUNCH-GAP AUDIT item 7 was deferred at session end.
+**State of play:** Test suite went from 199 passing/16 failing/55 skipped to **277 passing/0 failing/0 skipped across 17 suites**. One real consumer P1 (relatives extraction) and four admin CSR bugs were caught + fixed live in this session as the owner tested test1@gmail.com.
 
-**Outstanding items, in order of priority:**
+### Bundles waiting for owner upload
 
-1. ~~**Audit item 7 — admin.html absolute script URLs.**~~ **Closed as non-issue (2026-05-30 resume).** Source `public/admin.html:11,15` keeps absolute URLs for local dev convenience, but `scripts/postbuild-admin.js` rewrites both `<script src>` to root-relative `/libs/api-wrapper/index.iife.js` and `/libs/csr-wrapper/index.iife.js` at build time. Confirmed in current `build-admin/index.html`. Equivalent consumer rewrite handled by `scripts/postbuild.js` — built `build/index.html` also uses `/libs/...`. No code change needed; do NOT edit the source `public/admin.html` to be relative (would 404 in `npm start` dev — BC's CDN serves the live IIFE there).
+- **Consumer `public.88b26763.js`** — `reportExtract.js` relatives fix (was silently empty on every report). Live consumer is still `public.e46c7124.js`; defer upload until owner-verifications in flight land if you want, then upload.
+- **Admin `admin.aec3021e.js`** — rolls up ALL four admin fixes from today (Collected-sum / Searches-Reports-Logins tabs / UserDetail white-page / Notes-Messages routing). Live admin is still `51fea1e8.js`. **Upload this when ready** to verify the Notes & Messages IIFE-first routing works on BC's deployed backend.
 
-2. **Owner verifications outstanding** (against current bundles above):
-   - **#40** — re-run `(909) 663-7878` member phone search. Expect: jumps straight to a report (contextKey now sent). If still errors, paste the new `[API Router] create-report failed — raw response:` line.
-   - **#43** — re-run "John Smith CA" member search. Expect: new empty-state copy ("Common names with broad filters…"). If BC's raw response shows results being filtered out vs BC returning empty, that's a different bug — paste the dev console.
-   - **#58** — fresh signup → AccountPage billing history should show the synthesized $1 trial line (built from `commercePriceRules.find(_DESC_==='S0')`).
-   - **OPTOUT live flow** — `.env.production REACT_APP_USE_NEW_API_OPTOUT=true` is now live. Test the BC-hosted portal end-to-end (open portal works; confirmation deep-link `?awqh[...]=` still needs prod-side verification when BC sends the email).
-   - **Opt-out portal styling** — BC ask filed (`BC_OPTOUT_FORM_STYLING.md`); cosmetic only, not a verifier task.
-   - **Relatives section (NEW 2026-05-31)** — only triggers on the *new* consumer bundle `public.88b26763.js`, NOT the currently-deployed `public.e46c7124.js`. After uploading the new bundle: open any report → scroll to "Relatives & Associates" Section 5. Expect: populated rows for any record where BC returns `relationList`. Previously every report rendered an empty Relatives section due to a key-name bug in `src/utils/reportExtract.js` (was reading `relationshipList`, BC actually returns `relationList`). The stats card "Relatives" count will also flip from always-0 to the real number.
+### Outstanding owner verifications (carry-over from 2026-05-30 EOD, still valid)
 
-3. **Admin trio (#60 / #61 / #62)** — **BC redeployed 2026-05-30 23:25 GMT** (verified by deploy-verifier 2026-05-31). Deployed bundle hashes at `dev.admin.www.bytecrtrs.com/csr/` match local `admin.51fea1e8.js` + `admin.de3592b0.css` byte-for-byte. **Ready for owner verification:** #60 (CSR search), #61 (admin direct links), #62 (same routing class as #61).
+These are against the current LIVE bundles (`e46c7124` / `51fea1e8`):
+- **#40** — `(909) 663-7878` member phone search → expect jump-to-report.
+- **#43** — "John Smith CA" → expect new empty-state copy.
+- **#58** — fresh signup → synthesized $1 trial line on AccountPage.
+- **OPTOUT** — BC-hosted portal end-to-end (confirmation deep-link still needs prod verification when BC sends email).
 
-4. **Backlog items (#34, #35, #42, #51)** — owner direction needed before any code change; tracked in `project_backlog.md` with rationale.
+### Outstanding owner verifications AFTER uploading the new bundles
 
-5. **Dependabot vulns** — all 4 are dev/optional-service scope (qs in `server/` and `tracking-api/` node_modules; ws + babel-systemjs in dev tooling). None ships in consumer bundle. Update on next dep refresh, post-launch.
+Against `88b26763` (consumer):
+- **Relatives section** — open any report → "Relatives & Associates" Section 5 should populate from BC's `relationList`. Stats card "Relatives" count flips from always-0 to real number.
+
+Against `aec3021e` (admin) — re-test test1@gmail.com user detail:
+- **Order summary Collected** should match Payment History (fulfilled sales only).
+- **Searches / Reports / Logins tabs** should populate (server-side filter works; redundant client filter was wiping every row).
+- **UserDetail page** loads without white-screen (paymentTimestamp.localeCompare fix).
+- **Notes & Messages tab** should populate. If still empty, paste the Network-tab requests for `/message/admin/findNotes` and `/contactMessage/admin/find` — IIFE-first should be hitting different paths now. Direct fallback would log `dbg` lines in dev (stripped in prod).
+
+### Other carry-over
+
+- **Admin trio (#60 / #61 / #62)** — already verifiable on live `51fea1e8` per the 2026-05-31 morning deploy-verifier run. Owner verification still pending.
+- **Backlog items (#34, #35, #42, #51)** — owner direction needed.
+- **Dependabot vulns** — all 4 dev/optional-service scope, post-launch.
+
+### Memory artifacts written today
+
+- `reference_jest_static_asset_imports.md` — fileMock pattern for src files that import .png/.svg/etc.
+- `reference_authcontext_test_pattern.md` — useAuth() + flushAsync (two ticks).
+- `feedback_no_clientside_filter_on_bc_database_search.md` — the bug class that regressed twice in admin tracking tabs; do NOT add client `.filter()` on `/database/search` responses.
+
+### Today's commit summary (8 commits, all on `main`, ahead of origin)
+
+```
+bc1b5f4 chore(memory): admin bundle aec3021e + Notes/Messages IIFE-first fix
+f156c11 fix(admin): Notes & Messages tab — route through IIFE first
+60bb3e5 chore(memory): admin bundle 389ddd78 + UserDetail white-page fix
+ab625e2 fix(admin): white page on UserDetail — paymentTimestamp.localeCompare crash
+24ca326 chore(memory): feedback — never client-filter BC /database/search response
+6905444 chore(memory): admin bundle 4642ae89 + CSR tabs-empty fix
+c22686e fix(admin): CSR Searches/Reports/Logins tabs were empty
+e1d43b5 chore(memory): admin bundle 084c1f38 + CSR-Collected-sum fix
+8620d33 fix(admin): CSR tool Collected sum included rejected payment attempts
+14b61f8 chore(memory): EOD snapshot — test-suite session (2026-05-31)
+3799043 test: get suite into amazing shape — 199→267 passing, 0 failing, 0 skipped
+```
+
+### Non-blocking follow-ups (defer unless asked)
+
+From the console log when the UserDetail white-page was diagnosed:
+- `GET .../csr/[object Object] 404` — somewhere an object is passed as an `<img src>` / href.
+- `POST .../contactMessage/admin/find/<id> 404` and `GET .../message/admin/findNotes?userId=<id> 400` — these will likely resolve when `admin.aec3021e.js` ships (IIFE-first routing). If they persist after upload, BC may have changed required query params.
 
 ## Open BC asks from this session
 
