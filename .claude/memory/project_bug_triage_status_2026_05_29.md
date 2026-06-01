@@ -79,9 +79,10 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
     BC's sibling `api.message.contact.find` returns the same awkward envelope.
     Fix (in OUR `src/services/apiWrapper.js`, NOT BC's IIFE): removed the
     IIFE-first block from `csrFindUserContactMessages` only; Notes keep their
-    IIFE path (`csrFindUserAdminNotes`, where BC's envelope matches). Still
-    needs staging smoke-test on test1@gmail.com — confirm BOTH Notes & Messages
-    render. Rolls up everything in aec3021e below, plus this fix.
+    IIFE path (`csrFindUserAdminNotes`, where BC's envelope matches).
+    **VERIFIED in staging 2026-06-01** — owner confirmed BOTH Notes & Messages
+    render on test1@gmail.com user detail. Rolls up everything in aec3021e
+    below, plus this fix. CLOSED.
   Rolls up four 2026-05-31 admin fixes:
   - **Notes & Messages tab empty.** BC's deployed CSR backend started
     returning 400 on `GET /message/admin/findNotes` and 404 on
