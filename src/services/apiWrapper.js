@@ -66,7 +66,7 @@ async function loadCsrIife() {
  * input as-is — callers see the same shape regardless of which path served the
  * call.
  */
-function _unwrapBcResponse(value) {
+export function _unwrapBcResponse(value) {
   if (value == null || typeof value !== 'object') return value;
   // BC IIFEs catch their own axios errors and return a wrapper with
   // .params.error rather than throwing. Surface that as a real exception so
