@@ -67,15 +67,29 @@ originSessionId: 82d207c3-e509-423a-ac06-a3f99d812fa1
   EmailTickets ?contactMessageId= deep-link, UsersPage name-search
   guard, data-removal partial-failure visibility).
 
-- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.aec3021e.js` + css `admin.de3592b0.css`
+- **Admin (newest, NOT YET DEPLOYED):** `build-admin/admin.93d93b68.js` + css `admin.de3592b0.css`
+  (supersedes `aec3021e`; commit `a025577` on `main`, 2026-06-01)
+  - **Messages tab regression FIXED (2026-06-01).** The aec3021e IIFE-first
+    change (commit f156c11) fixed Notes but BROKE Messages: routing
+    `csrFindUserContactMessages` through `csrWrapper.api.user.findUserContacts`
+    first returned BC's non-standard envelope (truthy object, no `docs[]`),
+    which short-circuited the working fallbacks (direct REST → inbox-wide GET
+    + client filter) → empty Messages list on UserDetail. Same trait already
+    documented one method up: `csrFindContactMessages` is "Direct only" because
+    BC's sibling `api.message.contact.find` returns the same awkward envelope.
+    Fix (in OUR `src/services/apiWrapper.js`, NOT BC's IIFE): removed the
+    IIFE-first block from `csrFindUserContactMessages` only; Notes keep their
+    IIFE path (`csrFindUserAdminNotes`, where BC's envelope matches). Still
+    needs staging smoke-test on test1@gmail.com — confirm BOTH Notes & Messages
+    render. Rolls up everything in aec3021e below, plus this fix.
   Rolls up four 2026-05-31 admin fixes:
   - **Notes & Messages tab empty.** BC's deployed CSR backend started
     returning 400 on `GET /message/admin/findNotes` and 404 on
-    `POST /contactMessage/admin/find/:userId`. The IIFE methods documented
-    in csrApi.csv (`csrWrapper.api.user.findUserAdminNotes` /
-    `findUserContacts`) attach whatever csr-side auth fields BC now
-    requires. Switched both helpers to IIFE-first with direct REST as
-    fallback. (Surfaced on test1@gmail.com user detail.)
+    `POST /contactMessage/admin/find/:userId`. For NOTES, the IIFE method
+    (`csrWrapper.api.user.findUserAdminNotes`) attaches whatever csr-side auth
+    fields BC now requires and works — kept IIFE-first. For MESSAGES, the IIFE
+    `findUserContacts` returns the wrong envelope (see 2026-06-01 fix above) —
+    reverted to direct REST + inbox-filter. (Surfaced on test1@gmail.com.)
   - **UserDetail white page** (pre-existing). `latestPaymentInfo` sort used
     `(b.paymentTimestamp || b.createdAt || '').localeCompare(...)` but BC's
     `paymentTimestamp` is a numeric Unix-ms — `Number.prototype.localeCompare`
