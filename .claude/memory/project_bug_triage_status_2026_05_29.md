@@ -136,10 +136,17 @@ Top-10 + initial extensions all addressed. Remaining open in `bc client library 
 
 **Member/report:** #39 / #41 / #43 / #57 all addressed (closed-as-fixed or copy-shipped). #42 backlog'd (sweeping feature removal — needs usage data, not a launch fix). #51 backlog'd (thin-match flow is a feature build, not a polish item).
 
-**Admin (deferred):**
-- **#60** CSR search likely fixed in admin source; waiting on BC's admin redeploy
-- **#61** Admin direct links finicky (only the csr-login URL works)
-- **#62** Same as #61 — symptom of router/SPA serving issue
+**Admin (deferred) — validated 2026-06-01 against deployed `admin.93d93b68.js`:**
+- **#60** CSR search: code present in deployed bundle (email/phone/ZIP/last4;
+  name-search shows "not supported yet"). `/csr/admin.93d93b68.js` confirmed
+  live (HTTP 200) on dev.admin.www.bytecrtrs.com. Needs one empirical search
+  test w/ CSR login to fully close; code-wise fixed & shipped.
+- **#61 / #62** Direct deep-links / SPA refresh: **STILL BROKEN (confirmed via
+  curl 2026-06-01).** `/csr/` and `/csr/index.html` → 200, but `/csr/login`,
+  `/csr/users`, `/csr/tickets` → **404**. Host has no SPA catch-all. NOT our
+  code — BC nginx needs `location /csr/ { try_files $uri $uri/ /csr/index.html; }`.
+  Workaround we control: switch admin to HashRouter (`/csr/#/users`) — no server
+  rewrite needed. Awaiting owner decision (BC ask vs HashRouter).
 
 ## What to do on resume (snapshot 2026-05-31 EOD)
 
