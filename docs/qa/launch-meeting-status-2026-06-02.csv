@@ -1,0 +1,83 @@
+ID,Area,Flagged,Status,Owner,Notes
+1,Name Landing,No validation + cramped single-name placeholder,Complete,Front-end,Inline red-border errors; split First/Last placeholders
+2,Name Landing,State allowed blank,Complete,Front-end,State now required + validated before submit
+3,SRP,Load More button did nothing,Complete,Front-end,Button hides once pagination returns empty
+4,SRP,Buttons overlaid content on S5,Complete,Front-end,ResultCard stacks at <=520px
+5,SRP,Hard 5-result cap / count,Complete,Front-end,Surfaces real transient.total; >30 shows refine prompt
+6,Name Landing v2,Placeholders cramped,Complete,Front-end,Placeholders updated
+7,Name Landing v2,Middle name asked twice,Complete,Front-end,Resolved
+8,Name Landing v3,"FCRA-compliant badge + placeholders",Complete,Front-end,Swept 22 trust-badge sites; FCRA claims removed
+9,Name Landing v4,"FCRA-safe badge + placeholders",Complete,Front-end,Same FCRA sweep
+10,SRP,Optional city/age did not filter,Complete,Front-end,City/middleName/age forwarded + client narrow
+11,SRP,No sort option,Complete,Front-end,Sort dropdown: relevance/age/name
+12,Name Landing v5,State optional,Complete,Front-end,State required
+13,Name Landing v6,All-red scheme blurred error-red,Complete,Front-end,Swapped to brand green
+14,Phone Landing,Empty submit no error + box too low,Complete,Front-end,Inline error + tighter mobile padding
+15,Phone SRP,Showed unobscured owner details,Complete,Front-end,Blurred name / masked location / unlock pill
+15b,Phone Search,Click routed to signup-free preview,Complete,Front-end,Click goes straight to /signup with identity context
+16,Signup,Password rules hidden until failure,Complete,Front-end,Live 5-item checklist + expanded email disclosure
+17,Payment,FCRA + past expiry + address-on-file lie,Complete,Front-end,FCRA removed; past expiry rejected; billing ZIP required
+18,Membersite,Paid user showed Free Account,Complete,Front-end,Subscription persists + provisioning grace + reconcile
+19,Dashboard,Recent activity overflowed S5,Complete,Front-end,Responsive block at <=400px
+20,Membersite,Pre-signup report lost after payment,Complete,Front-end,pendingReport stash + auto-retry + resume banner
+21,Membersite,No signup email,Needs BC,BC,Welcome email must fire on signup; doc BC_SIGNUP_WELCOME_EMAIL.md
+22,Confirmation Page,Missing real confirmation,Complete,Front-end,Full confirmation screen with View-report CTA
+23,Member Search,State/city optional,Complete,Front-end,State now required + validation copy
+23b,All flows,State/city required sales + member,Complete,Front-end,Applied both flows
+23c,Member Search,City field needs typeahead,Deferred (by design),Front-end,Post-MVP
+24,Opt Out,New BC-hosted opt-out flow,Complete,Front-end,goToOptOutPage() + portal CTA; custom form still works
+25,Footer,Fold Refund + CA Privacy into Terms/Privacy,Complete,Front-end,Sections appended with anchors; legacy links removed
+26,Footer,Remove support@ from footer,Complete,Front-end,Removed
+27,Post SRP,Email disclosure for remarketing,Complete,Front-end,Disclosure added on /search
+28,Post SRP,Password requirements a PITA,Complete,Front-end,8-char min
+29,Payment,Billing disclosure greyed on top of SUP,Complete,Front-end,Moved into disclosure
+30,Payment,Too much space between fields on mobile,Complete,Front-end,Mobile rhythm tightened
+31,Payment,Credit-card expiry needs smart input,Complete,Front-end,Smart expiry auto-prefix
+32,Payment,Terms/Privacy links lose form on back,Complete,Front-end,Open in lightbox
+33,Payment,Contact-us link lose form on back,Complete,Front-end,Opens new tab
+34,Payment,SUP consent checkbox optional per shN,Deferred (by design),Product/BC,Needs per-shN flag from BC; compliance call
+35,Payment,Signup button compliance copy,Deferred (by design),Product,Conversion risk; recommend A/B test
+36,Payment,Upgrade-later link unclear,Complete,Front-end,Resolved
+37,Payment,No red border on missing billing fields,Complete,Front-end,Red border on missing (e.g. ZIP)
+38,Post Payment,Only footer visible after signup,Complete,Front-end,Scroll-to-top after submit
+39,Report Page,Report missing lots of data,Complete,Front-end,Extraction fixed (relatives); depth is BC-data-bound
+40,Search box,Phone search does not work,Complete,Front-end,createReportForPhone contextKey fix; pending owner smoke-test
+41,Report Page,Name vs phone report depth,Needs BC,BC,Two endpoints; comprehensiveness bounded by BC data
+42,Search box,Remove Address search,Deferred (by design),Product,Pull usage data before removing
+43,Membersite SRP,John Smith CA shows no results,Complete,Front-end,Empty-state copy + never client-filter fix
+44,Download PDF,Report page has less than PDF,Needs BC,BC,Parity bounded by BC report data
+45,Download PDF,Test fictional-data disclaimer,Needs BC,BC,doc BC_PDF_DISCLAIMER.md; soft-disable PDF is fallback
+46,Membership Section,Settings at top of dashboard,Complete,Front-end,Repositioned
+47,Subscription,Upgrade-to-Pro $29.99 copy mismatch,Complete,Front-end,Generic copy; price dynamic from brand config
+48,Buttons,Search box hidden behind button,Complete,Front-end,Search box made prominent
+49,My Reports,Account shows report dashboard does not,Complete,Front-end,Parity fixed
+50,Membersite Payment,Reactivate nonMemberOnlyCommerceOffer error,Complete,Front-end,Reactivation path fixed
+51,SUP,Thin-match flow not supported,Deferred (by design),Product,Feature build; ThinMatchPreview component exists
+52,Post SRP,Weak email validation (no MX),Complete,Front-end,Strict regex shipped; DNS/MX check is server/BC
+53,Payment,Billing fields red border by default,Deferred (by design),Product,Chose touch-then-error; discuss if owner wants always-red
+54,Payment,Zip code too long,Complete,Front-end,5-digit ZIP
+55,Payment,Bad session looks like payment decline,Complete,Front-end,Status-first error classifier
+56,My Reports,Dashboard hides reports when cancelled,Complete,Front-end,Reports show when cancelled
+57,Subs,Reactivate when cancelled,Complete,Front-end,Reactivate button added
+58,Subs,Billing history missing $1,Complete,Front-end,Synthesized $1 trial line
+59,Search after cancel,Lose access immediately on cancel,Complete,Front-end,Trial/period access retained through cancel
+60,Admin,Cannot search customers in CSR,Complete,Front-end,Code present + deployed (844a2f72); needs CSR-login verify
+61,Admin,Cannot reach CSR pages by direct link,Needs BC,BC,nginx SPA catch-all; doc BC_ADMIN_SPA_ROUTING_404.md
+62,Admin,Refresh on CSR route 404s,Needs BC,BC,Same nginx fix as 61
+63,Reporting,Visitor LP hit not logged to events API,Needs BC,BC,Events API wiring (tracking)
+64,Reporting,Failed experiences not logged,Needs BC,BC,Events API wiring
+65,Reporting,Failed signup not logged,Needs BC,BC,Events API wiring
+66,Reporting,dueTimestamp 30 days vs 7-day copy,Needs BC,BC,Confirm trial length + align dueTimestamp
+67,Header,Double logo + broken image,Complete,Front-end,Verified single logo in code
+68,Reporting,Session rotated after signup+search,Complete,Front-end,Confirmed expected behavior
+69,Membersite SRP,Count grows 5-of-5 then 6-of-6,Open - Front-end,Front-end,Show true total up front; partly BC-total dependent
+70,Membersite SRP,Load More is client-side (scraper Q),Info / acknowledged,Front-end,Limited result set; not a blocker
+71,Membersite Post SRP,Redundant report-ready interstitial,Complete,Front-end,Click goes direct to report
+72,Subs Cancel Lightbox,Cancel/keep lightbox logs no events,Needs BC,BC,Events API wiring
+73,CSR,Fresh signup forbidden on Customers/Orders,Needs BC,BC,CSR role/permissions provisioning (403)
+74,Membersite Billing,Cancel timestamp + does cancel stop renewal,Needs BC,BC,CRITICAL: canceled member may be charged at renewal; confirm
+75,Welcome Email,No email on signup,Needs BC,BC,Duplicate of 21
+76,Billing Meta,Where do card type / BIN live,Needs BC,BC,Data-location question
+77,Signup Meta,shN/shL/shM mapping + queryability,Needs BC,BC,8 sub-questions; persist resolved attribution per record
+78,Attribution,$1 fail->passthru attribution / DS0,Needs BC,BC,Clarify partner attribution on cascade outcomes
+79,Membersite Dashboard,Location is text input not dropdown,Open - Front-end,Front-end,Small fix; state dropdown to match landing/SRP
