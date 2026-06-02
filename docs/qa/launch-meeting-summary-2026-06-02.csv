@@ -1,0 +1,28 @@
+Section,Topic,IDs,Severity,Owner,Soft-Launch Impact,Recommended Action
+Headline,Complete (front-end shipped),—,—,Front-end,None,Ship the consumer funnel
+Headline,Deferred by design (product calls),34/35/42/51/23c/53,—,Product,None,Revisit post-MVP; A/B where relevant
+Headline,Open front-end (cosmetic),69/79,Low,Front-end,None,Small fast-follow fixes
+Headline,Needs BC / API-dev,17 items,—,BC,Varies (see below),Work the BC list in this meeting
+API/BC Blocker,Cancel does not stop renewal charge,74,Critical,BC,"Canceled trial user may be billed at renewal (refund/chargeback/trust risk)",Confirm BC suppresses recurring schedule at bill time BEFORE any cohort hits first renewal
+API/BC Blocker,CSR fresh-signup permissions,73,High,BC,"Support cannot load Customers/Orders (403) — can't service onboarded users",Provision CSR role/permissions before reps go live
+API/BC Blocker,shN/shL/shM attribution mapping + queryability,77,High,BC,"No partner/channel/sub-pub reporting; partly flying blind",Persist resolved shN/shL/partner/channel on each commerce record (or stable mapping view)
+API/BC Blocker,Admin deep-link / refresh 404,61/62,Medium,BC,"Admin only usable via /csr/ without refresh (workaround exists)",Add nginx try_files catch-all (doc BC_ADMIN_SPA_ROUTING_404.md filed)
+API/BC Blocker,Trial duration mismatch,66,Medium,BC,"Checkout says 7 days; dev provisions ~30",Confirm intended trial length and align dueTimestamp
+API/BC Blocker,Attribution on $1 fail->passthru / cascade,78,Medium,BC,"Can't attribute declined-then-passthru to partner",Clarify DS0 vs NDS0 partner attribution on cascade outcomes
+API/BC Blocker,Event logging (visitor/failures/cancel),63/64/65/72,Medium,BC,"Limited funnel analytics during soft launch",Wire events API for LP views + failed search/signup + cancel lightbox
+API/BC Blocker,Report depth + PDF parity + disclaimer,41/44/45,Medium,BC,"Reports may read thinner than competitors",Expand report-endpoint data; resolve PDF fictional-data disclaimer (doc filed)
+API/BC Blocker,Welcome email on signup,21/75,Low-Med,BC,"No email receipt (confirmation page covers the moment)",Trigger welcome email on commerceBilling/signup (doc BC_SIGNUP_WELCOME_EMAIL.md filed)
+API/BC Blocker,Card type / BIN metadata location,76,Low,BC,None (data question),Confirm where card type/BIN are stored
+API/BC Blocker,CSR customer search,60,Low,BC/Front-end,None (admin-only),"Code complete + deployed (844a2f72); one CSR-login confirmation needed"
+Front-end,No launch-blocking front-end items,—,—,Front-end,None,"Ship; 306 tests passing, 0 failing"
+Front-end,Member dashboard location field,79,Low,Front-end,None,Make state a dropdown to match landing/SRP
+Front-end,Member SRP true-total count,69,Low,Front-end,None,"Show true total up front (partly BC-total dependent)"
+Front-end,Billing fields red-border-by-default,53,Low,Product,None,"Owner decision: keep touch-based errors or force always-red"
+Front-end,Vendor strings in consumer bundle,—,Low,Front-end,None,"Deferred post-launch; no secret exposed; logged in backlog"
+Soft-Launch Risk,Overall verdict,—,—,—,VIABLE — recommended,Trickle consumer users now; gate scaling on the two items below
+Soft-Launch Risk,Consumer funnel (search->pay->report->member),—,Low,Front-end,"Happy path complete + tested",Launch as-is
+Soft-Launch Risk,Cancel/renewal billing,74,High,BC,"Small at trickle volume but recoverable only if caught early",Get definitive BC answer before any user reaches renewal
+Soft-Launch Risk,CSR tooling operational,73,High,BC,"Cannot service onboarded users if support tools 403",Confirm CSR permissions before support goes live
+Soft-Launch Risk,Reporting / attribution blind spots,63/64/65/72/77/78,Medium,BC,"Partial funnel analytics; optimization limited",Accept as instrumented learning; prioritize 77 + events post-launch
+Soft-Launch Risk,Report depth perception,41/44,Medium,BC,"Reports thinner than competitors",Trickle audience tolerates; expand BC report data as fast-follow
+Soft-Launch Risk,No welcome email,21,Low-Med,BC,"User confusion; confirmation page mitigates",Fast-follow BC item
