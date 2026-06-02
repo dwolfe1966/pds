@@ -16,7 +16,10 @@
  * the IDLookup brand.
  */
 
-import idlookupLogo from '../assets/idlookup_icon_transparent.png';
+// Inlined data URI (not a .png import): the .png asset import resolved to an
+// empty object {} in the Parcel module build → broken <img src="[object Object]">
+// (bug #67). A data URI string works identically across dev/prod/Jest/any host.
+import idlookupLogo from '../assets/idlookupLogo';
 
 export const BRANDS = {
   'idlookup.ai': {

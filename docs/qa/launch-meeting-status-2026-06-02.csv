@@ -68,7 +68,7 @@ ID,Area,Flagged,Status,Owner,Notes
 64,Reporting,Failed experiences not logged,Needs BC,BC,Events API wiring
 65,Reporting,Failed signup not logged,Needs BC,BC,Events API wiring
 66,Reporting,dueTimestamp 30 days vs 7-day copy,Needs BC,BC,Confirm trial length + align dueTimestamp
-67,Header,Double logo + broken image,Open - Front-end,Front-end,"LIVE BROKEN (verified in browser 2026-06-02): public header shows broken logo + doubled alt; brand.logoAsset = [object Object] in <img src>; SalesNav renders BrandLogo x2"
+67,Header,Double logo + broken image,Complete,Front-end,"FIXED 2026-06-02: .png import resolved to empty {} in Parcel build; replaced with inlined data URI + BrandLogo coercion; re-rendered local build shows real 512x512 logo. New bundle c6379164 — needs upload"
 68,Reporting,Session rotated after signup+search,Complete,Front-end,Confirmed expected behavior
 69,Membersite SRP,Count grows 5-of-5 then 6-of-6,Open - Front-end,Front-end,Show true total up front; partly BC-total dependent
 70,Membersite SRP,Load More is client-side (scraper Q),Info / acknowledged,Front-end,Limited result set; not a blocker

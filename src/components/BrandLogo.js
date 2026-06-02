@@ -16,8 +16,23 @@ const BrandLogo = ({ height = 36, style = {}, alt }) => {
     ...style,
   };
 
-  if (brand.logoAsset) {
-    return <img src={brand.logoAsset} alt={altText} style={baseStyle} />;
+  // Coerce logoAsset to a usable URL string. Depending on the build, an asset
+  // import can resolve to a plain URL string (Jest fileMock; new URL(...).href)
+  // OR to a module-namespace object ({ default: url }). Passing the object
+  // straight into src yields "[object Object]" → a broken image, and the alt
+  // text then renders beside the wordmark span (the reported "double logo").
+  // Resolve the string form; if none is usable, fall through to the SVG
+  // placeholder rather than ship a broken <img>.
+  const rawAsset = brand.logoAsset;
+  const logoSrc =
+    typeof rawAsset === 'string'
+      ? rawAsset
+      : rawAsset && typeof rawAsset === 'object'
+      ? rawAsset.default || rawAsset.src || rawAsset.url || ''
+      : '';
+
+  if (logoSrc) {
+    return <img src={logoSrc} alt={altText} style={baseStyle} />;
   }
 
   // Placeholder: rounded chip with brand initials. Square aspect.

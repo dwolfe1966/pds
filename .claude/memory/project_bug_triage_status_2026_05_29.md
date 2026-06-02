@@ -156,7 +156,7 @@ Top-10 + initial extensions all addressed. Remaining open in `bc client library 
   SPA catch-all is working. (Was 404 on 2026-06-01; BC ask doc
   `BC_ADMIN_SPA_ROUTING_404.md` was filed; resolved by 2026-06-02 — host config
   fixed + 844a2f72 uploaded.) **Admin bundle 844a2f72 is now LIVE** on
-  dev.admin.www.bytecrtrs.com/csr/ (owner uploaded). Consumer live = 88b26763.
+  dev.admin.www.bytecrtrs.com/csr/ (owner uploaded). Consumer live = 88b26763; NEW consumer build c6379164 fixes #67 broken logo (inlined data URI) — needs upload.
 
 ## What to do on resume (snapshot 2026-05-31 EOD)
 
