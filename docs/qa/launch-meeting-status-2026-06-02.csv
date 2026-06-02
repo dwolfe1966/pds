@@ -62,8 +62,8 @@ ID,Area,Flagged,Status,Owner,Notes
 58,Subs,Billing history missing $1,Complete,Front-end,Synthesized $1 trial line
 59,Search after cancel,Lose access immediately on cancel,Complete,Front-end,Trial/period access retained through cancel
 60,Admin,Cannot search customers in CSR,Complete,Front-end,Code present + deployed (844a2f72); needs CSR-login verify
-61,Admin,Cannot reach CSR pages by direct link,Needs BC,BC,nginx SPA catch-all; doc BC_ADMIN_SPA_ROUTING_404.md
-62,Admin,Refresh on CSR route 404s,Needs BC,BC,Same nginx fix as 61
+61,Admin,Cannot reach CSR pages by direct link,Complete,BC/Front-end,FIXED — verified live 2026-06-02: /csr/login + /csr/users serve SPA shell (200); 844a2f72 deployed
+62,Admin,Refresh on CSR route 404s,Complete,BC/Front-end,FIXED — verified live 2026-06-02: /csr/tickets cold-hit returns SPA shell (200)
 63,Reporting,Visitor LP hit not logged to events API,Needs BC,BC,Events API wiring (tracking)
 64,Reporting,Failed experiences not logged,Needs BC,BC,Events API wiring
 65,Reporting,Failed signup not logged,Needs BC,BC,Events API wiring

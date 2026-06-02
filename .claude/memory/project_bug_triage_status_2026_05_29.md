@@ -150,12 +150,13 @@ Top-10 + initial extensions all addressed. Remaining open in `bc client library 
   name-search shows "not supported yet"). `/csr/admin.93d93b68.js` confirmed
   live (HTTP 200) on dev.admin.www.bytecrtrs.com. Needs one empirical search
   test w/ CSR login to fully close; code-wise fixed & shipped.
-- **#61 / #62** Direct deep-links / SPA refresh: **STILL BROKEN (confirmed via
-  curl 2026-06-01).** `/csr/` and `/csr/index.html` → 200, but `/csr/login`,
-  `/csr/users`, `/csr/tickets` → **404**. Host has no SPA catch-all. NOT our
-  code — BC nginx needs `location /csr/ { try_files $uri $uri/ /csr/index.html; }`.
-  Workaround we control: switch admin to HashRouter (`/csr/#/users`) — no server
-  rewrite needed. Awaiting owner decision (BC ask vs HashRouter).
+- **#61 / #62** Direct deep-links / SPA refresh: **FIXED — verified live
+  2026-06-02.** `/csr/login`, `/csr/users`, `/csr/tickets` now all return 200
+  serving the real SPA shell (`ByteCrtrs Admin` + `admin.844a2f72.js`). The host
+  SPA catch-all is working. (Was 404 on 2026-06-01; BC ask doc
+  `BC_ADMIN_SPA_ROUTING_404.md` was filed; resolved by 2026-06-02 — host config
+  fixed + 844a2f72 uploaded.) **Admin bundle 844a2f72 is now LIVE** on
+  dev.admin.www.bytecrtrs.com/csr/ (owner uploaded). Consumer live = 88b26763.
 
 ## What to do on resume (snapshot 2026-05-31 EOD)
 

@@ -56,7 +56,7 @@ IDs **21/75** (welcome email), **41** (report-endpoint depth), **44** (report↔
 
 **Launch-affecting:**
 - **#73 — CSR permissions on fresh signup.** New CSR account → "Customers" = *forbidden resource*, "Orders" = *unable to load global order list*. CSR tooling unusable for newly-provisioned reps until BC grants the role/permissions.
-- **#61/#62 — Admin SPA deep-link 404s.** `/csr/<route>` and refresh return 404; only `/csr/` resolves. **Filed:** `docs/BC_ADMIN_SPA_ROUTING_404.md` — BC nginx needs `try_files $uri $uri/ /csr/index.html`. (Workaround today: navigate from `/csr/` without refreshing.)
+- **#61/#62 — Admin SPA deep-link 404s → ✅ FIXED (verified live 2026-06-02).** `/csr/login`, `/csr/users`, `/csr/tickets` now return 200 serving the real SPA shell (`ByteCrtrs Admin` + `admin.844a2f72.js`). The host's SPA catch-all is working and the current admin bundle is deployed. (Was 404 earlier the same morning; resolved during the day.) No remaining action.
 - **#21/#75 — Welcome email** not sent on paid signup. Filed: `docs/BC_SIGNUP_WELCOME_EMAIL.md`. Launch-acceptable gap (confirmation page exists), but users get no email receipt.
 - **#66 — Trial duration mismatch.** Dev trial provisions ~30 days; checkout copy says 7. Confirm intended trial length and align `dueTimestamp`.
 

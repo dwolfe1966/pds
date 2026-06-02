@@ -6,7 +6,7 @@ Headline,Needs BC / API-dev,17 items,—,BC,Varies (see below),Work the BC list 
 API/BC Blocker,Cancel does not stop renewal charge,74,Critical,BC,"Canceled trial user may be billed at renewal (refund/chargeback/trust risk)",Confirm BC suppresses recurring schedule at bill time BEFORE any cohort hits first renewal
 API/BC Blocker,CSR fresh-signup permissions,73,High,BC,"Support cannot load Customers/Orders (403) — can't service onboarded users",Provision CSR role/permissions before reps go live
 API/BC Blocker,shN/shL/shM attribution mapping + queryability,77,High,BC,"No partner/channel/sub-pub reporting; partly flying blind",Persist resolved shN/shL/partner/channel on each commerce record (or stable mapping view)
-API/BC Blocker,Admin deep-link / refresh 404,61/62,Medium,BC,"Admin only usable via /csr/ without refresh (workaround exists)",Add nginx try_files catch-all (doc BC_ADMIN_SPA_ROUTING_404.md filed)
+Resolved,Admin deep-link / refresh 404,61/62,—,BC/Front-end,"FIXED — verified live 2026-06-02: /csr/login, /csr/users, /csr/tickets all return SPA shell (200); 844a2f72 deployed",No action — SPA catch-all now working on admin host
 API/BC Blocker,Trial duration mismatch,66,Medium,BC,"Checkout says 7 days; dev provisions ~30",Confirm intended trial length and align dueTimestamp
 API/BC Blocker,Attribution on $1 fail->passthru / cascade,78,Medium,BC,"Can't attribute declined-then-passthru to partner",Clarify DS0 vs NDS0 partner attribution on cascade outcomes
 API/BC Blocker,Event logging (visitor/failures/cancel),63/64/65/72,Medium,BC,"Limited funnel analytics during soft launch",Wire events API for LP views + failed search/signup + cancel lightbox

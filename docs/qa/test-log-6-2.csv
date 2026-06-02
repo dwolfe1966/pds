@@ -1,0 +1,84 @@
+Bug #,Bug summary,Test method,Steps performed,Observed result,Why / explanation,Outcome
+NOTE,Testing methodology + limits,—,"This environment can do (a) live HTTP probes of dev.www.idlookup.ai and dev.admin.www.bytecrtrs.com/csr, (b) fetch+grep the DEPLOYED JS bundles, and (c) inspect source/build. It CANNOT drive a real browser: no Galaxy S5 emulator, no form fills, no real signup/payment, no authenticated member or CSR session (captcha+creds). Interactive/visual/mobile/auth bugs are therefore verified at the deployed-artifact + code level, labeled as such — not by live clicking.",Deployed consumer bundle = public.88b26763.js; deployed admin bundle = admin.844a2f72.js (both fetched 2026-06-02),Sets the confidence level for each row below,Read this first
+1,Name landing: no validation + cramped single-name placeholder,Deployed-bundle string probe,"Fetched https://dev.www.idlookup.ai/public.88b26763.js; grepped for 'ex. John' / 'ex. Smith'",4 hits each for 'ex. John' and 'ex. Smith',Split first/last placeholders are present in the live bundle,Verified in deployed bundle
+2,Name landing: state allowed blank,Code/source inspection,Inspected name landing source + validation; landing route loads (GET /name/landing → 200),State required + validated before submit in source,Validation logic present; live behavior needs interactive submit to fully confirm,Verified in code
+3,SRP: Load More button did nothing,Deployed-bundle string probe,Grepped bundle for 'Load More',2 hits,Pagination-aware Load More present; hides on empty page per source,Verified in deployed bundle (behavior needs interactive run)
+4,SRP: buttons overlaid content on S5,Code/source inspection,Inspected ResultCard responsive CSS (<=520px stack),Stacked layout rule present,Visual mobile check not executable here,Verified in code
+5,SRP: hard 5-result cap / count,Deployed-bundle string probe,Grepped bundle for 'More than 30 results',1 hit,Real total surfaced; >30 shows refine prompt,Verified in deployed bundle
+6,Name landing v2: placeholders cramped,Deployed-bundle string probe,Grepped bundle for 'ex. John'/'ex. Smith'; GET /name/landing/v2 region,Placeholder strings present,Same fix as #1,Verified in deployed bundle
+7,Name landing v2: middle name asked twice,Code/source inspection,Inspected v2 landing steps,Single middle-name field in source,Visual step-flow not executed,Verified in code
+8,Name landing v3: FCRA-compliant badge,Deployed-bundle string probe,Grepped bundle for 'FCRA compliant' / 'FCRA safe',0 hits for both,Promotional FCRA claims removed from live bundle,Verified fixed in deployed bundle
+9,Name landing v4: FCRA-safe badge,Deployed-bundle string probe,Grepped bundle for 'FCRA safe',0 hits,Same FCRA sweep,Verified fixed in deployed bundle
+10,SRP: optional city/age did not filter,Code/source inspection,Inspected SRP narrow logic,City/middleName/age forwarded + client narrow in source,Live filter behavior needs interactive search,Verified in code
+11,SRP: no sort option,Code/source inspection,Inspected SRP sort dropdown component,Sort options (relevance/age/name) in source,Needs interactive run to see dropdown,Verified in code
+12,Name landing v5: state optional,Code/source inspection,Inspected v5 validation,State required in source,—,Verified in code
+13,Name landing v6: all-red scheme,Live HTTP probe + code,GET /name/landing/v6 → 200; inspected v6 CSS palette,Brand-green palette in source; page loads,Visual color check not executed,Verified in code (loads live)
+14,Phone landing: empty submit no error + box too low,Live HTTP probe + code,GET /phone/landing → 200; inspected error + mobile padding,Inline error + tightened padding in source,Mobile visual not executed,Verified in code (loads live)
+15,Phone SRP: showed unobscured owner details,Deployed-bundle string probe,Grepped bundle for 'Sign up to unlock',4 hits,Blur/mask + unlock pill present in live bundle,Verified in deployed bundle
+15b,Phone search: click routed to signup-free preview,Code/source inspection,Inspected click handler → /signup?source=phone,Direct routing in source,—,Verified in code
+16,Signup: password rules hidden until failure,Code/source inspection,Inspected SignupPage password checklist,Live 5-item checklist in source,Interactive typing not executed,Verified in code
+17,Payment: FCRA + past expiry + address-on-file lie,Deployed-bundle string probe,Grepped bundle for 'This date is in the past',1 hit,Past-expiry rejection message present; FCRA removed (see #8),Verified in deployed bundle
+18,Membersite: paid user showed Free Account,Not executable here (auth),Requires real paid signup + member session,Could not log in / pay,Subscription-persistence logic present in source,Code-verified only; needs live paid session
+19,Dashboard: recent activity overflowed S5,Code/source inspection,Inspected dashboard <=400px responsive block,Responsive rule in source,Mobile visual not executed,Verified in code
+20,Membersite: pre-signup report lost after payment,Not executable here (auth),Requires signup+payment flow,Could not execute,pendingReport stash + auto-retry in source,Code-verified only; needs live session
+21,Membersite: no signup email,Not executable here (BC),Requires BC to send email on signup,Cannot trigger,Welcome email is a BC backend action; doc BC_SIGNUP_WELCOME_EMAIL.md filed,Needs BC (open)
+22,Confirmation page missing,Code/source inspection,Inspected confirmation screen component,Full confirmation screen + View-report CTA in source,Needs live paid flow to see rendered,Verified in code
+23,Member search: state/city optional,Code/source inspection,Inspected member search validation,State required + copy in source,—,Verified in code
+23b,All flows: state/city required sales+member,Code/source inspection,Inspected both flows,Applied in both,—,Verified in code
+23c,Member search: city typeahead,Not started (deferred),N/A,N/A,Post-MVP product decision,Deferred by design
+24,Opt-out: new BC-hosted flow,Live HTTP probe,GET /opt-out → 200; inspected goToOptOutPage(),Page loads; portal CTA in source,BC hosts the actual form,Verified in code (loads live)
+25,Footer: fold refund + CA privacy into terms/privacy,Live HTTP probe + bundle,GET /terms → 200; GET /privacy → 200; grepped bundle for 'refund-policy'/'california-privacy',Pages load; 0 hits for those exact anchor strings in 88b26763,Sections may use different anchor text OR predate this bundle — inconclusive by string,Pages live; anchor strings unconfirmed — verify
+26,Footer: remove support@,Code/source inspection,Inspected Footer.js,support email removed in source,—,Verified in code
+27,Post SRP: email disclosure for remarketing,Code/source inspection,Inspected /search disclosure,Disclosure copy in source,—,Verified in code
+28,Post SRP: password requirements a PITA,Code/source inspection,Inspected password rule (8-char min),Reduced rules in source,Interactive typing not executed,Verified in code
+29,Payment: billing disclosure greyed on top of SUP,Code/source inspection,Inspected SUP disclosure placement,Moved into disclosure in source,—,Verified in code
+30,Payment: too much space between fields on mobile,Code/source inspection,Inspected payment mobile rhythm,Tightened spacing in source,Mobile visual not executed,Verified in code
+31,Payment: smart expiry input,Code/source inspection,Inspected expiry input handler,Auto-prefix logic in source,Interactive typing not executed,Verified in code
+32,Payment: terms/privacy lightbox,Code/source inspection,Inspected disclosure links,Lightbox open in source,—,Verified in code
+33,Payment: contact-us new tab,Code/source inspection,Inspected contact link target,Opens new tab in source,—,Verified in code
+34,Payment: SUP checkbox optional per shN,Deferred (needs BC flag),N/A,N/A,Needs per-shN flag from BC; compliance decision,Deferred by design / Needs BC
+35,Payment: I-AGREE compliance CTA,Deferred,Grepped bundle ('Start Trial'/'Unlock Report' present = current CTA),Current price-led CTA live,Owner conversion concern; A/B recommended,Deferred by design
+36,Payment: upgrade-later link unclear,Code/source inspection,Inspected dashboard link,Resolved in source,—,Verified in code
+37,Payment: no red border on missing billing fields,Code/source inspection,Inspected PaymentPage touched+invalid border logic,Red border on missing/invalid in source,Interactive submit not executed,Verified in code
+38,Post payment: only footer visible after signup,Code/source inspection,Inspected scroll-to-top after submit,Scroll logic in source,—,Verified in code
+39,Report page missing data,Not executable here (auth),Requires member report view,Could not log in,Extraction (relatives) fixed in source; depth bounded by BC data,Code-verified; depth is BC-bound
+40,Search box: phone search does not work,Not executable here (auth),Requires member session,Could not execute,createReportForPhone contextKey fix in source,Code-verified; needs live verify
+41,Report page: name vs phone depth,Not executable here (BC),Requires member session + BC data,Could not execute,Two endpoints; comprehensiveness is BC data,Needs BC (open)
+42,Search box: remove address search,Deferred,N/A,N/A,Need usage data before removing,Deferred by design
+43,Membersite SRP: John Smith CA no results,Not executable here (auth),Requires member search,Could not execute,Empty-state copy + never-client-filter fix in source,Code-verified; needs live verify
+44,Download PDF: report page has less than PDF,Not executable here (BC),Requires member + PDF,Could not execute,Parity bounded by BC report data,Needs BC (open)
+45,Download PDF: test fictional-data disclaimer,Not executable here (BC),Requires member + PDF,Could not execute,BC-controlled disclaimer; doc BC_PDF_DISCLAIMER.md filed,Needs BC (open)
+46,Membership settings at top of dashboard,Not executable here (auth),Requires member session,Could not execute,Settings repositioned in source,Code-verified
+47,Subscription: upgrade $29.99 copy mismatch,Code/source inspection,Inspected AccountPage upgrade CTA,Generic copy; price dynamic from brand config in source,Needs live trial session to see rendered,Verified in code
+48,Buttons: search box hidden behind button,Not executable here (auth),Requires member dashboard,Could not execute,Prominent search box in source,Code-verified
+49,My Reports: account shows report dashboard does not,Not executable here (auth),Requires member session,Could not execute,Parity fixed in source,Code-verified
+50,Membersite payment: reactivate nonMemberOnlyCommerceOffer,Not executable here (auth),Requires cancelled member,Could not execute,Reactivation offer path fixed in source,Code-verified
+51,SUP: thin-match flow not supported,Deferred,N/A,N/A,Feature build; ThinMatchPreview component exists,Deferred by design
+52,Post SRP: weak email validation (no MX),Code/source inspection,Inspected src/utils/email.js strict regex,Strict regex present,DNS/MX check is server/BC-side; not client-doable,Verified in code (MX = BC)
+53,Payment: billing fields red border by default,Code/source inspection,Inspected PaymentPage initial field state,Fields red only after touch+fail (not default),Bug requested always-red; we chose touch-based,Open — design decision (not implemented as asked)
+54,Payment: zip code too long,Code/source inspection,Inspected ZIP input (maxLength 5),5-digit limit in source,—,Verified in code
+55,Payment: bad session looks like decline,Code/source inspection,Inspected status-first error classifier,Classifier in source,Needs live failed-session to confirm message,Verified in code
+56,My Reports: dashboard hides reports when cancelled,Not executable here (auth),Requires cancelled member,Could not execute,Reports show when cancelled in source,Code-verified
+57,Subs: reactivate when cancelled,Deployed-bundle string probe,Grepped bundle for 'Reactivate',1 hit,Reactivate control present in live bundle,Verified in deployed bundle
+58,Subs: billing history missing $1,Not executable here (auth),Requires member account page,Could not execute,Synthesized $1 trial line in source,Code-verified
+59,Search after cancel: lose access immediately,Not executable here (auth),Requires cancelled trial member,Could not execute,Trial/period access retained in source,Code-verified
+60,Admin: cannot search customers in CSR,Not executable here (auth),Requires CSR login (captcha+creds),Could not log in,Search code (email/phone/zip/last4) present + deployed in admin.844a2f72,Code-verified + deployed; needs CSR-login confirm
+61,Admin: cannot reach CSR pages by direct link,Live HTTP probe,"curl https://dev.admin.www.bytecrtrs.com/csr/login and /csr/users",HTTP 200 each; body = real SPA shell (ByteCrtrs Admin + admin.844a2f72.js),"SPA catch-all now serves /csr/index.html for sub-routes (was 404 this morning) — host config fixed + 844a2f72 deployed",FIXED — verified live 2026-06-02
+62,Admin: refresh on CSR route 404s,Live HTTP probe,curl /csr/tickets (cold direct hit = a refresh),HTTP 200; real SPA shell returned,Same catch-all fix as #61,FIXED — verified live 2026-06-02
+63,Reporting: visitor LP hit not logged,Not executable here (BC),Requires events-API inspection,Could not inspect BC events store,Events API wiring (tracking) pending,Needs BC (open)
+64,Reporting: failed experiences not logged,Not executable here (BC),Requires events store,Could not inspect,Events API wiring,Needs BC (open)
+65,Reporting: failed signup not logged,Not executable here (BC),Requires events store,Could not inspect,Events API wiring,Needs BC (open)
+66,Reporting: trial duration 30 vs 7-day copy,Not executable here (BC),Requires BC trial config + paid signup,Could not execute,dueTimestamp set by BC; confirm intended length,Needs BC (open)
+67,Header: double logo + broken image,Code/source inspection,Inspected MemberNav.js / BrandLogo.js render,Single BrandLogo per location; img src guarded,Live logged-in visual not executed but source shows no duplication,Verified fixed in code
+68,Reporting: session rotated after signup+search,Code/source inspection,Reviewed prior analysis,Confirmed expected behavior,Session rotation intended,Verified (expected)
+69,Membersite SRP: count grows 5-of-5 then 6-of-6,Code/source inspection,Inspected SearchResultsPage count render,'X of Y' where Y grows on Load More,True total not known up front (BC total dependent),Open — minor front-end
+70,Membersite SRP: load more is client-side,Code/source inspection,Reviewed pagination,Limited result set client-side,Informational scraper question; not a defect,Info / acknowledged
+71,Membersite post-SRP: redundant report-ready page,Code/source inspection,Inspected ResultCard click → /people/:id,Direct to report (paid); no interstitial,Routing goes straight to report,Verified fixed in code
+72,Subs cancel lightbox logs no events,Not executable here (BC/auth),Requires member + events store,Could not execute,Events API wiring,Needs BC (open)
+73,CSR: fresh signup forbidden on Customers/Orders,Not executable here (BC/auth),Requires CSR signup + login,Could not log in,403 = BC CSR role/permissions not provisioned,Needs BC (open)
+74,Membersite billing: cancel timestamp + renewal charge,Not executable here (BC),Requires member cancel + BC schedule inspection,Could not execute,"Recurring schedule stayed active after cancel; canceled member may be charged — BC must confirm suppression",Needs BC (CRITICAL — open)
+75,Welcome email: no email on signup,Not executable here (BC),Duplicate of 21,Could not trigger,BC backend email,Needs BC (open)
+76,Billing meta: where do card type / BIN live,Not executable here (BC),Requires BC data inspection,Could not inspect,Data-location question for BC,Needs BC (open)
+77,Signup meta: shN/shL/shM mapping + queryability,Not executable here (BC),Requires BC shape-tree + commerce records,Could not inspect,8 sub-questions; needs resolved attribution persisted per record,Needs BC (open — big)
+78,Attribution: $1 fail->passthru / DS0,Not executable here (BC),Requires BC cascade + attribution,Could not execute,Clarify partner attribution on cascade outcomes,Needs BC (open)
+79,Membersite dashboard: location text input not dropdown,Code/source inspection,Inspected Dashboard2.js location field,"<input type=text maxLength=2>, not a <select>",State should be a dropdown to match landing/SRP,Open — small front-end
