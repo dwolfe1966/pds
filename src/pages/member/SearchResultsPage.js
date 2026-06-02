@@ -28,6 +28,11 @@ const MemberSearchResultsPage = () => {
   const zipParam = params.get('zip') || zip;
   const ageParam = params.get('age');
   const [results, setResults] = useState([]);
+  // BC's true match count (transient.total via getTotalCount), independent of how
+  // many we've actually loaded. The sales SRP already surfaces this; the member
+  // SRP previously showed results.length, so "5 of 5" grew to "6 of 6" on Load
+  // More instead of showing the real total up front (#69).
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [rawResponse, setRawResponse] = useState(null);
@@ -201,6 +206,7 @@ const MemberSearchResultsPage = () => {
 
           const response = await api.searchPeople(searchParams);
           setResults(response.data || []);
+          setTotalCount(response.pagination?.total || (response.data?.length ?? 0));
           setRawResponse(response.rawResponse || null);
 
           if (response.searchContext) {
@@ -229,6 +235,7 @@ const MemberSearchResultsPage = () => {
 
           const response = await api.searchPeople(searchParams);
           setResults(response.data || []);
+          setTotalCount(response.pagination?.total || (response.data?.length ?? 0));
           setRawResponse(response.rawResponse || null);
 
           if (response.searchContext) {
@@ -254,6 +261,7 @@ const MemberSearchResultsPage = () => {
 
           const response = await api.searchPeople(searchParams);
           setResults(response.data || []);
+          setTotalCount(response.pagination?.total || (response.data?.length ?? 0));
           setRawResponse(response.rawResponse || null);
 
           if (response.searchContext) {
@@ -375,7 +383,7 @@ const MemberSearchResultsPage = () => {
       {/* Results count */}
       {!loading && (
         <p className={styles.resultsCount}>
-          Showing <strong className={styles.resultsCountHighlight}>{filteredResults.length}</strong> of {results.length} results
+          Showing <strong className={styles.resultsCountHighlight}>{filteredResults.length}</strong> of {Math.max(totalCount, results.length)} results
           {rawResponse?.hasMore?.() && ' · more available below'}
         </p>
       )}

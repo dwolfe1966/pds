@@ -136,6 +136,25 @@ describe('refreshSubscription — cancelled-but-in-period is still operative (bu
     expect(ctxValue.isPaid).toBe(true);
   });
 
+  test('REAL BC shape: subStatus:"canceled" AND transient.canceled:true with future due → operative (live-bug regression 2026-06-02)', async () => {
+    // The live cancel-at-period-end order carries BOTH subStatus 'canceled' and
+    // transient.canceled:true. The old ordering rejected on transient.canceled
+    // before the in-period check, dropping the user to "no active subscription"
+    // (broke #57/#59 and forced the #50 re-purchase). subStatus must win here.
+    mockApi.getUserOrders.mockResolvedValue([{
+      _id: 'order_cancel_in_period',
+      status: 'active',
+      subStatus: 'canceled',
+      transient: { canceled: true, cancelable: false },
+      commerceOffers: ['comp.offer.signup.main'],
+      dueTimestamp: Date.now() + 86400000,
+    }]);
+    render();
+    await flushAsync();
+    expect(ctxValue.subscription).toMatchObject({ status: 'active', subStatus: 'canceled', orderId: 'order_cancel_in_period' });
+    expect(ctxValue.isPaid).toBe(true);
+  });
+
   test('subStatus:"canceled" with dueTimestamp in the past → NOT operative, isPaid false', async () => {
     mockApi.getUserOrders.mockResolvedValue([{
       _id: 'order_cancel_lapsed',

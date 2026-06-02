@@ -7,6 +7,7 @@ import { track } from '../../services/trackingService';
 import { readLoginHistory } from '../../services/loginHistory';
 import { getBrand } from '../../services/brand';
 import { generateSyntheticActivity, hashString } from './watchingHelpers';
+import { US_STATES } from '../../data/usStates';
 
 /**
  * Dashboard — research-workbench layout.
@@ -259,19 +260,21 @@ function InlineNameSearch({ navigate }) {
             border: `1px solid ${PAGE.border}`, borderRadius: '0.375rem',
           }}
         />
-        <input
-          type="text"
+        <select
           value={stateAbbr}
-          onChange={(e) => { setError(''); setStateAbbr(e.target.value.toUpperCase().slice(0, 2)); }}
-          placeholder="ST"
-          maxLength={2}
+          onChange={(e) => { setError(''); setStateAbbr(e.target.value); }}
+          aria-label="State"
           style={{
-            width: 70,
+            flex: '1 1 150px', minWidth: 130,
             padding: '0.55rem 0.7rem', fontSize: '0.9rem',
-            textTransform: 'uppercase',
+            background: '#fff',
             border: `1px solid ${PAGE.border}`, borderRadius: '0.375rem',
           }}
-        />
+        >
+          {US_STATES.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
         <button
           type="submit"
           style={{

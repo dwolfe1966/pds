@@ -97,10 +97,17 @@ export const AuthProvider = ({ children }) => {
       const operativeOrder = Array.isArray(orders)
         ? orders.find(o => {
             if (o.status !== 'active') return false;
-            if (o.transient?.canceled) return false;
+            // Cancel-at-period-end: BC sets subStatus 'canceled' AND
+            // transient.canceled=true, but access continues until dueTimestamp
+            // (verified on the live order shape 2026-06-02). This MUST be checked
+            // BEFORE the transient.canceled rejection below — otherwise a
+            // cancelled-but-in-period order is wrongly treated as lapsed, which
+            // is what made #57/#59 show "no active subscription" and forced the
+            // #50 re-purchase path (BC then rejects nonMemberOnlyCommerceOffer).
             if (o.subStatus === 'canceled') {
               return !!(o.dueTimestamp && o.dueTimestamp > now);
             }
+            if (o.transient?.canceled) return false;
             return true;
           })
         : null;

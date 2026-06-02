@@ -176,7 +176,10 @@ const PurchaseDetailPage = () => {
   // See src/utils/orderFinancials.js for the full reasoning.
   const collected = order ? getOrderCollected(order) : null;
   const refunded  = order ? getOrderRefunded(order) : 0;
-  const canceled  = order?.transient?.canceled;
+  // Cancel-at-period-end orders are status=active + subStatus=canceled. Key off
+  // subStatus too — otherwise the action button stays "Cancel Order" and a CSR
+  // can't reactivate a cancelled-but-in-period order from this page.
+  const canceled  = order?.transient?.canceled || order?.subStatus === 'canceled';
   const backHref  = userId ? `/users/${userId}` : '/orders';
 
   return (
