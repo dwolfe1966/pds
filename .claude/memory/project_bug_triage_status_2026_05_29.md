@@ -260,3 +260,27 @@ Docs (BC asks filed this session):
 - `docs/BC_PDF_DISCLAIMER.md`, `docs/BC_OPTOUT_FORM_STYLING.md`
 
 Final commit before session end: `b0308a8 fix(admin): launch-gap audit items 8-11`. All pushed to origin/main.
+
+## 2026-06-03 session — latest deployable bundles + work
+
+**DEPLOYABLE (clean-built from HEAD, NOT yet uploaded):**
+- **Consumer `build/public.df6359be.js`** + css `public.c445a384.css` → dev.www.idlookup.ai.
+  Includes: cancel-at-period-end cluster (#50/#57/#59), #79 dashboard state dropdown,
+  #69 SRP true-total, #67 logo (data URI), tracking data.refer + events
+  (#63/#64/#65/#72), BC-driven pricing (findByShmName), shN registry, V3→loader
+  handoff, #3 billing-address-when-filled.
+- **Admin `build-admin/admin.ce2e8005.js`** + css `admin.de3592b0.css` →
+  dev.admin.www.bytecrtrs.com/csr/. Includes: CSR cancel-cluster order button,
+  order data exposure (#2 — attribution/offer/payer/gateway/raw viewer), admin logo
+  (data URI), Notes/Messages fix.
+
+**Shipped this session:** Shn framework ([[project_shn_framework]]), tracking
+data.refer attribution, BC-driven pricing, the 3 CSR tasks ([[project_next_csr_tasks]]),
+both logos. BC asks filed: docs/BC_SHN_PARTNER_SHAPE.md (partner modeling + names),
+docs/BC_ADMIN_SPA_ROUTING_404.md (#61/#62 — now FIXED live).
+
+**Reference learnings:** [[reference_datauri_logo_gotcha]],
+[[reference_cancel_at_period_end]], [[reference_live_uat_playwright]].
+
+**One open item:** real shN string values to swap into registry placeholder keys
+(1:*..5:*). Owner to provide partner→token mapping.

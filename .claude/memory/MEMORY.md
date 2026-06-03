@@ -35,3 +35,6 @@
 - [Feedback: never client-filter BC /database/search response](feedback_no_clientside_filter_on_bc_database_search.md) — displayFields trims the response; `docs.filter(d => d.xxxId === id)` wipes every row when the field isn't displayed. Trust `query.xxxId` server-side; regressed twice already.
 - [Queued CSR tasks (after SHN round)](project_next_csr_tasks.md) — messageCreate regression check, full CSR order data, pass address when filled
 - [Shn partner-attribution framework](project_shn_framework.md) — registry/resolver/data.refer/BC-driven pricing; real shN strings still to swap into placeholder keys
+- [Parcel .png import → {} (use data-URI logo)](reference_datauri_logo_gotcha.md) — importing a .png yields an empty object at runtime; inline as data URI
+- [Cancel-at-period-end order shape](reference_cancel_at_period_end.md) — check subStatus==canceled + dueTimestamp>now, not transient.canceled
+- [Live UAT via Playwright (Galaxy S5)](reference_live_uat_playwright.md) — real-browser testing; BC captcha gates searches; serve-admin Forbidden workaround; never save creds
