@@ -91,6 +91,7 @@ const PhoneLoaderPage = () => {
         }, 500);
       } catch (err) {
         console.error('Search error:', err);
+        track('search_failed', { type: 'phone', errorMessage: err?.message });
         setStatus('Error occurred. Redirecting...');
         setTimeout(() => {
           navigate(`/phone/search-result?phone=${encodeURIComponent(phone)}&error=true`);

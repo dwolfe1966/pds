@@ -43,7 +43,13 @@ export function initGtm() {
 }
 
 const REFERRAL_KEY = 'referralParams';
-const REFERRAL_FIELDS = ['refer_partnerId', 'refer_afid', 'refer_abc', 'utm_source', 'utm_medium', 'utm_campaign'];
+const REFERRAL_FIELDS = [
+  'refer_partnerId', 'refer_afid', 'refer_abc',
+  'utm_source', 'utm_medium', 'utm_campaign',
+  // Ad-click IDs — captured for BC tracking `data.refer` attribution.
+  // gclid = Google Ads, fbclid = Meta, msclkid = Microsoft Ads.
+  'gclid', 'fbclid', 'msclkid',
+];
 
 /**
  * Capture campaign/referral parameters from the landing URL on first boot.

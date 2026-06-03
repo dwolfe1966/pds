@@ -153,6 +153,7 @@ const NameSearchLoaderPage = () => {
           console.error('Search error:', err);
           if (err?.apiResponse) console.error('API response:', err.apiResponse);
         }
+        track('search_failed', { type: 'name', errorMessage: err?.message });
         // Generic message — never surface raw upstream errors to users.
         setStatus('Something went wrong. Redirecting...');
         setTimeout(() => {

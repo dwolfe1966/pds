@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
+import { track } from '../../services/trackingService';
 import styles from './AccountPage.module.css';
 
 /**
@@ -594,6 +595,7 @@ const AccountPage = () => {
     setShowCancelModal(false);
     try {
       await api.cancelSubscription(activeOrder._id || activeOrder.id);
+      track('subscription_cancel', { orderId: activeOrder._id || activeOrder.id });
       refreshSubscription();
       setCancelError('');
     } catch (err) {
@@ -744,7 +746,7 @@ const AccountPage = () => {
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
               <button
-                onClick={() => setShowCancelModal(false)}
+                onClick={() => { track('subscription_keep', {}); setShowCancelModal(false); }}
                 style={{
                   padding: '0.6rem 1.25rem',
                   border: '1px solid #d1d5db',
@@ -1123,7 +1125,7 @@ const AccountPage = () => {
                     Reactivate Subscription
                   </button>
                 ) : (
-                  <button className={styles.cancelBtn} onClick={() => setShowCancelModal(true)}>
+                  <button className={styles.cancelBtn} onClick={() => { track('cancel_lightbox_view', {}); setShowCancelModal(true); }}>
                     Cancel Subscription
                   </button>
                 )}
