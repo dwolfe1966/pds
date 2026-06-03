@@ -146,7 +146,7 @@ When I went to sub billing page, I got this ✅ **Ready — go ahead and cancel.
 
 (screenshot to the right) testing060126@idlookup.ai",Membersite My Account,needs BC,Reporting+Billing,,"BC: (1) where is the canonical cancel DATE recorded (revisions audit log?); (2) does cancel-at-period-end suppress the renewal charge, or could a canceled member be billed at renewal? CRITICAL — confirm before any cohort renews."
 75,Signup attempt success,There was no email sent,Welcome Email,needs BC,Membersite,,Duplicate of #21 — BC must send the welcome email on signup.
-76,Attempt signup,Where does the card type info live? looks like only type and bin are in mongo.,Billing Meta,needs BC,BIN info,,BC data-location question: where do card type / BIN live (only type+bin observed in Mongo).
+76,Attempt signup,Where does the card type info live? looks like only type and bin are in mongo.,Billing Meta,complete,BIN info,,"Card type / BIN live on the payment record under commercePayments[].rawRequest (gateway request). Now visible to CSRs: the order detail ""All order fields (raw)"" viewer (#2 work) surfaces rawRequest/rawResponse. Structured extraction of BIN→cardType can be added later if needed."
 77,shN data,"Where does this info live? I'll also need shN name, partner name, channel so we can cut up the data...
 
 1. **Level ↔ shape mapping.** Confirm: `shConId → shapecontainers` = **shN** (its desc literally says *""shN : Default IDL""*), `shColId → shapecollections` = **shL** — and **where does shM live** (`shapecomponents`?). Lock the shN/shL/shM definitions.
