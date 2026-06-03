@@ -296,12 +296,15 @@ const PaymentPage = () => {
             billingAddress: {
               firstName: submitUserInfo.firstName,
               lastName: submitUserInfo.lastName,
-              street1: form.street1 || '123 main',
+              // Pass the real street as non-bogus when the user filled it in
+              // (enables AVS street matching). Only fall back to a placeholder —
+              // and mark street1 bogus — when left blank. zip is always real.
+              street1: form.street1.trim() || '123 main',
               zip: form.billingZip,
               bogusFields: {
                 firstName: false,
                 lastName: false,
-                street1: true,
+                street1: form.street1.trim().length === 0,
                 street2: true,
                 city: true,
                 state: true,

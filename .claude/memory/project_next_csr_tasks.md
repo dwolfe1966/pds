@@ -9,8 +9,8 @@ metadata:
 
 Owner queued these (2026-06-03) to do right after the current Shn-framework round:
 
-1. **Review `messageCreate` in CSR** — BC said they may have **broken existing API calls**. Check `csrCreate*`/contactMessage/note create paths in `src/services/apiWrapper.js` against the current BC API; verify the CSR Notes/Messages + create flows still work (this is the area we already fixed once: [[project_bug_triage_status_2026_05_29]] Notes/Messages IIFE-first).
-2. **All data exposed on CSR orders** — make sure the CSR order detail (`PurchaseDetailPage` / UserDetail Orders tab) surfaces *all* available order data fields, nothing dropped.
-3. **Pass address if filled in** — signup/payment should send the billing **address** to BC when the user provided it (today billing ZIP is required; street/address may not be passed through). Check `PaymentPage` billing fields → BC `billing.sale`/`signup` body.
+1. ✅ **DONE (commit f378e75)** — Review `messageCreate` in CSR. Active paths already migrated to BC's 2026-04-17 API and work (note-create POST /message/admin/createNote → 201 verified live; contact forms use submitContact → message.contact.create). Removed dead `userCreateContact`/`createUserContact`/legacy `createContact` referencing BC-removed endpoints.
+2. ✅ **DONE (commit 46c00ac, admin bundle 1ed4c308)** — All data exposed on CSR orders. `PurchaseDetailPage` now shows attribution (shConId/shColId), offer, payer/payee, brand, status reason, order IP, retries; per-payment gateway txn/device/IP; + raw "All order fields" JSON viewer. Verified live.
+3. **Pass address if filled in** ← **IN PROGRESS** — signup/payment should send the billing **address** (street) to BC when provided (today only billing ZIP is required/passed). Check `PaymentPage` billing fields → BC `billing.sale`/`signup` body.
 
-These are NOT started — queued behind the Shn framework work.
+Bonus finding (not fixed): the **admin header logo is broken** ("[broken img] IDLookup.AI Admin") — admin-side equivalent of the #67 consumer logo bug; the data-URI fix was consumer-only.
