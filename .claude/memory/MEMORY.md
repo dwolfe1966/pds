@@ -34,3 +34,4 @@
 - [AuthContext test pattern](reference_authcontext_test_pattern.md) — `AuthContext` object isn't exported, use `useAuth()`; `flushAsync` needs TWO promise ticks
 - [Feedback: never client-filter BC /database/search response](feedback_no_clientside_filter_on_bc_database_search.md) — displayFields trims the response; `docs.filter(d => d.xxxId === id)` wipes every row when the field isn't displayed. Trust `query.xxxId` server-side; regressed twice already.
 - [Queued CSR tasks (after SHN round)](project_next_csr_tasks.md) — messageCreate regression check, full CSR order data, pass address when filled
+- [Shn partner-attribution framework](project_shn_framework.md) — registry/resolver/data.refer/BC-driven pricing; real shN strings still to swap into placeholder keys
