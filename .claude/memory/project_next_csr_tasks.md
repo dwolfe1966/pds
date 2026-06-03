@@ -11,6 +11,6 @@ Owner queued these (2026-06-03) to do right after the current Shn-framework roun
 
 1. ✅ **DONE (commit f378e75)** — Review `messageCreate` in CSR. Active paths already migrated to BC's 2026-04-17 API and work (note-create POST /message/admin/createNote → 201 verified live; contact forms use submitContact → message.contact.create). Removed dead `userCreateContact`/`createUserContact`/legacy `createContact` referencing BC-removed endpoints.
 2. ✅ **DONE (commit 46c00ac, admin bundle 1ed4c308)** — All data exposed on CSR orders. `PurchaseDetailPage` now shows attribution (shConId/shColId), offer, payer/payee, brand, status reason, order IP, retries; per-payment gateway txn/device/IP; + raw "All order fields" JSON viewer. Verified live.
-3. **Pass address if filled in** ← **IN PROGRESS** — signup/payment should send the billing **address** (street) to BC when provided (today only billing ZIP is required/passed). Check `PaymentPage` billing fields → BC `billing.sale`/`signup` body.
+3. ✅ **DONE (commit 9ac6145)** — Pass address if filled. PaymentPage had marked the street bogus(=fake) unconditionally + sent a hardcoded '123 main'; now sends the real street with `bogusFields.street1=false` when the user fills it (enables AVS), placeholder+bogus only when blank. VariantB is card-only express (no address input) + inactive — left as-is.
 
 Bonus finding (not fixed): the **admin header logo is broken** ("[broken img] IDLookup.AI Admin") — admin-side equivalent of the #67 consumer logo bug; the data-URI fix was consumer-only.
