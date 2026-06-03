@@ -58,11 +58,27 @@ function captureAttribution() {
   return { shn, shl };
 }
 
+// Persist resolved partner identity to sessionStorage so trackingService can
+// stamp it into BC's data.refer (per-partner/channel reporting) and so GTM
+// carries partner/channel. Re-runs on every campaign change (initial + BC-shape
+// enriched).
+function persistIdentity(campaign) {
+  if (typeof sessionStorage === 'undefined') return;
+  const id = (campaign && campaign.identity) || {};
+  try {
+    if (id.shnName) sessionStorage.setItem('attribution.shnName', id.shnName);
+    if (id.partner) sessionStorage.setItem('attribution.partner', id.partner);
+    if (id.channel) sessionStorage.setItem('attribution.channel', id.channel);
+  } catch { /* sessionStorage unavailable */ }
+}
+
 export const CampaignProvider = ({ children }) => {
   const [campaign, setCampaign] = useState(() => {
     const { shn, shl } = captureAttribution();
     return resolveCampaign(shn, shl);
   });
+
+  useEffect(() => { persistIdentity(campaign); }, [campaign]);
 
   useEffect(() => {
     // Best-effort BC shape fetch to enrich the resolved campaign with

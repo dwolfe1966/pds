@@ -50,6 +50,13 @@ function buildRefer() {
     const shl = sessionStorage.getItem('attribution.shl');
     if (shn) refer.shn = shn;
     if (shl) refer.shl = shl;
+    // Resolved partner identity (CampaignContext) for per-partner/channel reporting.
+    const shnName = sessionStorage.getItem('attribution.shnName');
+    const partner = sessionStorage.getItem('attribution.partner');
+    const channel = sessionStorage.getItem('attribution.channel');
+    if (shnName) refer.shnName = shnName;
+    if (partner) refer.partner = partner;
+    if (channel) refer.channel = channel;
     return Object.keys(refer).length ? refer : undefined;
   } catch { return undefined; }
 }

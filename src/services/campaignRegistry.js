@@ -22,6 +22,10 @@ export const CAMPAIGN_REGISTRY = {
   // Universal fallback — applied when neither the exact key nor any
   // partner-wide or page-wide partial match has an entry.
   default: {
+    // identity feeds reporting (data.refer + GTM). null = unknown/no-partner.
+    // When BC models partners (#77-Q6/Q4), identity comes from getShapeCompiled
+    // and these local values shrink to just landing/offer overrides.
+    identity: { shnName: null, brand: null, partner: null, channel: null },
     landing: { route: null },                   // null = no redirect; current route stays
     // search.type drives the landing route choice (consumed via landing.route)
     // search.perPage is currently advisory — BC teaser ignores perPage and
@@ -57,5 +61,39 @@ export const CAMPAIGN_REGISTRY = {
     signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },
     payment: { methods: ['card'] },
     offer:   { shmName: 'membership.offer.default.1', trial: false },
+  },
+
+  // ── Partners (from the shN spreadsheet) ────────────────────────────────────
+  // Keyed by `<shn>:*` (partner-wide, any page) — the resolver matches `?shn=X`
+  // against `X:*`. NOTE: the keys below use the sheet's ROW NUMBERS as
+  // PLACEHOLDERS. Replace `1:*`..`5:*` with the real shN strings (long tokens)
+  // when partner links are minted — the resolver is key-agnostic so no code
+  // change is needed, only these keys.
+  //
+  // `identity` is for reporting (rides into data.refer + GTM). `landing.route`
+  // is the one thing BC can't drive client-side. Payment acceptance / cascade /
+  // risk (shN 2/3 and 4/5 Hi-vs-Lo) is BC-side, keyed on shn — not configured here.
+
+  '1:*': {
+    identity: { shnName: 'IDL Default', brand: 'IDL', partner: 'Internal', channel: 'Default' },
+  },
+
+  // Internal cascade variants — BC adjusts payment acceptance by shn; identity-only.
+  '2:*': {
+    identity: { shnName: 'Cascade Decliner', brand: 'IDL', partner: 'Internal', channel: 'Cascade Decliner', purpose: 'Cascade $0 pass' },
+  },
+  '3:*': {
+    identity: { shnName: 'Cascade Exit', brand: 'IDL', partner: 'Internal', channel: 'Cascade Exit', purpose: 'Cascade $1 pass' },
+  },
+
+  // Google paid-search, inmate keyword → inmate funnel. HHI Hi/Lo differ only in
+  // BC payment-type/risk (BC-side); same client UX (inmate landing).
+  '4:*': {
+    identity: { shnName: 'Google Inmates HHI Hi', brand: 'IDL', partner: 'Google', channel: 'Search' },
+    landing: { route: '/name/landing/v3' },     // inmate-themed funnel
+  },
+  '5:*': {
+    identity: { shnName: 'Google Inmates HHI Lo', brand: 'IDL', partner: 'Google', channel: 'Search' },
+    landing: { route: '/name/landing/v3' },     // inmate-themed funnel
   },
 };

@@ -83,7 +83,16 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
   // Merge: registry default → matched entry → shape-derived extras.
   // Local registry wins for UX choices; shape supplies partner metadata.
   const defaults = CAMPAIGN_REGISTRY.default;
+  // identity for reporting: registry value, then BC shape OVERRIDES when present
+  // (BC is the source of truth for partner/brand identity — #77-Q4).
+  const identity = {
+    ...defaults.identity,
+    ...entry.identity,
+    ...(shapeProps.brandName ? { brand: shapeProps.brandName } : {}),
+    ...(shapeProps.partnerName ? { partner: shapeProps.partnerName } : {}),
+  };
   const resolved = {
+    identity,
     landing: { ...defaults.landing, ...entry.landing },
     search:  { ...defaults.search,  ...entry.search  },
     detail:  { ...defaults.detail,  ...entry.detail  },
