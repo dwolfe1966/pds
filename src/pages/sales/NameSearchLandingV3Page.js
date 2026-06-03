@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../../api';
-import { setSearchContext } from '../../services/searchContext';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import styles from './NameSearchLandingV3Page.module.css';
@@ -137,69 +135,30 @@ const NameSearchLandingV3Page = () => {
   // Search invoked directly from handleConfirm — NOT a useEffect. See
   // NameSearchLandingV5Page.js for the explanation of why effect-based
   // dispatch silently drops the search.
-  const runSearch = async () => {
-    let progressTimer;
-    try {
-      setFinalStatus('Searching our database...');
-      setFinalProgress(10);
+  const runSearch = () => {
+    // Delegate the actual search to /name/loader — the reliable path that V1 and
+    // /search/all use. V3's prior inline api.searchPeople could fail silently
+    // (no HTTP call, then redirect to ?error=true). Handing off keeps the
+    // inmate-themed entry wizard but a search execution path that works.
+    setFinalStatus('Searching our database...');
+    setFinalProgress(60);
+    gtmSetSearchInput({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      middleName: middleName.trim(),
+      city: city.trim(),
+      state: state.trim(),
+    });
+    try { sessionStorage.removeItem('nameSearchResults'); } catch {}
 
-      progressTimer = setInterval(() => {
-        setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
-      }, 200);
-
-      // Same param shape and API as /search/all → /name/loader so results display on /name/search-result
-      const searchParams = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        type: 'name'
-      };
-      if (middleName.trim()) searchParams.middleName = middleName.trim();
-      if (age.trim()) searchParams.age = age.trim();
-      if (city.trim()) searchParams.city = city.trim();
-      if (state.trim()) searchParams.state = state.trim();
-
-      gtmSetSearchInput({
-        firstName: searchParams.firstName,
-        lastName: searchParams.lastName,
-        middleName: searchParams.middleName,
-        city: searchParams.city,
-        state: searchParams.state,
-      });
-      try { sessionStorage.removeItem('nameSearchResults'); } catch {}
-
-      const response = await api.searchPeople(searchParams);
-      if (progressTimer) clearInterval(progressTimer);
-      setFinalProgress(100);
-      setFinalStatus('Search complete!');
-
-      const mappedResults = (response.data || []).map(result => ({
-        ...result,
-        id: result.id || result.extId,
-        extId: result.extId || result.id,
-        fullName: result.fullName || 'Unknown',
-        location: result.location || '',
-        ageRange: result.ageRange || '',
-        provider: result.provider
-      }));
-
-      sessionStorage.setItem('nameSearchResults', JSON.stringify({
-        results: mappedResults,
-        query: { firstName, lastName, middleName, age, city, state },
-        searchContext: response.searchContext || {},
-        pagination: response.pagination || {}
-      }));
-
-      if (response.searchContext) {
-        setSearchContext(response.searchContext);
-      }
-
-      setTimeout(() => navigate('/name/search-result'), 400);
-    } catch (error) {
-      if (progressTimer) clearInterval(progressTimer);
-      console.error('[V3 runSearch] error:', error);
-      setFinalStatus('Error occurred. Redirecting...');
-      setTimeout(() => navigate('/name/search-result?error=true'), 1500);
-    }
+    const params = new URLSearchParams();
+    params.set('firstName', firstName.trim());
+    params.set('lastName', lastName.trim());
+    if (state.trim()) params.set('state', state.trim());
+    if (middleName.trim()) params.set('middleName', middleName.trim());
+    if (age.trim()) params.set('age', age.trim());
+    if (city.trim()) params.set('city', city.trim());
+    navigate(`/name/loader?${params.toString()}`);
   };
 
   const startSearch = (e) => {
