@@ -458,7 +458,16 @@ const PaymentPage = () => {
       // Scroll to top so the confirmation is what they see.
       try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* SSR / non-DOM */ }
 
-      track('payment_complete', { plan: 'pro', offer_key: SIGNUP_OFFER_KEY });
+      // orderId + amount make this partner-attributed conversion (data.refer is
+      // auto-attached by track) joinable to the order with revenue in BC's
+      // tracking store — partner revenue reporting without depending on
+      // order-level commerceorders.refer, which isn't persisting (#77).
+      track('payment_complete', {
+        plan: 'pro',
+        offer_key: SIGNUP_OFFER_KEY,
+        orderId: verifiedOrder?._id || verifiedOrder?.id || resolvedReportId,
+        amount: brand.trialPrice,
+      });
       gtmSetTransaction({
         orderId: verifiedOrder?._id || verifiedOrder?.id || resolvedReportId,
         amount: brand.trialPrice,

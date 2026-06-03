@@ -142,7 +142,11 @@ export function useSignup() {
         const ctx = JSON.parse(sessionStorage.getItem('searchContext') || '{}');
         searchType = ctx?.teaserInput?.type || ctx?.type || undefined;
       } catch { /* no-op */ }
-      track('signup_complete', { source: 'signup', search_type: searchType });
+      // userId makes this partner-attributed conversion (data.refer is auto-
+      // attached by track) joinable to the user in BC's tracking store — the
+      // queryable attribution path while order-level commerceorders.refer
+      // isn't persisting (#77).
+      track('signup_complete', { source: 'signup', search_type: searchType, userId: response.user?._id || response.user?.id });
       gtmSignUp({ method: 'email', search_type: searchType });
       recordLogin({ method: 'signup', source: 'signup_flow', email });
       // BC compliance tracking — record T&C/FCRA agreement timestamp on BC side.
