@@ -239,8 +239,22 @@ const PurchaseDetailPage = () => {
                     {order.subStatus && <tr><td>Sub-status</td><td>{order.subStatus}</td></tr>}
                     <tr><td>Type</td><td>{order.type || order.commercePayments?.[0]?.type || '—'}</td></tr>
                     <tr><td>Created</td><td>{fmt(order.createdAt)}</td></tr>
-                    {order.schedule?.dueTimestamp && (
-                      <tr><td>Next billing</td><td>{fmtDate(order.schedule.dueTimestamp)}</td></tr>
+                    {(order.schedule?.dueTimestamp || order.dueTimestamp) && (
+                      <tr><td>Next billing</td><td>{fmtDate(order.schedule?.dueTimestamp || order.dueTimestamp)}</td></tr>
+                    )}
+                    {order.statusReason && <tr><td>Status reason</td><td>{order.statusReason}</td></tr>}
+                    {order.brandId && <tr><td>Brand</td><td>{order.brandId}</td></tr>}
+                    {(order.shConId || order.shColId) && (
+                      <tr><td>Attribution (shN / shL)</td><td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{order.shConId || '—'} / {order.shColId || '—'}</td></tr>
+                    )}
+                    {order.commerceOffers?.[0] && (
+                      <tr><td>Offer</td><td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{order.commerceOffers[0]}</td></tr>
+                    )}
+                    {order.payerId && <tr><td>Payer ID</td><td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{order.payerId}</td></tr>}
+                    {order.payeeId && <tr><td>Payee ID</td><td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{order.payeeId}</td></tr>}
+                    {order.ipAddress && <tr><td>Order IP</td><td>{order.ipAddress}</td></tr>}
+                    {order.immediateRetryCount != null && (
+                      <tr><td>Retries</td><td>{order.immediateRetryCount}</td></tr>
                     )}
                     {order.currentRevisionId && (
                       <tr><td>Revision ID</td><td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>{order.currentRevisionId}</td></tr>
@@ -261,6 +275,9 @@ const PurchaseDetailPage = () => {
                           <th className={styles.th}>Status</th>
                           <th className={styles.th}>Amount</th>
                           <th className={styles.th}>Date</th>
+                          <th className={styles.th}>Gateway Txn</th>
+                          <th className={styles.th}>Device</th>
+                          <th className={styles.th}>IP</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -273,7 +290,10 @@ const PurchaseDetailPage = () => {
                                 ? `$${Number(p.totalPrice.amount).toFixed(2)}`
                                 : '—'}
                             </td>
-                            <td className={styles.td}>{fmtDate(p.createdAt)}</td>
+                            <td className={styles.td}>{fmtDate(p.paymentTimestamp || p.createdAt)}</td>
+                            <td className={styles.td} style={{ fontFamily: 'monospace', fontSize: '0.72rem' }}>{p.gatewayTransactionId || '—'}</td>
+                            <td className={styles.td}>{p.device || '—'}</td>
+                            <td className={styles.td} style={{ fontSize: '0.78rem' }}>{p.ipAddress || '—'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -281,6 +301,22 @@ const PurchaseDetailPage = () => {
                   </div>
                 </div>
               )}
+
+              {/* All order fields (raw) — nothing hidden. Includes per-payment
+                  rawRequest/rawResponse (card BIN/type, AVS/CVV, decline reason),
+                  schedule, transient, transactionMeta, etc. */}
+              <div className={styles.card}>
+                <details>
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#374151' }}>
+                    All order fields (raw)
+                  </summary>
+                  <pre style={{
+                    marginTop: '0.75rem', maxHeight: 360, overflow: 'auto',
+                    background: '#0b1021', color: '#d6e2ff', padding: '0.75rem',
+                    borderRadius: '0.5rem', fontSize: '0.72rem', lineHeight: 1.45,
+                  }}>{JSON.stringify(order, null, 2)}</pre>
+                </details>
+              </div>
             </div>
 
             {/* ── Right column — actions ── */}
