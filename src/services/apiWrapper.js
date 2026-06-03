@@ -1721,27 +1721,6 @@ class ApiWrapperService {
   }
 
   /**
-   * Create a contact message (visitor — no login required).
-   * POST /api/message/contact
-   * apiWrapper.api.contact.create({ firstName, lastName, email, telephone, message, contentType })
-   * LEGACY — kept for backwards compatibility; prefer createContactMessage.
-   */
-  async createContact(params) {
-    if (this.useProxy) {
-      return await this._csrPost('/message/contact', params);
-    }
-    try {
-      const wrapper = await this.getWrapper();
-      return await wrapper.api.contact.create(params);
-    } catch (error) {
-      const enhancedError = new Error(error.message || 'Create contact failed');
-      enhancedError.originalError = error;
-      enhancedError.isCorsError = this._isCorsError(error);
-      throw enhancedError;
-    }
-  }
-
-  /**
    * Create a contact message — NEW BC spec (edited 2026-04-17).
    * POST /api/contactMessage/create
    * apiWrapper.api.message.contact.create(param)
@@ -1839,37 +1818,6 @@ class ApiWrapperService {
   }
 
   /**
-   * Create a user contact message (logged-in users only).
-   * POST /api/message/userContact
-   * apiWrapper.api.user.createContact({ message, parentCsrMessageId?, contentType })
-   * Used for member-initiated messages and replies to CSR mail.
-   *
-   * The dev IIFE may not expose `user.createContact` — try it first, fall back
-   * to direct POST. Same pattern as userUpdate.
-   */
-  async createUserContact(params) {
-    if (!this.useProxy) {
-      try {
-        const wrapper = await this.getWrapper();
-        if (typeof wrapper.api?.user?.createContact === 'function') {
-          return _unwrapBcResponse(await wrapper.api.user.createContact(params));
-        }
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          dbgWarn('[BC user.createContact] IIFE path threw; falling back to direct POST:', error?.message);
-        }
-        if (error?.status || error?.data) throw error;
-      }
-    }
-    try {
-      return await this._csrPost('/message/userContact', params);
-    } catch (error) {
-      const enhancedError = new Error(error.message || 'Create user contact failed');
-      enhancedError.originalError = error;
-      enhancedError.isCorsError = this._isCorsError(error);
-      throw enhancedError;
-    }
-  }
 
   /**
    * Count teaser searches performed by the logged-in user.

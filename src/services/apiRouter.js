@@ -300,8 +300,6 @@ async function _routeApiRequestInner(endpoint, params = {}) {
     // Consumer: user's own support messages
     'get-user-contacts',
     // Contact / messaging — BC endpoints
-    'create-contact',
-    'create-user-contact',
     'create-contact-message',
     'reply-contact-message',
     'contact-histories',
@@ -1065,18 +1063,6 @@ async function callNewAPI(endpoint, params) {
     // Consumer: user's own support messages — user.getContacts({ lastId? })
     case 'get-user-contacts': {
       return await apiWrapper.getUserContacts(params.lastId);
-    }
-
-    // Consumer: create contact message (visitor, no login required)
-    // apiWrapper.api.contact.create → POST /api/message/contact
-    case 'create-contact': {
-      return await apiWrapper.createContact(params.body || {});
-    }
-
-    // Consumer: create user contact (logged-in member)
-    // apiWrapper.api.user.createContact → POST /api/message/userContact
-    case 'create-user-contact': {
-      return await apiWrapper.createUserContact(params.body || {});
     }
 
     // Consumer: create contact message — new BC spec (2026-04-17)

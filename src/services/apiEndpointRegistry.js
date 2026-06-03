@@ -103,10 +103,6 @@ export const API_ENDPOINTS = {
   'admin-user-tracking': { newApi: true, mockApi: false },
   // Consumer: user's own support messages via user.getContacts
   'get-user-contacts': { newApi: true, mockApi: false },
-  // Consumer: create contact message (visitor, no login) via contact.create
-  'create-contact': { newApi: true, mockApi: true },
-  // Consumer: create user contact (logged-in) via user.createContact
-  'create-user-contact': { newApi: true, mockApi: true },
   // Consumer: new BC message.contact.* endpoints
   'create-contact-message': { newApi: true, mockApi: false },
   'reply-contact-message': { newApi: true, mockApi: false },

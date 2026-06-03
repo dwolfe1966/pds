@@ -459,19 +459,6 @@ const api = {
   },
 
   /**
-   * Send a contact message as a logged-in member.
-   * POST /api/message/userContact
-   * BC user.createContact accepts only { message, contentType, parentCsrMessageId? }
-   * — the member's identity comes from the session.
-   */
-  userCreateContact: async ({ message, contentType = 'text/plain', parentCsrMessageId, subject } = {}) => {
-    const body = { message, contentType };
-    if (parentCsrMessageId) body.parentCsrMessageId = parentCsrMessageId;
-    if (subject) body.subject = subject;
-    return await routeApiRequest('create-user-contact', { body });
-  },
-
-  /**
    * Register user in ByteCrtrs (pre-payment, no charge)
    * Must be called before billingSale so ByteCrtrs knows the user.
    */
