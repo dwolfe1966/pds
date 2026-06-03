@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from './AdminNav.module.css';
-// Use static import so Parcel bundles the image without import.meta (needed for classic script mode)
-import logoSrc from '../assets/idlookup_icon_transparent.png';
+// Inlined data URI — the .png asset import resolves to an empty object {} in the
+// Parcel build (→ broken <img src="[object Object]">, same as consumer bug #67).
+import logoSrc from '../assets/idlookupLogo';
 
 // Permissions / Content & UX / Offers are hidden from v1 nav — they're
 // localStorage-only today (no BC endpoints exist). Mail Log, CS Reps,
