@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
+import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
@@ -103,8 +104,14 @@ const PaymentPage = () => {
   // Pricing disclosure so the cardholder sees an explicit cancel-by date.
   const trialEndDate = new Date(Date.now() + brand.trialDays * 24 * 60 * 60 * 1000)
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const trialPriceStr = `$${brand.trialPrice.toFixed(2)}`;
-  const recurringPriceStr = `$${brand.recurringPrice.toFixed(2)}`;
+  // BC-driven per-partner pricing: when the campaign carries a partner offer
+  // (campaign.offer.shmName), display that offer's real BC price. Otherwise the
+  // default offer keeps the brand marketing display (TRX-approved override).
+  const offerPricing = useOfferPricing(campaign?.offer?.shmName);
+  const effectiveTrialPrice = offerPricing?.trialPrice ?? brand.trialPrice;
+  const effectiveRecurringPrice = offerPricing?.recurringPrice ?? brand.recurringPrice;
+  const trialPriceStr = `$${effectiveTrialPrice.toFixed(2)}`;
+  const recurringPriceStr = `$${effectiveRecurringPrice.toFixed(2)}`;
 
   const [form, setForm] = useState({
     cardNumber: '',
@@ -466,15 +473,15 @@ const PaymentPage = () => {
         plan: 'pro',
         offer_key: SIGNUP_OFFER_KEY,
         orderId: verifiedOrder?._id || verifiedOrder?.id || resolvedReportId,
-        amount: brand.trialPrice,
+        amount: effectiveTrialPrice,
       });
       gtmSetTransaction({
         orderId: verifiedOrder?._id || verifiedOrder?.id || resolvedReportId,
-        amount: brand.trialPrice,
+        amount: effectiveTrialPrice,
         currency: 'USD',
       });
       gtmPurchase({
-        value: brand.trialPrice,
+        value: effectiveTrialPrice,
         currency: 'USD',
         offer_key: SIGNUP_OFFER_KEY,
         item_name: `${brand.name} Signup (S0 — 7-day access)`,
