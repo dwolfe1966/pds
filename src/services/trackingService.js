@@ -54,23 +54,32 @@ function buildRefer() {
   } catch { return undefined; }
 }
 
+// BC's IIFE tracking endpoint is cold on the first paint, so the earliest event
+// (landing_view, #63) gets dropped. Rather than guess when it's warm, retry the
+// send with backoff until BC accepts it (createTracking returns null on failure,
+// a truthy response on success). Warm events succeed on attempt 0 — no retry.
+const RETRY_BACKOFF_MS = [2000, 5000, 12000];
+
+async function _sendToBC(eventName, payload, attempt = 0) {
+  let res = null;
+  try {
+    res = await api.createTracking({ type: `CLIENT:${eventName}`, ...payload });
+  } catch (_) { res = null; }
+  if (res != null) return; // BC accepted it
+  const delay = RETRY_BACKOFF_MS[attempt];
+  if (delay != null) {
+    setTimeout(() => { _sendToBC(eventName, payload, attempt + 1); }, delay);
+  }
+}
+
 export function track(eventName, properties = {}) {
   const sessionId = getSessionId();
   const timestamp = new Date().toISOString();
 
-  // BC tracking — primary. type prefix keeps client events distinct from
-  // BC's auto-recorded USER:* events. `refer` carries first-touch attribution
-  // (shn/shl + ad params) per BC's data.refer convention.
+  // BC tracking — primary. `refer` carries first-touch attribution (shn/shl + ad
+  // params) per BC's data.refer convention. Retries cover the cold-start window.
   const refer = buildRefer();
-  try {
-    api.createTracking({
-      type: `CLIENT:${eventName}`,
-      sessionId,
-      timestamp,
-      ...(refer ? { refer } : {}),
-      ...properties,
-    });
-  } catch (_) {}
+  _sendToBC(eventName, { sessionId, timestamp, ...(refer ? { refer } : {}), ...properties });
 
   // Local NDJSON mirror — dev-only. Shape unchanged for backwards compat with
   // the existing admin analytics page that reads this log.

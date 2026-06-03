@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import SearchBar from '../../components/SearchBar';
 import styles from './HomePage.module.css';
 import { useBrand } from '../../services/brand';
+import { useLandingTrack } from '../../hooks/useLandingTrack';
 
 /**
  * Home page for public visitors.
@@ -12,6 +13,9 @@ import { useBrand } from '../../services/brand';
 const HomePage = () => {
   const brand = useBrand();
   const navigate = useNavigate();
+  // Visitor LP event (#63) — the homepage previously fired nothing. Carries
+  // data.refer attribution via trackingService.
+  useLandingTrack('home', 'home');
 
   return (
     <main className={styles.main}>
