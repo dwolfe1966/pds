@@ -88,3 +88,32 @@ export function getLatestPaymentDeviceInfo(orders) {
   }
   return { device: null, ip: null };
 }
+
+/**
+ * Billing ZIP from the most recent billing address across a user's orders.
+ *
+ * ZIP is NOT a field on the BC user object — neither `/database/search` nor
+ * `getUserDetail` project it (verified live 2026-06-04: `'zip' in user` is
+ * false on both). It lives on the order billing address, at
+ * `commercePayments[].commerceToken.billingAddress.zip` and
+ * `commerceTokens[].billingAddress.zip`. Returns the ZIP from the newest
+ * payment that carries one, else the first order token's ZIP, else null.
+ * Pure — safe to call during render.
+ */
+export function getLatestBillingZip(orders) {
+  if (!Array.isArray(orders) || orders.length === 0) return null;
+  for (const order of orders) {
+    const cpArray = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
+    const sorted = [...cpArray].sort((a, b) => paymentEpoch(b) - paymentEpoch(a));
+    for (const p of sorted) {
+      const zip = p?.commerceToken?.billingAddress?.zip;
+      if (zip) return String(zip);
+    }
+    const tokens = Array.isArray(order?.commerceTokens) ? order.commerceTokens : [];
+    for (const t of tokens) {
+      const zip = t?.billingAddress?.zip;
+      if (zip) return String(zip);
+    }
+  }
+  return null;
+}

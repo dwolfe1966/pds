@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
-import { getOrderCollected, getLatestPaymentDeviceInfo } from '../../utils/orderFinancials';
+import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } from '../../utils/orderFinancials';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
 
@@ -1099,6 +1099,10 @@ const UserDetailPage = () => {
     : (fullUserId || '—');
   const allEmails = user?.emails?.length ? user.emails : (user?.email ? [user.email] : []);
   const allPhones = user?.phones?.length ? user.phones : (user?.phone ? [user.phone] : []);
+  // ZIP isn't on the BC user object (verified live 2026-06-04 — absent from both
+  // /database/search and getUserDetail); pull it from the latest order billing
+  // address. user.zip kept as a future-proof fallback if BC ever projects it.
+  const zip = getLatestBillingZip(orders) || user?.zip || null;
   const lastActive = user?.lastLogin || user?.transient?.lastLogin || null;
 
   // Extract device & IP from most recent order's commercePayments.
@@ -1176,6 +1180,10 @@ const UserDetailPage = () => {
                 <span className={styles.metaValue}>{accountAge}</span>
               </div>
             )}
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>Zip</span>
+              <span className={styles.metaValue}>{zip || '—'}</span>
+            </div>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Last Active</span>
               <span className={styles.metaValue}>{lastActive ? formatDateTime(lastActive) : '—'}</span>

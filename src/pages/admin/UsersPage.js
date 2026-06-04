@@ -379,7 +379,8 @@ const UsersPage = () => {
         </div>
 
         <p className={styles.searchHint}>
-          Search by email queries the server. Name filter is applied locally to loaded results.
+          Email, phone, ZIP, and card searches query the server and return matching customers.
+          The <strong>Name</strong> field only filters the results already loaded below — it does not search the server.
         </p>
       </div>
 

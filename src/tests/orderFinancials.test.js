@@ -12,6 +12,7 @@ import {
   getOrderRefunded,
   paymentEpoch,
   getLatestPaymentDeviceInfo,
+  getLatestBillingZip,
 } from '../utils/orderFinancials';
 
 describe('getOrderCollected — rejected-attempts bug', () => {
@@ -166,5 +167,43 @@ describe('getLatestPaymentDeviceInfo — most-recent device/IP across orders', (
   test('handles orders lacking a commercePayments array without throwing', () => {
     expect(getLatestPaymentDeviceInfo([{ _id: 'o1' }, { commercePayments: null }]))
       .toEqual({ device: null, ip: null });
+  });
+});
+
+describe('getLatestBillingZip — ZIP from order billing address (not on user object)', () => {
+  test('returns null for empty/missing orders', () => {
+    expect(getLatestBillingZip([])).toBeNull();
+    expect(getLatestBillingZip(null)).toBeNull();
+    expect(getLatestBillingZip(undefined)).toBeNull();
+  });
+
+  test('reads zip from the newest payment commerceToken.billingAddress (real BC shape, 2026-06-04)', () => {
+    // Mirrors the live order on user 6a2060a7…: zip lives at
+    // commercePayments[].commerceToken.billingAddress.zip
+    const orders = [{
+      commercePayments: [
+        { paymentTimestamp: 1000, commerceToken: { billingAddress: { zip: '10001' } } },
+        { paymentTimestamp: 5000, commerceToken: { billingAddress: { zip: '91362' } } },
+      ],
+    }];
+    expect(getLatestBillingZip(orders)).toBe('91362');
+  });
+
+  test('falls back to order.commerceTokens[].billingAddress.zip when payments carry none', () => {
+    const orders = [{
+      commercePayments: [{ paymentTimestamp: 3000 }],
+      commerceTokens: [{ billingAddress: { zip: '94107' } }],
+    }];
+    expect(getLatestBillingZip(orders)).toBe('94107');
+  });
+
+  test('coerces a numeric zip to string', () => {
+    const orders = [{ commerceTokens: [{ billingAddress: { zip: 91362 } }] }];
+    expect(getLatestBillingZip(orders)).toBe('91362');
+  });
+
+  test('returns null when no billing address carries a zip', () => {
+    expect(getLatestBillingZip([{ commercePayments: [{ device: 'x' }], commerceTokens: [{}] }]))
+      .toBeNull();
   });
 });
