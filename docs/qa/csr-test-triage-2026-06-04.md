@@ -70,7 +70,7 @@ No code change expected. Action = tester re-runs against current live bundle.
 
 | Row | Test | Why it's not a clean bucket |
 |---|---|---|
-| 38 | **Notes History** — "Saved Note, but do not see in Customer Profile" | We fixed + **verified** Notes on a bundle that should be live (`createNote` → 201; Notes/Messages verified 2026-06-01). So deploy-skew does NOT obviously explain this. Either it isn't actually deployed in `ce2e8005`, or BC changed the `findNotes` contract again. `handleSaveNote` refetches via `adminFindUserAdminNotes` after save — need the Network capture for `POST /message/admin/createNote` (201?) and the subsequent `GET /message/admin/findNotes` (does the new note appear?). |
+| 38 | **Notes History** — "Saved Note, but do not see in Customer Profile" | **RESOLVED — works on live `ce2e8005`; 6/3 fail was deploy skew. Re-test to close.** Reproduced live 2026-06-04: `POST /message/admin/createNote` → **201**; `GET /message/admin/findNotes` → **200** returns the note; it renders **after save AND after hard reload**. The IIFE-first Notes/Messages fix only reached live in `ce2e8005` (~6/3–6/4), so the 6/3 tester was on a pre-fix bundle. Benign known quirk: `POST /contactMessage/admin/find/:userId` 404s, but `fetchNotes` (`Promise.allSettled`) handles it and notes display via `findNotes`; per-user messages come from the inbox-wide fetch + client filter (existing design). **Not BC, not an open bug.** *(Left 2 labeled `UAT-row38-check` test notes on test acct `testingreg060326b@idlookup.ai` — BC has no note-delete; ignore/clean at will.)* |
 | 39–41 | Transaction Sales / Collections / Refunds History | Tester marked "Y?" (uncertain). Verify against a known order with history. |
 
 ---
@@ -168,7 +168,7 @@ watching as BC dev-env instability.
 ## Recommended order
 
 1. **Re-test Bucket A on live `ce2e8005`** (tester) — clears the most rows for zero code.
-2. **Investigate Bucket D Notes (row 38)** with a Network capture — the one genuine "ours" defect that isn't deploy-skew.
+2. ~~Investigate Bucket D Notes (row 38)~~ **DONE 2026-06-04 — works on live, was deploy skew (see Bucket D). Re-test to close.**
 3. **Ship two small ours-to-fix items** *(pending owner OK on scope)*: Zip on detail page (row 15) + reword the confusing email-search hint (row 11).
 4. **Owner decisions** (Bucket F) gate everything in Bucket B.
 5. **Bucket C** → file/repro with BC; not our code.
