@@ -50,4 +50,45 @@ async function sendBroadcast(recipients, subject, html) {
   return results;
 }
 
-module.exports = { emailLog, sendWelcome, sendPaymentConfirmation, sendAlertDigest, sendBroadcast };
+async function sendCancel(user, opts = {}) {
+  return _send(user.email, 'Your IDLookup membership is canceled', templates.cancelEmail(user, opts), 'cancel');
+}
+
+async function sendOptOutRequest(opts = {}) {
+  return _send(opts.email, 'Confirm your IDLookup opt-out request', templates.optOutRequestEmail(opts), 'optout_request');
+}
+
+async function sendPasswordReset(user, opts = {}) {
+  return _send(user.email, 'Reset your IDLookup password', templates.passwordResetEmail(user, opts), 'password_reset');
+}
+
+async function sendSignup(user, opts = {}) {
+  return _send(user.email, 'Welcome to IDLookup.AI — your trial is active', templates.signupEmail(user, opts), 'signup');
+}
+
+async function sendUncancel(user, opts = {}) {
+  return _send(user.email, "You're all set — your IDLookup membership is active again", templates.uncancelEmail(user, opts), 'uncancel');
+}
+
+async function sendRemarketing(user, step = 1, opts = {}) {
+  return _send(user.email, templates.remarketingSubject(step, opts), templates.remarketingEmail(user, step, opts), `remarketing_${step}`);
+}
+
+async function sendMessageCreated(user, opts = {}) {
+  return _send(user.email, templates.messageCreatedSubject(opts), templates.messageCreatedEmail(user, opts), 'message_created');
+}
+
+module.exports = {
+  emailLog,
+  sendWelcome,
+  sendPaymentConfirmation,
+  sendAlertDigest,
+  sendBroadcast,
+  sendCancel,
+  sendOptOutRequest,
+  sendPasswordReset,
+  sendSignup,
+  sendUncancel,
+  sendRemarketing,
+  sendMessageCreated,
+};

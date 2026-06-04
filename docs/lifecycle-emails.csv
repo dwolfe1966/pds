@@ -1,0 +1,127 @@
+Type,Subject,Body,Delay,,
+cancel,Your IDLookup membership is canceled — access through {{access_end_date}},"Hi {{first_name}},
+
+We've canceled the auto-renewal on your IDLookup.AI membership (order #{{order_number}}). You won't be charged again.
+
+Your access stays active until {{access_end_date}}. Until then you can keep running searches and viewing reports — nothing changes on your end until that date.
+
+Changed your mind? You can turn renewal back on anytime before {{access_end_date}} and keep everything without interruption:
+{{reactivate_url}}
+
+Questions about your account? Reply to this email or call us at {{support_phone}}, Monday–Friday, 9am–5pm ET.
+
+— The IDLookup.AI Team",Immediately on cancellation request (0 min),,
+optout request,Confirm your IDLookup opt-out request,"Hi,
+
+We received a request to remove the following information associated with {{email}} from IDLookup.AI search results.
+
+To protect against fraudulent removals, we need you to confirm this request. Click below within 48 hours to confirm:
+{{optout_confirm_url}}
+
+Once confirmed, your information will be removed from our search results within 48 hours (request ID: {{optout_request_id}}).
+
+If you did not make this request, you can safely ignore this email — no changes will be made.
+
+Need help? Call {{support_phone}}, Monday–Friday, 9am–5pm ET.
+
+— The IDLookup.AI Privacy Team",Immediately on opt-out submission (0 min),,
+reset password,Reset your IDLookup password,"Hi {{first_name}},
+
+We received a request to reset the password for your IDLookup.AI account ({{email}}).
+
+Click below to choose a new password. This link expires in 60 minutes:
+{{reset_url}}
+
+If you didn't request this, you can ignore this email — your password won't change and your account is secure.
+
+For your security, never share this link with anyone. IDLookup will never ask for your password by phone or email.
+
+Need help? Call {{support_phone}}, Monday–Friday, 9am–5pm ET.
+
+— The IDLookup.AI Team",Immediately on reset request (0 min),,
+signup,Welcome to IDLookup.AI — your trial is active,"Hi {{first_name}},
+
+Welcome to IDLookup.AI! Your account is ready and your 7-day Unlimited Search trial is active as of {{trial_start_date}}.
+
+You now have access to our database of over 247 million records. Search by name, phone, or email — and view up to 5 full reports per day.
+
+Start searching:
+{{dashboard_url}}
+
+A quick note on billing: we charged $1.00 today (order #{{order_number}}) for your first report. If you do nothing, your trial converts to an Unlimited Search subscription on {{trial_end_date}} at $49.98 every 30 days. Cancel anytime before then and you won't be charged again — manage your membership here: {{billing_url}}
+
+Questions? Reply to this email or call {{support_phone}}, Monday–Friday, 9am–5pm ET.
+
+— The IDLookup.AI Team",Immediately on signup (0 min),,
+uncancel,You're all set — your IDLookup membership is active again,"Hi {{first_name}},
+
+Good news — we've reactivated auto-renewal on your IDLookup.AI membership (order #{{order_number}}). Your access continues without interruption.
+
+Your next billing date is {{billing_date}} at $49.98, and you'll keep full access to unlimited searches and up to 5 reports per day.
+
+Pick up where you left off:
+{{dashboard_url}}
+
+You can change or cancel your membership anytime here: {{billing_url}}
+
+Thanks for staying with us. Questions? Call {{support_phone}}, Monday–Friday, 9am–5pm ET.
+
+— The IDLookup.AI Team",Immediately on reactivation (0 min),,
+remarketing 1,"{{first_name}}, your IDLookup searches are paused","Hi {{first_name}},
+
+Your IDLookup.AI access ended on {{access_end_date}}, so your searches and saved reports are paused for now.
+
+The people you were looking up haven't gone anywhere — and our database of 247M+ records is updated constantly. Reactivate in one click and pick up right where you left off:
+{{reactivate_url}}
+
+If there's anything we could have done better, just reply to this email — a real person reads every one.
+
+— The IDLookup.AI Team",3 days after access ended / trial lapsed,,
+remarketing 2,Still searching for {{search_subject}}? Pick up where you left off,"Hi {{first_name}},
+
+A lot can change in a public record in just a few days — new addresses, phone numbers, relatives, and more get added all the time.
+
+Your IDLookup.AI account is ready whenever you are. Reactivate and get back to unlimited searches plus up to 5 full reports a day:
+{{reactivate_url}}
+
+Just $49.98/month, and you can cancel anytime. No long-term commitment.
+
+Questions before you come back? Call us at {{support_phone}}, Monday–Friday, 9am–5pm ET.
+
+— The IDLookup.AI Team",10 days after access ended,,
+remarketing 3,A special offer to bring you back to IDLookup,"Hi {{first_name}},
+
+We'd love to have you back. For a limited time, reactivate your IDLookup.AI membership and get {{winback_offer}} on your next billing cycle.
+
+That's full access to 247M+ records, unlimited searches, and up to 5 reports per day — at your lowest price yet.
+
+Claim your offer:
+{{reactivate_url}}
+
+This offer expires {{offer_expiry_date}}. After that, standard pricing applies.
+
+— The IDLookup.AI Team",21 days after access ended,,
+remarketing 4 (final),"Last call, {{first_name}} — your IDLookup account closes soon","Hi {{first_name}},
+
+This is the last time we'll reach out about your IDLookup.AI account ({{email}}).
+
+If you'd like to keep your account and saved search history, reactivate before {{offer_expiry_date}}:
+{{reactivate_url}}
+
+After that we'll close the account to keep your data tidy, and you'd start fresh next time. No hard feelings either way — and you're always welcome back.
+
+Prefer to opt out of these emails? Unsubscribe here: {{unsubscribe_url}}
+
+— The IDLookup.AI Team",35 days after access ended (final touch),,
+message created,New message about your IDLookup request — {{message_subject}},"Hi {{first_name}},
+
+You have a new message on your IDLookup.AI support request regarding ""{{message_subject}}"".
+
+  ""{{message_preview}}""
+
+View the full message and reply here:
+{{message_thread_url}}
+
+You can also reply directly to this email and it will be added to your thread. Our team is available Monday–Friday, 9am–5pm ET.
+
+— The IDLookup.AI Support Team",Immediately on message creation (0 min),,
