@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import styles from './UsersPage.module.css';
 
@@ -122,6 +122,10 @@ const SKELETON_COUNT = 9;
 
 const UsersPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  // Name search is best-effort: BC ignores a server-side name filter, so we page
+  // the recent customer list and match client-side. This holds the scan summary.
+  const [nameSearchInfo, setNameSearchInfo] = useState(null);
   const [allUsers, setAllUsers]     = useState([]);
   const [loading, setLoading]       = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -144,49 +148,42 @@ const UsersPage = () => {
   useEffect(() => {
     const q = searchParams.get('q');
     if (!q) return;
-    // Auto-detect input type and route to the right filter
     const trimmed = q.trim();
-    const isEmail = trimmed.includes('@');
-    const isPhone = /^\d{7,}$/.test(trimmed.replace(/[\s\-().+]/g, ''));
-    const isZip = /^\d{5}(-\d{4})?$/.test(trimmed);
+    setSearchParams({}, { replace: true });
 
-    // Reset all filters first
-    setEmailFilter('');
-    setPhoneFilter('');
-    setZipCode('');
-    setLast4cc('');
-
-    if (!isEmail && !isPhone && !isZip) {
-      // Likely a name. BC's csrFindUsers has no name filter, so falling back
-      // to `email=<name>` returns empty silently and looks like the user
-      // doesn't exist. Surface a clear message and don't fire a wasted query.
-      setError('Name search isn’t supported yet. Try email, phone, ZIP code, or last 4 of card.');
-      setActiveFilters({});
-      setAdvancedOpen(true);
-      setSearchParams({}, { replace: true });
+    // Customer ID (24-hex ObjectId) → open the detail page directly (BC ignores
+    // an _id query on the user search, but getUserDetail resolves it).
+    if (/^[a-f0-9]{24}$/i.test(trimmed)) {
+      navigate(`/users/${trimmed}`);
       return;
     }
 
-    if (isEmail) {
-      setEmailFilter(trimmed);
-    } else if (isZip) {
-      setZipCode(trimmed);
-    } else {
-      setPhoneFilter(trimmed.replace(/[\s\-().+]/g, ''));
-    }
+    // Reset filters + name-scan summary.
+    setEmailFilter(''); setPhoneFilter(''); setZipCode(''); setLast4cc('');
+    setNameSearchInfo(null);
+    setError('');
+
+    // Auto-detect: email → @ ; ZIP → 5 digits ; last-4-CC → 4 digits ;
+    // phone → 7+ digits ; anything else → best-effort name scan.
+    const digits = trimmed.replace(/[\s\-().+]/g, '');
+    const isEmail = trimmed.includes('@');
+    const isZip = /^\d{5}(-\d{4})?$/.test(trimmed);
+    const isLast4 = /^\d{4}$/.test(trimmed);
+    const isPhone = /^\d{7,}$/.test(digits);
 
     const filters = {};
-    if (isEmail) filters.email = trimmed;
-    else if (isZip) filters.zip = trimmed;
-    else filters.phone = trimmed.replace(/[\s\-().+]/g, '');
-    setActiveFilters(filters);
+    if (isEmail) { setEmailFilter(trimmed); filters.email = trimmed; }
+    else if (isZip) { setZipCode(trimmed); filters.zip = trimmed; }
+    else if (isLast4) { setLast4cc(trimmed); filters.panLast4 = trimmed; }
+    else if (isPhone) { setPhoneFilter(digits); filters.phone = digits; }
+    else { filters.name = trimmed; } // name → fetchPage scans + filters client-side
 
+    setActiveFilters(filters);
     setAllUsers([]);
     setLastId(null);
     setNoMoreDocs(false);
     setAdvancedOpen(true);
     setFetchGeneration(g => g + 1);
-    setSearchParams({}, { replace: true });
   }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── data fetching ──────────────────────────────────────────────────────────
@@ -194,16 +191,39 @@ const UsersPage = () => {
   // Snapshot of filter values at the time Search was clicked
   const [activeFilters, setActiveFilters] = useState({});
 
+    const MAX_NAME_PAGES = 25; // ~250 most-recent customers (BC pages users 10 at a time)
+
   const fetchPage = useCallback(async (cursorId = null) => {
+    // Name search: BC ignores a server-side name filter (verified 2026-06-05), so
+    // page the recent customer list and match client-side. Best-effort + bounded;
+    // one-shot (no "load more"). BC ask filed to add a real name filter.
+    if (activeFilters.name) {
+      const needle = activeFilters.name.toLowerCase();
+      const matches = [];
+      let cursor = null, pages = 0, scanned = 0, done = false;
+      while (pages < MAX_NAME_PAGES) {
+        const res = await api.adminListUsers(cursor ? { lastId: cursor } : {});
+        const docs = res?.data ?? [];
+        scanned += docs.length;
+        for (const u of docs) {
+          const hay = `${u.firstName || ''} ${u.lastName || ''} ${u.name || ''}`.toLowerCase();
+          if (hay.includes(needle)) matches.push(u);
+        }
+        pages += 1;
+        cursor = docs[docs.length - 1]?._id ?? docs[docs.length - 1]?.id ?? null;
+        if (res?.noMoreDocs || !cursor || docs.length === 0) { done = true; break; }
+      }
+      setNameSearchInfo({ name: activeFilters.name, scanned, matched: matches.length, capped: !done });
+      return { docs: matches, last: null, noMoreDocs: true };
+    }
+
     const params = cursorId ? { lastId: cursorId } : {};
     // Use activeFilters (set on Search click), not live input state
     if (activeFilters.email) params.email = activeFilters.email;
     if (activeFilters.phone) params.phone = activeFilters.phone;
     if (activeFilters.zip) params.zip = activeFilters.zip;
     if (activeFilters.panLast4) params.panLast4 = activeFilters.panLast4;
-    console.log('[UsersPage] fetchPage params:', params);
     const res = await api.adminListUsers(params);
-    console.log('[UsersPage] fetchPage response:', { docsCount: (res?.data ?? []).length, noMoreDocs: res?.noMoreDocs });
     const docs = res?.data ?? [];
     const last = docs[docs.length - 1]?._id ?? docs[docs.length - 1]?.id ?? null;
     return { docs, last, noMoreDocs: res?.noMoreDocs ?? docs.length === 0 };
@@ -379,10 +399,19 @@ const UsersPage = () => {
         </div>
 
         <p className={styles.searchHint}>
-          Email, phone, ZIP, and card searches query the server and return matching customers.
-          The <strong>Name</strong> field only filters the results already loaded below — it does not search the server.
+          The search box auto-detects: <strong>email</strong>, <strong>ZIP</strong>,
+          <strong> phone</strong>, <strong>last 4 of card</strong>, and a 24-character
+          <strong> customer ID</strong> query the server. A <strong>name</strong> scans
+          the most-recent customers (BC has no server-side name filter yet).
         </p>
       </div>
+
+      {nameSearchInfo && (
+        <div className={styles.searchHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, padding: '0.5rem 0.75rem', margin: '0 0 0.75rem' }}>
+          Name search for “<strong>{nameSearchInfo.name}</strong>”: {nameSearchInfo.matched} match{nameSearchInfo.matched === 1 ? '' : 'es'} in the {nameSearchInfo.scanned} most-recent customers
+          {nameSearchInfo.capped ? ' (scan capped — refine by email/phone/ZIP/card or customer ID for older accounts).' : ' (all customers scanned).'}
+        </div>
+      )}
 
       {/* ── advanced search panel ── */}
       {advancedOpen && (
