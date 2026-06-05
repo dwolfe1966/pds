@@ -237,6 +237,19 @@ const UsersPage = () => {
     if (zipCode.trim()) filters.zip = zipCode.trim();
     if (last4cc.trim()) filters.panLast4 = last4cc.trim();
     setActiveFilters(filters);
+    setNameSearchInfo(null);
+    setAllUsers([]);
+    setLastId(null);
+    setNoMoreDocs(false);
+    setFetchGeneration(g => g + 1);
+  };
+
+  // Exit "Search Results" mode and reload the browse directory.
+  const clearSearch = () => {
+    setEmailFilter(''); setPhoneFilter(''); setZipCode(''); setLast4cc(''); setNameFilter('');
+    setActiveFilters({});
+    setNameSearchInfo(null);
+    setError('');
     setAllUsers([]);
     setLastId(null);
     setNoMoreDocs(false);
@@ -309,6 +322,19 @@ const UsersPage = () => {
     });
   }, [allUsers, nameFilter, statusFilter]);
 
+  // A search is "active" when a server filter or a name scan is in effect — the
+  // header then switches to a dedicated "Search Results" mode (only matches).
+  const searchCriteria = (() => {
+    const f = activeFilters;
+    if (f.email) return <>email “<strong>{f.email}</strong>”</>;
+    if (f.name) return <>name “<strong>{f.name}</strong>”</>;
+    if (f.zip) return <>ZIP <strong>{f.zip}</strong></>;
+    if (f.phone) return <>phone <strong>{f.phone}</strong></>;
+    if (f.panLast4) return <>card <strong>····{f.panLast4}</strong></>;
+    return null;
+  })();
+  const hasActiveSearch = searchCriteria !== null;
+
   // ── render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -316,13 +342,35 @@ const UsersPage = () => {
       {/* ── header ── */}
       <div className={styles.pageHeader}>
         <div className={styles.titleBlock}>
-          <h1 className={styles.title}>Customer Directory</h1>
-          {!loading && (
-            <p className={styles.subtitle}>
-              {filteredUsers.length !== allUsers.length
-                ? `${filteredUsers.length} of ${allUsers.length} customers`
-                : `${allUsers.length} customer${allUsers.length !== 1 ? 's' : ''} loaded`}
-            </p>
+          {hasActiveSearch ? (
+            <>
+              <h1 className={styles.title}>Search Results</h1>
+              {!loading && (
+                <p className={styles.subtitle}>
+                  <strong>{filteredUsers.length}</strong> match{filteredUsers.length === 1 ? '' : 'es'} for {searchCriteria}
+                  {' · '}
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    style={{ background: 'none', border: 'none', padding: 0, color: '#1a56db', cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}
+                  >
+                    Clear search
+                  </button>
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <h1 className={styles.title}>Customer Directory</h1>
+              {!loading && (
+                <p className={styles.subtitle}>
+                  {filteredUsers.length !== allUsers.length
+                    ? `${filteredUsers.length} of ${allUsers.length} customers`
+                    : `${allUsers.length} customer${allUsers.length !== 1 ? 's' : ''} loaded`}
+                  {' · browsing recent customers — search above to find a specific one'}
+                </p>
+              )}
+            </>
           )}
         </div>
 
