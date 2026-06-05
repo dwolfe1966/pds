@@ -140,6 +140,52 @@ describe('adaptReportDetailResponse', () => {
   });
 });
 
+// ─── adaptTeaserResponse ─────────────────────────────────────────────────────
+
+describe('adaptTeaserResponse', () => {
+  // The PHONE teaser nests identities under commerceContent.raws[0].transient —
+  // this exact shape returned 0 results before the fallback was added (2026-06-05).
+  test('extracts identities from commerceContent.raws[0].transient (phone teaser shape)', () => {
+    const response = {
+      commerceContent: {
+        _id: 'cc-phone-1',
+        data: { teaserInput: { type: 'phone', phone: '9096637878', contextKey: 'sale.phone.teaser' } },
+        raws: [
+          { transient: { identities: [MOCK_IDENTITY, { ...MOCK_IDENTITY, extId: 'ext-456' }], total: 2, perPage: 5 } },
+        ],
+      },
+    };
+    const result = adaptTeaserResponse(response);
+    expect(result.data).toHaveLength(2);
+    expect(result.data[0].extId).toBe('ext-123');
+    expect(result.pagination.total).toBe(2);
+    expect(result.searchContext.commerceContentId).toBe('cc-phone-1');
+    expect(result.searchContext.teaserInput?.phone).toBe('9096637878');
+  });
+
+  test('extracts from commerceContent.raws via getData() wrapper', () => {
+    const response = {
+      getData: () => ({ commerceContent: { _id: 'cc-2', raws: [{ transient: { identities: [MOCK_IDENTITY], total: 1, perPage: 5 } }] } }),
+    };
+    const result = adaptTeaserResponse(response);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].extId).toBe('ext-123');
+  });
+
+  test('still works with top-level raws[0].transient (name teaser shape — regression guard)', () => {
+    const response = { raws: [{ transient: { identities: [MOCK_IDENTITY], total: 1, perPage: 20 } }] };
+    const result = adaptTeaserResponse(response);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].extId).toBe('ext-123');
+  });
+
+  test('returns empty data (no throw) when there are genuinely no identities', () => {
+    const result = adaptTeaserResponse({ commerceContent: { _id: 'cc-3', raws: [{ transient: { identities: [], total: 0, perPage: 5 } }] } });
+    expect(result.data).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+  });
+});
+
 // ─── adaptReportListResponse ─────────────────────────────────────────────────
 
 describe('adaptReportListResponse', () => {

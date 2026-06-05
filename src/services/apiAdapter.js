@@ -121,6 +121,42 @@ export function adaptTeaserResponse(response) {
     identities = [];
   }
 
+  // Robust fallback — covers the PHONE teaser shape (verified live 2026-06-05):
+  // identities are nested under `commerceContent.raws[0].transient`, which neither
+  // getIdentities() nor the `raws[0].transient` branch surfaces, so the phone SRP
+  // showed "no results" even though BC returned matches. Mirror the report-detail
+  // resolver: dig the raw data out of the IIFE wrapper and search raws (by key, not
+  // index) for the transient carrying identities. Runs in PRODUCTION too — the old
+  // getData() path was gated behind `if (development)`.
+  if (identities.length === 0) {
+    let rawData = null;
+    if (response && typeof response.getData === 'function') {
+      const d = response.getData();
+      rawData = d?.params?.response?.data ?? d?.data ?? d;
+    }
+    rawData = rawData || response?.params?.response?.data || response?.data || response;
+    const raws =
+      rawData?.raws ??
+      rawData?.commerceContent?.raws ??
+      response?.commerceContent?.raws ??
+      response?.raws ??
+      [];
+    const t = (Array.isArray(raws) ? raws.find((r) => r?.transient?.identities) : null)?.transient;
+    if (t) {
+      identities = t.identities || [];
+      total = t.total || total;
+      perPage = t.perPage || perPage;
+    }
+    // teaserInput + commerceContentId are needed for the downstream report-create.
+    const cc = rawData?.commerceContent || response?.commerceContent || rawData || {};
+    teaserInput = teaserInput || cc?.data?.teaserInput || rawData?.teaserInput || null;
+    searchContextKey = searchContextKey || teaserInput?.contextKey || teaserInput?.searchContextKey || cc?.data?.contextKey || null;
+    commerceContentId = commerceContentId || cc?._id || cc?.id || null;
+    if (process.env.NODE_ENV === 'development' && identities.length) {
+      console.log('[API Adapter] commerceContent.raws fallback found', identities.length, 'identities');
+    }
+  }
+
   return {
     data: identities.map(adaptIdentity),
     pagination: {
