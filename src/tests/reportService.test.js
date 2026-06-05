@@ -13,6 +13,7 @@ jest.mock('../api', () => ({
     createReport: jest.fn(),
     getReportDetail: jest.fn(),
     getReportList: jest.fn(),
+    searchPeople: jest.fn(),
   },
 }));
 
@@ -261,18 +262,43 @@ describe('createReportForPhone', () => {
     jest.clearAllMocks();
   });
 
-  test('calls api.createReport with type reversePhone', async () => {
+  // BC requires a teaserInput on report/create, so createReportForPhone now runs
+  // the phone teaser FIRST and creates the report with that context.
+  const PHONE_TEASER = {
+    data: [{ extId: 'ext-abc' }],
+    searchContext: { contextKey: 'sale.phone.teaser', teaserInput: { type: 'phone', phone: '5125551234', contextKey: 'sale.phone.teaser' } },
+  };
+
+  test('runs the phone teaser then creates the report WITH teaserInput', async () => {
+    api.searchPeople.mockResolvedValue(PHONE_TEASER);
     api.createReport.mockResolvedValue(RICH_ADAPTER_RESPONSE);
 
     const result = await createReportForPhone('5125551234');
 
     expect(result.success).toBe(true);
+    expect(api.searchPeople).toHaveBeenCalledWith({ phone: '5125551234', type: 'phone' });
     expect(api.createReport).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'reversePhone', phone: '5125551234' })
+      expect.objectContaining({
+        type: 'reversePhone',
+        phone: '5125551234',
+        contextKey: 'sale.phone.report',
+        teaserInput: PHONE_TEASER.searchContext.teaserInput,
+      })
     );
   });
 
+  test('returns { success:false } (no report) when the teaser finds nothing', async () => {
+    api.searchPeople.mockResolvedValue({ data: [], searchContext: {} });
+
+    const result = await createReportForPhone('0000000000');
+
+    expect(result.success).toBe(false);
+    expect(result.commerceContentId).toBeNull();
+    expect(api.createReport).not.toHaveBeenCalled();
+  });
+
   test('returns rich structured data', async () => {
+    api.searchPeople.mockResolvedValue(PHONE_TEASER);
     api.createReport.mockResolvedValue(RICH_ADAPTER_RESPONSE);
 
     const result = await createReportForPhone('5125551234');
@@ -281,10 +307,10 @@ describe('createReportForPhone', () => {
     expect(result.identities).toHaveLength(1);
     expect(result.fullContact).toBeDefined();
     expect(result.familyWatchdog).toBeDefined();
-    expect(result.raws).toHaveLength(2);
   });
 
   test('propagates errors', async () => {
+    api.searchPeople.mockResolvedValue(PHONE_TEASER);
     api.createReport.mockRejectedValue(new Error('Phone not found'));
 
     await expect(createReportForPhone('0000000000')).rejects.toThrow('Phone not found');

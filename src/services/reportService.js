@@ -241,47 +241,26 @@ export async function createReportForIdentity(extId, identity = null) {
 }
 
 /**
- * Create a full report directly from a phone number (member use-case).
- * Uses report/create with type: 'reversePhone' — bypasses teaser search entirely
- * and returns full identity + fullContact + familyWatchdog data in one call.
+ * Create a full report from a phone number (member use-case).
+ *
+ * BC's report/create REQUIRES a teaserInput — a bare reversePhone create now 400s
+ * with "teaserInput should not be empty" (confirmed live 2026-06-05). So we run the
+ * phone teaser FIRST to obtain the teaser context, then create the report through
+ * the shared createReport() (which maps sale.phone.teaser→report and forwards the
+ * teaserInput). Mirrors the working name flow. Returns { success:false } with no
+ * commerceContentId when the teaser finds nothing.
  * @param {string} phone - 10-digit phone number (digits only)
- * @returns {Promise<{success: boolean, commerceContentId: string|null, reportData: Object}>}
  */
 export async function createReportForPhone(phone) {
-  const params = {
-    type: 'reversePhone',
-    phone,
-    contextKey: typeof window !== 'undefined' ? window.ApiWrapper?.contextKey?.sale?.phone?.report : undefined,
-  };
-
   try {
-    const response = await api.createReport(params);
-
-    // Extract commerceContentId — mirrors the same pattern used in createReport()
-    let commerceContentId = null;
-    if (response.commerceContentId) {
-      commerceContentId = response.commerceContentId;
-    } else if (response.reportId) {
-      commerceContentId = response.reportId;
-    } else if (response.reportData?.commerceContents?.[0]?._id) {
-      commerceContentId = response.reportData.commerceContents[0]._id;
-    } else if (response.commerceContents?.[0]?._id) {
-      commerceContentId = response.commerceContents[0]._id;
+    // 1) Phone teaser → identities + searchContext (carries teaserInput).
+    const teaser = await api.searchPeople({ phone, type: 'phone' });
+    if (!teaser?.data?.length || !teaser?.searchContext?.teaserInput) {
+      return { success: false, commerceContentId: null, identities: [], fullContact: null, familyWatchdog: null, raws: [], reportData: null };
     }
-
-    const result = {
-      success: true,
-      commerceContentId,
-      identities: response.identities || [],
-      fullContact: response.fullContact || null,
-      familyWatchdog: response.familyWatchdog || null,
-      raws: response.raws || [],
-      reportData: response.reportData || response,
-      fullResponse: response,
-    };
-
-    cacheReportResult(commerceContentId, result);
-    return result;
+    // 2) Create the report with the teaser context — createReport() forwards
+    //    teaserInput and maps the contextKey to sale.phone.report.
+    return await createReport(null, { type: 'reversePhone', phone, searchContext: teaser.searchContext });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[reportService] createReportForPhone failed:', error);
