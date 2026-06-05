@@ -18,11 +18,23 @@ the viewed user's. Verified live 2026-06-05 against `dev.admin.www.bytecrtrs.com
 
 ## Stopgap shipped on our side
 
-We now filter the returned page client-side by `updaterId === viewedUserId` (admin bundle
-after `eac6104b`), so the tabs no longer leak other users. **Limitation:** BC paginates the
-`trackings` search **globally** (latest-N across all users), so a user whose events aren't in
-the recent global pages shows few/none until the CSR pages back through global history. This
-is correctness-safe (no leak) but makes the tabs unreliable/incomplete.
+1. We filter the returned page client-side by `updaterId === viewedUserId` so the tabs no
+   longer leak other users.
+2. The default page was capped at **10** docs (global, across all users), which buried most
+   users' events — a user with reports on their dashboard showed **none** on their CSR detail.
+   We now request **`perPage: 100`** on the trackings search (verified honored — `limit`/`size`/
+   `pageSize` are NOT), so the per-user filter actually has the user's events to surface.
+
+**Limitation:** still global pagination — at production scale (>perPage recent events across all
+users) a user whose events fall beyond the fetched page(s) will still under-show. Correctness-safe
+(no leak), but only server-side scoping fully fixes it.
+
+## Related finding — CSR user-search by email
+
+Exact `query.email` match for a known address returned **0** docs (the field filter IS honored),
+and the `users` collection ignores `perPage` (caps at 10). So locating a user by exact email can
+fail/fall back to the default list. Please confirm the supported user-search query shape
+(exact vs partial; is the email on `email` or an `emails[]` array; cross-brand visibility?).
 
 ## Ask
 

@@ -1610,13 +1610,19 @@ class ApiWrapperService {
     const { type, lastId, updaterId } = params;
     const query = {};
     if (type) query['data.type'] = type;
+    // We send updaterId, but BC's /database/search on `trackings` does NOT honor
+    // it (verified live 2026-06-05 — returns events across ALL users). The caller
+    // filters the returned page by updaterId. The default page is capped at 10,
+    // which buried most users' events behind other users' (a user with reports
+    // showed none on their CSR detail). `perPage` IS honored (limit/size/pageSize
+    // are not), so request a large page so the per-user filter actually has the
+    // user's events to find. Real fix = BC server-side scoping
+    // (docs/BC_CSR_TRACKING_SCOPE.md); this is the stopgap.
     if (updaterId) query['updaterId'] = updaterId;
-    const body = { collectionName: 'trackings', query };
+    const body = { collectionName: 'trackings', query, perPage: 100 };
     if (lastId) body.lastId = lastId;
-    // Always direct-POST: the IIFE's tracking.findUser doesn't accept an
-    // updaterId filter, so going through it returns events for every user
-    // and we'd page forever to find this one's. The direct path filters
-    // server-side via query.updaterId.
+    // Always direct-POST: the IIFE's tracking.findUser doesn't accept these
+    // filters, so going through it returns events for every user.
     return await this._csrPost('/database/search', body);
   }
 
