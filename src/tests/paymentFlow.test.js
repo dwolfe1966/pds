@@ -150,9 +150,9 @@ describe('PaymentPage — form rendering', () => {
     expect(container.textContent).toContain('Encrypted');
   });
 
-  test('shows trial CTA with trial price', () => {
+  test('shows the compliance-led CTA (bug #35)', () => {
     render();
-    expect(container.textContent).toContain('Start Trial — $1.00 Today');
+    expect(container.textContent).toContain('I Agree, View Report Now');
   });
 
   test('shows authenticated user email', () => {

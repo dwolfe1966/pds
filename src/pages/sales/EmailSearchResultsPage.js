@@ -6,7 +6,8 @@ import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
-import { readThinMatch, isThinMatch } from '../../services/thinMatch';
+import { readThinMatch } from '../../services/thinMatch';
+import { useCampaign } from '../../context/CampaignContext';
 import { useBrand } from '../../services/brand';
 
 /**
@@ -15,6 +16,7 @@ import { useBrand } from '../../services/brand';
  */
 const EmailSearchResultsPage = () => {
   const brand = useBrand();
+  const campaign = useCampaign(); // bug #51: shN drives thin-match vs no-records
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -180,7 +182,7 @@ const EmailSearchResultsPage = () => {
         {!loading && !errorMessage && results.length === 0 && (
           (() => {
             const flags = readThinMatch();
-            return isThinMatch(flags)
+            return campaign?.search?.zeroState === 'thinMatch'
               ? <ThinMatchPreview searchType="email" query={{ email }} flags={flags} />
               : <ZeroResultsPanel searchType="email" query={{ email }} />;
           })()

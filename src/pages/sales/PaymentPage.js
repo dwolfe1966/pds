@@ -95,6 +95,10 @@ const PLAN_FEATURES = [
 const PaymentPage = () => {
   const brand = useBrand();
   const campaign = useCampaign();
+  // Bug #34: the SUP terms checkbox is shown + required on the default shN, and
+  // can be relaxed per affiliate shN. Strict by default — only an explicit
+  // `requireTermsCheckbox: false` in the campaign registry hides/ungates it.
+  const requireTermsCheckbox = campaign?.payment?.requireTermsCheckbox !== false;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, user, loading: authLoading, isPaid, setToken, setUser, setSubscription } = useAuth();
@@ -848,12 +852,14 @@ const PaymentPage = () => {
                       <strong>*Terms of Use and Pricing Information</strong>
                     </p>
                     <label className={styles.termsLabel}>
-                      <input
-                        type="checkbox"
-                        className={styles.termsCheckbox}
-                        checked={agreeTerms}
-                        onChange={(e) => setAgreeTerms(e.target.checked)}
-                      />
+                      {requireTermsCheckbox && (
+                        <input
+                          type="checkbox"
+                          className={styles.termsCheckbox}
+                          checked={agreeTerms}
+                          onChange={(e) => setAgreeTerms(e.target.checked)}
+                        />
+                      )}
                       <span className={styles.termsBody}>
                         By clicking the button below, you agree to {brand.name}'s{' '}
                         <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</Link>,{' '}
@@ -888,16 +894,18 @@ const PaymentPage = () => {
                   {/* CTA */}
                   <button
                     type="submit"
-                    disabled={loading || !agreeTerms}
+                    disabled={loading || (requireTermsCheckbox && !agreeTerms)}
                     className={styles.submitBtn}
                   >
                     {loading ? (
                       <span className={styles.submitSpinner}>
                         <span className={styles.spinner} /> Processing…
                       </span>
-                    ) : selectedPerson
-                      ? `Unlock Report — ${trialPriceStr} Today`
-                      : `Start Trial — ${trialPriceStr} Today`}
+                    ) : (
+                      // Bug #35: compliance-led CTA directly above the SUP/terms
+                      // disclosure — the button text states the agreement.
+                      'I Agree, View Report Now'
+                    )}
                   </button>
 
                   {process.env.NODE_ENV === 'development' && (

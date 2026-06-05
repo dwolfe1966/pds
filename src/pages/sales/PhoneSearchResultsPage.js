@@ -5,7 +5,8 @@ import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext, setIdentityContext, getSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
-import { readThinMatch, isThinMatch } from '../../services/thinMatch';
+import { readThinMatch } from '../../services/thinMatch';
+import { useCampaign } from '../../context/CampaignContext';
 
 // Partner bugs 15a/15b: phone SRP previously rendered unobscured owner details
 // via ResultCard and clicks led to a generic "signup free" preview. Phone
@@ -31,6 +32,7 @@ function maskLocation(loc = '') {
 const PhoneSearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const campaign = useCampaign(); // bug #51: shN drives thin-match vs no-records
   const params = new URLSearchParams(location.search);
   const phone = params.get('phone');
   const [results, setResults] = useState([]);
@@ -233,7 +235,7 @@ const PhoneSearchResultsPage = () => {
         {!loading && !error && results.length === 0 && (
           (() => {
             const flags = readThinMatch();
-            return isThinMatch(flags)
+            return campaign?.search?.zeroState === 'thinMatch'
               ? <ThinMatchPreview searchType="phone" query={{ phone }} flags={flags} />
               : <ZeroResultsPanel searchType="phone" query={{ phone }} />;
           })()

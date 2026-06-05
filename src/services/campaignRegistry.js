@@ -31,11 +31,18 @@ export const CAMPAIGN_REGISTRY = {
     // search.perPage is currently advisory — BC teaser ignores perPage and
     // returns its default page size (~5); additional results come from
     // response.getMore(). See apiRouter.js:591.
-    search:  { type: 'name', perPage: 5 },
+    // zeroState (bug #51): SRP behavior when a search returns no/sparse results.
+    // 'noRecords' (strict default) → "no records found" panel. Affiliate shNs can
+    // set 'thinMatch' to show the ThinMatchPreview upsell instead.
+    search:  { type: 'name', perPage: 5, zeroState: 'noRecords' },
     detail:  { variant: '1' },                  // matches the v1 layout default in SearchDetailPreviewPage
 
     signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },
-    payment: { methods: ['card'] },
+    // requireTermsCheckbox (bug #34): on the default shN we SHOW + REQUIRE the
+    // SUP terms checkbox. Affiliate shNs can set `requireTermsCheckbox: false`
+    // to hide the checkbox and not gate submit on it (disclosure text still shows).
+    // Strict by default — only an explicit `false` relaxes it.
+    payment: { methods: ['card'], requireTermsCheckbox: true },
     offer:   { shmName: null, trial: false },   // null = let BC pick default offer
   },
 
@@ -56,10 +63,13 @@ export const CAMPAIGN_REGISTRY = {
     // to /name/loader which is the same path /search/all uses and is known
     // to work. Restore to '/name/landing/v5' once the V5 wizard bug is fixed.
     landing: { route: '/name/landing' },
-    search:  { type: 'name', perPage: 10 },
+    // Exercises the affiliate-style relaxations end-to-end (bugs #34/#51):
+    //   - search.zeroState 'thinMatch' → SRP shows ThinMatchPreview, not "no records"
+    //   - payment.requireTermsCheckbox false → SUP checkbox hidden + not required
+    search:  { type: 'name', perPage: 10, zeroState: 'thinMatch' },
     detail:  { variant: 'b' },
     signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },
-    payment: { methods: ['card'] },
+    payment: { methods: ['card'], requireTermsCheckbox: false },
     offer:   { shmName: 'membership.offer.default.1', trial: false },
   },
 
