@@ -216,7 +216,38 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
 // wrapper requests a large `perPage` so that filter has the user's events to
 // find. This block tests the WRAPPER's request shape (the client filter lives
 // in UserDetailPage). The wrapper returns docs verbatim.
-describe('csrFindUserTracking — query shape (updaterId + perPage), returns verbatim', () => {
+describe('csrFindUserTracking — IIFE-first with direct-POST fallback', () => {
+  // Default: no IIFE method available → falls through to the direct _csrPost.
+  beforeEach(() => {
+    jest.spyOn(apiWrapper, 'getCsrWrapper').mockResolvedValue(null);
+  });
+
+  test('prefers the IIFE tracking.findUser when it returns a usable docs[]', async () => {
+    const iifeResult = { docs: [{ _id: 't1', updaterId: 'u1' }], noMoreDocs: true };
+    apiWrapper.getCsrWrapper.mockResolvedValue({
+      api: { tracking: { findUser: jest.fn().mockResolvedValue(iifeResult) } },
+    });
+    const csrPost = jest.spyOn(apiWrapper, '_csrPost');
+
+    const res = await apiWrapper.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
+
+    expect(res.docs).toHaveLength(1);
+    expect(res.noMoreDocs).toBe(true);
+    expect(csrPost).not.toHaveBeenCalled(); // used the IIFE, no direct POST
+  });
+
+  test('falls back to direct POST when the IIFE returns a non-standard envelope (no docs[])', async () => {
+    apiWrapper.getCsrWrapper.mockResolvedValue({
+      api: { tracking: { findUser: jest.fn().mockResolvedValue({ junk: true }) } },
+    });
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [{ _id: 'd1' }], noMoreDocs: true });
+
+    const res = await apiWrapper.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
+
+    expect(apiWrapper._csrPost).toHaveBeenCalled();
+    expect(res.docs).toHaveLength(1);
+  });
+
   test('sends updaterId in the query AND requests a large perPage page', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 

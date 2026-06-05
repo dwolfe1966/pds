@@ -1612,17 +1612,35 @@ class ApiWrapperService {
     if (type) query['data.type'] = type;
     // We send updaterId, but BC's /database/search on `trackings` does NOT honor
     // it (verified live 2026-06-05 — returns events across ALL users). The caller
-    // filters the returned page by updaterId. The default page is capped at 10,
-    // which buried most users' events behind other users' (a user with reports
-    // showed none on their CSR detail). `perPage` IS honored (limit/size/pageSize
-    // are not), so request a large page so the per-user filter actually has the
-    // user's events to find. Real fix = BC server-side scoping
-    // (docs/BC_CSR_TRACKING_SCOPE.md); this is the stopgap.
+    // client-filters by updaterId. `perPage` lifts BC's 10-doc default so that
+    // filter has the user's events to find. Real fix = BC server-side scoping
+    // (docs/BC_CSR_TRACKING_SCOPE.md).
     if (updaterId) query['updaterId'] = updaterId;
     const body = { collectionName: 'trackings', query, perPage: 100 };
     if (lastId) body.lastId = lastId;
-    // Always direct-POST: the IIFE's tracking.findUser doesn't accept these
-    // filters, so going through it returns events for every user.
+
+    // Prefer the canonical IIFE method (gets BC's auth handling); fall back to a
+    // direct /database/search POST. We ACCEPT the IIFE result only if it yields a
+    // usable docs[] — some IIFE methods return a non-standard envelope (no docs[])
+    // that doesn't throw and would silently empty the tab (cf.
+    // csrFindUserContactMessages). NOTE: if the IIFE strips `perPage` we'd get
+    // BC's 10-cap back; verify a high-activity user still shows all their events.
+    try {
+      const csr = await this.getCsrWrapper();
+      const fn = csr?.api?.tracking?.findUser;
+      if (typeof fn === 'function') {
+        const raw = _unwrapBcResponse(
+          await fn.call(csr.api.tracking, { type, updaterId, perPage: 100, ...(lastId ? { lastId } : {}) })
+        );
+        const docs = raw?.docs || raw?.results || (Array.isArray(raw) ? raw : null);
+        if (Array.isArray(docs)) {
+          return { docs, noMoreDocs: raw?.noMoreDocs ?? docs.length === 0 };
+        }
+        // Non-standard envelope (no docs[]) → fall through to the direct POST.
+      }
+    } catch (err) {
+      dbg(`[CsrWrapper] tracking.findUser threw, falling back to direct POST: ${err?.message}`);
+    }
     return await this._csrPost('/database/search', body);
   }
 
