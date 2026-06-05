@@ -38,3 +38,5 @@
 - [Parcel .png import → {} (use data-URI logo)](reference_datauri_logo_gotcha.md) — importing a .png yields an empty object at runtime; inline as data URI
 - [Cancel-at-period-end order shape](reference_cancel_at_period_end.md) — check subStatus==canceled + dueTimestamp>now, not transient.canceled
 - [Live UAT via Playwright (Galaxy S5)](reference_live_uat_playwright.md) — real-browser testing; BC captcha gates searches; serve-admin Forbidden workaround; never save creds
+- [BC CSR user object omits zip/card/phone](reference_bc_user_object_no_zip.md) — search filters by them but doesn't return them; ZIP lives in order billingAddress; Users-list Zip/CC columns are dead
+- [CSR triage session 2026-06-04](project_csr_triage_2026_06_04.md) — live admin=ce2e8005, deployable=f80dd2d8; Notes row 38 resolved (deploy skew); CTO-list assessment + BC asks

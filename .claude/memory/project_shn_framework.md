@@ -36,10 +36,16 @@ config tool) — "customize to a point," no heavy config UI. Built 2026-06-03.
   partner/channel + source/gclid/fbclid into BC `tracking.create` `data.refer` on
   EVERY event. Retries on cold-start failure.
 
-**Attribution measurement (the #77 workaround that WORKS today):** every event +
-conversion (`signup_complete`+userId, `payment_complete`+orderId+amount) carries
-`data.refer` into BC's tracking store, queryable via `csrWrapper.api.tracking
-.findUser` — no dependency on the non-persisting `commerceorders.refer`.
+**Attribution measurement:** every event + conversion (`signup_complete`+userId,
+`payment_complete`+orderId+amount) carries `data.refer` into BC's tracking store,
+queryable via `csrWrapper.api.tracking.findUser`.
+**UPDATE 2026-06-04:** `commerceorders.refer` DOES persist (BC confirmed). It was
+`{}` on every order because `billing.sale`'s `queryString` was built from the
+stripped `/payment` URL, not first-touch. Fixed: `trackingService.buildReferQueryString()`
+(refer_* from `referralParams`) now feeds the sale `queryString` →
+`commerceorders.refer` (consumer `999bf839`, pending deploy). gclid/utm still ride
+`data.refer` only. Verify post-deploy: land `?refer_partnerId=TEST` → $1 trial →
+order.refer populates AND sale succeeds.
 
 **Inmate funnel:** `/name/landing/v3` (NameSearchLandingV3Page, "Find an Inmate"
 theme). Its search was made reliable by handing off to `/name/loader` (was inline
