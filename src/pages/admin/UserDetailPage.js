@@ -441,20 +441,23 @@ const UserDetailPage = () => {
     setLoginsError('');
     try {
       const res = await api.adminFindUserTracking('USER:login', lastId || undefined, id);
-      const docs = res?.docs || [];
-      // BC's /database/search already filters server-side via query.updaterId
-      // (csrFindUserTracking passes it in the body). The previous client-side
-      // `docs.filter(d => d.updaterId === id)` was broken — BC's response
-      // displayFields excludes updaterId, so d.updaterId is undefined on every
-      // doc and the filter wiped them all out. Trust the server filter.
+      const raw = res?.docs || [];
+      // PRIVACY (verified live 2026-06-05): BC's /database/search on `trackings`
+      // does NOT honor query.updaterId — it returns the latest events across ALL
+      // users (a viewed user's Logins came back as 10 docs all belonging to a
+      // different user). updaterId IS present per-doc, so we MUST scope to the
+      // viewed user client-side or we leak other users' history. Paginate on the
+      // RAW (global) cursor so "load more" keeps digging; display only this
+      // user's docs. (BC ask: docs/BC_CSR_TRACKING_SCOPE.md — real server-side scoping.)
+      const mine = raw.filter((d) => d.updaterId === id);
       if (lastId) {
-        setLogins(prev => [...prev, ...docs]);
+        setLogins(prev => [...prev, ...mine]);
       } else {
-        setLogins(docs);
+        setLogins(mine);
       }
-      const last = docs[docs.length - 1];
+      const last = raw[raw.length - 1];
       setLoginsLastId(last?._id || null);
-      setLoginsNoMore(res?.noMoreDocs === true || docs.length === 0);
+      setLoginsNoMore(res?.noMoreDocs === true || raw.length === 0);
     } catch (err) {
       setLoginsError(err?.message || 'Failed to load login history');
     } finally {
@@ -469,18 +472,20 @@ const UserDetailPage = () => {
     setActivityError('');
     try {
       const res = await api.adminFindUserTracking(TRACKING_ACTIVITY_TYPES, lastId || undefined, id);
-      const docs = res?.docs || [];
-      // BC's /database/search already filters server-side via query.updaterId
-      // (csrFindUserTracking passes it). See fetchLogins above for the full
-      // story on why the prior client-side filter wiped every doc.
+      const raw = res?.docs || [];
+      // PRIVACY: BC ignores query.updaterId on the `trackings` collection and
+      // returns events across ALL users (verified live 2026-06-05 — Searches
+      // came back spanning 5 distinct users). Scope to the viewed user via the
+      // per-doc updaterId; paginate on the RAW global cursor. See fetchLogins.
+      const mine = raw.filter((d) => d.updaterId === id);
       if (lastId) {
-        setActivities(prev => [...prev, ...docs]);
+        setActivities(prev => [...prev, ...mine]);
       } else {
-        setActivities(docs);
+        setActivities(mine);
       }
-      const last = docs[docs.length - 1];
+      const last = raw[raw.length - 1];
       setActivityLastId(last?._id || null);
-      setActivityNoMore(res?.noMoreDocs === true || docs.length === 0);
+      setActivityNoMore(res?.noMoreDocs === true || raw.length === 0);
     } catch (err) {
       setActivityError(err?.message || 'Failed to load activity');
     } finally {
