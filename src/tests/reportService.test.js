@@ -265,11 +265,11 @@ describe('createReportForPhone', () => {
   // BC requires a teaserInput on report/create, so createReportForPhone now runs
   // the phone teaser FIRST and creates the report with that context.
   const PHONE_TEASER = {
-    data: [{ extId: 'ext-abc' }],
+    data: [{ extId: 'ext-abc' }, { extId: 'ext-relative' }],
     searchContext: { contextKey: 'sale.phone.teaser', teaserInput: { type: 'phone', phone: '5125551234', contextKey: 'sale.phone.teaser' } },
   };
 
-  test('runs the phone teaser then creates the report WITH teaserInput', async () => {
+  test('teaser → creates the report for the rank-0 identity via the extId path (not reversePhone)', async () => {
     api.searchPeople.mockResolvedValue(PHONE_TEASER);
     api.createReport.mockResolvedValue(RICH_ADAPTER_RESPONSE);
 
@@ -279,11 +279,14 @@ describe('createReportForPhone', () => {
     expect(api.searchPeople).toHaveBeenCalledWith({ phone: '5125551234', type: 'phone' });
     expect(api.createReport).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'reversePhone',
-        phone: '5125551234',
+        type: 'extId',
+        extId: 'ext-abc', // rank-0 identity from the phone teaser
         contextKey: 'sale.phone.report',
         teaserInput: PHONE_TEASER.searchContext.teaserInput,
       })
+    );
+    expect(api.createReport).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'reversePhone' })
     );
   });
 

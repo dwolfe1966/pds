@@ -253,14 +253,17 @@ export async function createReportForIdentity(extId, identity = null) {
  */
 export async function createReportForPhone(phone) {
   try {
-    // 1) Phone teaser → identities + searchContext (carries teaserInput).
+    // 1) Phone teaser → ranked identities + searchContext (carries teaserInput).
     const teaser = await api.searchPeople({ phone, type: 'phone' });
-    if (!teaser?.data?.length || !teaser?.searchContext?.teaserInput) {
+    const first = teaser?.data?.[0];
+    if (!first?.extId || !teaser?.searchContext?.teaserInput) {
       return { success: false, commerceContentId: null, identities: [], fullContact: null, familyWatchdog: null, raws: [], reportData: null };
     }
-    // 2) Create the report with the teaser context — createReport() forwards
-    //    teaserInput and maps the contextKey to sale.phone.report.
-    return await createReport(null, { type: 'reversePhone', phone, searchContext: teaser.searchContext });
+    // 2) Create the report for the matched (rank-0 = phone owner) identity via the
+    //    SAME extId path name search uses. `reversePhone` is a dead end: without a
+    //    teaserInput it 400s ("teaserInput should not be empty"); WITH the phone
+    //    teaser's teaserInput it 500s. The extId path is the documented, working one.
+    return await createReport(first.extId, { type: 'extId', searchContext: teaser.searchContext });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('[reportService] createReportForPhone failed:', error);
