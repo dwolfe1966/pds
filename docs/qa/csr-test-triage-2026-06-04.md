@@ -70,7 +70,7 @@ No code change expected. Action = tester re-runs against current live bundle.
 
 | Row | Test | Why it's not a clean bucket |
 |---|---|---|
-| 38 | **Notes History** — "Saved Note, but do not see in Customer Profile" | **RESOLVED — works on live `ce2e8005`; 6/3 fail was deploy skew. Re-test to close.** Reproduced live 2026-06-04: `POST /message/admin/createNote` → **201**; `GET /message/admin/findNotes` → **200** returns the note; it renders **after save AND after hard reload**. The IIFE-first Notes/Messages fix only reached live in `ce2e8005` (~6/3–6/4), so the 6/3 tester was on a pre-fix bundle. Benign known quirk: `POST /contactMessage/admin/find/:userId` 404s, but `fetchNotes` (`Promise.allSettled`) handles it and notes display via `findNotes`; per-user messages come from the inbox-wide fetch + client filter (existing design). **Not BC, not an open bug.** *(Left 2 labeled `UAT-row38-check` test notes on test acct `testingreg060326b@idlookup.ai` — BC has no note-delete; ignore/clean at will.)* |
+| 38 | **Notes History** — "Saved Note, but do not see in Customer Profile" | **Could NOT reproduce under a warm session; prime suspect = intermittent `findNotes` 403 on cold load (shared with row 4). Client hardening shipped; tester to re-test on `ce2e8005`.** ⚠️ Correction: this is **NOT** deploy skew — by our own bundle history, `844a2f72` (live 6/2, what the 6/3 tester had) **already contained** the Notes/Messages fix. What I observed: a warm/retried session works end-to-end (`createNote` 201 → `findNotes` 200 → renders after save AND reload), BUT one cold-load run returned **`GET /message/admin/findNotes` → 403** and the notes list went empty. `fetchNotes` uses `Promise.allSettled`, so a 403 → rejected → `adminNoteDocs=[]` → silently renders "No notes" — i.e. exactly "saved a note, don't see it". **Client fix shipped (`eac6104b`):** a failed notes fetch now shows "Couldn't load notes — Retry" instead of a false empty state (`notesError` flag). Open questions for BC: is the CSR session/auth gate racing on cold load? (`/message/admin/findNotes` 403 + `contactMessage/admin/find/:userId` 404 — see `BC_CSR_DATA_EXPOSURE.md`.) Also worth asking the tester **where** they looked (note lives in the Notes & Messages tab, not the profile card). *(Left 2 labeled `UAT-row38-check` test notes on `testingreg060326b@idlookup.ai`.)* |
 | 39–41 | Transaction Sales / Collections / Refunds History | Tester marked "Y?" (uncertain). Verify against a known order with history. |
 
 ---
@@ -168,7 +168,7 @@ watching as BC dev-env instability.
 ## Recommended order
 
 1. **Re-test Bucket A on live `ce2e8005`** (tester) — clears the most rows for zero code.
-2. ~~Investigate Bucket D Notes (row 38)~~ **DONE 2026-06-04 — works on live, was deploy skew (see Bucket D). Re-test to close.**
+2. **Notes (row 38)** — investigated 2026-06-04. NOT deploy skew. Prime suspect = intermittent `findNotes` 403 on cold load (shared w/ row 4); client hardening shipped (`eac6104b`). Tester to re-test; BC to answer the 403/404 session-race questions.
 3. **Ship two small ours-to-fix items** *(pending owner OK on scope)*: Zip on detail page (row 15) + reword the confusing email-search hint (row 11).
 4. **Owner decisions** (Bucket F) gate everything in Bucket B.
 5. **Bucket C** → file/repro with BC; not our code.

@@ -32,15 +32,26 @@ only on the billing token (not the user), say so — we'll source them from orde
 > address)** — same root pattern (data is captured/filterable but not surfaced). Worth solving
 > together: define the canonical billing/identity fields the CSR tool can read per user/order.
 
-## 2. FYI / low-priority cleanup — `contactMessage/admin/find/:userId` 404s
+## 2. Intermittent **403 on `/message/admin/findNotes`** (+ 404 on `:userId`) — session/auth race?
 
-`POST /api/contactMessage/admin/find/:userId` (per-user contacts / `findUserContacts`)
-returns **404** consistently. We've worked around it (notes display via
-`GET /message/admin/findNotes`, which works; per-user messages via the inbox-wide
-`GET /api/contactMessage/admin/find` + client-side filter). **No launch impact** — flagging
-so the dead per-user endpoint can be fixed or formally retired.
+Observed live 2026-06-04 on the CSR tool: on **cold page loads**, CSR-protected reads
+**intermittently return 403** before settling — e.g. `GET /api/message/admin/findNotes → 403`,
+then `200` on retry. Consistently, `POST /api/contactMessage/admin/find/:userId` (per-user
+contacts) returns **404**.
 
-## Not an ask — for the record
-- **Admin notes work end-to-end** (`POST /message/admin/createNote` → 201;
-  `GET /message/admin/findNotes` returns the note; renders after save and reload). The earlier
-  "saved note not visible" QA finding was a stale-bundle artifact, now resolved on `ce2e8005`.
+Why it matters: a transient 403 on `findNotes` makes a customer's notes briefly vanish from the
+CSR tool — the likely cause of the QA "saved a note but don't see it in the profile" report
+(QA row 38). We've hardened our client (a failed fetch now shows "Couldn't load notes — Retry"
+instead of a false "no notes"), but the underlying 403 is BC-side.
+
+**Questions for the CTO/dev:**
+- Is the CSR session/auth gate **racing on cold load** (request fires before the session cookie
+  is validated)? Same intermittent-403 signature shows on `/api/database/search` and may relate
+  to the "Register Member worked before, not today" report (row 4).
+- Is `POST /contactMessage/admin/find/:userId` a **dead endpoint** (always 404) that should be
+  fixed or formally retired? We already fall back to the inbox-wide
+  `GET /api/contactMessage/admin/find` + client filter.
+
+*(For the record: when the session is warm, notes work end-to-end — `createNote` 201,
+`findNotes` returns the note, renders after save and reload. The bug is the cold-load 403, not
+note creation.)*

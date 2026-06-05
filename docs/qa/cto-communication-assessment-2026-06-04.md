@@ -74,7 +74,9 @@ local bridge (`campaignRegistry` = landing route + interim identity/offer) plus 
 don't send contradictory/stale premises, and decouple all of it from the launch gate.
 
 ## What I'm adding to the BC communication (this session)
-See `docs/BC_CSR_DATA_EXPOSURE.md` — concrete CSR-tool asks that ride the same "expose/persist the
-data" theme as Q3/Q4: (a) add `zip`/`last4cc`/`phone` to the CSR user-**search** `displayFields`
-(today they're filter-only, so the CSR Users-list Zip/CC columns render "—" for everyone), and
-(b) FYI/cleanup: `POST /contactMessage/admin/find/:userId` 404s (we've worked around it).
+See `docs/BC_CSR_DATA_EXPOSURE.md` — concrete CSR-tool asks: (a) add `zip`/`last4cc`/`phone` to
+the CSR user-**search** `displayFields` (today they're filter-only, so the CSR Users-list Zip/CC
+columns render "—" for everyone — same "expose the data" theme as Q3/Q4); and (b) the **intermittent
+403 on `/message/admin/findNotes`** (+ 404 on `contactMessage/admin/find/:userId`) — a cold-load
+session/auth race that's the likely cause of QA row 38 ("saved note not visible") **and** plausibly
+row 4 ("Register Member worked before, not today"). Same 403 signature appears on `/database/search`.

@@ -256,6 +256,11 @@ const UserDetailPage = () => {
 
   // Notes state
   const [notes, setNotes]               = useState([]);
+  // True when the admin-notes fetch (findNotes) errored — so the empty state can
+  // distinguish "fetch failed" from "genuinely no notes". A transient 403 on
+  // /message/admin/findNotes (cold-load/auth race) otherwise silently renders as
+  // "no notes" — which reads as "saved a note but it disappeared" (QA row 38).
+  const [notesError, setNotesError]     = useState(false);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [noteText, setNoteText]         = useState('');
 
@@ -423,6 +428,11 @@ const UserDetailPage = () => {
     const merged = [...legacyMapped, ...adminNotesMapped]
       .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     setNotes(merged);
+    // The admin-notes fetch is authoritative for CSR notes (incl. just-saved
+    // ones). If it rejected (e.g. a transient 403), flag it so we don't show a
+    // misleading "no notes" empty state. The legacy contacts fetch is allowed to
+    // fail (its per-user endpoint 404s by design; messages fall back elsewhere).
+    setNotesError(adminNotesRes.status === 'rejected');
   }, [id]);
 
   // ── Fetch login tracking ──────────────────────────────────
@@ -1912,7 +1922,21 @@ const UserDetailPage = () => {
                         </div>
                       )}
 
-                      {notes.length === 0 && !showNoteForm && (
+                      {notes.length === 0 && notesError && (
+                        <div className={styles.emptyState}>
+                          <p>Couldn’t load notes — the request failed (this can happen on a
+                          cold page load). Your saved notes are not lost.</p>
+                          <button
+                            type="button"
+                            className={styles.addNoteBtn}
+                            onClick={fetchNotes}
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
+
+                      {notes.length === 0 && !notesError && !showNoteForm && (
                         <div className={styles.emptyState}>No notes or messages yet.</div>
                       )}
 
