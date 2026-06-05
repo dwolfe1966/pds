@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
-import { track } from '../../services/trackingService';
+import { track, buildReferQueryString } from '../../services/trackingService';
 import { validatePassword } from '../../hooks/useSignup';
 import { gtmPurchase } from '../../services/gtm';
 import { readThinMatch } from '../../services/thinMatch';
@@ -193,6 +193,8 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
         }],
         commerceOfferKeys: [{ key: 'comp.offer.signup.main', target: 'main', options: {} }],
         sequenceOption: readThinMatch(),
+        // First-touch attribution → commerceorders.refer (see PaymentPage).
+        ...((qs) => (qs ? { queryString: qs } : {}))(buildReferQueryString()),
       };
 
       const saleResult = await api.billingSale(saleParams);

@@ -5,7 +5,7 @@ import { useCampaign } from '../../context/CampaignContext';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
-import { track } from '../../services/trackingService';
+import { track, buildReferQueryString } from '../../services/trackingService';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch } from '../../services/thinMatch';
@@ -323,11 +323,16 @@ const PaymentPage = () => {
         // the order history records the true match state. Flags default to
         // `false` when no teaser search preceded this purchase.
         sequenceOption: readThinMatch(),
-        // Strip internal UI params (upgrade, selected, redirect) before passing to BC.
-        // BC uses queryString for campaign attribution — our UI flags are not valid BC params.
+        // BC uses queryString for campaign attribution → commerceorders.refer.
+        // The acquisition refer_* params arrive on the LANDING url, are captured
+        // into referralParams, and the url is stripped — so they are NOT on the
+        // /payment url. Seed from that first-touch capture (authoritative), then
+        // layer any non-internal params still on the live url without overriding.
         ...((() => {
-          const bcParams = new URLSearchParams(searchParams);
-          ['upgrade', 'selected', 'redirect'].forEach(k => bcParams.delete(k));
+          const bcParams = new URLSearchParams(buildReferQueryString() || '');
+          const live = new URLSearchParams(searchParams);
+          ['upgrade', 'selected', 'redirect'].forEach(k => live.delete(k));
+          live.forEach((v, k) => { if (!bcParams.has(k)) bcParams.set(k, v); });
           const qs = bcParams.toString();
           return qs ? { queryString: qs } : {};
         })()),
@@ -470,8 +475,8 @@ const PaymentPage = () => {
 
       // orderId + amount make this partner-attributed conversion (data.refer is
       // auto-attached by track) joinable to the order with revenue in BC's
-      // tracking store — partner revenue reporting without depending on
-      // order-level commerceorders.refer, which isn't persisting (#77).
+      // tracking store. (The order itself now also carries commerceorders.refer
+      // via the sale queryString above — this remains the broader signal.)
       track('payment_complete', {
         plan: 'pro',
         offer_key: SIGNUP_OFFER_KEY,

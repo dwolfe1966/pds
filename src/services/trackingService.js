@@ -30,9 +30,10 @@ function getSessionId() {
 // Attribution captured at first touch (gtm.captureReferralParams →
 // 'referralParams'; CampaignContext → 'attribution.shn'/'shl'). Assembled into
 // BC's `data.refer` convention so every tracked event carries partner/ad
-// attribution — the queryable client-side path while BC's order-level
-// `commerceorders.refer` isn't persisting (#77). Read straight from
-// sessionStorage to keep this module import-light and never-throw.
+// attribution. (Order-level `commerceorders.refer` DOES persist — confirmed by
+// BC 2026-06-04 — and is now fed the first-touch refer_* params at checkout via
+// `buildReferQueryString`; this tracking-store path remains the broader signal.)
+// Read straight from sessionStorage to keep this module import-light and never-throw.
 function buildRefer() {
   if (typeof sessionStorage === 'undefined') return undefined;
   try {
@@ -58,6 +59,24 @@ function buildRefer() {
     if (partner) refer.partner = partner;
     if (channel) refer.channel = channel;
     return Object.keys(refer).length ? refer : undefined;
+  } catch { return undefined; }
+}
+
+// First-touch attribution as a BC `queryString` for commerce calls
+// (billing.sale/signup). BC parses the refer_* params into `commerceorders.refer`
+// (confirmed persisting 2026-06-04). Scoped to the documented refer_* keys only —
+// gclid/utm already attribute via the tracking-store `data.refer` path above, and
+// extra params on a sale have unconfirmed BC handling. Returns undefined when no
+// attribution is present. Never throws (sensitive checkout path).
+export function buildReferQueryString() {
+  if (typeof sessionStorage === 'undefined') return undefined;
+  try {
+    let params = {};
+    try { params = JSON.parse(sessionStorage.getItem('referralParams') || '{}') || {}; } catch { params = {}; }
+    const pairs = ['refer_partnerId', 'refer_afid', 'refer_abc']
+      .filter((k) => params[k] != null && params[k] !== '')
+      .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`);
+    return pairs.length ? pairs.join('&') : undefined;
   } catch { return undefined; }
 }
 

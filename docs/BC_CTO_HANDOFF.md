@@ -26,20 +26,21 @@ resolution.
 cost-model partner/channel rollup.
 **Owner:** BC. **Status:** filed (#77-Q4 expose names, #77-Q6 model partners). **Fast-follow, not a launch gate** — our `data.refer` tracking workaround covers measurement in the interim.
 
-### [ ] 2. Forward landing-URL params to the backend  *(@corp-queued #10)*
-**⚠️ Resolve a contradiction first.** Your note says *"the backend already supports persisting
-`shn`/`gclid`/`refer_*`/`utm_*` into `commerceorders.refer`."* Our integration notes
-(`trackingService.js`) say `commerceorders.refer` **isn't persisting** — which is why we route
-attribution through the tracking store instead. Confirmed in our code: our commerce call
-(`billingSale`) currently sends **no** `refer`/`shn`/`gclid`.
-**Ask (yes/no to CTO):** *If we add a `refer` block to `billingSale`, will BC persist it to
-`commerceorders.refer`?*
-  - **If yes** → small change on **us** (add `refer` to the sale payload); then it's done.
-  - **If no** → BC ask: persist `commerceorders.refer` (backend support + we send it).
-**Also confirm:** Google Ads **auto-tagging is ON** (so `gclid` lands on paid clicks); and the
-**campaign → shN mapping** (1:1 node, or via captured params).
-**Why:** Google Ads cost→revenue (`gclid`, §M6 eCPA / §M9) + refer-level (sub-publisher) cost.
-**Owner:** TBD (depends on the yes/no).
+### [x] 2. Forward landing-URL `refer_*` to the commerce record  *(@corp-queued #10) — RESOLVED our side 2026-06-04*
+**Resolved:** BC confirmed `commerceorders.refer` **does** persist. Root cause was on us and was a
+*latent bug*, not just a missing field: `billing.sale` already sent a `queryString`, but built from
+the **live `/payment` URL** — and the acquisition `refer_*` params arrive on the **landing** URL,
+get captured into `referralParams`, and the URL is stripped, so they never reached `/payment`. So
+`commerceorders.refer` was `{}` on every order (verified live: 24/24 orders had `refer: {}`).
+**Fix shipped** (consumer `public.999bf839.js`, pending deploy): the sale `queryString` is now seeded
+from the first-touch `referralParams` (`buildReferQueryString`, scoped to `refer_partnerId/afid/abc`
+per the doc contract) and merged with live non-internal params. `gclid`/`utm_*` continue to attribute
+via the tracking-store `data.refer` path.
+**Verify after deploy:** land with `?refer_partnerId=TEST123`, complete a $1 trial, then open the
+order in CSR → `refer` should show `{ partnerId: "TEST123", … }` AND the sale must still succeed.
+**Still confirm (BC):** Google Ads **auto-tagging ON** (so `gclid` lands on paid clicks); the
+**campaign → shN mapping**; and whether you also want `gclid`/`utm_*` landed on `commerceorders.refer`
+(today only `refer_*` is contract-documented there).
 
 ---
 
