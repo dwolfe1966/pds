@@ -249,7 +249,10 @@ const MemberGeneralSearchPage = () => {
       <div className={styles.formCard}>
         {/* Tabs */}
         <div className={styles.tabs}>
-          {['name', 'phone', 'email', 'address'].map((tab) => (
+          {/* Address/location search removed (bug #42): City/State/Zip search
+              had no useful BC-backed result. Name/Phone/Email only. The address
+              form + handler below are now unreachable (no tab, no URL path). */}
+          {['name', 'phone', 'email'].map((tab) => (
             <button
               key={tab}
               type="button"

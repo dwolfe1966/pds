@@ -5,6 +5,7 @@ import ResultCard from '../../components/ResultCard';
 import SearchBar from '../../components/SearchBar';
 import { useAuth } from '../../context/AuthContext';
 import { setSearchContext } from '../../services/searchContext';
+import { track } from '../../services/trackingService';
 import styles from './SearchResultsPage.module.css';
 
 /**
@@ -430,6 +431,9 @@ const MemberSearchResultsPage = () => {
                 className={styles.loadMoreBtn}
                 onClick={async () => {
                   setLoadingMore(true);
+                  // #70: emit a client-side tracking event for the load-more
+                  // interaction (data.refer attribution auto-attached by track).
+                  track('search_load_more', { resultsSoFar: filteredResults.length });
                   try {
                     const more = await api.loadMoreSearchResults(rawResponse);
                     if (more?.data?.length) setResults(prev => [...prev, ...more.data]);
