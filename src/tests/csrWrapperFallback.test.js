@@ -208,28 +208,34 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tracking tab (Searches / Reports / Logins). The bug (pre-existing, surfaced
-// 2026-05-31): the page applied `docs.filter(d => d.updaterId === id)` to BC's
-// /database/search response, but BC's displayFields EXCLUDES updaterId from
-// returned docs — so d.updaterId is undefined on every row and the filter
-// wiped them all. Fix: scope SERVER-SIDE via query.updaterId and trust the
-// response. See feedback memory `no_clientside_filter_on_bc_database_search`.
-describe('csrFindUserTracking — scopes server-side, never client-filters', () => {
-  test('passes updaterId into the /database/search query (server-side scoping)', async () => {
+// Tracking tab (Searches / Reports / Logins). History: 2026-05-31 a client
+// `docs.filter(d => d.updaterId === id)` wiped rows (updaterId was thought
+// absent). 2026-06-05 we VERIFIED live that BC IGNORES query.updaterId on the
+// `trackings` collection (returns events across all users) AND updaterId IS
+// present per-doc — so the page DOES client-filter again (privacy), and the
+// wrapper requests a large `perPage` so that filter has the user's events to
+// find. This block tests the WRAPPER's request shape (the client filter lives
+// in UserDetailPage). The wrapper returns docs verbatim.
+describe('csrFindUserTracking — query shape (updaterId + perPage), returns verbatim', () => {
+  test('sends updaterId in the query AND requests a large perPage page', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 
     await apiWrapper.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
 
+    // We still send updaterId (BC IGNORES it — verified live 2026-06-05 — so the
+    // caller client-filters; sending it remains correct intent + future-proofs a
+    // BC server-side fix). perPage:100 lifts BC's 10-doc default so the per-user
+    // filter actually has the user's events to find.
     expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
       collectionName: 'trackings',
       query: { 'data.type': 'USER:login', updaterId: 'u1' },
+      perPage: 100,
     });
   });
 
-  test('returns BC docs VERBATIM even though they carry no updaterId field', async () => {
-    // This is the exact condition that broke the old client filter: the docs
-    // are correctly scoped server-side but have no `updaterId` property. The
-    // wrapper must NOT drop them.
+  test('returns BC docs VERBATIM (no filtering at the wrapper layer)', async () => {
+    // The wrapper never filters — the per-user client filter lives in
+    // UserDetailPage. The wrapper must return whatever BC sends, untouched.
     const body = {
       docs: [
         { _id: 't1', data: { type: 'USER:login' } }, // note: no updaterId field
@@ -253,6 +259,7 @@ describe('csrFindUserTracking — scopes server-side, never client-filters', () 
     expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
       collectionName: 'trackings',
       query: {},
+      perPage: 100,
       lastId: 'cursor9',
     });
   });
