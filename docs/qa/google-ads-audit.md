@@ -52,6 +52,62 @@ enhanced conversions (hashed email/phone) configured; no duplicate/test tags.
 category/attribution, no duplicates; final URLs carry `?shn=` so the funnel resolves
 the partner; tracking template doesn't strip gclid; keyword↔landing alignment.
 
+## Layer 2 — GTM container `GTM-THCSBJWN` *(audited 2026-06-06, workspace 3)*
+2 tags: **Adwords Conversion Linker** (All Pages + History Change) ✅ and **Adwords
+Pixel Signup Conversion** (id `18044069648`, label `6CztCM_GgZUcEJDOipxD`).
+
+**🔴 P0 — the conversion will never fire.** The conversion tag triggers ONLY on a
+PAGEVIEW of `//www.idlookup.ai/pixelforsignup?type=pixel` (partner-gated). **The site
+has no `/pixelforsignup` page** (grep: 0 matches) — the React app stays in the SPA and
+pushes `purchase`/`sign_up` dataLayer events instead, which NO tag listens to. Code and
+container were built to different specs. *Data layer DOES align otherwise:* gtmContext
+pushes the canonical keys the tag reads (`transactionAmount`, `transactionCurrency`,
+`partnerName`, `partnerChannel`, `sessionId`, `orderId`). **Fix (recommend):** re-point
+the conversion tag to a CUSTOM_EVENT trigger on the `sign_up` (and/or `purchase`)
+dataLayer event — the code already emits it with the canonical fields. (Alternative:
+build a real `/pixelforsignup` confirmation page — more work, matches the as-built tag.)
+
+**🟡 conversion gating** — fires only for partnerName/channel ∈ {Google/Search,
+Internal/Cascade Decliner, Internal/Cascade Exit}. Google Inmates Upper (Google/Search)
+is covered; default/other traffic won't convert (confirm intentional). A generic
+"Sales Confirmation" trigger exists but isn't attached to the tag.
+
+**🟡 orderId = `{{Variable - Session ID}}`** for dedup — should be the BC orderId
+(gtmContext exposes `orderId`); session id can span 0/many orders.
+
+**🟡 no GA4 tag** in this container (only the 2 Adwords tags) — the code's GA4-style
+events (`purchase`, `view`, etc.) aren't measured here. Confirm GA4 lives elsewhere.
+
+## Layer 3 — Google Ads account *(audited 2026-06-06 — 8 campaigns, all Paused = pre-launch ✓)*
+
+**🔴 P0 — final URLs carry NO `?shn=`.** Zero ads pass a shN token, so the partner
+funnel (landing v3 / SUP variant / opt-out / partner attribution for `6a22ff83…`)
+never activates. The "Inmate Search - Upper Quadrant" campaign (= Google Inmates Upper)
+must put `?shn=6a22ff83ca16ad4ef68b84b5` on its final URL (or a tracking template).
+
+**🔴 P0 — campaigns point to domains OUTSIDE our funnel + GTM:**
+`www.inmatessearcher.com` and `www.privaterecords.net` are NOT in the GTM per-brand
+map (idlookup.ai / peoplesearcher.ai / inmatefinderhub.com) and aren't the funnel we
+built — so that paid traffic has **no tracking and no shN funnel**. Affected:
+"Inmates (PR - IS) Lower/Upper HHI", "LE - Death/Divorce". Decide: repoint to
+idlookup.ai, or are these separate (legacy) sites?
+
+**🟡 P1 — dev domain in final URLs.** "Campaign #1" and "Inmate Search - Upper
+Quadrant" use `dev.www.idlookup.ai` — must be `www.idlookup.ai` (prod) before unpause.
+
+**Campaign → domain map:**
+- Campaign #1 → dev.www.idlookup.ai
+- Inmate Search - Upper Quadrant → dev + www.idlookup.ai
+- Inmates (PR - IS) Lower HHI → idlookup.ai + **inmatessearcher.com**
+- Inmates (PR - IS) Upper HHI → idlookup.ai + **inmatessearcher.com + privaterecords.net**
+- LE - Death/Divorce (Upper/Lower) → idlookup.ai + **privaterecords.net**
+
+(Auto-tagging ON / conversion-actions list weren't in this campaign-structure export —
+confirm auto-tagging is ON in Settings, and that a Signup conversion action exists and
+is tied to id `18044069648` / label `6CztCM_GgZUcEJDOipxD`.)
+
 ## Status
-- Layer 1: audited; double-load fixed; `transaction_id` open.
-- Layer 2/3: awaiting exports (GTM container JSON + Ads exports). Drop under `docs/ads/`.
+- Layer 1: ✅ audited; double-load FIXED (c936086); `transaction_id` open.
+- Layer 2: ✅ audited — P0 conversion-trigger mismatch (pixelforsignup vs dataLayer event).
+- Layer 3: ✅ audited — P0 no `?shn=` in final URLs + off-funnel domains; P1 dev URLs.
+
