@@ -62,10 +62,22 @@ has no `/pixelforsignup` page** (grep: 0 matches) — the React app stays in the
 pushes `purchase`/`sign_up` dataLayer events instead, which NO tag listens to. Code and
 container were built to different specs. *Data layer DOES align otherwise:* gtmContext
 pushes the canonical keys the tag reads (`transactionAmount`, `transactionCurrency`,
-`partnerName`, `partnerChannel`, `sessionId`, `orderId`). **Fix (recommend):** re-point
-the conversion tag to a CUSTOM_EVENT trigger on the `sign_up` (and/or `purchase`)
-dataLayer event — the code already emits it with the canonical fields. (Alternative:
-build a real `/pixelforsignup` confirmation page — more work, matches the as-built tag.)
+`partnerName`, `partnerChannel`, `sessionId`, `orderId`).
+
+**Fix is GTM-side only — NO code change needed.** The post-payment confirmation
+(`PaymentPage.js:490-500`) already fires the event: on `billing.sale` success it calls
+`gtmSetTransaction({orderId, amount: effectiveTrialPrice, currency})` then `gtmPurchase()`,
+pushing a **`purchase`** dataLayer event that carries `orderId` + real `transactionAmount`
++ `partnerName`/`partnerChannel`/`sessionId`. GTM changes:
+1. Re-point the conversion tag's trigger: drop the 3 `/pixelforsignup?type=pixel`
+   PAGEVIEW triggers → one **Custom Event** trigger, Event = `purchase` (keep the
+   partnerName/partnerChannel gate conditions if the gating is intentional).
+2. Point the conversion's Order-ID/dedup field at a new dataLayer var reading `orderId`
+   (not `{{Variable - Session ID}}`) — the `purchase` event now carries the BC orderId.
+   *(This also closes the P1 dedup item.)*
+3. Transaction Amount / Currency vars already read `transactionAmount`/`transactionCurrency`
+   — the `purchase` event supplies both. Conversion Linker stays as-is.
+(Alternative: build a real `/pixelforsignup` page — more work, no upside over the above.)
 
 **🟡 conversion gating** — fires only for partnerName/channel ∈ {Google/Search,
 Internal/Cascade Decliner, Internal/Cascade Exit}. Google Inmates Upper (Google/Search)
