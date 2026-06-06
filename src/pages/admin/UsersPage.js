@@ -133,57 +133,20 @@ const UsersPage = () => {
   const [lastId, setLastId]         = useState(null);
   const [noMoreDocs, setNoMoreDocs] = useState(false);
 
-  // filter + view state
-  const [nameFilter, setNameFilter]   = useState('');
-  const [zipCode, setZipCode]         = useState('');
-  const [last4cc, setLast4cc]         = useState('');
-  const [emailFilter, setEmailFilter] = useState(searchParams.get('q') || '');
-  const [phoneFilter, setPhoneFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [view, setView]               = useState('list'); // 'list' | 'cards'
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  // search + filter + view state
+  const [searchQuery, setSearchQuery]   = useState(searchParams.get('q') || '');
+  const [statusFilter, setStatusFilter] = useState('all'); // filters results, not a search
+  const [view, setView]                 = useState('list'); // 'list' | 'cards'
   const [fetchGeneration, setFetchGeneration] = useState(0);
 
-  // Handle nav search: ?q= param triggers smart search on mount
+  // Nav-bar search (?q=) and the on-page search box BOTH funnel through
+  // runSmartSearch — one place, one behavior.
   useEffect(() => {
     const q = searchParams.get('q');
     if (!q) return;
-    const trimmed = q.trim();
     setSearchParams({}, { replace: true });
-
-    // Customer ID (24-hex ObjectId) → open the detail page directly (BC ignores
-    // an _id query on the user search, but getUserDetail resolves it).
-    if (/^[a-f0-9]{24}$/i.test(trimmed)) {
-      navigate(`/users/${trimmed}`);
-      return;
-    }
-
-    // Reset filters + name-scan summary.
-    setEmailFilter(''); setPhoneFilter(''); setZipCode(''); setLast4cc('');
-    setNameSearchInfo(null);
-    setError('');
-
-    // Auto-detect: email → @ ; ZIP → 5 digits ; last-4-CC → 4 digits ;
-    // phone → 7+ digits ; anything else → best-effort name scan.
-    const digits = trimmed.replace(/[\s\-().+]/g, '');
-    const isEmail = trimmed.includes('@');
-    const isZip = /^\d{5}(-\d{4})?$/.test(trimmed);
-    const isLast4 = /^\d{4}$/.test(trimmed);
-    const isPhone = /^\d{7,}$/.test(digits);
-
-    const filters = {};
-    if (isEmail) { setEmailFilter(trimmed); filters.email = trimmed; }
-    else if (isZip) { setZipCode(trimmed); filters.zip = trimmed; }
-    else if (isLast4) { setLast4cc(trimmed); filters.panLast4 = trimmed; }
-    else if (isPhone) { setPhoneFilter(digits); filters.phone = digits; }
-    else { filters.name = trimmed; } // name → fetchPage scans + filters client-side
-
-    setActiveFilters(filters);
-    setAllUsers([]);
-    setLastId(null);
-    setNoMoreDocs(false);
-    setAdvancedOpen(true);
-    setFetchGeneration(g => g + 1);
+    setSearchQuery(q.trim());
+    runSmartSearch(q);
   }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── data fetching ──────────────────────────────────────────────────────────
@@ -229,27 +192,36 @@ const UsersPage = () => {
     return { docs, last, noMoreDocs: res?.noMoreDocs ?? docs.length === 0 };
   }, [activeFilters]);
 
-  const handleServerSearch = () => {
-    // Snapshot current input values into activeFilters
-    const filters = {};
-    if (emailFilter.trim()) filters.email = emailFilter.trim();
-    if (phoneFilter.trim()) filters.phone = phoneFilter.trim();
-    if (zipCode.trim()) filters.zip = zipCode.trim();
-    if (last4cc.trim()) filters.panLast4 = last4cc.trim();
-    setActiveFilters(filters);
+  // Exit "Search Results" mode and reload the browse directory.
+  const clearSearch = () => {
+    setSearchQuery('');
+    setActiveFilters({});
     setNameSearchInfo(null);
+    setError('');
     setAllUsers([]);
     setLastId(null);
     setNoMoreDocs(false);
     setFetchGeneration(g => g + 1);
   };
 
-  // Exit "Search Results" mode and reload the browse directory.
-  const clearSearch = () => {
-    setEmailFilter(''); setPhoneFilter(''); setZipCode(''); setLast4cc(''); setNameFilter('');
-    setActiveFilters({});
+  // ONE smart search — auto-detects the input type and runs the BC query that
+  // actually matches it (so results match the criteria):
+  //   24-hex → customer ID (open detail) · "@" → email · 5 digits → ZIP ·
+  //   4 digits → last-4 of card · 7+ digits → phone · anything else → name scan.
+  const runSmartSearch = (rawQuery) => {
+    const trimmed = (rawQuery || '').trim();
+    if (!trimmed) { clearSearch(); return; }
+    if (/^[a-f0-9]{24}$/i.test(trimmed)) { navigate(`/users/${trimmed}`); return; }
     setNameSearchInfo(null);
     setError('');
+    const digits = trimmed.replace(/[\s\-().+]/g, '');
+    const filters = {};
+    if (trimmed.includes('@')) filters.email = trimmed;
+    else if (/^\d{5}(-\d{4})?$/.test(trimmed)) filters.zip = trimmed;
+    else if (/^\d{4}$/.test(trimmed)) filters.panLast4 = trimmed;
+    else if (/^\d{7,}$/.test(digits)) filters.phone = digits;
+    else filters.name = trimmed;
+    setActiveFilters(filters);
     setAllUsers([]);
     setLastId(null);
     setNoMoreDocs(false);
@@ -295,32 +267,14 @@ const UsersPage = () => {
 
   // ── client-side filtering ──────────────────────────────────────────────────
 
+  // Only the Status control filters the loaded results client-side; searching is
+  // done server-side (or via the name scan) in runSmartSearch.
   const filteredUsers = useMemo(() => {
-    const q = nameFilter.trim().toLowerCase();
     return allUsers.filter((u) => {
-      // status filter
-      if (statusFilter !== 'all') {
-        const s = resolveStatus(u);
-        if (s !== statusFilter) return false;
-      }
-      // client-side name filter (firstName, lastName, fullName, name)
-      if (q) {
-        const first = (u.firstName || '').toLowerCase();
-        const last = (u.lastName || '').toLowerCase();
-        const full = (u.fullName || '').toLowerCase();
-        const name = (u.name || '').toLowerCase();
-        const display = getDisplayName(u).toLowerCase();
-        if (
-          !first.includes(q) &&
-          !last.includes(q) &&
-          !full.includes(q) &&
-          !name.includes(q) &&
-          !display.includes(q)
-        ) return false;
-      }
+      if (statusFilter !== 'all' && resolveStatus(u) !== statusFilter) return false;
       return true;
     });
-  }, [allUsers, nameFilter, statusFilter]);
+  }, [allUsers, statusFilter]);
 
   // A search is "active" when a server filter or a name scan is in effect — the
   // header then switches to a dedicated "Search Results" mode (only matches).
@@ -375,11 +329,14 @@ const UsersPage = () => {
         </div>
 
         <div className={styles.controls}>
-          {/* Email search — server-side */}
-          <div className={styles.searchGroup}>
-            <label className={styles.searchLabel}>Email (server)</label>
+          {/* ── ONE search box — auto-detects the input type ── */}
+          <form
+            className={styles.searchGroup}
+            style={{ flex: 1, minWidth: 280 }}
+            onSubmit={(e) => { e.preventDefault(); runSmartSearch(searchQuery); }}
+          >
             <div className={styles.searchRow}>
-              <div className={styles.searchWrap}>
+              <div className={styles.searchWrap} style={{ flex: 1 }}>
                 <span className={styles.searchIcon}>
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="9" cy="9" r="7" />
@@ -389,53 +346,36 @@ const UsersPage = () => {
                 <input
                   type="text"
                   className={styles.searchInput}
-                  placeholder="Search by email..."
-                  value={emailFilter}
-                  onChange={(e) => setEmailFilter(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleServerSearch()}
-                  aria-label="Search by email (server)"
+                  placeholder="Search by email, name, ZIP, phone, last 4 of card, or customer ID…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search customers"
                 />
               </div>
-              <button
-                className={styles.serverSearchBtn}
-                onClick={handleServerSearch}
-                disabled={loading}
-              >
+              <button type="submit" className={styles.serverSearchBtn} disabled={loading}>
                 Search
               </button>
+              {hasActiveSearch && (
+                <button
+                  type="button"
+                  className={styles.serverSearchBtn}
+                  onClick={clearSearch}
+                  style={{ background: '#fff', color: '#374151', border: '1px solid #d1d5db' }}
+                >
+                  Clear
+                </button>
+              )}
             </div>
-          </div>
+          </form>
 
-          {/* Name filter — client-side */}
-          <div className={styles.searchGroup}>
-            <label className={styles.searchLabel}>Name (local filter)</label>
-            <input
-              type="text"
-              className={styles.filterInput}
-              style={{ width: 200 }}
-              placeholder="Filter by name..."
-              value={nameFilter}
-              onChange={(e) => setNameFilter(e.target.value)}
-              aria-label="Filter by name (client-side)"
-            />
-          </div>
-
-          <button
-            type="button"
-            className={styles.advancedToggleBtn}
-            onClick={() => setAdvancedOpen(o => !o)}
-            aria-expanded={advancedOpen}
-          >
-            Advanced {advancedOpen ? '\u25B2' : '\u25BC'}
-          </button>
-
+          {/* Status is a FILTER on the results, not a search. */}
           <select
             className={styles.filterSelect}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            aria-label="Filter by status"
+            aria-label="Filter results by status"
           >
-            <option value="all">All Statuses</option>
+            <option value="all">All statuses</option>
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
           </select>
@@ -447,10 +387,9 @@ const UsersPage = () => {
         </div>
 
         <p className={styles.searchHint}>
-          The search box auto-detects: <strong>email</strong>, <strong>ZIP</strong>,
-          <strong> phone</strong>, <strong>last 4 of card</strong>, and a 24-character
-          <strong> customer ID</strong> query the server. A <strong>name</strong> scans
-          the most-recent customers (BC has no server-side name filter yet).
+          One box, auto-detected: <strong>email</strong> / <strong>ZIP</strong> /
+          <strong> phone</strong> / <strong>last 4 of card</strong> / <strong>customer ID</strong> query
+          the server; a <strong>name</strong> scans the most-recent customers. \u201CStatus\u201D filters the results.
         </p>
       </div>
 
@@ -461,65 +400,6 @@ const UsersPage = () => {
         </div>
       )}
 
-      {/* ── advanced search panel ── */}
-      {advancedOpen && (
-        <div className={styles.advancedPanel}>
-          <div className={styles.advancedSection}>
-            <span className={styles.advancedSectionLabel}>Server search</span>
-            <div className={styles.advancedGrid}>
-              <input
-                type="text"
-                className={styles.filterInput}
-                placeholder="Email"
-                value={emailFilter}
-                onChange={(e) => setEmailFilter(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleServerSearch()}
-                aria-label="Search by email (server)"
-              />
-              <input
-                type="text"
-                className={styles.filterInput}
-                placeholder="Phone"
-                value={phoneFilter}
-                onChange={(e) => setPhoneFilter(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleServerSearch()}
-                aria-label="Search by phone (server)"
-              />
-              <input
-                type="text"
-                className={styles.filterInput}
-                placeholder="Zip Code"
-                value={zipCode}
-                onChange={(e) => setZipCode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleServerSearch()}
-                aria-label="Search by zip code (server)"
-                maxLength={10}
-              />
-              <input
-                type="text"
-                className={styles.filterInput}
-                placeholder="Last 4 CC"
-                value={last4cc}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setLast4cc(v);
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && handleServerSearch()}
-                aria-label="Search by last 4 digits of credit card (server)"
-                maxLength={4}
-              />
-            </div>
-            <button
-              className={styles.serverSearchBtn}
-              onClick={handleServerSearch}
-              disabled={loading}
-              title="Re-fetch from server with current filters"
-            >
-              Search
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── error ── */}
       {error && <div className={styles.errorBanner}>{error}</div>}
