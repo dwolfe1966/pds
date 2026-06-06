@@ -115,7 +115,7 @@ export const CAMPAIGN_REGISTRY = {
       shnName: 'Google Inmates Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
       purpose: 'Capture search intent re: incarcerated individuals → capture trials',
     },
-    landing: { route: '/name/landing/v5' },     // config landing "name/landing/5"
+    landing: { route: '/name/landing/v3' },     // inmate funnel (config said "5", corrected to v3 — the reliable /name/loader path the other Google Inmates rows use)
     detail:  { variant: 'c' },                  // config sup "ver=c" → SearchDetailPreviewVariantC
     optOut:  true,                              // config optout "yes" — see resolver; behavior TBD
   },
