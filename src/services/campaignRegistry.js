@@ -114,6 +114,10 @@ export const CAMPAIGN_REGISTRY = {
       purpose: 'Capture search intent re: incarcerated individuals → capture trials',
     },
     landing: { route: '/name/landing/v3' },     // inmate funnel (config said "5", corrected to v3 — the reliable /name/loader path)
+    // zeroState 'thinMatch' (#51, owner 2026-06-06): 0-result searches show the
+    // ThinMatchPreview upsell instead of "no records found" — capture trials on
+    // sparse matches rather than dead-ending the funnel.
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },
     detail:  { variant: 'a' },                  // SUP → SearchDetailPreviewVariantA (per owner)
     optOut:  true,                              // config optout "yes" → opt-out link in funnel
   },
