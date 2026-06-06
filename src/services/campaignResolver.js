@@ -99,6 +99,7 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
     signup:  { ...defaults.signup,  ...entry.signup  },
     payment: { ...defaults.payment, ...entry.payment },
     offer:   { ...defaults.offer,   ...entry.offer   },
+    optOut:  entry.optOut ?? defaults.optOut,
     // Metadata for analytics / debugging
     _matchKey: matchKey,
     _shn: shn,

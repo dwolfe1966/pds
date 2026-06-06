@@ -44,6 +44,7 @@ export const CAMPAIGN_REGISTRY = {
     // Strict by default — only an explicit `false` relaxes it.
     payment: { methods: ['card'], requireTermsCheckbox: true },
     offer:   { shmName: null, trial: false },   // null = let BC pick default offer
+    optOut:  false,                             // partner "optout: yes" flag (behavior TBD)
   },
 
   // ── Test placeholder. Hit `?shn=demo&shl=v5` to exercise the redirect +
@@ -105,5 +106,17 @@ export const CAMPAIGN_REGISTRY = {
   '5:*': {
     identity: { shnName: 'Google Inmates HHI Lo', brand: 'IDL', partner: 'Google', channel: 'Search' },
     landing: { route: '/name/landing/v3' },     // inmate-themed funnel
+  },
+
+  // ── First REAL shN token (replaces the placeholder rows above for this partner).
+  // Source config: { landing: "name/landing/5", sup: "ver=c", optout: "yes" }.
+  '6a22ff83ca16ad4ef68b84b5:*': {
+    identity: {
+      shnName: 'Google Inmates Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
+      purpose: 'Capture search intent re: incarcerated individuals → capture trials',
+    },
+    landing: { route: '/name/landing/v5' },     // config landing "name/landing/5"
+    detail:  { variant: 'c' },                  // config sup "ver=c" → SearchDetailPreviewVariantC
+    optOut:  true,                              // config optout "yes" — see resolver; behavior TBD
   },
 };
