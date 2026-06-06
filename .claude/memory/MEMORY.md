@@ -41,3 +41,4 @@
 - [BC CSR user object omits zip/card/phone](reference_bc_user_object_no_zip.md) — search filters by them but doesn't return them; ZIP lives in order billingAddress; Users-list Zip/CC columns are dead
 - [CSR triage session 2026-06-04](project_csr_triage_2026_06_04.md) — live admin=ce2e8005, deployable=f80dd2d8; Notes row 38 resolved (deploy skew); CTO-list assessment + BC asks
 - [BC teaser identities nested in commerceContent.raws](reference_bc_teaser_response_shape.md) — phone SRP "no results" was adaptTeaserResponse missing the commerceContent.raws nesting; contextKey enum was fine
+- [Launch state 2026-06-06](project_launch_state_2026_06_06.md) — CURRENT: deployables (consumer 742dba2e / admin 7aa4d485), what shipped (phone fixes, CSR single-search, Shn 6a22ff83), open BC asks + decisions
