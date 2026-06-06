@@ -1009,7 +1009,15 @@ class ApiWrapperService {
   // different envelope shape than our callers parse, so wrapper-first here
   // breaks UsersPage. Revisit once the response normalization is unified.
   async csrFindUsers(params = {}) {
-    return await this._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', ...params });
+    // BC's /database/search honors filters ONLY under `query` — a top-level
+    // `phone`/`email`/… is IGNORED and BC returns the default list (verified live
+    // 2026-06-05: phone search returned 10 recent non-matches). `lastId`/`perPage`
+    // stay top-level; everything else (email/phone/zip/panLast4/firstName/…) is the query.
+    const { lastId, perPage, brandId, ...filters } = params;
+    const body = { brandId: brandId || 'idlookup', collectionName: 'users', query: { ...filters } };
+    if (lastId) body.lastId = lastId;
+    if (perPage) body.perPage = perPage;
+    return await this._csrPost('/database/search', body);
   }
 
   // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)

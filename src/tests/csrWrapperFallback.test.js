@@ -216,6 +216,37 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
 // wrapper requests a large `perPage` so that filter has the user's events to
 // find. This block tests the WRAPPER's request shape (the client filter lives
 // in UserDetailPage). The wrapper returns docs verbatim.
+// REGRESSION LOCK: BC's /database/search honors user filters ONLY under `query`.
+// A top-level phone/email/etc. is ignored and BC returns the default list — which
+// rendered "users with empty phones" as fake matches (2026-06-05).
+describe('csrFindUsers — filters MUST be nested under query (not top-level)', () => {
+  test('email/phone/zip/panLast4 go under query; lastId/perPage stay top-level', async () => {
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
+
+    await apiWrapper.csrFindUsers({ phone: '3106134575', lastId: 'c1', perPage: 50 });
+
+    expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
+      brandId: 'idlookup',
+      collectionName: 'users',
+      query: { phone: '3106134575' },
+      lastId: 'c1',
+      perPage: 50,
+    });
+  });
+
+  test('no filters → empty query (browse default list)', async () => {
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
+
+    await apiWrapper.csrFindUsers({});
+
+    expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
+      brandId: 'idlookup',
+      collectionName: 'users',
+      query: {},
+    });
+  });
+});
+
 describe('csrFindUserTracking — query shape (updaterId + perPage), returns verbatim', () => {
   test('sends updaterId in the query AND requests a large perPage page', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
