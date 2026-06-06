@@ -12,7 +12,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import apiWrapper from '../services/apiWrapper';
 import { resolveCampaign } from '../services/campaignResolver';
-import { push as gtmPush } from '../services/gtmContext';
+import { push as gtmPush, setCampaign as gtmSetCampaign } from '../services/gtmContext';
 
 const SHN_KEY = 'attribution.shn';
 const SHL_KEY = 'attribution.shl';
@@ -70,6 +70,14 @@ function persistIdentity(campaign) {
     if (id.partner) sessionStorage.setItem('attribution.partner', id.partner);
     if (id.channel) sessionStorage.setItem('attribution.channel', id.channel);
   } catch { /* sessionStorage unavailable */ }
+  // Push the resolved partner identity into gtmContext so every dataLayer event
+  // (incl. the post-payment `purchase` conversion) carries partnerName/partnerChannel.
+  // The GTM Ads conversion tag GATES on these (Google/Search etc.) — without this,
+  // shN-driven traffic (no UTM) reaches `purchase` with empty partner fields and the
+  // conversion never fires. gtmSetCampaign maps name→partnerName, channel→partnerChannel.
+  if (id.partner || id.channel) {
+    gtmSetCampaign({ name: id.partner || undefined, channel: id.channel || undefined });
+  }
 }
 
 export const CampaignProvider = ({ children }) => {
