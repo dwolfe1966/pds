@@ -261,6 +261,7 @@ describe('csrFindUserTracking — query shape (updaterId + perPage), returns ver
       collectionName: 'trackings',
       query: { 'data.type': 'USER:login', updaterId: 'u1' },
       perPage: 100,
+      displayFields: ['_id', 'createdAt', 'data', 'updaterId', 'trackingIds'],
     });
   });
 
@@ -291,6 +292,7 @@ describe('csrFindUserTracking — query shape (updaterId + perPage), returns ver
       collectionName: 'trackings',
       query: {},
       perPage: 100,
+      displayFields: ['_id', 'createdAt', 'data', 'updaterId', 'trackingIds'],
       lastId: 'cursor9',
     });
   });

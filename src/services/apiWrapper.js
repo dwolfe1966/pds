@@ -1627,7 +1627,16 @@ class ApiWrapperService {
     // user's events to find. Real fix = BC server-side scoping
     // (docs/BC_CSR_TRACKING_SCOPE.md); this is the stopgap.
     if (updaterId) query['updaterId'] = updaterId;
-    const body = { collectionName: 'trackings', query, perPage: 100 };
+    // Explicitly request `updaterId` (+ the fields the tabs render) in displayFields.
+    // The client-side scope filter is `d.updaterId === id`; if BC ever trims updaterId
+    // from the response the filter would wipe EVERY row, so we ask for it by name.
+    // (BC currently over-returns regardless, so this can't trim needed fields.)
+    const body = {
+      collectionName: 'trackings',
+      query,
+      perPage: 100,
+      displayFields: ['_id', 'createdAt', 'data', 'updaterId', 'trackingIds'],
+    };
     if (lastId) body.lastId = lastId;
     // Always direct-POST: the IIFE's tracking.findUser doesn't accept these
     // filters, so going through it returns events for every user.

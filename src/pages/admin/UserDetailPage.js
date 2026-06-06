@@ -442,6 +442,13 @@ const UserDetailPage = () => {
     try {
       const res = await api.adminFindUserTracking('USER:login', lastId || undefined, id);
       const raw = res?.docs || [];
+      // Guard: we scope by per-doc updaterId. If BC returns docs but NONE carry an
+      // updaterId field, the field was trimmed — don't render that as "no logins".
+      if (raw.length > 0 && !raw.some((d) => 'updaterId' in d)) {
+        setLoginsError('Login history is temporarily unavailable (records came back without the owner field). Please retry.');
+        setLoginsNoMore(true);
+        return;
+      }
       // PRIVACY (verified live 2026-06-05): BC's /database/search on `trackings`
       // does NOT honor query.updaterId — it returns the latest events across ALL
       // users (a viewed user's Logins came back as 10 docs all belonging to a
@@ -473,6 +480,13 @@ const UserDetailPage = () => {
     try {
       const res = await api.adminFindUserTracking(TRACKING_ACTIVITY_TYPES, lastId || undefined, id);
       const raw = res?.docs || [];
+      // Guard (see fetchLogins): a non-empty page with NO updaterId field anywhere
+      // means BC trimmed it — surface an error instead of a misleading empty list.
+      if (raw.length > 0 && !raw.some((d) => 'updaterId' in d)) {
+        setActivityError('Activity is temporarily unavailable (records came back without the owner field). Please retry.');
+        setActivityNoMore(true);
+        return;
+      }
       // PRIVACY: BC ignores query.updaterId on the `trackings` collection and
       // returns events across ALL users (verified live 2026-06-05 — Searches
       // came back spanning 5 distinct users). Scope to the viewed user via the
