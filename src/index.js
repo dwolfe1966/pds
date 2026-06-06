@@ -5,7 +5,7 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { CampaignProvider } from './context/CampaignContext';
-import { initGtm, captureReferralParams } from './services/gtm';
+import { captureReferralParams } from './services/gtm';
 import {
   setCampaign as gtmSetCampaign,
   setBcAttributionFromShape as gtmSetBcAttributionFromShape,
@@ -16,7 +16,10 @@ import './styles/base.css';
 import './styles/contentContainer.css';
 
 captureReferralParams();
-initGtm();
+// NOTE: GTM is loaded by the per-brand snippet in public/index.html (maps
+// hostname → container). We intentionally do NOT call a second JS loader here —
+// doing so double-loaded GTM (and loaded the dev container on prod via
+// REACT_APP_GTM_ID), double-counting Google Ads conversions.
 
 // Capture shn/shl from URL and persist to sessionStorage BEFORE the BC IIFE
 // initializes — `apiWrapper.getInstance()` reads sessionStorage for the

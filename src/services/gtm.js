@@ -10,37 +10,15 @@
  *   gtmEvent('sign_up', { method: 'email' });
  */
 
-let gtmInitialized = false;
-
-export function initGtm() {
-  if (gtmInitialized || typeof window === 'undefined' || typeof document === 'undefined') return;
-  const id = process.env.REACT_APP_GTM_ID;
-  if (!id) return;
-  gtmInitialized = true;
-
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
-
-  const s = document.createElement('script');
-  s.async = true;
-  s.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(id)}`;
-  const first = document.getElementsByTagName('script')[0];
-  if (first && first.parentNode) {
-    first.parentNode.insertBefore(s, first);
-  } else {
-    document.head.appendChild(s);
-  }
-
-  const noscript = document.createElement('noscript');
-  const iframe = document.createElement('iframe');
-  iframe.src = `https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(id)}`;
-  iframe.height = '0';
-  iframe.width = '0';
-  iframe.style.display = 'none';
-  iframe.style.visibility = 'hidden';
-  noscript.appendChild(iframe);
-  document.body.insertBefore(noscript, document.body.firstChild);
-}
+/**
+ * DEPRECATED / NO-OP. GTM is loaded by the per-brand snippet in
+ * public/index.html (maps hostname → the right container at runtime, covering
+ * all four brands). This used to load a SECOND container from REACT_APP_GTM_ID,
+ * which double-loaded GTM (double-counting Google Ads conversions) and loaded
+ * the dev container `GTM-WV7N6WWP` on production. Kept as a no-op so any stray
+ * import can't re-introduce the double-load; do NOT load GTM here.
+ */
+export function initGtm() {}
 
 const REFERRAL_KEY = 'referralParams';
 const REFERRAL_FIELDS = [
