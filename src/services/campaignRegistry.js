@@ -97,26 +97,24 @@ export const CAMPAIGN_REGISTRY = {
     identity: { shnName: 'Cascade Exit', brand: 'IDL', partner: 'Internal', channel: 'Cascade Exit', purpose: 'Cascade $1 pass' },
   },
 
-  // Google paid-search, inmate keyword → inmate funnel. HHI Hi/Lo differ only in
-  // BC payment-type/risk (BC-side); same client UX (inmate landing).
-  '4:*': {
-    identity: { shnName: 'Google Inmates HHI Hi', brand: 'IDL', partner: 'Google', channel: 'Search' },
-    landing: { route: '/name/landing/v3' },     // inmate-themed funnel
-  },
+  // Google paid-search, inmate keyword → inmate funnel.
+  // Row #4 ("Google Inmates HHI Hi") IS "Google Inmates Upper" — its real shN token
+  // is 6a22ff83… (entry below), so the 4:* placeholder is retired/merged into it.
+  // Row #5 ("Google Inmates HHI Lo") still awaits its real token (kept as placeholder).
   '5:*': {
     identity: { shnName: 'Google Inmates HHI Lo', brand: 'IDL', partner: 'Google', channel: 'Search' },
     landing: { route: '/name/landing/v3' },     // inmate-themed funnel
   },
 
-  // ── First REAL shN token (replaces the placeholder rows above for this partner).
-  // Source config: { landing: "name/landing/5", sup: "ver=c", optout: "yes" }.
+  // ── REAL shN token for the Google Inmates Upper partner (= former placeholder row #4).
+  // Source config: { landing: "name/landing/5"→v3, sup: "ver=c"→a, optout: "yes" }.
   '6a22ff83ca16ad4ef68b84b5:*': {
     identity: {
       shnName: 'Google Inmates Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
       purpose: 'Capture search intent re: incarcerated individuals → capture trials',
     },
-    landing: { route: '/name/landing/v3' },     // inmate funnel (config said "5", corrected to v3 — the reliable /name/loader path the other Google Inmates rows use)
+    landing: { route: '/name/landing/v3' },     // inmate funnel (config said "5", corrected to v3 — the reliable /name/loader path)
     detail:  { variant: 'a' },                  // SUP → SearchDetailPreviewVariantA (per owner)
-    optOut:  true,                              // config optout "yes" — see resolver; behavior TBD
+    optOut:  true,                              // config optout "yes" → opt-out link in funnel
   },
 };
