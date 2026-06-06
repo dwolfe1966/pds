@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useSignup, validatePassword } from '../../hooks/useSignup';
 import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
+import { useCampaign } from '../../context/CampaignContext';
+import OptOutNotice from '../../components/OptOutNotice';
 
 /**
  * Variant C — LOW TEASE (Mystery/Curiosity)
@@ -21,6 +23,7 @@ import { useBrand } from '../../services/brand';
  */
 const SearchDetailPreviewVariantC = ({ person, id }) => {
   const brand = useBrand();
+  const campaign = useCampaign();
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const { submit: submitSignup, loading, error, setError, success } = useSignup();
@@ -76,6 +79,13 @@ const SearchDetailPreviewVariantC = ({ person, id }) => {
   return (
     <main className={styles.main} data-no-nav="true" style={{ background: '#fafaf9' }}>
       <style>{pulseKeyframes}</style>
+
+      {/* Partner opt-out option (campaign.optOut / shN "optout: yes") */}
+      {campaign?.optOut && (
+        <div style={{ maxWidth: 600, margin: '0.75rem auto 0', padding: '0 1rem' }}>
+          <OptOutNotice />
+        </div>
+      )}
 
       {/* Mini header */}
       <div className={styles.miniHeader} style={{ background: '#fafaf9', borderBottom: '1px solid #e8e5e0' }}>
