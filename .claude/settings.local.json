@@ -204,7 +204,11 @@
       "Bash(NODE_PATH=__CMDSUB_OUTPUT__/node_modules LINK=https://www.inmatessearcher.com/member/loginLink/6a1a2db250a7fa57688f4bdb5a46e0beca3d4676e4300bc0bd850793063fee2da994eecc6fdb10a600b52b87 node /tmp/oj-compare.js)",
       "Bash(sort -k5 -n)",
       "Bash(NODE_PATH=__CMDSUB_OUTPUT__/node_modules BASE=https://dev.www.idlookup.ai EMAIL=test21@test21.com PASSWORD=Moll12279@ node /tmp/our-report-capture.js)",
-      "Bash(NODE_PATH=__CMDSUB_OUTPUT__/node_modules BASE=https://dev.www.idlookup.ai EMAIL=test21@test21.com PASSWORD=Moll12279@ IDS=6a2360f03ee34476089faef7,6a235d643ee34476089faa84,6a16418ab3c9219c1328b361,6a163c576fec0c32365f8310,6a163bc46fec0c32365f81de,6a1630b56fec0c32365f744f,6a11ea84aaf121809263f9f5 node /tmp/our-multi.js)"
+      "Bash(NODE_PATH=__CMDSUB_OUTPUT__/node_modules BASE=https://dev.www.idlookup.ai EMAIL=test21@test21.com PASSWORD=Moll12279@ IDS=6a2360f03ee34476089faef7,6a235d643ee34476089faa84,6a16418ab3c9219c1328b361,6a163c576fec0c32365f8310,6a163bc46fec0c32365f81de,6a1630b56fec0c32365f744f,6a11ea84aaf121809263f9f5 node /tmp/our-multi.js)",
+      "Bash(sed -n '115,145p' src/utils/reportExtract.js)",
+      "Bash(sed -n '150,260p' src/utils/reportExtract.js)",
+      "Bash(sed -n '279,300p' src/utils/reportExtract.js)",
+      "Bash(sed -n '377,405p' src/pages/member/SearchResultDetailPage.js)"
     ]
   }
 }

@@ -26,7 +26,19 @@ FinancialRecordCard field coverage. NO BC ask needed for the 2 named gaps. (Poss
 secondary BC ask: evictions/marriages/divorces/akas categories — confirm if absent.)
 Creds used at runtime via env only; never stored.
 
-**(Original hypothesis, now confirmed):** BC already RETURNS the data; our UI drops fields.
+**FIX SHIPPED 2026-06-07 (`61ff71d`, bundle `public.969b1fb8.js`):** full gap analysis in
+`docs/qa/report-data-gap-analysis.md`. Surfaced in report detail (all client-side):
+address County+ZIP4; criminal mugshot(url-guarded)+name+commitment/conviction/release dates+
+sentence+marks+vehicle (inmate lifecycle); property extract REWRITTEN to BC's nested shape
+(assessment/detail/owner/history → assessed/market value, beds/baths, ownership, last sale —
+card was ~blank before, flat keys); financial lienType/courtCase#/taxPeriod; phone Business/
+Disconnected. +6 extract tests (324 total). Verified extract AND render against 7 real captures
+via local prod bundle. NOT yet deployed. Other gaps found beyond owner's 2: criminal mugshot/
+incarceration (biggest), property-blank bug, phone flags. Lone possible BC ask: evictions/
+marriages/divorces categories (unconfirmed). Address-level `ownership` P/C code left unmapped
+(undocumented legend) — surfaced ownership via property records instead.
+
+**(Original hypothesis, confirmed):** BC already RETURNS the data; our UI dropped fields.
 
 **Reference comparison the owner gave:** O.J. ("Orenthal") Simpson report.
 - Ours: generate/view on IDLookup.ai (report detail).
