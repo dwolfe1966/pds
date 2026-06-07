@@ -27,7 +27,14 @@ Legend: **BC** = present in our captured response · **Extract** = kept by repor
 | **ownership** (Owner/Renter) | ✓ | ✗ | ✗ |
 | **zip4** | ✓ | ✗ | ✗ |
 | predir/postdir/aptName/aptNum (parsed street) | ✓ | ✗ | ✗ |
-**Fix:** add `ownership`+`zip4` to extract; render `county`, `ownership`, ZIP+4 columns.
+**Fix (shipped):** render County + ZIP+4; richer rows with residence **duration**
+(~6.3 yrs), apartment/unit, and a **map** link. Verified OldCo's per-address data is the
+**same scalar field set we already carry** (`county, zip4, dateRange, ownershipStatus,
+lat/long, parsed street, apt`) — we actually hold a **superset** (we also have
+firstSeen/lastSeen, CASS, frequency). So address depth is a presentation matter, now closed.
+**Lone open item:** `ownership`/`ownershipStatus` is a single-char code (`P`/`C`) on BOTH
+sites — undocumented. Need BC's **code legend** to safely label Owner/Renter per address
+(not guessing in a published report). Small, legitimate BC ask.
 
 ### 2. Criminal Records — `reportExtract.js:273`, `CriminalCard:809`  *(BIGGEST un-flagged gap)*
 We keep only charge/court fields (offense date, charges-filed, code, description, counts,

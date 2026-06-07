@@ -124,10 +124,15 @@ integration, no new data spend.**
 ## Status & next step
 
 - **Built and verified.** Ships with the next deployment of IDLookup.ai.
-- **One open item to confirm (minor):** a few niche record categories on the legacy
-  product (e.g., evictions, marriages/divorces) — we will confirm whether the BC feed
-  includes them and, if so, surface them as well. This is the only item that could
-  involve a BC question, and it is secondary to everything above.
+- **Address depth (a specific concern raised):** we verified the legacy product's
+  per‑address information is the **same set of fields we already receive** — in fact we
+  carry a superset. We've enhanced the address section to show, per address, the
+  residence **duration**, apartment/unit, county, ZIP+4, and a map link. This was a
+  presentation difference, now closed.
+- **Open items to confirm (minor, the only candidates for a BC question):** (1) a
+  single‑character ownership code (Owner/Renter) that needs the data provider's legend to
+  label accurately; (2) a few niche record categories (e.g., evictions, marriages/divorces).
+  Both are secondary to everything above.
 
 ---
 
