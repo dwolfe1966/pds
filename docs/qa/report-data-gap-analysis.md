@@ -46,8 +46,18 @@ disposition, source). BC's `criminalList[i]` ALSO carries, all **dropped at extr
 | **bodyMark** (scars / marks / tattoos) | physical identification |
 | **vehicle** | associated vehicle(s) |
 | **name / age / dob / address** (on the record) | identity confirmation |
-**Fix:** extend criminal extract to keep photo/sexOffender/physical/vehicle; CriminalCard
-renders mugshot + a "Sex offender" badge + physical description + vehicle.
+**Fix (shipped):** criminal extract now keeps the offender **name** and a full **physical
+description** — sex, race, **height, weight, hair, eyes, skin tone, birth state** — rendered
+as a "Description" line per record. Verified on the live O.J. Simpson report (populated on
+all 44 entries).
+**Findings from real data (BC questions, not client fixes):**
+- **Mugshots:** BC returns a `photo` field but it is **empty on every record** (O.J.
+  included) — no images in our feed. *(BC ask: are criminal booking photos available?)*
+- **Sentence / release dates:** present in schema but **sparsely populated** in our feed.
+  *(BC ask: completeness of incarceration lifecycle data.)*
+- **Sex-offender flag:** the per-record `c.sexOffender` object is **present-but-empty on
+  non-offenders** — we deliberately do NOT render a per-record badge (false-positive /
+  defamation risk); the dedicated Sex Offender Registry section is authoritative.
 
 ### 3. Property Records — `reportExtract.js:336`, `PropertyCard:769`  *(extract reads WRONG keys)*
 BC's `propertyList[i]` is **nested**: `{ owner[], history[] (buyer/seller sale history),
