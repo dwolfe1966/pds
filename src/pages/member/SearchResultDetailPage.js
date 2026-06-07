@@ -4,7 +4,7 @@ import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getReportDetail, createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext, getSearchContext } from '../../services/searchContext';
-import { extractAll, formatDateRange, fmtPhone } from '../../utils/reportExtract';
+import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../utils/reportExtract';
 import { track } from '../../services/trackingService';
 
 /**
@@ -357,19 +357,33 @@ const SearchResultDetailPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {data.addresses.map((addr, i) => (
-                  <tr key={i} style={i % 2 === 0 ? {} : { backgroundColor: '#f9fafb' }}>
-                    <Td>
-                      {i === 0 && <span style={styles.currentBadge}>Current</span>}
-                      {addr.street || '—'}
-                    </Td>
-                    <Td>{addr.city || '—'}</Td>
-                    <Td>{addr.state || '—'}</Td>
-                    <Td>{addr.zip ? (addr.zip4 ? `${addr.zip}-${addr.zip4}` : addr.zip) : '—'}</Td>
-                    <Td>{addr.county || '—'}</Td>
-                    <Td>{formatDateRange(addr.firstSeen, addr.lastSeen)}</Td>
-                  </tr>
-                ))}
+                {data.addresses.map((addr, i) => {
+                  const dur = residenceDuration(addr.firstSeen, addr.lastSeen);
+                  const mapQ = encodeURIComponent(addr.full || [addr.street, addr.city, addr.state, addr.zip].filter(Boolean).join(', '));
+                  // `street` (from BC's `complete`) often already includes the unit —
+                  // only append apt when it isn't already there, to avoid "ST APT 2, APT 2".
+                  const showApt = addr.apt && !(addr.street || '').toUpperCase().includes(addr.apt.toUpperCase());
+                  return (
+                    <tr key={i} style={i % 2 === 0 ? {} : { backgroundColor: '#f9fafb' }}>
+                      <Td>
+                        {i === 0 && <span style={styles.currentBadge}>Current</span>}
+                        {addr.street || '—'}{showApt ? `, ${addr.apt}` : ''}
+                        {mapQ && (
+                          <a href={`https://www.google.com/maps/search/?api=1&query=${mapQ}`} target="_blank" rel="noopener noreferrer"
+                            style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: '#2563eb', textDecoration: 'none' }}>map ↗</a>
+                        )}
+                      </Td>
+                      <Td>{addr.city || '—'}</Td>
+                      <Td>{addr.state || '—'}</Td>
+                      <Td>{addr.zip ? (addr.zip4 ? `${addr.zip}-${addr.zip4}` : addr.zip) : '—'}</Td>
+                      <Td>{addr.county || '—'}</Td>
+                      <Td>
+                        {formatDateRange(addr.firstSeen, addr.lastSeen)}
+                        {dur && <span style={{ color: '#6b7280' }}> · {dur}</span>}
+                      </Td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </Section>

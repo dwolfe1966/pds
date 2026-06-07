@@ -125,6 +125,7 @@ function extractAll(result) {
       zip: a.zip || '',
       zip4: a.zip4 || '',
       county: a.county || '',
+      apt: [a.aptName, a.aptNum].map(safeStr).filter(Boolean).join(' ').trim(),
       // NOTE: BC also sends a single-char `ownership` code (e.g. 'P'/'C') per address,
       // but its legend is undocumented — we surface clear ownership via property records
       // (detail.ownershipStatus) instead of guessing a label here.
@@ -514,4 +515,31 @@ function extractAll(result) {
   };
 }
 
-module.exports = { extractAll, formatDateRange, formatBcDate, dedup, fmtPhone };
+/**
+ * Approximate how long someone lived at an address, from first/last-seen
+ * (YYYYMMDD ints or date-ish strings). Returns e.g. "~2.7 yrs", "~8 mo", or ''.
+ */
+function residenceDuration(first, last) {
+  const toDate = (v) => {
+    if (!v) return null;
+    const s = String(v);
+    if (/^\d{8}$/.test(s)) {
+      const dt = new Date(+s.slice(0, 4), (+s.slice(4, 6) || 1) - 1, +s.slice(6, 8) || 1);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    const dt = new Date(v);
+    return isNaN(dt.getTime()) ? null : dt;
+  };
+  const f = toDate(first);
+  const l = toDate(last);
+  if (!f || !l) return '';
+  const yrs = (l - f) / (365.25 * 24 * 3600 * 1000);
+  if (yrs < 0) return '';
+  if (yrs < 1) {
+    const mo = Math.round(yrs * 12);
+    return mo <= 0 ? '' : `~${mo} mo`;
+  }
+  return `~${yrs < 10 ? yrs.toFixed(1) : Math.round(yrs)} yrs`;
+}
+
+module.exports = { extractAll, formatDateRange, formatBcDate, dedup, fmtPhone, residenceDuration };

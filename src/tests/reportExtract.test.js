@@ -1,4 +1,4 @@
-const { extractAll, formatDateRange, dedup, fmtPhone } = require('../utils/reportExtract');
+const { extractAll, formatDateRange, dedup, fmtPhone, residenceDuration } = require('../utils/reportExtract');
 
 // ─── formatDateRange ──────────────────────────────────────────────────────
 
@@ -788,13 +788,22 @@ describe('extractAll', () => {
   // ── Expanded fields (2026-06-07 gap fix): per-address county/zip4, criminal
   //    incarceration detail + mugshot, nested property shape, financial extras ──
   describe('expanded report fields', () => {
-    test('address keeps county and zip4', () => {
+    test('address keeps county, zip4, apt', () => {
       const report = makeReport({ identities: [makePrimaryIdentity({
-        addressList: [{ complete: '1 MAIN ST', city: 'DENVER', state: 'CO', zip: '80014', zip4: '3437', county: 'DENVER' }],
+        addressList: [{ complete: '1 MAIN ST', city: 'DENVER', state: 'CO', zip: '80014', zip4: '3437', county: 'DENVER', aptName: 'APT', aptNum: '4B' }],
       })] });
       const a = extractAll(report).addresses[0];
       expect(a.county).toBe('DENVER');
       expect(a.zip4).toBe('3437');
+      expect(a.apt).toBe('APT 4B');
+    });
+
+    test('residenceDuration approximates years/months from YYYYMMDD', () => {
+      expect(residenceDuration(20230101, 20260101)).toBe('~3.0 yrs');
+      expect(residenceDuration(20251101, 20260518)).toBe('~7 mo');
+      expect(residenceDuration(20000101, 20260101)).toBe('~26 yrs');
+      expect(residenceDuration(null, 20260101)).toBe('');
+      expect(residenceDuration(20260101, 20250101)).toBe('');
     });
 
     test('criminal record extracts incarceration detail + guards mugshot', () => {
