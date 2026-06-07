@@ -2,9 +2,8 @@
 
 Comparing the O.J. ("Orenthal") Simpson report on both sites, which use the **same
 BC API + data provider**. BC staff observed the old site surfaces more (1) per-address
-detail and (2) financial info. This documents what's **verified on the wire** so far —
-the final display-gap-vs-product-gap conclusion is **deliberately deferred** pending one
-artifact (see "Open fork").
+detail and (2) financial info. **Resolved: it's a display/rendering gap on our side, not
+a data or BC-product gap** — we already receive equivalent-or-richer data (see RESOLVED).
 
 ## What the OLD site actually serves (captured on the wire)
 Endpoint: `GET /api/commerce/customer/find/contents` →
@@ -43,23 +42,44 @@ We do NOT render `county` (extracted but dropped) or `ownershipStatus` (not extr
   to our *own* `BC_REPORT_RESPONSE_STRUCTURE.md`, NOT to reality. The old-site capture
   disproves any "we already surface everything" reassurance. Treat that doc as incomplete.
 
-## Open fork — needs ONE artifact to close
-**Does OUR `/idLookup/report/detail` response ALSO contain `tempClient.processed.person`?**
-- **YES** → pure **display/adapter gap**: we already receive the rich data and only read
-  `transient.identities`. Fixable entirely client-side, NO BC dependency. (Big, good outcome.)
-- **NO** → BC hands us a structurally thinner shape (different product/provider/endpoint) →
-  that's the **BC ask**.
+## RESOLVED (2026-06-07) — it's a DISPLAY gap, not a data/BC gap
+Captured OUR `/idLookup/report/detail` as a logged-in paid member across **7 saved
+reports**. Findings:
 
-Everything else (28 addresses, county, ownership, finance/foreclosures/evictions) is
-downstream of this. **Cannot be answered from the competitor capture alone** — we have
-zero captures of our own report payload, and the repo has none saved.
+- **No `tempClient.processed.person`** in our payload — but it doesn't matter, because
+  our `raws[].transient.identities[0]` is just as rich (different field names, equivalent
+  data). `hasProcessed=false`, `hasTransient/identities/addressList=true`.
+- **Per-address: we ALREADY receive `county`, `ownership` (owner/renter), `zip4`,
+  `dateRange`, lat/long, parsed street (predir/streetNumber/street/suffix), aptName.**
+  Verified across subjects: every report has per-address `county`; property-linked
+  addresses carry `ownership`. Our UI (`SearchResultDetailPage` address table) renders
+  only street/city/state/zip + date range → **we DROP county/ownership/zip4 in the UI.**
+- **Financial: we ALREADY receive POPULATED `lienList` etc. when the subject has them.**
+  One subject (28 addresses) returned `lienList:3` + `criminalList:8`. Each lien is
+  deeply detailed: `caseDescription` ("STATE TAX LIEN"), `documentLocation.docNumber`,
+  `recordingDate`, `taxPeriodMax/Min`, `issuingAgency`, `debtor`, FIPS/county/state,
+  `lienType`, `creditor`. We render these via `FinancialRecordCard`.
+- **Category breadth is huge on our side** — the identity exposes 40+ lists incl.
+  `lienList, judgmentList, bankruptcyList, foreclosureList, criminalList, arrestsList,
+  arrestWatchList, propertyList, professionalList, driverLicenseList, veteranList,
+  motorVehicleList, aircraftList, businessList, deathList, sanctionsList, fraudList,
+  relationshipList(58)`.
 
-**Cheapest way to get it (do NOT mint a fresh report through captcha+payment):**
-1. A dev member session on idlookup.ai with ≥1 existing paid report → run the same capture
-   technique against `/idLookup/report/detail/<id>` and grep raws for `tempClient.processed`
-   vs `transient.identities`. (Viewing an existing report should not be captcha-gated.)
-2. Or an existing `commerceContentId` queried via CSR.
+**Conclusion:** the BC staffer's "old site got more from the same API" is, on our side,
+a **rendering/presentation gap — NOT a data-acquisition or BC-product gap.** We already
+receive equivalent-or-richer data; we just don't surface all of it.
 
-## Captures (local, not committed — contain PII)
-`/tmp/oj-out/` — old-site payloads (`net-36.json` = saved-reports contents incl. O.J.
-processed.person; `net-10.json` = a report with full financials), screenshots, text.
+### Recommended fix (client-side, no BC dependency)
+1. **Address History table:** add `county`, `ownership` (Owner/Renter/Leased), `zip4`
+   (or full ZIP+4), and show the full address-history depth (don't cap). `reportExtract`
+   already keeps `county`; add `ownership`.
+2. **Financial section:** confirm `FinancialRecordCard` surfaces the rich lien fields we
+   receive (case description, doc #, recording date, tax period, issuing agency, debtor) —
+   it largely does; audit for any dropped fields.
+3. **(Optional) Category parity:** old-site `processed.person` also lists evictions,
+   marriages, divorces, akas — confirm whether our identity returns these; if not, that's
+   the only candidate genuine BC ask (small, secondary to the owner's two named gaps).
+
+## Captures (local /tmp only, NOT committed — contain PII)
+`/tmp/oj-out/` (old site) + `/tmp/our-out/` (ours). Credentials were used at runtime via
+env vars only — never written to any file, script, commit, or memory.
