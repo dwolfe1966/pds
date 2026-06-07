@@ -352,6 +352,7 @@ const SearchResultDetailPage = () => {
                   <Th>City</Th>
                   <Th>State</Th>
                   <Th>ZIP</Th>
+                  <Th>County</Th>
                   <Th>Dates</Th>
                 </tr>
               </thead>
@@ -364,7 +365,8 @@ const SearchResultDetailPage = () => {
                     </Td>
                     <Td>{addr.city || '—'}</Td>
                     <Td>{addr.state || '—'}</Td>
-                    <Td>{addr.zip || '—'}</Td>
+                    <Td>{addr.zip ? (addr.zip4 ? `${addr.zip}-${addr.zip4}` : addr.zip) : '—'}</Td>
+                    <Td>{addr.county || '—'}</Td>
                     <Td>{formatDateRange(addr.firstSeen, addr.lastSeen)}</Td>
                   </tr>
                 ))}
@@ -382,6 +384,7 @@ const SearchResultDetailPage = () => {
                   <Th>Number</Th>
                   <Th>Type</Th>
                   <Th>Carrier</Th>
+                  <Th>Status</Th>
                   <Th>Dates</Th>
                 </tr>
               </thead>
@@ -394,6 +397,9 @@ const SearchResultDetailPage = () => {
                     </Td>
                     <Td>{p.type || '—'}</Td>
                     <Td>{p.carrier || '—'}</Td>
+                    <Td>
+                      {[p.business && 'Business', p.disconnected && 'Disconnected'].filter(Boolean).join(' · ') || '—'}
+                    </Td>
                     <Td>{formatDateRange(p.firstSeen, p.lastSeen)}</Td>
                   </tr>
                 ))}
@@ -769,17 +775,32 @@ const FamilyWatchdogSection = ({ offenders }) => {
 const PropertyCard = ({ property }) => {
   const p = property;
   const addressLine = [p.address, p.city, p.state, p.zip].filter(Boolean).join(', ');
+  const usd = (v) => `$${Number(v).toLocaleString()}`;
   return (
     <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
-      <p style={styles.listItemTitle}>{addressLine || 'Property record'}</p>
+      <p style={styles.listItemTitle}>
+        {addressLine || 'Property record'}
+        {p.foreclosure && <span style={{ marginLeft: '0.5rem', padding: '0.125rem 0.5rem', fontSize: '0.7rem', fontWeight: 600, color: '#fff', background: '#b91c1c', borderRadius: '0.25rem' }}>FORECLOSURE</span>}
+      </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.5rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
-        {p.ownerType && <div><strong>Type:</strong> {p.ownerType}</div>}
-        {p.apn && <div><strong>APN:</strong> {p.apn}</div>}
-        {p.purchasePrice && <div><strong>Purchase:</strong> ${Number(p.purchasePrice).toLocaleString()} {p.purchaseDate && `(${p.purchaseDate})`}</div>}
-        {p.assessedValue && <div><strong>Assessed:</strong> ${Number(p.assessedValue).toLocaleString()} {p.assessedYear && `(${p.assessedYear})`}</div>}
+        {p.owner && <div style={{ gridColumn: 'span 2' }}><strong>Owner:</strong> {p.owner}</div>}
+        {p.ownershipStatus && <div><strong>Ownership:</strong> {p.ownershipStatus}</div>}
+        {p.useCode && <div><strong>Use:</strong> {p.useCode}</div>}
+        {p.assessedValue && <div><strong>Assessed:</strong> {usd(p.assessedValue)} {p.assessedYear && `(${p.assessedYear})`}</div>}
+        {p.marketValue && <div><strong>Market:</strong> {usd(p.marketValue)}</div>}
+        {p.totalTax && <div><strong>Annual tax:</strong> {usd(p.totalTax)}</div>}
         {p.bedCount && <div><strong>Beds:</strong> {p.bedCount}</div>}
         {p.bathCount && <div><strong>Baths:</strong> {p.bathCount}</div>}
-        {p.coOwner && <div><strong>Co-owner:</strong> {p.coOwner}</div>}
+        {p.yearBuilt && <div><strong>Built:</strong> {p.yearBuilt}</div>}
+        {p.buildingSqft && <div><strong>Building:</strong> {Number(p.buildingSqft).toLocaleString()} sqft</div>}
+        {p.lotSqft && <div><strong>Lot:</strong> {Number(p.lotSqft).toLocaleString()} sqft</div>}
+        {p.apn && <div><strong>Parcel #:</strong> {p.apn}</div>}
+        {p.county && <div><strong>County:</strong> {p.county}</div>}
+        {p.lastSale && (p.lastSale.date || p.lastSale.deedType) && (
+          <div style={{ gridColumn: 'span 2' }}>
+            <strong>Last transfer:</strong> {[p.lastSale.date, p.lastSale.deedType, p.lastSale.buyer && `to ${p.lastSale.buyer}`].filter(Boolean).join(' · ')}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -809,22 +830,40 @@ const LicenseRow = ({ license }) => {
 const CriminalCard = ({ record }) => {
   const r = record;
   return (
-    <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
-      <p style={styles.listItemTitle}>
-        {r.description || r.offenseCode || 'Court record'}
-        {r.counts && <span style={{ fontWeight: 400, color: '#6b7280' }}> · count {r.counts}</span>}
-      </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
-        {r.caseNumber && <div><strong>Case #:</strong> {r.caseNumber}</div>}
-        {r.offenseDate && <div><strong>Offense:</strong> {r.offenseDate}</div>}
-        {r.chargesFiledDate && <div><strong>Charges filed:</strong> {r.chargesFiledDate}</div>}
-        {r.disposition && (
-          <div style={{ gridColumn: 'span 2' }}>
-            <strong>Disposition:</strong> {r.disposition}
-            {r.dispositionDate && ` (${r.dispositionDate})`}
-          </div>
-        )}
-        {r.sourceName && <div style={{ gridColumn: 'span 2' }}><strong>Source:</strong> {r.sourceName}</div>}
+    <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem', display: 'flex', gap: '1rem' }}>
+      {r.photo && (
+        <img
+          src={r.photo}
+          alt={r.name ? `${r.name} booking photo` : 'Booking photo'}
+          style={{ width: 96, height: 120, objectFit: 'cover', borderRadius: '0.375rem', flexShrink: 0, background: '#e5e7eb' }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={styles.listItemTitle}>
+          {r.description || r.offenseCode || 'Court record'}
+          {r.counts && <span style={{ fontWeight: 400, color: '#6b7280' }}> · count {r.counts}</span>}
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
+          {r.name && <div style={{ gridColumn: 'span 2' }}><strong>Name on record:</strong> {r.name}</div>}
+          {r.caseNumber && <div><strong>Case #:</strong> {r.caseNumber}</div>}
+          {r.offenseDate && <div><strong>Offense:</strong> {r.offenseDate}</div>}
+          {r.chargesFiledDate && <div><strong>Charges filed:</strong> {r.chargesFiledDate}</div>}
+          {r.convictionDate && <div><strong>Convicted:</strong> {r.convictionDate}</div>}
+          {r.commitmentDate && <div><strong>Committed:</strong> {r.commitmentDate}</div>}
+          {r.sentence && <div><strong>Sentence:</strong> {r.sentence}</div>}
+          {r.releaseDate && <div><strong>Release:</strong> {r.releaseDate}</div>}
+          {r.disposition && (
+            <div style={{ gridColumn: 'span 2' }}>
+              <strong>Disposition:</strong> {r.disposition}
+              {r.dispositionDate && ` (${r.dispositionDate})`}
+            </div>
+          )}
+          {r.marks && r.marks.length > 0 && <div style={{ gridColumn: 'span 2' }}><strong>Marks/scars:</strong> {r.marks.join('; ')}</div>}
+          {r.vehicles && r.vehicles.length > 0 && <div style={{ gridColumn: 'span 2' }}><strong>Vehicle:</strong> {r.vehicles.join('; ')}</div>}
+          {r.comments && <div style={{ gridColumn: 'span 2' }}>{r.comments}</div>}
+          {r.sourceName && <div style={{ gridColumn: 'span 2' }}><strong>Source:</strong> {r.sourceName}</div>}
+        </div>
       </div>
     </div>
   );
@@ -844,6 +883,9 @@ const FinancialRecordCard = ({ record }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
         {r.recordingDate && <div><strong>Recorded:</strong> {r.recordingDate}</div>}
         {r.documentNumber && <div><strong>Doc #:</strong> {r.documentNumber}</div>}
+        {r.lienType && <div><strong>Lien type:</strong> {r.lienType}</div>}
+        {r.courtCaseNumber && <div><strong>Court case #:</strong> {r.courtCaseNumber}</div>}
+        {r.taxPeriod && <div><strong>Tax period:</strong> {r.taxPeriod}</div>}
         {r.county && <div><strong>County:</strong> {r.county}{r.state ? `, ${r.state}` : ''}</div>}
         {r.creditor && <div><strong>Creditor:</strong> {r.creditor}</div>}
         {r.issuingAgency && <div style={{ gridColumn: 'span 2' }}><strong>Issuing agency:</strong> {r.issuingAgency}</div>}

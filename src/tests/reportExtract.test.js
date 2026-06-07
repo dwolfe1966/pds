@@ -784,4 +784,85 @@ describe('extractAll', () => {
       expect(data.fullName).toBe('Unknown');
     });
   });
+
+  // ── Expanded fields (2026-06-07 gap fix): per-address county/zip4, criminal
+  //    incarceration detail + mugshot, nested property shape, financial extras ──
+  describe('expanded report fields', () => {
+    test('address keeps county and zip4', () => {
+      const report = makeReport({ identities: [makePrimaryIdentity({
+        addressList: [{ complete: '1 MAIN ST', city: 'DENVER', state: 'CO', zip: '80014', zip4: '3437', county: 'DENVER' }],
+      })] });
+      const a = extractAll(report).addresses[0];
+      expect(a.county).toBe('DENVER');
+      expect(a.zip4).toBe('3437');
+    });
+
+    test('criminal record extracts incarceration detail + guards mugshot', () => {
+      const report = makeReport({ identities: [makePrimaryIdentity({
+        criminalList: [{
+          name: [{ data: 'JOHN DOE' }],
+          photo: 'https://img.example/mug.jpg',
+          bodyMark: [{ description: 'TATTOO L ARM' }],
+          vehicle: [{ year: '2010', make: 'FORD', model: 'F150' }],
+          offense: [{
+            date: { data: '01/02/2010' },
+            commitment: { date: { data: '03/04/2010' } },
+            releaseDate: { data: '05/06/2012' },
+            sentence: { data: '24 MONTHS' },
+            description: 'BURGLARY',
+          }],
+        }],
+      })] });
+      const c = extractAll(report).criminalRecords[0];
+      expect(c.name).toBe('JOHN DOE');
+      expect(c.photo).toBe('https://img.example/mug.jpg');
+      expect(c.commitmentDate).toBe('03/04/2010');
+      expect(c.releaseDate).toBe('05/06/2012');
+      expect(c.sentence).toBe('24 MONTHS');
+      expect(c.marks).toEqual(['TATTOO L ARM']);
+      expect(c.vehicles).toEqual(['2010 FORD F150']);
+    });
+
+    test('non-url photo is dropped (no broken img src)', () => {
+      const report = makeReport({ identities: [makePrimaryIdentity({
+        criminalList: [{ photo: 'not-a-url', offense: [{ description: 'X' }] }],
+      })] });
+      expect(extractAll(report).criminalRecords[0].photo).toBe('');
+    });
+
+    test('property reads the nested BC shape (assessment/detail/owner/history)', () => {
+      const report = makeReport({ identities: [makePrimaryIdentity({
+        propertyList: [{
+          address: { data: '8 THERESA AVE', city: 'BURLINGTON', state: 'MA', zip: '01803' },
+          assessment: { assessedValue: 1046200, marketValue: 1326000, taxYear: '2025', totalTax: 9060 },
+          detail: { county: 'MIDDLESEX', parcelNumber: 'BURL-65', ownershipStatus: 'TRUST', bedrooms: 4, bathrooms: 2.5, yearBuilt: '1993' },
+          owner: [{ personName: [{ first: 'TIM', last: 'CHIN' }] }],
+          history: [{ detail: { transferDate: { data: '09/18/2019' }, deedType: 'QUIT CLAIM DEED' }, buyer: [{ name: 'CHIN FT' }] }],
+          foreclosure: {},
+        }],
+      })] });
+      const p = extractAll(report).properties[0];
+      expect(p.assessedValue).toBe(1046200);
+      expect(p.bedCount).toBe(4);
+      expect(p.ownershipStatus).toBe('TRUST');
+      expect(p.owner).toBe('TIM CHIN');
+      expect(p.lastSale.date).toBe('09/18/2019');
+      expect(p.lastSale.deedType).toBe('QUIT CLAIM DEED');
+      expect(p.foreclosure).toBe(false);
+    });
+
+    test('financial record keeps lienType, courtCaseNumber, taxPeriod', () => {
+      const report = makeReport({ identities: [makePrimaryIdentity({
+        lienList: [{
+          record: [{ caseDescription: 'STATE TAX LIEN', taxPeriodMin: { data: '01/01/2014' }, taxPeriodMax: { data: '12/31/2014' } }],
+          lienType: ['TAX'],
+          courtCaseNumber: ['CV-123'],
+        }],
+      })] });
+      const l = extractAll(report).liens[0];
+      expect(l.lienType).toBe('TAX');
+      expect(l.courtCaseNumber).toBe('CV-123');
+      expect(l.taxPeriod).toBe('01/01/2014 – 12/31/2014');
+    });
+  });
 });

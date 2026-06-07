@@ -123,7 +123,11 @@ function extractAll(result) {
       city: a.city || '',
       state: a.state || '',
       zip: a.zip || '',
+      zip4: a.zip4 || '',
       county: a.county || '',
+      // NOTE: BC also sends a single-char `ownership` code (e.g. 'P'/'C') per address,
+      // but its legend is undocumented — we surface clear ownership via property records
+      // (detail.ownershipStatus) instead of guessing a label here.
       firstSeen: a.meta?.firstSeen || a.firstSeen || null,
       lastSeen: a.meta?.lastSeen || a.lastSeen || null,
       dateRange: a.dateRange || '',
@@ -276,11 +280,29 @@ function extractAll(result) {
     const crimes = Array.isArray(c.crime) ? c.crime : [];
     // Prefer offense[] (richer); fall back to crime[] if offense is empty
     const source = offenses.length ? offenses : crimes;
+    // Per-record (person-level) detail shared across this record's offenses.
+    // High-value for an inmate-search product: mugshot, physical marks, vehicle.
+    const nm = Array.isArray(c.name) ? c.name[0] : null;
+    const offenderName = nm ? safeStr(nm.data || [nm.first, nm.middle, nm.last].filter(Boolean).join(' ')) : '';
+    const photo = c.photo;
+    const photoUrl = typeof photo === 'string' ? photo
+      : (photo?.url || photo?.data
+        || (Array.isArray(photo) ? (typeof photo[0] === 'string' ? photo[0] : (photo[0]?.url || photo[0]?.data || '')) : '')) || '';
+    const marks = Array.isArray(c.bodyMark)
+      ? c.bodyMark.map(m => safeStr(typeof m === 'string' ? m : (m?.description || m?.type || m?.data || ''))).filter(Boolean)
+      : [];
+    const vehicles = Array.isArray(c.vehicle)
+      ? c.vehicle.map(v => safeStr(typeof v === 'string' ? v : (v?.description || [v?.year, v?.make, v?.model].filter(Boolean).join(' ') || v?.data || ''))).filter(Boolean)
+      : [];
     source.forEach((o, oi) => {
       const offense = o.offense || o;
       const courtCase = o.courtCase || o;
       criminalRecords.push({
         id: `${ci}-${oi}`,
+        name: offenderName,
+        photo: /^(https?:|data:)/i.test(photoUrl) ? photoUrl : '',
+        marks,
+        vehicles,
         caseNumber: safeStr(o.caseNumber || courtCase.caseNumber || ''),
         offenseDate: pickBcDate(offense.date, o.date),
         chargesFiledDate: pickBcDate(courtCase.chargesFiledDate, o.chargesFiledDate),
@@ -289,6 +311,12 @@ function extractAll(result) {
         counts: safeStr(courtCase.counts || o.counts),
         disposition: safeStr((courtCase.disposition || o.disposition)?.data),
         dispositionDate: pickBcDate((courtCase.disposition || o.disposition)?.date),
+        // Incarceration lifecycle — populated for actual inmate records.
+        commitmentDate: pickBcDate(offense.commitment?.date),
+        convictionDate: pickBcDate(offense.conviction?.date),
+        sentence: safeStr(offense.sentence?.data || offense.sentence?.term || (typeof offense.sentence === 'string' ? offense.sentence : '')),
+        releaseDate: pickBcDate(offense.releaseDate),
+        comments: safeStr(offense.comments),
         sourceState: safeStr(o.sourceState || c.sourceState),
         sourceName: safeStr(o.sourceName || c.sourceName),
         category: safeStr(offense.category || o.category),
@@ -321,6 +349,9 @@ function extractAll(result) {
         creditor: Array.isArray(rec.creditor) ? rec.creditor.map(c => c?.name?.[0]?.first ? [c.name[0].first, c.name[0].last].filter(Boolean).join(' ') : '').filter(Boolean).join(', ') : '',
         debtorName,
         debtorAddress,
+        lienType: Array.isArray(rec.lienType) ? rec.lienType.filter(Boolean).join(', ') : safeStr(rec.lienType),
+        courtCaseNumber: Array.isArray(rec.courtCaseNumber) ? rec.courtCaseNumber.filter(Boolean).join(', ') : safeStr(rec.courtCaseNumber),
+        taxPeriod: [pickBcDate(r0.taxPeriodMin), pickBcDate(r0.taxPeriodMax)].filter(Boolean).join(' – '),
       };
     });
   };
@@ -329,21 +360,50 @@ function extractAll(result) {
   const foreclosures = extractFinancialRecords(primary.foreclosureList, 'Foreclosure');
   const bankruptcies = extractFinancialRecords(primary.bankruptcyList, 'Bankruptcy');
 
-  // Properties — schema unknown without populated sample; we extract best-effort
-  const properties = (primary.propertyList || []).map((p, i) => ({
-    id: `prop-${i}`,
-    apn: safeStr(p.apn || p.parcelNumber),
-    address: safeStr(p.address || p.fullAddress || p.complete || p.data || ''),
-    city: safeStr(p.city), state: safeStr(p.state), zip: safeStr(p.zip),
-    purchasePrice: p.purchasePrice || p.salePrice || null,
-    purchaseDate: pickBcDate(p.purchaseDate, p.saleDate),
-    assessedValue: p.assessedValue || p.value || null,
-    assessedYear: p.assessedYear || null,
-    bedCount: p.bedCount || p.bedrooms || null,
-    bathCount: p.bathCount || p.bathrooms || null,
-    ownerType: safeStr(p.ownerType || p.type),
-    coOwner: safeStr(p.coOwner),
-  }));
+  // Properties — BC's propertyList[i] is NESTED: { address{}, assessment{},
+  // detail{}, owner[], history[], foreclosure{} }. (Earlier flat-key extract read
+  // p.apn/p.assessedValue etc. that don't exist → card rendered nothing.)
+  const ownerName = (oArr) => {
+    const o0 = Array.isArray(oArr) ? oArr[0] : null;
+    if (!o0) return '';
+    if (o0.name) return safeStr(o0.name);
+    const pn = Array.isArray(o0.personName) ? o0.personName[0] : null;
+    return pn ? safeStr([pn.first, pn.middle, pn.last].filter(Boolean).join(' ')) : '';
+  };
+  const properties = (primary.propertyList || []).map((p, i) => {
+    const det = p.detail || {};
+    const ass = p.assessment || {};
+    const addr = p.address || {};
+    const lastSale = (Array.isArray(p.history) ? p.history : [])
+      .map(h => ({
+        date: pickBcDate(h.detail?.transferDate, h.detail?.receiptDate),
+        deedType: safeStr(h.detail?.deedType),
+        buyer: ownerName(h.buyer),
+        seller: ownerName(h.seller),
+      }))
+      .filter(s => s.date || s.deedType)[0] || null;
+    return {
+      id: `prop-${i}`,
+      address: safeStr(addr.data || addr.complete || [addr.streetNumber, addr.predir, addr.street, addr.streetSuffix].filter(Boolean).join(' ')),
+      city: safeStr(addr.city), state: safeStr(addr.state), zip: safeStr(addr.zip),
+      apn: safeStr(det.parcelNumber),
+      county: safeStr(det.county),
+      useCode: safeStr(det.useCode),
+      ownershipStatus: safeStr(det.ownershipStatus),       // clear text: "TRUST", "JOINT TENANTS"…
+      bedCount: det.bedrooms || null,
+      bathCount: det.bathrooms || null,
+      yearBuilt: safeStr(det.yearBuilt),
+      buildingSqft: det.buildingSqft || null,
+      lotSqft: det.lotSqft || null,
+      assessedValue: ass.assessedValue || null,
+      marketValue: ass.marketValue || null,
+      assessedYear: safeStr(ass.taxYear || ass.assessorYear),
+      totalTax: ass.totalTax || null,
+      owner: ownerName(p.owner),
+      lastSale,
+      foreclosure: !!(p.foreclosure && Object.keys(p.foreclosure).length),
+    };
+  });
 
   // Professional licences
   const professionalLicenses = (primary.professionalList || []).map((p, i) => ({
