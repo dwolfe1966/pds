@@ -13,10 +13,20 @@ IDLookup.ai does. Two named gaps:
 1. **More information per previous address** (per-address detail breadth).
 2. **More financial info** — liens, bankruptcies, judgments, etc.
 
-**Hypothesis (most likely):** BC's report API already RETURNS this data; our report-detail
-UI/adapter just doesn't render it (we're dropping fields). "Same API + data provider" points
-to a display gap, not a data-source gap. Confirm by comparing BC's raw report response vs what
-our report component renders.
+**RESOLVED 2026-06-07 — it's a DISPLAY gap, not a data/BC gap.** Full writeup:
+`docs/qa/report-breadth-comparison.md`. Captured our own `/idLookup/report/detail` as paid
+member test21 across 7 saved reports. Our `raws[].transient.identities[0]` already carries:
+per-address `county`+`ownership`+`zip4`+`dateRange`+lat/long; POPULATED `lienList` (one
+subject: 3 liens, deeply detailed — caseDescription/docNumber/recordingDate/taxPeriod/
+issuingAgency/debtor) + 40+ categories. Old site uses a different endpoint shape
+(`/api/commerce/customer/find/contents` → `tempClient.processed.person`) but equivalent data.
+Our UI just renders street/city/state/zip+dates per address and drops county/ownership.
+**Fix = client-side:** surface county/ownership/zip4 in the address table; audit
+FinancialRecordCard field coverage. NO BC ask needed for the 2 named gaps. (Possible
+secondary BC ask: evictions/marriages/divorces/akas categories — confirm if absent.)
+Creds used at runtime via env only; never stored.
+
+**(Original hypothesis, now confirmed):** BC already RETURNS the data; our UI drops fields.
 
 **Reference comparison the owner gave:** O.J. ("Orenthal") Simpson report.
 - Ours: generate/view on IDLookup.ai (report detail).
