@@ -860,6 +860,19 @@ const CriminalCard = ({ record }) => {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
           {r.name && <div style={{ gridColumn: 'span 2' }}><strong>Name on record:</strong> {r.name}</div>}
+          {r.physical && (
+            <div style={{ gridColumn: 'span 2' }}>
+              <strong>Description:</strong> {[
+                r.physical.sex, r.physical.race,
+                r.physical.height && `Ht ${r.physical.height}`,
+                r.physical.weight && `Wt ${r.physical.weight}`,
+                r.physical.hairColor && `Hair ${r.physical.hairColor}`,
+                r.physical.eyeColor && `Eyes ${r.physical.eyeColor}`,
+                r.physical.skinTone && `Skin ${r.physical.skinTone}`,
+                r.physical.birthState && `Born ${r.physical.birthState}`,
+              ].filter(Boolean).join(' · ')}
+            </div>
+          )}
           {r.caseNumber && <div><strong>Case #:</strong> {r.caseNumber}</div>}
           {r.offenseDate && <div><strong>Offense:</strong> {r.offenseDate}</div>}
           {r.chargesFiledDate && <div><strong>Charges filed:</strong> {r.chargesFiledDate}</div>}

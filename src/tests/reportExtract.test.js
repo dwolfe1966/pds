@@ -832,6 +832,24 @@ describe('extractAll', () => {
       expect(c.vehicles).toEqual(['2010 FORD F150']);
     });
 
+    test('criminal record extracts physical descriptors (not sex-offender flag)', () => {
+      const report = makeReport({ identities: [makePrimaryIdentity({
+        criminalList: [{
+          sex: 'MALE', race: 'BLACK', height: "6' 2", weight: '212 LBS', hairColor: 'BLACK',
+          eyeColor: 'DARK BROWN', birthState: 'CA',
+          // present-but-empty sexOffender object (as on non-offenders) must NOT flag anything
+          sexOffender: { registerDate: { sortable: 0 } },
+          offense: [{ description: 'ROBBERY' }],
+        }],
+      })] });
+      const c = extractAll(report).criminalRecords[0];
+      expect(c.physical.sex).toBe('MALE');
+      expect(c.physical.height).toBe("6' 2");
+      expect(c.physical.hairColor).toBe('BLACK');
+      // No sexOffender field should leak onto the record from a present-but-empty object.
+      expect(c.sexOffender).toBeUndefined();
+    });
+
     test('non-url photo is dropped (no broken img src)', () => {
       const report = makeReport({ identities: [makePrimaryIdentity({
         criminalList: [{ photo: 'not-a-url', offense: [{ description: 'X' }] }],

@@ -295,6 +295,24 @@ function extractAll(result) {
     const vehicles = Array.isArray(c.vehicle)
       ? c.vehicle.map(v => safeStr(typeof v === 'string' ? v : (v?.description || [v?.year, v?.make, v?.model].filter(Boolean).join(' ') || v?.data || ''))).filter(Boolean)
       : [];
+    // Physical descriptors (populated on real criminal records — verified on live
+    // data). Simple strings. NOTE: we deliberately do NOT derive a per-record
+    // "sex offender" flag from c.sexOffender — the field is present-but-empty on
+    // non-offenders, so presence is not a positive; the dedicated Sex Offender
+    // Registry section (familyWatchdog) is the authoritative source.
+    const physical = {
+      sex: safeStr(c.sex),
+      race: safeStr(c.race),
+      // Provider sometimes appends a dangling " OR" artifact (e.g. "212 LBS OR").
+      height: safeStr(c.height).replace(/\s+OR\s*$/i, '').trim(),
+      weight: safeStr(c.weight).replace(/\s+OR\s*$/i, '').trim(),
+      hairColor: safeStr(c.hairColor),
+      eyeColor: safeStr(c.eyeColor),
+      skinTone: safeStr(c.skinTone),
+      age: safeStr(c.age),
+      birthState: safeStr(c.birthState),
+    };
+    const hasPhysical = Object.values(physical).some(Boolean);
     source.forEach((o, oi) => {
       const offense = o.offense || o;
       const courtCase = o.courtCase || o;
@@ -304,6 +322,7 @@ function extractAll(result) {
         photo: /^(https?:|data:)/i.test(photoUrl) ? photoUrl : '',
         marks,
         vehicles,
+        physical: hasPhysical ? physical : null,
         caseNumber: safeStr(o.caseNumber || courtCase.caseNumber || ''),
         offenseDate: pickBcDate(offense.date, o.date),
         chargesFiledDate: pickBcDate(courtCase.chargesFiledDate, o.chargesFiledDate),
