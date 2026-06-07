@@ -1,0 +1,1586 @@
+{
+    "exportFormatVersion": 2,
+    "exportTime": "2026-06-06 19:13:34",
+    "containerVersion": {
+        "path": "accounts/6347502676/containers/248333046/versions/0",
+        "accountId": "6347502676",
+        "containerId": "248333046",
+        "containerVersionId": "0",
+        "container": {
+            "path": "accounts/6347502676/containers/248333046",
+            "accountId": "6347502676",
+            "containerId": "248333046",
+            "name": "www.idlookup.ai",
+            "publicId": "GTM-THCSBJWN",
+            "usageContext": [
+                "WEB"
+            ],
+            "fingerprint": "1778952791176",
+            "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6347502676/containers/248333046/workspaces?apiLink=container",
+            "features": {
+                "supportUserPermissions": true,
+                "supportEnvironments": true,
+                "supportWorkspaces": true,
+                "supportGtagConfigs": false,
+                "supportBuiltInVariables": true,
+                "supportClients": false,
+                "supportFolders": true,
+                "supportTags": true,
+                "supportTemplates": true,
+                "supportTriggers": true,
+                "supportVariables": true,
+                "supportVersions": true,
+                "supportZones": true,
+                "supportTransformations": false
+            },
+            "tagIds": [
+                "GTM-THCSBJWN"
+            ]
+        },
+        "tag": [
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "tagId": "10",
+                "name": "Adwords - Conversion Linker",
+                "type": "gclidw",
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableCrossDomain",
+                        "value": "false"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableUrlPassthrough",
+                        "value": "false"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableCookieOverrides",
+                        "value": "false"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "firingTriggerId": [
+                    "8",
+                    "9"
+                ],
+                "tagFiringOption": "ONCE_PER_EVENT",
+                "monitoringMetadata": {
+                    "type": "MAP"
+                },
+                "consentSettings": {
+                    "consentStatus": "NOT_SET"
+                }
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "tagId": "29",
+                "name": "Adwords - Pixel Signup Conversion",
+                "type": "awct",
+                "parameter": [
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableNewCustomerReporting",
+                        "value": "false"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableConversionLinker",
+                        "value": "true"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "orderId",
+                        "value": "{{Variable - Session ID}}"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableProductReporting",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "conversionValue",
+                        "value": "{{Variable - Transaction Amount}}"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "conversionCookiePrefix",
+                        "value": "_gcl"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "enableShippingData",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "conversionId",
+                        "value": "18044069648"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "currencyCode",
+                        "value": "{{Variable - Transaction Currency}}"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "conversionLabel",
+                        "value": "6CztCM_GgZUcEJDOipxD"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "rdp",
+                        "value": "false"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "firingTriggerId": [
+                    "26",
+                    "21",
+                    "23"
+                ],
+                "tagFiringOption": "ONCE_PER_EVENT",
+                "monitoringMetadata": {
+                    "type": "MAP"
+                },
+                "consentSettings": {
+                    "consentStatus": "NOT_SET"
+                }
+            }
+        ],
+        "trigger": [
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "8",
+                "name": "Page View - All Pages",
+                "type": "PAGEVIEW",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "7"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "9",
+                "name": "History Change - All Events",
+                "type": "HISTORY_CHANGE",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "7"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "21",
+                "name": "Page Load - Sales Confirmation Internal CasD",
+                "type": "PAGEVIEW",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai/pixelforsignup"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "type=pixel"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Variable - Partner Name}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "Internal"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Variable - Partner Channel}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "Cascade Decliner"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "7"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "23",
+                "name": "Page Load - Sales Confirmation Internal CasX",
+                "type": "PAGEVIEW",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai/pixelforsignup"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "type=pixel"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Variable - Partner Name}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "Internal"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Variable - Partner Channel}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "Cascade Exit"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "7"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "24",
+                "name": "Error - All Pages",
+                "type": "JS_ERROR",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "7"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "25",
+                "name": "Scroll - Sales Vertical",
+                "type": "SCROLL_DEPTH",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "7",
+                "parameter": [
+                    {
+                        "type": "TEMPLATE",
+                        "key": "verticalThresholdUnits",
+                        "value": "PERCENT"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "verticalThresholdsPercent",
+                        "value": "30, 40, 50, 60, 70, 80, 90, 100"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "verticalThresholdOn",
+                        "value": "true"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "triggerStartOption",
+                        "value": "WINDOW_LOAD"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "horizontalThresholdOn",
+                        "value": "false"
+                    }
+                ]
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "26",
+                "name": "Page Load - Sales Confirmation Google Search",
+                "type": "PAGEVIEW",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai/pixelforsignup"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "type=pixel"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Variable - Partner Name}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "Google"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "EQUALS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Variable - Partner Channel}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "Search"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "7"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "triggerId": "41",
+                "name": "Page Load - Sales Confirmation",
+                "type": "PAGEVIEW",
+                "filter": [
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "//www.idlookup.ai/pixelforsignup"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "CONTAINS",
+                        "parameter": [
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg0",
+                                "value": "{{Page URL}}"
+                            },
+                            {
+                                "type": "TEMPLATE",
+                                "key": "arg1",
+                                "value": "type=pixel"
+                            }
+                        ]
+                    }
+                ],
+                "fingerprint": "1775260446627",
+                "parentFolderId": "7"
+            }
+        ],
+        "variable": [
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "4",
+                "name": "Variable - Target Last Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetLastName"
+                    }
+                ],
+                "fingerprint": "1775260446407",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "5",
+                "name": "Variable - First Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "firstName"
+                    }
+                ],
+                "fingerprint": "1775260446407",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "6",
+                "name": "Variable - Target State",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetState"
+                    }
+                ],
+                "fingerprint": "1775260446407",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "11",
+                "name": "Variable - SHL",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "shL"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "12",
+                "name": "Variable - Target Ext ID",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetExtId"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "13",
+                "name": "Variable - Target Middle Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetMiddleName"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "14",
+                "name": "Variable - Partner Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "partnerName"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "15",
+                "name": "Variable - Last Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "lastName"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "16",
+                "name": "Variable - Email",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "email"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "17",
+                "name": "Variable - SHN Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "shNName"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "18",
+                "name": "Variable - Target First Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetFirstName"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "19",
+                "name": "Variable - Transaction Amount",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "true"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "defaultValue",
+                        "value": "1"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "transactionAmount"
+                    }
+                ],
+                "fingerprint": "1775260446408",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "20",
+                "name": "Variable - Partner Channel",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "partnerChannel"
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "22",
+                "name": "Variable - Search State",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "searchState"
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "27",
+                "name": "Variable - Transaction Currency",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "true"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "defaultValue",
+                        "value": "USD"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "transactionCurrency"
+                    }
+                ],
+                "fingerprint": "1775260446409",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "28",
+                "name": "Variable - Session ID",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "sessionId"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "30",
+                "name": "Variable - Target Phone",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetPhone"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "31",
+                "name": "Variable - Search Middle Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "searchMiddleName"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "32",
+                "name": "Variable - SHN",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "shN"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "33",
+                "name": "Variable - Target City",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetCity"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "34",
+                "name": "variable - Order ID",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "orderId"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "35",
+                "name": "Variable - Phone",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "phone"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "36",
+                "name": "Variable - Search City",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "searchCity"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "37",
+                "name": "Variable - Target Age",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "targetAge"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "38",
+                "name": "Variable - Search Last Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "searchLastName"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "39",
+                "name": "Variable - Zip",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "zip"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "variableId": "40",
+                "name": "Variable - Search First Name",
+                "type": "v",
+                "parameter": [
+                    {
+                        "type": "INTEGER",
+                        "key": "dataLayerVersion",
+                        "value": "2"
+                    },
+                    {
+                        "type": "BOOLEAN",
+                        "key": "setDefaultValue",
+                        "value": "false"
+                    },
+                    {
+                        "type": "TEMPLATE",
+                        "key": "name",
+                        "value": "searchFirstName"
+                    }
+                ],
+                "fingerprint": "1775260446410",
+                "parentFolderId": "3",
+                "formatValue": {}
+            }
+        ],
+        "folder": [
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "folderId": "3",
+                "name": "Variables",
+                "fingerprint": "1775260446407"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "folderId": "7",
+                "name": "Triggers",
+                "fingerprint": "1775260446408"
+            }
+        ],
+        "builtInVariable": [
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "PAGE_URL",
+                "name": "Page URL"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "PAGE_HOSTNAME",
+                "name": "Page Hostname"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "PAGE_PATH",
+                "name": "Page Path"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "REFERRER",
+                "name": "Referrer"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "EVENT",
+                "name": "Event"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CLICK_ELEMENT",
+                "name": "Click Element"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CLICK_CLASSES",
+                "name": "Click Classes"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CLICK_ID",
+                "name": "Click ID"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CLICK_TARGET",
+                "name": "Click Target"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CLICK_URL",
+                "name": "Click URL"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CLICK_TEXT",
+                "name": "Click Text"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "FORM_ELEMENT",
+                "name": "Form Element"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "FORM_CLASSES",
+                "name": "Form Classes"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "FORM_ID",
+                "name": "Form ID"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "FORM_TARGET",
+                "name": "Form Target"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "FORM_URL",
+                "name": "Form URL"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "FORM_TEXT",
+                "name": "Form Text"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ERROR_MESSAGE",
+                "name": "Error Message"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ERROR_URL",
+                "name": "Error URL"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ERROR_LINE",
+                "name": "Error Line"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "NEW_HISTORY_FRAGMENT",
+                "name": "New History Fragment"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "OLD_HISTORY_FRAGMENT",
+                "name": "Old History Fragment"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "NEW_HISTORY_STATE",
+                "name": "New History State"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "OLD_HISTORY_STATE",
+                "name": "Old History State"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "HISTORY_SOURCE",
+                "name": "History Source"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CONTAINER_VERSION",
+                "name": "Container Version"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "DEBUG_MODE",
+                "name": "Debug Mode"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "RANDOM_NUMBER",
+                "name": "Random Number"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "CONTAINER_ID",
+                "name": "Container ID"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "HTML_ID",
+                "name": "HTML ID"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ENVIRONMENT_NAME",
+                "name": "Environment Name"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_PROVIDER",
+                "name": "Video Provider"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_URL",
+                "name": "Video URL"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_TITLE",
+                "name": "Video Title"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_DURATION",
+                "name": "Video Duration"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_PERCENT",
+                "name": "Video Percent"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_VISIBLE",
+                "name": "Video Visible"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_STATUS",
+                "name": "Video Status"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "VIDEO_CURRENT_TIME",
+                "name": "Video Current Time"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "SCROLL_DEPTH_THRESHOLD",
+                "name": "Scroll Depth Threshold"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "SCROLL_DEPTH_UNITS",
+                "name": "Scroll Depth Units"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "SCROLL_DEPTH_DIRECTION",
+                "name": "Scroll Direction"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ELEMENT_VISIBILITY_RATIO",
+                "name": "Percent Visible"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ELEMENT_VISIBILITY_TIME",
+                "name": "On-Screen Duration"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ANALYTICS_CLIENT_ID",
+                "name": "Analytics Client ID"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ANALYTICS_SESSION_ID",
+                "name": "Analytics Session ID"
+            },
+            {
+                "accountId": "6347502676",
+                "containerId": "248333046",
+                "type": "ANALYTICS_SESSION_NUMBER",
+                "name": "Analytics Session Number"
+            }
+        ],
+        "fingerprint": "1780773214742",
+        "tagManagerUrl": "https://tagmanager.google.com/#/versions/accounts/6347502676/containers/248333046/versions/0?apiLink=version"
+    }
+}

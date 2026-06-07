@@ -1,0 +1,64 @@
+"https://dev.admin.www.bytecrtrs.com/csr
+ login : admin@admin.admin    
+ pwd:  bcEdgeApiPass123!@#",Test Date,Implemented,Works Y|N,Blocker,Dependencies,Screenshot,url,Notes
+Register Member,6/3,Y,N,Y,,https://nimb.ws/oCrlJkV,,"Worked before, but not today."
+Contact Us Privacy,6/3,Y,Y,,,,,
+Contact Us Remove My Information,6/3,Y,Y,,,,,"Only tested Redirection, not Opt Out"
+Contact Us Unsubscribe from Email/Text,6/3,Y,N,,,,,Points to Opt Out page
+Contact Us Billing Question,6/3,Y,N,1 week after launch,,https://nimb.ws/7bLodym,,Captcha verification failed. The requested feature is not available. http 412
+Contact Us Start an email,6/3,Y,N,1 week after launch,,https://nimb.ws/o1Fsd9Z,,Captcha verification failed. The requested feature is not available. http 413
+XCally Trigger,6/3,N,,,"CSR phone search, argument handling",,,
+Customers Search by email ,6/3,Y,N,1 week after launch,,https://nimb.ws/62ajObn,,"Confusing message: ""Search by email queries the server. Name filter is applied locally to loaded results."""
+Customers Filter by Name,6/3,Y,Y,,,,,
+Customers Advanced Search by Email,6/3,Y,N,1 week after launch,,,,
+Customers Advanced Search by Phone,6/3,Y,N,1 week after launch,,https://nimb.ws/bgveY8k,,Details page does not display Phone
+Customers Advanced Search by Zipcode,6/3,Y,N,,,https://nimb.ws/bgveY8k,,Details page does not display Zipcode field
+Customers Advanced Search by Last 4 CC,6/3,Y,N,1 week after launch,,,,
+Customers Advanced Search by First 6 CC,6/3,N,,,,,,
+Customers Advanced Search by Brand,6/4,N,,,,,,
+Display listing w Brand,6/3,N,,,,,,
+Display listing w Zipcode,6/3,N,,,,,,
+Display listing w Email,6/3,Y,Y,,,,,
+Display listing w Name,6/3,Y,Y,,,,,
+Display listing w Card,6/3,N,,1 week after launch,,https://nimb.ws/OaZNTAS,,
+Display listing w Phone,6/3,Y,N,,,,,
+Display listing w Last Bill,6/3,Y,Y,,,,,
+Display listing w Status,6/3,Y,Y,,,,,
+Display Details Brand Contact Info,6/3,N,,,,,,
+Display Details CC Update,6/3,N,,,,,,
+Display Details Customer ID,6/3,Y,Y,,,,,
+Display Details Card details,6/3,N,,,,,,
+Display Details Email,6/3,Y,,,,,,
+Display Details Phone,6/3,Y,N,,,https://nimb.ws/VBzoY0J,,
+Display Details IP,6/3,Y,Y,,,,,
+Display Details Device,6/3,Y,Y,,,,,
+Display Details Status,6/3,N,,1 week after launch,,,,
+Display Details Activity,6/3,Y,Y,,,,,
+Display Details Customer Login,6/3,N,,,,,,
+Display Details Notes History,6/3,Y,N,1 week after launch,,https://nimb.ws/4MoufAE,,"Saved Note, but do not see in Customer Profile"
+Display Details Transaction Sales History,6/3,Y?,,,,,,
+Display Details Transaction Collections History,6/3,Y?,,,,,,
+Display Details Transaction Refunds History,6/3,Y?,,,,,,
+Display Details Transaction Refund order,6/4,Y,N,,,,https://dev.admin.www.bytecrtrs.com/csr/users/6a0dfcb47c34395b056567af,"From: (Unknown Sender)
+To: ""Original: dev@test01.bytecrtrs.com"" <dev@test01.bytecrtrs.com>
+Subject:  CommerceBillingService:signup|Bz6PY2t4854mZJkRq4ZLLXgUjAhdF486|sdDIQt2DPPqMXwaJ5qDeru2dRjaT79iJ|1780578616368|aogYSWHR:failed
+CommerceBillingService:signup|Bz6PY2t4854mZJkRq4ZLLXgUjAhdF486|sdDIQt2DPPqMXwaJ5qDeru2dRjaT79iJ|1780578616368|aogYSWHR:failed { ""billingSeriesId"": ""signup|Bz6PY2t4854mZJkRq4ZLLXgUjAhdF486|sdDIQt2DPPqMXwaJ5qDeru2dRjaT79iJ|1780578616368|aogYSWHR"", ""commercePaymentType"": ""refund"", ""targetCommerceOrderId"": ""6a0dfcb47c34395b056567cb"", ""targetCommerceOrderRevisionId"": ""6a0dfcb57c34395b056567fd"", ""targetCommercePaymentId"": ""6a0dfcb47c34395b056567d4"", ""targetCommercePaymentRevisionId"": ""6a0dfcb57c34395b056567fb"", ""amount"": 1 } main.js:16042:17|async CommerceBillingService.transaction main.js:15477:28|async CommerceBillingCorrectService.correct ""notCorrectable"" { ""email"": null, ""name"": null, ""address"": { ""firstName"": null, ""lastName"": null, ""street1"": null, ""street2"": null, ""city"": null, ""state"": null, ""zip"": null, ""country"": null }, ""bin"": null, ""last4"": null, ""userId"": null, ""actorId"": null, ""actorEmail"": null, ""brandId"": null, ""commerceOrderId"": null, ""commerceTransactionBundleId"": null, ""commercePaymentId"": null, ""ccBrand"": null, ""ccType"": null, ""ccCountry"": null, ""ccLevel"": null, ""ccBank"": null, ""ccRegulated"": null, ""ipAddress"": null, ""device"": null, ""billingType"": null, ""commercePaymentType"": ""refund"", ""sequence"": null, ""retry"": null, ""paymentTimestamp"": null, ""responseStatus"": null, ""totalAmount"": null, ""currency"": null, ""gatewayStatus"": null, ""gatewaySubStatus"": null, ""gatewayTransactionId"": null, ""gatewayDurationMs"": null, ""cascade"": null, ""velocityOptionKeys"": null, ""whitelisted"": null, ""banned"": null, ""nonMemberOnly"": null } rawResponse: undefined { ""apiId"": ""sdDIQt2DPPqMXwaJ5qDeru2dRjaT79iJ"", ""clientId"": ""Bz6PY2t4854mZJkRq4ZLLXgUjAhdF486"", ""sessionId"": ""Sk_RrpyBcijGjK40FEqKENplme-UeGR4"", ""trackingId"": ""6a2179384936192edc6712cc"" }
+
+🔗 Links:
+[Text] https://test01.bytecrtrs.com/maddy/html/1780578619_29783.txt.zst
+[HTML] https://test01.bytecrtrs.com/maddy/html/1780578619_29783.html.zst
+[Original] https://test01.bytecrtrs.com/maddy/html/1780578619_29783.original.zst"
+Display Details Cancel All Action,6/3,Y,N,Y,,https://nimb.ws/783DY0B,,Impemented as Cancel Order
+Display Details Cancel Offer Action,6/3,N,,,,,,Maybe?
+Add Offer,6/3,N,,,,,,
+Email Action & Templates,6/3,N,,,,,,
+Billing Editor,6/3,N,,,,,,
+Opt Out,6/3,Y,?,,,,,
+Unsubscribe,6/3,Y,?,,,,,
+,,,,,,,,
+New Features,6/3,,,,,,,
+Dashboard,6/3,Y,,,,,,
+Dashboard Search by ID,6/3,Y,N,,,https://nimb.ws/cikPG0E,,
+Dashboard Search by Email,6/3,Y,N,,,https://nimb.ws/MltPAoz,,
+Dashboard Search by Phone,6/3,N,N,1 week after launch,,,,Contact Us not working
+Dashboard Search by Zip,6/3,N,N,,,,,Contact Us missing Entry Field

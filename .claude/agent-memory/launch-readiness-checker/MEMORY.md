@@ -1,0 +1,2 @@
+- [Vendor-string leak vs console leak](feedback_vendor_string_leak_vs_console.md) — a CsrWrapper/ByteCrtrs hit in consumer build/ is a finding even when dbg() is a prod no-op
+- [Shared apiWrapper bundles CSR into consumer](project_shared_apiwrapper_csr_leak.md) — src/services/apiWrapper.js ships the full admin/CSR surface into build/public.*.js unguarded

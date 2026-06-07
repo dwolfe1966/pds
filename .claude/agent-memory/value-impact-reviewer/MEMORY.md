@@ -1,0 +1,2 @@
+- [Support messaging enumeration gap](project_support_messaging_constraints.md) — BC removed /userContact/list 2026-04-17; consumer is per-thread only; BFF ruled out before launch
+- [Silent-state regressions](feedback_silent_state_regressions.md) — storage-key drift and BC response-shape mismatches in this repo fail invisibly; scrutinize closer
