@@ -48,6 +48,17 @@ map link, + County + ZIP+4. Lone BC ask: `ownership` single-char code (P/C) lege
 Stakeholder brief: `docs/report-detail-parity-brief.md` (for staff+investors). Mugshot demo
 still needs a real inmate subject (none of test21's 7 saved reports have a booking photo).
 
+**O.J. REPORT VALIDATION + physical descriptors (2026-06-07, `65525c6`, bundle `public.772bfb29.js`):**
+owner generated O.J. report on our site (/people/6a25df363ee3447608a236a7). Confirmed live: Property
+cards w/ assessed $1.7M-$18.5M, 44 criminal records (Name on record), financial, 18 addresses, sex-offender
+registry (13 nearby). NEW: BC returns rich per-criminal-record PHYSICAL DESCRIPTORS (sex/race/height/
+weight/hair/eyes/skinTone/birthState) we were dropping — now extracted+rendered as a Description line.
+BC QUESTIONS (not client fixes): (1) mugshots — BC `photo` field present but EMPTY on all records, no
+images in feed; (2) sentence/releaseDate sparsely populated; (3) per-record c.sexOffender object is
+present-but-empty on non-offenders → we do NOT render a per-record badge (defamation risk), registry
+section is authoritative. Open BC asks now: ownership P/C legend, criminal photos, incarceration-data
+completeness, niche categories (evictions/marriages/divorces). Latest bundle: `public.772bfb29.js`.
+
 **(Original hypothesis, confirmed):** BC already RETURNS the data; our UI dropped fields.
 
 **Reference comparison the owner gave:** O.J. ("Orenthal") Simpson report.
