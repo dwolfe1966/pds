@@ -38,6 +38,16 @@ incarceration (biggest), property-blank bug, phone flags. Lone possible BC ask: 
 marriages/divorces categories (unconfirmed). Address-level `ownership` P/C code left unmapped
 (undocumented legend) — surfaced ownership via property records instead.
 
+**ADDRESS DEEP-DIVE (2026-06-07, `02497cd`, bundle `public.0454a84b.js`):** owner concern
+"OldCo addresses very detailed." Verified OldCo per-address data = SAME scalar field set we
+carry (county/zip4/dateRange/ownershipStatus/lat-long/parsed-street/apt), NO nested/associated
+data — we hold a superset. Pure presentation. Enhanced Address History rows: residence DURATION
+(~6.3 yrs / ~6 mo via residenceDuration() from first/last-seen), apt (dedup'd vs street line),
+map link, + County + ZIP+4. Lone BC ask: `ownership` single-char code (P/C) legend → Owner/Renter
+(don't guess). Latest deployable bundle now `public.0454a84b.js` (supersedes 969b1fb8).
+Stakeholder brief: `docs/report-detail-parity-brief.md` (for staff+investors). Mugshot demo
+still needs a real inmate subject (none of test21's 7 saved reports have a booking photo).
+
 **(Original hypothesis, confirmed):** BC already RETURNS the data; our UI dropped fields.
 
 **Reference comparison the owner gave:** O.J. ("Orenthal") Simpson report.
