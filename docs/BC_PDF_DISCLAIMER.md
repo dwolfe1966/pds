@@ -16,6 +16,14 @@
 > it for the `idlookup` brand (keep the FCRA "not a consumer report" line). Until then the
 > launch fallback below applies — don't hand a paying customer a real report stamped
 > "fictional data."** Verified via `scripts/verify-pdf-disclaimer.js`.
+>
+> **Audited ALL 9 of test21's report PDFs (`scripts/audit-pdf-disclaimers.js`) — 9/9 still
+> carry the disclaimer**, including the most recent. The owner's own downloaded file
+> (`MOLLY LYNN ARTZ (1).pdf`) was byte-identical (75,115 B) to our live pull and also
+> contains it. NOTE: "no Section 10" in some PDFs is a RED HERRING — report sections are
+> **data-conditional** (e.g. Molly's run has no §5 or §10 because there's no such data),
+> unrelated to the disclaimer. So there is no "clean template" variant in play; the
+> disclaimer is universal until BC removes it server-side.
 
 ## Copy-paste summary
 
