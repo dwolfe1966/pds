@@ -9,7 +9,17 @@ metadata:
 
 Snapshot end of 2026-06-06 session. Supersedes [[csr-triage-session-2026-06-04]] for live state.
 
-**Latest deployable bundles (origin/main @ f79ad95):**
+**VERIFIED LIVE 2026-06-08** (curled the hosts + rebuilt HEAD → hashes match, no skew):
+- **Consumer LIVE = `public.772bfb29.js`** on dev.www.idlookup.ai — == current HEAD build.
+  Rolls up ALL report-parity work (address rows, property rewrite, financial/lien, criminal
+  physical descriptors). Supersedes 742dba2e.
+- **Admin LIVE = `admin.eff24bd1.js`** on dev.admin.www.bytecrtrs.com/csr/ — == current HEAD
+  build. = the old `7aa4d485` + commit `2ad278d` (request updaterId in tracking displayFields
+  + guard against trim). build-admin/ is now gitignored (commit 127f306).
+  Structural verification only — live bytes == committed source. Functional/live-UAT smoke
+  (needs BC captcha + creds, owner-interactive) NOT yet run this session.
+
+**Earlier deployable bundles (origin/main @ f79ad95, now superseded):**
 - **Consumer `public.742dba2e.js`** — rolls up everything below.
 - **Admin `admin.7aa4d485.js`** — single smart search + query-shape fix + dedicated
   results + direct-POST tracking (perPage:100). Supersedes the broken IIFE bundle

@@ -147,14 +147,17 @@
   gap: 0.375rem;
 }
 
-.cardTypePill {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #fff;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+/* Colored card-brand acceptance marks (card-brand compliance requirement, TRX).
+   Always visible at checkout; flex-shrink so the four logos don't overflow the
+   label row on narrow mobile viewports. */
+.cardBrandMarks {
+  flex-shrink: 0;
+}
+
+@media (max-width: 400px) {
+  .fieldLabelRow {
+    flex-wrap: wrap;
+  }
 }
 
 .inputWrap {

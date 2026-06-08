@@ -16,6 +16,7 @@ import { readThinMatch } from '../../services/thinMatch';
 const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
 import styles from './PaymentPage.module.css';
 import { useBrand } from '../../services/brand';
+import CardBrandMarks from '../../components/CardBrandMarks';
 
 // Detect card type from PAN prefix
 function detectCardType(pan) {
@@ -27,8 +28,6 @@ function detectCardType(pan) {
   return null;
 }
 
-const CARD_TYPE_LABELS = { visa: 'Visa', mastercard: 'Mastercard', amex: 'Amex', discover: 'Discover' };
-const CARD_TYPE_COLORS = { visa: '#1a1f71', mastercard: '#eb001b', amex: '#2e77bc', discover: '#ff6600' };
 
 // Format card number with spaces
 function formatCardNumber(value, cardType) {
@@ -685,14 +684,7 @@ const PaymentPage = () => {
                   <div className={styles.fieldGroup}>
                     <div className={styles.fieldLabelRow}>
                       <label className={styles.label} htmlFor="pay-card">Card Number</label>
-                      {cardType && (
-                        <span
-                          className={styles.cardTypePill}
-                          style={{ background: CARD_TYPE_COLORS[cardType] }}
-                        >
-                          {CARD_TYPE_LABELS[cardType]}
-                        </span>
-                      )}
+                      <CardBrandMarks detected={cardType} className={styles.cardBrandMarks} />
                     </div>
                     <div className={styles.inputWrap}>
                       <input

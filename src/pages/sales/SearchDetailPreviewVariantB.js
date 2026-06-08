@@ -12,6 +12,7 @@ const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
 const SIGNUP_OFFER_S0_USD = 1.01;
 import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
+import CardBrandMarks from '../../components/CardBrandMarks';
 
 // ── Card utilities ────────────────────────────────────────────────────────────
 
@@ -426,15 +427,7 @@ const SearchDetailPreviewVariantB = ({ person, id }) => {
               <div style={{ marginBottom: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                   <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }} htmlFor="vb-card">Card Number</label>
-                  {cardType && (
-                    <span style={{
-                      background: { visa: '#1a1f71', mastercard: '#eb001b', amex: '#2e77bc', discover: '#ff6600' }[cardType],
-                      color: '#fff', fontSize: '0.7rem', fontWeight: 700,
-                      padding: '0.15rem 0.5rem', borderRadius: '3px',
-                    }}>
-                      {cardType.toUpperCase()}
-                    </span>
-                  )}
+                  <CardBrandMarks detected={cardType} />
                 </div>
                 <input
                   id="vb-card" type="text" name="cardNumber" value={cardNumber}
