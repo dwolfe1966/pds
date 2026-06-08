@@ -13,6 +13,22 @@
  */
 const { chromium, devices } = require('@playwright/test');
 const fs = require('fs');
+const path = require('path');
+
+// Load creds from a gitignored scripts/.smoke.env (KEY=VALUE per line) so they
+// never appear on the command line, in shell history, or in this chat. Values
+// already set in the real environment win. Quotes around values are stripped.
+(function loadSmokeEnv() {
+  const f = path.join(__dirname, '.smoke.env');
+  if (!fs.existsSync(f)) return;
+  for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (!m || line.trim().startsWith('#')) continue;
+    const key = m[1];
+    let val = m[2].trim().replace(/^['"‘’“”]|['"‘’“”]$/g, '');
+    if (process.env[key] === undefined) process.env[key] = val;
+  }
+})();
 
 const CBASE = 'https://dev.www.idlookup.ai';
 const ABASE = 'https://dev.admin.www.bytecrtrs.com';
