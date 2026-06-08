@@ -74,51 +74,83 @@ export const CAMPAIGN_REGISTRY = {
     offer:   { shmName: 'membership.offer.default.1', trial: false },
   },
 
-  // ── Partners (from the shN spreadsheet) ────────────────────────────────────
+  // ── Partners (from the shN spreadsheet, refreshed 2026-06-08) ───────────────
   // Keyed by `<shn>:*` (partner-wide, any page) — the resolver matches `?shn=X`
-  // against `X:*`. NOTE: the keys below use the sheet's ROW NUMBERS as
-  // PLACEHOLDERS. Replace `1:*`..`5:*` with the real shN strings (long tokens)
-  // when partner links are minted — the resolver is key-agnostic so no code
-  // change is needed, only these keys.
+  // against `X:*`. Keys are the REAL shN tokens (24-hex BC shConIds).
   //
-  // `identity` is for reporting (rides into data.refer + GTM). `landing.route`
-  // is the one thing BC can't drive client-side. Payment acceptance / cascade /
-  // risk (shN 2/3 and 4/5 Hi-vs-Lo) is BC-side, keyed on shn — not configured here.
+  // Sheet `theme` config → registry fields:
+  //   landing "/"             → landing.route null (no redirect, stays on current route)
+  //   landing "name/landing/3"→ '/name/landing/v3'  (inmate funnel)
+  //   landing "name/landing/4"→ '/name/landing/v4'  (death funnel)
+  //   landing "name/landing/6"→ '/name/landing/v6'  (divorce funnel)
+  //   sup "ver=a"             → detail.variant 'a'
+  //   optout "yes"            → optOut true
+  //   thinmatch "yes"         → search.zeroState 'thinMatch' (ThinMatchPreview upsell
+  //                             on 0/sparse results instead of "no records found", #51)
+  //
+  // `identity` rides into reporting (data.refer + GTM). `landing.route` is the one
+  // thing BC can't drive client-side. Payment acceptance / cascade / risk is BC-side,
+  // keyed on shn — not configured here. (The old cascade placeholder rows 2:*/3:* were
+  // dropped 2026-06-08 — not in the refreshed sheet.)
 
-  '1:*': {
+  // IDL Default — internal default partner. landing "/" = no redirect (stays home).
+  // NOTE: this is the keyed entry for traffic arriving with THIS shn; the universal
+  // `default` fallback above is intentionally left strict for unknown/no-shn traffic.
+  '69a2380b53ecf9b049d01fbb:*': {
     identity: { shnName: 'IDL Default', brand: 'IDL', partner: 'Internal', channel: 'Default' },
+    landing: { route: null },                                       // "/" → no redirect
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },  // thinmatch: yes
+    detail:  { variant: 'a' },                                      // sup: ver=a
+    optOut:  true,                                                  // optout: yes
   },
 
-  // Internal cascade variants — BC adjusts payment acceptance by shn; identity-only.
-  '2:*': {
-    identity: { shnName: 'Cascade Decliner', brand: 'IDL', partner: 'Internal', channel: 'Cascade Decliner', purpose: 'Cascade $0 pass' },
-  },
-  '3:*': {
-    identity: { shnName: 'Cascade Exit', brand: 'IDL', partner: 'Internal', channel: 'Cascade Exit', purpose: 'Cascade $1 pass' },
-  },
-
-  // Google paid-search, inmate keyword → inmate funnel.
-  // Row #4 ("Google Inmates HHI Hi") IS "Google Inmates Upper" — its real shN token
-  // is 6a22ff83… (entry below), so the 4:* placeholder is retired/merged into it.
-  // Row #5 ("Google Inmates HHI Lo") still awaits its real token (kept as placeholder).
-  '5:*': {
-    identity: { shnName: 'Google Inmates HHI Lo', brand: 'IDL', partner: 'Google', channel: 'Search' },
-    landing: { route: '/name/landing/v3' },     // inmate-themed funnel
-  },
-
-  // ── REAL shN token for the Google Inmates Upper partner (= former placeholder row #4).
-  // Source config: { landing: "name/landing/5"→v3, sup: "ver=c"→a, optout: "yes" }.
+  // Google Inmates Upper — inmate funnel (v3). Real token live.
   '6a22ff83ca16ad4ef68b84b5:*': {
     identity: {
       shnName: 'Google Inmates Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
       purpose: 'Capture search intent re: incarcerated individuals → capture trials',
     },
-    landing: { route: '/name/landing/v3' },     // inmate funnel (config said "5", corrected to v3 — the reliable /name/loader path)
-    // zeroState 'thinMatch' (#51, owner 2026-06-06): 0-result searches show the
-    // ThinMatchPreview upsell instead of "no records found" — capture trials on
-    // sparse matches rather than dead-ending the funnel.
-    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },
-    detail:  { variant: 'a' },                  // SUP → SearchDetailPreviewVariantA (per owner)
-    optOut:  true,                              // config optout "yes" → opt-out link in funnel
+    landing: { route: '/name/landing/v3' },     // "name/landing/3" → inmate funnel (reliable /name/loader path)
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },  // thinmatch: yes
+    detail:  { variant: 'a' },                  // sup: ver=a → SearchDetailPreviewVariantA
+    optOut:  true,                              // optout: yes
   },
+
+  // ── Pending real shN tokens (owner "waiting for ids", 2026-06-08). Config below is
+  // READY per the sheet — when each token is minted, replace the placeholder key
+  // (`PENDING_*:*`) with the real 24-hex `<token>:*`. The resolver is key-agnostic, so
+  // that one-line key swap is the ONLY edit needed; until then these keys never match
+  // real inbound traffic and are inert. The v4 (death) + v6 (divorce) funnel search was
+  // fixed this session to use the reliable /name/loader handoff (matching v3).
+
+  // 'PENDING_GOOGLE_INMATES_LOWER:*': {
+  //   identity: { shnName: 'Google Inmates Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
+  //     purpose: 'Capture search intent re: incarcerated individuals → capture trials' },
+  //   landing: { route: '/name/landing/v3' },
+  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  // },
+  // 'PENDING_GOOGLE_DEATH_UPPER:*': {
+  //   identity: { shnName: 'Google Death Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
+  //     purpose: 'Capture search intent related to deceased individuals → capture trials' },
+  //   landing: { route: '/name/landing/v4' },
+  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  // },
+  // 'PENDING_GOOGLE_DEATH_LOWER:*': {
+  //   identity: { shnName: 'Google Death Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
+  //     purpose: 'Capture search intent related to deceased individuals → capture trials' },
+  //   landing: { route: '/name/landing/v4' },
+  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  // },
+  // 'PENDING_GOOGLE_DIVORCE_UPPER:*': {
+  //   identity: { shnName: 'Google Divorce Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
+  //     purpose: 'Capture search intent related to divorced individuals → capture trials' },
+  //   landing: { route: '/name/landing/v6' },
+  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  // },
+  // 'PENDING_GOOGLE_DIVORCE_LOWER:*': {
+  //   identity: { shnName: 'Google Divorce Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
+  //     purpose: 'Capture search intent related to divorced individuals → capture trials' },
+  //   landing: { route: '/name/landing/v6' },
+  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  // },
 };
