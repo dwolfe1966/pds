@@ -211,7 +211,18 @@
       "Bash(sed -n '377,405p' src/pages/member/SearchResultDetailPage.js)",
       "Bash(NODE_PATH=__CMDSUB_OUTPUT__/node_modules LINK=https://www.inmatessearcher.com/member/loginLink/6a1a2db250a7fa57688f4bdb5a46e0beca3d4676e4300bc0bd850793063fee2da994eecc6fdb10a600b52b87 node /tmp/oj-addr.js)",
       "Bash(pdftotext report.pdf report.txt)",
-      "Bash(sed -n '1,25p' report.txt)"
+      "Bash(sed -n '1,25p' report.txt)",
+      "WebFetch(domain:docs.google.com)",
+      "Bash(pdftotext -layout \"Terms-PR.pdf\" /tmp/src_terms.txt)",
+      "Bash(pdftotext -layout \"Privacy Policy-PR.pdf\" /tmp/src_privacy.txt)",
+      "Bash(sed -n '1,30p' /tmp/src_terms.txt)",
+      "Bash(sed -n '458,466p' /tmp/src_terms.txt)",
+      "Bash(sed -n '305,330p' /tmp/src_terms.txt)",
+      "Bash(pdftotext -layout \"/Users/davidwolfe/Documents/GitHub/pds/docs/content/Terms-PR.pdf\" /tmp/src_terms.txt)",
+      "Bash(sort -t: -k2 -u)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(sed -n '276,280p' src/pages/sales/TermsPage.js)",
+      "Bash(sed -n '191,194p' /tmp/src_terms.txt)"
     ]
   }
 }
