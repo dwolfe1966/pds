@@ -741,6 +741,7 @@ const PrivacyPage = () => {
             <li><strong>Phone:</strong> {brand.supportPhone}</li>
             <li><strong>Web Contact Us page:</strong> <Link to="/contact" style={LINK}>{brand.domain}/contact</Link></li>
             <li><strong>Web Home page:</strong> <Link to="/" style={LINK}>{brand.domain}</Link></li>
+            <li><strong>Mailing Address:</strong> People Data Systems LLC, 2803 Philadelphia Pike, Suite B #237, Claymont, DE 19703</li>
           </ul>
         </section>
       </div>

@@ -146,7 +146,7 @@ const TermsPage = () => {
           <h3 style={SUBHEAD}>3.2 Content Licensing</h3>
           <p style={P}>
             By posting User Content, you grant us a global, perpetual, irrevocable,
-            royalty-free, and sub-licensable license to reproduce, modify, distribute,
+            royalty-free, non-exclusive, and sub-licensable license to reproduce, modify, distribute,
             display, and publish said content in any format or media, current or
             future. This includes the right to use the content for platform promotion.
             Your user name may be linked to your submissions.
@@ -192,8 +192,8 @@ const TermsPage = () => {
           </p>
           <ul style={UL}>
             <li>Post content that is abusive, harassing, threatening, or obscene;</li>
-            <li>Post User Content that is unlawful, harmful, tortious, defamatory, libelous, or invasive of another's privacy;</li>
             <li>Post material that disparages others based on race, gender, religion, disability, or sexual orientation;</li>
+            <li>Post User Content that is unlawful, harmful, tortious, defamatory, libelous, or invasive of another's privacy;</li>
             <li>Use the platform for commercial benchmarking or to aggregate data for competing products;</li>
             <li>Duplicate, download (excluding page caching required for private use, or as otherwise explicitly allowed by these Terms), alter, circulate, post, transfer, exhibit, perform, recreate, air, copy, issue, reissue, upload, authorize, deconstruct, develop derivative works from, or offer for purchase any material or other data found on or retrieved through the Services, via any method except as permitted in these Terms or with the prior written authorization of {brand.name};</li>
             <li>Scrape, index, or copy platform information using automated tools (robots, spiders, crawlers) without manual browser access or an approved API;</li>
@@ -276,7 +276,7 @@ const TermsPage = () => {
             AND ASSIGNS OF ANY OF THE FOREGOING) SHALL NOT BE LIABLE FOR ANY INDIRECT,
             CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM THE USE OR INABILITY TO USE
             THE SERVICES. OUR TOTAL AGGREGATE LIABILITY SHALL NOT EXCEED THE AMOUNT
-            PAID FOR THE RELEVANT SERVICE OR $100, WHICHEVER IS GREATER. WE ARE NOT
+            PAID FOR THE RELEVANT SERVICE OR $100. WE ARE NOT
             RESPONSIBLE FOR THE ILLEGAL OR OFFENSIVE CONDUCT OF THIRD PARTIES.
           </p>
           <p style={P}>
