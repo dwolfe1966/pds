@@ -1,5 +1,9 @@
 # BC ask — Consumer needs to enumerate its own contactMessage threads ✅ RESOLVED
 
+> **STATUS: RESOLVED 2026-05-28 — ARCHIVED 2026-06-08.** BC shipped `getUserContacts`.
+> Follow-on scope issue (empty for member-submitted threads) tracked separately in
+> `docs/BC_GETUSERCONTACTS_SCOPE.md`. Kept for history.
+
 **Raised:** 2026-05-27 · **Renewed:** 2026-05-28 · **Closed:** 2026-05-28 (same day)
 **Resolved by:** Kwan Park / BC — new endpoint shipped within hours of the renewed ask.
 

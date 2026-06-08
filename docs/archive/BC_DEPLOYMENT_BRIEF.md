@@ -1,4 +1,8 @@
 # Deployment Brief for ByteCrtrs
+
+> **STATUS: OBSOLETE — ARCHIVED 2026-06-08.** Describes a Dec-2025 dev build being
+> live in March 2026. Long resolved — current bundles deploy routinely and were
+> re-verified live this session. Kept for history.
 **App:** IDLookup.AI
 **Live URL:** https://dev.www.idlookup.ai/
 **Date:** 2026-03-31

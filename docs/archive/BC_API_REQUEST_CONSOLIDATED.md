@@ -1,5 +1,10 @@
 # ByteCrtrs API Request — Consolidated Endpoint Requirements
 
+> **STATUS: POST-LAUNCH ROADMAP — ARCHIVED 2026-06-08.** This 38-endpoint list is a
+> feature roadmap (Who's-Watching, broker-removal, exposure-score) — mostly deferred/
+> post-launch, NOT current launch asks. Live launch-relevant asks are consolidated in
+> `BC_CTO_HANDOFF.md`. Revisit this for the post-launch feature build-out. Kept as roadmap.
+
 **Date:** April 13, 2026
 **From:** IDLookup Development Team (David Wolfe)
 **To:** ByteCrtrs (Kwan)

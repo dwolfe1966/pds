@@ -1,5 +1,9 @@
 # BC ask — Add SPA catch-all rewrite for the admin app under `/csr/`
 
+> **STATUS: RESOLVED live 2026-06-02 — ARCHIVED 2026-06-08.** `/csr/*` deep-links now
+> serve the SPA shell (verified 200 on `/csr/login`, `/csr/users`, `/csr/tickets`).
+> Host catch-all is working. Kept for history.
+
 **Raised:** 2026-06-01
 **Bug ref:** Bugs.csv rows **#61 / #62** (CSR — "Direct deep-links don't work (SPA refresh)")
 **Environment:** `https://dev.admin.www.bytecrtrs.com/csr/` (also `dev.gwhubadmin.www.bytecrtrs.com/csr/`)

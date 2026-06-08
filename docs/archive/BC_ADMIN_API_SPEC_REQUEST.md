@@ -1,5 +1,10 @@
 # ByteCrtrs CSR API — Requested Endpoints for IDLookup Admin App
 
+> **STATUS: SUPERSEDED — ARCHIVED 2026-06-08.** Superseded by the 2026-04-13
+> `BC_API_REQUEST_CONSOLIDATED.md`; several endpoints (tickets/notes/messages) have
+> since been wired via `csrWrapper`. Current CSR asks live in `BC_CTO_HANDOFF.md` +
+> `BC_CSR_DATA_EXPOSURE.md`. Kept for history.
+
 **Date:** April 7, 2026
 **From:** IDLookup Development Team
 **To:** ByteCrtrs (Kwan)

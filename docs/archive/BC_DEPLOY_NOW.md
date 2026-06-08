@@ -1,4 +1,7 @@
 # BC Deployment — Files to Upload
+
+> **STATUS: OBSOLETE — ARCHIVED 2026-06-08.** Specific 2026-03-31 bundle-hash upload
+> list, superseded by the current FileZilla deploy flow. Kept for history.
 **Built:** 2026-03-31
 **Deploy to:** https://dev.www.idlookup.ai/
 
