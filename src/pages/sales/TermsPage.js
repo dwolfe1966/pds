@@ -43,7 +43,7 @@ const TermsPage = () => {
       <div className="contentContainer contentContainerNarrow">
         <h1 style={HEADING}>Terms of Service</h1>
         <p style={{ marginBottom: '2rem', color: '#6b7280', fontStyle: 'italic' }}>
-          Last Updated: 5/19/2026
+          Last Updated: 6/8/2026
         </p>
 
         <p style={{ ...P, fontWeight: 700, textTransform: 'uppercase' }}>
