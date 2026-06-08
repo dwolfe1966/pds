@@ -1,6 +1,13 @@
 # BC ask — CSR search: server-side name filter + order-by-id
 
-**Raised:** 2026-06-05 · **From:** PDS / idlookup CSR tooling
+**Raised:** 2026-06-05 · **From:** PDS / idlookup CSR tooling · **STILL OPEN (order-by-id)**
+
+> **⚠️ RE-VERIFIED 2026-06-08 — docs ahead of backend.** BC's csrApi docs were updated
+> 2026-06-08 to add `userId` and `orderId` params to `user.find`. We re-tested live the same
+> day (`scripts/verify-bc-csr-params.js`): `user.find({ orderId:'6a11ea7d…af98e' })` returned
+> **10 unrelated users** (the default list), NOT the order's owner — i.e. `orderId` is **not
+> honored server-side**. The param is documented but the filter isn't implemented. **Ask BC to
+> actually implement the `orderId`→owning-user lookup** before we wire order-id into CSR search.
 
 We wired the CSR customer/order searches the team needs. Probed BC's
 `/database/search` live (non-matching values, so 0 = filter honored, 10 = ignored):

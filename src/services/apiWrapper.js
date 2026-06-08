@@ -1390,8 +1390,13 @@ class ApiWrapperService {
   // Returns the created thread with { _id, hash, ... } so callers can reply via
   // csrCreateCsrReply or share the replyLinkUrl with the user.
   async csrCreateContactMessage(params = {}) {
-    return await this._viaCsr('api.message.contact.create', params,
-      () => this._csrPost('/contactMessage/admin/create', params));
+    // BC 2026-06-02: /contactMessage/admin/create now requires "at least one of
+    // brandId or shConId". Default to the idlookup brand when the caller doesn't
+    // specify one (single-brand consumer) so CSR-composed threads don't 400.
+    // Multi-brand callers can override with brandId/shConId/shColId.
+    const body = params.brandId || params.shConId ? params : { brandId: 'idlookup', ...params };
+    return await this._viaCsr('api.message.contact.create', body,
+      () => this._csrPost('/contactMessage/admin/create', body));
   }
 
   // csrWrapper.api.user.createCsrMail — DEPRECATED 2026-04-17
@@ -1619,8 +1624,11 @@ class ApiWrapperService {
     const query = {};
     if (type) query['data.type'] = type;
     // We send updaterId, but BC's /database/search on `trackings` does NOT honor
-    // it (verified live 2026-06-05 — returns events across ALL users). The caller
-    // filters the returned page by updaterId. The default page is capped at 10,
+    // it (verified live 2026-06-05 AND re-verified 2026-06-08 — returns events
+    // across ALL users, mixed updaterIds, even though csrApi docs added `updaterId`
+    // to tracking.findUser on 2026-06-08; the doc is ahead of the backend). The caller
+    // filters the returned page by updaterId. KEEP this client filter — removing it on
+    // the strength of the doc alone would leak other users' events. The default page is capped at 10,
     // which buried most users' events behind other users' (a user with reports
     // showed none on their CSR detail). `perPage` IS honored (limit/size/pageSize
     // are not), so request a large page so the per-user filter actually has the

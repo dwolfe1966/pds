@@ -1,6 +1,16 @@
 # BC ask — CSR tracking search must scope to one user (PRIVACY)
 
-**Raised:** 2026-06-05 · **Severity: HIGH (cross-user data exposure)**
+**Raised:** 2026-06-05 · **Severity: HIGH (cross-user data exposure)** · **STILL OPEN**
+
+> **⚠️ RE-VERIFIED 2026-06-08 — docs ahead of backend.** BC's csrApi docs were updated
+> 2026-06-08 to add `updaterId` to `tracking.findUser`. We re-tested live the same day
+> (`scripts/verify-bc-csr-params.js`): POSTing `{collectionName:'trackings', query:{'data.type':
+> 'USER:login', updaterId:'6a11ea7d…'}}` STILL returns 100 docs with **mixed** updaterIds
+> (`6943179e…`, `6a23298b…`, `6a11ea7d…`) — i.e. `updaterId` is **not honored server-side**.
+> So the param is documented but the backend filter isn't implemented. We are KEEPING our
+> client-side scope filter (removing it would leak other users' events). **Ask BC to actually
+> implement server-side `updaterId` filtering on the `trackings` collection** — documenting
+> the param is not enough.
 
 ## Problem (verified live)
 
