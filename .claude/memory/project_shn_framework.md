@@ -51,7 +51,23 @@ order.refer populates AND sale succeeds.
 theme). Its search was made reliable by handing off to `/name/loader` (was inline
 api.searchPeople that failed silently). See [[feedback_silent_referenceerror]].
 
-**Pending:** (1) the real long-string shN values for the 5 partners (owner to
-provide → swap into registry keys). (2) BC asks in `docs/BC_SHN_PARTNER_SHAPE.md`
-(#77-Q6 model partners, #77-Q4 expose names) to fully shift identity/offer to BC.
-Spreadsheet source: shN / shN Name / Brand / Partner / Channel / Purpose.
+**REFRESHED SHEET 2026-06-08 (commit debe2e3, bundle public.c387fd5c.js):** new
+7-partner sheet (cascade rows GONE). Columns: shN / shN Name / Brand / Partner /
+Channel / Purpose / theme(JSON). theme→registry map: landing "/"→route null |
+"name/landing/3"→v3 (inmate) | "/4"→v4 (death) | "/6"→v6 (divorce); sup "ver=a"→
+detail.variant 'a'; optout "yes"→optOut true; thinmatch "yes"→zeroState 'thinMatch'.
+- **2 real tokens wired:** `69a2380b53ecf9b049d01fbb` = IDL Default (landing "/" =
+  no redirect; keyed entry ONLY — universal `default` left strict for unknown/no-shn
+  traffic, owner decision 2026-06-08). `6a22ff83ca16ad4ef68b84b5` = Google Inmates
+  Upper (v3).
+- **Dropped** dead row-number placeholders (1:*/2:*/3:*/5:*) + cascade rows.
+- **5 partners awaiting IDs** (owner "waiting for ids"): Google Inmates Lower (v3),
+  Death Upper/Lower (v4), Divorce Upper/Lower (v6) — staged as commented
+  `PENDING_*:*` templates in campaignRegistry.js; real-token swap is a 1-line key change.
+- **Fixed v4 (death) + v6 (divorce) funnel search** same session: both still used the
+  silent-fail inline `api.searchPeople` (→ `/name/search-result?error=true`); ported
+  the v3 `/name/loader` handoff. v3/v4/v6 now all reliable; v2/v5 NOT (still inline).
+
+**Still pending:** (1) the 5 real shN tokens above. (2) BC asks in
+`docs/BC_SHN_PARTNER_SHAPE.md` (#77-Q6 model partners, #77-Q4 expose names) to fully
+shift identity/offer to BC.
