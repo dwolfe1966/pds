@@ -698,7 +698,7 @@ const PaymentPage = () => {
                         placeholder="1234 5678 9012 3456"
                         inputMode="numeric"
                         autoComplete="cc-number"
-                        className={`${styles.input} ${!validation.cardNumber ? styles.inputError : ''} ${touched.cardNumber && validation.cardNumber ? styles.inputValid : ''}`}
+                        className={`${styles.input} ${touched.cardNumber && !validation.cardNumber ? styles.inputError : ''} ${touched.cardNumber && validation.cardNumber ? styles.inputValid : ''}`}
                       />
                       {touched.cardNumber && (
                         <span className={styles.fieldIndicator}>
@@ -728,7 +728,7 @@ const PaymentPage = () => {
                           inputMode="numeric"
                           autoComplete="cc-exp"
                           maxLength="5"
-                          className={`${styles.input} ${!validation.expiry ? styles.inputError : ''} ${touched.expiry && validation.expiry ? styles.inputValid : ''}`}
+                          className={`${styles.input} ${touched.expiry && !validation.expiry ? styles.inputError : ''} ${touched.expiry && validation.expiry ? styles.inputValid : ''}`}
                         />
                         {touched.expiry && (
                           <span className={styles.fieldIndicator}>
@@ -761,7 +761,7 @@ const PaymentPage = () => {
                           placeholder={cardType === 'amex' ? '1234' : '123'}
                           inputMode="numeric"
                           autoComplete="cc-csc"
-                          className={`${styles.input} ${!validation.cvv ? styles.inputError : ''} ${touched.cvv && validation.cvv ? styles.inputValid : ''}`}
+                          className={`${styles.input} ${touched.cvv && !validation.cvv ? styles.inputError : ''} ${touched.cvv && validation.cvv ? styles.inputValid : ''}`}
                         />
                         {touched.cvv && (
                           <span className={styles.fieldIndicator}>

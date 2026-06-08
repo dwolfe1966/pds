@@ -41,6 +41,12 @@ Walk the launch checklist for the IDLookup production rollout (target window 202
 10. **BC cert sanity.**
     - All absolute hostnames in `src/` and `.env.*` should be in `dev.admin.www.bytecrtrs.com` or `dev.gwhubadmin.www.bytecrtrs.com` SAN, OR be relative `/api`. Hardcoded `dev1.dev.www.bytecrtrs.com` and `dev.www.bytecrtrs.com` references in `apiWrapper.js` are known fallbacks — flag if newly added.
 
+11. **Colored card-brand logos on every checkout surface (card-brand / TRX compliance).**
+    - Required by the card brands (flagged by payments provider TRX): the colored Visa/Mastercard/Amex/Discover acceptance marks must be visible at checkout.
+    - Confirm `CardBrandMarks` is imported and rendered on EVERY card-entry surface — currently `src/pages/sales/PaymentPage.js` AND `src/pages/sales/SearchDetailPreviewVariantB.js` (inline checkout). Grep: `grep -rl 'name="cardNumber"' src/pages` → each hit must render `<CardBrandMarks`.
+    - Marks must be visible by default (not only on detection); detected brand emphasized, others dimmed. Inline SVG, NOT image assets (Parcel resolves `.png` imports to `{}` at runtime).
+    - Card/Expiry/CVV fields must NOT show the red error border on first load — only after blur or a failed submit (gate `inputError` on `touched.X`).
+
 ## Reporting format
 
 ```
