@@ -5,6 +5,18 @@
 **Environment:** `https://dev.www.idlookup.ai/`
 **Endpoint:** `apiWrapper.api.idLookup.downloadPdfReport({ commerceContentId })`
 
+> **⚠️ VERIFIED ACTIVE 2026-06-08 — question #1 answered: it is UNCONDITIONAL, not
+> dev-only.** Pulled the live PDF for the O.J. Simpson report (`6a25df363ee3447608a236a7`,
+> `GET /idLookup/report/pdf/<id>`, real member session). The report is unmistakably
+> **real data** (real Miami address 9450 SW 112TH ST, real foreclosure docs with doc
+> numbers/dates, 44 real criminal histories) — yet page 1 still reads verbatim:
+> *"This report uses fictional data to illustrate how an www.idlookup.ai report could
+> look."* So the prefix is baked into BC's template regardless of data; it will NOT
+> resolve on prod cutover. **Action: BC must remove it for the `idlookup` brand (keep
+> the FCRA "not a consumer report" line); until they do, the launch fallback below
+> (soft-block the PDF CTA) applies — we should NOT hand a paying customer a real report
+> stamped "fictional data."** Verified via `scripts/verify-pdf-disclaimer.js`.
+
 ## Copy-paste summary
 
 > The PDF report we serve to paying members carries this disclaimer at

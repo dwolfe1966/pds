@@ -209,7 +209,9 @@
       "Bash(sed -n '150,260p' src/utils/reportExtract.js)",
       "Bash(sed -n '279,300p' src/utils/reportExtract.js)",
       "Bash(sed -n '377,405p' src/pages/member/SearchResultDetailPage.js)",
-      "Bash(NODE_PATH=__CMDSUB_OUTPUT__/node_modules LINK=https://www.inmatessearcher.com/member/loginLink/6a1a2db250a7fa57688f4bdb5a46e0beca3d4676e4300bc0bd850793063fee2da994eecc6fdb10a600b52b87 node /tmp/oj-addr.js)"
+      "Bash(NODE_PATH=__CMDSUB_OUTPUT__/node_modules LINK=https://www.inmatessearcher.com/member/loginLink/6a1a2db250a7fa57688f4bdb5a46e0beca3d4676e4300bc0bd850793063fee2da994eecc6fdb10a600b52b87 node /tmp/oj-addr.js)",
+      "Bash(pdftotext report.pdf report.txt)",
+      "Bash(sed -n '1,25p' report.txt)"
     ]
   }
 }
