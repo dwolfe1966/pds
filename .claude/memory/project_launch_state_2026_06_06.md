@@ -66,6 +66,14 @@ Card-brand + no-red-on-load checks folded into launch-checklist item 11. Owner t
 
 **SUP variant preview:** `/search/<id>?v=a|b|c|d|e` (overrides shN `detail.variant`; default '1').
 
+**BC-asks relevance review 2026-06-08:** triaged all 17 BC_*.md. Moved 6 no-longer-current
+to `docs/archive/` (with STATUS banners + archive README): USERCONTACT_LIST_404 + ADMIN_SPA_ROUTING_404
+(RESOLVED), DEPLOYMENT_BRIEF + DEPLOY_NOW (OBSOLETE), ADMIN_API_SPEC_REQUEST + API_REQUEST_CONSOLIDATED
+(SUPERSEDED/roadmap). docs/ root now = active asks only (spine `BC_CTO_HANDOFF`) + 2 reference docs
+(API_COVERAGE, REPORT_RESPONSE_STRUCTURE). **PDF disclaimer VERIFIED ACTIVE**: pulled the live O.J.
+PDF (real data) — still stamped "fictional data" → UNCONDITIONAL in BC's template, NOT dev-only;
+launch fallback = soft-block the PDF CTA until BC removes it. Verified via scripts/verify-pdf-disclaimer.js.
+
 **Open BC asks (docs/):** BC_CSR_TRACKING_SCOPE (server-side tracking scope),
 BC_CSR_SEARCH_GAPS (server name filter + order-by-id), BC_CTO_HANDOFF (attribution tree /
 BIN / street; **Q2: confirm commerceorders.refer persists → if yes, add `refer` to billingSale,
