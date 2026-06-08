@@ -19,6 +19,13 @@ Snapshot end of 2026-06-06 session. Supersedes [[csr-triage-session-2026-06-04]]
   Structural verification only — live bytes == committed source. Functional/live-UAT smoke
   (needs BC captcha + creds, owner-interactive) NOT yet run this session.
 
+**NEW deployable, NOT yet uploaded (consumer `public.673c4d74.js`, commit df48985):**
+TRX/card-brand compliance — colored Visa/Mastercard/Amex/Discover acceptance marks
+now shown on BOTH checkout surfaces (PaymentPage + SearchDetailPreviewVariantB inline
+checkout). New `src/components/CardBrandMarks.js` = inline SVG logos (NOT image assets —
+Parcel .png→{} gotcha); all four always visible, detected brand emphasized + others
+dimmed. Removed redundant text pills. Owner to upload 673c4d74 → dev.www.idlookup.ai.
+
 **Earlier deployable bundles (origin/main @ f79ad95, now superseded):**
 - **Consumer `public.742dba2e.js`** — rolls up everything below.
 - **Admin `admin.7aa4d485.js`** — single smart search + query-shape fix + dedicated
