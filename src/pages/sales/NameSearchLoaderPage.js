@@ -18,7 +18,7 @@ const SCAN_PHASES = [
 
 /**
  * Name search loader page - Shows loading state while performing search.
- * Mimics the privaterecords.net/name/loader flow with IDLookup design.
+ * Name loader flow with IDLookup design.
  * Automatically redirects to search results when complete.
  */
 const NameSearchLoaderPage = () => {

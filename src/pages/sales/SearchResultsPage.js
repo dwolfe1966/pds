@@ -15,7 +15,7 @@ import { useBrand } from '../../services/brand';
 
 /**
  * Displays search results for public searches on the marketing funnel.
- * Mimics the privaterecords.net/name/search-result flow with IDLookup design.
+ * Name search-result flow with IDLookup design.
  * Fetches results from the public `/search` endpoint or from sessionStorage.
  */
 const SalesSearchResultsPage = () => {

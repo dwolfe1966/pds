@@ -7,7 +7,7 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 
 /**
  * Home page for public visitors.
- * Enhanced design with marketing content inspired by privaterecords.com
+ * Enhanced design with marketing content.
  * Uses PQS production site design system.
  */
 const HomePage = () => {

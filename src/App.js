@@ -124,7 +124,7 @@ const App = () => {
           <Route path="/search" element={<LandingPage />} />
           {/* General search page with tabs for name, phone, and email */}
           <Route path="/search/all" element={<GeneralSearchPage />} />
-          {/* Name search flow (mimics privaterecords.net) */}
+          {/* Name search flow */}
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
           <Route path="/name/landing/v2" element={<NameSearchLandingV2Page />} />
           <Route path="/name/landing/v3" element={<NameSearchLandingV3Page />} />
