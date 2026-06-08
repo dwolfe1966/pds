@@ -57,24 +57,29 @@ async function consumerSmoke(browser) {
     await page.waitForTimeout(3500);
     r.loggedIn = !/\/login/.test(page.url());
 
-    // open report: try direct REPORT_ID first, fall back to first library link
+    // Open an EXISTING library report by CLICKING the link (in-app SPA nav) so the
+    // already-hydrated paid status survives — a full page.goto() to /people/:id
+    // re-boots the app and the narrow paywall redirects before getOrders() resolves.
+    // REPORT_ID is opened only if it's actually in THIS member's library; otherwise
+    // we open the member's first own report (the rich BC data is present on those).
     let opened = false;
-    await page.goto(`${CBASE}/people/${REPORT_ID}`, { waitUntil: 'networkidle' }).catch(() => {});
-    await page.waitForTimeout(4000);
-    let t = await page.locator('body').innerText();
-    if (has(t, /input password|captcha/i) || has(t, /couldn.?t (generate|load)|not found|no report/i) || t.length < 400) {
-      // fall back to dashboard library
-      await page.goto(`${CBASE}/dashboard`, { waitUntil: 'networkidle' });
-      await page.waitForTimeout(2000);
-      const link = page.locator('a[href*="/people/"], a[href*="/report"], a:has-text("View")').first();
-      if (await link.count()) {
-        r.openedVia = await link.getAttribute('href').catch(() => null);
-        await link.click(); await page.waitForLoadState('networkidle').catch(() => {});
-        await page.waitForTimeout(4500);
-        t = await page.locator('body').innerText();
-        opened = true;
-      }
-    } else { r.openedVia = `/people/${REPORT_ID}`; opened = true; }
+    let t = '';
+    const onReport = () => /\/people\//.test(page.url());
+    await page.goto(`${CBASE}/dashboard`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(3000); // let AuthContext hydrate paid status
+    const hrefs = await page.locator('a[href*="/people/"]').evaluateAll(els =>
+      els.map(e => e.getAttribute('href')).filter(Boolean));
+    r.libraryReportCount = hrefs.length;
+    const target = hrefs.find(h => h && h.includes(REPORT_ID)) || hrefs[0];
+    if (target) {
+      r.openedVia = target;
+      await page.locator(`a[href="${target}"]`).first().click().catch(() => {});
+      await page.waitForLoadState('networkidle').catch(() => {});
+      await page.waitForTimeout(4500);
+      t = await page.locator('body').innerText();
+      opened = onReport();
+      if (!opened) r.redirectedTo = page.url().replace(CBASE, '');
+    } else { r.note = 'no /people/ links in dashboard library'; }
 
     r.reportUrl = page.url().replace(CBASE, '');
     r.captchaBlocked = has(t, /input password|captcha/i);
