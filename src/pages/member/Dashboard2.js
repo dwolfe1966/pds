@@ -519,7 +519,7 @@ function ActivityTimeline({ items, loading }) {
 // ─── Dashboard2 ─────────────────────────────────────────────────────────────
 
 const Dashboard2 = () => {
-  const { user, token, subscription, isPaid } = useAuth();
+  const { user, token, subscription, isPaid, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
 
   const [reports, setReports] = useState([]);
@@ -789,6 +789,47 @@ const Dashboard2 = () => {
             ))}
           </div>
         </section>
+
+        {/* Subscribe promo — signed up but not paying (trial non-converter). Sits
+            directly under the marketing strip. Gated on a settled unpaid state so it
+            never flashes for subscribers while billing status loads. */}
+        {token && !isPaid && !subscriptionLoading && (
+          <section style={{
+            background: '#f0fdf4',
+            border: `1px solid ${PAGE.brand}`,
+            borderRadius: '0.75rem',
+            padding: '1.1rem 1.25rem',
+            marginBottom: '1rem',
+            display: 'flex',
+            gap: '1.25rem',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: PAGE.brand }}>
+                You're on a free account
+              </div>
+              <h2 style={{ margin: '0.2rem 0 0', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '-0.01em', color: PAGE.text }}>
+                Subscribe to unlock unlimited searches &amp; full reports
+              </h2>
+              <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: PAGE.textMuted, maxWidth: 580 }}>
+                Search as many people as you want and view up to 5 full reports a day. Cancel anytime.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { track('dashboard_cta_click', { target: 'subscribe' }); navigate('/payment?upgrade=1'); }}
+              style={{
+                background: PAGE.brand, color: '#fff', border: 'none',
+                padding: '0.7rem 1.4rem', borderRadius: '0.5rem',
+                fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Subscribe Now
+            </button>
+          </section>
+        )}
 
         {/* Bug #46 (2026-05-29): SubscriptionTile moved out of the top
             position — it was encouraging cancel taps before users engaged
