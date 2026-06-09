@@ -56,18 +56,19 @@ api.searchPeople that failed silently). See [[feedback_silent_referenceerror]].
 Channel / Purpose / theme(JSON). theme→registry map: landing "/"→route null |
 "name/landing/3"→v3 (inmate) | "/4"→v4 (death) | "/6"→v6 (divorce); sup "ver=a"→
 detail.variant 'a'; optout "yes"→optOut true; thinmatch "yes"→zeroState 'thinMatch'.
-- **2 real tokens wired:** `69a2380b53ecf9b049d01fbb` = IDL Default (landing "/" =
-  no redirect; keyed entry ONLY — universal `default` left strict for unknown/no-shn
-  traffic, owner decision 2026-06-08). `6a22ff83ca16ad4ef68b84b5` = Google Inmates
-  Upper (v3).
+- **ALL 7 sheet tokens now wired (2026-06-09, consumer bundle `e9bad569`).**
+  Already live: `69a2380b53ecf9b049d01fbb` = IDL Default (landing "/" = no redirect;
+  keyed entry ONLY — universal `default` left strict for unknown/no-shn traffic, owner
+  decision 2026-06-08); `6a22ff83ca16ad4ef68b84b5` = Google Inmates Upper (v3).
+  Swapped in 2026-06-09 (owner provided minted IDs): `…aae5` Inmates Lower (v3),
+  `…aae6` Death Upper (v4), `…aae7` Death Lower (v4), `…aae8` Divorce Upper (v6),
+  `…aae9` Divorce Lower (v6). Upper/Lower pairs share landing+config (differ only by
+  ad position). PENDING_*:* placeholders removed.
 - **Dropped** dead row-number placeholders (1:*/2:*/3:*/5:*) + cascade rows.
-- **5 partners awaiting IDs** (owner "waiting for ids"): Google Inmates Lower (v3),
-  Death Upper/Lower (v4), Divorce Upper/Lower (v6) — staged as commented
-  `PENDING_*:*` templates in campaignRegistry.js; real-token swap is a 1-line key change.
 - **Fixed v4 (death) + v6 (divorce) funnel search** same session: both still used the
   silent-fail inline `api.searchPeople` (→ `/name/search-result?error=true`); ported
   the v3 `/name/loader` handoff. v3/v4/v6 now all reliable; v2/v5 NOT (still inline).
 
-**Still pending:** (1) the 5 real shN tokens above. (2) BC asks in
-`docs/BC_SHN_PARTNER_SHAPE.md` (#77-Q6 model partners, #77-Q4 expose names) to fully
-shift identity/offer to BC.
+**Still pending:** BC asks in `docs/BC_SHN_PARTNER_SHAPE.md` (#77-Q6 model partners,
+#77-Q4 expose names) to fully shift identity/offer to BC. (All 7 sheet tokens are
+wired; consumer bundle needs deploy to ship them.)
