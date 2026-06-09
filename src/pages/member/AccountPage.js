@@ -354,7 +354,10 @@ const AccountPage = () => {
             const tRaw = d.type || '';
             const tLow = tRaw.toLowerCase();
             const isContact   = tLow === 'contact';
-            const isCsrReply  = tLow.endsWith('csrreply');
+            // Consumer histories tag CSR replies `userContactCsrMail` (Api.csv 750/806);
+            // the admin path uses `…csrReply`. Accept both, else CSR replies render as the
+            // member's own outbound message (no support styling).
+            const isCsrReply  = tLow.endsWith('csrreply') || tLow === 'usercontactcsrmail';
             const isUserReply = tLow.endsWith('userreply');
             if (isContact) diag.contact += 1;
             else if (isCsrReply) diag.csrReply += 1;
