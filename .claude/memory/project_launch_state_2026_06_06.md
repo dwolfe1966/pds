@@ -74,15 +74,20 @@ to `docs/archive/` (with STATUS banners + archive README): USERCONTACT_LIST_404 
 PDF (real data) — still stamped "fictional data" → UNCONDITIONAL in BC's template, NOT dev-only;
 launch fallback = soft-block the PDF CTA until BC removes it. Verified via scripts/verify-pdf-disclaimer.js.
 
-**BC csrApi update 2026-06-08 = DOCS AHEAD OF BACKEND (verified, important):** BC added
-`updaterId` to `tracking.findUser` and `userId`/`orderId` to `user.find` in the csrApi docs.
-Live re-test (`scripts/verify-bc-csr-params.js`, 2026-06-08) shows NEITHER is honored
-server-side — tracking still returns mixed updaterIds; user.find by orderId returns the
-default unrelated list. So BC_CSR_TRACKING_SCOPE + BC_CSR_SEARCH_GAPS remain OPEN. **Do NOT
-remove the client-side tracking scope filter** (would leak other users' events) and don't wire
-order-id CSR search until BC actually implements it. Reinforces [[feedback_no_clientside_filter_on_bc_database_search]].
-DID ship: `csrCreateContactMessage` now defaults `brandId:'idlookup'` (BC 2026-06-02 made
-contact.create require brandId-or-shConId) — admin bundle now `6d7132aa`.
+**BC csrApi orderId/updaterId — DOCS AHEAD 6/8, IMPLEMENTED + RE-VERIFIED 6/9:** BC added
+`updaterId` to `tracking.findUser` and `userId`/`orderId` to `user.find` in the docs 2026-06-08;
+the backend ignored both that day (re-test returned the default list). **2026-06-09 re-test
+(`scripts/verify-bc-csr-params.js`) — BOTH now honored server-side:** `user.find({orderId})`
+returns exactly the owning user (1 doc, correct `_id`); `tracking.findUser({updaterId})` is
+scoped. **Order-by-id WIRED** (commit 8f9e5e5, admin bundle `8e73d6c5`): `order:<24-hex>` prefix
+in `UsersPage.runSmartSearch` → resolves owning customer's detail; bare 24-hex still = customer
+id (no probe tax); 0 matches = "no customer found", no blind navigate. Verified via the live
+wired path `scripts/live-uat-order-search.js`. BC_CSR_SEARCH_GAPS order-by-id = RESOLVED; **name
+filter still UNIMPLEMENTED** (name search stays the client-side scan). **Tracking client-side
+scope filter LEFT IN PLACE** — now redundant server-side but its failure mode is a privacy leak;
+retire only as its own verified step. Reinforces [[feedback_no_clientside_filter_on_bc_database_search]].
+Earlier ship: `csrCreateContactMessage` defaults `brandId:'idlookup'` (BC 2026-06-02 contact.create
+requires brandId-or-shConId).
 
 **Open BC asks (docs/):** BC_CSR_TRACKING_SCOPE (server-side tracking scope),
 BC_CSR_SEARCH_GAPS (server name filter + order-by-id), BC_CTO_HANDOFF (attribution tree /
