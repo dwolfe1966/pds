@@ -790,6 +790,11 @@ const PropertyCard = ({ property }) => {
   const p = property;
   const addressLine = [p.address, p.city, p.state, p.zip].filter(Boolean).join(', ');
   const usd = (v) => `$${Number(v).toLocaleString()}`;
+  // Full transfer history (newest-first). Fall back to the single lastSale for
+  // any data path that didn't populate the array.
+  const history = Array.isArray(p.history) && p.history.length
+    ? p.history
+    : (p.lastSale ? [p.lastSale] : []);
   return (
     <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
       <p style={styles.listItemTitle}>
@@ -810,12 +815,22 @@ const PropertyCard = ({ property }) => {
         {p.lotSqft && <div><strong>Lot:</strong> {Number(p.lotSqft).toLocaleString()} sqft</div>}
         {p.apn && <div><strong>Parcel #:</strong> {p.apn}</div>}
         {p.county && <div><strong>County:</strong> {p.county}</div>}
-        {p.lastSale && (p.lastSale.date || p.lastSale.deedType) && (
-          <div style={{ gridColumn: 'span 2' }}>
-            <strong>Last transfer:</strong> {[p.lastSale.date, p.lastSale.deedType, p.lastSale.buyer && `to ${p.lastSale.buyer}`].filter(Boolean).join(' · ')}
-          </div>
-        )}
       </div>
+      {history.length > 0 && (
+        <div style={{ marginTop: '0.75rem', borderTop: '1px solid #e5e7eb', paddingTop: '0.625rem' }}>
+          <p style={{ margin: '0 0 0.375rem', fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>
+            Transfer history{history.length > 1 ? ` (${history.length})` : ''}
+          </p>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+            {history.map((h, i) => (
+              <li key={i} style={{ fontSize: '0.82rem', color: '#4b5563', display: 'flex', gap: '0.625rem' }}>
+                <span style={{ minWidth: '5.5rem', fontWeight: 600, color: '#111827' }}>{h.date || '—'}</span>
+                <span>{[h.deedType, h.seller && `from ${h.seller}`, h.buyer && `to ${h.buyer}`].filter(Boolean).join(' · ') || 'Transfer'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

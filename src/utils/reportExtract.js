@@ -394,14 +394,20 @@ function extractAll(result) {
     const det = p.detail || {};
     const ass = p.assessment || {};
     const addr = p.address || {};
-    const lastSale = (Array.isArray(p.history) ? p.history : [])
+    // Full transfer history (BC's history[] is newest-first). We render every
+    // entry per property; `lastSale` = the most recent, kept for the PDF/back-compat.
+    // NOTE: sale amount isn't in BC's confirmed history shape (transferDate/
+    // receiptDate/deedType/buyer/seller only) — add it here once a real report
+    // confirms the key; do not invent one on spec.
+    const history = (Array.isArray(p.history) ? p.history : [])
       .map(h => ({
         date: pickBcDate(h.detail?.transferDate, h.detail?.receiptDate),
         deedType: safeStr(h.detail?.deedType),
         buyer: ownerName(h.buyer),
         seller: ownerName(h.seller),
       }))
-      .filter(s => s.date || s.deedType)[0] || null;
+      .filter(s => s.date || s.deedType || s.buyer || s.seller);
+    const lastSale = history[0] || null;
     return {
       id: `prop-${i}`,
       address: safeStr(addr.data || addr.complete || [addr.streetNumber, addr.predir, addr.street, addr.streetSuffix].filter(Boolean).join(' ')),
@@ -421,6 +427,7 @@ function extractAll(result) {
       totalTax: ass.totalTax || null,
       owner: ownerName(p.owner),
       lastSale,
+      history,
       foreclosure: !!(p.foreclosure && Object.keys(p.foreclosure).length),
     };
   });

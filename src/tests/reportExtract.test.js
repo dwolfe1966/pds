@@ -878,6 +878,24 @@ describe('extractAll', () => {
       expect(p.foreclosure).toBe(false);
     });
 
+    test('property keeps the FULL transfer history (newest-first), not just lastSale', () => {
+      const report = makeReport({ identities: [makePrimaryIdentity({
+        propertyList: [{
+          address: { data: '8 THERESA AVE', city: 'BURLINGTON', state: 'MA', zip: '01803' },
+          history: [
+            { detail: { transferDate: { data: '09/18/2019' }, deedType: 'QUIT CLAIM DEED' }, buyer: [{ name: 'CHIN FT' }] },
+            { detail: { transferDate: { data: '04/02/2007' }, deedType: 'WARRANTY DEED' }, buyer: [{ name: 'TIM CHIN' }], seller: [{ name: 'PRIOR OWNER' }] },
+          ],
+        }],
+      })] });
+      const p = extractAll(report).properties[0];
+      expect(p.history).toHaveLength(2);
+      expect(p.history[0].date).toBe('09/18/2019');
+      expect(p.history[1].date).toBe('04/02/2007');
+      expect(p.history[1].seller).toBe('PRIOR OWNER');
+      expect(p.lastSale).toEqual(p.history[0]); // lastSale = most recent
+    });
+
     test('financial record keeps lienType, courtCaseNumber, taxPeriod', () => {
       const report = makeReport({ identities: [makePrimaryIdentity({
         lienList: [{
