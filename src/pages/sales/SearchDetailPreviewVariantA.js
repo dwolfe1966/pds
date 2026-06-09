@@ -4,7 +4,6 @@ import { useSignup } from '../../hooks/useSignup';
 import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
 import { useCampaign } from '../../context/CampaignContext';
-import OptOutNotice from '../../components/OptOutNotice';
 
 /**
  * Variant A — VCard + free signup form.
@@ -35,12 +34,6 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
 
   return (
     <main className={styles.main} data-no-nav="true">
-      {/* Partner opt-out option (campaign.optOut / shN "optout: yes") */}
-      {campaign?.optOut && (
-        <div style={{ maxWidth: 600, margin: '0.75rem auto 0', padding: '0 1rem' }}>
-          <OptOutNotice />
-        </div>
-      )}
       {/* ── Mini header ── */}
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>

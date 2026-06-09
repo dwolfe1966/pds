@@ -9,7 +9,6 @@ import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import { readThinMatch } from '../../services/thinMatch';
 import { useCampaign } from '../../context/CampaignContext';
-import OptOutNotice from '../../components/OptOutNotice';
 import styles from './SearchResultsPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -208,8 +207,6 @@ const SalesSearchResultsPage = () => {
   return (
     <main className={styles.main}>
       <div className={styles.contentContainer}>
-        {/* Partner opt-out option (campaign.optOut / shN "optout: yes") */}
-        {campaign?.optOut && <OptOutNotice />}
         {/* Header Section */}
         <div className={styles.header}>
           <h1 className={styles.title}>

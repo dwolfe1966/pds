@@ -45,10 +45,12 @@ export const CAMPAIGN_REGISTRY = {
     // Strict by default — only an explicit `false` relaxes it.
     payment: { methods: ['card'], requireTermsCheckbox: true },
     offer:   { shmName: null, trial: false },   // null = let BC pick default offer
-    // BC's per-shN "optout" flag (comp.client.theme.optout). Drives the SUP consent
-    // block on PaymentPage + the OptOutNotice on SRP/detail. Default TRUE = compliant
-    // (show both) — matches BC's default theme (optout:'yes') and is the safe fallback
-    // if the shape fetch fails. Affiliate shNs set optout:'no' to strip the UI.
+    // BC's per-shN "optout" flag (comp.client.theme.optout). SOLE effect: the SUP
+    // consent text + checkbox above the CTA on PaymentPage. Default TRUE = compliant
+    // (show it) — matches BC's default theme (optout:'yes') and is the safe fallback if
+    // the shape fetch fails. Affiliate shNs set optout:'no' to hide that block + not gate
+    // submit on it. (It does NOT add an opt-out link to the search/detail header — that
+    // was a 2026-06-05 misread, reverted 2026-06-09; the removal link lives in the Footer.)
     optOut:  true,
   },
 

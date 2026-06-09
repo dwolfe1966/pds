@@ -4,7 +4,6 @@ import { useSignup, validatePassword } from '../../hooks/useSignup';
 import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
 import { useCampaign } from '../../context/CampaignContext';
-import OptOutNotice from '../../components/OptOutNotice';
 
 /**
  * Variant D — HIGH TEASE (Partial Reveal)
@@ -134,12 +133,6 @@ const SearchDetailPreviewVariantD = ({ person, id }) => {
 
   return (
     <main className={styles.main} data-no-nav="true" style={{ background: '#f4f4f5' }}>
-      {/* Partner opt-out option (campaign.optOut / shN "optout: yes") */}
-      {campaign?.optOut && (
-        <div style={{ maxWidth: 600, margin: '0.75rem auto 0', padding: '0 1rem' }}>
-          <OptOutNotice />
-        </div>
-      )}
       {/* Mini header */}
       <div className={styles.miniHeader} style={{ background: '#ffffff', borderColor: '#e4e4e7' }}>
         <Link to="/name/search-result" className={styles.miniHeaderBack} style={{ color: '#0d5d2f' }}>
