@@ -40,10 +40,15 @@ per-search as `response.raws[0].transient.sequenceOption.thinMatch`
 signal; `comp.client.theme.thinmatch` is the campaign-level config used for the decision.
 ShapeCompiled `keys` also reveal BC hosts its OWN email campaigns
 (`comp.campaign.email.{guest,signup,member,cancel,...}.series`) — relevant if email moves
-fully to BC. **Consumers (wired):** payment-page SUP consent / pricing-disclosure block gates on
-`campaign.optOut` (PaymentPage `requireTermsCheckbox = campaign?.optOut !== false`);
-`campaign.optOut` ALSO gates the `OptOutNotice` on SRP/detail (unified "show compliance
-UI" flag). thinmatch → SRP `zeroState` decision (ThinMatchPreview vs ZeroResultsPanel).
+fully to BC. **Consumers (wired):** `campaign.optOut` has ONE effect (owner clarified 2026-06-09) —
+it toggles JUST the consent **checkbox + the "By clicking…" SUP pricing-disclosure
+paragraph** under the "*Terms of Use and Pricing Information" heading on PaymentPage
+(`requireTermsCheckbox = campaign?.optOut !== false`; heading + FCRA note always show).
+It does NOT add any opt-out link to the search/detail funnel — the `OptOutNotice` that
+commit fd6f701 (2026-06-05) put at the top of SRP/detail was a MISREAD; removed +
+component deleted 2026-06-09. The data-removal/opt-out link lives ONLY in the site
+**Footer** (`/opt-out`, `/suppression-list`), always, not gated. thinmatch →
+SRP `zeroState` decision (ThinMatchPreview vs ZeroResultsPanel).
 
 **Owner decision 2026-06-09 (REVERSES the 2026-06-08 strict-default):** organic/no-shn
 traffic gets BOTH the thinmatch promo AND the optout/SUP messaging. So BC's theme drives
