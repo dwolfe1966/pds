@@ -94,10 +94,11 @@ const PLAN_FEATURES = [
 const PaymentPage = () => {
   const brand = useBrand();
   const campaign = useCampaign();
-  // SUP consent / pricing-disclosure block visibility is driven by BC's per-shN
-  // "optout" flag (comp.client.theme.optout → campaign.optOut). optout:'yes' (default
-  // + compliant) → show the block and require the checkbox; an affiliate shN with
-  // optout:'no' → campaign.optOut false → hide it and don't gate submit on it (#34).
+  // BC's per-shN "optout" flag (comp.client.theme.optout → campaign.optOut) toggles
+  // ONLY the consent checkbox + the SUP pricing-disclosure paragraph below the "Terms
+  // of Use and Pricing Information" heading (the heading and the FCRA note always show).
+  // optout:'yes' (default + compliant) → show it and require the checkbox; an affiliate
+  // shN with optout:'no' → campaign.optOut false → hide it and don't gate submit (#34).
   const requireTermsCheckbox = campaign?.optOut !== false;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -839,22 +840,22 @@ const PaymentPage = () => {
 
                   {/* Visa subscription-disclosure block — pricing, renewal, cancel.
                       Must appear BEFORE the submit button so the cardholder reads
-                      the terms prior to authorizing the charge. Hidden when BC's shN
-                      optout flag is 'no' (campaign.optOut === false). */}
-                  {requireTermsCheckbox && (
+                      the terms prior to authorizing the charge. */}
                   <div className={styles.termsBlock}>
                     <p className={styles.termsHeading}>
                       <strong>*Terms of Use and Pricing Information</strong>
                     </p>
+                    {/* shN optout flag toggles ONLY the consent checkbox + the SUP
+                        pricing disclosure below. The heading above and the FCRA note
+                        below always show. Hidden when campaign.optOut === false. */}
+                    {requireTermsCheckbox && (
                     <label className={styles.termsLabel}>
-                      {requireTermsCheckbox && (
-                        <input
-                          type="checkbox"
-                          className={styles.termsCheckbox}
-                          checked={agreeTerms}
-                          onChange={(e) => setAgreeTerms(e.target.checked)}
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        className={styles.termsCheckbox}
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                      />
                       <span className={styles.termsBody}>
                         By clicking the button below, you agree to {brand.name}'s{' '}
                         <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</Link>,{' '}
@@ -875,6 +876,7 @@ const PaymentPage = () => {
                         7 days a week.
                       </span>
                     </label>
+                    )}
                     <p className={styles.termsBody} style={{ marginTop: '0.75rem' }}>
                       You also understand and agree that {brand.name} is not a "consumer reporting
                       agency", as defined in the Fair Credit Reporting Act (15 U.S.C. § 1681, et seq.)
@@ -885,7 +887,6 @@ const PaymentPage = () => {
                       any other eligibility determination subject to FCRA.
                     </p>
                   </div>
-                  )}
 
                   {/* CTA */}
                   <button
