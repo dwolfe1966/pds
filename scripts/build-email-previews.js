@@ -25,10 +25,10 @@ const sampleSet = {
   'reset-password': () => t.passwordResetEmail(sUser, { email: sUser.email, resetUrl: 'https://idlookup.ai/reset?token=sample' }),
   signup:           () => t.signupEmail(sUser, { orderNumber: 'A1B2C3D4', trialStartDate: 'Jun 5, 2026', trialEndDate: 'Jun 12, 2026' }),
   uncancel:         () => t.uncancelEmail(sUser, { orderNumber: 'A1B2C3D4', billingDate: 'Jul 5, 2026' }),
-  'remarketing-1':  () => t.remarketingEmail(sUser, 1, { accessEndDate: 'Jun 1, 2026', reactivateUrl: 'https://idlookup.ai/account' }),
-  'remarketing-2':  () => t.remarketingEmail(sUser, 2, { searchSubject: 'John Q. Public', reactivateUrl: 'https://idlookup.ai/account' }),
-  'remarketing-3':  () => t.remarketingEmail(sUser, 3, { winbackOffer: '50% off your first month', offerExpiryDate: 'Jun 30, 2026', reactivateUrl: 'https://idlookup.ai/account' }),
-  'remarketing-4':  () => t.remarketingEmail(sUser, 4, { email: sUser.email, offerExpiryDate: 'Jul 10, 2026', reactivateUrl: 'https://idlookup.ai/account' }),
+  'remarketing-1':  () => t.remarketingEmail(sUser, 1, { upgradeUrl: 'https://idlookup.ai/payment' }),
+  'remarketing-2':  () => t.remarketingEmail(sUser, 2, { searchSubject: 'John Q. Public', price: '$49.98', upgradeUrl: 'https://idlookup.ai/payment' }),
+  'remarketing-3':  () => t.remarketingEmail(sUser, 3, { winbackOffer: '50% off your first month', offerExpiryDate: 'Jun 30, 2026', upgradeUrl: 'https://idlookup.ai/payment' }),
+  'remarketing-4':  () => t.remarketingEmail(sUser, 4, { email: sUser.email, offerExpiryDate: 'Jul 10, 2026', upgradeUrl: 'https://idlookup.ai/payment' }),
   'message-created':() => t.messageCreatedEmail(sUser, { messageSubject: 'Billing question', messagePreview: "Thanks for reaching out — we've reviewed your account and issued a refund of $49.98.", threadUrl: 'https://idlookup.ai/account' }),
 };
 
@@ -46,10 +46,10 @@ const tokenSet = {
   'reset-password': () => t.passwordResetEmail(kUser, { email: '{{email}}', resetUrl: '{{reset_url}}' }),
   signup:           () => t.signupEmail(kUser, { orderNumber: '{{order_number}}', trialStartDate: '{{trial_start_date}}', trialEndDate: '{{trial_end_date}}', price: '{{price}}', period: '{{period}}' }),
   uncancel:         () => t.uncancelEmail(kUser, { orderNumber: '{{order_number}}', billingDate: '{{billing_date}}', price: '{{price}}' }),
-  'remarketing-1':  () => t.remarketingEmail(kUser, 1, { accessEndDate: '{{access_end_date}}', reactivateUrl: '{{reactivate_url}}' }),
-  'remarketing-2':  () => t.remarketingEmail(kUser, 2, { searchSubject: '{{search_subject}}', reactivateUrl: '{{reactivate_url}}', price: '{{price}}' }),
-  'remarketing-3':  () => t.remarketingEmail(kUser, 3, { winbackOffer: '{{winback_offer}}', offerExpiryDate: '{{offer_expiry_date}}', reactivateUrl: '{{reactivate_url}}' }),
-  'remarketing-4':  () => t.remarketingEmail(kUser, 4, { email: '{{email}}', offerExpiryDate: '{{offer_expiry_date}}', reactivateUrl: '{{reactivate_url}}' }),
+  'remarketing-1':  () => t.remarketingEmail(kUser, 1, { upgradeUrl: '{{upgrade_url}}' }),
+  'remarketing-2':  () => t.remarketingEmail(kUser, 2, { searchSubject: '{{search_subject}}', upgradeUrl: '{{upgrade_url}}', price: '{{price}}' }),
+  'remarketing-3':  () => t.remarketingEmail(kUser, 3, { winbackOffer: '{{winback_offer}}', offerExpiryDate: '{{offer_expiry_date}}', upgradeUrl: '{{upgrade_url}}' }),
+  'remarketing-4':  () => t.remarketingEmail(kUser, 4, { email: '{{email}}', offerExpiryDate: '{{offer_expiry_date}}', upgradeUrl: '{{upgrade_url}}' }),
   'message-created':() => t.messageCreatedEmail(kUser, { messageSubject: '{{message_subject}}', messagePreview: '{{message_preview}}', threadUrl: '{{message_thread_url}}' }),
 };
 

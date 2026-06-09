@@ -186,39 +186,42 @@ ${supportLine()}
 `);
 }
 
-// --- remarketing (winback drip, steps 1-4) -----------------------------------
-// Targets lapsed trials (voluntary or failed-payment) and non-renewing subscribers.
+// --- remarketing (trial non-converter drip, steps 1-4) -----------------------
+// Targets people who SIGNED UP (created an account / started the $1 trial) but never
+// converted to a paid membership. They have an account but no full access — so the
+// framing is "finish unlocking / complete your membership", NOT "your membership
+// ended / reactivate". CTA points at the upgrade/payment page.
 const REMARKETING = {
   1: {
-    subject: () => 'Your IDLookup searches are paused',
-    heading: 'Your searches are paused',
-    lead: (o) => `your IDLookup.AI access ended${o.accessEndDate ? ` on <strong>${o.accessEndDate}</strong>` : ''}, so your searches and saved reports are paused for now.`,
-    detail: () => `The people you were looking up haven't gone anywhere — and our database of 247M+ records is updated constantly. Reactivate in one click and pick up right where you left off.`,
-    cta: 'Reactivate Now',
-    footer: () => `If there's anything we could have done better, just reply to this email — a real person reads every one.`,
+    subject: () => "You're almost there — finish unlocking your IDLookup report",
+    heading: 'Your report is ready to unlock',
+    lead: () => `you created your IDLookup.AI account but haven't unlocked full access yet — the report you started is still waiting for you.`,
+    detail: () => `Become a member to see complete contact info, addresses, relatives, and background records — plus unlimited searches across our 247M+ records.`,
+    cta: 'Unlock Full Access',
+    footer: () => `Questions before you upgrade? Just reply to this email — a real person reads every one.`,
   },
   2: {
-    subject: (o) => o.searchSubject ? `Still searching for ${o.searchSubject}?` : 'Pick up where you left off',
+    subject: (o) => o.searchSubject ? `${o.searchSubject}'s full report is still waiting` : 'Your search results are still waiting',
     heading: 'Pick up where you left off',
-    lead: () => `a lot can change in a public record in just a few days — new addresses, phone numbers, and relatives get added all the time.`,
-    detail: (o) => `Your IDLookup.AI account is ready whenever you are. Reactivate for unlimited searches plus up to 5 full reports a day — just ${o.price || '$49.98'}/month, cancel anytime.`,
-    cta: 'Reactivate Now',
-    footer: () => `Questions before you come back? Call ${SUPPORT_PHONE}, Monday–Friday, 9am–5pm ET.`,
+    lead: () => `the people you looked up are still in our records — and there's a lot more we couldn't show you on the free preview.`,
+    detail: (o) => `Upgrade to a full membership for complete reports, unlimited searches, and up to 5 reports a day — just ${o.price || '$49.98'}/month, cancel anytime.`,
+    cta: 'See Full Reports',
+    footer: () => `Questions before you upgrade? Call ${SUPPORT_PHONE}, Monday–Friday, 9am–5pm ET.`,
   },
   3: {
-    subject: () => 'A special offer to bring you back to IDLookup',
-    heading: "We'd love to have you back",
-    lead: (o) => `for a limited time, reactivate your IDLookup.AI membership and get <strong>${o.winbackOffer || 'a special discount'}</strong> on your next billing cycle.`,
-    detail: () => `That's full access to 247M+ records, unlimited searches, and up to 5 reports per day — at your lowest price yet.`,
+    subject: () => 'A special offer to complete your IDLookup membership',
+    heading: "Here's a little something to get you started",
+    lead: (o) => `you're one step away from full access — complete your IDLookup.AI membership now and get <strong>${o.winbackOffer || 'a special discount'}</strong> on your first month.`,
+    detail: () => `That's complete reports on 247M+ records, unlimited searches, and up to 5 reports per day — at your lowest price yet.`,
     cta: 'Claim Your Offer',
     footer: (o) => o.offerExpiryDate ? `This offer expires ${o.offerExpiryDate}. After that, standard pricing applies.` : `This is a limited-time offer.`,
   },
   4: {
-    subject: () => 'Last call — your IDLookup account closes soon',
-    heading: 'Last call',
-    lead: (o) => `this is the last time we'll reach out about your IDLookup.AI account${o.email ? ` (${o.email})` : ''}.`,
-    detail: (o) => `If you'd like to keep your account and saved search history, reactivate${o.offerExpiryDate ? ` before <strong>${o.offerExpiryDate}</strong>` : ' now'}. After that we'll close the account to keep your data tidy — no hard feelings, and you're always welcome back.`,
-    cta: 'Keep My Account',
+    subject: () => 'Last chance — your IDLookup account is about to expire',
+    heading: 'Last call to unlock your account',
+    lead: (o) => `this is the last time we'll reach out about the IDLookup.AI account you started${o.email ? ` (${o.email})` : ''}.`,
+    detail: (o) => `You signed up but never unlocked full access. Complete your membership${o.offerExpiryDate ? ` before <strong>${o.offerExpiryDate}</strong>` : ' now'} to keep your account and saved searches — after that we'll close it out to keep things tidy.`,
+    cta: 'Complete My Membership',
     footer: () => `Prefer to stop these emails? <a href="{{unsubscribe_url}}" style="color:#6b7280;">Unsubscribe here</a>.`,
   },
 };
@@ -229,12 +232,14 @@ function remarketingSubject(step, opts = {}) {
 function remarketingEmail(user, step = 1, opts = {}) {
   const name = firstName(user);
   const v = REMARKETING[step] || REMARKETING[1];
-  const reactivateUrl = opts.reactivateUrl || `${APP_URL}/account`;
+  // Trial non-converters need to UPGRADE (complete payment), so the CTA targets the
+  // payment page. Accept upgradeUrl; fall back to the legacy reactivateUrl opt.
+  const ctaUrl = opts.upgradeUrl || opts.reactivateUrl || `${APP_URL}/payment`;
   return base(v.subject(opts), `
 ${h2(v.heading)}
 ${p(`Hi ${name}, ${v.lead(opts)}`)}
 ${p(v.detail(opts))}
-${button(reactivateUrl, v.cta)}
+${button(ctaUrl, v.cta)}
 ${RULE}
 ${fineprint(v.footer(opts))}
 `);
