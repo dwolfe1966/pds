@@ -40,5 +40,19 @@ per-search as `response.raws[0].transient.sequenceOption.thinMatch`
 signal; `comp.client.theme.thinmatch` is the campaign-level config used for the decision.
 ShapeCompiled `keys` also reveal BC hosts its OWN email campaigns
 (`comp.campaign.email.{guest,signup,member,cancel,...}.series`) — relevant if email moves
-fully to BC. Open: the payment-page opt-out SECTION UI doesn't exist yet (only the flag is
-plumbed); live end-to-end thinmatch behavior is captcha-gated to fully verify.
+fully to BC. **Consumers (wired):** payment-page SUP consent / pricing-disclosure block gates on
+`campaign.optOut` (PaymentPage `requireTermsCheckbox = campaign?.optOut !== false`);
+`campaign.optOut` ALSO gates the `OptOutNotice` on SRP/detail (unified "show compliance
+UI" flag). thinmatch → SRP `zeroState` decision (ThinMatchPreview vs ZeroResultsPanel).
+
+**Owner decision 2026-06-09 (REVERSES the 2026-06-08 strict-default):** organic/no-shn
+traffic gets BOTH the thinmatch promo AND the optout/SUP messaging. So BC's theme drives
+both flags for ALL traffic (no strict guard), and the registry DEFAULT is now the 'on'
+state (zeroState 'thinMatch', optOut true) as the safe fallback. An shN with
+thinmatch:'no'/optout:'no' overrides to 'noRecords' / hidden. Bundle ee4a5795.
+
+Open: FCRA disclaimer currently sits inside the optout-gated block (hides with
+optout:'no') — split out if it must always show. Inmates Upper (6a22ff83) resolved to
+the DEFAULT container in one probe (cached?) — confirm it has its own config. Live
+end-to-end (real affiliate optout:'no' token through checkout) is captcha-gated to fully
+verify; logic is unit-tested.

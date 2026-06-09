@@ -57,9 +57,12 @@ Channel / Purpose / theme(JSON). theme→registry map: landing "/"→route null 
 "name/landing/3"→v3 (inmate) | "/4"→v4 (death) | "/6"→v6 (divorce); sup "ver=a"→
 detail.variant 'a'; optout "yes"→optOut true; thinmatch "yes"→zeroState 'thinMatch'.
 - **ALL 7 sheet tokens now wired (2026-06-09, consumer bundle `e9bad569`).**
-  Already live: `69a2380b53ecf9b049d01fbb` = IDL Default (landing "/" = no redirect;
-  keyed entry ONLY — universal `default` left strict for unknown/no-shn traffic, owner
-  decision 2026-06-08); `6a22ff83ca16ad4ef68b84b5` = Google Inmates Upper (v3).
+  Already live: `69a2380b53ecf9b049d01fbb` = IDL Default (landing "/" = no redirect);
+  `6a22ff83ca16ad4ef68b84b5` = Google Inmates Upper (v3).
+  **UX defaults REVERSED 2026-06-09:** organic/no-shn now gets the thinmatch promo +
+  optout/SUP messaging (registry default zeroState 'thinMatch', optOut true; BC theme
+  drives both). This supersedes the 2026-06-08 "universal default strict" decision.
+  See [[reference_bc_shapecompiled_theme]].
   Swapped in 2026-06-09 (owner provided minted IDs): `…aae5` Inmates Lower (v3),
   `…aae6` Death Upper (v4), `…aae7` Death Lower (v4), `…aae8` Divorce Upper (v6),
   `…aae9` Divorce Lower (v6). Upper/Lower pairs share landing+config (differ only by
