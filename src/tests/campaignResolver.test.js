@@ -37,6 +37,16 @@ describe('campaignResolver — BC theme drives optOut + zeroState', () => {
     expect(typeof c.optOut).toBe('boolean');
   });
 
+  test('no-shn/organic traffic ignores BC default theme (strict default, owner 2026-06-08)', () => {
+    // BC's DEFAULT shN theme returns optout/thinmatch:'yes', but organic visitors
+    // (no shn) must stay strict — the theme override is gated on a real shn.
+    const c = resolveCampaign(null, null, {
+      shape: shapeWith({ landing: '/', sup: 'ver=a', optout: 'yes', thinmatch: 'yes' }),
+    });
+    expect(c.search.zeroState).not.toBe('thinMatch'); // registry strict default
+    expect(c.optOut).toBe(false);
+  });
+
   test('shape-aware cache: pre-shape and shape-enriched resolutions do not collide', () => {
     const pre = resolveCampaign('tok-e', null);                    // mount (no shape)
     const post = resolveCampaign('tok-e', null, {                  // enriched

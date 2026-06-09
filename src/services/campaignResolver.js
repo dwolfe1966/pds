@@ -98,6 +98,14 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
   const { entry, matchKey } = findRegistryEntry(shn, shl);
   const shapeProps = extractShapeProps(shape);
 
+  // Strict default for no-shn / organic traffic (owner decision 2026-06-08): only
+  // let BC's theme flip the UX flags when a real shn is present. BC's DEFAULT shN
+  // theme currently returns optout/thinmatch:'yes' (and carries placeholder content),
+  // which would otherwise push direct/organic visitors into the thin-match promo.
+  const applyTheme = Boolean(shn);
+  const themeZeroState = applyTheme ? shapeProps.zeroState : undefined;
+  const themeOptOut = applyTheme ? shapeProps.optOut : undefined;
+
   // Merge: registry default → matched entry → shape-derived extras.
   // Local registry wins for UX choices; shape supplies partner metadata.
   const defaults = CAMPAIGN_REGISTRY.default;
@@ -112,14 +120,14 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
   const resolved = {
     identity,
     landing: { ...defaults.landing, ...entry.landing },
-    // BC's thinmatch flag (shapeProps.zeroState) overrides the registry when present.
-    search:  { ...defaults.search,  ...entry.search, ...(shapeProps.zeroState ? { zeroState: shapeProps.zeroState } : {}) },
+    // BC's thinmatch flag overrides the registry for real shn traffic (guarded above).
+    search:  { ...defaults.search,  ...entry.search, ...(themeZeroState ? { zeroState: themeZeroState } : {}) },
     detail:  { ...defaults.detail,  ...entry.detail  },
     signup:  { ...defaults.signup,  ...entry.signup  },
     payment: { ...defaults.payment, ...entry.payment },
     offer:   { ...defaults.offer,   ...entry.offer   },
-    // BC's optout flag overrides the registry when present (source of truth).
-    optOut:  shapeProps.optOut ?? entry.optOut ?? defaults.optOut,
+    // BC's optout flag overrides the registry for real shn traffic (guarded above).
+    optOut:  themeOptOut ?? entry.optOut ?? defaults.optOut,
     // Metadata for analytics / debugging
     _matchKey: matchKey,
     _shn: shn,
