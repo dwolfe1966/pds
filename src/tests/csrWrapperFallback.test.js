@@ -79,34 +79,41 @@ describe('_unwrapBcResponse — BC envelope shapes', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => {
-  test('direct POST success returns the body verbatim', async () => {
-    const body = { docs: [{ _id: 'm1' }], noMoreDocs: true };
-    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue(body);
-    const filterSpy = jest.spyOn(apiWrapper, 'csrFindContactMessages');
+  test('direct POST docs are merged with the inbox email/targetUserId scan (deduped)', async () => {
+    // New contract (2026-06-09): consumer contact messages link by EMAIL, not
+    // targetUserId, so the per-user REST endpoint returns 0 for them. We ALWAYS
+    // also run the inbox scan and merge — never return the REST body verbatim.
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [{ _id: 'm1' }], noMoreDocs: true });
+    jest.spyOn(apiWrapper, 'csrFindContactMessages').mockResolvedValue({
+      docs: [
+        { _id: 'i1', content: { targetUserId: 'u1' } },
+        { _id: 'i2', content: { targetUserId: 'other' } },
+      ],
+    });
 
     const res = await apiWrapper.csrFindUserContactMessages({ userId: 'u1' });
 
-    expect(res).toBe(body);
-    expect(apiWrapper._csrPost).toHaveBeenCalledWith(
-      '/contactMessage/admin/find/u1',
-      {},
-    );
-    expect(filterSpy).not.toHaveBeenCalled(); // no fallback needed
+    // REST doc (m1) + the targetUserId-matched inbox doc (i1), deduped; i2 dropped.
+    expect(res.docs.map((d) => d._id).sort()).toEqual(['i1', 'm1']);
+    expect(res._looseMatched).toBe(true);
+    expect(apiWrapper._csrPost).toHaveBeenCalledWith('/contactMessage/admin/find/u1', {});
   });
 
   test('REGRESSION LOCK: a malicious BC IIFE findUserContacts cannot short-circuit the result', async () => {
     // Even if the CSR IIFE exposes a findUserContacts that returns a truthy,
     // docs-less envelope (the f156c11 failure mode), MESSAGES must ignore it
-    // and serve from the direct/REST path.
+    // and serve from the direct/REST path (+ inbox scan).
     jest.spyOn(apiWrapper, 'getCsrWrapper').mockResolvedValue({
       api: { user: { findUserContacts: jest.fn().mockResolvedValue({ junk: true }) } },
     });
-    const body = { docs: [{ _id: 'm1' }] };
-    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue(body);
+    jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [{ _id: 'm1' }] });
+    jest.spyOn(apiWrapper, 'csrFindContactMessages').mockResolvedValue({ docs: [] });
 
     const res = await apiWrapper.csrFindUserContactMessages({ userId: 'u1' });
 
-    expect(res).toBe(body);
+    // IIFE junk ignored; result comes from the direct REST path.
+    expect(res.docs.map((d) => d._id)).toEqual(['m1']);
+    expect(res._looseMatched).toBe(true);
   });
 
   test('direct POST 404 → inbox-wide scan + filter by targetUserId', async () => {
@@ -121,7 +128,7 @@ describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => 
 
     const res = await apiWrapper.csrFindUserContactMessages({ userId: 'u1' });
 
-    expect(res._fallback).toBe('inbox-filter');
+    expect(res._looseMatched).toBe(true);
     expect(res.docs.map((d) => d._id)).toEqual(['keep']);
   });
 

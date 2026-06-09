@@ -55,12 +55,27 @@ function extractShapeProps(shape) {
   const tryKey = (key) => {
     try { return shape.getShComp(key); } catch { return undefined; }
   };
+  // BC delivers the per-shN theme (landing/sup/optout/thinmatch — the same object
+  // from the shN sheet) as comp.client.theme. getShComp may return it parsed
+  // (type 'json') or as a raw JSON string — handle both.
+  let theme = tryKey('comp.client.theme');
+  if (typeof theme === 'string') { try { theme = JSON.parse(theme); } catch { theme = null; } }
+  if (!theme || typeof theme !== 'object') theme = null;
+  const yes = (v) => /^(yes|true|1)$/i.test(String(v ?? '').trim());
+
   return {
     brandName: tryKey('comp.brand.name'),
     partnerName:
+      tryKey('comp.tracking.partner.name') ||
       tryKey('comp.partner.name') ||
       tryKey('comp.connection.name'),
-    // Add others as BC exposes them.
+    // BC-driven per-shN flags (source of truth — override the local registry).
+    // optout:'yes' → optOut true; thinmatch:'yes' → zeroState 'thinMatch' (show the
+    // promo + signup CTA on no-results) else 'noRecords' ("no results found").
+    optOut:    theme ? yes(theme.optout) : undefined,
+    zeroState: theme ? (yes(theme.thinmatch) ? 'thinMatch' : 'noRecords') : undefined,
+    // landing kept on the registry — BC's theme uses '/name/landing/3' while our
+    // routes are '/name/landing/v3'; don't drive routing off it without a mapping.
   };
 }
 
@@ -74,7 +89,10 @@ function extractShapeProps(shape) {
  * @returns {object} resolved campaign config with `_matchKey` and `_shape` metadata
  */
 export function resolveCampaign(shn, shl, { shape = null } = {}) {
-  const cacheKey = KEY(shn, shl);
+  // Shape-aware cache key: the pre-shape mount resolution and the shape-enriched
+  // re-resolution must NOT collide, or BC enrichment (optOut/zeroState/identity)
+  // gets dropped when the cached pre-shape result is returned.
+  const cacheKey = KEY(shn, shl) + (shape ? '#shape' : '');
   if (cache.has(cacheKey)) return cache.get(cacheKey);
 
   const { entry, matchKey } = findRegistryEntry(shn, shl);
@@ -94,12 +112,14 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
   const resolved = {
     identity,
     landing: { ...defaults.landing, ...entry.landing },
-    search:  { ...defaults.search,  ...entry.search  },
+    // BC's thinmatch flag (shapeProps.zeroState) overrides the registry when present.
+    search:  { ...defaults.search,  ...entry.search, ...(shapeProps.zeroState ? { zeroState: shapeProps.zeroState } : {}) },
     detail:  { ...defaults.detail,  ...entry.detail  },
     signup:  { ...defaults.signup,  ...entry.signup  },
     payment: { ...defaults.payment, ...entry.payment },
     offer:   { ...defaults.offer,   ...entry.offer   },
-    optOut:  entry.optOut ?? defaults.optOut,
+    // BC's optout flag overrides the registry when present (source of truth).
+    optOut:  shapeProps.optOut ?? entry.optOut ?? defaults.optOut,
     // Metadata for analytics / debugging
     _matchKey: matchKey,
     _shn: shn,
