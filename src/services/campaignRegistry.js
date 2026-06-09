@@ -116,41 +116,43 @@ export const CAMPAIGN_REGISTRY = {
     optOut:  true,                              // optout: yes
   },
 
-  // ── Pending real shN tokens (owner "waiting for ids", 2026-06-08). Config below is
-  // READY per the sheet — when each token is minted, replace the placeholder key
-  // (`PENDING_*:*`) with the real 24-hex `<token>:*`. The resolver is key-agnostic, so
-  // that one-line key swap is the ONLY edit needed; until then these keys never match
-  // real inbound traffic and are inert. The v4 (death) + v6 (divorce) funnel search was
-  // fixed this session to use the reliable /name/loader handoff (matching v3).
+  // ── Real shN tokens swapped in 2026-06-09 (owner provided the minted IDs). All
+  // Upper/Lower pairs share the same landing + config — they differ only by ad
+  // position (bid/reporting on the Google side), so they resolve to identical UX.
 
-  // 'PENDING_GOOGLE_INMATES_LOWER:*': {
-  //   identity: { shnName: 'Google Inmates Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
-  //     purpose: 'Capture search intent re: incarcerated individuals → capture trials' },
-  //   landing: { route: '/name/landing/v3' },
-  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
-  // },
-  // 'PENDING_GOOGLE_DEATH_UPPER:*': {
-  //   identity: { shnName: 'Google Death Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
-  //     purpose: 'Capture search intent related to deceased individuals → capture trials' },
-  //   landing: { route: '/name/landing/v4' },
-  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
-  // },
-  // 'PENDING_GOOGLE_DEATH_LOWER:*': {
-  //   identity: { shnName: 'Google Death Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
-  //     purpose: 'Capture search intent related to deceased individuals → capture trials' },
-  //   landing: { route: '/name/landing/v4' },
-  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
-  // },
-  // 'PENDING_GOOGLE_DIVORCE_UPPER:*': {
-  //   identity: { shnName: 'Google Divorce Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
-  //     purpose: 'Capture search intent related to divorced individuals → capture trials' },
-  //   landing: { route: '/name/landing/v6' },
-  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
-  // },
-  // 'PENDING_GOOGLE_DIVORCE_LOWER:*': {
-  //   identity: { shnName: 'Google Divorce Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
-  //     purpose: 'Capture search intent related to divorced individuals → capture trials' },
-  //   landing: { route: '/name/landing/v6' },
-  //   search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
-  // },
+  // Google Inmates Lower — inmate funnel (v3).
+  '6a273f983ee3447608a3aae5:*': {
+    identity: { shnName: 'Google Inmates Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
+      purpose: 'Capture search intent re: incarcerated individuals → capture trials' },
+    landing: { route: '/name/landing/v3' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+  // Google Death Upper — death funnel (v4).
+  '6a273f983ee3447608a3aae6:*': {
+    identity: { shnName: 'Google Death Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
+      purpose: 'Capture search intent related to deceased individuals → capture trials' },
+    landing: { route: '/name/landing/v4' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+  // Google Death Lower — death funnel (v4).
+  '6a273f983ee3447608a3aae7:*': {
+    identity: { shnName: 'Google Death Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
+      purpose: 'Capture search intent related to deceased individuals → capture trials' },
+    landing: { route: '/name/landing/v4' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+  // Google Divorce Upper — divorce funnel (v6).
+  '6a273f983ee3447608a3aae8:*': {
+    identity: { shnName: 'Google Divorce Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
+      purpose: 'Capture search intent related to divorced individuals → capture trials' },
+    landing: { route: '/name/landing/v6' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+  // Google Divorce Lower — divorce funnel (v6).
+  '6a273f983ee3447608a3aae9:*': {
+    identity: { shnName: 'Google Divorce Lower', brand: 'IDL', partner: 'Google', channel: 'Search',
+      purpose: 'Capture search intent related to divorced individuals → capture trials' },
+    landing: { route: '/name/landing/v6' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
 };
