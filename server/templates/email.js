@@ -33,24 +33,25 @@ function welcomeEmail(user) {
 <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">Welcome, ${name}!</h2>
 <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Your IDLookup account is ready. You now have access to our database of over 247 million records.</p>
 <p style="margin:0 0 24px;color:#374151;line-height:1.6;">Start searching for people by name, phone number, or email address.</p>
-<a href="http://localhost:3000/dashboard" style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Go to Dashboard</a>
+<a href="${APP_URL}/dashboard" style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Go to Dashboard</a>
 <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
 <p style="margin:0;color:#6b7280;font-size:14px;">Need help? Reply to this email or visit our support center.</p>
 `);
 }
 
-function paymentConfirmationEmail(user, plan) {
+function paymentConfirmationEmail(user, plan, opts = {}) {
   const name = user.fullName ? user.fullName.split(' ')[0] : 'there';
   const planName = plan || 'Pro';
+  const amount = opts.price || '$29.99/mo';
   return base('Payment Confirmed — IDLookup', `
 <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">Payment Confirmed</h2>
 <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Hi ${name}, your <strong>${planName}</strong> subscription is now active.</p>
 <table width="100%" cellpadding="12" cellspacing="0" style="background:#f9fafb;border-radius:6px;margin:0 0 24px;">
 <tr><td style="color:#374151;font-size:14px;">Plan</td><td style="color:#111827;font-weight:600;text-align:right;">${planName}</td></tr>
-<tr style="border-top:1px solid #e5e7eb;"><td style="color:#374151;font-size:14px;">Amount</td><td style="color:#111827;font-weight:600;text-align:right;">$29.99/mo</td></tr>
+<tr style="border-top:1px solid #e5e7eb;"><td style="color:#374151;font-size:14px;">Amount</td><td style="color:#111827;font-weight:600;text-align:right;">${amount}</td></tr>
 <tr style="border-top:1px solid #e5e7eb;"><td style="color:#374151;font-size:14px;">Status</td><td style="color:#059669;font-weight:600;text-align:right;">Active</td></tr>
 </table>
-<a href="http://localhost:3000/account" style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">View Account</a>
+<a href="${APP_URL}/account" style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">View Account</a>
 <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
 <p style="margin:0;color:#6b7280;font-size:14px;">You can manage or cancel your subscription anytime from your account page.</p>
 `);
@@ -73,7 +74,7 @@ function alertDigestEmail(user, alerts) {
 ${alertRows || '<tr><td colspan="2" style="padding:10px 0;color:#9ca3af;font-size:14px;">No active alerts.</td></tr>'}
 </table>
 <br>
-<a href="http://localhost:3000/alerts" style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Manage Alerts</a>
+<a href="${APP_URL}/alerts" style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Manage Alerts</a>
 `);
 }
 
@@ -200,7 +201,7 @@ const REMARKETING = {
     subject: (o) => o.searchSubject ? `Still searching for ${o.searchSubject}?` : 'Pick up where you left off',
     heading: 'Pick up where you left off',
     lead: () => `a lot can change in a public record in just a few days — new addresses, phone numbers, and relatives get added all the time.`,
-    detail: () => `Your IDLookup.AI account is ready whenever you are. Reactivate for unlimited searches plus up to 5 full reports a day — just $49.98/month, cancel anytime.`,
+    detail: (o) => `Your IDLookup.AI account is ready whenever you are. Reactivate for unlimited searches plus up to 5 full reports a day — just ${o.price || '$49.98'}/month, cancel anytime.`,
     cta: 'Reactivate Now',
     footer: () => `Questions before you come back? Call ${SUPPORT_PHONE}, Monday–Friday, 9am–5pm ET.`,
   },

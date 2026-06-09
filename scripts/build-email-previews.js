@@ -17,6 +17,9 @@ fs.mkdirSync(OUT_TOK, { recursive: true });
 // ---- SAMPLE data (realistic, clearly fictional) ----------------------------
 const sUser = { fullName: 'Jordan Smith', email: 'jordan.smith@example.com' };
 const sampleSet = {
+  welcome:          () => t.welcomeEmail(sUser),
+  'payment-confirmation': () => t.paymentConfirmationEmail(sUser, 'Pro', { price: '$29.99/mo' }),
+  'alert-digest':   () => t.alertDigestEmail(sUser, [{ name: 'John Q. Public', createdAt: '2026-06-01' }, { name: '(555) 123-4567', createdAt: '2026-05-28' }]),
   cancel:           () => t.cancelEmail(sUser, { orderNumber: 'A1B2C3D4', accessEndDate: 'Jul 5, 2026', reactivateUrl: 'https://idlookup.ai/account' }),
   'optout-request': () => t.optOutRequestEmail({ email: sUser.email, optOutConfirmUrl: 'https://idlookup.ai/opt-out/confirm?id=req_8f3a', optOutRequestId: 'req_8f3a2c' }),
   'reset-password': () => t.passwordResetEmail(sUser, { email: sUser.email, resetUrl: 'https://idlookup.ai/reset?token=sample' }),
@@ -34,13 +37,17 @@ const sampleSet = {
 // firstName(user) does fullName.split(' ')[0]; a token has no space so it survives.
 const kUser = { fullName: '{{first_name}}', email: '{{email}}' };
 const tokenSet = {
+  welcome:          () => t.welcomeEmail(kUser),
+  'payment-confirmation': () => t.paymentConfirmationEmail(kUser, '{{plan}}', { price: '{{price}}' }),
+  // Digest is a repeating list — one row shown with token fields; ESP loops per alert.
+  'alert-digest':   () => t.alertDigestEmail(kUser, [{ name: '{{alert_name}}' }]),
   cancel:           () => t.cancelEmail(kUser, { orderNumber: '{{order_number}}', accessEndDate: '{{access_end_date}}', reactivateUrl: '{{reactivate_url}}' }),
   'optout-request': () => t.optOutRequestEmail({ email: '{{email}}', optOutConfirmUrl: '{{optout_confirm_url}}', optOutRequestId: '{{optout_request_id}}' }),
   'reset-password': () => t.passwordResetEmail(kUser, { email: '{{email}}', resetUrl: '{{reset_url}}' }),
   signup:           () => t.signupEmail(kUser, { orderNumber: '{{order_number}}', trialStartDate: '{{trial_start_date}}', trialEndDate: '{{trial_end_date}}', price: '{{price}}', period: '{{period}}' }),
   uncancel:         () => t.uncancelEmail(kUser, { orderNumber: '{{order_number}}', billingDate: '{{billing_date}}', price: '{{price}}' }),
   'remarketing-1':  () => t.remarketingEmail(kUser, 1, { accessEndDate: '{{access_end_date}}', reactivateUrl: '{{reactivate_url}}' }),
-  'remarketing-2':  () => t.remarketingEmail(kUser, 2, { searchSubject: '{{search_subject}}', reactivateUrl: '{{reactivate_url}}' }),
+  'remarketing-2':  () => t.remarketingEmail(kUser, 2, { searchSubject: '{{search_subject}}', reactivateUrl: '{{reactivate_url}}', price: '{{price}}' }),
   'remarketing-3':  () => t.remarketingEmail(kUser, 3, { winbackOffer: '{{winback_offer}}', offerExpiryDate: '{{offer_expiry_date}}', reactivateUrl: '{{reactivate_url}}' }),
   'remarketing-4':  () => t.remarketingEmail(kUser, 4, { email: '{{email}}', offerExpiryDate: '{{offer_expiry_date}}', reactivateUrl: '{{reactivate_url}}' }),
   'message-created':() => t.messageCreatedEmail(kUser, { messageSubject: '{{message_subject}}', messagePreview: '{{message_preview}}', threadUrl: '{{message_thread_url}}' }),
