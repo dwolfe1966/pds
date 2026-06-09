@@ -45,3 +45,4 @@
 - [Ads/conversion audit 2026-06-07](project_ads_conversion_2026_06_07.md) — GTM double-load + conversion-gate (partnerName) fixed in code; bundle ee72ad75; owner TODO = re-point GTM tag to `purchase` + add `?shn=` to Ads URLs; probe scripts/live-uat-gtm-shn.js
 - [Report-breadth eval task](project_report_breadth_task.md) — NEXT: compare report detail vs old site (same BC API); gaps = per-address + financial (lien/bankruptcy); likely a display gap not data; O.J. Simpson comparison
 - [BC contactMessages link by email, not targetUserId](reference_bc_contactmessage_email_link.md) — per-user endpoint 404s on them; CSR user-detail Messages tab fix = always email-merge; per-endpoint apiId auth gotcha
+- [BC ShapeCompiled comp.client.theme = per-shN config](reference_bc_shapecompiled_theme.md) — landing/sup/optout/thinmatch live here; drives optOut + zeroState; resolver cache-key bug fixed; probe via network intercept
