@@ -63,7 +63,11 @@ const sampleRows = [], tokenRows = [];
 for (const name of names) {
   const sampleHtml = fillFooter(sampleSet[name]());
   fs.writeFileSync(path.join(OUT, `${name}.html`), sampleHtml, 'utf8');
-  const tokenHtml = tokenSet[name](); // keep {{unsubscribe_url}}/{{privacy_url}} as tokens too
+  // Token (ESP) set: the brand domain is itself a merge field. APP_URL-derived
+  // links render as https://idlookup.ai/... here — rewrite the domain to {{brand_url}}
+  // so the same templates work per-brand. Footer/CTA value tokens are untouched, and
+  // the "IDLookup.AI" brand *text* in copy is not a URL so it stays.
+  const tokenHtml = tokenSet[name]().replace(/https:\/\/idlookup\.ai/g, '{{brand_url}}');
   fs.writeFileSync(path.join(OUT_TOK, `${name}.html`), tokenHtml, 'utf8');
   const title = (sampleHtml.match(/<title>([^<]*)<\/title>/) || [, name])[1];
   sampleRows.push(`  <li><a href="${name}.html">${name}</a> — <span style="color:#6b7280">${title}</span></li>`);
