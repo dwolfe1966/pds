@@ -32,9 +32,10 @@ export const CAMPAIGN_REGISTRY = {
     // returns its default page size (~5); additional results come from
     // response.getMore(). See apiRouter.js:591.
     // zeroState (bug #51): SRP behavior when a search returns no/sparse results.
-    // 'noRecords' (strict default) → "no records found" panel. Affiliate shNs can
-    // set 'thinMatch' to show the ThinMatchPreview upsell instead.
-    search:  { type: 'name', perPage: 5, zeroState: 'noRecords' },
+    // Default 'thinMatch' → ThinMatchPreview upsell on no-results (owner 2026-06-09:
+    // organic/no-shn gets the promo too). BC's per-shN thinmatch flag overrides this;
+    // an shN with thinmatch:'no' resolves to 'noRecords' ("no results found").
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },
     detail:  { variant: '1' },                  // matches the v1 layout default in SearchDetailPreviewPage
 
     signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },

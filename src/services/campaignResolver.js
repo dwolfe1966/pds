@@ -98,12 +98,11 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
   const { entry, matchKey } = findRegistryEntry(shn, shl);
   const shapeProps = extractShapeProps(shape);
 
-  // THINMATCH: strict default for no-shn / organic traffic (owner decision 2026-06-08).
-  // BC's DEFAULT theme returns thinmatch:'yes' (placeholder), which would otherwise push
-  // direct/organic visitors into the promo — so only honor it for a real shn.
-  // OPTOUT: NOT guarded — optout:'yes' (show compliance UI) is the compliant default, so
-  // BC drives it for all traffic and the registry default (true) is a safe fallback.
-  const themeZeroState = shn ? shapeProps.zeroState : undefined;
+  // BC's theme drives BOTH UX flags for ALL traffic (owner 2026-06-09, reversing the
+  // 2026-06-08 strict-default): organic/no-shn gets the thinmatch promo + optout
+  // compliance messaging, same as default-shN traffic. Registry defaults (zeroState
+  // 'thinMatch', optOut true) are the safe fallback when the shape fetch fails and match
+  // BC's default theme (thinmatch/optout:'yes').
 
   // Merge: registry default → matched entry → shape-derived extras.
   // Local registry wins for UX choices; shape supplies partner metadata.
@@ -119,8 +118,8 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
   const resolved = {
     identity,
     landing: { ...defaults.landing, ...entry.landing },
-    // BC's thinmatch flag overrides the registry for real shn traffic (guarded above).
-    search:  { ...defaults.search,  ...entry.search, ...(themeZeroState ? { zeroState: themeZeroState } : {}) },
+    // BC's thinmatch flag overrides the registry when present (source of truth).
+    search:  { ...defaults.search,  ...entry.search, ...(shapeProps.zeroState ? { zeroState: shapeProps.zeroState } : {}) },
     detail:  { ...defaults.detail,  ...entry.detail  },
     signup:  { ...defaults.signup,  ...entry.signup  },
     payment: { ...defaults.payment, ...entry.payment },
