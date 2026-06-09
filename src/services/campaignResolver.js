@@ -98,13 +98,12 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
   const { entry, matchKey } = findRegistryEntry(shn, shl);
   const shapeProps = extractShapeProps(shape);
 
-  // Strict default for no-shn / organic traffic (owner decision 2026-06-08): only
-  // let BC's theme flip the UX flags when a real shn is present. BC's DEFAULT shN
-  // theme currently returns optout/thinmatch:'yes' (and carries placeholder content),
-  // which would otherwise push direct/organic visitors into the thin-match promo.
-  const applyTheme = Boolean(shn);
-  const themeZeroState = applyTheme ? shapeProps.zeroState : undefined;
-  const themeOptOut = applyTheme ? shapeProps.optOut : undefined;
+  // THINMATCH: strict default for no-shn / organic traffic (owner decision 2026-06-08).
+  // BC's DEFAULT theme returns thinmatch:'yes' (placeholder), which would otherwise push
+  // direct/organic visitors into the promo — so only honor it for a real shn.
+  // OPTOUT: NOT guarded — optout:'yes' (show compliance UI) is the compliant default, so
+  // BC drives it for all traffic and the registry default (true) is a safe fallback.
+  const themeZeroState = shn ? shapeProps.zeroState : undefined;
 
   // Merge: registry default → matched entry → shape-derived extras.
   // Local registry wins for UX choices; shape supplies partner metadata.
@@ -126,8 +125,8 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
     signup:  { ...defaults.signup,  ...entry.signup  },
     payment: { ...defaults.payment, ...entry.payment },
     offer:   { ...defaults.offer,   ...entry.offer   },
-    // BC's optout flag overrides the registry for real shn traffic (guarded above).
-    optOut:  themeOptOut ?? entry.optOut ?? defaults.optOut,
+    // BC's optout flag overrides the registry when present (compliant default = true).
+    optOut:  shapeProps.optOut ?? entry.optOut ?? defaults.optOut,
     // Metadata for analytics / debugging
     _matchKey: matchKey,
     _shn: shn,

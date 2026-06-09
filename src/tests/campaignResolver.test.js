@@ -37,13 +37,19 @@ describe('campaignResolver — BC theme drives optOut + zeroState', () => {
     expect(typeof c.optOut).toBe('boolean');
   });
 
-  test('no-shn/organic traffic ignores BC default theme (strict default, owner 2026-06-08)', () => {
-    // BC's DEFAULT shN theme returns optout/thinmatch:'yes', but organic visitors
-    // (no shn) must stay strict — the theme override is gated on a real shn.
+  test('no-shn/organic: thinmatch stays strict, but optOut is the compliant default', () => {
+    // BC's DEFAULT theme returns thinmatch/optout:'yes'. THINMATCH is guarded for
+    // organic (no promo on direct traffic, owner 2026-06-08); OPTOUT is not guarded —
+    // show-compliance-UI is the compliant default (registry default true too).
     const c = resolveCampaign(null, null, {
       shape: shapeWith({ landing: '/', sup: 'ver=a', optout: 'yes', thinmatch: 'yes' }),
     });
-    expect(c.search.zeroState).not.toBe('thinMatch'); // registry strict default
+    expect(c.search.zeroState).not.toBe('thinMatch'); // thinmatch strict for organic
+    expect(c.optOut).toBe(true);                       // optout compliant default
+  });
+
+  test('real shn with optout:no hides the compliance UI (campaign.optOut false)', () => {
+    const c = resolveCampaign('tok-f', null, { shape: shapeWith({ optout: 'no', thinmatch: 'no' }) });
     expect(c.optOut).toBe(false);
   });
 
