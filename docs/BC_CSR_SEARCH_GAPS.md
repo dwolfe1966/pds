@@ -1,13 +1,17 @@
 # BC ask — CSR search: server-side name filter + order-by-id
 
-**Raised:** 2026-06-05 · **From:** PDS / idlookup CSR tooling · **STILL OPEN (order-by-id)**
+**Raised:** 2026-06-05 · **From:** PDS / idlookup CSR tooling · **order-by-id RESOLVED 2026-06-09; name filter STILL OPEN**
 
-> **⚠️ RE-VERIFIED 2026-06-08 — docs ahead of backend.** BC's csrApi docs were updated
-> 2026-06-08 to add `userId` and `orderId` params to `user.find`. We re-tested live the same
-> day (`scripts/verify-bc-csr-params.js`): `user.find({ orderId:'6a11ea7d…af98e' })` returned
-> **10 unrelated users** (the default list), NOT the order's owner — i.e. `orderId` is **not
-> honored server-side**. The param is documented but the filter isn't implemented. **Ask BC to
-> actually implement the `orderId`→owning-user lookup** before we wire order-id into CSR search.
+> **✅ RESOLVED 2026-06-09 — order-by-id now works + wired.** BC's csrApi docs added `userId`
+> and `orderId` to `user.find` on 2026-06-08, but that day's live re-test showed the backend
+> ignored them (returned the default list). **Re-verified 2026-06-09** (`scripts/verify-bc-csr-params.js`):
+> `user.find({ orderId:'6a11ea7d…af98e' })` now returns **exactly the owning user** (1 doc,
+> correct `_id`) and `tracking.findUser({ updaterId })` is server-side scoped. BC implemented
+> both overnight. **Wired** `orderId` into CSR search via an `order:<id>` prefix in
+> `UsersPage.runSmartSearch` → resolves to the owning customer's detail (admin bundle `8e73d6c5`).
+> Verified through the live wired path (`scripts/live-uat-order-search.js`): real order id → owner
+> detail; bogus order id → "no customer found", no blind navigate. The tracking client-side scope
+> filter was intentionally left in place (separate change; its failure mode is a privacy leak).
 
 We wired the CSR customer/order searches the team needs. Probed BC's
 `/database/search` live (non-matching values, so 0 = filter honored, 10 = ignored):

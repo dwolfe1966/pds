@@ -204,13 +204,40 @@ const UsersPage = () => {
     setFetchGeneration(g => g + 1);
   };
 
+  // Resolve an order id to its owning customer and open that customer's detail.
+  // BC's user.find honors `query.orderId` server-side as of 2026-06-08 (verified
+  // live via scripts/verify-bc-csr-params.js). 0 matches → explicit not-found, never
+  // a blind navigate (an order id is not a user id).
+  const resolveOrderId = async (orderId) => {
+    setNameSearchInfo(null);
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.adminListUsers({ orderId });
+      const owner = (res?.data ?? [])[0];
+      const ownerId = owner?._id || owner?.id;
+      if (ownerId) {
+        navigate(`/users/${ownerId}`);
+      } else {
+        setError(`No customer found for order id ${orderId}.`);
+        setLoading(false);
+      }
+    } catch (err) {
+      setError(err.message || 'Order lookup failed.');
+      setLoading(false);
+    }
+  };
+
   // ONE smart search — auto-detects the input type and runs the BC query that
   // actually matches it (so results match the criteria):
-  //   24-hex → customer ID (open detail) · "@" → email · 5 digits → ZIP ·
-  //   4 digits → last-4 of card · 7+ digits → phone · anything else → name scan.
+  //   "order:<24-hex>" → order id (resolve owning customer) · 24-hex → customer ID
+  //   (open detail) · "@" → email · 5 digits → ZIP · 4 digits → last-4 of card ·
+  //   7+ digits → phone · anything else → name scan.
   const runSmartSearch = (rawQuery) => {
     const trimmed = (rawQuery || '').trim();
     if (!trimmed) { clearSearch(); return; }
+    const orderMatch = trimmed.match(/^order:\s*([a-f0-9]{24})$/i);
+    if (orderMatch) { resolveOrderId(orderMatch[1]); return; }
     if (/^[a-f0-9]{24}$/i.test(trimmed)) { navigate(`/users/${trimmed}`); return; }
     setNameSearchInfo(null);
     setError('');
@@ -346,7 +373,7 @@ const UsersPage = () => {
                 <input
                   type="text"
                   className={styles.searchInput}
-                  placeholder="Search by email, name, ZIP, phone, last 4 of card, or customer ID…"
+                  placeholder="Search by email, name, ZIP, phone, last 4 of card, customer ID, or order:<id>…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   aria-label="Search customers"
@@ -388,8 +415,9 @@ const UsersPage = () => {
 
         <p className={styles.searchHint}>
           One box, auto-detected: <strong>email</strong> / <strong>ZIP</strong> /
-          <strong> phone</strong> / <strong>last 4 of card</strong> / <strong>customer ID</strong> query
-          the server; a <strong>name</strong> scans the most-recent customers. \u201CStatus\u201D filters the results.
+          <strong> phone</strong> / <strong>last 4 of card</strong> / <strong>customer ID</strong> /
+          <strong> order:&lt;id&gt;</strong> query the server; a <strong>name</strong> scans the
+          most-recent customers. \u201CStatus\u201D filters the results.
         </p>
       </div>
 
