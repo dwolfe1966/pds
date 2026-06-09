@@ -1501,33 +1501,51 @@ class ApiWrapperService {
     // renders an EMPTY Messages list on UserDetailPage. (Regressed by f156c11
     // when the IIFE-first pattern was applied to messages as well as notes;
     // the notes read csrFindUserAdminNotes keeps the IIFE — messages do not.)
+    // Loose match on user-id OR email, merging two sources. We must ALWAYS run the
+    // email scan when we have an email — NOT only on 404 — because consumer contact-
+    // form messages carry no targetUserId/owner (verified live 2026-06-09: docs link
+    // to the member only by sender email), so BC's targetUserId-keyed endpoint returns
+    // 200-but-EMPTY for them and the old "fallback on 404" never fired. That left
+    // consumer→CSR messages visible on the general inbox but missing from the user's
+    // detail page. Dedupe by _id across both sources.
+    const wantEmail = (userEmail || '').toLowerCase().trim();
+    const byId = new Map();
+    const add = (d) => { const k = d?._id || d?.id; byId.set(k || byId.size, d); };
+
+    // (a) BC's targetUserId-keyed REST path — catches messages explicitly linked to
+    // the user (e.g. CSR-composed mail). 404/405 = not on this deployment; ignore.
     if (userId) {
       try {
-        return await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
+        const r = await this._csrPost(`/contactMessage/admin/find/${encodeURIComponent(userId)}`, lastId ? { lastId } : {});
+        (r?.docs ?? r?.data ?? (Array.isArray(r) ? r : [])).forEach(add);
       } catch (err) {
         if (err?.status !== 404 && err?.status !== 405) throw err;
-        dbg(`[csrFindUserContactMessages] /contactMessage/admin/find/${userId} → 404, falling back to inbox-wide GET + client-side filter`);
+        dbg(`[csrFindUserContactMessages] /contactMessage/admin/find/${userId} → ${err?.status}, relying on inbox scan`);
       }
     }
-    // Fallback: scan recent contactMessages and filter client-side. Match
-    // either targetUserId === userId (BC's intended link) OR sender email
-    // === userEmail (covers messages with no targetUserId set).
-    const raw = await this.csrFindContactMessages(lastId ? { lastId } : {});
-    const docs = raw?.docs ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-    const wantEmail = (userEmail || '').toLowerCase().trim();
-    const filtered = docs.filter((d) => {
-      const t = d?.content?.targetUserId || d?.targetUserId;
-      if (userId && t === userId) return true;
-      if (!wantEmail) return false;
-      const senderEmail = (d?.content?.input?.email || d?.content?.email || '').toLowerCase().trim();
-      return senderEmail === wantEmail;
-    });
-    dbg(`[csrFindUserContactMessages] filter matched ${filtered.length}/${docs.length} (userId=${userId || '∅'}, email=${wantEmail || '∅'})`);
-    return {
-      docs: filtered,
-      noMoreDocs: raw?.noMoreDocs ?? true,
-      _fallback: 'inbox-filter',
-    };
+
+    // (b) Inbox scan + loose client match on targetUserId OR sender email. NOTE: a
+    // single inbox page (BC caps it) — messages older than the first page aren't
+    // matched. Real fix is a BC server-side email filter on this endpoint; until
+    // then this covers recent traffic. email/targetUserId are in displayFields
+    // (read by the general inbox) so client-matching on them is safe.
+    let scanned = 0;
+    if (wantEmail || userId) {
+      const raw = await this.csrFindContactMessages(lastId ? { lastId } : {});
+      const docs = raw?.docs ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+      scanned = docs.length;
+      for (const d of docs) {
+        const t = d?.content?.targetUserId || d?.targetUserId;
+        if (userId && t === userId) { add(d); continue; }
+        if (!wantEmail) continue;
+        const senderEmail = (d?.content?.input?.email || d?.content?.email || '').toLowerCase().trim();
+        if (senderEmail === wantEmail) add(d);
+      }
+    }
+
+    const merged = [...byId.values()];
+    dbg(`[csrFindUserContactMessages] merged ${merged.length} (scanned ${scanned}; userId=${userId || '∅'}, email=${wantEmail || '∅'})`);
+    return { docs: merged, noMoreDocs: true, _looseMatched: true };
   }
 
   // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
