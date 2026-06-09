@@ -33,7 +33,7 @@ const BENEFIT_BULLETS = [
 ];
 
 /**
- * Name search landing v3 – Inmatesearcher-style flow with progress bar,
+ * Name search landing v3 – inmate-search themed flow with progress bar,
  * single-column layout, trust badges, and benefit bullets.
  * Same 4 steps, same data: Name → Location → Details → Confirm → Results.
  */
