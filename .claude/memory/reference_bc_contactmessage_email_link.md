@@ -24,8 +24,16 @@ Fix (commit on 2026-06-09, admin bundle `0693f646`): `csrFindUserContactMessages
 now ALWAYS runs the email loose-match (`userId === targetUserId` OR
 `senderEmail === userEmail`) and merges it with the targetUserId REST path, deduped
 by `_id` — not only on a 404 like before. UserDetailPage already passes
-`userEmail: user?.email`. Caps: single inbox page (old messages beyond page 1 not
-matched) — real fix is a BC server-side email filter on this endpoint (BC ask).
+`userEmail: user?.email`. Caps: BC has NO server-side email filter on /contactMessage/admin/find (takes only
+`{lastId}`), so the email match must PAGE the inbox. Fixed 2026-06-10: the scan was
+only reading page 1, so a member's older tickets (e.g. a May 27 ticket viewed in June,
+on inbox page 2/3) never matched on their user-detail page. Now pages bounded (40,
+early-stops on noMoreDocs). Also fixed a race in UserDetailPage.fetchUserTickets (ran
+twice — mount w/o email, then with email; stale empty run could clobber results →
+request-token guard) and added an `?email=` hint on the tickets→userDetail link as a
+fallback. Real fix still = a BC server-side email filter (BC ask). Separately observed:
+BC's `/user/management/detail` (getUserDetail) intermittently returns
+`{message,error,statusCode}`, blanking the whole user-detail page — watch this.
 
 Auth gotcha for probes: BC uses a **per-endpoint apiId**, so a `clientId=...` query
 captured from one page (e.g. /csr/users) **403s** on `/contactMessage/admin/*`.
