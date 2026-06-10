@@ -146,6 +146,8 @@ const PaymentPage = () => {
   // the report the user was trying to reach before the paywall (partner bug 22).
   const [confirmedReportId, setConfirmedReportId] = useState(null);
   const [reportProvisioning, setReportProvisioning] = useState(false);
+  // BC order id for the confirmation receipt shown on the success screen.
+  const [confirmedOrderId, setConfirmedOrderId] = useState(null);
   // Suppresses the "already paid → redirect to dashboard" guard while a purchase
   // is mid-flight. AuthContext refetches subscription on token change, so the
   // billing.sale-issued token can flip isPaid mid-handler — without this flag,
@@ -471,6 +473,7 @@ const PaymentPage = () => {
       // setSubscription (isPaid → true) and setSuccess (suppresses the redirect).
       if (resolvedReportId) setConfirmedReportId(resolvedReportId);
       else if (reportFailed) setReportProvisioning(true);
+      setConfirmedOrderId(verifiedOrder?._id || verifiedOrder?.id || resolvedReportId || null);
       setSuccess(true);
       setSubscription?.(verifiedSubscription);
       // Bug #38 (2026-05-29): the success screen is much shorter than the
@@ -573,6 +576,24 @@ const PaymentPage = () => {
               <p className={styles.successText}>
                 Your {brand.name} Basic membership is now active. A receipt is on its way to <strong>{user?.email}</strong>.
               </p>
+
+              {/* Payment confirmation — amount charged today + order id for the customer's records */}
+              <div style={{
+                margin: '1rem auto 0', maxWidth: 380,
+                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem',
+                padding: '0.75rem 1rem', fontSize: '0.9rem', color: '#166534', textAlign: 'left',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                  <span>Amount paid today</span>
+                  <strong>{trialPriceStr}</strong>
+                </div>
+                {confirmedOrderId && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '0.4rem', alignItems: 'baseline' }}>
+                    <span>Order ID</span>
+                    <strong style={{ fontFamily: 'monospace', fontSize: '0.82rem', wordBreak: 'break-all', textAlign: 'right' }}>{confirmedOrderId}</strong>
+                  </div>
+                )}
+              </div>
 
               {/* Primary CTA varies by whether report creation succeeded.
                   confirmedReportId → direct jump to the report they wanted.
