@@ -1,5 +1,13 @@
 # BC ask — `getUserContacts` returns empty for member-submitted threads
 
+> **✅ RESOLVED GOING FORWARD — confirmed 2026-06-10.** BC now sets `targetUserId` on
+> member-submitted threads, so **newly created** conversations show up in account → Messages
+> (owner confirmed: "new messages do show up"; `test21@test21.com`'s newer threads now appear).
+> **Only LEGACY threads** (created before BC's fix) are still missing via `getUserContacts` —
+> owner has accepted that as OK (no backfill required). The flat 0-docs repro below was for an
+> account whose threads predate the fix. Remaining (optional, low priority): a one-time backfill
+> of `targetUserId` on pre-fix threads if you ever want them to surface. Otherwise closeable.
+
 **Raised:** 2026-05-29
 **Environment:** `https://dev.www.idlookup.ai/`
 **Builds under test:** consumer `ed43a54c` (and successor with `targetUserId` plumbed through)
