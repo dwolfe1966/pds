@@ -44,6 +44,7 @@ import EmailLandingV6Page from './pages/sales/EmailSearchLandingV6Page';
 import EmailLoaderPage from './pages/sales/EmailLoaderPage';
 import EmailSearchResultsPage from './pages/sales/EmailSearchResultsPage';
 import OptOutLandingPage from './pages/sales/OptOutLandingPage';
+import UnsubscribePage from './pages/sales/UnsubscribePage';
 import PartnerPage from './pages/sales/PartnerPage';
 import PrivacyPage from './pages/sales/PrivacyPage';
 import TermsPage from './pages/sales/TermsPage';
@@ -167,6 +168,7 @@ const App = () => {
           <Route path="/email/search-result" element={<EmailSearchResultsPage />} />
           {/* Opt-out routes */}
           <Route path="/opt-out" element={<OptOutLandingPage />} />
+          <Route path="/unsubscribe" element={<UnsubscribePage />} />
           {/* Legal and policy pages */}
           <Route path="/partner" element={<PartnerPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />

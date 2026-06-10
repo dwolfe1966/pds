@@ -398,6 +398,12 @@ const api = {
     return await apiWrapper.goToOptOutPage({ newPage });
   },
 
+  // Consumer email unsubscribe (public /unsubscribe page + member Communications tab).
+  unsubscribeEmail: async (email) => {
+    const { default: apiWrapper } = await import('./services/apiWrapper');
+    return await apiWrapper.unsubscribeManagedContactMail(email);
+  },
+
   /**
    * Download report as PDF via ByteCrtrs.
    * Triggers a BC-managed popup — the user clicks Confirm to start the download.

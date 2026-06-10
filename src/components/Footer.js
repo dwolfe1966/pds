@@ -43,6 +43,7 @@ const Footer = () => {
             <div className={styles.sectionLinks}>
               {[
                 { to: '/opt-out', label: 'Opt Out' },
+                { to: '/unsubscribe', label: 'Unsubscribe' },
                 { to: '/suppression-list', label: 'Suppression List' },
                 { to: '/partner', label: 'Partner With Us' },
               ].map((link) => (

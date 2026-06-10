@@ -7,6 +7,56 @@ import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
 import styles from './AccountPage.module.css';
+import { useBrand } from '../../services/brand';
+
+// Communications / unsubscribe tab — lets a member stop marketing emails (BC
+// unsubscribeMail). Texts are stopped via reply STOP (no consumer text endpoint).
+function CommunicationsTab({ email }) {
+  const brand = useBrand();
+  const [status, setStatus] = useState('idle'); // idle | loading | done | error
+  const [error, setError] = useState('');
+  const unsub = async () => {
+    if (!email) { setError('No email is on file for this account.'); return; }
+    setError(''); setStatus('loading');
+    try { await api.unsubscribeEmail(email); setStatus('done'); }
+    catch (e) { setError(e?.message || 'Could not unsubscribe. Please try again, or contact support.'); setStatus('error'); }
+  };
+  const box = { border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1.1rem 1.25rem', marginBottom: '1rem' };
+  return (
+    <div>
+      <div style={box}>
+        <h3 style={{ margin: '0 0 0.35rem', fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Marketing emails</h3>
+        {status === 'done' ? (
+          <p style={{ margin: 0, color: '#166534', fontSize: '0.9rem' }}>
+            <strong>{email}</strong> has been unsubscribed from {brand.name} marketing emails. You'll
+            still receive essential account messages (receipts, password resets, support replies).
+          </p>
+        ) : (
+          <>
+            <p style={{ margin: '0 0 0.75rem', color: '#374151', fontSize: '0.9rem', lineHeight: 1.5 }}>
+              Stop promotional emails to <strong>{email || 'your account'}</strong>. You'll still get
+              essential account and transactional messages.
+            </p>
+            {error && <p style={{ margin: '0 0 0.5rem', color: '#dc2626', fontSize: '0.85rem' }}>{error}</p>}
+            <button type="button" onClick={unsub} disabled={status === 'loading'} style={{
+              padding: '0.6rem 1rem', background: '#fff', color: '#0d5d2f', border: '1px solid #0d5d2f',
+              borderRadius: '0.5rem', fontSize: '0.9rem', fontWeight: 600, cursor: status === 'loading' ? 'default' : 'pointer',
+            }}>
+              {status === 'loading' ? 'Unsubscribing…' : 'Unsubscribe from marketing emails'}
+            </button>
+          </>
+        )}
+      </div>
+      <div style={box}>
+        <h3 style={{ margin: '0 0 0.35rem', fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Text messages</h3>
+        <p style={{ margin: 0, color: '#374151', fontSize: '0.9rem', lineHeight: 1.5 }}>
+          To stop text messages, reply <strong>STOP</strong> to any message from us. Reply
+          <strong> START</strong> to opt back in.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Unified Account page combining Profile, Security & Privacy, Subscription & Billing,
@@ -19,7 +69,7 @@ const AccountPage = () => {
 
   // ─── Tab state (supports ?tab=messages deep-linking) ────────────────────────
   // Default lands on Security & Privacy (first tab); Profile is the last tab.
-  const validTabs = ['security', 'billing', 'messages', 'profile'];
+  const validTabs = ['security', 'billing', 'messages', 'communications', 'profile'];
   const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'security';
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -712,6 +762,7 @@ const AccountPage = () => {
     { key: 'security', label: 'Security' },
     { key: 'billing', label: 'Subscription & Billing' },
     { key: 'messages', label: 'Messages' },
+    { key: 'communications', label: 'Communications' },
     { key: 'profile', label: 'Profile' },
   ];
 
@@ -1342,6 +1393,16 @@ const AccountPage = () => {
       )}
 
       {/* ── MESSAGES TAB ────────────────────────────────────────────────────── */}
+      {activeTab === 'communications' && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Communications</h2>
+          <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1rem' }}>
+            Manage the marketing emails and texts you receive from us.
+          </p>
+          <CommunicationsTab email={user?.email} />
+        </div>
+      )}
+
       {activeTab === 'messages' && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Support Messages</h2>

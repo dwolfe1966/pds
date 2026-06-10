@@ -1620,6 +1620,26 @@ class ApiWrapperService {
     return await this._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`);
   }
 
+  // CONSUMER (public + member) email unsubscribe.
+  // apiWrapper.api.managedContact.unsubscribeMail({ value: email }) → POST
+  // /managedContact/unsubscribe/mail. Used by the public /unsubscribe page and the
+  // member Communications tab. NOTE: there is NO consumer text/SMS unsubscribe endpoint
+  // (BC exposes only unsubscribe/mail) — texts are stopped by replying STOP; a BC ask is
+  // filed for a web text-unsubscribe.
+  async unsubscribeManagedContactMail(email) {
+    const value = (email || '').trim();
+    if (!value) throw new Error('Email is required');
+    try {
+      const wrapper = await this.getWrapper();
+      if (typeof wrapper?.api?.managedContact?.unsubscribeMail === 'function') {
+        return await wrapper.api.managedContact.unsubscribeMail({ value });
+      }
+    } catch (err) {
+      if (err?.status && err.status !== 404 && err.status !== 405) throw err;
+    }
+    return await this._csrPost('/managedContact/unsubscribe/mail', { value });
+  }
+
   // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)
   // params: { type ('email'|'phone'), contactAddress?, lastId? }
   async csrFindManagedContacts(params = {}) {
