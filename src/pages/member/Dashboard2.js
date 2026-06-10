@@ -831,6 +831,41 @@ const Dashboard2 = () => {
           </section>
         )}
 
+        {/* Complete-profile prompt (item vi) — shown when the member is missing a name
+            or phone; links to the Profile tab to fill them in. */}
+        {(() => {
+          if (!token || !user) return null;
+          const needsName = !(user.firstName || user.fullName || user.name);
+          const needsPhone = !user.phone;
+          if (!needsName && !needsPhone) return null;
+          const missing = [needsName && 'name', needsPhone && 'phone'].filter(Boolean).join(' and ');
+          return (
+            <section style={{
+              background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '0.75rem',
+              padding: '1rem 1.25rem', marginBottom: '1rem',
+              display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div style={{ flex: 1, minWidth: 240 }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e3a8a' }}>Complete your profile</div>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', color: '#1e40af' }}>
+                  Add your {missing} for faster support and better account security.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { track('dashboard_cta_click', { target: 'complete_profile' }); navigate('/account?tab=profile'); }}
+                style={{
+                  background: '#1d4ed8', color: '#fff', border: 'none',
+                  padding: '0.6rem 1.1rem', borderRadius: '0.5rem',
+                  fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                Complete profile →
+              </button>
+            </section>
+          );
+        })()}
+
         {/* Bug #46 (2026-05-29): SubscriptionTile moved out of the top
             position — it was encouraging cancel taps before users engaged
             with the product. Now rendered below the reports/activity grid. */}

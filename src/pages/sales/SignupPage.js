@@ -18,7 +18,7 @@ const SignupPage = ({ source = 'direct' }) => {
   const location = useLocation();
   const { submit, loading, error, success, redirectTo } = useSignup();
 
-  const [form, setForm] = useState({ email: '', password: '', optin: false });
+  const [form, setForm] = useState({ email: '', password: '', phone: '', optin: false });
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [emailError, setEmailError] = useState('');
 
@@ -82,6 +82,7 @@ const SignupPage = ({ source = 'direct' }) => {
       selectedPersonId: params.get('selected'),
       queryString: location.search.replace(/^\?/, '') || undefined,
       redirectParam: params.get('redirect'),
+      extraPayload: { phone: form.phone.trim() || undefined },
     });
   };
 
@@ -141,6 +142,24 @@ const SignupPage = ({ source = 'direct' }) => {
                 <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.45 }}>
                   We'll only use your email for login, receipts, and account alerts.
                   Never sold, shared, or used for marketing without your consent.
+                </p>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label} htmlFor="phone">
+                  Phone <span style={{ fontWeight: 400, color: '#6b7280' }}>(optional)</span>
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  autoComplete="tel"
+                  placeholder="(555) 123-4567"
+                  className={styles.input}
+                />
+                <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.45 }}>
+                  Optional — helps with account security and faster support. We'll only text you if you opt in.
                 </p>
               </div>
               <div className={styles.formGroup}>

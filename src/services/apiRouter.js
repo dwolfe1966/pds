@@ -565,6 +565,9 @@ async function callNewAPI(endpoint, params) {
         firstName,
         lastName,
         fullName: `${firstName} ${lastName}`.trim(),
+        // Optional phone from signup — flows to user.phone, used at billing.sale and
+        // shown/editable in the Account → Profile tab.
+        ...(body.phone ? { phone: String(body.phone).trim() } : {}),
         role: 'member',
       };
 
