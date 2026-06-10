@@ -229,6 +229,18 @@ const EmailTicketsPage = () => {
   const RESOLVED_TAG = 'resolved';
   const isResolved = (item) => Array.isArray(item?.index) && item.index.includes(RESOLVED_TAG);
 
+  // Resolve sender emails → user accounts (drives member status, the customer-detail
+  // link, AND the member/non-member filter). Resolved from allItems — NOT the filtered
+  // listItems — so the filter can read it without a dependency cycle.
+  const senderUsers = useTicketSenderUsers(allItems);
+  // True if a ticket maps to a registered account. Resolved object = member, null =
+  // non-member; while the lookup is pending (undefined) fall back to the targetUserId hint.
+  const memberStatus = (item) => {
+    const email = isContactMessage(item.type) ? contactMessageSenderEmail(item).toLowerCase().trim() : '';
+    const entry = email ? senderUsers[email] : undefined;
+    return entry === undefined ? isMemberLinked(item) : !!entry;
+  };
+
   const listItems = useMemo(() => {
     if (mode === 'user') {
       const items = allItems.filter((item) => isMailThread(item.type));
@@ -238,8 +250,8 @@ const EmailTicketsPage = () => {
     }
     // Inbox mode — combine all five filters.
     let items = allItems;
-    if (filterDir === 'member')    items = items.filter(isMemberLinked);
-    if (filterDir === 'nonmember') items = items.filter((i) => !isMemberLinked(i));
+    if (filterDir === 'member')    items = items.filter(memberStatus);
+    if (filterDir === 'nonmember') items = items.filter((i) => !memberStatus(i));
     if (statusFilter === 'awaiting') items = items.filter((i) => !hasReply(i));
     if (statusFilter === 'replied')  items = items.filter(hasReply);
     if (categoryFilter !== 'all')   items = items.filter((i) => itemCategory(i) === categoryFilter);
@@ -249,11 +261,7 @@ const EmailTicketsPage = () => {
     if (searchQuery.trim())         items = items.filter((i) => matchesSearch(i, searchQuery.trim()));
     return items;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allItems, filterDir, mode, statusFilter, categoryFilter, resolutionFilter, myAssignedOnly, searchQuery, adminUserId]);
-
-  // Resolve sender emails → user accounts so each ticket shows real member status
-  // and links to the customer's detail page when the email matches an account.
-  const senderUsers = useTicketSenderUsers(listItems);
+  }, [allItems, filterDir, mode, statusFilter, categoryFilter, resolutionFilter, myAssignedOnly, searchQuery, adminUserId, senderUsers]);
 
   const selected = useMemo(() => {
     if (!selectedId) return null;
