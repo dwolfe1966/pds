@@ -108,16 +108,18 @@ const AccountPage = () => {
 
   // ─── Messages tab state ─────────────────────────────────────────────────────
   const [messages, setMessages] = useState([]);
+  // Conversations grouped by thread: [{ contactMessageId, hash, subject, messages[], canReply }]
+  const [threads, setThreads] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesError, setMessagesError] = useState('');
   const [lastMessageId, setLastMessageId] = useState(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
-  // Inline reply (item iii) — targets the most-recent thread so members can reply in
-  // place instead of being sent to the Contact Us page.
-  const [activeThread, setActiveThread] = useState(null); // { contactMessageId, hash }
-  const [replyText, setReplyText] = useState('');
-  const [replySending, setReplySending] = useState(false);
-  const [replyError, setReplyError] = useState('');
+  // Inline reply — per-thread drafts so each conversation has its own reply box (members
+  // reply in place instead of being sent to Contact Us). Reply is only allowed by BC when
+  // the thread's last message is from CSR.
+  const [replyDrafts, setReplyDrafts] = useState({});   // { [contactMessageId]: text }
+  const [replySendingId, setReplySendingId] = useState(null);
+  const [replyErrors, setReplyErrors] = useState({});   // { [contactMessageId]: error }
   const [messagesFetched, setMessagesFetched] = useState(false);
 
   // ─── Compose message state ──────────────────────────────────────────────────
@@ -455,26 +457,35 @@ const AccountPage = () => {
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       const finalMsgs = merged.length > 0 ? merged : readLocalMessages();
       setMessages(finalMsgs);
-      // Active reply thread = the most-recent message's thread (item iii).
-      // BC only accepts a user reply when the thread's LAST message is from CSR
-      // ("UserReply can be written only if the last written message is a CSR"). So group
-      // by thread (merged is newest-first → first seen = that thread's newest message) and
-      // pick the most-recent thread whose newest message is a CSR reply. If none qualifies,
-      // no inline reply (the member starts a New Message instead).
-      const threadLast = new Map(); // contactMessageId → { hash, ts, csrLast }
-      for (const m of merged) {
-        if (!m.contactMessageId || !m.hash || threadLast.has(m.contactMessageId)) continue;
-        threadLast.set(m.contactMessageId, {
-          hash: m.hash,
-          ts: new Date(m.createdAt || 0).getTime(),
-          csrLast: m.type === 'userContactCsrMail',
-        });
+
+      // Group messages into conversation threads so the UI shows each conversation
+      // (original + its replies) together instead of one flat date-sorted list. Within a
+      // thread, messages render oldest→newest; threads are ordered most-recent-first.
+      // A thread is replyable only when its LAST message is from CSR — BC rejects a reply
+      // otherwise ("UserReply can be written only if the last written message is a CSR").
+      const threadMap = new Map();
+      for (const m of finalMsgs) {
+        const tid = m.contactMessageId || `solo-${m._id}`;
+        if (!threadMap.has(tid)) {
+          threadMap.set(tid, { id: tid, contactMessageId: m.contactMessageId || null, hash: m.hash || null, messages: [] });
+        }
+        threadMap.get(tid).messages.push(m);
       }
-      let replyTarget = null;
-      for (const [cid, t] of threadLast) {
-        if (t.csrLast && (!replyTarget || t.ts > replyTarget.ts)) replyTarget = { contactMessageId: cid, hash: t.hash, ts: t.ts };
-      }
-      setActiveThread(replyTarget ? { contactMessageId: replyTarget.contactMessageId, hash: replyTarget.hash } : null);
+      const builtThreads = Array.from(threadMap.values()).map((t) => {
+        const msgs = t.messages.slice().sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        const last = msgs[msgs.length - 1];
+        const subjectMsg = msgs.find((x) => x.content?.subject);
+        return {
+          ...t,
+          subject: subjectMsg?.content?.subject || 'Support conversation',
+          messages: msgs,
+          lastTs: new Date(last?.createdAt || 0).getTime(),
+          lastIsCsr: last?.type === 'userContactCsrMail',
+          canReply: !!(t.contactMessageId && t.hash) && last?.type === 'userContactCsrMail',
+        };
+      }).sort((a, b) => b.lastTs - a.lastTs);
+      setThreads(builtThreads);
+
       setMsgDiag(diag);
       setHasMoreMessages(false);
       setMessagesFetched(true);
@@ -493,31 +504,32 @@ const AccountPage = () => {
     }
   };
 
-  // Inline reply to the active support thread (item iii) — no redirect to Contact Us.
-  const handleSendReply = async () => {
-    const text = replyText.trim();
-    if (!activeThread?.contactMessageId || !activeThread?.hash || !text || replySending) return;
-    setReplySending(true);
-    setReplyError('');
+  // Inline reply to a specific conversation thread — no redirect to Contact Us.
+  const handleSendReply = async (thread) => {
+    const tid = thread?.contactMessageId;
+    const text = (replyDrafts[tid] || '').trim();
+    if (!tid || !thread?.hash || !text || replySendingId) return;
+    setReplySendingId(tid);
+    setReplyErrors((e) => ({ ...e, [tid]: '' }));
     try {
       await api.replyContactMessage({
-        contactMessageId: activeThread.contactMessageId,
-        hash: activeThread.hash,
+        contactMessageId: thread.contactMessageId,
+        hash: thread.hash,
         message: text,
         contentType: 'text/plain',
       });
-      setReplyText('');
+      setReplyDrafts((d) => ({ ...d, [tid]: '' }));
       await fetchMessages(); // refresh to show the sent reply
     } catch (err) {
       // BC rejects a reply when the thread's last message isn't a CSR one (the gate
-      // above should prevent this, but handle it gracefully if state is stale).
+      // should prevent this, but handle it gracefully if state is stale).
       const msg = /last written message is a CSR/i.test(err?.data?.message || err?.message || '')
-        ? "Support needs to reply before you can send another message. Use 'New Message' to start a new request."
+        ? 'Support needs to reply before you can send another message.'
         : (err?.message || 'Could not send your reply. Please try again.');
-      setReplyError(msg);
+      setReplyErrors((e) => ({ ...e, [tid]: msg }));
       await fetchMessages(); // re-sync so the composer reflects the real thread state
     } finally {
-      setReplySending(false);
+      setReplySendingId(null);
     }
   };
 
@@ -1694,111 +1706,80 @@ const AccountPage = () => {
             </div>
           ) : (
             <>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {messages.map((msg, idx) => {
-                  const isSupport = msg.type === 'userContactCsrMail';
-                  const subject = msg.content?.subject;
-                  const messageBody = msg.content?.message || '';
-                  const isHtml = msg.content?.contentType === 'text/html';
-                  return (
-                    <li
-                      key={msg._id || idx}
-                      style={{
-                        padding: '1rem',
-                        marginBottom: '0.75rem',
-                        background: isSupport ? '#f0fdf4' : '#f9fafb',
-                        borderLeft: `4px solid ${isSupport ? '#0d5d2f' : '#d1d5db'}`,
-                        borderRadius: '0.5rem',
-                      }}
-                    >
-                      {/* Header row */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {/* Direction icon */}
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            width: '28px', height: '28px', borderRadius: '50%',
-                            background: isSupport ? '#0d5d2f' : '#6b7280', color: '#fff', fontSize: '0.75rem', flexShrink: 0,
-                          }}>
-                            {isSupport ? (
-                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 2 4 5v6c0 5 3.5 9.3 8 11 4.5-1.7 8-6 8-11V5l-8-3Z" />
-                              </svg>
-                            ) : (
-                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="8" r="4" />
-                                <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-                              </svg>
-                            )}
-                          </span>
-                          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: isSupport ? '#0d5d2f' : '#374151' }}>
-                            {isSupport ? 'Support Team' : 'You'}
-                          </span>
-                        </div>
-                        <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-                          {formatMessageDate(msg.createdAt)}
-                        </span>
+              {threads.map((thread, ti) => {
+                const draft = replyDrafts[thread.contactMessageId] || '';
+                const sending = replySendingId === thread.contactMessageId;
+                const err = replyErrors[thread.contactMessageId];
+                const last = thread.messages[thread.messages.length - 1];
+                return (
+                  <div key={thread.id || ti} style={{ border: '1px solid #e5e7eb', borderRadius: '0.75rem', marginBottom: '1.25rem', overflow: 'hidden' }}>
+                    {/* Thread header — subject + summary */}
+                    <div style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb', padding: '0.7rem 1rem' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#111827' }}>{thread.subject}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: '0.15rem' }}>
+                        {thread.messages.length} message{thread.messages.length === 1 ? '' : 's'} · last activity {formatMessageDate(last?.createdAt)}
                       </div>
-
-                      {/* Subject */}
-                      {subject && (
-                        <p style={{ fontWeight: 600, color: '#111827', fontSize: '0.95rem', margin: '0 0 0.4rem' }}>
-                          {subject}
-                        </p>
-                      )}
-
-                      {/* Message body */}
-                      {isHtml ? (
-                        <div
-                          style={{ color: '#374151', fontSize: '0.9rem', lineHeight: '1.6', wordBreak: 'break-word' }}
-                          dangerouslySetInnerHTML={{ __html: sanitizeMessageHtml(messageBody) }}
-                        />
+                    </div>
+                    {/* Conversation — oldest first; original message labelled, replies indented in time */}
+                    <div style={{ padding: '0.75rem 1rem' }}>
+                      {thread.messages.map((msg, mi) => {
+                        const isSupport = msg.type === 'userContactCsrMail';
+                        const isOriginal = mi === 0 && !isSupport;
+                        const messageBody = msg.content?.message || '';
+                        const isHtml = msg.content?.contentType === 'text/html';
+                        return (
+                          <div key={msg._id || mi} style={{
+                            padding: '0.6rem 0.8rem', marginBottom: '0.5rem',
+                            marginLeft: isSupport ? '1.25rem' : 0,
+                            background: isSupport ? '#f0fdf4' : '#f9fafb',
+                            borderLeft: `3px solid ${isSupport ? '#0d5d2f' : '#d1d5db'}`, borderRadius: '0.4rem',
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 600, fontSize: '0.84rem', color: isSupport ? '#0d5d2f' : '#374151' }}>
+                                {isSupport ? 'Support Team' : (isOriginal ? 'You · original message' : 'You · reply')}
+                              </span>
+                              <span style={{ fontSize: '0.78rem', color: '#9ca3af' }}>{formatMessageDate(msg.createdAt)}</span>
+                            </div>
+                            {isHtml ? (
+                              <div style={{ color: '#374151', fontSize: '0.88rem', lineHeight: '1.6', wordBreak: 'break-word' }} dangerouslySetInnerHTML={{ __html: sanitizeMessageHtml(messageBody) }} />
+                            ) : (
+                              <p style={{ color: '#374151', fontSize: '0.88rem', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{messageBody}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {/* Per-thread reply — only when support replied last (BC rule) */}
+                      {thread.canReply ? (
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <textarea
+                            value={draft}
+                            onChange={(e) => setReplyDrafts((d) => ({ ...d, [thread.contactMessageId]: e.target.value }))}
+                            placeholder="Reply to support…"
+                            rows={2}
+                            disabled={sending}
+                            style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.92rem', fontFamily: 'inherit', resize: 'vertical' }}
+                          />
+                          {err && <p style={{ margin: '0.3rem 0 0', color: '#dc2626', fontSize: '0.82rem' }}>{err}</p>}
+                          <button
+                            type="button"
+                            onClick={() => handleSendReply(thread)}
+                            disabled={sending || !draft.trim()}
+                            style={{ marginTop: '0.5rem', padding: '0.55rem 1.05rem', background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: '0.5rem', fontSize: '0.88rem', fontWeight: 600, cursor: sending || !draft.trim() ? 'default' : 'pointer', opacity: sending || !draft.trim() ? 0.6 : 1 }}
+                          >
+                            {sending ? 'Sending…' : 'Send reply'}
+                          </button>
+                        </div>
                       ) : (
-                        <p style={{ color: '#374151', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                          {messageBody}
-                        </p>
+                        thread.contactMessageId && (
+                          <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: '#9ca3af' }}>
+                            You'll be able to reply here once support responds.
+                          </p>
+                        )
                       )}
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {/* Inline reply (item iii) — reply to the support thread here, no redirect. */}
-              {activeThread && (
-                <div style={{ marginTop: '1rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
-                  <label htmlFor="account-reply" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: '0.4rem' }}>
-                    Reply to support
-                  </label>
-                  <textarea
-                    id="account-reply"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Type your reply…"
-                    rows={3}
-                    disabled={replySending}
-                    style={{
-                      width: '100%', boxSizing: 'border-box', padding: '0.65rem 0.8rem',
-                      border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.95rem',
-                      fontFamily: 'inherit', resize: 'vertical',
-                    }}
-                  />
-                  {replyError && <p style={{ margin: '0.4rem 0 0', color: '#dc2626', fontSize: '0.85rem' }}>{replyError}</p>}
-                  <button
-                    type="button"
-                    onClick={handleSendReply}
-                    disabled={replySending || !replyText.trim()}
-                    style={{
-                      marginTop: '0.6rem', padding: '0.6rem 1.1rem',
-                      background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: '0.5rem',
-                      fontSize: '0.9rem', fontWeight: 600,
-                      cursor: replySending || !replyText.trim() ? 'default' : 'pointer',
-                      opacity: replySending || !replyText.trim() ? 0.6 : 1,
-                    }}
-                  >
-                    {replySending ? 'Sending…' : 'Send reply'}
-                  </button>
-                </div>
-              )}
+                    </div>
+                  </div>
+                );
+              })}
 
               {hasMoreMessages ? (
                 <button
