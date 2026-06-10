@@ -153,7 +153,7 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
   for (const tk of tickets || []) {
     add(tk.createdAt, 'message', 'Support message', String(tk?.content?.input?.topic || tk?.content?.subject || '').slice(0, 70));
   }
-  return ev.sort((a, b) => b.ts - a.ts);
+  return ev.sort((a, b) => a.ts - b.ts); // chronological (oldest first)
 }
 
 function getPaymentCountPerOrder(orders) {
@@ -1349,7 +1349,7 @@ const UserDetailPage = () => {
               return (
                 <div>
                   <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: '0 0 1rem' }}>
-                    Every recorded event for this customer, newest first.{stillLoading ? ' Loading…' : ''}
+                    Every recorded event for this customer, oldest first.{stillLoading ? ' Loading…' : ''}
                   </p>
                   {events.length === 0 ? (
                     <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>{stillLoading ? 'Loading events…' : 'No events recorded yet.'}</p>
