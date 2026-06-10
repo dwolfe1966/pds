@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { useTicketSenderUsers } from '../../hooks/useTicketSenderUsers';
 import styles from './EmailTicketsPage.module.css';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -249,6 +250,10 @@ const EmailTicketsPage = () => {
     return items;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allItems, filterDir, mode, statusFilter, categoryFilter, resolutionFilter, myAssignedOnly, searchQuery, adminUserId]);
+
+  // Resolve sender emails → user accounts so each ticket shows real member status
+  // and links to the customer's detail page when the email matches an account.
+  const senderUsers = useTicketSenderUsers(listItems);
 
   const selected = useMemo(() => {
     if (!selectedId) return null;
@@ -894,8 +899,17 @@ const EmailTicketsPage = () => {
                 const isCM = isContactMessage(item.type);
                 const subject = isCM ? contactMessageSubject(item) : (item.content?.subject || '(No subject)');
                 const preview = isCM ? contactMessagePreview(item) : stripHtml(item.content?.message || '');
+                // Resolve sender email → account: object = member, null = non-member,
+                // undefined = lookup pending. Falls back to the targetUserId hint while pending.
+                const senderEmail = isCM ? contactMessageSenderEmail(item) : '';
+                const member = senderEmail ? senderUsers?.[senderEmail.toLowerCase()] : null;
+                const memberSuffix = member
+                  ? (member.isSubscriber ? ' · Subscriber' : ' · Member')
+                  : (member === null
+                      ? (isMemberLinked(item) ? ' · Member' : ' · Non-member')
+                      : '');
                 const senderLabel = isCM
-                  ? `${contactMessageSenderName(item)}${isMemberLinked(item) ? ' · Member' : ' · Non-member'}`
+                  ? `${contactMessageSenderName(item)}${memberSuffix}`
                   : (isCsrMail(item.type)
                       ? (item.owner ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim() : 'CSR')
                       : (userName || 'Customer'));
@@ -904,7 +918,7 @@ const EmailTicketsPage = () => {
                 return (
                   <div
                     key={id}
-                    style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}
+                    style={{ display: 'flex', alignItems: 'stretch', gap: 0, flexWrap: 'wrap' }}
                   >
                     {showCheckbox && (
                       <label
@@ -950,6 +964,21 @@ const EmailTicketsPage = () => {
                         {preview ? ` — ${preview.length > 60 ? preview.slice(0, 60) + '...' : preview}` : ''}
                       </div>
                     </button>
+                    {member && (
+                      <Link
+                        to={`/users/${member.userId}`}
+                        title="Open customer detail"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          flexBasis: '100%', display: 'block',
+                          padding: '0.3rem 0.75rem', background: '#f0fdf4',
+                          borderLeft: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb',
+                          color: '#0d5d2f', fontWeight: 600, fontSize: '0.78rem', textDecoration: 'none',
+                        }}
+                      >
+                        View customer profile&nbsp;→
+                      </Link>
+                    )}
                   </div>
                 );
               })}

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { useTicketSenderUsers } from '../../hooks/useTicketSenderUsers';
 
 /**
  * MyDashboardPage — CSR landing page.
@@ -113,13 +114,15 @@ function StatTile({ label, value, sublabel, color = PAGE.text, accent = PAGE.bra
 
 // ─── Ticket row ─────────────────────────────────────────────────────────────
 
-function TicketRow({ ticket, csrId }) {
+function TicketRow({ ticket, csrId, senderUsers }) {
   const id = ticket._id || ticket.id;
   const subject = ticketSubject(ticket);
   const email = ticketSenderEmail(ticket);
   const replied = hasReply(ticket);
   const lastEvent = ticket?.latestReply?.createdAt || ticket?.updatedAt || ticket?.createdAt;
-  const targetUserId = ticket?.content?.targetUserId;
+  // Resolve the sender email → user account: object = member, null = non-member,
+  // undefined = lookup still pending (show nothing rather than flash "non-member").
+  const member = email ? senderUsers?.[email.toLowerCase()] : null;
   return (
     <li style={{
       display: 'flex', alignItems: 'center', gap: '0.75rem',
@@ -142,7 +145,8 @@ function TicketRow({ ticket, csrId }) {
         <div style={{ fontSize: '0.78rem', color: PAGE.textMuted, marginTop: '0.1rem' }}>
           {email && <>{email} · </>}
           {formatRelative(lastEvent)}
-          {!targetUserId && <> · <span style={{ color: PAGE.warn, fontWeight: 600 }}>non-member</span></>}
+          {member === null && <> · <span style={{ color: PAGE.warn, fontWeight: 600 }}>non-member</span></>}
+          {member && <> · <span style={{ color: PAGE.brand, fontWeight: 600 }}>{member.isSubscriber ? 'subscriber' : 'member'}</span></>}
           {isAssignedToCsr(ticket, csrId) && <> · <span style={{ color: PAGE.accent, fontWeight: 600 }}>assigned to you</span></>}
         </div>
       </div>
@@ -167,6 +171,8 @@ const MyDashboardPage = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Resolve sender emails → user accounts so rows show real member status.
+  const senderUsers = useTicketSenderUsers(tickets);
 
   useEffect(() => {
     let cancelled = false;
@@ -361,7 +367,7 @@ const MyDashboardPage = () => {
             ) : (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {myOpenTopFive.map((t) => (
-                  <TicketRow key={t._id || t.id} ticket={t} csrId={csrId} />
+                  <TicketRow key={t._id || t.id} ticket={t} csrId={csrId} senderUsers={senderUsers} />
                 ))}
               </ul>
             )}
@@ -398,7 +404,7 @@ const MyDashboardPage = () => {
             ) : (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {newestUnassigned.map((t) => (
-                  <TicketRow key={t._id || t.id} ticket={t} csrId={csrId} />
+                  <TicketRow key={t._id || t.id} ticket={t} csrId={csrId} senderUsers={senderUsers} />
                 ))}
               </ul>
             )}
