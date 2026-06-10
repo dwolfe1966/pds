@@ -5,14 +5,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IDLookup.AI</title>
-  <!-- Google Tag Manager (per-host loader) -->
-  <!--
-       Same SPA bundle ships to idlookup.ai, peoplesearcher.ai,
-       inmatefinderhub.com, and dev.www.idlookup.ai. Each domain has its own
-       GTM container; this snippet picks the right one by hostname at page
-       load. Localhost / *.vercel.app / unknown hosts intentionally skip
-       GTM so dev sessions don't pollute analytics.
-       Keep this in sync with brand.js BRANDS keys. -->
+  <!-- Google Tag Manager: per-host loader DISABLED 2026-06-10.
+       BC's IIFE now injects comp.client.init.header, which loads the brand's GTM
+       container (comp.brand.gtm) on every page. Our loader below was therefore
+       DOUBLE-loading GTM (verified live: GTM-WV7N6WWP x2 on dev and peoplesearcher).
+       Commented out so BC's injection is the single source. Re-enable this client-side
+       per-host loader if BC ever stops injecting GTM via comp.client.init.header.
+       (Separate issue to track: BC's container loaded WRONG on idlookup.ai and
+       inmatefinderhub.com - they got the dev container GTM-WV7N6WWP x1, not their own.)
   <script>
     (function () {
       var host = (window.location.hostname || '').toLowerCase().replace(/^www\./, '');
@@ -32,8 +32,11 @@
       })(window,document,'script','dataLayer',gtmId);
     })();
   </script>
-  <!-- End Google Tag Manager -->
-  <!-- Google tag (gtag.js) — Google Ads conversion tracking (AW-18044069648) -->
+  -->
+  <!-- Google Ads conversion pixel (gtag.js, AW-18044069648) DISABLED 2026-06-10.
+       Removed to avoid double-counting: the Ads conversion fires through BC's GTM
+       container (loaded via comp.client.init.header). Re-enable below ONLY if the AW
+       tag is NOT configured inside that GTM container.
   <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18044069648"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -41,7 +44,7 @@
     gtag('js', new Date());
     gtag('config', 'AW-18044069648');
   </script>
-  <!-- End Google tag (gtag.js) -->
+  -->
   <script src="https://cdn.jsdelivr.net/npm/axios@1.13.2/dist/axios.min.js"></script>
   <script src="https://dev.www.idlookup.ai/libs/api-wrapper/index.iife.js"></script>
 </head>
