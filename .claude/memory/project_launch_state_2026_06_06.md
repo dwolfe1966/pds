@@ -9,6 +9,19 @@ metadata:
 
 Snapshot end of 2026-06-06 session. Supersedes [[csr-triage-session-2026-06-04]] for live state.
 
+**LATEST BUILT, NOT DEPLOYED (2026-06-10):** consumer `public.2f1b01f7.js`, admin `admin.be63ef47.js`.
+Rolls up: GTM dedupe (our loader+AW gtag disabled; BC init.header is source), payment confirmation
+receipt + `/paymentconfirm` URL, optout/thinmatch from `comp.client.theme`, CSR member-status +
+ticket→customer links + paginated per-user message scan + refund billingSeriesId fix + order:id
+search + partial email search + UserDetail Timeline tab, and the CS/compliance batch (i–viii):
+email unsubscribe (page+footer+account tab), account Messages pagination + inline reply, optional
+signup phone + dashboard complete-profile prompt; plus dashboard fixes (removed fabricated activity
+feed, hid empty stat tiles for free members). **Validate live after deploy:** a refund, an
+unsubscribe, a member message thread, phone-at-billing. **Open BC asks (docs/):** BC_UNSUBSCRIBE_TEXT
+(text unsubscribe), BC_REFUND_BILLINGSERIESID, BC_GETUSERCONTACTS_SCOPE (member-thread targetUserId),
+BC_CSR_SEARCH_GAPS #1/#3 (server-side name + partial email). See [[reference_bc_shapecompiled_theme]],
+[[reference_bc_contactmessage_email_link]].
+
 **VERIFIED LIVE 2026-06-08** (curled the hosts + rebuilt HEAD → hashes match, no skew):
 - **Consumer LIVE = `public.772bfb29.js`** on dev.www.idlookup.ai — == current HEAD build.
   Rolls up ALL report-parity work (address rows, property rewrite, financial/lien, criminal
