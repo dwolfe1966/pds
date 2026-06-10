@@ -115,6 +115,47 @@ function extractPayments(orders) {
   return payments;
 }
 
+// Item viii — flatten every timestamped record this page already loads into one
+// newest-first time-series for the Timeline tab. No new BC calls.
+const TIMELINE_ACT_LABELS = {
+  'USER:nameSearchTeaser': 'Name search', 'USER:phoneSearchTeaser': 'Phone search',
+  'USER:nameSearch': 'Report created (name)', 'USER:phoneSearch': 'Report created (phone)',
+  'USER:nameSearchTeaserOptOut': 'Opt-out search', 'USER:phoneSearchTeaserOptOut': 'Opt-out search',
+};
+function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
+  const ev = [];
+  const add = (ts, kind, label, detail) => {
+    const t = ts ? new Date(ts).getTime() : NaN;
+    if (!Number.isNaN(t)) ev.push({ ts: t, iso: ts, kind, label, detail });
+  };
+  if (user?.createdAt) add(user.createdAt, 'registration', 'Account created');
+  for (const p of extractPayments(orders || [])) {
+    const s = String(p.status || '').toLowerCase();
+    const kind = /fail|declin|reject|error/.test(s) ? 'payment_failed'
+      : s === 'refunded' ? 'refund' : s === 'canceled' ? 'canceled' : 'payment';
+    const label = kind === 'payment_failed' ? `Payment failed ${p.amount}`
+      : kind === 'refund' ? `Refunded ${p.amount}`
+      : kind === 'canceled' ? 'Subscription canceled' : `Payment ${p.amount}`;
+    add(p.date, kind, label, `Order …${String(p.orderId || '').slice(-8)}${p.status ? ` · ${p.status}` : ''}`);
+  }
+  for (const l of logins || []) {
+    add(l.createdAt || l.date, 'login', 'Logged in', [l.device, l.ipAddress || l.ip].filter(Boolean).join(' · '));
+  }
+  for (const a of activities || []) {
+    const t = a?.data?.type || a?.type || '';
+    const isReport = /:(name|phone)Search$/.test(t);
+    add(a.createdAt, isReport ? 'report' : 'search', TIMELINE_ACT_LABELS[t] || 'Search',
+      a?.data?.input?.fullName || a?.data?.input?.phone || '');
+  }
+  for (const n of notes || []) {
+    add(n.createdAt, 'note', 'CSR note', String(n?.content?.message || n?.message || '').replace(/<[^>]+>/g, '').slice(0, 70));
+  }
+  for (const tk of tickets || []) {
+    add(tk.createdAt, 'message', 'Support message', String(tk?.content?.input?.topic || tk?.content?.subject || '').slice(0, 70));
+  }
+  return ev.sort((a, b) => b.ts - a.ts);
+}
+
 function getPaymentCountPerOrder(orders) {
   // Returns { orderId: count } for orders that have commercePayments
   const map = {};
@@ -175,7 +216,7 @@ function Toast({ message, type, onDone }) {
 
 // Tab order matches the four-up-front profile framing: orders, searches,
 // reports, logins. Notes/Audit/Actions follow.
-const TABS = ['Orders & Payments', 'Searches', 'Reports', 'Logins', 'Notes & Messages', 'Audit', 'Actions'];
+const TABS = ['Timeline', 'Orders & Payments', 'Searches', 'Reports', 'Logins', 'Notes & Messages', 'Audit', 'Actions'];
 
 // Map prefix → display action type. Notes we write on CSR actions are prefixed
 // with one of these so the audit tab can pluck them out of the general notes
@@ -235,7 +276,7 @@ const UserDetailPage = () => {
   const [ordersError, setOrdersError]   = useState('');
 
   // UI state
-  const [activeTab, setActiveTab]       = useState('Orders & Payments');
+  const [activeTab, setActiveTab]       = useState('Timeline');
   const [expandedOrders, setExpandedOrders] = useState({});
   const [suspending, setSuspending]     = useState(false);
   const [copied, setCopied]             = useState(false);
@@ -531,12 +572,13 @@ const UserDetailPage = () => {
 
   // Fetch tracking data on tab activation (lazy load)
   useEffect(() => {
-    if (activeTab === 'Logins' && !loginsFetched && id) {
+    // Timeline needs logins + activity too (orders/notes/tickets load on mount).
+    if ((activeTab === 'Logins' || activeTab === 'Timeline') && !loginsFetched && id) {
       fetchLogins();
     }
     // Searches and Reports both pull from the same tracking dataset; one
     // fetch hydrates both tabs and we filter client-side.
-    if ((activeTab === 'Searches' || activeTab === 'Reports') && !activityFetched && id) {
+    if ((activeTab === 'Searches' || activeTab === 'Reports' || activeTab === 'Timeline') && !activityFetched && id) {
       fetchActivity();
     }
   }, [activeTab, loginsFetched, activityFetched, id, fetchLogins, fetchActivity]);
@@ -1294,6 +1336,40 @@ const UserDetailPage = () => {
           </div>
 
           <div className={styles.tabContent}>
+
+            {/* ── Tab: Timeline (item viii) — unified event time-series ── */}
+            {activeTab === 'Timeline' && (() => {
+              const events = buildTimeline({ user, orders, logins, activities, notes, tickets: userTickets });
+              const stillLoading = ordersLoading || loginsLoading || activityLoading;
+              const COLORS = {
+                registration: '#1d4ed8', payment: '#16a34a', payment_failed: '#dc2626',
+                refund: '#d97706', canceled: '#6b7280', login: '#0891b2',
+                search: '#7c3aed', report: '#0d5d2f', note: '#9333ea', message: '#0ea5e9',
+              };
+              return (
+                <div>
+                  <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: '0 0 1rem' }}>
+                    Every recorded event for this customer, newest first.{stillLoading ? ' Loading…' : ''}
+                  </p>
+                  {events.length === 0 ? (
+                    <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>{stillLoading ? 'Loading events…' : 'No events recorded yet.'}</p>
+                  ) : (
+                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderLeft: '2px solid #e5e7eb', marginLeft: '160px' }}>
+                      {events.map((e, i) => (
+                        <li key={i} style={{ position: 'relative', padding: '0.45rem 0 0.45rem 1.25rem', minHeight: 28 }}>
+                          <span style={{ position: 'absolute', left: '-180px', top: '0.55rem', width: 150, textAlign: 'right', fontSize: '0.76rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                            {formatDateTime(e.iso)}
+                          </span>
+                          <span style={{ position: 'absolute', left: -7, top: '0.6rem', width: 12, height: 12, borderRadius: '50%', background: COLORS[e.kind] || '#9ca3af', border: '2px solid #fff' }} />
+                          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827' }}>{e.label}</div>
+                          {e.detail && <div style={{ fontSize: '0.8rem', color: '#6b7280', wordBreak: 'break-word' }}>{e.detail}</div>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* ── Tab: Orders & Payments ──────────────────── */}
             {activeTab === 'Orders & Payments' && (
