@@ -6,7 +6,6 @@ import { getReportList } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import { readLoginHistory } from '../../services/loginHistory';
 import { getBrand } from '../../services/brand';
-import { generateSyntheticActivity, hashString } from './watchingHelpers';
 import { US_STATES } from '../../data/usStates';
 
 /**
@@ -633,11 +632,9 @@ const Dashboard2 = () => {
     try { api.downloadPdfReport?.(commerceContentId); } catch {}
   };
 
-  // Merge the member's own activity (reports, searches, logins — labelled
-  // "You") with synthetic cross-user entries (other members, anonymized
-  // per the masking spec) into a single Recent Activity timeline. Real
-  // cross-user data isn't available from the consumer SPA today; the
-  // synthetic feed will be replaced once BC ships an aggregate endpoint.
+  // The member's own real activity (reports, searches, logins — all labelled
+  // "You") as a single Recent Activity timeline. No fabricated cross-user entries —
+  // the page footer states "Nothing is fabricated", so the feed must honor that.
   const activity = useMemo(() => {
     const reportItems = (reports || []).slice(0, 20).map((r) => ({
       kind: 'report',
@@ -685,38 +682,11 @@ const Dashboard2 = () => {
       return acc;
     }, []);
 
-    // Synthetic cross-user feed. Seed combines a 5-minute time bucket with
-    // a per-viewer hash so every member sees a slightly different feed and
-    // it rotates without re-renders pinning the same items.
-    const fiveMinBucket = Math.floor(Date.now() / (5 * 60 * 1000));
-    const viewerHash = hashString(user?.id || user?._id || user?.email || 'visitor');
-    const syntheticRaw = generateSyntheticActivity(fiveMinBucket ^ viewerHash, 12);
-    const syntheticItems = syntheticRaw.map((s, i) => {
-      let label;
-      if (s.kind === 'search') {
-        label = `${s.actor} searched ${s.searchType} · ${s.subject}`;
-      } else if (s.kind === 'report') {
-        label = `${s.actor} pulled a report on ${s.subject}`;
-      } else if (s.kind === 'signup') {
-        label = `${s.actor} created an account`;
-      } else {
-        label = `${s.actor} signed in`;
-      }
-      return {
-        kind: s.kind,
-        id: `syn-${i}-${s.timestamp}`,
-        actor: s.actor,
-        label,
-        timestamp: s.timestamp,
-        synthetic: true,
-      };
-    });
-
-    return [...reportItems, ...searchItems, ...loginItems, ...syntheticItems]
+    return [...reportItems, ...searchItems, ...loginItems]
       .filter((x) => x.timestamp)
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
       .slice(0, 18);
-  }, [reports, searches, logins, user]);
+  }, [reports, searches, logins]);
 
   const greetingName = user?.firstName || (user?.fullName || '').split(/\s+/)[0] || (user?.email || '').split('@')[0] || 'there';
 
@@ -870,7 +840,10 @@ const Dashboard2 = () => {
             position — it was encouraging cancel taps before users engaged
             with the product. Now rendered below the reports/activity grid. */}
 
-        {/* Stats row — all real counters */}
+        {/* Stats row — paid members only. Free members have no counters (they only
+            fire when isPaid), so render nothing instead of four empty 0/—/—/0 tiles.
+            The subscribe promo above already carries the free-member CTA. */}
+        {isPaid && (
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <StatTile
             label="Reports pulled"
@@ -900,6 +873,7 @@ const Dashboard2 = () => {
             loading={statsLoading && searches.length === 0}
           />
         </div>
+        )}
 
         {/* Inline search — bug #48 (2026-05-29): the previous CTA was a
             single button that hid the search behind a click. Surfacing
