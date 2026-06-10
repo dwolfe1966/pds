@@ -142,6 +142,10 @@ const App = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/payment" element={<PaymentPage />} />
+          {/* Confirmation URL — PaymentPage replaceState's to /paymentconfirm on success.
+              On a fresh hit (reload/direct) there's no success state, so PaymentPage's
+              isPaid guard sends the (already-paid) user to the dashboard. */}
+          <Route path="/paymentconfirm" element={<PaymentPage />} />
           {/* Phone search routes */}
           <Route path="/phone/landing" element={<PhoneLandingPage />} />
           <Route path="/phone/landing/v2" element={<PhoneLandingV2Page />} />

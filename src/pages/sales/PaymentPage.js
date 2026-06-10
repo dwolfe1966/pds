@@ -480,6 +480,10 @@ const PaymentPage = () => {
       // payment form, so without this the user lands on the page footer.
       // Scroll to top so the confirmation is what they see.
       try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* SSR / non-DOM */ }
+      // Reflect the confirmation in the URL (/paymentconfirm) without unmounting this
+      // screen — replaceState keeps the success state + conversion intact. The route is
+      // registered in App.js so a reload/direct hit resolves (isPaid → dashboard).
+      try { window.history.replaceState(null, '', '/paymentconfirm'); } catch { /* SSR / non-DOM */ }
 
       // orderId + amount make this partner-attributed conversion (data.refer is
       // auto-attached by track) joinable to the order with revenue in BC's
