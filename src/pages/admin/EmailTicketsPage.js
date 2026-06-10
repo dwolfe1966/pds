@@ -966,7 +966,7 @@ const EmailTicketsPage = () => {
                     </button>
                     {member && (
                       <Link
-                        to={`/users/${member.userId}`}
+                        to={`/users/${member.userId}${senderEmail ? `?email=${encodeURIComponent(senderEmail)}` : ''}`}
                         title="Open customer detail"
                         onClick={(e) => e.stopPropagation()}
                         style={{

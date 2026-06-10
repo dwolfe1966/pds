@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } from '../../utils/orderFinancials';
 import styles from './UserDetailPage.module.css';
@@ -219,6 +219,11 @@ const TRACKING_ACTIVITY_TYPES = [
 
 const UserDetailPage = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  // Email hint from the linking page (e.g. a ticket's sender). Lets the per-user
+  // message scan match by email even when the user-detail load (which provides
+  // user.email) is slow or BC's getUserDetail is erroring.
+  const emailHint = (searchParams.get('email') || '').trim();
   const navigate = useNavigate();
 
   // Data state
@@ -362,18 +367,26 @@ const UserDetailPage = () => {
   // Most member-submitted contactMessages have no targetUserId set (BC
   // doesn't auto-link them server-side on this deployment). We pass the
   // user's email so csrFindUserContactMessages can match by either key.
+  // Runs twice — once on mount (before the user loads, so no email → matches nothing)
+  // and again once user.email is available. The email run is the one with results, but
+  // it isn't always the last to resolve (each call now pages the inbox), so guard with
+  // a request token: only the most recent invocation may write state. Without this the
+  // stale empty run clobbers the good one and the user's tickets vanish.
+  const ticketReqRef = useRef(0);
   const fetchUserTickets = useCallback(async () => {
+    const reqId = ++ticketReqRef.current;
     setUserTicketsLoading(true);
     try {
-      const res = await api.adminFindUserContactMessages({ userId: id, userEmail: user?.email });
+      const res = await api.adminFindUserContactMessages({ userId: id, userEmail: user?.email || emailHint });
+      if (reqId !== ticketReqRef.current) return; // superseded by a newer fetch
       const docs = res?.data || res?.docs || (Array.isArray(res) ? res : []);
       setUserTickets(docs);
     } catch {
-      setUserTickets([]);
+      if (reqId === ticketReqRef.current) setUserTickets([]);
     } finally {
-      setUserTicketsLoading(false);
+      if (reqId === ticketReqRef.current) setUserTicketsLoading(false);
     }
-  }, [id, user?.email]);
+  }, [id, user?.email, emailHint]);
 
   // ── Fetch notes & messages (all user contacts: notes, CSR mail, user replies) ──
   const fetchNotes = useCallback(async () => {

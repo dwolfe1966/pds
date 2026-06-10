@@ -1524,22 +1524,33 @@ class ApiWrapperService {
       }
     }
 
-    // (b) Inbox scan + loose client match on targetUserId OR sender email. NOTE: a
-    // single inbox page (BC caps it) — messages older than the first page aren't
-    // matched. Real fix is a BC server-side email filter on this endpoint; until
-    // then this covers recent traffic. email/targetUserId are in displayFields
-    // (read by the general inbox) so client-matching on them is safe.
+    // (b) Inbox scan + loose client match on targetUserId OR sender email. BC has no
+    // server-side email filter on /contactMessage/admin/find, so a member's older
+    // tickets sit beyond page 1 and were getting missed (e.g. a May ticket viewed in
+    // June). Page through the inbox (bounded) and collect every match. Early-stops on
+    // noMoreDocs, so a small inbox costs ~1-2 requests; the cap only bites in
+    // high-volume prod (real fix = a BC server-side email filter — filed as a BC ask).
+    // email/targetUserId are in displayFields (read by the general inbox), so
+    // client-matching on them is safe. A caller-supplied lastId means single-page mode.
     let scanned = 0;
     if (wantEmail || userId) {
-      const raw = await this.csrFindContactMessages(lastId ? { lastId } : {});
-      const docs = raw?.docs ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      scanned = docs.length;
-      for (const d of docs) {
-        const t = d?.content?.targetUserId || d?.targetUserId;
-        if (userId && t === userId) { add(d); continue; }
-        if (!wantEmail) continue;
-        const senderEmail = (d?.content?.input?.email || d?.content?.email || '').toLowerCase().trim();
-        if (senderEmail === wantEmail) add(d);
+      const MAX_PAGES = lastId ? 1 : 40;
+      let cursor = lastId || null;
+      for (let page = 0; page < MAX_PAGES; page++) {
+        const raw = await this.csrFindContactMessages(cursor ? { lastId: cursor } : {});
+        const docs = raw?.docs ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
+        if (!docs.length) break;
+        scanned += docs.length;
+        for (const d of docs) {
+          const t = d?.content?.targetUserId || d?.targetUserId;
+          if (userId && t === userId) { add(d); continue; }
+          if (!wantEmail) continue;
+          const senderEmail = (d?.content?.input?.email || d?.content?.email || '').toLowerCase().trim();
+          if (senderEmail === wantEmail) add(d);
+        }
+        const next = docs[docs.length - 1]?._id ?? docs[docs.length - 1]?.id ?? null;
+        if (raw?.noMoreDocs || !next || next === cursor) break;
+        cursor = next;
       }
     }
 
