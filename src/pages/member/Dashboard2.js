@@ -726,6 +726,35 @@ const Dashboard2 = () => {
           </p>
         </header>
 
+        {/* Search is the hero — the primary action for a returning member sits directly
+            under the greeting, above marketing/status (bug #48: surfacing first/last/state
+            as the primary action makes search the dashboard's center of gravity). */}
+        <InlineNameSearch navigate={navigate} />
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => { track('dashboard_cta_click', { target: 'account' }); navigate('/account'); }}
+            style={{
+              background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
+              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
+              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Account & billing
+          </button>
+          <button
+            type="button"
+            onClick={() => { track('dashboard_cta_click', { target: 'support' }); navigate('/contact'); }}
+            style={{
+              background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
+              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
+              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Contact support
+          </button>
+        </div>
+
         {/* Marketing strip — "we watch the world" framing pinned to what BC
             actually delivers: continuous data partner refresh + broad coverage. */}
         <section style={{
@@ -748,13 +777,13 @@ const Dashboard2 = () => {
               We watch the world's records
             </div>
             <h2 style={{
-              margin: '0.2rem 0 0', fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.01em',
-              // Explicit yellow — relying on inherited #fff was being clobbered
-              // by global heading styles, leaving the headline near-invisible
-              // against the green gradient. A small dark shadow gives it edge
-              // without making it look neon.
-              color: '#fde047',
-              textShadow: '0 1px 2px rgba(0,0,0,0.25)',
+              margin: '0.2rem 0 0', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.01em',
+              // Explicit white (the intended color — global heading styles were clobbering
+              // the inherited #fff). White on the green gradient clears WCAG AA for large
+              // text; the prior yellow (#fde047) failed contrast. Size bumped to 1.2rem so it
+              // qualifies as large text. Shadow keeps the edge against the lighter gradient end.
+              color: '#fff',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
             }}>
               12B+ public records, refreshed continuously by our data partners.
             </h2>
@@ -935,36 +964,6 @@ const Dashboard2 = () => {
           />
         </div>
         )}
-
-        {/* Inline search — bug #48 (2026-05-29): the previous CTA was a
-            single button that hid the search behind a click. Surfacing
-            first/last/state as the primary action makes the search the
-            dashboard's center of gravity. */}
-        <InlineNameSearch navigate={navigate} />
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => { track('dashboard_cta_click', { target: 'account' }); navigate('/account'); }}
-            style={{
-              background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
-              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
-              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Account & billing
-          </button>
-          <button
-            type="button"
-            onClick={() => { track('dashboard_cta_click', { target: 'support' }); navigate('/contact'); }}
-            style={{
-              background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
-              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
-              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Contact support
-          </button>
-        </div>
 
         {/* Two-column: Reports library (hero) + Activity */}
         <div data-dashboard-grid style={{

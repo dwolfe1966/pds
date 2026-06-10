@@ -164,6 +164,13 @@
   outline: none;
 }
 
+/* Keyboard focus gets a visible ring (mouse clicks don't, via :focus-visible). */
+.hamburger:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .hamburgerLine {
   width: 24px;
   height: 2px;

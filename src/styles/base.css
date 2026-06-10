@@ -138,3 +138,18 @@ button {
   animation: spin 1s linear infinite;
 }
 
+
+/* Accessibility: visible keyboard-focus ring for interactive elements that don't
+   define their own (most dashboard controls use inline styles with no :focus state).
+   :focus-visible only triggers for keyboard nav, so mouse clicks stay clean. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #0d5d2f;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
