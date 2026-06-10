@@ -820,7 +820,7 @@ class ApiWrapperService {
    * password (REACT_APP_NEW_API_CAPTCHA) as the token, then retry the
    * original POST with the `x-captcha-id` header. Bounded by a single retry.
    */
-  async _csrPost(path, body = {}, { _captchaRetried = false, _captchaId = null } = {}) {
+  async _csrPost(path, body = {}, { _captchaRetried = false, _captchaId = null, billingSeriesType = null } = {}) {
     const baseUrl = this.useProxy
       ? `${this.proxyUrl}${path}`
       : `${this.endpointUrl}${path}`;
@@ -828,20 +828,27 @@ class ApiWrapperService {
     const apiId = this._generateRandomId();
     const sep = path.includes('?') ? '&' : '?';
     const url = `${baseUrl}${sep}clientId=${clientId}&apiId=${apiId}`;
+    // Billing endpoints (e.g. /commerceBilling/correct refunds) require a billingSeriesId
+    // that the IIFE normally injects. When a caller routes a billing op through this
+    // direct path it passes billingSeriesType so we mirror the IIFE — built from the SAME
+    // clientId/apiId used for this request, so they match.
+    const finalBody = billingSeriesType
+      ? { ...body, billingSeriesId: this._makeBillingSeriesId(billingSeriesType, clientId, apiId) }
+      : body;
     const headers = { 'Content-Type': 'application/json' };
     if (_captchaId) headers['x-captcha-id'] = _captchaId;
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
       headers,
-      body: JSON.stringify(body),
+      body: JSON.stringify(finalBody),
     });
     if (response.status === 412 && !_captchaRetried) {
       const captcha = await response.json().catch(() => null);
       if (captcha?.captchaId && captcha?.type) {
         const verified = await this._verifyCaptcha(captcha);
         if (verified) {
-          return this._csrPost(path, body, { _captchaRetried: true, _captchaId: captcha.captchaId });
+          return this._csrPost(path, body, { _captchaRetried: true, _captchaId: captcha.captchaId, billingSeriesType });
         }
       }
     }
@@ -1231,7 +1238,11 @@ class ApiWrapperService {
   //           targetCommercePaymentId, targetCommercePaymentRevisionId, amount }
   async csrRefundVoidOrder(params = {}) {
     return await this._viaCsr('api.user.refundVoidOrder', params,
-      () => this._csrPost('/commerceBilling/correct', params));
+      // Direct fallback must inject billingSeriesId or BC rejects "billingSeriesId should
+      // not be empty" (the IIFE injects it on /commerceBilling/correct; type 'signup' per
+      // the deployed wrapper). Reached only when the IIFE refundVoidOrder path is
+      // unavailable/throws. MUST be validated with one real low-value refund before relying.
+      () => this._csrPost('/commerceBilling/correct', params, { billingSeriesType: 'signup' }));
   }
 
   // csrWrapper.api.user.findOrderPayments — POST /commerceMgmt/orderPayments
