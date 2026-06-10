@@ -456,8 +456,25 @@ const AccountPage = () => {
       const finalMsgs = merged.length > 0 ? merged : readLocalMessages();
       setMessages(finalMsgs);
       // Active reply thread = the most-recent message's thread (item iii).
-      const newest = merged.find((m) => m.contactMessageId && m.hash);
-      setActiveThread(newest ? { contactMessageId: newest.contactMessageId, hash: newest.hash } : null);
+      // BC only accepts a user reply when the thread's LAST message is from CSR
+      // ("UserReply can be written only if the last written message is a CSR"). So group
+      // by thread (merged is newest-first → first seen = that thread's newest message) and
+      // pick the most-recent thread whose newest message is a CSR reply. If none qualifies,
+      // no inline reply (the member starts a New Message instead).
+      const threadLast = new Map(); // contactMessageId → { hash, ts, csrLast }
+      for (const m of merged) {
+        if (!m.contactMessageId || !m.hash || threadLast.has(m.contactMessageId)) continue;
+        threadLast.set(m.contactMessageId, {
+          hash: m.hash,
+          ts: new Date(m.createdAt || 0).getTime(),
+          csrLast: m.type === 'userContactCsrMail',
+        });
+      }
+      let replyTarget = null;
+      for (const [cid, t] of threadLast) {
+        if (t.csrLast && (!replyTarget || t.ts > replyTarget.ts)) replyTarget = { contactMessageId: cid, hash: t.hash, ts: t.ts };
+      }
+      setActiveThread(replyTarget ? { contactMessageId: replyTarget.contactMessageId, hash: replyTarget.hash } : null);
       setMsgDiag(diag);
       setHasMoreMessages(false);
       setMessagesFetched(true);
@@ -492,7 +509,13 @@ const AccountPage = () => {
       setReplyText('');
       await fetchMessages(); // refresh to show the sent reply
     } catch (err) {
-      setReplyError(err?.message || 'Could not send your reply. Please try again.');
+      // BC rejects a reply when the thread's last message isn't a CSR one (the gate
+      // above should prevent this, but handle it gracefully if state is stale).
+      const msg = /last written message is a CSR/i.test(err?.data?.message || err?.message || '')
+        ? "Support needs to reply before you can send another message. Use 'New Message' to start a new request."
+        : (err?.message || 'Could not send your reply. Please try again.');
+      setReplyError(msg);
+      await fetchMessages(); // re-sync so the composer reflects the real thread state
     } finally {
       setReplySending(false);
     }

@@ -760,6 +760,15 @@ const Dashboard2 = () => {
           </div>
         </section>
 
+        {/* Membership status — directly below the green marketing strip for PAID members.
+            Free members get the subscribe promo below instead, so there's exactly one
+            membership/subscribe rectangle under the strip (no duplication). */}
+        {isPaid && (
+          <div style={{ marginBottom: '1rem' }}>
+            <SubscriptionTile subscription={subscription} orders={orders} planDisplayName={planDisplayName} navigate={navigate} />
+          </div>
+        )}
+
         {/* Subscribe promo — signed up but not paying (trial non-converter). Sits
             directly under the marketing strip. Gated on a settled unpaid state so it
             never flashes for subscribers while billing status loads. */}
@@ -921,11 +930,6 @@ const Dashboard2 = () => {
           <ActivityTimeline items={activity} loading={reportsLoading || statsLoading} />
         </div>
 
-        {/* Subscription strip — moved down so it's reachable but not the
-            first call to action (#46). */}
-        <div style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>
-          <SubscriptionTile subscription={subscription} orders={orders} planDisplayName={planDisplayName} navigate={navigate} />
-        </div>
 
         {/* Honest disclosure footer */}
         <p style={{
