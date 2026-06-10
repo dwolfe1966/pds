@@ -112,6 +112,12 @@ const AccountPage = () => {
   const [messagesError, setMessagesError] = useState('');
   const [lastMessageId, setLastMessageId] = useState(null);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  // Inline reply (item iii) — targets the most-recent thread so members can reply in
+  // place instead of being sent to the Contact Us page.
+  const [activeThread, setActiveThread] = useState(null); // { contactMessageId, hash }
+  const [replyText, setReplyText] = useState('');
+  const [replySending, setReplySending] = useState(false);
+  const [replyError, setReplyError] = useState('');
   const [messagesFetched, setMessagesFetched] = useState(false);
 
   // ─── Compose message state ──────────────────────────────────────────────────
@@ -355,10 +361,21 @@ const AccountPage = () => {
     setMessagesError('');
     setMsgDiag(null);
     try {
-      // Stage 1: enumerate via BC and merge into local ref cache.
+      // Stage 1: enumerate via BC and merge into local ref cache. PAGE through every
+      // page (BC returns one page per call) so older threads aren't missed — the cause
+      // of "not all messages show up" (item ii).
       try {
-        const list = await api.getUserContacts();
-        const listDocs = list?.docs || [];
+        const listDocs = [];
+        let cursor = null;
+        for (let pages = 0; pages < 20; pages++) {
+          const list = await api.getUserContacts(cursor || undefined);
+          const docs = list?.docs || [];
+          listDocs.push(...docs);
+          const last = docs[docs.length - 1];
+          const next = last?._id || last?.id || null;
+          if (list?.noMoreDocs || !docs.length || !next || next === cursor) break;
+          cursor = next;
+        }
         if (listDocs.length > 0) {
           const existing = readLocalThreads();
           const haveIds = new Set(existing.map((r) => r?.contactMessageId).filter(Boolean));
@@ -421,6 +438,9 @@ const AccountPage = () => {
               _id: id,
               type: mappedType,
               createdAt: d.createdAt,
+              // Thread context so a member can reply inline to this conversation (item iii).
+              contactMessageId: ref.contactMessageId,
+              hash: ref.hash,
               content: {
                 subject: isContact ? subject : '',
                 message: body,
@@ -435,6 +455,9 @@ const AccountPage = () => {
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       const finalMsgs = merged.length > 0 ? merged : readLocalMessages();
       setMessages(finalMsgs);
+      // Active reply thread = the most-recent message's thread (item iii).
+      const newest = merged.find((m) => m.contactMessageId && m.hash);
+      setActiveThread(newest ? { contactMessageId: newest.contactMessageId, hash: newest.hash } : null);
       setMsgDiag(diag);
       setHasMoreMessages(false);
       setMessagesFetched(true);
@@ -450,6 +473,28 @@ const AccountPage = () => {
   const handleLoadMoreMessages = () => {
     if (lastMessageId && !messagesLoading) {
       fetchMessages(lastMessageId);
+    }
+  };
+
+  // Inline reply to the active support thread (item iii) — no redirect to Contact Us.
+  const handleSendReply = async () => {
+    const text = replyText.trim();
+    if (!activeThread?.contactMessageId || !activeThread?.hash || !text || replySending) return;
+    setReplySending(true);
+    setReplyError('');
+    try {
+      await api.replyContactMessage({
+        contactMessageId: activeThread.contactMessageId,
+        hash: activeThread.hash,
+        message: text,
+        contentType: 'text/plain',
+      });
+      setReplyText('');
+      await fetchMessages(); // refresh to show the sent reply
+    } catch (err) {
+      setReplyError(err?.message || 'Could not send your reply. Please try again.');
+    } finally {
+      setReplySending(false);
     }
   };
 
@@ -1694,6 +1739,43 @@ const AccountPage = () => {
                   );
                 })}
               </ul>
+
+              {/* Inline reply (item iii) — reply to the support thread here, no redirect. */}
+              {activeThread && (
+                <div style={{ marginTop: '1rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+                  <label htmlFor="account-reply" style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: '0.4rem' }}>
+                    Reply to support
+                  </label>
+                  <textarea
+                    id="account-reply"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Type your reply…"
+                    rows={3}
+                    disabled={replySending}
+                    style={{
+                      width: '100%', boxSizing: 'border-box', padding: '0.65rem 0.8rem',
+                      border: '1px solid #d1d5db', borderRadius: '0.5rem', fontSize: '0.95rem',
+                      fontFamily: 'inherit', resize: 'vertical',
+                    }}
+                  />
+                  {replyError && <p style={{ margin: '0.4rem 0 0', color: '#dc2626', fontSize: '0.85rem' }}>{replyError}</p>}
+                  <button
+                    type="button"
+                    onClick={handleSendReply}
+                    disabled={replySending || !replyText.trim()}
+                    style={{
+                      marginTop: '0.6rem', padding: '0.6rem 1.1rem',
+                      background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: '0.5rem',
+                      fontSize: '0.9rem', fontWeight: 600,
+                      cursor: replySending || !replyText.trim() ? 'default' : 'pointer',
+                      opacity: replySending || !replyText.trim() ? 0.6 : 1,
+                    }}
+                  >
+                    {replySending ? 'Sending…' : 'Send reply'}
+                  </button>
+                </div>
+              )}
 
               {hasMoreMessages ? (
                 <button
