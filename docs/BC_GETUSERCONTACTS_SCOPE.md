@@ -12,6 +12,15 @@
 > per-browser localStorage cache as a stopgap). Please pick one of the three fixes below; option
 > 3 (broaden the read filter to also match `ownerId`/sender email) is the only one that surfaces
 > existing threads without a backfill.
+>
+> **DECISIVE REPRO 2026-06-10:** logged in live as `test21@test21.com` (who has 5+ threads
+> visible in CSR) and intercepted the call — `GET /contactMessage/getUserContacts` returns
+> **`{ docs: [], noMoreDocs: true }`** (0 docs). So this is NOT pagination and NOT a client bug:
+> BC returns zero threads for a member who demonstrably has several. The only message the member
+> sees in account → Messages is one cached in their browser's localStorage. **No client-side fix
+> is possible** — BC must link the threads (option 1/2) or broaden the read filter (option 3) +
+> backfill `targetUserId` on existing threads. Now a Director-flagged CS/compliance issue — please
+> prioritize.
 
 ## Ready-to-send summary (copy-paste for chat/email)
 
