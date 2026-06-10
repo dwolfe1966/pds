@@ -4,6 +4,15 @@
 **Environment:** `https://dev.www.idlookup.ai/`
 **Builds under test:** consumer `ed43a54c` (and successor with `targetUserId` plumbed through)
 
+> **STILL OPEN — re-surfaced 2026-06-10.** The Director of CS flagged that a member's messages
+> don't all appear in account → Messages (e.g. `test21@test21.com`). We fixed the *page-1
+> truncation* on our side (consumer bundle `9079698d`: `fetchMessages` now pages through every
+> page of `getUserContacts` via `lastId`). But the **root cause below is unchanged** — threads
+> where BC never set `content.targetUserId` are still missing on a fresh device (we only have a
+> per-browser localStorage cache as a stopgap). Please pick one of the three fixes below; option
+> 3 (broaden the read filter to also match `ownerId`/sender email) is the only one that surfaces
+> existing threads without a backfill.
+
 ## Ready-to-send summary (copy-paste for chat/email)
 
 > Thanks for shipping `apiWrapper.api.message.contact.getUserContacts` on 2026-05-28 — we wired it the same day. Empirically though, it returns `docs: []` for a member who has two existing contactMessage threads visible in CSR (`dwolfe666@gmail.com`).

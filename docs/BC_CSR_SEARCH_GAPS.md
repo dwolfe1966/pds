@@ -44,5 +44,13 @@ We wired the CSR customer/order searches the team needs. Probed BC's
    has an order id (from a receipt / gateway) without the customer. Today CSR must find
    the customer first.
 
-Neither blocks launch — both have client-side workarounds or customer-first flows — but
-they make CSR materially faster.
+3. **Server-side PARTIAL/contains match on email (and name).** *(Added 2026-06-10 — Director of
+   CS request.)* Today `query.email` is **exact-match only**, and name has no server filter at
+   all. We shipped a client-side workaround (UsersPage now substring-matches email *and* name
+   over the recent-customer scan, admin bundle `bcec552e`) — but it's bounded to ~250 recent
+   customers, so a partial like `test21` won't find older accounts. A `contains`/regex operator
+   on `email`/`firstName`/`lastName` in `/api/database/search` (collection `users`) would let CSR
+   find any customer by a fragment. Same underlying need as ask #1.
+
+None block launch — all have client-side workarounds or customer-first flows — but they make
+CSR materially faster, and #3 is a recurring CSR pain (partial email lookups).
