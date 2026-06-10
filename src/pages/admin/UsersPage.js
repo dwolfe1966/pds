@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
+import { isValidEmail } from '../../utils/email';
 import styles from './UsersPage.module.css';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -169,7 +170,7 @@ const UsersPage = () => {
         const docs = res?.data ?? [];
         scanned += docs.length;
         for (const u of docs) {
-          const hay = `${u.firstName || ''} ${u.lastName || ''} ${u.name || ''}`.toLowerCase();
+          const hay = `${u.firstName || ''} ${u.lastName || ''} ${u.name || ''} ${u.email || ''}`.toLowerCase();
           if (hay.includes(needle)) matches.push(u);
         }
         pages += 1;
@@ -243,7 +244,10 @@ const UsersPage = () => {
     setError('');
     const digits = trimmed.replace(/[\s\-().+]/g, '');
     const filters = {};
-    if (trimmed.includes('@')) filters.email = trimmed;
+    // A COMPLETE email → exact server-side filter (fast, precise). A PARTIAL email
+    // fragment (has '@' but isn't valid, or no '@') → the client-side text scan, which
+    // now matches the email substring too — so "test21" or "test21@" find them (item vii).
+    if (isValidEmail(trimmed)) filters.email = trimmed;
     else if (/^\d{5}(-\d{4})?$/.test(trimmed)) filters.zip = trimmed;
     else if (/^\d{4}$/.test(trimmed)) filters.panLast4 = trimmed;
     else if (/^\d{7,}$/.test(digits)) filters.phone = digits;
