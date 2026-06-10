@@ -520,6 +520,7 @@ function ActivityTimeline({ items, loading }) {
 const Dashboard2 = () => {
   const { user, token, subscription, isPaid, subscriptionLoading } = useAuth();
   const navigate = useNavigate();
+  const brand = getBrand();
 
   const [reports, setReports] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(true);
@@ -531,6 +532,27 @@ const Dashboard2 = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [logins, setLogins] = useState([]);
   const [planDisplayName, setPlanDisplayName] = useState('');
+
+  // Trial transparency (anti-chargeback): when the member is on a trial with an upcoming
+  // first real charge, surface the date + amount so it's never a surprise.
+  const trialInfo = useMemo(() => {
+    if (!isPaid || subscription?.subStatus === 'canceled') return null;
+    const nextMs = subscription?.dueDate ? new Date(subscription.dueDate).getTime() : null;
+    if (!nextMs || nextMs <= Date.now()) return null;
+    const op = (orders || []).find((o) => (o._id || o.id) === subscription?.orderId)
+      || (orders || []).find((o) => o.status === 'active');
+    const collected = op?.transient?.amount?.collected;
+    const startMs = op?.createdAt ? new Date(op.createdAt).getTime() : (op?.orderTimestamp || null);
+    const inWindow = startMs ? Date.now() < startMs + brand.trialDays * 86400000 : false;
+    // Trial = only the trial price (or nothing) collected so far; fall back to the date window.
+    const onlyTrialPaid = collected != null ? collected < brand.recurringPrice : inWindow;
+    if (!onlyTrialPaid) return null;
+    return {
+      daysLeft: Math.max(0, Math.ceil((nextMs - Date.now()) / 86400000)),
+      chargeDate: new Date(nextMs).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }),
+      price: `$${brand.recurringPrice.toFixed(2)}`,
+    };
+  }, [isPaid, subscription, orders, brand.trialDays, brand.recurringPrice]);
 
   const intent = useMemo(() => readSignupIntent(), []);
   const intentCopy = intent ? INTENT_COPY[intent] || INTENT_COPY.other : INTENT_COPY.other;
@@ -759,6 +781,36 @@ const Dashboard2 = () => {
             ))}
           </div>
         </section>
+
+        {/* Trial transparency banner — the upcoming first charge, front and center. */}
+        {trialInfo && (
+          <section style={{
+            background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '0.75rem',
+            padding: '1rem 1.25rem', marginBottom: '1rem',
+            display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <div style={{ fontSize: '0.98rem', fontWeight: 700, color: '#92400e' }}>
+                You're on your free trial — {trialInfo.daysLeft} day{trialInfo.daysLeft === 1 ? '' : 's'} left
+              </div>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.86rem', color: '#78350f', lineHeight: 1.5 }}>
+                On <strong>{trialInfo.chargeDate}</strong> your card will be charged <strong>{trialInfo.price}/month</strong> unless
+                you cancel. You can cancel anytime — no hidden fees.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { track('dashboard_cta_click', { target: 'manage_trial' }); navigate('/account?tab=billing'); }}
+              style={{
+                background: '#b45309', color: '#fff', border: 'none',
+                padding: '0.6rem 1.1rem', borderRadius: '0.5rem',
+                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Manage subscription
+            </button>
+          </section>
+        )}
 
         {/* Membership status — directly below the green marketing strip for PAID members.
             Free members get the subscribe promo below instead, so there's exactly one
