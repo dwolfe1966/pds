@@ -43,6 +43,10 @@
 > backfill `targetUserId` on existing threads. Now a Director-flagged CS/compliance issue — please
 > prioritize.
 
+## TL;DR (one paragraph, 2026-06-11)
+
+> `apiWrapper.api.message.contact.getUserContacts` (`GET /api/contactMessage/getUserContacts`, Api v3.csv:645) returns `{docs:[], noMoreDocs:true}` for members who actually have threads — confirmed on `test21@test21.com` by an incognito A/B (it only *looks* populated in a normal browser because of our per-device cache) and by a brand-new thread that also never appears, so it isn't legacy data. The member-side create `apiWrapper.api.message.contact.create` (`POST /api/contactMessage/create`, Api.csv:523) never sets `content.targetUserId` — which is exactly what `getUserContacts` filters on — even though that field is already fully supported admin-side via `csrWrapper.api.message.contact.setTargetUser` (`POST /api/contactMessage/admin/setTargetUserId`, csrApi.csv:838). Any one fixes it: populate `content.targetUserId` from the authenticated session on `/api/contactMessage/create`, honor an explicit `targetUserId` in that body, or broaden `getUserContacts` to also match `ownerId`/`content.input.email`. Net impact: members see their support messages only on the device where they created them, and there's no client-side workaround.
+
 ## Ready-to-send summary (copy-paste for chat/email)
 
 > **Re-escalation 2026-06-11 — `getUserContacts` is not enumerating member-submitted threads at all (not legacy-only).**
