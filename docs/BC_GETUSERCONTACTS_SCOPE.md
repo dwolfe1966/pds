@@ -20,7 +20,10 @@
 > `?updaterId=`, `?userId=` (= the member's `_id`). **All returned `200` with `{docs:[]}`**
 > (baseline `200/0` too — auth fine). BC ignores undocumented filter params on this endpoint, so
 > we cannot scope it from the client. Also tried stuffing the id into the one documented param,
-> `?lastId=<memberId>` → `200 {docs:[]}` (lastId is a pagination cursor, not a filter). **This
+> `?lastId=<memberId>` → `200 {docs:[]}` (lastId is a pagination cursor, not a filter). NB: the
+> deployed IIFE exposes **no** `getUserContacts` method (`api.message.contact` = create/reply/
+> histories only), so our app always hits the endpoint via a direct GET — the "method call" and
+> the raw GET are the identical request, both 0 docs. **This
 > requires a BC server-side read-filter change** — have `getUserContacts` match the `ownerId` it
 > already stores. Escalation confirmed (no HOLD).
 
