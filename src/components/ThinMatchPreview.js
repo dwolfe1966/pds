@@ -95,7 +95,9 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
     setError('');
     const pwErr = validatePassword(password);
     if (pwErr) { setError(pwErr); return; }
-    await submit({ email: email.trim(), password, optin });
+    // Thin-match signup has no target report, so send the new member straight to the
+    // payment page in its general/promo mode (→ dashboard after they subscribe).
+    await submit({ email: email.trim(), password, optin, redirectParam: '/payment' });
   };
 
   return (
@@ -112,13 +114,13 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
           fontSize: '0.75rem',
           fontWeight: 700,
           letterSpacing: '0.05em',
-          color: '#1a56db',
-          background: '#dbeafe',
+          color: '#0d5d2f',
+          background: '#dcfce7',
           padding: '0.25rem 0.625rem',
           borderRadius: '999px',
           marginBottom: '0.75rem',
         }}>PREVIEW</span>
-        <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 700, color: '#1e3a5f' }}>
+        <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>
           {copy.title}
         </h2>
         <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.55 }}>{copy.body}</p>
@@ -141,7 +143,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
               fontSize: '0.6875rem', fontWeight: 700,
               padding: '0.15rem 0.45rem', borderRadius: 4, letterSpacing: '0.04em',
             }}>SAMPLE</div>
-            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e3a5f' }}>{card.title}</div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#111827' }}>{card.title}</div>
             <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>
               Age {card.ageRange}
             </div>
@@ -160,12 +162,12 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
           paid member sees a "refine search" hint instead of a payment prompt. */}
       {!token ? (
         <div style={{
-          border: '2px solid #1a56db',
+          border: '2px solid #0d5d2f',
           borderRadius: '0.75rem',
           padding: '1.5rem',
           background: '#fff',
         }}>
-          <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
+          <h3 style={{ margin: '0 0 0.5rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
             Create an account to unlock full results
           </h3>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
@@ -177,7 +179,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
             />
             <input
               type="password" required autoComplete="new-password"
-              placeholder="Create a password (8+ chars, upper/lower/number/symbol)"
+              placeholder="Create a password (at least 8 characters)"
               value={password} onChange={(e) => setPassword(e.target.value)}
               style={inputStyle}
             />
@@ -198,12 +200,12 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
         </div>
       ) : !isPaid ? (
         <div style={{
-          border: '2px solid #1a56db',
+          border: '2px solid #0d5d2f',
           borderRadius: '0.75rem',
           padding: '1.5rem',
           background: '#fff',
         }}>
-          <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
+          <h3 style={{ margin: '0 0 0.5rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
             Upgrade to view the full report
           </h3>
           <p style={{ margin: '0 0 1rem', color: '#4b5563', fontSize: '0.9rem' }}>
@@ -212,7 +214,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
           <Link to="/payment" style={{
             display: 'inline-block',
             padding: '0.875rem 1.25rem',
-            background: '#1a56db',
+            background: '#0d5d2f',
             color: '#fff',
             borderRadius: '0.5rem',
             textDecoration: 'none',
@@ -228,7 +230,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
           padding: '1.5rem',
           background: '#f8fafc',
         }}>
-          <h3 style={{ margin: '0 0 0.5rem', color: '#1e3a5f', fontSize: '1.25rem', fontWeight: 700 }}>
+          <h3 style={{ margin: '0 0 0.5rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
             Try a different search
           </h3>
           <p style={{ margin: 0, color: '#4b5563', fontSize: '0.9rem' }}>
@@ -250,7 +252,7 @@ const inputStyle = {
 
 const ctaStyle = (loading) => ({
   padding: '0.875rem 1rem',
-  background: loading ? '#94a3b8' : '#1a56db',
+  background: loading ? '#94a3b8' : '#0d5d2f',
   color: '#fff',
   border: 'none',
   borderRadius: '0.5rem',

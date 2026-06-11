@@ -573,6 +573,26 @@ const PaymentPage = () => {
             </div>
           )}
 
+          {/* General promotional teaser — shown when there's no target report (e.g. a
+              thin-match signup). After payment the success screen routes to the dashboard. */}
+          {!selectedPerson && !success && (
+            <div style={{
+              background: 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
+              color: '#fff', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
+            }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#bbf7d0' }}>
+                {brand.name} Membership
+              </div>
+              <h2 style={{ margin: '0.25rem 0 0.4rem', fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>
+                Unlock unlimited people searches &amp; full reports
+              </h2>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: '#dcfce7', lineHeight: 1.5 }}>
+                Contact info, addresses, relatives, and more — search as many people as you want and pull
+                up to 5 full reports a day.
+              </p>
+            </div>
+          )}
+
           {success ? (
             <div className={styles.successBox}>
               <div className={styles.successIcon}>✓</div>
