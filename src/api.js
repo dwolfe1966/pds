@@ -784,6 +784,10 @@ const api = {
    */
   submitContact: async (body) => {
     const category = body.category || 'general';
+    // Forward the member's id as targetUserId so BC can link the thread to them and
+    // getUserContacts (filters on content.targetUserId) can surface it. Callers set
+    // `userId` (e.g. ContactPage) — that name was previously dropped; accept either.
+    const targetUserId = body.targetUserId || body.userId;
     let contactBody;
     if (category === 'billing') {
       contactBody = {
@@ -800,7 +804,7 @@ const api = {
         // BC's contact.create doesn't auto-link member-submitted threads
         // to the authenticated user's _id. If BC strips or rejects this
         // field, see docs/BC_GETUSERCONTACTS_SCOPE.md for next ask.
-        ...(body.targetUserId ? { targetUserId: body.targetUserId } : {}),
+        ...(targetUserId ? { targetUserId } : {}),
       };
     } else {
       // BC's general-category 'orderId' is required by the doc but empty
@@ -837,7 +841,7 @@ const api = {
         // BC's contact.create doesn't auto-link member-submitted threads
         // to the authenticated user's _id. If BC strips or rejects this
         // field, see docs/BC_GETUSERCONTACTS_SCOPE.md for next ask.
-        ...(body.targetUserId ? { targetUserId: body.targetUserId } : {}),
+        ...(targetUserId ? { targetUserId } : {}),
       };
     }
 
