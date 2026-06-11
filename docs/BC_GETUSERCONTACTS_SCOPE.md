@@ -1,14 +1,19 @@
 # BC ask — `getUserContacts` returns empty for member-submitted threads
 
-> **⏸️ HOLD before escalating — 2026-06-11.** We found the gap may be (partly) OUR side:
-> `api.submitContact` only forwarded `body.targetUserId`, but callers set `body.userId` — so
-> `targetUserId` was **dropped and never sent** to `POST /api/contactMessage/create`. Every
-> "BC doesn't enumerate" test above was on threads created WITHOUT `targetUserId`. Fixed in
-> consumer `abdfa12a` (map `userId`→`targetUserId`); verified the create payload now carries
-> `input.targetUserId`. **Re-test pending:** create a new thread (captcha) → incognito →
-> `getUserContacts`. If it now appears, BC honors the explicit field and this ask is MOOT.
-> Only escalate (options below) if the create succeeds but the thread still doesn't enumerate,
-> or if BC rejects the undocumented field.
+> **PINPOINTED 2026-06-11 — it's a read-filter path mismatch; BC already has the link.**
+> Created a new member thread (`POST /api/contactMessage/create` → **201**) and inspected the
+> stored doc (`_id 6a2af94dc28252975cc73dba`):
+> - BC **auto-sets `ownerId: <memberId>` and `updaterId: <memberId>`** on the thread — the
+>   member→thread link already exists server-side with no input from us.
+> - The `targetUserId` we now send is stored at **`content.input.targetUserId: <memberId>`**
+>   (nested under `input`, because the create body is `{ input: {...} }`).
+> - There is **no top-level `content.targetUserId`** — which is exactly what `getUserContacts`
+>   filters on — so it returns `{docs:[]}` despite the member clearly owning the thread.
+>
+> **Cleanest fix (zero client change): `getUserContacts` should match by `ownerId`** (BC already
+> populates it correctly on every member thread). Alternatively match `content.input.targetUserId`
+> or `updaterId`. We have no way to write a top-level `content.targetUserId` from the consumer —
+> the create nests everything we send under `content.input`.
 
 > **❌ STILL OPEN — corrected 2026-06-11 (the 2026-06-10 "resolved" call was WRONG).**
 > The earlier "new messages show up" was the per-device **localStorage cache** of
@@ -55,7 +60,7 @@
 
 ## TL;DR (one paragraph, 2026-06-11)
 
-> `apiWrapper.api.message.contact.getUserContacts` (`GET /api/contactMessage/getUserContacts`, Api v3.csv:645) returns `{docs:[], noMoreDocs:true}` for members who actually have threads — confirmed on `test21@test21.com` by an incognito A/B (it only *looks* populated in a normal browser because of our per-device cache) and by a brand-new thread that also never appears, so it isn't legacy data. The member-side create `apiWrapper.api.message.contact.create` (`POST /api/contactMessage/create`, Api.csv:523) never sets `content.targetUserId` — which is exactly what `getUserContacts` filters on — even though that field is already fully supported admin-side via `csrWrapper.api.message.contact.setTargetUser` (`POST /api/contactMessage/admin/setTargetUserId`, csrApi.csv:838). Any one fixes it: populate `content.targetUserId` from the authenticated session on `/api/contactMessage/create`, honor an explicit `targetUserId` in that body, or broaden `getUserContacts` to also match `ownerId`/`content.input.email`. Net impact: members see their support messages only on the device where they created them, and there's no client-side workaround.
+> `apiWrapper.api.message.contact.getUserContacts` (`GET /api/contactMessage/getUserContacts`, Api v3.csv:645) returns `{docs:[], noMoreDocs:true}` for members who own threads — verified on `test21@test21.com` (incognito, so no client cache). The link isn't missing on your side: a member create (`POST /api/contactMessage/create`) returns **201** and BC **auto-stamps `ownerId` and `updaterId` = the member's id** on the thread (example `_id 6a2af94dc28252975cc73dba`, `ownerId 6a11ea7daaf121809263f972`). The problem is the read filter: `getUserContacts` matches on **`content.targetUserId`** (top-level), which nothing populates there — the `targetUserId` we now pass is stored at **`content.input.targetUserId`** (nested, because the create body is `{ input: {...} }`), and we can't write a top-level `content.targetUserId` from the consumer. **Cleanest fix, zero change on our side: have `getUserContacts` match by `ownerId`** (you already set it on every member thread); alternatively match `content.input.targetUserId` or `updaterId`. Net impact today: members only see their support messages on the device where they created them.
 
 ## Ready-to-send summary (copy-paste for chat/email)
 
