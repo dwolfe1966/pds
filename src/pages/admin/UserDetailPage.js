@@ -144,8 +144,19 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
   for (const a of activities || []) {
     const t = a?.data?.type || a?.type || '';
     const isReport = /:(name|phone)Search$/.test(t);
-    add(a.createdAt, isReport ? 'report' : 'search', TIMELINE_ACT_LABELS[t] || 'Search',
-      a?.data?.input?.fullName || a?.data?.input?.phone || '');
+    // BC tracking carries the searched subject in data.teaserInput (fName/lName/city/state)
+    // — append the name/phone to the label so each event reads e.g. "Name search — David Wolfe".
+    const ti = a?.data?.teaserInput || a?.data?.input || {};
+    const name = [ti.fName, ti.lName].filter(Boolean).join(' ').trim();
+    const subject = name
+      ? name.replace(/\b\w/g, (c) => c.toUpperCase())
+      : (ti.phone || ti.phoneNumber || ti.fullName || '');
+    const city = ti.city ? ti.city.replace(/\b\w/g, (c) => c.toUpperCase()) : '';
+    const st = ti.state ? (ti.state.length === 2 ? ti.state.toUpperCase() : ti.state) : '';
+    const loc = [city, st].filter(Boolean).join(', ');
+    const base = TIMELINE_ACT_LABELS[t] || 'Search';
+    add(a.createdAt, isReport ? 'report' : 'search',
+      subject ? `${base} — ${subject}` : base, loc);
   }
   for (const n of notes || []) {
     add(n.createdAt, 'note', 'CSR note', String(n?.content?.message || n?.message || '').replace(/<[^>]+>/g, '').slice(0, 70));
