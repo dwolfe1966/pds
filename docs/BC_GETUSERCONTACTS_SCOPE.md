@@ -14,6 +14,13 @@
 > populates it correctly on every member thread). Alternatively match `content.input.targetUserId`
 > or `updaterId`. We have no way to write a top-level `content.targetUserId` from the consumer —
 > the create nests everything we send under `content.input`.
+>
+> **No client-side param workaround — tested 2026-06-11.** Replayed the authenticated
+> `GET /api/contactMessage/getUserContacts` with each of `?targetUserId=`, `?ownerId=`,
+> `?updaterId=`, `?userId=` (= the member's `_id`). **All returned `200` with `{docs:[]}`**
+> (baseline `200/0` too — auth fine). BC ignores undocumented filter params on this endpoint, so
+> we cannot scope it from the client. **This requires a BC server-side read-filter change** —
+> have `getUserContacts` match the `ownerId` it already stores. Escalation confirmed (no HOLD).
 
 > **❌ STILL OPEN — corrected 2026-06-11 (the 2026-06-10 "resolved" call was WRONG).**
 > The earlier "new messages show up" was the per-device **localStorage cache** of
