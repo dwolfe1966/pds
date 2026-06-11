@@ -46,3 +46,4 @@
 - [Report-breadth eval task](project_report_breadth_task.md) — NEXT: compare report detail vs old site (same BC API); gaps = per-address + financial (lien/bankruptcy); likely a display gap not data; O.J. Simpson comparison
 - [BC contactMessages link by email, not targetUserId](reference_bc_contactmessage_email_link.md) — per-user endpoint 404s on them; CSR user-detail Messages tab fix = always email-merge; per-endpoint apiId auth gotcha
 - [BC ShapeCompiled comp.client.theme = per-shN config](reference_bc_shapecompiled_theme.md) — landing/sup/optout/thinmatch live here; drives optOut + zeroState; resolver cache-key bug fixed; probe via network intercept
+- [BC billing.sale 406 = non-false sequenceOption](reference_bc_sale_sequenceoption_406.md) — promo/thin-match sale must send all-false thin-match flags; only send readThinMatch() for a real report unlock
