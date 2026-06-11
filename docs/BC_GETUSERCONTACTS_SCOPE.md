@@ -1,5 +1,15 @@
 # BC ask — `getUserContacts` returns empty for member-submitted threads
 
+> **⏸️ HOLD before escalating — 2026-06-11.** We found the gap may be (partly) OUR side:
+> `api.submitContact` only forwarded `body.targetUserId`, but callers set `body.userId` — so
+> `targetUserId` was **dropped and never sent** to `POST /api/contactMessage/create`. Every
+> "BC doesn't enumerate" test above was on threads created WITHOUT `targetUserId`. Fixed in
+> consumer `abdfa12a` (map `userId`→`targetUserId`); verified the create payload now carries
+> `input.targetUserId`. **Re-test pending:** create a new thread (captcha) → incognito →
+> `getUserContacts`. If it now appears, BC honors the explicit field and this ask is MOOT.
+> Only escalate (options below) if the create succeeds but the thread still doesn't enumerate,
+> or if BC rejects the undocumented field.
+
 > **❌ STILL OPEN — corrected 2026-06-11 (the 2026-06-10 "resolved" call was WRONG).**
 > The earlier "new messages show up" was the per-device **localStorage cache** of
 > (contactMessageId, hash) refs — NOT BC enumeration. **Decisive A/B 2026-06-11:** same
