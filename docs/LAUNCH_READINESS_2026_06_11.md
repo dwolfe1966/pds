@@ -22,8 +22,9 @@ Google Ads conversion setup (`docs/GOOGLE_ADS_CONVERSION_SETUP.md`).
 Terms/Privacy aligned to compliance source docs · competitor strings scrubbed · CSR member-status +
 ticket→customer links.
 
-**BC implemented (verified):** `user.find` **order-by-id** · `getUserContacts` **targetUserId** (new
-threads now appear).
+**BC implemented (verified):** `user.find` **order-by-id**. (Correction 2026-06-11: `getUserContacts`
+`targetUserId` is **NOT** resolved — an incognito A/B showed BC returns 0 docs; the apparent fix was
+the per-device localStorage cache. See BC asks below.)
 
 ## 2. Where we are — open items
 
@@ -46,7 +47,7 @@ threads now appear).
 | Refund `billingSeriesId` confirm + IIFE-path question | Med |
 | Text/SMS **unsubscribe** endpoint (currently STOP-only) | Med |
 | Server-side **partial** email/name CSR search | Low |
-| Legacy `getUserContacts` backfill | Low (optional) |
+| **`getUserContacts` not enumerating member threads** — incognito/new-device shows 0 messages (cache-masked) | HIGH |
 
 ## 3. Launch Readiness Assessment
 

@@ -1,12 +1,18 @@
 # BC ask — `getUserContacts` returns empty for member-submitted threads
 
-> **✅ RESOLVED GOING FORWARD — confirmed 2026-06-10.** BC now sets `targetUserId` on
-> member-submitted threads, so **newly created** conversations show up in account → Messages
-> (owner confirmed: "new messages do show up"; `test21@test21.com`'s newer threads now appear).
-> **Only LEGACY threads** (created before BC's fix) are still missing via `getUserContacts` —
-> owner has accepted that as OK (no backfill required). The flat 0-docs repro below was for an
-> account whose threads predate the fix. Remaining (optional, low priority): a one-time backfill
-> of `targetUserId` on pre-fix threads if you ever want them to surface. Otherwise closeable.
+> **❌ STILL OPEN — corrected 2026-06-11 (the 2026-06-10 "resolved" call was WRONG).**
+> The earlier "new messages show up" was the per-device **localStorage cache** of
+> (contactMessageId, hash) refs — NOT BC enumeration. **Decisive A/B 2026-06-11:** same
+> account `test21@test21.com`, same moment —
+> - **Normal browser** (has cache): account → Messages shows **all threads**.
+> - **Incognito** (no cache): `GET /contactMessage/getUserContacts` → **`{"docs":[],"noMoreDocs":true}`** (0 docs).
+>
+> So BC is **not** enumerating this member's threads server-side. Net member impact: support
+> messages are visible **only on the device where they were created/viewed**; a new browser,
+> incognito, or another device shows nothing. **No client-side fix is possible** — the consumer
+> has no endpoint to enumerate a member's contactMessages by email/ownerId. Needs BC to set
+> `targetUserId` on member-submitted threads (option 1/2) or broaden `getUserContacts` to match
+> by `ownerId`/sender email (option 3) — see below. Re-escalate; this is a real cross-device gap.
 
 **Raised:** 2026-05-29
 **Environment:** `https://dev.www.idlookup.ai/`
