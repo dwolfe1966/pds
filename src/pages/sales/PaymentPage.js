@@ -8,7 +8,7 @@ import { createReportForIdentity } from '../../services/reportService';
 import { track, buildReferQueryString } from '../../services/trackingService';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
-import { readThinMatch } from '../../services/thinMatch';
+import { readThinMatch, EMPTY_FLAGS } from '../../services/thinMatch';
 
 // BC offer key — the actual price charged is enforced by BC's offer config
 // (findByShmName). Display values come from `brand.trialPrice` /
@@ -326,10 +326,12 @@ const PaymentPage = () => {
           // default signup offer. Set per partner+page via campaignRegistry.
           { key: campaign?.offer?.shmName || 'comp.offer.signup.main', target: 'main', options: {} },
         ],
-        // Reflect BC's teaser-time thin-match signal on the billing order so
-        // the order history records the true match state. Flags default to
-        // `false` when no teaser search preceded this purchase.
-        sequenceOption: readThinMatch(),
+        // Reflect BC's teaser-time thin-match signal ONLY when this purchase unlocks a
+        // specific teaser report (selectedPersonId present). A general/promo signup (e.g.
+        // the thin-match path, no target report) must send the all-false sequence BC's
+        // canonical sale uses — otherwise BC rejects the sale with 406. This also stops a
+        // stale sessionStorage thin flag from leaking into a normal purchase.
+        sequenceOption: selectedPersonId ? readThinMatch() : { ...EMPTY_FLAGS },
         // BC uses queryString for campaign attribution → commerceorders.refer.
         // The acquisition refer_* params arrive on the LANDING url, are captured
         // into referralParams, and the url is stripped — so they are NOT on the
@@ -575,7 +577,7 @@ const PaymentPage = () => {
 
           {/* General promotional teaser — shown when there's no target report (e.g. a
               thin-match signup). After payment the success screen routes to the dashboard. */}
-          {!selectedPerson && !success && (
+          {!selectedPersonId && !success && (
             <div style={{
               background: 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
               color: '#fff', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
@@ -945,8 +947,9 @@ const PaymentPage = () => {
                       </span>
                     ) : (
                       // Bug #35: compliance-led CTA directly above the SUP/terms
-                      // disclosure — the button text states the agreement.
-                      'I Agree, View Report Now'
+                      // disclosure — the button text states the agreement. When there's no
+                      // target report (general/promo signup), it just continues to the dashboard.
+                      (selectedPersonId ? 'I Agree, View Report Now' : 'I Agree, Continue')
                     )}
                   </button>
 

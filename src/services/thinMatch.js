@@ -7,7 +7,7 @@
 
 const KEY = 'thinMatchState';
 
-const EMPTY_FLAGS = {
+export const EMPTY_FLAGS = {
   thinMatch: false,
   thinMatchDataProviderDown: false,
   thinMatchTooManyResults: false,

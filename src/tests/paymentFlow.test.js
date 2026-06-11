@@ -152,7 +152,11 @@ describe('PaymentPage — form rendering', () => {
 
   test('shows the compliance-led CTA (bug #35)', () => {
     render();
-    expect(container.textContent).toContain('I Agree, View Report Now');
+    // Compliance lead "I Agree," is present in both CTA variants — "I Agree, View Report
+    // Now" (report unlock) and "I Agree, Continue" (general/promo signup, no target report).
+    // This render has no selectedPersonId, so it shows the Continue variant.
+    expect(container.textContent).toContain('I Agree,');
+    expect(container.textContent).toContain('I Agree, Continue');
   });
 
   test('shows authenticated user email', () => {
