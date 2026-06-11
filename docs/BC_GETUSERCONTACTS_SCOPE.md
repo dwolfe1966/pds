@@ -13,6 +13,13 @@
 > has no endpoint to enumerate a member's contactMessages by email/ownerId. Needs BC to set
 > `targetUserId` on member-submitted threads (option 1/2) or broaden `getUserContacts` to match
 > by `ownerId`/sender email (option 3) — see below. Re-escalate; this is a real cross-device gap.
+>
+> **NOT legacy-only — confirmed 2026-06-11.** Created a BRAND-NEW thread as test21 (via
+> `/contact` → contactMessage.create, captcha solved manually), then checked in a fresh
+> incognito session: `getUserContacts` STILL returns 0. So `targetUserId` is **not being set
+> on new member-submitted threads either** — the fix is not live at all, it's not just a
+> backfill question. Every member-submitted thread is invisible to that member from any device
+> without the local cache.
 
 **Raised:** 2026-05-29
 **Environment:** `https://dev.www.idlookup.ai/`
@@ -38,17 +45,23 @@
 
 ## Ready-to-send summary (copy-paste for chat/email)
 
-> Thanks for shipping `apiWrapper.api.message.contact.getUserContacts` on 2026-05-28 — we wired it the same day. Empirically though, it returns `docs: []` for a member who has two existing contactMessage threads visible in CSR (`dwolfe666@gmail.com`).
+> **Re-escalation 2026-06-11 — `getUserContacts` is not enumerating member-submitted threads at all (not legacy-only).**
 >
-> Looking at your example response, `getUserContacts` filters on `content.targetUserId === authenticatedUser._id`. That field doesn't get set when a logged-in member submits via `apiWrapper.api.message.contact.create` — only when CSR creates a thread on the member's behalf (`csrWrapper.api.message.contact.create` sets it explicitly).
+> `apiWrapper.api.message.contact.getUserContacts` returns `{ docs: [], noMoreDocs: true }` for members who demonstrably have threads. We proved it's a server-side enumeration gap, not a client bug or a stale-data/backfill question, with two tests on `test21@test21.com`:
 >
-> Three possible fixes — any one closes it:
+> 1. **Incognito A/B (same account, same moment):** in a normal browser, account → Messages shows all the member's threads; in an **incognito** window (no localStorage), `getUserContacts` returns **0 docs**. → What members "see" today is only our **per-device localStorage cache** of `(contactMessageId, hash)` refs, not your enumeration.
+> 2. **Brand-new thread:** created a fresh thread as test21 via `apiWrapper.api.message.contact.create` (captcha solved), then checked a clean incognito session → `getUserContacts` **still returns 0**. So `content.targetUserId` is **not being set on new member-submitted threads either** — this is not just a missing backfill of old threads.
 >
-> 1. **Auto-link on the write side.** `contact.create` reads the authenticated subject (same one `getUserContacts` reads on the read side) and stores it as `content.targetUserId`. You already have the session; this is internal consistency.
-> 2. **Honor an explicit `targetUserId` in the create body.** We're shipping that field today; if BC stores it, future member-submitted threads will surface immediately.
-> 3. **Broaden `getUserContacts` filter** to also match by `ownerId === authenticatedUser._id` and/or sender `content.input.email`. This is the only option that surfaces *existing* threads without a data backfill.
+> **Member impact:** a member sees their own support messages only on the device where they created/viewed them. New device, new browser, or incognito = blank. This is a real cross-device support gap (Director of CS flagged).
 >
-> Whichever path you pick, please confirm so we can stop the empirical-test patches. Existing threads (created before today) will still need a one-time backfill of `content.targetUserId` unless you choose option 3. Full diagnosis in `docs/BC_GETUSERCONTACTS_SCOPE.md` in the repo.
+> **Root cause (as before):** `getUserContacts` filters on `content.targetUserId === authenticatedUser._id`, but `message.contact.create` doesn't populate `content.targetUserId` for member-submitted threads (only `csrWrapper`'s CSR-side create sets it).
+>
+> **Any ONE of these closes it:**
+> 1. **Auto-link on write:** `contact.create` stores the authenticated subject as `content.targetUserId` (you already have the session — internal consistency).
+> 2. **Honor an explicit `targetUserId`** in the create body (we already send it).
+> 3. **Broaden `getUserContacts`** to also match `ownerId === authenticatedUser._id` and/or sender `content.input.email` — the only option that surfaces **existing** threads with no backfill.
+>
+> Please confirm which path + a timeline. We have no client-side fix (the consumer can't enumerate contactMessages by email/ownerId). Full diagnosis: `docs/BC_GETUSERCONTACTS_SCOPE.md`.
 
 ---
 
