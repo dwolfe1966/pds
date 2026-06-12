@@ -321,9 +321,9 @@ export async function callAdminAPI(endpoint, params) {
       return order;
     }
 
-    // csrWrapper.api.user.updateScheduleDueTimestamp → POST /commerceMgnt/updateScheduleDueTimestamp
+    // csrWrapper.api.user.updateSchedule → POST /commerceMgmt/updateSchedule
     case 'admin-update-schedule': {
-      return await apiWrapperCsr.csrUpdateScheduleDueTimestamp(params.scheduleId, params.dueTimestamp);
+      return await apiWrapperCsr.csrUpdateScheduleDueTimestamp(params.scheduleId, params.dueTimestamp, params.amount);
     }
 
     // Tracking — database/search on 'tracking' collection

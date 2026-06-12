@@ -606,8 +606,8 @@ const api = {
     return await routeApiRequest('admin-order-detail', { userId, orderId, lastPaymentId });
   },
 
-  adminUpdateScheduleDueTimestamp: async (scheduleId, dueTimestamp) => {
-    return await routeApiRequest('admin-update-schedule', { scheduleId, dueTimestamp });
+  adminUpdateScheduleDueTimestamp: async (scheduleId, dueTimestamp, amount) => {
+    return await routeApiRequest('admin-update-schedule', { scheduleId, dueTimestamp, amount });
   },
 
   adminListDataRemoval: async (params = {}) => {

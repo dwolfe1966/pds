@@ -373,11 +373,15 @@ class ApiWrapperCsrService {
     return await apiWrapper._csrPost('/commerceMgmt/orderHistories', body);
   }
 
-  // csrWrapper.api.user.updateScheduleDueTimestamp — POST /commerceMgmt/updateScheduleDueTimestamp
-  // params: { scheduleId, dueTimestamp }
-  async csrUpdateScheduleDueTimestamp(scheduleId, dueTimestamp) {
-    return await this._viaCsr('api.user.updateScheduleDueTimestamp', { scheduleId, dueTimestamp },
-      () => apiWrapper._csrPost('/commerceMgmt/updateScheduleDueTimestamp', { scheduleId, dueTimestamp }));
+  // csrWrapper.api.user.updateSchedule — POST /commerceMgmt/updateSchedule
+  // params: { scheduleId, dueTimestamp, amount? } (amount added 2026-05-13).
+  // Was broken: targeted a non-existent IIFE method (`updateScheduleDueTimestamp`) AND a
+  // wrong path (`/updateScheduleDueTimestamp`) → always 404'd. No UI caller today, but fixed
+  // for correctness. ⚠️ mutates a subscription schedule — live-test before relying.
+  async csrUpdateScheduleDueTimestamp(scheduleId, dueTimestamp, amount) {
+    const payload = { scheduleId, dueTimestamp, ...(amount != null ? { amount } : {}) };
+    return await this._viaCsr('api.user.updateSchedule', payload,
+      () => apiWrapper._csrPost('/commerceMgmt/updateSchedule', payload));
   }
 
   // POST /commerce/offer/findByShmName — added 2026-04-21
@@ -392,8 +396,13 @@ class ApiWrapperCsrService {
   // Used by CS agents to create orders on behalf of users (retention, comp, downsell).
   // Uses the admin session (connect.sid) so BC tags it as a CSR-initiated order.
   async csrCreateOrder(params = {}) {
+    // The deployed csrWrapper exposes no `billing.sale`, so this ALWAYS hits the direct path
+    // — which (like the refund /commerceBilling/correct) needs a billingSeriesId or BC rejects
+    // with 406 "billingSeriesId should not be empty". Inject it (type 'sale', matching the
+    // consumer _saleViaProxy). _viaCsr target kept so it auto-uses the IIFE if BC adds
+    // billing.sale. ⚠️ Validate with one real low-value CSR sale.
     return await this._viaCsr('api.billing.sale', params,
-      () => apiWrapper._csrPost('/commerceBilling/sale', params));
+      () => apiWrapper._csrPost('/commerceBilling/sale', params, { billingSeriesType: 'sale' }));
   }
 
   // csrWrapper.api.optOut.find — POST /database/search
