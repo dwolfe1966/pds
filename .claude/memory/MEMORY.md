@@ -47,3 +47,4 @@
 - [BC contactMessages link by email, not targetUserId](reference_bc_contactmessage_email_link.md) — per-user endpoint 404s on them; CSR user-detail Messages tab fix = always email-merge; per-endpoint apiId auth gotcha
 - [BC ShapeCompiled comp.client.theme = per-shN config](reference_bc_shapecompiled_theme.md) — landing/sup/optout/thinmatch live here; drives optOut + zeroState; resolver cache-key bug fixed; probe via network intercept
 - [BC billing.sale 406 = non-false sequenceOption](reference_bc_sale_sequenceoption_406.md) — promo/thin-match sale must send all-false thin-match flags; only send readThinMatch() for a real report unlock
+- [CSR library migration map](reference_csr_library_migration.md) — which csr* methods migrate to csrWrapper IIFE, which cant (BC gaps), 4 "fake lib-first" that silently hand-roll, stale envelope-comment trap
