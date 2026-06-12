@@ -18,6 +18,7 @@
  */
 
 import apiWrapper, { _unwrapBcResponse } from '../services/apiWrapper';
+import apiWrapperCsr from '../services/apiWrapperCsr';
 
 const err = (status, message = 'err') => Object.assign(new Error(message), { status });
 
@@ -84,14 +85,14 @@ describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => 
     // targetUserId, so the per-user REST endpoint returns 0 for them. We ALWAYS
     // also run the inbox scan and merge — never return the REST body verbatim.
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [{ _id: 'm1' }], noMoreDocs: true });
-    jest.spyOn(apiWrapper, 'csrFindContactMessages').mockResolvedValue({
+    jest.spyOn(apiWrapperCsr, 'csrFindContactMessages').mockResolvedValue({
       docs: [
         { _id: 'i1', content: { targetUserId: 'u1' } },
         { _id: 'i2', content: { targetUserId: 'other' } },
       ],
     });
 
-    const res = await apiWrapper.csrFindUserContactMessages({ userId: 'u1' });
+    const res = await apiWrapperCsr.csrFindUserContactMessages({ userId: 'u1' });
 
     // REST doc (m1) + the targetUserId-matched inbox doc (i1), deduped; i2 dropped.
     expect(res.docs.map((d) => d._id).sort()).toEqual(['i1', 'm1']);
@@ -103,13 +104,13 @@ describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => 
     // Even if the CSR IIFE exposes a findUserContacts that returns a truthy,
     // docs-less envelope (the f156c11 failure mode), MESSAGES must ignore it
     // and serve from the direct/REST path (+ inbox scan).
-    jest.spyOn(apiWrapper, 'getCsrWrapper').mockResolvedValue({
+    jest.spyOn(apiWrapperCsr, 'getCsrWrapper').mockResolvedValue({
       api: { user: { findUserContacts: jest.fn().mockResolvedValue({ junk: true }) } },
     });
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [{ _id: 'm1' }] });
-    jest.spyOn(apiWrapper, 'csrFindContactMessages').mockResolvedValue({ docs: [] });
+    jest.spyOn(apiWrapperCsr, 'csrFindContactMessages').mockResolvedValue({ docs: [] });
 
-    const res = await apiWrapper.csrFindUserContactMessages({ userId: 'u1' });
+    const res = await apiWrapperCsr.csrFindUserContactMessages({ userId: 'u1' });
 
     // IIFE junk ignored; result comes from the direct REST path.
     expect(res.docs.map((d) => d._id)).toEqual(['m1']);
@@ -118,7 +119,7 @@ describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => 
 
   test('direct POST 404 → inbox-wide scan + filter by targetUserId', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockRejectedValue(err(404));
-    jest.spyOn(apiWrapper, 'csrFindContactMessages').mockResolvedValue({
+    jest.spyOn(apiWrapperCsr, 'csrFindContactMessages').mockResolvedValue({
       docs: [
         { _id: 'keep', content: { targetUserId: 'u1' } },
         { _id: 'drop', content: { targetUserId: 'other' } },
@@ -126,7 +127,7 @@ describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => 
       noMoreDocs: true,
     });
 
-    const res = await apiWrapper.csrFindUserContactMessages({ userId: 'u1' });
+    const res = await apiWrapperCsr.csrFindUserContactMessages({ userId: 'u1' });
 
     expect(res._looseMatched).toBe(true);
     expect(res.docs.map((d) => d._id)).toEqual(['keep']);
@@ -134,14 +135,14 @@ describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => 
 
   test('inbox filter matches by sender email when no targetUserId is set', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockRejectedValue(err(404));
-    jest.spyOn(apiWrapper, 'csrFindContactMessages').mockResolvedValue({
+    jest.spyOn(apiWrapperCsr, 'csrFindContactMessages').mockResolvedValue({
       docs: [
         { _id: 'keep', content: { input: { email: 'Test1@Gmail.com' } } },
         { _id: 'drop', content: { input: { email: 'nope@x.com' } } },
       ],
     });
 
-    const res = await apiWrapper.csrFindUserContactMessages({
+    const res = await apiWrapperCsr.csrFindUserContactMessages({
       userId: 'u1',
       userEmail: 'test1@gmail.com', // case-insensitive match
     });
@@ -151,16 +152,16 @@ describe('csrFindUserContactMessages — MESSAGES go direct, never IIFE', () => 
 
   test('non-404 direct error rethrows — failures must surface, not silently empty', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockRejectedValue(err(500, 'boom'));
-    const filterSpy = jest.spyOn(apiWrapper, 'csrFindContactMessages');
+    const filterSpy = jest.spyOn(apiWrapperCsr, 'csrFindContactMessages');
 
     await expect(
-      apiWrapper.csrFindUserContactMessages({ userId: 'u1' }),
+      apiWrapperCsr.csrFindUserContactMessages({ userId: 'u1' }),
     ).rejects.toThrow('boom');
     expect(filterSpy).not.toHaveBeenCalled();
   });
 
   test('throws when neither userId nor userEmail is provided', async () => {
-    await expect(apiWrapper.csrFindUserContactMessages({})).rejects.toThrow(
+    await expect(apiWrapperCsr.csrFindUserContactMessages({})).rejects.toThrow(
       /userId or userEmail/,
     );
   });
@@ -171,12 +172,12 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
   test('uses the CSR IIFE findUserAdminNotes when present, and unwraps it', async () => {
     const data = { docs: [{ _id: 'n1' }] };
     const findUserAdminNotes = jest.fn().mockResolvedValue({ getData: () => data });
-    jest.spyOn(apiWrapper, 'getCsrWrapper').mockResolvedValue({
+    jest.spyOn(apiWrapperCsr, 'getCsrWrapper').mockResolvedValue({
       api: { user: { findUserAdminNotes } },
     });
     const getSpy = jest.spyOn(apiWrapper, '_csrGet');
 
-    const res = await apiWrapper.csrFindUserAdminNotes({ userId: 'u1' });
+    const res = await apiWrapperCsr.csrFindUserAdminNotes({ userId: 'u1' });
 
     expect(res).toBe(data);
     expect(findUserAdminNotes).toHaveBeenCalledWith({ userId: 'u1' });
@@ -184,11 +185,11 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
   });
 
   test('falls back to direct GET when the IIFE is unavailable', async () => {
-    jest.spyOn(apiWrapper, 'getCsrWrapper').mockResolvedValue(null);
+    jest.spyOn(apiWrapperCsr, 'getCsrWrapper').mockResolvedValue(null);
     const body = { docs: [{ _id: 'n2' }] };
     jest.spyOn(apiWrapper, '_csrGet').mockResolvedValue(body);
 
-    const res = await apiWrapper.csrFindUserAdminNotes({ userId: 'u1' });
+    const res = await apiWrapperCsr.csrFindUserAdminNotes({ userId: 'u1' });
 
     expect(res).toBe(body);
     expect(apiWrapper._csrGet).toHaveBeenCalledWith(
@@ -197,20 +198,20 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
   });
 
   test('falls back to direct GET when the IIFE method throws', async () => {
-    jest.spyOn(apiWrapper, 'getCsrWrapper').mockResolvedValue({
+    jest.spyOn(apiWrapperCsr, 'getCsrWrapper').mockResolvedValue({
       api: { user: { findUserAdminNotes: jest.fn().mockRejectedValue(err(500)) } },
     });
     const body = { docs: [{ _id: 'n3' }] };
     jest.spyOn(apiWrapper, '_csrGet').mockResolvedValue(body);
 
-    const res = await apiWrapper.csrFindUserAdminNotes({ userId: 'u1' });
+    const res = await apiWrapperCsr.csrFindUserAdminNotes({ userId: 'u1' });
 
     expect(res).toBe(body);
     expect(apiWrapper._csrGet).toHaveBeenCalled();
   });
 
   test('requires userId', async () => {
-    await expect(apiWrapper.csrFindUserAdminNotes({})).rejects.toThrow(/userId is required/);
+    await expect(apiWrapperCsr.csrFindUserAdminNotes({})).rejects.toThrow(/userId is required/);
   });
 });
 
@@ -230,7 +231,7 @@ describe('csrFindUsers — filters MUST be nested under query (not top-level)', 
   test('email/phone/zip/panLast4 go under query; lastId/perPage stay top-level', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 
-    await apiWrapper.csrFindUsers({ phone: '3106134575', lastId: 'c1', perPage: 50 });
+    await apiWrapperCsr.csrFindUsers({ phone: '3106134575', lastId: 'c1', perPage: 50 });
 
     expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
       brandId: 'idlookup',
@@ -244,7 +245,7 @@ describe('csrFindUsers — filters MUST be nested under query (not top-level)', 
   test('no filters → empty query (browse default list)', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 
-    await apiWrapper.csrFindUsers({});
+    await apiWrapperCsr.csrFindUsers({});
 
     expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
       brandId: 'idlookup',
@@ -258,7 +259,7 @@ describe('csrFindUserTracking — query shape (updaterId + perPage), returns ver
   test('sends updaterId in the query AND requests a large perPage page', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 
-    await apiWrapper.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
+    await apiWrapperCsr.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
 
     // We still send updaterId (BC IGNORES it — verified live 2026-06-05 — so the
     // caller client-filters; sending it remains correct intent + future-proofs a
@@ -284,7 +285,7 @@ describe('csrFindUserTracking — query shape (updaterId + perPage), returns ver
     };
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue(body);
 
-    const res = await apiWrapper.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
+    const res = await apiWrapperCsr.csrFindUserTracking({ updaterId: 'u1', type: 'USER:login' });
 
     expect(res).toBe(body);
     expect(res.docs).toHaveLength(2);
@@ -293,7 +294,7 @@ describe('csrFindUserTracking — query shape (updaterId + perPage), returns ver
   test('forwards lastId for pagination and omits empty query keys', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 
-    await apiWrapper.csrFindUserTracking({ lastId: 'cursor9' });
+    await apiWrapperCsr.csrFindUserTracking({ lastId: 'cursor9' });
 
     expect(apiWrapper._csrPost).toHaveBeenCalledWith('/database/search', {
       collectionName: 'trackings',
