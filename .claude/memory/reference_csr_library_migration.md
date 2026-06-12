@@ -11,10 +11,16 @@ Analysis 2026-06-11 (deployed csrWrapper IIFE `/tmp/bc-csr.js`). Goal: move CSR 
 hand-rolled `_csrPost`/`_csrGet` (which replicate auth/captcha/billingSeriesId by hand — the
 refund-406 bug class) onto `csrWrapper.api.*`.
 
-**Stale-comment trap:** `_viaCsr` runs `_unwrapBcResponse(fn())`, and the CSR IIFE's
-`getData()` returns `response.data` — byte-identical to what `_csrPost` returns. So every
-"IIFE returns a different envelope, kept direct" comment in `apiWrapperCsr.js` is **stale**;
-the envelope is not a blocker. ~10 direct methods can migrate drop-in.
+**Envelope comments are EMPIRICAL, not stale — do NOT blindly migrate (corrected 2026-06-12).**
+A survey agent claimed `_unwrapBcResponse(getData())` normalizes everything so the "IIFE
+returns a different envelope, kept direct" comments are stale. **That's wrong:** at least two
+methods carry empirical warnings from people who tried the IIFE — `csrFindContactMessages`
+("…breaking the inbox + dashboard") and `csrFindUserOrders` ("returns a different envelope
+shape than callers expect"). `_viaCsr` does NOT fall back when the IIFE *succeeds* with a
+different shape, so a bad migration silently breaks the CSR caller. **Each read migration needs
+per-method LIVE verification** (load the actual CSR page, compare data) — not a bulk swap.
+Reverted a "safe subset" migration on 2026-06-12 for exactly this reason. Migrations deferred
+to post-launch.
 
 **Deployed csrWrapper IIFE surface:** `user.{create,update,getUserDetail,find,findAdmin,
 findUserContacts,findUserAdminNotes,findOrders,getOrder,findOrderPayments,findOrderHistories,
