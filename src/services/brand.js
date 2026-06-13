@@ -32,11 +32,11 @@ export const BRANDS = {
     // server-side source of truth for what actually gets charged; these
     // values are the marketing display + GTM transactionAmount. Keep in
     // sync with BC's offer.commercePrice when BC ships price updates.
-    // TEMPORARY OVERRIDE (TRX approval): display $1.00 / $49.98 even though
-    // BC's commercePriceRules currently say $0.98 trial / $39.01 monthly.
-    // When BC updates its offer to match these values, this comment can be
-    // removed. The actual charge is BC's price, not these — keep this gap
-    // tight; current marketing display is 2¢ / $10.97 higher than BC charge.
+    // Verified 2026-06-13 against BC's LIVE offer comp.offer.signup.main
+    // (offer.findByShmName → priceInfo: s0=trial, s1=recurring): BC charges
+    // $1.00 trial / $49.98 per 30 days — MATCHES the display below. The earlier
+    // TRX-era $0.98/$39.01 gap is closed; display == charge. (Partner offers
+    // already display BC's live price via useOfferPricing.)
     trialPrice: 1.00,
     trialDays: 7,
     recurringPrice: 49.98,
@@ -65,11 +65,11 @@ export const BRANDS = {
     domain: 'peoplesearcher.ai',
     // Inbound support is routed through /contact — no public inbound email surfaces.
     supportPhone: '833-958-3677',
-    // TEMPORARY OVERRIDE (TRX approval): display $1.00 / $49.98 even though
-    // BC's commercePriceRules currently say $0.98 trial / $39.01 monthly.
-    // When BC updates its offer to match these values, this comment can be
-    // removed. The actual charge is BC's price, not these — keep this gap
-    // tight; current marketing display is 2¢ / $10.97 higher than BC charge.
+    // Verified 2026-06-13 against BC's LIVE offer comp.offer.signup.main
+    // (offer.findByShmName → priceInfo: s0=trial, s1=recurring): BC charges
+    // $1.00 trial / $49.98 per 30 days — MATCHES the display below. The earlier
+    // TRX-era $0.98/$39.01 gap is closed; display == charge. (Partner offers
+    // already display BC's live price via useOfferPricing.)
     trialPrice: 1.00,
     trialDays: 7,
     recurringPrice: 49.98,
@@ -92,11 +92,11 @@ export const BRANDS = {
     domain: 'inmatefinderhub.com',
     // Inbound support is routed through /contact — no public inbound email surfaces.
     supportPhone: '833-632-7173',
-    // TEMPORARY OVERRIDE (TRX approval): display $1.00 / $49.98 even though
-    // BC's commercePriceRules currently say $0.98 trial / $39.01 monthly.
-    // When BC updates its offer to match these values, this comment can be
-    // removed. The actual charge is BC's price, not these — keep this gap
-    // tight; current marketing display is 2¢ / $10.97 higher than BC charge.
+    // Verified 2026-06-13 against BC's LIVE offer comp.offer.signup.main
+    // (offer.findByShmName → priceInfo: s0=trial, s1=recurring): BC charges
+    // $1.00 trial / $49.98 per 30 days — MATCHES the display below. The earlier
+    // TRX-era $0.98/$39.01 gap is closed; display == charge. (Partner offers
+    // already display BC's live price via useOfferPricing.)
     trialPrice: 1.00,
     trialDays: 7,
     recurringPrice: 49.98,
