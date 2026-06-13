@@ -1,48 +1,39 @@
 # Sample ad destination URLs — reporting-app validation
-# Format: https://dev.www.idlookup.ai/?shn=<token>&shl=&gclid=&utm_*=&refer_*=
+# Format: https://dev.www.idlookup.ai/?shn=<token>&gclid=&utm_*=&refer_*=  (brand root, no path/shl — landing resolved from shn)
 # gclid is a sample — Google auto-tagging supplies the real one in production.
 
 
 ## Google Inmates Upper  (shn=6a22ff83ca16ad4ef68b84b5)
-https://dev.www.idlookup.ai/?shn=6a22ff83ca16ad4ef68b84b5&shl=v5&gclid=Cj0KCQYBU9MqrHGAwTy39tn_Z4QQwAOBKCRsjm8ejW8BsBUHEAWWb2AMTxFV652_gtnCHDiteCJi8x3YGM9&utm_source=google&utm_medium=cpc&utm_campaign=inmates-upper&utm_term=inmate+records&refer_partnerId=google&refer_afid=g-inmates-upper&refer_abc=ag4217206968
-https://dev.www.idlookup.ai/?shn=6a22ff83ca16ad4ef68b84b5&shl=v3&gclid=Cj0KEQjwOf64T9ZhU0nnTw-ip0WNZheoHYm29pb8-6ZFNSYeqz9uBbqiP0KncwSvbnOYctNBiW&utm_source=google&utm_medium=cpc&utm_campaign=inmates-upper&utm_term=inmate+search&refer_partnerId=google&refer_afid=g-inmates-upper&refer_abc=ag2264772102
-https://dev.www.idlookup.ai/?shn=6a22ff83ca16ad4ef68b84b5&shl=v4&gclid=Cj0KCQjwVNsNJ9FaInTr-Xf6IDX7LvUN_wB_TO9-mEPyf4TrgxWDx-gzDXzKuuA4_9XyHHgZZ-f2feAc82a57Fx&utm_source=google&utm_medium=cpc&utm_campaign=inmates-upper&utm_term=find+an+inmate&refer_partnerId=google&refer_afid=g-inmates-upper&refer_abc=ag2434759169
+https://dev.www.idlookup.ai/?shn=6a22ff83ca16ad4ef68b84b5&gclid=CjwKCAjwno7A2h2zkJNbUl-LAslWv0CLN_9w47isEQmCFEoudBCxZGaBQvsh43KOeC63snJ5aH&utm_source=google&utm_medium=cpc&utm_campaign=inmates-upper&utm_term=find+an+inmate&refer_partnerId=google&refer_afid=g-inmates-upper&refer_abc=ag6813043751
+https://dev.www.idlookup.ai/?shn=6a22ff83ca16ad4ef68b84b5&gclid=EAIaIQobChMI8pGzn_Au0ahJgC5_3dJGmLFa1Y2oI92AawNGOT4zFvg2zSRBJh5upWxaHvJVwrB0d&utm_source=google&utm_medium=cpc&utm_campaign=inmates-upper&utm_term=inmate+records&refer_partnerId=google&refer_afid=g-inmates-upper&refer_abc=ag4370703903
+https://dev.www.idlookup.ai/?shn=6a22ff83ca16ad4ef68b84b5&gclid=Cj0KCQrUdKmi2DDjjDLUaKYJygGzRP64jP5LroP0N6edG85JxDDtXpfXSeanFM2LaQNUmZtM&utm_source=google&utm_medium=cpc&utm_campaign=inmates-upper&utm_term=find+an+inmate&refer_partnerId=google&refer_afid=g-inmates-upper&refer_abc=ag8555791752
 
 ## Google Inmates Lower  (shn=6a273f983ee3447608a3aae5)
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae5&shl=v5&gclid=Cj0KEQjw6W-pYEQ_bS-2rstyKgQ2tnCBEgQVdJVeESfKgBEtCReMIlFVd0d7UptIZQMjd9Kl2LhbdN&utm_source=google&utm_medium=cpc&utm_campaign=inmates-lower&utm_term=jail+records&refer_partnerId=google&refer_afid=g-inmates-lower&refer_abc=ag6019385401
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae5&shl=v4&gclid=Cj0KCQgu3M_qOiFkhDxUrjEpGE2dST1hskZx3TaXwgF79iO1GPHhWFFO2wMmYfJ_S6BAUrXfMG&utm_source=google&utm_medium=cpc&utm_campaign=inmates-lower&utm_term=who+is+in+jail&refer_partnerId=google&refer_afid=g-inmates-lower&refer_abc=ag7327408000
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae5&shl=v2&gclid=Cj0KCQjw8K98vaMeh0Q0FE1404jv19L8si4BUk_cj2cofklEkf-RbyDP6NOryFIpSkWJLRr-Bc8IO6awCWPDy_q&utm_source=google&utm_medium=cpc&utm_campaign=inmates-lower&utm_term=who+is+in+jail&refer_partnerId=google&refer_afid=g-inmates-lower&refer_abc=ag1492410724
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae5&gclid=CjwKCAjw74GTruiLv_M4lumdL0no8sQacSZVkXzvmqfpkYP1sGyJZbaTeczbGjJr_4Ng&utm_source=google&utm_medium=cpc&utm_campaign=inmates-lower&utm_term=who+is+in+jail&refer_partnerId=google&refer_afid=g-inmates-lower&refer_abc=ag8921929554
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae5&gclid=Cj0KCQjwVZUoHRtP3hfrFN1VxZqHlPNwJ5r9LAmMKCM38ox712iKkSpDyJPE9xJyPVl7fccsthovdb_V&utm_source=google&utm_medium=cpc&utm_campaign=inmates-lower&utm_term=arrest+records&refer_partnerId=google&refer_afid=g-inmates-lower&refer_abc=ag8961392134
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae5&gclid=Cj0KEQjwN0l8mBN5Ct0TUf0nRMSjUBBG8KBb7hTWP_EKBduFbd8eyCj-TYDaoSVtCX557ZozzQuy2zSUa2PWjjo&utm_source=google&utm_medium=cpc&utm_campaign=inmates-lower&utm_term=arrest+records&refer_partnerId=google&refer_afid=g-inmates-lower&refer_abc=ag2045634546
 
 ## Google Death Upper  (shn=6a273f983ee3447608a3aae6)
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae6&shl=v6&gclid=Cj0KCQjwja2t4rYVXhSzBXU1bfGEoY1moXEvWJtUXs00U_icd3s05HnwRGMPNwz1GSmN&utm_source=google&utm_medium=cpc&utm_campaign=death-upper&utm_term=is+someone+deceased&refer_partnerId=google&refer_afid=g-death-upper&refer_abc=ag1505672281
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae6&shl=v2&gclid=Cj0KCQdph07lLXChyjXYMTy6ng_W3NynCQLhUHDUXz7VMJT4EUe_hBZSXlbqNnLr4DaKQ2W2Aa9FP_H&utm_source=google&utm_medium=cpc&utm_campaign=death-upper&utm_term=death+records&refer_partnerId=google&refer_afid=g-death-upper&refer_abc=ag5354472497
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae6&shl=v4&gclid=CjwKCAjwf8bgiN1iVDRj89V7W6C1Rqg4PfTui-W1DDVuUbfQCWEAKYK90U19gM8q_uu2lshiMnKuLr&utm_source=google&utm_medium=cpc&utm_campaign=death-upper&utm_term=obituary+search&refer_partnerId=google&refer_afid=g-death-upper&refer_abc=ag8616448833
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae6&gclid=Cj0KCQfCd-T0vY5lRwZ5mB2222ZDbsq_rsYRgaXOCdYlZNkG2dYrqP9Gcy_-w4AoYSx&utm_source=google&utm_medium=cpc&utm_campaign=death-upper&utm_term=obituary+search&refer_partnerId=google&refer_afid=g-death-upper&refer_abc=ag4950185109
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae6&gclid=Cj0KCQZeAVhPzS0hibuCXim7diVC72fFL6MkT8sX3r1gRVG6fR_WCsvheQagwJfSwsqKB&utm_source=google&utm_medium=cpc&utm_campaign=death-upper&utm_term=is+someone+deceased&refer_partnerId=google&refer_afid=g-death-upper&refer_abc=ag4916247725
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae6&gclid=Cj0KEQjwC1FAUGH9qxyp8NYBbMSPf6TutEGY7FeLQO91n5iey3AKPlWhzdvRMK0FXlWYvQlfxQ&utm_source=google&utm_medium=cpc&utm_campaign=death-upper&utm_term=death+records&refer_partnerId=google&refer_afid=g-death-upper&refer_abc=ag2086565834
 
 ## Google Death Lower  (shn=6a273f983ee3447608a3aae7)
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae7&shl=v4&gclid=CjwKCAjwMPgYDvdVcUXs6YfJqK2ZqAWgprXsCeJigEa6d95M2vZ04u0GYMAzsIfTcQ2YVb78&utm_source=google&utm_medium=cpc&utm_campaign=death-lower&utm_term=funeral+records&refer_partnerId=google&refer_afid=g-death-lower&refer_abc=ag1694293571
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae7&shl=v3&gclid=EAIaIQobChMIBPZFIN78iL3Yn0yJItLBSxwobodS_g62cYbZVPXmnm_JVecr12CkpF8WbY6icqukFW6g757RBfVtn_&utm_source=google&utm_medium=cpc&utm_campaign=death-lower&utm_term=death+certificate+lookup&refer_partnerId=google&refer_afid=g-death-lower&refer_abc=ag4674639670
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae7&shl=v5&gclid=Cj0KEQjwthdMNm8jGaWd5jdRpMWaQldAlb6fMCUo-C7DQ77Fpz_eLF1tT_6ruEEzyvr3Tl8mJF&utm_source=google&utm_medium=cpc&utm_campaign=death-lower&utm_term=death+notice+search&refer_partnerId=google&refer_afid=g-death-lower&refer_abc=ag6903895082
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae7&gclid=Cj0KCQjwpa82ms0xUTqIiaPkS_EasrWlxjCB-rI-Xb2mow8pW2lJXPowkgGp4-H6_DObSWACSOCUm&utm_source=google&utm_medium=cpc&utm_campaign=death-lower&utm_term=funeral+records&refer_partnerId=google&refer_afid=g-death-lower&refer_abc=ag4220655279
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae7&gclid=Cj0KCQo0sIPkYydoNy6PmPBDGssMStrTWyaoSNgv4NnZEhzLWvG5Agu2Id6ePYFkh4E7x89fC&utm_source=google&utm_medium=cpc&utm_campaign=death-lower&utm_term=funeral+records&refer_partnerId=google&refer_afid=g-death-lower&refer_abc=ag7062862908
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae7&gclid=CjwKCAjwBX9teBVlO4H-zz4AR_qXkPDZVdQL9TrWjj2CFDllliMCYkJwYqsbbpwllqoDP&utm_source=google&utm_medium=cpc&utm_campaign=death-lower&utm_term=death+certificate+lookup&refer_partnerId=google&refer_afid=g-death-lower&refer_abc=ag3380046661
 
 ## Google Divorce Upper  (shn=6a273f983ee3447608a3aae8)
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae8&shl=v5&gclid=Cj0KCQiaR4JXIvTCrDEWBs4fGiQy6hCQCD7Z7_PLPWHfS50rtzOOXeLTG3xBphdfFASi&utm_source=google&utm_medium=cpc&utm_campaign=divorce-upper&utm_term=divorce+search&refer_partnerId=google&refer_afid=g-divorce-upper&refer_abc=ag4733216638
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae8&shl=v4&gclid=Cj0KCQjw6ygyM_YYKGDfCsNpdWWCSfDEwi6K-i4QsPLJdcjRH3nQhxzyaOA9FFD1hy41s&utm_source=google&utm_medium=cpc&utm_campaign=divorce-upper&utm_term=divorce+search&refer_partnerId=google&refer_afid=g-divorce-upper&refer_abc=ag1852030511
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae8&shl=v3&gclid=Cj0KCQwRGkei-3uFRoqbN_oobfuG9PSSaXx7-tFxuKNMLF7jW4vPZ6rajSJKKILav_i0zYBaG&utm_source=google&utm_medium=cpc&utm_campaign=divorce-upper&utm_term=divorce+records&refer_partnerId=google&refer_afid=g-divorce-upper&refer_abc=ag7882084513
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae8&gclid=EAIaIQobChMIEc6rV0yt-gt1HENKZuUs-trs35rW-84StTKSdeJnjqiDP4-1h3NaKuI-mGsC67qMGJm-sqr&utm_source=google&utm_medium=cpc&utm_campaign=divorce-upper&utm_term=marriage+records&refer_partnerId=google&refer_afid=g-divorce-upper&refer_abc=ag7499809726
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae8&gclid=Cj0KCQAc5Qeky3Yi6gsn2b3fehcxRNFG54tEzaTM9lf2SHh8V20Eaq13H_Dh8KNHJKQT-t5vOfcGMY&utm_source=google&utm_medium=cpc&utm_campaign=divorce-upper&utm_term=marriage+records&refer_partnerId=google&refer_afid=g-divorce-upper&refer_abc=ag3891192885
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae8&gclid=CjwKCAjwQUDkX1VOBQlhdj4UQQO0ryEkXPiHghuE3ahpr7cgFLJWi9yJ_LPagQHjA711e&utm_source=google&utm_medium=cpc&utm_campaign=divorce-upper&utm_term=marriage+records&refer_partnerId=google&refer_afid=g-divorce-upper&refer_abc=ag8043692891
 
 ## Google Divorce Lower  (shn=6a273f983ee3447608a3aae9)
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae9&shl=v5&gclid=Cj0KEQjw3-9QSvfYWCfbDveWF4FHMOS5GPlkIVFZ_lv7pHxaFYjzr-Fwobkw2ha1M6E8w7Hz6fV&utm_source=google&utm_medium=cpc&utm_campaign=divorce-lower&utm_term=marriage+divorce+lookup&refer_partnerId=google&refer_afid=g-divorce-lower&refer_abc=ag6695662059
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae9&shl=v3&gclid=EAIaIQobChMIgU_Sf6ULCfbaILtPGV2ITa56Kquq_7H9r4bb8sIJfvwgrZZzraS2X7P5VCByc6QdI&utm_source=google&utm_medium=cpc&utm_campaign=divorce-lower&utm_term=marriage+divorce+lookup&refer_partnerId=google&refer_afid=g-divorce-lower&refer_abc=ag4971876915
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae9&shl=v6&gclid=CjwKCAjwbdF6L4usHsFdANuaQsZ-QOXynA7Iv6i-XhGRas75KwH9Hs2Aw4KAcVHXw4BSsw4Wwc&utm_source=google&utm_medium=cpc&utm_campaign=divorce-lower&utm_term=find+divorce+records&refer_partnerId=google&refer_afid=g-divorce-lower&refer_abc=ag1369115332
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae9&gclid=EAIaIQobChMI_YwDp-81oqUYzfK-NMRSKXhvWPkWfwxFgPU_qEjhCpYds2x1Cpf1YI5Uu6eXQRel4mMAtGHVkuRY&utm_source=google&utm_medium=cpc&utm_campaign=divorce-lower&utm_term=marriage+divorce+lookup&refer_partnerId=google&refer_afid=g-divorce-lower&refer_abc=ag5633228339
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae9&gclid=Cj0KEQjwCVxv3sdXFPaUAsS7W-276KOs4SOYtxGzYfA9WG_Ob1iWuDGxj172W3D9p5lhmjfUZSV6Do&utm_source=google&utm_medium=cpc&utm_campaign=divorce-lower&utm_term=find+divorce+records&refer_partnerId=google&refer_afid=g-divorce-lower&refer_abc=ag5653972094
+https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae9&gclid=EAIaIQobChMIMqd7_mvcMwk4_o5qbEJBIKI9zPTC9wTH3mt0neVbaoG2l7l5JIrlstlw52N82O0GTjSj&utm_source=google&utm_medium=cpc&utm_campaign=divorce-lower&utm_term=county+divorce+records&refer_partnerId=google&refer_afid=g-divorce-lower&refer_abc=ag9500332898
 
 ## IDL Default (brand)  (shn=69a2380b53ecf9b049d01fbb)
-https://dev.www.idlookup.ai/?shn=69a2380b53ecf9b049d01fbb&shl=v3&gclid=EAIaIQobChMIh6mXhriT9e37wn8MIZnnZDQjQARsNQypXa25HAK5TTCVWAxJgA0gJodfWuTVYABxJXGnyGniBtcqe&utm_source=google&utm_medium=cpc&utm_campaign=brand-idlookup&utm_term=idlookup&refer_partnerId=google&refer_afid=g-brand-idlookup&refer_abc=ag6492429099
-https://dev.www.idlookup.ai/?shn=69a2380b53ecf9b049d01fbb&shl=v2&gclid=Cj0KCQjwoN-kdU3nLzK90Qh-c4KDA2zHem2tzA7MGjLanvKvJot6BCJOYdrEboG9ztiP3UZRH1ZVxM&utm_source=google&utm_medium=cpc&utm_campaign=brand-idlookup&utm_term=idlookup.ai&refer_partnerId=google&refer_afid=g-brand-idlookup&refer_abc=ag1897013783
-https://dev.www.idlookup.ai/?shn=69a2380b53ecf9b049d01fbb&shl=v6&gclid=Cj0KCQjwj8lRwIkqf8RYX8W_Zwet21gV4avqHYqL1ayv2A1b_uL_1vLaZVBRy23MkZNrZd0cND9UuUtyB7nWQ2&utm_source=google&utm_medium=cpc&utm_campaign=brand-idlookup&utm_term=idlookup&refer_partnerId=google&refer_afid=g-brand-idlookup&refer_abc=ag6211915806
-
-# --- shn-only variants (if you want just the base) ---
-https://dev.www.idlookup.ai/?shn=6a22ff83ca16ad4ef68b84b5
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae5
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae6
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae7
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae8
-https://dev.www.idlookup.ai/?shn=6a273f983ee3447608a3aae9
-https://dev.www.idlookup.ai/?shn=69a2380b53ecf9b049d01fbb
+https://dev.www.idlookup.ai/?shn=69a2380b53ecf9b049d01fbb&gclid=EAIaIQobChMIEitMyfsBVvMHE3tBh62N4LGFGi6_MqzHCIjUz_o7Sy1pI9y-G7awh0Zdj9fv&utm_source=google&utm_medium=cpc&utm_campaign=brand-idlookup&utm_term=id+lookup&refer_partnerId=google&refer_afid=g-brand-idlookup&refer_abc=ag9291414838
+https://dev.www.idlookup.ai/?shn=69a2380b53ecf9b049d01fbb&gclid=EAIaIQobChMIRo4CLJJVjrLXBbhJ5eK-Q8o0Uq2w4yYMu1l61Zv2FirZgYtTSsqjGsBA6DqW-C2FFHMlM-x9z&utm_source=google&utm_medium=cpc&utm_campaign=brand-idlookup&utm_term=idlookup.ai&refer_partnerId=google&refer_afid=g-brand-idlookup&refer_abc=ag1010830515
+https://dev.www.idlookup.ai/?shn=69a2380b53ecf9b049d01fbb&gclid=Cj0KEQjwyljvdMPyjfpYJVYI42YKfrI01urGPGBAjeoQOQesM8agBWZkv3gY7jw_m-WBTec&utm_source=google&utm_medium=cpc&utm_campaign=brand-idlookup&utm_term=id+lookup&refer_partnerId=google&refer_afid=g-brand-idlookup&refer_abc=ag6540335284
