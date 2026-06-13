@@ -518,7 +518,7 @@ function ActivityTimeline({ items, loading }) {
 // ─── Dashboard2 ─────────────────────────────────────────────────────────────
 
 const Dashboard2 = () => {
-  const { user, token, subscription, isPaid, subscriptionLoading } = useAuth();
+  const { user, token, subscription, isPaid, subscriptionLoading, subscriptionError, refreshSubscription } = useAuth();
   const navigate = useNavigate();
   const brand = getBrand();
 
@@ -726,6 +726,31 @@ const Dashboard2 = () => {
           </p>
         </header>
 
+        {/* BC-unreachable banner — show when the subscription fetch failed on a server/network
+            error (NOT a 403 "no orders"), so an outage reads as "can't reach servers" instead of
+            a wiped account. */}
+        {token && subscriptionError && !subscriptionLoading && (
+          <div style={{
+            background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.75rem',
+            padding: '0.9rem 1.25rem', marginBottom: '1rem',
+            display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#991b1b' }}>We're having trouble reaching our servers</div>
+              <p style={{ margin: '0.15rem 0 0', fontSize: '0.85rem', color: '#7f1d1d' }}>
+                Some of your information may not load right now. Your account and data are safe — please try again in a moment.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { try { refreshSubscription?.(token); } catch {} }}
+              style={{ background: '#b91c1c', color: '#fff', border: 'none', padding: '0.55rem 1.05rem', borderRadius: '0.5rem', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Search is the hero — the primary action for a returning member sits directly
             under the greeting, above marketing/status (bug #48: surfacing first/last/state
             as the primary action makes search the dashboard's center of gravity). */}
@@ -853,7 +878,7 @@ const Dashboard2 = () => {
         {/* Subscribe promo — signed up but not paying (trial non-converter). Sits
             directly under the marketing strip. Gated on a settled unpaid state so it
             never flashes for subscribers while billing status loads. */}
-        {token && !isPaid && !subscriptionLoading && (
+        {token && !isPaid && !subscriptionLoading && !subscriptionError && (
           <section style={{
             background: '#f0fdf4',
             border: `1px solid ${PAGE.brand}`,

@@ -723,6 +723,9 @@ class ApiWrapperService {
       const enhancedError = new Error(error.message || 'Get orders failed');
       enhancedError.originalError = error;
       enhancedError.isCorsError = this._isCorsError(error);
+      // Preserve HTTP status so AuthContext can distinguish 403 (no orders → unpaid)
+      // from a 5xx / unreachable BC (outage → don't render the member as wiped).
+      enhancedError.status = error?.status ?? error?.response?.status ?? null;
       throw enhancedError;
     }
   }
@@ -750,7 +753,9 @@ class ApiWrapperService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      const err = new Error(errorData.error?.message || errorData.message || `HTTP ${response.status}`);
+      err.status = response.status; // preserve so callers can tell 403 (no orders) from 5xx (outage)
+      throw err;
     }
 
     return await response.json();

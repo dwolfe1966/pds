@@ -697,6 +697,16 @@ async function callNewAPI(endpoint, params) {
       if (Array.isArray(d)) return d;
       if (Array.isArray(d?.orders)) return d.orders;
       if (Array.isArray(d?.raws)) return d.raws;
+      // A non-array response is NOT "no orders" — BC returns 403 for that (which throws).
+      // Reaching here with a gateway-error payload (the IIFE swallows a 502 'Bad Gateway'
+      // HTML into a non-array) means BC is unreachable. Surface it as a 5xx so AuthContext
+      // shows "can't reach servers" instead of rendering a paid member as unpaid.
+      const blob = typeof d === 'string' ? d : JSON.stringify(d ?? raw ?? '');
+      if (/<html|bad gateway|gateway time-?out|\b50[234]\b/i.test(blob)) {
+        const e = new Error('BC gateway error on getUserOrders');
+        e.status = 503;
+        throw e;
+      }
       return [];
     }
 

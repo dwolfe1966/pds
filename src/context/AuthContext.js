@@ -19,6 +19,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  // True when the LAST subscription fetch failed because BC was unreachable (5xx/CORS/
+  // network) — distinct from "no orders" (403). Lets the UI show "can't reach servers"
+  // instead of rendering a paid member as wiped during a BC outage.
+  const [subscriptionError, setSubscriptionError] = useState(false);
   const userRef = useRef(null);
 
   useEffect(() => { userRef.current = user; }, [user]);
@@ -84,6 +88,7 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
     setSubscriptionLoading(true);
+    setSubscriptionError(false); // fresh attempt — only the catch re-raises it on a server error
     try {
       const orders = await api.getUserOrders();
       // An "operative" order grants access right now. Two cases:
@@ -133,8 +138,14 @@ export const AuthProvider = ({ children }) => {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[AuthContext] refreshSubscription failed:', err?.message);
       }
-      // BC unreachable / 403 / etc → treat as "no subscription". Callers that need
-      // to wait for provisioning (PaymentPage) poll us; we never speculate.
+      // 403 = genuinely no orders (unpaid). A 5xx / CORS / network error means BC is
+      // unreachable — flag that distinctly so the UI shows "can't reach servers" rather
+      // than rendering a paid member as wiped/unpaid during an outage.
+      const status = err?.status;
+      const isServerError = err?.isCorsError === true
+        || (typeof status === 'number' && status >= 500)
+        || (status == null && /network|failed to fetch|gateway|timeout|50[234]/i.test(err?.message || ''));
+      if (isServerError) setSubscriptionError(true);
       setSubscription(null);
       return null;
     } finally {
@@ -213,6 +224,7 @@ export const AuthProvider = ({ children }) => {
     gtmClearUser();
     setSubscription(null);
     setSubscriptionLoading(false);
+    setSubscriptionError(false);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -238,6 +250,7 @@ export const AuthProvider = ({ children }) => {
     subscription,
     setSubscription,
     subscriptionLoading,
+    subscriptionError,
     isPaid,
     refreshSubscription,
   };
