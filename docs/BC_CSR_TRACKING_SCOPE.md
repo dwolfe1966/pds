@@ -1,6 +1,16 @@
 # BC ask — CSR tracking search must scope to one user (PRIVACY)
 
-**Raised:** 2026-06-05 · **Severity: HIGH (cross-user data exposure)** · **STILL OPEN**
+**Raised:** 2026-06-05 · **Severity: HIGH (cross-user data exposure)** · **✅ RESOLVED 2026-06-13**
+
+> **✅ RESOLVED — verified live 2026-06-13.** BC now honors `updaterId` server-side on
+> `tracking.findUser` (same as they implemented `orderId`). Live admin test on `test21`
+> (`6a11ea7d…`): the Logins/Searches/Reports tabs returned **197 docs, ALL with
+> `updaterId === the requested user`, 0 from other users**. The cross-user exposure is gone.
+> **Keep our client-side per-doc `updaterId` filter as defense-in-depth** — its failure mode
+> is a privacy leak, so we do not remove it on the strength of one verification. (Separately,
+> do NOT migrate `csrFindUserTracking` to the IIFE's `tracking.findUser` — it drops our
+> `perPage:100`/`displayFields`, capping results at 10; that's a pagination concern, not the
+> scoping one, see `BC_CSRWRAPPER_GAPS.md`.) Earlier history below.
 
 > **⚠️ RE-VERIFIED 2026-06-08 — docs ahead of backend.** BC's csrApi docs were updated
 > 2026-06-08 to add `updaterId` to `tracking.findUser`. We re-tested live the same day
