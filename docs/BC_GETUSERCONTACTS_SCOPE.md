@@ -1,5 +1,17 @@
 # BC ask — `getUserContacts` returns empty for member-submitted threads
 
+> **✅ RESOLVED GOING FORWARD — verified live 2026-06-13.** BC now enumerates member threads
+> that carry the `targetUserId` we send (our consumer fix `abdfa12a` maps `userId`→`targetUserId`
+> on `contactMessage/create`). Re-tested test21 in a **fresh context (no cache)**:
+> `getUserContacts` returns **1 doc** (was **0** on 06-11) — the thread created on 06-11 with the
+> fix. So **new member threads now appear cross-device** once the consumer build (`227ad9b9`+,
+> which includes `abdfa12a`) is deployed. Two caveats: (1) only **1** of test21's 5+ threads
+> shows → BC is matching the `targetUserId` field, NOT `ownerId`, so **legacy threads** (created
+> before the fix, no `targetUserId`) still don't enumerate — needs an `ownerId` match or a
+> one-time backfill (LOW priority; owner previously accepted legacy-missing). (2) Passing a query
+> param to `getUserContacts` still does nothing (baseline == params == 1) — the param avenue is
+> moot now that the session-scoped baseline works. Earlier diagnosis retained below.
+
 > **PINPOINTED 2026-06-11 — it's a read-filter path mismatch; BC already has the link.**
 > Created a new member thread (`POST /api/contactMessage/create` → **201**) and inspected the
 > stored doc (`_id 6a2af94dc28252975cc73dba`):
