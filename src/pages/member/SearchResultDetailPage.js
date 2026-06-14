@@ -861,18 +861,25 @@ const PropertyCard = ({ property }) => {
 const LicenseRow = ({ license }) => {
   const l = license;
   return (
-    <div style={styles.listItem}>
+    <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
       <p style={styles.listItemTitle}>
         {l.profession || 'Professional Licence'} {l.state && `(${l.state})`}
+        {l.status && <span style={{ marginLeft: '0.5rem', padding: '0.125rem 0.5rem', fontSize: '0.7rem', fontWeight: 600, color: '#fff', background: l.status.toUpperCase() === 'ACTIVE' ? '#15803d' : '#6b7280', borderRadius: '0.25rem' }}>{l.status}</span>}
       </p>
-      <p style={styles.listItemSub}>
-        {[
-          l.licenseNumber && `# ${l.licenseNumber}`,
-          l.issued && `Issued ${l.issued}`,
-          l.expires && `Expires ${l.expires}`,
-          l.status,
-        ].filter(Boolean).join(' · ')}
-      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
+        {l.licenseNumber && <div><strong>License #:</strong> {l.licenseNumber}</div>}
+        {l.board && <div style={{ gridColumn: 'span 2' }}><strong>Board:</strong> {l.board}</div>}
+        {l.issued && <div><strong>Issued:</strong> {l.issued}</div>}
+        {l.registered && <div><strong>Registered:</strong> {l.registered}</div>}
+        {l.expires && <div><strong>Expires:</strong> {l.expires}</div>}
+        {l.recordDate && <div><strong>Record date:</strong> {l.recordDate}</div>}
+        {l.person && <div><strong>Name on record:</strong> {l.person}</div>}
+        {l.business && <div style={{ gridColumn: 'span 2' }}><strong>Business:</strong> {l.business}</div>}
+        {l.address && <div style={{ gridColumn: 'span 2' }}><strong>Address:</strong> {l.address}</div>}
+        {l.phone && <div><strong>Phone:</strong> {l.phone}</div>}
+        {l.email && <div><strong>Email:</strong> {l.email}</div>}
+        {l.url && <div style={{ gridColumn: 'span 2' }}><strong>URL:</strong> {l.url}</div>}
+      </div>
     </div>
   );
 };
@@ -981,6 +988,9 @@ const FinancialRecordCard = ({ record }) => {
         {r.trustee && <div><strong>Trustee:</strong> {r.trustee}</div>}
         {r.titleCompany && <div><strong>Title company:</strong> {r.titleCompany}</div>}
         {r.creditor && <div><strong>Creditor:</strong> {r.creditor}</div>}
+        {r.plaintiff && <div><strong>Plaintiff:</strong> {r.plaintiff}</div>}
+        {r.attorney && <div><strong>Attorney:</strong> {r.attorney}</div>}
+        {r.stayOrdered === 'Y' && <div><strong>Stay ordered:</strong> Yes</div>}
         {r.issuingAgency && <div style={{ gridColumn: 'span 2' }}><strong>Issuing agency:</strong> {r.issuingAgency}</div>}
         {r.lienProperty && <div style={{ gridColumn: 'span 2' }}><strong>Property:</strong> {r.lienProperty}</div>}
         {r.hoaAddress && <div style={{ gridColumn: 'span 2' }}><strong>HOA address:</strong> {r.hoaAddress}</div>}

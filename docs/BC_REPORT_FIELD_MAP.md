@@ -100,3 +100,29 @@ nameList, dobList, addressList(18), relationshipList(57), phoneList, emailList, 
 criminalList, lienList, foreclosureList. Remaining expose-all work is field-level within
 financial (above) and verifying field completeness on address/relationship/employment when a
 packet populates their richer fields.
+
+---
+
+## 4. Special-cases sweep (2026-06-14) — coverage across ALL of test21's reports
+
+Captured all 10 reports (`scripts/capture-all-reports.js`). Coverage matrix (list → total):
+addressList 135, relationshipList 398, criminalList 59, nameList 34, phoneList 34, emailList
+28, dobList 13, lienList 11, propertyList 9, **judgmentList 4**, foreclosureList 2,
+**professionalList 2**.
+
+Two more SPECIAL CASES found + fixed (real shapes differ from our assumptions):
+- **judgmentList** — shares lien record[]/info[] BUT parties differ: `defendant[]`/`plaintiff[]`/
+  `attorney` (strings or arrays), NOT `debtor[]`. Old extractor read `rec.debtor` → no party
+  shown. Fixed: defendant→debtor fallback; creditor/plaintiff/attorney via partyOrStr (handles
+  string OR array); added `stayOrdered`. Verified: "SUPPORT JUDGMENT", debtor JEFFREY TINSLEY,
+  creditor TINSLEY KIMBERLY, attorney ALEXANDRA BAUER.
+- **professionalList** — totally different shape `{ info{ license{number,state,board,desc},
+  status, dates }, person[], business[], address[], phone[], email[], url[] }`. Old extractor
+  read flat profession/licenseNumber/issuedDate → **rendered 100% blank**. Rewritten + verified:
+  "ALLOPATHIC & OSTEOPATHIC PHYSICIANS - FAMILY MEDICINE", lic 20A7048, board, ACTIVE, person,
+  business, address, phone.
+
+**Still UNVERIFIED** (no data in any of test21's reports): bankruptcyList, motorVehicleList,
+aircraftList, businessList, employmentList, driverLicenseList, veteranList, sanctionsList,
+deathList, socialList, ipList. These extractors are unconfirmed against real shapes — verify
+when a packet populates them (the judgment/professional/foreclosure cases prove assumptions break).

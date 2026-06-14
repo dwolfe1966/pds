@@ -437,6 +437,7 @@ function extractAll(result) {
   const partyNames = (arr) => (Array.isArray(arr) ? arr : [])
     .map((o) => {
       if (!o) return '';
+      if (typeof o === 'string') return safeStr(o);
       if (typeof o.name === 'string') return safeStr(o.name);
       if (o.name && typeof o.name === 'object' && !Array.isArray(o.name)) {
         const v = safeStr(o.name.data || [o.name.first, o.name.middle, o.name.last].filter(Boolean).join(' '));
@@ -460,15 +461,20 @@ function extractAll(result) {
     return [line, cityState].filter(Boolean).join(', ');
   };
   const num = (v) => (typeof v === 'number' ? v : (v != null && v !== '' && !isNaN(Number(v)) ? Number(v) : null));
+  // creditor/plaintiff/attorney can arrive as a plain STRING or an array of party objects.
+  const partyOrStr = (v) => (typeof v === 'string' ? safeStr(v) : partyNames(v));
 
-  // Liens / judgments / bankruptcies share BC's record[]/info[]/debtor[] shape. Per
+  // Liens / judgments / bankruptcies share BC's record[]/info[] shape, but the PARTY keys
+  // differ: liens use debtor[]; judgments use defendant[]/plaintiff[]/attorney. Per
   // feedback_expose_all_report_data we surface every record[0] + top-level field.
   const extractFinancialRecords = (list, defaultType) => {
     return (list || []).map((rec, idx) => {
       const records = Array.isArray(rec.record) ? rec.record : [];
       const info = Array.isArray(rec.info) ? rec.info[0] : (rec.info || {});
       const r0 = records[0] || {};
-      const debtor0 = Array.isArray(rec.debtor) ? rec.debtor[0] : null;
+      // Liens carry debtor[]; judgments carry defendant[] (the judgment debtor).
+      const debtor0 = (Array.isArray(rec.debtor) && rec.debtor[0]) ? rec.debtor[0]
+        : ((Array.isArray(rec.defendant) && rec.defendant[0]) ? rec.defendant[0] : null);
       const debtorName = debtor0 && Array.isArray(debtor0.name) && debtor0.name[0]
         ? [debtor0.name[0].first, debtor0.name[0].middle, debtor0.name[0].last].filter(Boolean).join(' ')
         : '';
@@ -491,7 +497,11 @@ function extractAll(result) {
         stayOrderedDate: pickBcDate(r0.stayOrderedDate),
         refileExtendLastDate: pickBcDate(r0.refileExtendLastDate),
         issuingAgency: Array.isArray(rec.issuingAgency) ? rec.issuingAgency.filter(Boolean).join(', ') : safeStr(rec.issuingAgency),
-        creditor: partyNames(rec.creditor),
+        creditor: partyOrStr(rec.creditor),
+        plaintiff: partyOrStr(rec.plaintiff),
+        defendant: partyNames(rec.defendant),
+        attorney: partyOrStr(rec.attorney),
+        stayOrdered: safeStr(r0.stayOrdered),
         debtorName,
         debtorAddress,
         lienType: Array.isArray(rec.lienType) ? rec.lienType.filter(Boolean).join(', ') : safeStr(rec.lienType),
@@ -606,16 +616,36 @@ function extractAll(result) {
     };
   });
 
-  // Professional licences
-  const professionalLicenses = (primary.professionalList || []).map((p, i) => ({
-    id: `lic-${i}`,
-    profession: safeStr(p.profession || p.type || p.description),
-    licenseNumber: safeStr(p.licenseNumber || p.number),
-    state: safeStr(p.state),
-    issued: pickBcDate(p.issuedDate, p.issued),
-    expires: pickBcDate(p.expirationDate, p.expires),
-    status: safeStr(p.status),
-  }));
+  // Professional licences — BC's real shape is { info{ license{}, ...dates }, person[],
+  // business[], address[], phone[], email[], url[] }, NOT the flat profession/licenseNumber
+  // keys the old extractor assumed (so it rendered blank). Expose every field.
+  const professionalLicenses = (primary.professionalList || []).map((p, i) => {
+    const info = p.info || {};
+    const lic = info.license || {};
+    const person = (Array.isArray(p.person) && p.person[0]) ? p.person[0] : null;
+    const personName = person && Array.isArray(person.name) && person.name[0]
+      ? safeStr([person.name[0].first, person.name[0].middle, person.name[0].last].filter(Boolean).join(' ')) : '';
+    const biz = (Array.isArray(p.business) && p.business[0] && Array.isArray(p.business[0].businessName))
+      ? p.business[0].businessName.filter(Boolean).join(', ') : '';
+    return {
+      id: `lic-${i}`,
+      profession: safeStr(lic.desc || p.profession || p.type || p.description),
+      licenseNumber: safeStr(lic.number || p.licenseNumber || p.number),
+      state: safeStr(lic.state || p.state),
+      board: safeStr(lic.board),
+      status: safeStr(info.status || info.statusCode || p.status),
+      issued: pickBcDate(info.originalIssueDate, p.issuedDate, p.issued),
+      registered: pickBcDate(info.registeredDate),
+      expires: pickBcDate(info.expirationDate, p.expirationDate, p.expires),
+      recordDate: pickBcDate(info.recordDate),
+      person: personName,
+      business: biz,
+      address: (Array.isArray(p.address) && p.address[0]) ? fmtAddr(p.address[0]) : '',
+      phone: Array.isArray(p.phone) ? p.phone.filter(Boolean).join(', ') : safeStr(p.phone),
+      email: Array.isArray(p.email) ? p.email.filter(Boolean).join(', ') : safeStr(p.email),
+      url: Array.isArray(p.url) ? p.url.filter(Boolean).join(', ') : safeStr(p.url),
+    };
+  });
 
   // Other public records — driver licence, veteran status, businesses, etc.
   const driverLicenses = (primary.driverLicenseList || []).map((d, i) => ({
