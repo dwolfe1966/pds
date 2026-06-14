@@ -66,7 +66,22 @@ landValue/improvementValue/propertyDescription/subdivision to the property card.
 
 ---
 
-## 3. Financial records (lien/judgment/foreclosure/bankruptcy) — NEXT expose-all target
+## 3. Financial records (lien/judgment/foreclosure/bankruptcy) — DONE (commit pending)
+
+**STATUS: DONE.** Liens/judgments/bankruptcies now expose all record[]/top fields (damarType,
+taxCertificationNumber, all dates, lien property/hoaAddress). **Foreclosure is a SPECIAL CASE**
+with a distinct shape (`detail[]` auction/trustee/beneficiary/amounts + `trustor[]`) — given
+its own extractor (`extractForeclosures`); the old record[]/info[]/debtor[] extractor rendered
+foreclosures nearly blank. Criminal charge-name backfill: bare court-docket rows inherit the
+charge from any same-case row (matched on normalized case OR shared digit-core), within/across
+records — blank charges 6→1 on the O.J. packet (the last is a genuinely charge-less court entry).
+NOTE: judgmentList/bankruptcyList had no data in this packet — they SHARE the lien shape per the
+existing grouping but are UNVERIFIED; confirm against a packet that populates them.
+Other lists (motorVehicleList, aircraftList, businessList, employmentList…) may have their own
+special shapes when populated — verify per-list as packets surface them (the foreclosure case
+shows assuming a shared shape is wrong).
+
+### (original notes)
 
 `extractFinancialRecords` is still curated. From a real `lienList[0]`:
 - **TOP keys:** info, record, courtCaseNumber, taxCertificationNumber, lienType, creditor,

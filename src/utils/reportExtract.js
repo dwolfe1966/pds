@@ -379,16 +379,14 @@ function extractAll(result) {
     };
 
     const rows = [...offenses.map(fromOffense), ...crimes.map(fromCrime)];
-    // Cases that already have a NAMED charge — used to drop bare empty-charge dupes.
-    const chargedCases = new Set(rows.filter(r => r.charge).map(r => normKey(r.caseNumber)).filter(Boolean));
+    // Dedupe identical charge+case rows surfaced by BOTH arrays (keep the richer one).
+    // Bare court-docket rows are KEPT (not dropped) — their charge name is backfilled
+    // globally below from any same-case named charge.
     const seen = new Map();
     rows.forEach((r) => {
-      // Drop an empty-charge row when a named charge already covers the same case.
-      if (!r.charge && r.caseNumber && chargedCases.has(normKey(r.caseNumber))) return;
       const key = `${normKey(r.charge)}|${normKey(r.caseNumber)}`;
       const prev = seen.get(key);
       if (prev) {
-        // Same charge+case surfaced by both arrays — keep the row with more fields.
         const score = (x) => Object.values(x).filter(Boolean).length;
         if (score(r) > score(prev)) seen.set(key, r);
         return;
@@ -411,8 +409,60 @@ function extractAll(result) {
       });
     });
   });
+  // Global charge-name backfill: a bare court-docket row inherits the charge from any
+  // OTHER criminal row on the same case — within OR across records (BC often files the
+  // same case under multiple sources/number formats: 097211 / BA097211 / LACBA097211-01).
+  // Only the charge label is borrowed; each row keeps its own disposition/dates/source.
+  const caseDigits = (s) => safeStr(s).replace(/\D/g, '');
+  const namedCrimRows = criminalRecords.filter(r => r.description && normKey(r.caseNumber).length >= 5);
+  criminalRecords.forEach((r) => {
+    if (r.description || !r.caseNumber) return;
+    const k = normKey(r.caseNumber);
+    if (k.length < 5) return;
+    const kd = caseDigits(r.caseNumber);
+    const hits = new Set();
+    namedCrimRows.forEach((nr) => {
+      const nk = normKey(nr.caseNumber);
+      const nd = caseDigits(nr.caseNumber);
+      // Match on full normalized case OR on a shared digit-core (>=6 digits) — same case
+      // is often filed under different court prefixes (XCNBA097211-01 vs LACBA097211-01).
+      if (nk === k || nk.includes(k) || k.includes(nk)
+        || (kd.length >= 6 && nd.length >= 6 && (nd.includes(kd) || kd.includes(nd)))) hits.add(nr.description);
+    });
+    if (hits.size) r.description = [...hits].join('; ');
+  });
 
-  // Liens / judgments / foreclosures / bankruptcies — same pattern.
+  // Shared helpers (used by financial + property extractors). Join every party on an
+  // owner/buyer/seller/creditor array — BC can list multiple, person OR business.
+  const partyNames = (arr) => (Array.isArray(arr) ? arr : [])
+    .map((o) => {
+      if (!o) return '';
+      if (typeof o.name === 'string') return safeStr(o.name);
+      if (o.name && typeof o.name === 'object' && !Array.isArray(o.name)) {
+        const v = safeStr(o.name.data || [o.name.first, o.name.middle, o.name.last].filter(Boolean).join(' '));
+        if (v) return v;
+      }
+      const nm = Array.isArray(o.name) && o.name[0] ? o.name[0] : null;
+      if (nm) return safeStr(nm.data || [nm.first, nm.middle, nm.last].filter(Boolean).join(' '));
+      const pn = Array.isArray(o.personName) && o.personName[0] ? o.personName[0] : null;
+      const person = pn ? safeStr([pn.first, pn.middle, pn.last].filter(Boolean).join(' ')) : '';
+      const biz = Array.isArray(o.businessName) ? o.businessName.filter(Boolean).join(', ') : '';
+      return person || biz || safeStr(o.data);
+    })
+    .filter(Boolean)
+    .join(' & ');
+  const fmtAddr = (a) => {
+    a = a || {};
+    if (a.data) return safeStr(a.data);
+    if (a.complete) return safeStr(a.complete);
+    const line = safeStr([a.streetNumber, a.predir, a.street, a.streetSuffix, a.aptName, a.aptNum].filter(Boolean).join(' '));
+    const cityState = [safeStr(a.city), [safeStr(a.state), safeStr(a.zip)].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    return [line, cityState].filter(Boolean).join(', ');
+  };
+  const num = (v) => (typeof v === 'number' ? v : (v != null && v !== '' && !isNaN(Number(v)) ? Number(v) : null));
+
+  // Liens / judgments / bankruptcies share BC's record[]/info[]/debtor[] shape. Per
+  // feedback_expose_all_report_data we surface every record[0] + top-level field.
   const extractFinancialRecords = (list, defaultType) => {
     return (list || []).map((rec, idx) => {
       const records = Array.isArray(rec.record) ? rec.record : [];
@@ -423,7 +473,7 @@ function extractAll(result) {
         ? [debtor0.name[0].first, debtor0.name[0].middle, debtor0.name[0].last].filter(Boolean).join(' ')
         : '';
       const debtorAddress = debtor0 && Array.isArray(debtor0.address) && debtor0.address[0]
-        ? [debtor0.address[0].complete, debtor0.address[0].city, debtor0.address[0].state].filter(Boolean).join(', ')
+        ? fmtAddr(debtor0.address[0])
         : '';
       return {
         id: `${defaultType}-${idx}`,
@@ -433,48 +483,67 @@ function extractAll(result) {
         state: safeStr(info.caseState || rec.caseState),
         recordingDate: pickBcDate(r0.recordingDate, rec.recordingDate),
         documentNumber: safeStr(r0.documentLocation?.docNumber || rec.documentNumber),
+        damarType: safeStr(r0.damarType),
+        origRecordingDate: pickBcDate(r0.origRecordingDate),
+        documentFilingDate: pickBcDate(r0.documentFilingDate),
+        origDocumentDate: pickBcDate(r0.origDocumentDate),
+        abstractIssueDate: pickBcDate(r0.abstractIssueDate),
+        stayOrderedDate: pickBcDate(r0.stayOrderedDate),
+        refileExtendLastDate: pickBcDate(r0.refileExtendLastDate),
         issuingAgency: Array.isArray(rec.issuingAgency) ? rec.issuingAgency.filter(Boolean).join(', ') : safeStr(rec.issuingAgency),
-        creditor: Array.isArray(rec.creditor) ? rec.creditor.map(c => c?.name?.[0]?.first ? [c.name[0].first, c.name[0].last].filter(Boolean).join(' ') : '').filter(Boolean).join(', ') : '',
+        creditor: partyNames(rec.creditor),
         debtorName,
         debtorAddress,
         lienType: Array.isArray(rec.lienType) ? rec.lienType.filter(Boolean).join(', ') : safeStr(rec.lienType),
+        taxCertificationNumber: Array.isArray(rec.taxCertificationNumber) ? rec.taxCertificationNumber.filter(Boolean).join(', ') : safeStr(rec.taxCertificationNumber),
         courtCaseNumber: Array.isArray(rec.courtCaseNumber) ? rec.courtCaseNumber.filter(Boolean).join(', ') : safeStr(rec.courtCaseNumber),
+        hoaAddress: Array.isArray(rec.hoaAddress) && rec.hoaAddress[0] ? fmtAddr(rec.hoaAddress[0]) : '',
+        lienProperty: Array.isArray(rec.property) && rec.property[0] ? fmtAddr(rec.property[0].address || rec.property[0]) : '',
         taxPeriod: [pickBcDate(r0.taxPeriodMin), pickBcDate(r0.taxPeriodMax)].filter(Boolean).join(' – '),
+      };
+    });
+  };
+  // Foreclosures use a DIFFERENT BC shape: detail[] (auction/trustee/beneficiary/amounts)
+  // + trustor[] (the borrower). The old record[]/info[]/debtor[] extractor rendered these
+  // nearly blank — handle their real shape and expose every field.
+  const personOrData = (o) => safeStr(o?.data || (o && [o.first, o.middle, o.last].filter(Boolean).join(' ')) || '');
+  const extractForeclosures = (list) => {
+    return (list || []).map((rec, idx) => {
+      const d = (Array.isArray(rec.detail) ? rec.detail[0] : rec.detail) || {};
+      return {
+        id: `Foreclosure-${idx}`,
+        type: 'Foreclosure',
+        description: safeStr(d.documentType || d.recordType || 'Foreclosure'),
+        recordType: safeStr(d.recordType),
+        documentType: safeStr(d.documentType),
+        documentNumber: safeStr(d.documentNumber),
+        recordingDate: pickBcDate(d.documentDate),
+        auctionDate: pickBcDate(d.auctionDate),
+        auctionTime: safeStr(d.auctionTime),
+        trusteeSaleDate: pickBcDate(d.trusteeSaleDate),
+        delinquentDate: pickBcDate(d.delinquentDate),
+        originalLoanDate: pickBcDate(d.originalLoanDate),
+        defaultAmount: num(d.defaultAmount),
+        defaultPrincipalBalance: num(d.defaultPrincipalBalance),
+        beneficiary: personOrData(d.beneficiary),
+        trustee: personOrData(d.trustee),
+        titleCompany: safeStr(d.titleCompanyName),
+        debtorName: partyNames(rec.trustor),
+        lienProperty: d.address ? fmtAddr(d.address) : '',
+        county: safeStr(d.address?.county),
+        state: safeStr(d.address?.state),
       };
     });
   };
   const liens = extractFinancialRecords(primary.lienList, 'Lien');
   const judgments = extractFinancialRecords(primary.judgmentList, 'Judgment');
-  const foreclosures = extractFinancialRecords(primary.foreclosureList, 'Foreclosure');
+  const foreclosures = extractForeclosures(primary.foreclosureList);
   const bankruptcies = extractFinancialRecords(primary.bankruptcyList, 'Bankruptcy');
 
   // Properties — BC's propertyList[i] is NESTED: { address{}, assessment{},
   // detail{}, owner[], history[], foreclosure{} }. (Earlier flat-key extract read
   // p.apn/p.assessedValue etc. that don't exist → card rendered nothing.)
-  // Join every party (person OR business) on an owner/buyer/seller array — BC can
-  // list multiple, and a party may be a businessName instead of a personName.
-  const partyNames = (arr) => (Array.isArray(arr) ? arr : [])
-    .map((o) => {
-      if (!o) return '';
-      if (o.name) return safeStr(o.name);
-      const pn = Array.isArray(o.personName) && o.personName[0] ? o.personName[0] : null;
-      const person = pn ? safeStr([pn.first, pn.middle, pn.last].filter(Boolean).join(' ')) : '';
-      const biz = Array.isArray(o.businessName) ? o.businessName.filter(Boolean).join(', ') : '';
-      return person || biz;
-    })
-    .filter(Boolean)
-    .join(' & ');
-  const fmtAddr = (a) => {
-    a = a || {};
-    // BC's `data`/`complete` is already the full one-line address — don't re-append
-    // city/state/zip (that produced "…DORAL, FL 33172, DORAL, FL 33172").
-    if (a.data) return safeStr(a.data);
-    if (a.complete) return safeStr(a.complete);
-    const line = safeStr([a.streetNumber, a.predir, a.street, a.streetSuffix, a.aptName, a.aptNum].filter(Boolean).join(' '));
-    const cityState = [safeStr(a.city), [safeStr(a.state), safeStr(a.zip)].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-    return [line, cityState].filter(Boolean).join(', ');
-  };
-  const num = (v) => (typeof v === 'number' ? v : (v != null && v !== '' && !isNaN(Number(v)) ? Number(v) : null));
+  // partyNames / fmtAddr / num are defined once above (shared with the financial extractor).
   const properties = (primary.propertyList || []).map((p, i) => {
     const det = p.detail || {};
     const ass = p.assessment || {};

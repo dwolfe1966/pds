@@ -947,6 +947,7 @@ const CriminalCard = ({ record }) => {
 /* ─── FinancialRecordCard (liens, judgments, foreclosures, bankruptcies) ── */
 const FinancialRecordCard = ({ record }) => {
   const r = record;
+  const usd = (v) => `$${Number(v).toLocaleString()}`;
   return (
     <div style={{ ...styles.listItem, padding: '0.875rem 1.25rem' }}>
       <p style={styles.listItemTitle}>
@@ -956,15 +957,34 @@ const FinancialRecordCard = ({ record }) => {
         </span>
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
+        {(r.defaultAmount || r.defaultPrincipalBalance) ? <div><strong>Default amount:</strong> {usd(r.defaultAmount || r.defaultPrincipalBalance)}</div> : null}
         {r.recordingDate && <div><strong>Recorded:</strong> {r.recordingDate}</div>}
         {r.documentNumber && <div><strong>Doc #:</strong> {r.documentNumber}</div>}
+        {r.documentType && r.documentType !== r.description && <div><strong>Document type:</strong> {r.documentType}</div>}
+        {r.recordType && <div><strong>Record type:</strong> {r.recordType}</div>}
         {r.lienType && <div><strong>Lien type:</strong> {r.lienType}</div>}
+        {r.damarType && <div><strong>Type code:</strong> {r.damarType}</div>}
+        {r.taxCertificationNumber && <div><strong>Tax cert #:</strong> {r.taxCertificationNumber}</div>}
         {r.courtCaseNumber && <div><strong>Court case #:</strong> {r.courtCaseNumber}</div>}
         {r.taxPeriod && <div><strong>Tax period:</strong> {r.taxPeriod}</div>}
+        {r.auctionDate && <div><strong>Auction:</strong> {r.auctionDate}{r.auctionTime ? ` @ ${r.auctionTime}` : ''}</div>}
+        {r.trusteeSaleDate && <div><strong>Trustee sale:</strong> {r.trusteeSaleDate}</div>}
+        {r.delinquentDate && <div><strong>Delinquent:</strong> {r.delinquentDate}</div>}
+        {r.originalLoanDate && <div><strong>Original loan:</strong> {r.originalLoanDate}</div>}
+        {r.origRecordingDate && <div><strong>Orig. recorded:</strong> {r.origRecordingDate}</div>}
+        {r.documentFilingDate && <div><strong>Filed:</strong> {r.documentFilingDate}</div>}
+        {r.abstractIssueDate && <div><strong>Abstract issued:</strong> {r.abstractIssueDate}</div>}
+        {r.stayOrderedDate && <div><strong>Stay ordered:</strong> {r.stayOrderedDate}</div>}
+        {r.refileExtendLastDate && <div><strong>Refile/extend:</strong> {r.refileExtendLastDate}</div>}
         {r.county && <div><strong>County:</strong> {r.county}{r.state ? `, ${r.state}` : ''}</div>}
+        {r.beneficiary && <div><strong>Beneficiary:</strong> {r.beneficiary}</div>}
+        {r.trustee && <div><strong>Trustee:</strong> {r.trustee}</div>}
+        {r.titleCompany && <div><strong>Title company:</strong> {r.titleCompany}</div>}
         {r.creditor && <div><strong>Creditor:</strong> {r.creditor}</div>}
         {r.issuingAgency && <div style={{ gridColumn: 'span 2' }}><strong>Issuing agency:</strong> {r.issuingAgency}</div>}
-        {r.debtorName && <div style={{ gridColumn: 'span 2' }}><strong>Debtor:</strong> {r.debtorName}{r.debtorAddress && ` — ${r.debtorAddress}`}</div>}
+        {r.lienProperty && <div style={{ gridColumn: 'span 2' }}><strong>Property:</strong> {r.lienProperty}</div>}
+        {r.hoaAddress && <div style={{ gridColumn: 'span 2' }}><strong>HOA address:</strong> {r.hoaAddress}</div>}
+        {r.debtorName && <div style={{ gridColumn: 'span 2' }}><strong>{r.type === 'Foreclosure' ? 'Borrower' : 'Debtor'}:</strong> {r.debtorName}{r.debtorAddress && ` — ${r.debtorAddress}`}</div>}
       </div>
     </div>
   );
