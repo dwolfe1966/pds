@@ -48,3 +48,5 @@
 - [BC ShapeCompiled comp.client.theme = per-shN config](reference_bc_shapecompiled_theme.md) — landing/sup/optout/thinmatch live here; drives optOut + zeroState; resolver cache-key bug fixed; probe via network intercept
 - [BC billing.sale 406 = non-false sequenceOption](reference_bc_sale_sequenceoption_406.md) — promo/thin-match sale must send all-false thin-match flags; only send readThinMatch() for a real report unlock
 - [CSR library migration map](reference_csr_library_migration.md) — which csr* methods migrate to csrWrapper IIFE, which cant (BC gaps), 4 "fake lib-first" that silently hand-roll, stale envelope-comment trap
+- [Feedback: EXPOSE ALL report data](feedback_expose_all_report_data.md) — report detail must show every BC field; no attribute too minor; don't cherry-pick
+- [BC report field map](bc_report_field_map.md) — real packet path + criminal/property field inventory + charge-name bug; docs/BC_REPORT_FIELD_MAP.md

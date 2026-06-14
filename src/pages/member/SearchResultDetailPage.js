@@ -807,6 +807,8 @@ const PropertyCard = ({ property }) => {
         {p.useCode && <div><strong>Use:</strong> {p.useCode}</div>}
         {p.assessedValue && <div><strong>Assessed:</strong> {usd(p.assessedValue)} {p.assessedYear && `(${p.assessedYear})`}</div>}
         {p.marketValue && <div><strong>Market:</strong> {usd(p.marketValue)}</div>}
+        {p.landValue && <div><strong>Land value:</strong> {usd(p.landValue)}</div>}
+        {p.improvementValue && <div><strong>Improvements:</strong> {usd(p.improvementValue)}</div>}
         {p.totalTax && <div><strong>Annual tax:</strong> {usd(p.totalTax)}</div>}
         {p.bedCount && <div><strong>Beds:</strong> {p.bedCount}</div>}
         {p.bathCount && <div><strong>Baths:</strong> {p.bathCount}</div>}
@@ -815,6 +817,9 @@ const PropertyCard = ({ property }) => {
         {p.lotSqft && <div><strong>Lot:</strong> {Number(p.lotSqft).toLocaleString()} sqft</div>}
         {p.apn && <div><strong>Parcel #:</strong> {p.apn}</div>}
         {p.county && <div><strong>County:</strong> {p.county}</div>}
+        {p.subdivision && <div><strong>Subdivision:</strong> {p.subdivision}</div>}
+        {p.propertyDescription && <div style={{ gridColumn: 'span 2' }}><strong>Legal description:</strong> {p.propertyDescription}</div>}
+        {p.mailingAddress && <div style={{ gridColumn: 'span 2' }}><strong>Owner mailing:</strong> {p.mailingAddress}</div>}
       </div>
       {history.length > 0 && (
         <div style={{ marginTop: '0.75rem', borderTop: '1px solid #e5e7eb', paddingTop: '0.625rem' }}>
@@ -822,12 +827,29 @@ const PropertyCard = ({ property }) => {
             Transfer history{history.length > 1 ? ` (${history.length})` : ''}
           </p>
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-            {history.map((h, i) => (
-              <li key={i} style={{ fontSize: '0.82rem', color: '#4b5563', display: 'flex', gap: '0.625rem' }}>
-                <span style={{ minWidth: '5.5rem', fontWeight: 600, color: '#111827' }}>{h.date || '—'}</span>
-                <span>{[h.deedType, h.seller && `from ${h.seller}`, h.buyer && `to ${h.buyer}`].filter(Boolean).join(' · ') || 'Transfer'}</span>
-              </li>
-            ))}
+            {history.map((h, i) => {
+              const extra = [
+                h.transferType && h.deedType,
+                h.docNumber && `Doc ${h.docNumber}`,
+                h.loanValue && `Loan ${usd(h.loanValue)}${h.loanType ? ` (${h.loanType})` : ''}${h.interestRate ? ` @ ${h.interestRate.toFixed(2)}%` : ''}`,
+                !h.loanValue && h.loanType,
+                h.armsLength && `Arm's-length: ${h.armsLength}`,
+                h.quitclaim === 'Yes' && 'Quitclaim',
+              ].filter(Boolean);
+              return (
+                <li key={i} style={{ fontSize: '0.82rem', color: '#4b5563', borderLeft: '2px solid #e5e7eb', paddingLeft: '0.625rem' }}>
+                  <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                    <span style={{ minWidth: '5.5rem', fontWeight: 600, color: '#111827' }}>{h.date || '—'}</span>
+                    {h.salesPrice ? <span style={{ fontWeight: 600, color: '#111827' }}>{usd(h.salesPrice)}</span> : null}
+                    <span>{[h.transferType || h.deedType, h.seller && `from ${h.seller}`, h.buyer && `to ${h.buyer}`].filter(Boolean).join(' · ') || 'Transfer'}</span>
+                    {h.isCurrentOwner && <span style={{ padding: '0.05rem 0.4rem', fontSize: '0.65rem', fontWeight: 600, color: '#065f46', background: '#d1fae5', borderRadius: '0.25rem' }}>CURRENT OWNER</span>}
+                  </div>
+                  {extra.length > 0 && (
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.15rem' }}>{extra.join(' · ')}</div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -870,7 +892,7 @@ const CriminalCard = ({ record }) => {
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={styles.listItemTitle}>
-          {r.description || r.offenseCode || 'Court record'}
+          {r.description || r.caseType || r.category || 'Court record'}
           {r.counts && <span style={{ fontWeight: 400, color: '#6b7280' }}> · count {r.counts}</span>}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
@@ -901,10 +923,21 @@ const CriminalCard = ({ record }) => {
               {r.dispositionDate && ` (${r.dispositionDate})`}
             </div>
           )}
+          {r.amendedDispositionDate && <div><strong>Amended disposition:</strong> {r.amendedDispositionDate}</div>}
+          {r.court && <div><strong>Court:</strong> {r.court}</div>}
+          {r.county && <div><strong>County / jurisdiction:</strong> {r.county}</div>}
+          {r.caseType && <div><strong>Case type:</strong> {r.caseType}</div>}
+          {r.category && <div><strong>Category:</strong> {r.category}</div>}
+          {r.offenseCode && <div><strong>Statute / code:</strong> {r.offenseCode}</div>}
+          {r.plea && <div><strong>Plea:</strong> {r.plea}</div>}
+          {r.fines && <div><strong>Fines:</strong> {r.fines}</div>}
+          {r.arrestDate && <div><strong>Arrest date:</strong> {r.arrestDate}</div>}
+          {r.warrantDate && <div><strong>Warrant date:</strong> {r.warrantDate}</div>}
+          {r.supervisionDate && <div><strong>Supervision date:</strong> {r.supervisionDate}</div>}
           {r.marks && r.marks.length > 0 && <div style={{ gridColumn: 'span 2' }}><strong>Marks/scars:</strong> {r.marks.join('; ')}</div>}
           {r.vehicles && r.vehicles.length > 0 && <div style={{ gridColumn: 'span 2' }}><strong>Vehicle:</strong> {r.vehicles.join('; ')}</div>}
           {r.comments && <div style={{ gridColumn: 'span 2' }}>{r.comments}</div>}
-          {r.sourceName && <div style={{ gridColumn: 'span 2' }}><strong>Source:</strong> {r.sourceName}</div>}
+          {(r.sourceName || r.sourceState) && <div style={{ gridColumn: 'span 2' }}><strong>Source:</strong> {[r.sourceName, r.sourceState].filter(Boolean).join(' · ')}</div>}
         </div>
       </div>
     </div>

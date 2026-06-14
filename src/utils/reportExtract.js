@@ -272,17 +272,22 @@ function extractAll(result) {
   })).filter(sp => sp.network || sp.url);
   const social = dedup(rawSocial, sp => (sp.url || sp.network + sp.username).toLowerCase());
 
-  // Criminal records — most complex schema. BC's criminalList[i] has two
-  // parallel structures: offense[] (flat) and crime[] (nested). Flatten
-  // both into a single row per case for rendering.
+  // Criminal records — BC's criminalList[i] carries TWO parallel structures:
+  // offense[] (flat) and crime[] (nested under offense{}/courtCase{}). They are
+  // parallel SETS but NOT index-aligned (BC orders them differently — verified on
+  // a live packet: offense[5]="BURGLARY"/crime[5]="BATTERY", swapped at [6]). So we
+  // build each charge row WHOLLY from one source (never mix charge↔disposition across
+  // the two) and dedupe by charge+case. This fixes blank charge names: COURT-category
+  // rows have an empty offense.description while the charge lives in
+  // crime[].offense.description. Per feedback_expose_all_report_data we surface every
+  // offense/courtCase field BC sends, not a curated subset.
   const criminalRecords = [];
+  const normKey = (s) => safeStr(s).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const joinDesc = (d) => (Array.isArray(d) ? d.filter(Boolean).join('; ') : safeStr(d));
   (primary.criminalList || []).forEach((c, ci) => {
     const offenses = Array.isArray(c.offense) ? c.offense : [];
     const crimes = Array.isArray(c.crime) ? c.crime : [];
-    // Prefer offense[] (richer); fall back to crime[] if offense is empty
-    const source = offenses.length ? offenses : crimes;
-    // Per-record (person-level) detail shared across this record's offenses.
-    // High-value for an inmate-search product: mugshot, physical marks, vehicle.
+    // Per-record (person-level) detail shared across this record's charges.
     const nm = Array.isArray(c.name) ? c.name[0] : null;
     const offenderName = nm ? safeStr(nm.data || [nm.first, nm.middle, nm.last].filter(Boolean).join(' ')) : '';
     const photo = c.photo;
@@ -295,11 +300,9 @@ function extractAll(result) {
     const vehicles = Array.isArray(c.vehicle)
       ? c.vehicle.map(v => safeStr(typeof v === 'string' ? v : (v?.description || [v?.year, v?.make, v?.model].filter(Boolean).join(' ') || v?.data || ''))).filter(Boolean)
       : [];
-    // Physical descriptors (populated on real criminal records — verified on live
-    // data). Simple strings. NOTE: we deliberately do NOT derive a per-record
-    // "sex offender" flag from c.sexOffender — the field is present-but-empty on
-    // non-offenders, so presence is not a positive; the dedicated Sex Offender
-    // Registry section (familyWatchdog) is the authoritative source.
+    // Physical descriptors. NOTE: we deliberately do NOT derive a per-record "sex
+    // offender" flag from c.sexOffender — present-but-empty on non-offenders; the
+    // dedicated Sex Offender Registry section (familyWatchdog) is authoritative.
     const physical = {
       sex: safeStr(c.sex),
       race: safeStr(c.race),
@@ -313,9 +316,88 @@ function extractAll(result) {
       birthState: safeStr(c.birthState),
     };
     const hasPhysical = Object.values(physical).some(Boolean);
-    source.forEach((o, oi) => {
-      const offense = o.offense || o;
-      const courtCase = o.courtCase || o;
+
+    // Map one offense[] element -> a self-consistent charge row.
+    const fromOffense = (o) => ({
+      charge: joinDesc(o.description),
+      caseNumber: safeStr(o.caseNumber),
+      offenseCode: safeStr(o.code),
+      counts: safeStr(o.counts),
+      category: safeStr(o.category),
+      caseType: safeStr(o.caseType),
+      court: safeStr(o.court),
+      county: safeStr(o.countyOrJurisdiction),
+      plea: safeStr(o.plea),
+      fines: safeStr(o.fines),
+      disposition: safeStr(o.disposition?.data),
+      dispositionDate: pickBcDate(o.disposition?.date),
+      amendedDispositionDate: pickBcDate(o.amendedDisposition?.date),
+      offenseDate: pickBcDate(o.date),
+      chargesFiledDate: pickBcDate(o.chargesFiledDate),
+      convictionDate: pickBcDate(o.conviction?.date),
+      commitmentDate: pickBcDate(o.commitment?.date),
+      releaseDate: pickBcDate(o.releaseDate),
+      warrantDate: pickBcDate(o.warrant?.date),
+      arrestDate: pickBcDate(o.arrest?.date),
+      supervisionDate: pickBcDate(o.supervision?.date),
+      sentence: safeStr(o.sentence?.data || o.sentence?.term || (typeof o.sentence === 'string' ? o.sentence : '')),
+      comments: joinDesc(o.comments),
+      sourceState: safeStr(o.sourceState || c.sourceState),
+      sourceName: safeStr(o.sourceName || c.sourceName),
+    });
+    // Map one crime[] element (nested offense{}/courtCase{}) -> a charge row.
+    const fromCrime = (cr) => {
+      const off = cr.offense || {};
+      const cc = cr.courtCase || {};
+      return {
+        charge: joinDesc(off.description),
+        caseNumber: safeStr(cr.caseNumber || cc.caseNumber),
+        offenseCode: safeStr(off.code),
+        counts: safeStr(cc.counts),
+        category: safeStr(off.category),
+        caseType: safeStr(cc.caseType),
+        court: safeStr(cc.court),
+        county: safeStr(cc.countyOrJurisdiction),
+        plea: safeStr(cc.plea),
+        fines: safeStr(cc.fines),
+        disposition: safeStr(cc.disposition?.data),
+        dispositionDate: pickBcDate(cc.disposition?.date),
+        amendedDispositionDate: pickBcDate(cc.amendedDispositionDate),
+        offenseDate: pickBcDate(off.date),
+        chargesFiledDate: pickBcDate(cc.chargesFiledDate),
+        convictionDate: pickBcDate(cc.conviction?.date),
+        commitmentDate: pickBcDate(cc.commitment?.date),
+        releaseDate: pickBcDate(cr.releaseDate),
+        warrantDate: pickBcDate(cr.warrant?.date),
+        arrestDate: pickBcDate(cr.arrest?.date),
+        supervisionDate: '',
+        sentence: safeStr(cr.sentence?.data || cr.sentence?.term || (typeof cr.sentence === 'string' ? cr.sentence : '')),
+        comments: joinDesc(cr.comments),
+        sourceState: safeStr(cr.sourceState || c.sourceState),
+        sourceName: safeStr(cr.sourceName || c.sourceName),
+      };
+    };
+
+    const rows = [...offenses.map(fromOffense), ...crimes.map(fromCrime)];
+    // Cases that already have a NAMED charge — used to drop bare empty-charge dupes.
+    const chargedCases = new Set(rows.filter(r => r.charge).map(r => normKey(r.caseNumber)).filter(Boolean));
+    const seen = new Map();
+    rows.forEach((r) => {
+      // Drop an empty-charge row when a named charge already covers the same case.
+      if (!r.charge && r.caseNumber && chargedCases.has(normKey(r.caseNumber))) return;
+      const key = `${normKey(r.charge)}|${normKey(r.caseNumber)}`;
+      const prev = seen.get(key);
+      if (prev) {
+        // Same charge+case surfaced by both arrays — keep the row with more fields.
+        const score = (x) => Object.values(x).filter(Boolean).length;
+        if (score(r) > score(prev)) seen.set(key, r);
+        return;
+      }
+      seen.set(key, r);
+    });
+    // If a record yielded no charge rows, still surface the person-level detail.
+    const finalRows = seen.size ? [...seen.values()] : [{}];
+    finalRows.forEach((r, oi) => {
       criminalRecords.push({
         id: `${ci}-${oi}`,
         name: offenderName,
@@ -323,23 +405,9 @@ function extractAll(result) {
         marks,
         vehicles,
         physical: hasPhysical ? physical : null,
-        caseNumber: safeStr(o.caseNumber || courtCase.caseNumber || ''),
-        offenseDate: pickBcDate(offense.date, o.date),
-        chargesFiledDate: pickBcDate(courtCase.chargesFiledDate, o.chargesFiledDate),
-        offenseCode: safeStr(offense.code || o.code),
-        description: safeStr(offense.description || o.description || (Array.isArray(offense.description) ? offense.description.join('; ') : '')),
-        counts: safeStr(courtCase.counts || o.counts),
-        disposition: safeStr((courtCase.disposition || o.disposition)?.data),
-        dispositionDate: pickBcDate((courtCase.disposition || o.disposition)?.date),
-        // Incarceration lifecycle — populated for actual inmate records.
-        commitmentDate: pickBcDate(offense.commitment?.date),
-        convictionDate: pickBcDate(offense.conviction?.date),
-        sentence: safeStr(offense.sentence?.data || offense.sentence?.term || (typeof offense.sentence === 'string' ? offense.sentence : '')),
-        releaseDate: pickBcDate(offense.releaseDate),
-        comments: safeStr(offense.comments),
-        sourceState: safeStr(o.sourceState || c.sourceState),
-        sourceName: safeStr(o.sourceName || c.sourceName),
-        category: safeStr(offense.category || o.category),
+        // `description` retained as the charge label for back-compat (render/PDF/tests).
+        description: r.charge || '',
+        ...r,
       });
     });
   });
@@ -383,49 +451,86 @@ function extractAll(result) {
   // Properties — BC's propertyList[i] is NESTED: { address{}, assessment{},
   // detail{}, owner[], history[], foreclosure{} }. (Earlier flat-key extract read
   // p.apn/p.assessedValue etc. that don't exist → card rendered nothing.)
-  const ownerName = (oArr) => {
-    const o0 = Array.isArray(oArr) ? oArr[0] : null;
-    if (!o0) return '';
-    if (o0.name) return safeStr(o0.name);
-    const pn = Array.isArray(o0.personName) ? o0.personName[0] : null;
-    return pn ? safeStr([pn.first, pn.middle, pn.last].filter(Boolean).join(' ')) : '';
+  // Join every party (person OR business) on an owner/buyer/seller array — BC can
+  // list multiple, and a party may be a businessName instead of a personName.
+  const partyNames = (arr) => (Array.isArray(arr) ? arr : [])
+    .map((o) => {
+      if (!o) return '';
+      if (o.name) return safeStr(o.name);
+      const pn = Array.isArray(o.personName) && o.personName[0] ? o.personName[0] : null;
+      const person = pn ? safeStr([pn.first, pn.middle, pn.last].filter(Boolean).join(' ')) : '';
+      const biz = Array.isArray(o.businessName) ? o.businessName.filter(Boolean).join(', ') : '';
+      return person || biz;
+    })
+    .filter(Boolean)
+    .join(' & ');
+  const fmtAddr = (a) => {
+    a = a || {};
+    // BC's `data`/`complete` is already the full one-line address — don't re-append
+    // city/state/zip (that produced "…DORAL, FL 33172, DORAL, FL 33172").
+    if (a.data) return safeStr(a.data);
+    if (a.complete) return safeStr(a.complete);
+    const line = safeStr([a.streetNumber, a.predir, a.street, a.streetSuffix, a.aptName, a.aptNum].filter(Boolean).join(' '));
+    const cityState = [safeStr(a.city), [safeStr(a.state), safeStr(a.zip)].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    return [line, cityState].filter(Boolean).join(', ');
   };
+  const num = (v) => (typeof v === 'number' ? v : (v != null && v !== '' && !isNaN(Number(v)) ? Number(v) : null));
   const properties = (primary.propertyList || []).map((p, i) => {
     const det = p.detail || {};
     const ass = p.assessment || {};
     const addr = p.address || {};
-    // Full transfer history (BC's history[] is newest-first). We render every
-    // entry per property; `lastSale` = the most recent, kept for the PDF/back-compat.
-    // NOTE: sale amount isn't in BC's confirmed history shape (transferDate/
-    // receiptDate/deedType/buyer/seller only) — add it here once a real report
-    // confirms the key; do not invent one on spec.
+    // Full transfer history (BC's history[] is newest-first). Per
+    // feedback_expose_all_report_data we now surface every confirmed field:
+    // salesPrice, transferType, docNumber, quitclaim/arms-length flags, and the
+    // attached loan (loanValue/loanType/rate — rate is x100, 370 => 3.70%).
     const history = (Array.isArray(p.history) ? p.history : [])
-      .map(h => ({
-        date: pickBcDate(h.detail?.transferDate, h.detail?.receiptDate),
-        deedType: safeStr(h.detail?.deedType),
-        buyer: ownerName(h.buyer),
-        seller: ownerName(h.seller),
-      }))
-      .filter(s => s.date || s.deedType || s.buyer || s.seller);
+      .map((h) => {
+        const hd = h.detail || {};
+        const loan0 = Array.isArray(h.loan) ? h.loan[0] : (h.loan || null);
+        const rate = loan0 && typeof loan0.estimatedInterestRate === 'number' ? loan0.estimatedInterestRate / 100 : null;
+        return {
+          date: pickBcDate(hd.transferDate, hd.receiptDate),
+          transferDate: pickBcDate(hd.transferDate),
+          recordingDate: pickBcDate(hd.receiptDate),
+          deedType: safeStr(hd.deedType),
+          transferType: safeStr(hd.transferType),
+          salesPrice: num(hd.salesPrice),
+          docNumber: safeStr(hd.docNumber),
+          quitclaim: safeStr(hd.quitclaimFlag),
+          armsLength: safeStr(hd.armsLengthFlag),
+          buyer: partyNames(h.buyer),
+          seller: partyNames(h.seller),
+          isCurrentOwner: !!h.isCurrentOwner,
+          loanValue: num(loan0 && loan0.loanValue),
+          loanType: safeStr(loan0 && loan0.loanType),
+          interestRate: rate,
+        };
+      })
+      .filter(s => s.date || s.deedType || s.buyer || s.seller || s.salesPrice || s.docNumber || s.loanValue);
     const lastSale = history[0] || null;
     return {
       id: `prop-${i}`,
       address: safeStr(addr.data || addr.complete || [addr.streetNumber, addr.predir, addr.street, addr.streetSuffix].filter(Boolean).join(' ')),
       city: safeStr(addr.city), state: safeStr(addr.state), zip: safeStr(addr.zip),
+      mailingAddress: fmtAddr(p.mailingAddress),
       apn: safeStr(det.parcelNumber),
       county: safeStr(det.county),
       useCode: safeStr(det.useCode),
+      propertyDescription: safeStr(det.propertyDescription),
+      subdivision: safeStr(det.subdivision),
       ownershipStatus: safeStr(det.ownershipStatus),       // clear text: "TRUST", "JOINT TENANTS"…
       bedCount: det.bedrooms || null,
       bathCount: det.bathrooms || null,
       yearBuilt: safeStr(det.yearBuilt),
       buildingSqft: det.buildingSqft || null,
       lotSqft: det.lotSqft || null,
-      assessedValue: ass.assessedValue || null,
-      marketValue: ass.marketValue || null,
+      assessedValue: num(ass.assessedValue),
+      marketValue: num(ass.marketValue),
+      landValue: num(ass.landValue),
+      improvementValue: num(ass.improvementValue),
       assessedYear: safeStr(ass.taxYear || ass.assessorYear),
-      totalTax: ass.totalTax || null,
-      owner: ownerName(p.owner),
+      totalTax: num(ass.totalTax),
+      owner: partyNames(p.owner),
       lastSale,
       history,
       foreclosure: !!(p.foreclosure && Object.keys(p.foreclosure).length),
