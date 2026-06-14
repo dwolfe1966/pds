@@ -62,3 +62,26 @@ totalTax, date, assessorYear. Also property-level `mailingAddress` (owner mailin
 
 **Fix:** add salesPrice/transferType/docNumber/loan to each history row; add
 landValue/improvementValue/propertyDescription/subdivision to the property card.
+**STATUS: DONE** (commit c8f78c4f) — criminal + property now expose all fields above.
+
+---
+
+## 3. Financial records (lien/judgment/foreclosure/bankruptcy) — NEXT expose-all target
+
+`extractFinancialRecords` is still curated. From a real `lienList[0]`:
+- **TOP keys:** info, record, courtCaseNumber, taxCertificationNumber, lienType, creditor,
+  issuingAgency, property, business, debtor, hoaAddress, meta, eid.
+  We emit: caseDescription, county, state, recordingDate, documentNumber, issuingAgency,
+  creditor, debtor(name+address), lienType, courtCaseNumber, taxPeriod.
+  **Dropped:** taxCertificationNumber, lien `property`, lien `business`, `hoaAddress`.
+- **`record[]` keys:** caseDescription, documentLocation, originalDocumentLocation,
+  recordingDate, date, damarType, origRecordingDate, taxPeriodMax, taxPeriodMin,
+  refileExtendLastDate, abstractIssueDate, stayOrderedDate, documentFilingDate, origDocumentDate.
+  **Dropped:** damarType, origRecordingDate, refileExtendLastDate, abstractIssueDate,
+  stayOrderedDate, documentFilingDate, origDocumentDate.
+
+Audit (this packet): all 10 POPULATED lists are extracted (no whole section dropped) —
+nameList, dobList, addressList(18), relationshipList(57), phoneList, emailList, propertyList,
+criminalList, lienList, foreclosureList. Remaining expose-all work is field-level within
+financial (above) and verifying field completeness on address/relationship/employment when a
+packet populates their richer fields.
