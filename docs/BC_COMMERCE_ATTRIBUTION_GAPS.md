@@ -27,18 +27,39 @@ click grain) isn't on the billable record — only on the tracking store.
 `billing.sale` `queryString` (alongside the `refer_*` keys that already round-trip).
 Bundle `public.ed680352.js` (build clean; deploy pending).
 
-**What we need from BC — pick one and confirm:**
-1. **Does order-creation parse arbitrary `queryString` keys into `commerceorders.refer`,
-   or only an internal `refer_*` allowlist?**
-   - If arbitrary keys are parsed → our deploy alone lands `gclid` on the order. Confirm and we're done.
-   - If allowlisted → **extend the allowlist** to include `gclid` (and ideally `fbclid`,
-     `msclkid`, `utm_*`), then our client values will populate.
-2. **Order grain is sufficient** — gclid does NOT need to be copied onto the payment
-   row; order→payment joins on `orderId`, so the click-join works as long as gclid is on
-   the order. (Don't over-build a payment-level field unless it's free.)
+**RESOLVED 2026-06-15 — fixed our side, no BC change needed.** BC ingests ONLY
+`refer_`-prefixed queryString params into `commerceorders.refer` (it strips the prefix:
+`refer_partnerId` → `refer.partnerId`). The first attempt sent raw `gclid=`, which BC
+dropped (analyst verified live: `refer_*` reached commerce, raw `gclid` did not). Fix =
+send the click-join keys under the proven convention — **`refer_gclid` / `refer_fbclid` /
+`refer_msclkid`** → `refer.gclid` etc. (`trackingService.buildReferQueryString`, commit
+`1c94667`, bundle **`public.e9ca7f91.js`**, deployed). Order grain is sufficient
+(order→payment joins on `orderId`).
 
-**Verify after both sides ship:** land the test URL above → $1 trial → confirm
-`commerceorders.refer.gclid === '<the gclid>'`.
+**Client side VERIFIED (2026-06-15, deployed `e9ca7f91`):** deployed bundle contains the
+`refer_gclid` logic; landing the campaign URL captures `gclid` into `referralParams`; the
+sale `queryString` the client emits is
+`refer_partnerId=…&refer_afid=…&refer_abc=…&refer_gclid=<gclid>`. Everything up to the sale
+boundary confirmed.
+
+### ⮑ Final confirmation step (one $1 sale) — how to run it
+The only unverified link is BC persisting `refer_gclid` → `refer.gclid` server-side
+(structurally identical to the `refer_*` keys that already persist, so high-confidence —
+but a fixed `refer` schema is the one residual risk). To close it in one shot:
+
+> **`node scripts/live-uat-shn-sale-verify.js`** — opens a headed browser on the full
+> campaign test URL (gclid + refer_* baked in). Drive the funnel by hand (search → solve
+> captcha → unlock → enter the BC test card → submit the $1 trial). The script never
+> touches the card; it intercepts the `commerceBilling/sale` + order responses and prints
+> `order.shConId`, `refer`, and `partner`. Result also written to
+> `scripts/out/shn-sale-verify.json`.
+>
+> **PASS =** the printed `refer` contains `gclid` (i.e. `commerceorders.refer.gclid ===`
+> the landing gclid). Override the test value with `GCLID=… node scripts/...` if desired.
+> If the sale response doesn't expose `shConId`/`refer` to the browser, read the order via
+> CSR instead and check `commerceorders.refer.gclid`.
+
+Once `refer.gclid` is confirmed on a fresh order, #10 is closed.
 
 ---
 
@@ -110,10 +131,10 @@ should not reconcile two attribution sources in the browser bundle.
 
 ## Ownership summary
 
-| Gap | David (client) | BC (Kwan / CTO / Jerome) |
-|-----|----------------|--------------------------|
-| 1 — gclid on order | ✅ `buildReferQueryString` emits gclid/utm (bundle `ed680352`, deploy pending) | Confirmed: BC parses the full queryString → gclid lands on `commerceorders.refer` on deploy |
-| 2 — wrong/unresolved shN → default partner | Confirm URL shn == sheet B12; if mismatch, fix Ads URL + registry; add `shnRejected` diagnostic | Provide authoritative shN (sheet row 12); resolve payment partner from `order.refer` (option b) + persist gclid; share both orders' shConId/shColId |
+| Gap | David (client) | BC |
+|-----|----------------|-----|
+| 1 — gclid on order | ✅ FIXED + DEPLOYED (`e9ca7f91`): send `refer_gclid`/`refer_fbclid`/`refer_msclkid`; client side verified. Last step: one $1 sale to confirm `refer.gclid` persists (`scripts/live-uat-shn-sale-verify.js`) | None needed — uses the existing `refer_*` ingestion |
+| 2 — shN resolved to default → default partner | ✅ FIXED + DEPLOYED (`e70d1364`): call `api.shape.setShapeParams` after `getInstance`; shape resolution verified live | None needed — analyst confirms #6 done end-to-end (google/search on payment) |
 
 See also `docs/BC_SHN_PARTNER_SHAPE.md` (#77-Q4/Q6 partner modeling),
 `docs/BC_CSRWRAPPER_HOSTING.md` (live-wrapper hosting ask), and `docs/qa/google-ads-audit.md`.
