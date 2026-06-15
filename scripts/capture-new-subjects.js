@@ -24,12 +24,16 @@ const primOf = (j) => j?.commerceContent?.raws?.[0]?.transient?.identities?.[0]
   const b = await chromium.launch({ headless: !process.env.HEADED });
   const p = await (await b.newContext()).newPage();
   p.setDefaultTimeout(30000);
-  let lastReport = null;
+  const isTeaser = (j) => {
+    const cc = j?.commerceContent || {};
+    return cc?.data?.teaser === true || /teaser/i.test(cc?.productType || '') || /teaser/i.test(cc?.data?.contextKey || '');
+  };
+  let lastReport = null, lastFull = null;
   p.on('response', async (r) => {
     if (!/\/api\/|report|proxy/i.test(r.url())) return;
     let t = ''; try { t = await r.text(); } catch {}
     if (!/"criminalList"|"propertyList"|"nameList"|"identities"/.test(t)) return;
-    try { const j = JSON.parse(t); if (primOf(j)) lastReport = j; } catch {}
+    try { const j = JSON.parse(t); if (primOf(j)) { lastReport = j; if (!isTeaser(j)) lastFull = j; } } catch {}
   });
 
   await p.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
@@ -44,7 +48,7 @@ const primOf = (j) => j?.commerceContent?.raws?.[0]?.transient?.identities?.[0]
   for (let s = 0; s < SUBJECTS.length; s++) {
     const subj = SUBJECTS[s];
     try {
-      lastReport = null;
+      lastReport = null; lastFull = null;
       await p.goto(`${BASE}/people-search`, { waitUntil: 'networkidle' }).catch(() => {});
       await p.waitForTimeout(1500);
       await p.fill('#gs-firstName', subj.first);
@@ -60,15 +64,19 @@ const primOf = (j) => j?.commerceContent?.raws?.[0]?.transient?.identities?.[0]
         if (await card.count() && await card.isVisible().catch(() => false)) { await card.click().catch(() => {}); clicked = true; }
       }
       if (!clicked) { console.log(`  no results/timeout for ${subj.last}`); continue; }
-      // wait for the created report to come back over the wire
-      for (let i = 0; i < 20 && !lastReport; i++) await p.waitForTimeout(1500);
-      if (!lastReport) { console.log(`  report not captured for ${subj.last}`); continue; }
-      const prim = primOf(lastReport);
+      // wait for a FULL report (not just the teaser) to come back over the wire
+      for (let i = 0; i < 24 && !lastFull; i++) await p.waitForTimeout(1500);
+      if (!lastFull) {
+        console.log(`  only a TEASER came back for ${subj.last} — test21 still can't create full reports (out of credits).`);
+        if (s === 0) { console.log('\n>>> Stopping early to save your captcha-solving. Top up credits and re-run. <<<'); break; }
+        continue;
+      }
+      const prim = primOf(lastFull);
+      fs.writeFileSync(`/tmp/newrpt-${s}-${subj.last}.json`, JSON.stringify(lastFull));
       const counts = {};
       Object.keys(prim).forEach((k) => { if (k.endsWith('List') && Array.isArray(prim[k]) && prim[k].length) counts[k] = prim[k].length; });
       found[`${subj.first} ${subj.last}`] = counts;
-      fs.writeFileSync(`/tmp/newrpt-${s}-${subj.last}.json`, JSON.stringify(lastReport));
-      console.log(`  -> lists: ${Object.entries(counts).map(([k, v]) => `${k}:${v}`).join(', ')}`);
+      console.log(`  -> FULL report lists: ${Object.entries(counts).map(([k, v]) => `${k}:${v}`).join(', ')}`);
     } catch (e) { console.log(`  error on ${subj.last}: ${String(e.message).slice(0, 60)}`); }
   }
 
