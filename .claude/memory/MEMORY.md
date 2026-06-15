@@ -50,3 +50,4 @@
 - [CSR library migration map](reference_csr_library_migration.md) — which csr* methods migrate to csrWrapper IIFE, which cant (BC gaps), 4 "fake lib-first" that silently hand-roll, stale envelope-comment trap
 - [Feedback: EXPOSE ALL report data](feedback_expose_all_report_data.md) — report detail must show every BC field; no attribute too minor; don't cherry-pick
 - [BC report field map](bc_report_field_map.md) — real packet path + criminal/property field inventory + charge-name bug; docs/BC_REPORT_FIELD_MAP.md
+- [Report-detail expose-all status](project_report_detail_expose_all.md) — verified lists + special cases done (bundle d57752b7 NOT deployed); unverified lists blocked (test21 can't create reports)
