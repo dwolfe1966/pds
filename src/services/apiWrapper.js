@@ -103,6 +103,22 @@ class ApiWrapperService {
         dbgWarn('[ApiWrapper] getInstance rejected initialShParams; retrying without:', shErr?.message);
         this.wrapper = window.ApiWrapper.getInstance(baseConfig);
       }
+      // BC CTO 2026-06-15: `initialShParams` at getInstance is NOT enough to switch
+      // BC off its default shN — getInstance is a singleton, so if the instance was
+      // already created (by the IIFE on load, or an earlier call) our config is
+      // ignored and orders resolve to the DEFAULT shN (69a2380b…). BC's documented
+      // method to set/refresh the shape AFTER init is api.shape.setShapeParams
+      // (HowTo, added 2026-05-13). Call it explicitly with the first-touch shn/shl so
+      // BC resolves the campaign shape (e.g. 6a22ff83 Google Inmates) before any
+      // shape/order call. Fire-and-forget + guarded: a bad shn must not break init.
+      if (initialShParams && typeof this.wrapper?.api?.shape?.setShapeParams === 'function') {
+        try {
+          const r = this.wrapper.api.shape.setShapeParams(initialShParams);
+          if (r && typeof r.catch === 'function') r.catch((e) => dbgWarn('[ApiWrapper] setShapeParams rejected; staying on default shN:', e?.message));
+        } catch (spErr) {
+          dbgWarn('[ApiWrapper] setShapeParams threw; staying on default shN:', spErr?.message);
+        }
+      }
       this._installCaptchaHandler();
       this.initialized = true;
       return this.wrapper;

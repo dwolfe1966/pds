@@ -69,18 +69,20 @@ supersedes the earlier "just set comp.tracking.partner on the 6a22ff83 shape" fr
 the shape isn't even being selected. CTO points to the partner sheet
 (`…/1R7fE5Jp4TNt14BlwsbTqpxpUwNh1BxihGhfXqn0qNpQ`, row 12 / B12:G12) as the authoritative shN.
 
-**The one fact that branches the fix (compare URL shn vs sheet B12):**
-- **sheet B12 ≠ `6a22ff83…`** → the Ads final URL / our registry carries a stale/wrong shN.
-  Fix = put the sheet's authoritative shN on the Ads URLs (+ swap our registry key). Data fix, no logic change.
-- **sheet B12 == `6a22ff83…`** → the value is right but our client isn't loading it →
-  client bug: either (a) BC's IIFE `getInstance` *rejects* the shn and we silently retry
-  WITHOUT shParams (`apiWrapper.js:99-104` catch → default), or (b) `getShapeCompiled()`
-  resolves default despite the shn. Then fix is ours.
+**RESOLVED 2026-06-15 — it's a CLIENT bug, now fixed.** Owner confirmed `6a22ff83…` IS
+the correct shN for Google Inmates Upper (default = `69a2380b53ecf9b049d01fbb`). CTO
+pinpointed it: **we were not calling a BC method to set the shN after seeing it in the URL.**
+We passed `initialShParams` at `getInstance`, but `getInstance` is a **singleton** — if the
+instance already exists (IIFE auto-init on load, or an earlier call), our config is ignored
+and BC stays on its default shN. BC's documented fix (HowTo, added 2026-05-13) is
+**`api.shape.setShapeParams({ shn, shl, cascade })`** — sets/refreshes the shape AFTER init.
 
-**Client-side trap to close regardless:** the `getInstance` catch silently swallows an
-shn rejection and loads BC's default with no signal (console is stripped in prod). Add a
-sessionStorage diagnostic flag (e.g. `attribution.shnRejected`) so a rejected shn is
-visible instead of silently degrading to default.
+**Fix shipped (`apiWrapper.js`, bundle `public.e70d1364.js`, deploy pending):** after
+`getInstance`, explicitly call `this.wrapper.api.shape.setShapeParams(initialShParams)` with
+the first-touch shn/shl (guarded + fire-and-forget so a bad shn can't break init). This sets
+the campaign shape on the live instance before any shape/order call, so BC resolves the
+inmates node instead of default — restoring the partner/shColId attribution AND letting the
+shape's `comp.tracking.partner` flow onto the order.
 
 **Discriminating DB read to request from BC:** pull `shConId` AND `shColId` from BOTH the
 06-11 (worked) and 06-15 (broke) orders. If shConId is identical but shColId differs →
