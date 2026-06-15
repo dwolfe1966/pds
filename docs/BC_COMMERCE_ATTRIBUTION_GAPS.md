@@ -60,29 +60,58 @@ BC populates it from the shape tree for the `shn`. We independently spotted this
 Upper) resolving to the **default container**. The DB scan now confirms it's a real
 config gap, not a probe cache artifact.
 
-**What we need from BC:**
-- On the shape for `shn=6a22ff83ca16ad4ef68b84b5` (and its sibling Lower/Death/Divorce
-  tokens), set **`comp.tracking.partner.name = "google"`** and
-  **`comp.tracking.partner.channel`** to the correct channel (e.g. `search` / `inmates`)
-  so the payment's partner resolves to Google instead of internal/default.
-- Once set, the shape path and the `refer_*` path **converge on their own** — no client
-  change required.
+**UPDATE 2026-06-15 — BC CTO root-caused it: "your client loads only default shN; load
+the correct shN."** Three signals now converge: (1) CTO statement, (2) our own 06-09
+ShapeCompiled probe ("6a22ff83 → DEFAULT container"), (3) the order's partner=internal/default.
+**The shN value `6a22ff83ca16ad4ef68b84b5` is not resolving to the Google/Inmates node** —
+BC falls back to its default shN, and shColId + partner follow from that default. This
+supersedes the earlier "just set comp.tracking.partner on the 6a22ff83 shape" framing:
+the shape isn't even being selected. CTO points to the partner sheet
+(`…/1R7fE5Jp4TNt14BlwsbTqpxpUwNh1BxihGhfXqn0qNpQ`, row 12 / B12:G12) as the authoritative shN.
+
+**The one fact that branches the fix (compare URL shn vs sheet B12):**
+- **sheet B12 ≠ `6a22ff83…`** → the Ads final URL / our registry carries a stale/wrong shN.
+  Fix = put the sheet's authoritative shN on the Ads URLs (+ swap our registry key). Data fix, no logic change.
+- **sheet B12 == `6a22ff83…`** → the value is right but our client isn't loading it →
+  client bug: either (a) BC's IIFE `getInstance` *rejects* the shn and we silently retry
+  WITHOUT shParams (`apiWrapper.js:99-104` catch → default), or (b) `getShapeCompiled()`
+  resolves default despite the shn. Then fix is ours.
+
+**Client-side trap to close regardless:** the `getInstance` catch silently swallows an
+shn rejection and loads BC's default with no signal (console is stripped in prod). Add a
+sessionStorage diagnostic flag (e.g. `attribution.shnRejected`) so a rejected shn is
+visible instead of silently degrading to default.
+
+**Discriminating DB read to request from BC:** pull `shConId` AND `shColId` from BOTH the
+06-11 (worked) and 06-15 (broke) orders. If shConId is identical but shColId differs →
+resolution regression; if shConId differs → two different tokens (no regression, just the
+6a22ff83 config gap). Settles it in one read.
+
+**Recommended primary fix = BC option (b), not (a):** have BC resolve payment
+`partner/channel` from `commerceorders.refer` when present (`refer_partnerId=google`,
+`afid=g-inmates-upper` → google/search) and persist `gclid` onto the commerce record.
+This is robust to ALL root-cause branches because it bypasses the shColId/shN cascade
+entirely — consistent with the design principle below. Option (a) (re-send shN/shColId on
+the sale queryString) is fragile here: we have no `shColId` for this URL, and re-sending
+the same `6a22ff83` that already cascades to default won't help. Hold (a) as a contingency.
+Normalize casing in either path (`Google/Search` in refer vs lowercase in the shape).
 
 **Design note:** treat `commerceorders.refer` as the authoritative acquisition record
-going forward, and make the legacy `commercepayments…partner` path *agree* with it (by
-fixing the shape). We should not reconcile two attribution sources in the browser bundle.
+going forward, and make the legacy `commercepayments…partner` path *agree* with it. We
+should not reconcile two attribution sources in the browser bundle.
 
-**Verify:** re-run the test URL → confirm `commercepayments.data.tracking.partner.name`
-resolves to `google` and matches `commerceorders.refer.partnerId`.
+**Verify:** re-run the test URL → confirm (i) `getShapeCompiled` resolves the inmates shape
+(not default), (ii) `commercepayments.data.tracking.partner.name === 'google'` matches
+`commerceorders.refer.partnerId`, (iii) `commerceorders.refer.gclid` is set.
 
 ---
 
 ## Ownership summary
 
-| Gap | David (client) | Kwan (BC) |
-|-----|----------------|-----------|
-| 1 — gclid on order | ✅ `buildReferQueryString` emits gclid/utm (bundle `ed680352`, deploy pending) | Confirm queryString-key parsing (or extend the `refer_*` allowlist) |
-| 2 — partner contradiction | (none — we don't write payment.partner) | Set `comp.tracking.partner.name/.channel` on the `6a22ff83…` shape (+ sibling tokens) |
+| Gap | David (client) | BC (Kwan / CTO / Jerome) |
+|-----|----------------|--------------------------|
+| 1 — gclid on order | ✅ `buildReferQueryString` emits gclid/utm (bundle `ed680352`, deploy pending) | Confirmed: BC parses the full queryString → gclid lands on `commerceorders.refer` on deploy |
+| 2 — wrong/unresolved shN → default partner | Confirm URL shn == sheet B12; if mismatch, fix Ads URL + registry; add `shnRejected` diagnostic | Provide authoritative shN (sheet row 12); resolve payment partner from `order.refer` (option b) + persist gclid; share both orders' shConId/shColId |
 
-See also `docs/BC_SHN_PARTNER_SHAPE.md` (#77-Q4/Q6 partner modeling) and
-`docs/qa/google-ads-audit.md`.
+See also `docs/BC_SHN_PARTNER_SHAPE.md` (#77-Q4/Q6 partner modeling),
+`docs/BC_CSRWRAPPER_HOSTING.md` (live-wrapper hosting ask), and `docs/qa/google-ads-audit.md`.
