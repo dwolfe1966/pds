@@ -64,16 +64,22 @@ function buildRefer() {
 
 // First-touch attribution as a BC `queryString` for commerce calls
 // (billing.sale/signup). BC parses the refer_* params into `commerceorders.refer`
-// (confirmed persisting 2026-06-04). Scoped to the documented refer_* keys only —
-// gclid/utm already attribute via the tracking-store `data.refer` path above, and
-// extra params on a sale have unconfirmed BC handling. Returns undefined when no
-// attribution is present. Never throws (sensitive checkout path).
+// (confirmed persisting 2026-06-04). We ALSO pass the Google/Facebook/Bing click
+// IDs and utm_* here so the click-join key (gclid for §M6 eCPA at click grain)
+// lands on the billable `commerceorders.refer`, not just the tracking-store
+// `data.refer`. NOTE: persistence of these non-`refer_*` keys onto the order is
+// pending BC confirmation that order-creation parses arbitrary queryString keys
+// (vs. an internal refer_* allowlist) — if BC ignores them the sale is unaffected
+// (extra queryString keys are harmless; refer_* already round-trips). Returns
+// undefined when no attribution is present. Never throws (sensitive checkout path).
 export function buildReferQueryString() {
   if (typeof sessionStorage === 'undefined') return undefined;
   try {
     let params = {};
     try { params = JSON.parse(sessionStorage.getItem('referralParams') || '{}') || {}; } catch { params = {}; }
-    const pairs = ['refer_partnerId', 'refer_afid', 'refer_abc']
+    const pairs = ['refer_partnerId', 'refer_afid', 'refer_abc',
+      'gclid', 'fbclid', 'msclkid',
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term']
       .filter((k) => params[k] != null && params[k] !== '')
       .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`);
     return pairs.length ? pairs.join('&') : undefined;
