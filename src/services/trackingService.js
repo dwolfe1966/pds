@@ -63,26 +63,29 @@ function buildRefer() {
 }
 
 // First-touch attribution as a BC `queryString` for commerce calls
-// (billing.sale/signup). BC parses the refer_* params into `commerceorders.refer`
-// (confirmed persisting 2026-06-04). We ALSO pass the Google/Facebook/Bing click
-// IDs and utm_* here so the click-join key (gclid for §M6 eCPA at click grain)
-// lands on the billable `commerceorders.refer`, not just the tracking-store
-// `data.refer`. NOTE: persistence of these non-`refer_*` keys onto the order is
-// pending BC confirmation that order-creation parses arbitrary queryString keys
-// (vs. an internal refer_* allowlist) — if BC ignores them the sale is unaffected
-// (extra queryString keys are harmless; refer_* already round-trips). Returns
-// undefined when no attribution is present. Never throws (sensitive checkout path).
+// (billing.sale/signup). BC ingests ONLY `refer_`-prefixed params into
+// `commerceorders.refer`, stripping the prefix (`refer_partnerId` → `refer.partnerId`,
+// confirmed persisting 2026-06-04). A raw `gclid=` is therefore DROPPED at the order
+// (verified 2026-06-15: refer_* reached commerce, raw gclid did not). So we send the
+// click-join keys under the same proven convention — `refer_gclid` → `refer.gclid`
+// etc. — to get the §M6 click-grain join key (gclid) onto the billable order, not
+// just the tracking-store `data.refer`. Returns undefined when no attribution is
+// present. Never throws (sensitive checkout path).
 export function buildReferQueryString() {
   if (typeof sessionStorage === 'undefined') return undefined;
   try {
     let params = {};
     try { params = JSON.parse(sessionStorage.getItem('referralParams') || '{}') || {}; } catch { params = {}; }
-    const pairs = ['refer_partnerId', 'refer_afid', 'refer_abc',
-      'gclid', 'fbclid', 'msclkid',
-      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term']
-      .filter((k) => params[k] != null && params[k] !== '')
-      .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`);
-    return pairs.length ? pairs.join('&') : undefined;
+    const out = [];
+    const push = (k, v) => { if (v != null && v !== '') out.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`); };
+    // Sub-publisher params — already round-trip onto commerceorders.refer.
+    ['refer_partnerId', 'refer_afid', 'refer_abc'].forEach((k) => push(k, params[k]));
+    // Click-join keys under the refer_ convention so BC lands them as refer.gclid /
+    // refer.fbclid / refer.msclkid on the order (raw gclid= is dropped — no slot).
+    push('refer_gclid', params.gclid);
+    push('refer_fbclid', params.fbclid);
+    push('refer_msclkid', params.msclkid);
+    return out.length ? out.join('&') : undefined;
   } catch { return undefined; }
 }
 
