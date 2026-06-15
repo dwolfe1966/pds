@@ -126,3 +126,14 @@ Two more SPECIAL CASES found + fixed (real shapes differ from our assumptions):
 aircraftList, businessList, employmentList, driverLicenseList, veteranList, sanctionsList,
 deathList, socialList, ipList. These extractors are unconfirmed against real shapes — verify
 when a packet populates them (the judgment/professional/foreclosure cases prove assumptions break).
+
+### Sourcing attempt for unverified lists (2026-06-14)
+Tried creating fresh reports on record-diverse subjects (Trump/Travolta/Stewart/Powell) via
+the real member search (`scripts/capture-new-subjects.js`). Result: captured only TEASERS
+(`contextKey: sale.name.teaser`) — test21's result-clicks did NOT create full reports (the
+member create-report path routes to /payment, i.e. the test account is out of credits / not in
+a create-capable state). So the unverified lists (bankruptcy/vehicle/aircraft/business/
+employment/driverLicense/veteran/sanctions/death) cannot be sourced from this demo environment:
+fresh searches yield teasers, and none of test21's 10 pre-seeded reports populate them. Verify
+these extractors when a credit-capable account or real/richer packet that populates them is
+available (or ask BC for sample packets).
