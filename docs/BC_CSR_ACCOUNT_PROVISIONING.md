@@ -41,6 +41,27 @@ through to `'member'` and the app's `role === 'admin'` gates denied login. Fixed
 `src/services/apiRouter.js` to recognize any `admin*`/`csr*` role (+ optional
 `REACT_APP_ADMIN_ROLES` env list). Ships in the next build-admin upload.
 
+## Is it "direct endpoint access disabled, use the lib method"? — NO (tested)
+
+We considered that BC may have closed direct `/api/*` POSTs and now requires the IIFE
+lib method. Tested both paths on the **same authenticated csrManager session**
+(`scripts/probe-csr-libmethod-vs-direct.js`):
+
+| Call | Result |
+|---|---|
+| IIFE lib method `csrWrapper.api.user.find({collectionName:'users', query:{}})` | **403 Forbidden resource** |
+| Direct `POST /api/database/search?clientId&apiId` (what `_csrPost` does) | **403 Forbidden resource** |
+
+Both fail identically → this is **not** a transport/method issue; migrating `csrFindUsers`
+to the lib method would 403 the same way. It is the account's permission grant.
+
+## Old admin account is also dead
+
+`admin@admin.admin` (the previously-working CSR login) now returns **401** on
+`POST /api/auth/login` — credentials no longer valid at BC. So we currently have **no**
+account that can both log in *and* read CSR data. Please advise whether `admin@admin.admin`
+was rotated/disabled and what replaces it.
+
 ## BC ask
 
 The `frontend@csrManager.pds` permission set is **"Frontend dev's"** — scoped to
