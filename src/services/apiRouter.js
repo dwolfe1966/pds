@@ -518,10 +518,25 @@ async function callNewAPI(endpoint, params) {
         .filter(Boolean);
       const isInAllowlist = adminEmails.includes(loginEmail);
 
+      // BC denotes staff with role strings like 'admin', 'csr', and 'csrManager'
+      // (verified live 2026-06-16: frontend@csrManager.pds → roles:['csrManager']).
+      // Match any admin*/csr* role rather than an exact 'csr'/'admin' string, so new
+      // CSR tiers authenticate without a code change. Additional non-prefixed role
+      // names can be allow-listed via REACT_APP_ADMIN_ROLES (comma-list, exact match,
+      // case-insensitive). 'member' never matches either rule.
+      const extraAdminRoles = (process.env.REACT_APP_ADMIN_ROLES || '')
+        .split(',')
+        .map(r => r.toLowerCase().trim())
+        .filter(Boolean);
+      const isStaffRole = (r) => {
+        if (typeof r !== 'string') return false;
+        const role = r.toLowerCase().trim();
+        return /^(admin|csr)/.test(role) || extraAdminRoles.includes(role);
+      };
       const isAdmin =
         isInAllowlist ||
-        rawUser.role === 'csr' || rawUser.role === 'admin' ||
-        rolesArray.includes('csr') || rolesArray.includes('admin');
+        isStaffRole(rawUser.role) ||
+        rolesArray.some(isStaffRole);
 
       if (process.env.NODE_ENV === 'development') {
         dbg('[BC Login] isAdmin:', isAdmin, '(allowlist:', isInAllowlist, ', roles:', rolesArray, ')');
