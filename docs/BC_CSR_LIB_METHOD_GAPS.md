@@ -10,11 +10,19 @@ csrWrapper surface (introspected live, not the docs). Two lists below.
 Hi — we've moved the CSR app onto the csrWrapper library wherever a working method exists
 (8 reads migrated + verified). To finish, we need three things from your side. Grouped by type.
 
+**Sample-call notes:** all direct calls carry `?clientId=…&apiId=…` query params (omitted below for
+brevity) and the CSR session cookie. The ids shown are real **dev test records** so you can reproduce.
+
 ### 1. Open these `/database/search` collections for the `csrManager` role
 Login + `users` + `trackings` work. These 5 still return `403 "Invalid Database Search Role"`,
-which blocks the matching CSR screens:
+which blocks the matching CSR screens. Same call shape for each — only `collectionName` changes:
 
-| Collection | CSR screen it blocks |
+```
+POST /api/database/search
+{ "brandId": "idlookup", "collectionName": "commerceOrder", "query": {}, "perPage": 20 }
+→ 403 { "message": "Invalid Database Search Role", "statusCode": 403 }      (want: 200 { docs:[…], noMoreDocs })
+```
+| Collection (set as `collectionName`) | CSR screen it blocks |
 |---|---|
 | `commerceOrder` | global order/purchase search |
 | `optOutRequest` | Data Removal list |
@@ -23,19 +31,80 @@ which blocks the matching CSR screens:
 | `contact` | visitor contact-message list |
 
 ### 2. ADD these lib methods (none exist — no way to call them except directly)
-For each, the endpoint + params + response we use today (the lib method can wrap the same call):
+For each: the **direct call we make today** (sample) → the **lib method we want**.
 
-1. **Global order search** — `POST /api/database/search` `{ brandId, collectionName:'commerceOrder', …filters, lastId? }` → `{ docs:[commerceOrder…], noMoreDocs }`  (`user.findOrders` needs a userId, so it can't do this)
-2. **One user's `userContact` notes/CSR-mail** — `POST /api/database/search` `{ collectionName:'userContact', targetUserId, lastId? }` → `{ docs:[userContact…], noMoreDocs }`  (`user.findUserContacts` returns *contactMessages* — different data)
-3. **All `userContact` records** (support inbox) — `POST /api/database/search` `{ collectionName:'userContact', lastId? }` → `{ docs, noMoreDocs }`
-4. **Visitor `contact` messages** — `POST /api/database/search` `{ collectionName:'contact', …filters, lastId? }` → `{ docs, noMoreDocs }`
-5. **CSR sale/order creation** (`billing.sale`) — `POST /api/commerceBilling/sale` `{ …saleBody, billingSeriesId }` (we hand-build billingSeriesId today or BC 406s) → created order
-6. **Offer lookup** (`offer.findByShmName`) — `POST /api/commerce/offer/findByShmName` `{ shmName, key? }` → offer doc (`transient.priceInfo` s0/s1)
-7. **Link contact→user** (`contact.changeContactToUserContact`) — `POST /api/message/admin/user/changeContactToUserContact` `{ messageId, targetUserId }` → updated record
+**1. Global order search** — browse all orders (`user.findOrders` needs a userId, so it can't do this)
+```
+POST /api/database/search
+{ "brandId":"idlookup", "collectionName":"commerceOrder", "query":{}, "perPage":20 }
+→ { docs:[commerceOrder…], noMoreDocs }
+WANT:  csrWrapper.api.order.find({ brandId:"idlookup", perPage:20, lastId })
+```
+
+**2. One user's `userContact` notes / CSR-mail** (`user.findUserContacts` returns *contactMessages* — different data)
+```
+POST /api/database/search
+{ "collectionName":"userContact", "targetUserId":"6a30a88dce24e4018b18e016" }
+→ { docs:[userContact…], noMoreDocs }
+WANT:  csrWrapper.api.user.findUserContactNotes({ userId:"6a30a88dce24e4018b18e016", lastId })
+```
+
+**3. ALL `userContact` records** (unified support inbox)
+```
+POST /api/database/search
+{ "collectionName":"userContact", "perPage":20 }
+→ { docs:[userContact…], noMoreDocs }
+WANT:  csrWrapper.api.userContact.findAll({ perPage:20, lastId })
+```
+
+**4. Visitor `contact` messages**
+```
+POST /api/database/search
+{ "collectionName":"contact", "perPage":20 }
+→ { docs:[contact…], noMoreDocs }
+WANT:  csrWrapper.api.contact.find({ perPage:20, lastId })
+```
+
+**5. CSR sale / order creation** (`billing.sale`) — we hand-build `billingSeriesId` today or BC 406s
+```
+POST /api/commerceBilling/sale
+{ "shmName":"<offer>", "payerId":"6a30a88dce24e4018b18e016", …saleBody,
+  "billingSeriesId":"<we generate this client-side>" }
+→ created order
+WANT:  csrWrapper.api.billing.sale({ shmName:"<offer>", payerId:"…", …saleBody })   // lib injects billingSeriesId
+```
+
+**6. Offer lookup by shm name** (`offer.findByShmName`)
+```
+POST /api/commerce/offer/findByShmName
+{ "shmName":"<offer-shm>" }
+→ offer doc (we read transient.priceInfo s0/s1)
+WANT:  csrWrapper.api.offer.findByShmName({ shmName:"<offer-shm>" })
+```
+
+**7. Link a visitor contact to a user** (`contact.changeContactToUserContact`)
+```
+POST /api/message/admin/user/changeContactToUserContact
+{ "messageId":"6a31ca36f009300c72f299b2", "targetUserId":"6a30a88dce24e4018b18e016" }
+→ updated record
+WANT:  csrWrapper.api.contact.changeContactToUserContact({ messageId:"…", targetUserId:"…" })
+```
 
 ### 3. FIX these existing lib methods — they return the WRONG data
-1. **`user.findAdmin`** (CSR-rep / admin-staff list) — our direct call `POST /api/database/search` `{ brandId, collectionName:'users', isAdmin:true }` returns 10 staff; the lib returns **0**. Please make it return the staff list.
-2. **`tracking.findUser`** (a customer's Searches/Reports/Logins) — our direct call `POST /api/database/search` `{ collectionName:'trackings', query:{'data.type':type}, updaterId, perPage:100 }` returns that user's events; the lib `tracking.findUser({type})` returns **0** for a target user (it appears to return only the caller's own tracking). Please let it scope to a target user (`updaterId`/`targetUserId`) and honor `perPage`. (Same root issue as `BC_CSR_TRACKING_SCOPE.md`.)
+
+**1. `user.findAdmin`** (CSR-rep / admin-staff list) — direct returns 10 staff, lib returns 0
+```
+DIRECT (works):  POST /api/database/search { "brandId":"idlookup", "collectionName":"users", "isAdmin":true, "perPage":10 }  → { docs:[10 staff…] }
+LIB (broken):    csrWrapper.api.user.findAdmin({ brandId:"idlookup", perPage:10 })                                          → { docs:[] }   ← want the 10 staff
+```
+
+**2. `tracking.findUser`** (a customer's Searches / Reports / Logins) — direct returns the user's events, lib returns 0
+```
+DIRECT (works):  POST /api/database/search { "collectionName":"trackings", "query":{ "data.type":"USER:login" }, "updaterId":"6a30a88dce24e4018b18e016", "perPage":100 }  → { docs:[that user's events…] }
+LIB (broken):    csrWrapper.api.tracking.findUser({ type:"USER:login" })   → returns 0 for a target user (seems scoped to the caller's own tracking)
+WANT:            csrWrapper.api.tracking.findUser({ type:"USER:login", updaterId:"6a30a88dce24e4018b18e016", perPage:100 })   // scope to a target user + honor perPage
+```
+(Same root issue as `BC_CSR_TRACKING_SCOPE.md`.)
 
 Once #1–#3 land, we switch the last few calls (`optOut.find`, `managedContact.find`, and the items above) onto the library and we're fully off direct endpoint calls. Thanks!
 
