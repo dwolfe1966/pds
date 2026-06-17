@@ -51,4 +51,5 @@
 - [Feedback: EXPOSE ALL report data](feedback_expose_all_report_data.md) — report detail must show every BC field; no attribute too minor; don't cherry-pick
 - [BC report field map](bc_report_field_map.md) — real packet path + criminal/property field inventory + charge-name bug; docs/BC_REPORT_FIELD_MAP.md
 - [Report-detail expose-all status](project_report_detail_expose_all.md) — verified lists + special cases done (bundle d57752b7 NOT deployed); unverified lists blocked (test21 can't create reports)
-- [CSR auth state 2026-06-16](project_csr_auth_state_2026_06_16.md) — csrManager role-gate FIXED (236ebeb); both BC accounts blocked (csrManager 403 on data, admin@admin.admin login 401); lib method does NOT bypass the 403; need a known-good CSR account
+- [CSR auth state 2026-06-16](project_csr_auth_state_2026_06_16.md) — csrManager role-gate FIXED; BC partially opened collections; 8 CSR reads migrated to lib-first (verified); BC ask doc complete (grants + 7 add + 2 fix + sample calls); admin `805fa86a` NOT deployed
+- [Security: open-redirect + deps 2026-06-16](project_security_open_redirect_2026_06_16.md) — react-router open-redirect reachable via AdminLoginPage `redirect` param (SHIPPED, fix); shell-quote critical = build-only; awaiting owner ack to bump

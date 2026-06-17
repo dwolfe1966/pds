@@ -55,9 +55,12 @@ login = 200. /database/search error changed from "Forbidden resource" to per-col
   enumeration), `contact` (Visitor contacts list).
 - Core customer workflow (search → open → orders → tickets → tracking) is UNBLOCKED. Remaining
   gaps = standalone list views (data-removal, unsubscribe, visitor-contacts) + global order search.
-- **STILL TO DEPLOY:** role-gate fix — now bundled with the lib migration as
-  `admin.4273569c.js` (supersedes 8261333d). Until uploaded, the LIVE app blocks csrManager
-  at the login screen even though BC now permits the data.
+- **STILL TO DEPLOY (end of 2026-06-16, all committed+pushed, none uploaded):**
+  - Admin `admin.805fa86a.js` = role-gate fix + 8 lib migrations (supersedes 4273569c/8261333d).
+    Until uploaded the LIVE app blocks csrManager at the login screen even though BC permits data.
+  - Consumer `public.e9ca7f91.js` / `public.af1a2eba.css` = mobile sliding-menu Sign-out fix
+    (100vh→100dvh + safe-area), MemberNav + SalesNav.
+  - Rebuild both right before upload.
 
 **LIB MIGRATION (BC wants NO direct endpoint calls) — doc: BC_CSR_LIB_METHOD_GAPS.md.**
 Gate = result-EQUIVALENCE (lib vs direct, same query incl. filtered → same _id set+count),
