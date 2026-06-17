@@ -124,19 +124,24 @@ class ApiWrapperCsrService {
   }
 
   // csrWrapper.api.user.find — POST /database/search
-  // Direct /database/search retained: the IIFE's api.user.find returns a
-  // different envelope shape than our callers parse, so wrapper-first here
-  // breaks UsersPage. Revisit once the response normalization is unified.
+  // Lib-first as of 2026-06-16: api.user.find was verified _id-equivalent to the
+  // direct call for BOTH the unfiltered list AND a filtered by-email query (same
+  // count, same _ids, same {docs,noMoreDocs,displayFields,dateFields} after getData()).
+  // The lib wraps filters into `query` itself, so pass them flat. Direct
+  // /database/search retained as the fallback (BC honors filters ONLY under `query`;
+  // a top-level filter is ignored and returns the default list).
+  // NOTE: API-level equivalence is green; confirm UsersPage search end-to-end after
+  // the role-gate bundle deploys (live UI couldn't be exercised pre-deploy).
   async csrFindUsers(params = {}) {
-    // BC's /database/search honors filters ONLY under `query` — a top-level
-    // `phone`/`email`/… is IGNORED and BC returns the default list (verified live
-    // 2026-06-05: phone search returned 10 recent non-matches). `lastId`/`perPage`
-    // stay top-level; everything else (email/phone/zip/panLast4/firstName/…) is the query.
     const { lastId, perPage, brandId, ...filters } = params;
     const body = { brandId: brandId || 'idlookup', collectionName: 'users', query: { ...filters } };
     if (lastId) body.lastId = lastId;
     if (perPage) body.perPage = perPage;
-    return await apiWrapper._csrPost('/database/search', body);
+    const libArgs = { brandId: brandId || 'idlookup', ...filters };
+    if (lastId) libArgs.lastId = lastId;
+    if (perPage) libArgs.perPage = perPage;
+    return await this._viaCsr('api.user.find', libArgs,
+      () => apiWrapper._csrPost('/database/search', body));
   }
 
   // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)
@@ -170,11 +175,13 @@ class ApiWrapperCsrService {
   // collection filtered by payerId, then normalize the response shape so
   // callers see the same { orders, perPage } envelope either way.
   async csrFindUserOrders(params = {}) {
-    // Direct POST primary — the IIFE wrapper returns a different envelope
-    // shape than callers expect. With the path typo fixed (commerceMgmt vs
-    // commerceMgnt), this hits the right URL directly.
+    // Lib-first (api.user.findOrders) — verified _id-equivalent to the direct
+    // /commerceMgmt/userOrders call 2026-06-16 (same {orders,perPage} envelope
+    // after getData()). On lib-absent/throw, falls through to the direct primary,
+    // whose own 404 path then runs the /database/search recovery strategies below.
     try {
-      return await apiWrapper._csrPost('/commerceMgmt/userOrders', params);
+      return await this._viaCsr('api.user.findOrders', params,
+        () => apiWrapper._csrPost('/commerceMgmt/userOrders', params));
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
       const { userId, lastOrderId } = params;
@@ -359,18 +366,22 @@ class ApiWrapperCsrService {
 
   // csrWrapper.api.user.findOrderPayments — POST /commerceMgmt/orderPayments
   // params: { orderId, lastPaymentId? }
+  // Lib-first (verified _id-equivalent to the direct call 2026-06-16); direct fallback.
   async csrFindOrderPayments(orderId, lastPaymentId) {
     const body = { orderId };
     if (lastPaymentId) body.lastPaymentId = lastPaymentId;
-    return await apiWrapper._csrPost('/commerceMgmt/orderPayments', body);
+    return await this._viaCsr('api.user.findOrderPayments', body,
+      () => apiWrapper._csrPost('/commerceMgmt/orderPayments', body));
   }
 
   // csrWrapper.api.user.findOrderHistories — POST /commerceMgmt/orderHistories
   // params: { orderId, lastRevisionId? }
+  // Lib-first (verified _id-equivalent to the direct call 2026-06-16); direct fallback.
   async csrFindOrderHistories(orderId, lastRevisionId) {
     const body = { orderId };
     if (lastRevisionId) body.lastRevisionId = lastRevisionId;
-    return await apiWrapper._csrPost('/commerceMgmt/orderHistories', body);
+    return await this._viaCsr('api.user.findOrderHistories', body,
+      () => apiWrapper._csrPost('/commerceMgmt/orderHistories', body));
   }
 
   // csrWrapper.api.user.updateSchedule — POST /commerceMgmt/updateSchedule

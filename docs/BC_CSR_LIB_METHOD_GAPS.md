@@ -16,24 +16,38 @@ createUserAdminNote,updateAdminNote}`, `managedContact.{find,unsubscribe}`, `tra
 **Absent:** any `billing`, `offer`, or top-level `contact` namespace; any *global* order finder;
 any *all-user* contact finder.
 
-## List A — we will switch these to EXISTING lib methods (our work, no BC action)
+## List A — switch to EXISTING lib methods (our work, no BC action)
 
-These hand-roll a direct HTTP call today but a lib method already exists. We're migrating them.
+Gated on **result-equivalence** (lib vs direct on the SAME query/perPage → same `_id` set +
+count, including a filtered query), not shape-match. Shape-match alone is insufficient — see
+List C below where two methods shape-matched perfectly yet returned empty results.
 
-| Our call (direct today) | Existing lib method | Note |
+**DONE — equivalence GREEN + verified end-to-end in the UI (local prod bundle, 2026-06-16):**
+| Our call (direct before) | Lib method now used | Verification |
 |---|---|---|
-| customer search → `/database/search` users | `user.find` | envelope differs from our parser — needs adapter |
-| CSR-rep list → `/database/search` users(isAdmin) | `user.findAdmin` | |
-| data-removal list → `/database/search` optOutRequest | `optOut.find` | |
-| unsubscribe list → `/database/search` managedContact | `managedContact.find` | |
-| tracking tabs → `/database/search` trackings | `tracking.findUser` | lib drops our `perPage:100`+`displayFields` — verify no capped/mixed-user regression |
-| per-customer orders → `/commerceMgmt/userOrders` | `user.findOrders` | envelope differs — needs adapter |
-| order detail → `/commerceMgmt/getUserOrder` | `user.getOrder` | |
-| order payments → `/commerceMgmt/orderPayments` | `user.findOrderPayments` | |
-| order histories → `/commerceMgmt/orderHistories` | `user.findOrderHistories` | |
-| tickets inbox → `/contactMessage/admin/find` | `message.contact.find` | envelope differs — broke inbox before; adapt + verify |
-| ticket thread → `/contactMessage/admin/histories` | `message.contact.histories` | |
-| reply link → `/contactMessage/admin/replyUrl` | `message.contact.replyLinkUrl` | |
+| customer search → `/database/search` users | `user.find` | unfiltered 10==10 + by-email 1==1 (same _ids); UI: list + search render |
+| per-customer orders → `/commerceMgmt/userOrders` | `user.findOrders` | 1==1; UI: Orders tab renders |
+| order payments → `/commerceMgmt/orderPayments` | `user.findOrderPayments` | 1==1 |
+| order histories → `/commerceMgmt/orderHistories` | `user.findOrderHistories` | 1==1 |
+
+**QUEUED — lib exists, needs its own equivalence/field check before switching:**
+| Our call (direct today) | Lib method | Why not yet |
+|---|---|---|
+| order detail → `/commerceMgmt/getUserOrder` | `user.getOrder` | single-object `{order}`; run id-equivalence then switch |
+| tickets inbox → `/contactMessage/admin/find` | `message.contact.find` | _id set matched (20==20) BUT empirical "breaks inbox+dashboard" scar — verify `latestReply` fields + `lastId` paging first |
+| ticket thread → `/contactMessage/admin/histories` | `message.contact.histories` | verify by contactMessageId |
+| reply link → `/contactMessage/admin/replyUrl` | `message.contact.replyLinkUrl` | verify returned URL |
+
+## List C — lib method EXISTS but returns WRONG results (BC must FIX, do NOT switch)
+
+These passed shape-match but FAILED result-equivalence — switching would silently empty the UI.
+| Our call | Lib method | Result-equivalence finding |
+|---|---|---|
+| CSR-rep list | `user.findAdmin` | lib returned **0 docs** vs direct **10** (same query). Likely wrong collection/args. |
+| tracking tabs (Searches/Reports/Logins) | `tracking.findUser` | lib returned **0** vs direct **100** for `{type,updaterId,perPage:100}`. Appears to scope to the *caller's own* tracking, not a target user's — can't carry our `updaterId` scoping. |
+
+**Until BC fixes these two, we keep the direct calls** (the alternative is an empty CSR-rep list
+and empty Searches/Reports/Logins tabs).
 
 ## List B — NO lib method exists; please ADD these to the csrWrapper IIFE
 
