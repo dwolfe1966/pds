@@ -30,13 +30,17 @@ List C below where two methods shape-matched perfectly yet returned empty result
 | order payments → `/commerceMgmt/orderPayments` | `user.findOrderPayments` | 1==1 |
 | order histories → `/commerceMgmt/orderHistories` | `user.findOrderHistories` | 1==1 |
 
-**QUEUED — lib exists, needs its own equivalence/field check before switching:**
-| Our call (direct today) | Lib method | Why not yet |
+**DONE (round 2) — equivalence GREEN (incl. field-set + paging) + UI-verified:**
+| Our call (direct before) | Lib method now used | Verification |
 |---|---|---|
-| order detail → `/commerceMgmt/getUserOrder` | `user.getOrder` | single-object `{order}`; run id-equivalence then switch |
-| tickets inbox → `/contactMessage/admin/find` | `message.contact.find` | _id set matched (20==20) BUT empirical "breaks inbox+dashboard" scar — verify `latestReply` fields + `lastId` paging first |
-| ticket thread → `/contactMessage/admin/histories` | `message.contact.histories` | verify by contactMessageId |
-| reply link → `/contactMessage/admin/replyUrl` | `message.contact.replyLinkUrl` | verify returned URL |
+| order detail → `/commerceMgmt/getUserOrder` | `user.getOrder` | same `order._id`; UI: Orders tab |
+| tickets inbox → `/contactMessage/admin/find` | `message.contact.find` | page1 20==20 + page2 (lastId) 20==20, **identical key set incl. latestReply**; UI: inbox loads + thread opens |
+| ticket thread → `/contactMessage/admin/histories` | `message.contact.histories` | 1==1, sameKeys |
+| reply link → `/contactMessage/admin/replyUrl` | `message.contact.replyLinkUrl` | identical replyLinkUrl |
+
+**All 8 verified List-A reads now go lib-first (direct fallback retained).** Remaining direct
+calls are List B (no lib) / List C (lib broken) below, plus `optOut.find`/`managedContact.find`
+(can't verify until BC opens those collections).
 
 ## List C — lib method EXISTS but returns WRONG results (BC must FIX, do NOT switch)
 
@@ -48,6 +52,68 @@ These passed shape-match but FAILED result-equivalence — switching would silen
 
 **Until BC fixes these two, we keep the direct calls** (the alternative is an empty CSR-rep list
 and empty Searches/Reports/Logins tabs).
+
+---
+
+## Plain message for BC (copy/paste) — with the endpoints we call today
+
+Hi — we're moving all CSR calls onto the csrWrapper library (no direct endpoint calls). Most are
+done. Two asks remain. For each we list the endpoint + params + response we use today, so the lib
+method can wrap the same call.
+
+### Please ADD these lib methods (none exist today — no way to call them except directly)
+
+1. **Global order search** (browse all orders, not one user's)
+   - We call: `POST /api/database/search`
+   - Params: `{ brandId: 'idlookup', collectionName: 'commerceOrder', ...filters, lastId? }`
+   - Returns: `{ docs: [commerceOrder…], noMoreDocs }`
+   - (`api.user.findOrders` needs a `userId` and 400s on bare brandId, so it can't do this.)
+
+2. **Find a single user's `userContact` notes / CSR-mail**
+   - We call: `POST /api/database/search`
+   - Params: `{ collectionName: 'userContact', targetUserId, lastId? }`
+   - Returns: `{ docs: [userContact…], noMoreDocs }`
+   - (`api.user.findUserContacts` returns **contactMessages** — different data — so it doesn't cover this.)
+
+3. **Find ALL `userContact` records** (unified support inbox)
+   - We call: `POST /api/database/search`
+   - Params: `{ collectionName: 'userContact', lastId? }`
+   - Returns: `{ docs: [userContact…], noMoreDocs }`
+
+4. **Find visitor `contact` messages**
+   - We call: `POST /api/database/search`
+   - Params: `{ collectionName: 'contact', ...filters, lastId? }`
+   - Returns: `{ docs: [contact…], noMoreDocs }`
+
+5. **CSR-initiated sale / order creation** (`billing.sale` on the CSR IIFE)
+   - We call: `POST /api/commerceBilling/sale`
+   - Params: the sale body **+ a `billingSeriesId` we have to hand-build** (type `sale`); without it BC 406s "billingSeriesId should not be empty"
+   - Returns: the created order
+   - (A lib `billing.sale` would inject billingSeriesId itself, like the consumer wrapper does.)
+
+6. **Offer lookup by shm name** (`offer.findByShmName`)
+   - We call: `POST /api/commerce/offer/findByShmName`
+   - Params: `{ shmName, key? }`
+   - Returns: the offer doc (we read `transient.priceInfo` s0/s1)
+
+7. **Link a visitor contact to a user** (`contact.changeContactToUserContact`)
+   - We call: `POST /api/message/admin/user/changeContactToUserContact`
+   - Params: `{ messageId, targetUserId }`
+   - Returns: the updated record
+
+### Please FIX these existing lib methods — they return the wrong data
+
+8. **`user.findAdmin`** (CSR-rep / admin-staff list)
+   - Direct equivalent we still use: `POST /api/database/search` with
+     `{ brandId: 'idlookup', collectionName: 'users', isAdmin: true }` → `{ docs: [staff…], noMoreDocs }` (10 rows)
+   - Lib `user.findAdmin({ brandId })` returns **0 docs** for the same data. Please make it return the CSR/admin staff.
+
+9. **`tracking.findUser`** (a customer's Searches / Reports / Logins)
+   - Direct equivalent we still use: `POST /api/database/search` with
+     `{ collectionName: 'trackings', query: { 'data.type': type }, updaterId, perPage: 100 }` → `{ docs: [tracking…], noMoreDocs }`
+   - Lib `tracking.findUser({ type })` returns **0** for a target user — it appears to return only the *caller's own* tracking. Please let it scope to a target user (`updaterId`/`targetUserId`) and honor `perPage`. (Same root issue as `BC_CSR_TRACKING_SCOPE.md`.)
+
+Once these land we can finish moving fully onto the library. Thanks!
 
 ## List B — NO lib method exists; please ADD these to the csrWrapper IIFE
 

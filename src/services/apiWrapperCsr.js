@@ -322,9 +322,12 @@ class ApiWrapperCsrService {
   // Same 404 risk as csrFindUserOrders on some BC deployments — fall back to
   // /database/search filtered by order _id and normalize the response shape.
   async csrGetUserOrder(params = {}) {
-    // Direct POST primary — same envelope-mismatch risk as csrFindUserOrders.
+    // Lib-first (api.user.getOrder) — verified _id-equivalent to the direct
+    // /commerceMgmt/getUserOrder call 2026-06-16 (same {order} payload). On
+    // lib-absent/throw → direct primary, whose 404 path runs the by-_id recovery below.
     try {
-      return await apiWrapper._csrPost('/commerceMgmt/getUserOrder', params);
+      return await this._viaCsr('api.user.getOrder', params,
+        () => apiWrapper._csrPost('/commerceMgmt/getUserOrder', params));
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
       if (process.env.NODE_ENV === 'development') {
@@ -616,12 +619,15 @@ class ApiWrapperCsrService {
   // Lists all contactMessages (member-linked and non-member) sorted by latest reply
   // or by contact date if no reply exists. Each record may include a latestReply.
   async csrFindContactMessages(params = {}) {
-    // Direct only: IIFE's api.message.contact.find returns a different
-    // envelope shape than our parsers expect, breaking the inbox + dashboard.
+    // Lib-first (api.message.contact.find) — verified 2026-06-16: _id-equivalent
+    // AND identical full key set (incl. latestReply) to the direct call on BOTH
+    // page 1 and a lastId-paged page 2. (The prior "breaks inbox+dashboard" envelope
+    // mismatch no longer reproduces through getData().) Direct GET retained as fallback.
     const qs = new URLSearchParams();
     if (params.lastId) qs.set('lastId', params.lastId);
     const suffix = qs.toString() ? `?${qs.toString()}` : '';
-    return await apiWrapper._csrGet(`/contactMessage/admin/find${suffix}`);
+    return await this._viaCsr('api.message.contact.find', params,
+      () => apiWrapper._csrGet(`/contactMessage/admin/find${suffix}`));
   }
 
   // csrWrapper.api.user.findUserContacts — POST /contactMessage/admin/find/:targetUserId
@@ -705,10 +711,13 @@ class ApiWrapperCsrService {
   // csrWrapper.api.message.contact.histories — GET /api/contactMessage/admin/histories
   // Returns the full thread (contact + user/csr replies) for a contact message.
   async csrFindContactHistories(params = {}) {
+    // Lib-first (api.message.contact.histories) — verified _id-equivalent + sameKeys
+    // to the direct call 2026-06-16. Direct GET retained as fallback.
     const qs = new URLSearchParams();
     if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
     if (params.lastId) qs.set('lastId', params.lastId);
-    return await apiWrapper._csrGet(`/contactMessage/admin/histories?${qs.toString()}`);
+    return await this._viaCsr('api.message.contact.histories', params,
+      () => apiWrapper._csrGet(`/contactMessage/admin/histories?${qs.toString()}`));
   }
 
   // csrWrapper.api.message.contact.createCsrReply — POST /contactMessage/admin/csrReply
@@ -747,9 +756,12 @@ class ApiWrapperCsrService {
   // csrWrapper.api.message.contact.replyLinkUrl — GET /contactMessage/admin/replyUrl
   // Returns the reply link URL that the user would receive via email.
   async csrGetContactReplyLinkUrl(params = {}) {
+    // Lib-first (api.message.contact.replyLinkUrl) — verified identical replyLinkUrl
+    // to the direct call 2026-06-16. Direct GET retained as fallback.
     const qs = new URLSearchParams();
     if (params.messageId) qs.set('messageId', params.messageId);
-    return await apiWrapper._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`);
+    return await this._viaCsr('api.message.contact.replyLinkUrl', params,
+      () => apiWrapper._csrGet(`/contactMessage/admin/replyUrl?${qs.toString()}`));
   }
 
   // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)

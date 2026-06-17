@@ -67,6 +67,25 @@ const SEARCH = process.env.CSR_SEARCH || 'testingreg061526d@idlookup.ai';
     rec.customerDetail = { note: 'no customer link to open' };
   }
 
+  // Tickets inbox (csrFindContactMessages → api.message.contact.find) + open a thread
+  // (csrFindContactHistories → api.message.contact.histories)
+  await page.goto(`${BASE}/csr/tickets`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(3500);
+  const tText = await page.locator('body').innerText();
+  rec.ticketsInbox = {
+    forbidden: /forbidden|invalid database search role|unable to load/i.test(tText),
+    rowish: await page.locator('table tr, [role="row"], a[href*="ticket" i], li').count(),
+    empty: /no tickets|no messages|nothing here/i.test(tText),
+  };
+  const trow = page.locator('table tbody tr, [role="row"], a[href*="ticket" i]').first();
+  if (await trow.count()) {
+    await trow.click().catch(() => {});
+    await page.waitForTimeout(2500);
+    const thText = await page.locator('body').innerText();
+    rec.ticketThread = { opened: thText.trim().length > 80,
+      forbidden: /forbidden|invalid database search role/i.test(thText) };
+  }
+
   console.log(JSON.stringify(rec, null, 2));
   await browser.close();
 })().catch(e => { console.error('FATAL', e); process.exit(1); });
