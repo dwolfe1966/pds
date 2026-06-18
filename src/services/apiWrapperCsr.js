@@ -425,9 +425,14 @@ class ApiWrapperCsrService {
     return await apiWrapper._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });
   }
 
-  // csrWrapper.api.user.findUserContacts — POST /database/search (collectionName: userContact)
-  // Returns notes, csr mails, and user contacts for a given userId.
-  // BC filters by targetUserId on this collection.
+  // Direct POST /database/search (collectionName: userContact) — returns the
+  // userContact COLLECTION (CSR-outbound mail `userContactCsrMail` + member
+  // inbound replies `userContact`) for a given userId, filtered by targetUserId.
+  // NOT routed through the IIFE: the same-named IIFE method `user.findUserContacts`
+  // hits /contactMessage/admin/find/:targetUserId and returns *contactMessages* —
+  // a DIFFERENT collection (see csrFindUserContactMessages below). Semantic trap;
+  // do not "migrate" this to the IIFE method. (Direct call subject to the
+  // userContact /database/search role gate — BC ask, BC_CSR_LIB_METHOD_GAPS.md #1.)
   async csrFindUserContacts(params = {}) {
     const { userId, ...rest } = params;
     const body = { collectionName: 'userContact', ...rest };
@@ -777,15 +782,27 @@ class ApiWrapperCsrService {
       () => apiWrapper._csrPost('/managedContact/management/unsubscribe', { managedContactId }));
   }
 
-  // csrWrapper.api.contact.find — POST /database/search (collectionName: contact)
-  // Finds visitor contact messages. Params: { status?, brandId?, email?, lastId? }
+  // Visitor contact messages. Delegates to message.contact.find — verified live
+  // 2026-06-17 that GET /contactMessage/admin/find returns the visitor submissions
+  // (docs all `type:"contact"`), which is the same data the inbox uses. The old
+  // direct `POST /database/search {collectionName:'contact'}` path 403s "Invalid
+  // Database Search Role" for the CSR role and is what BC told us to drop in favor
+  // of message.contact.find (BC_CSR_LIB_RESPONSE_MESSAGE.md item 2.4).
   async csrFindContacts(params = {}) {
-    return await apiWrapper._csrPost('/database/search', { collectionName: 'contact', ...params });
+    return await this.csrFindContactMessages(params);
   }
 
-  // csrWrapper.api.contact.changeContactToUserContact — POST /message/admin/user/changeContactToUserContact
-  // Links a visitor contact message to a real user account.
-  // Params: { messageId, targetUserId }
+  // Links a visitor contact message to a real user account. Params: { messageId, targetUserId }.
+  // Stays on the direct POST /message/admin/user/changeContactToUserContact: the IIFE has NO
+  // `contact.changeContactToUserContact` (confirmed absent live 2026-06-17 — no `contact` namespace),
+  // so _viaCsr always falls through to the direct call anyway.
+  //
+  // CANDIDATE lib replacement = csrSetContactTargetUser (message.contact.setTargetUser), but DO NOT
+  // switch until BC confirms equivalence: (1) BC's csrApi.csv shows setTargetUser needs a
+  // `currentRevisionId` concurrency token (an extra fetch), unlike this method's {messageId,targetUserId};
+  // (2) "changeContactToUserContact" implies a contact→userContact collection conversion, whereas
+  // setTargetUser only sets a targetUserId field — they may not be the same operation. Asked in
+  // BC_CSR_LIB_RESPONSE_MESSAGE.md item 2.7. (NB: this path is currently unused by any page.)
   async csrChangeContactToUserContact(params = {}) {
     return await this._viaCsr('api.contact.changeContactToUserContact', params,
       () => apiWrapper._csrPost('/message/admin/user/changeContactToUserContact', params));
