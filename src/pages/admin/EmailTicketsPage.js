@@ -243,9 +243,11 @@ const EmailTicketsPage = () => {
 
   const listItems = useMemo(() => {
     if (mode === 'user') {
-      const items = allItems.filter((item) => isMailThread(item.type));
+      // A member's messages live in contactMessage (linked by targetUserId), alongside
+      // any userContact-collection mail/replies — include both so user-mode isn't empty.
+      const items = allItems.filter((item) => isMailThread(item.type) || isContactMessage(item.type));
       if (filterDir === 'outbound') return items.filter((item) => isCsrMail(item.type));
-      if (filterDir === 'inbound') return items.filter((item) => isUserContact(item.type));
+      if (filterDir === 'inbound') return items.filter((item) => isUserContact(item.type) || isContactMessage(item.type));
       return items;
     }
     // Inbox mode — combine all five filters.
@@ -310,7 +312,7 @@ const EmailTicketsPage = () => {
       if (users.length === 0) { setSearchError(`No user found for "${q}".`); return; }
       const user = users[0];
       setResolvedUser(user);
-      await fetchUserContacts(user._id || user.id, null);
+      await fetchUserContacts(user._id || user.id, null, user.email);
     } catch (err) {
       setSearchError(err.message || 'Failed to find user.');
     } finally {
@@ -318,23 +320,35 @@ const EmailTicketsPage = () => {
     }
   };
 
-  const fetchUserContacts = async (userId, cursorId) => {
+  const fetchUserContacts = async (userId, cursorId, userEmail = resolvedUser?.email) => {
     setLoadingItems(true);
     setItemsError('');
     try {
-      const params = { userId, ...(cursorId ? { lastId: cursorId } : {}) };
-      const res = await api.adminFindUserContacts(params);
-      const all = (res?.data ?? res?.docs ?? [])
+      // Mirror fetchInbox: a member's correspondence lives in contactMessage (linked by
+      // targetUserId) — fetch that WORKING per-user source (same call the user-detail
+      // "Contact tickets" section uses, with an email-merge). ALSO try the userContact
+      // collection (notes / CSR mail); it 403s for the CSR role today (BC ask —
+      // BC_CSR_LIB_METHOD_LIVE_EVIDENCE.md §2), so tolerate failure and merge whatever
+      // it returns. Additive: picks up userContact for free if BC opens that collection.
+      const [cmRes, ucRes] = await Promise.all([
+        api.adminFindUserContactMessages({ userId, userEmail }).catch(() => ({ docs: [] })),
+        api.adminFindUserContacts({ userId, ...(cursorId ? { lastId: cursorId } : {}) }).catch(() => ({ data: [] })),
+      ]);
+      const cmDocs = cmRes?.docs ?? cmRes?.data ?? (Array.isArray(cmRes) ? cmRes : []);
+      const ucDocs = ucRes?.data ?? ucRes?.docs ?? (Array.isArray(ucRes) ? ucRes : []);
+      const byId = new Map();
+      [...cmDocs, ...ucDocs].forEach((d) => { const k = d._id || d.id; byId.set(k || byId.size, d); });
+      const all = [...byId.values()]
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      const docs = cursorId ? all : all.slice(0, 10);
-      const last = docs.length > 0 ? resolveId(docs[docs.length - 1]) : null;
       if (cursorId) {
-        setAllItems((prev) => [...prev, ...docs]);
+        setAllItems((prev) => [...prev, ...all]);
       } else {
-        setAllItems(docs);
+        setAllItems(all);
       }
-      setLastId(last);
-      setNoMoreDocs(res?.noMoreDocs ?? docs.length === 0);
+      setLastId(all.length > 0 ? resolveId(all[all.length - 1]) : null);
+      // The per-user contactMessage finder returns all matches in one pass, so there's
+      // no further page to fetch.
+      setNoMoreDocs(true);
     } catch (err) {
       setItemsError(err.message || 'Failed to load contacts.');
     } finally {
