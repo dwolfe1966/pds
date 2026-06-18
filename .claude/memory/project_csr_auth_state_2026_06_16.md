@@ -53,6 +53,9 @@ login = 200. /database/search error changed from "Forbidden resource" to per-col
   search — but per-customer orders work via the dedicated endpoint), `optOutRequest` (Data
   Removal list), `managedContact` (Unsubscribe list), `userContact` (all-user-contacts
   enumeration), `contact` (Visitor contacts list).
+  **⚠ PARTIALLY SUPERSEDED 2026-06-17 — see [[csr-lib-live-evidence-2026-06-17]]:** live re-test
+  shows `optOut.find` and `managedContact.find` are now READABLE (managedContact returned 10 docs);
+  only `commerceOrder`/`userContact`/`contact` remain gated.
 - Core customer workflow (search → open → orders → tickets → tracking) is UNBLOCKED. Remaining
   gaps = standalone list views (data-removal, unsubscribe, visitor-contacts) + global order search.
 - **STILL TO DEPLOY (end of 2026-06-16, all committed+pushed, none uploaded):**
