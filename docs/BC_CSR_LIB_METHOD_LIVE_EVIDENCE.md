@@ -40,7 +40,27 @@ the admin/CSR users.
 
 ---
 
-## 2. Item 2.2 — `findUserContacts` / `findUserAdminNotes` do NOT read the `userContact` collection
+## 2. Item 2.2 — REASSESSED 2026-06-18: Kwan is likely RIGHT; `findUserContacts` + `findUserAdminNotes` cover it
+
+> **UPDATE 2026-06-18 — supersedes the original §2 analysis below.** Kwan's point: the test user
+> `6a30a88` simply had no messages, so the 0-results were *data*, not a method bug. Re-checking live:
+> that user now has **1 contactMessage** (`6a31ca36`, `targetUserId=6a30a88`) and **1 admin note**, and
+> `findUserContacts`→**1** / `findUserAdminNotes`→**1** return them. More importantly, **our own
+> write-path agrees with Kwan**: `submitContact` (api.js:785–845) routes *member* contact submissions
+> to `message.contact.create` → the **`contactMessage`** collection with `targetUserId` set, and
+> `findUserContacts` reads `/contactMessage/admin/find/:userId` *by targetUserId* — i.e. it reads back
+> exactly what members write. So "a single user's messages & notes" = contactMessages-by-`targetUserId`
+> (`findUserContacts`) + admin notes (`findUserAdminNotes`). **We are conceding 2.2 to Kwan's methods.**
+>
+> **One open confirmation (doesn't block conceding):** our code also references a `userContact`
+> collection (`/database/search collectionName=userContact`, the `userContactCsrMail`/`userContact`
+> types, `/message/userContact/list`). We can't read it (403) to tell whether it's a *separate* store
+> with data `findUserContacts` misses, or just a legacy alias for "contactMessage by targetUserId."
+> Asked Kwan to confirm. If it's all contactMessage → 2.2 fully closed.
+>
+> _Original (pre-reassessment) analysis retained below for the record:_
+
+### (Original) `findUserContacts` / `findUserAdminNotes` do NOT read the `userContact` collection
 
 Verified by the **backend URL each method actually hit** (decisive — independent of doc count):
 
@@ -72,7 +92,19 @@ same in-session auth returned 200 for the `users`/`trackings` direct calls in §
 
 ---
 
-## 2b. Item 2.3 — `findUserContacts` / `findUserAdminNotes` CANNOT serve the all-users inbox
+## 2b. Item 2.3 — REASSESSED 2026-06-18: Kwan now says `message.contact.find`; likely RIGHT
+
+> **UPDATE 2026-06-18 — supersedes the original §2b below.** Kwan's revised answer for 2.3 is
+> `csrWrapper.api.message.contact.find` (not the two per-user methods he first cited). Given the §2
+> reassessment — member messages are written to the **`contactMessage`** collection (linked by
+> `targetUserId`) — `message.contact.find` returns **all** contactMessages (members + visitors) =
+> the unified inbox. So it **likely covers 2.3**, consistent with it being correct for 2.4. **We are
+> conceding 2.3 to `message.contact.find`**, pending the same data-model confirmation as §2 (is the
+> `userContact` collection a separate store, or all contactMessage-by-targetUserId?).
+>
+> _Original (pre-reassessment) analysis retained below for the record:_
+
+### (Original) `findUserContacts` / `findUserAdminNotes` CANNOT serve the all-users inbox
 
 BC suggested the **same two methods** for item 2.3 (list ALL `userContact` records / unified inbox).
 They fail on **two independent counts** — verified live 2026-06-17 (login confirmed: `user.find`
@@ -276,16 +308,17 @@ filtered query before switching). `userContact` remains gated — see §2 / §2b
 
 ## Net asks for BC after this run
 
-1. **FIX** `user.findAdmin` (lib 0 / direct 10, §1) and `tracking.findUser` (lib 0 / direct 100, §1).
-2. **OPEN** the `userContact` collection to the CSR role (still 403, §2/§2b/§4) **and ADD** finders for
-   it — per-user keyed by `targetUserId` (2.2) and all-users (2.3). `findUserContacts`/`findUserAdminNotes`
-   read different collections and are per-user only.
-3. **ADD** the absent namespaces (§3): `billing.sale` (CSR, with `payerId`, §2d),
-   `offer.findByShmName`, global `commerceOrder` finder, all-user `userContact` finder.
-4. **WITHDRAWN by us:** item 2.4 (`contact`-collection finder) — `message.contact.find` covers visitor
-   contacts (§2c); item 2.7 (`changeContactToUserContact`) — `message.contact.setTargetUser` exists and
-   covers it pending BC confirmation (§2e). And no longer needed: opening `managedContact` /
-   `optOutRequest` — already readable (§4).
+1. **FIX** `user.findAdmin` (returns 0; `isAdmin` filter is a no-op → no path to CSR staff, §1/§5b) and
+   `tracking.findUser` (returns 0 / caller's events; ignores `perPage`, §1/§5b).
+2. **ADD** `csrWrapper.api.billing.sale({ payerId, … })` (§2d) and `offer.findByShmName` + fix offer
+   resolution in the CSR context (§5b). (Global `commerceOrder` finder still open if needed.)
+3. **CONFIRM** the data model (closes 2.2/2.3): is the `userContact` collection a *separate* store, or
+   is member correspondence all `contactMessage` linked by `targetUserId`? If the latter, 2.2/2.3 are done.
+4. **WITHDRAWN / CONCEDED by us:**
+   - 2.2 → `findUserContacts` + `findUserAdminNotes` (§2, reassessed — member msgs are contactMessages).
+   - 2.3 → `message.contact.find` (§2b, reassessed).
+   - 2.4 → `message.contact.find` (§2c). · 2.7 → `message.contact.setTargetUser` (§2e, pending equivalence).
+   - No longer needed: opening `managedContact` / `optOutRequest` — already readable (§4).
 
 ---
 

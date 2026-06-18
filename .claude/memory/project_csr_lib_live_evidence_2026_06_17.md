@@ -44,6 +44,27 @@ wrong query body, NOT a permission/transport issue.
 - `user.findUserAdminNotes({userId})` → `GET /api/message/admin/findNotes?referenceId=…&referenceCollection=users` (admin notes).
 - Both returned 0 for this user (no tickets/notes); URL proves the collection mismatch regardless.
 
+**2.2/2.3 REASSESSED 2026-06-18 — Kwan likely RIGHT; we CONCEDED.** Kwan: test user 6a30a88 just had
+no messages → 0 was data, not a method bug. Re-check: that user now has 1 contactMessage (linked) + 1
+note; findUserContacts→1 / findUserAdminNotes→1. Decisive: OUR write-path (`submitContact`, api.js
+~785-845) routes MEMBER contacts to `message.contact.create` → **contactMessage** collection with
+`targetUserId`, and findUserContacts reads `/contactMessage/admin/find/:userId` BY targetUserId — i.e.
+reads back what members write. So 2.2 = findUserContacts+findUserAdminNotes; 2.3 = message.contact.find
+(Kwan's revised answer). CONCEDED both. OPEN data-model Q to Kwan: is `userContact` collection a SEPARATE
+store or just contactMessage-by-targetUserId? (cheap discriminator: do csrCreateCsrReply
+`userContactCsrMail` replies land as contactMessage histories or separate docs?) Doc §2/§2b updated.
+
+**CODE FIX 2026-06-18 (EmailTicketsPage user-mode) — the ONLY real breakage was here.** UserDetailPage
+(allSettled) + tickets inbox (.catch) already tolerated the userContact 403; only `fetchUserContacts`
+(user-mode search) had an UNCAUGHT `adminFindUserContacts` → 403 threw "Failed to load contacts."
+Fix (ADDITIVE, model-independent, per advisor): fetchUserContacts now mirrors fetchInbox — fetches the
+WORKING `adminFindUserContactMessages({userId,userEmail})` (contactMessage by targetUserId + email merge)
+AND keeps `adminFindUserContacts` as a `.catch(()=>[])` merge source (picks up userContact free if BC
+opens it); user-mode listItems filter now includes `isContactMessage`. Did NOT repoint shared service
+methods (would mislabel contactMessages as notes in UserDetailPage) and did NOT rip out userContact
+types. UI-VERIFIED via serve-admin-prod + verify-csr-tickets-usermode.js: failedToLoad=false, rows
+render, userContact 403 swallowed, contactMessage 200 serves data. Admin bundle `admin.5860946e.js`.
+
 **CODE FIXES DONE (2026-06-17, apiWrapperCsr.js; consumer build clean):**
 - **2.4** `csrFindContacts` now delegates to `csrFindContactMessages` (message.contact.find) instead of
   the gated `POST /database/search {collectionName:'contact'}` (403). NOTE: the all-inbox finder is
