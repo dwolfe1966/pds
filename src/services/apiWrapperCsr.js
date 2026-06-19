@@ -104,13 +104,20 @@ class ApiWrapperCsrService {
    * existing fallback test). EVERY MUTATING caller MUST pass { retryOnError: false }
    * so a post-send error surfaces instead of being silently retried.
    *
+   * opts.validate: a predicate on the unwrapped lib result. If it returns false the
+   * lib SUCCEEDED but with an unusable/wrong shape (the f156c11 class — a truthy
+   * envelope with no docs[] that the caller would silently degrade to []). For
+   * idempotent reads (retryOnError) we then prefer the known-good direct fallback
+   * instead of returning the bad shape. (Never applied to mutations — they don't
+   * pass retryOnError:true, so a committed mutation is never re-run.)
+   *
    * @param {string} dotPath e.g. 'api.user.findOrders'
    * @param {*} args         passed straight through to the wrapper method
    * @param {() => Promise<*>} fallback
-   * @param {{retryOnError?: boolean}} [opts]
+   * @param {{retryOnError?: boolean, validate?: (r:any)=>boolean}} [opts]
    */
   async _viaCsr(dotPath, args, fallback, opts = {}) {
-    const { retryOnError = true } = opts;
+    const { retryOnError = true, validate } = opts;
     let fn = null, parent = null;
     try {
       const csr = await this.getCsrWrapper();
@@ -132,7 +139,14 @@ class ApiWrapperCsrService {
       return await fallback();
     }
     try {
-      return _unwrapBcResponse(await fn.call(parent, args));
+      const result = _unwrapBcResponse(await fn.call(parent, args));
+      // Lib succeeded but with an unusable shape → for idempotent reads, use the
+      // known-good direct call instead of silently degrading to an empty list.
+      if (retryOnError && typeof validate === 'function' && !validate(result)) {
+        dbg(`[CsrWrapper] ${dotPath} returned an unusable shape, falling back to direct`);
+        return await fallback();
+      }
+      return result;
     } catch (err) {
       if (retryOnError) {
         dbg(`[CsrWrapper] ${dotPath} threw, retrying via fallback: ${err?.message}`);
@@ -142,6 +156,16 @@ class ApiWrapperCsrService {
       dbg(`[CsrWrapper] ${dotPath} threw (mutation — NOT retried): ${err?.message}`);
       throw err;
     }
+  }
+
+  // True when `r` is a usable LIST response (an array, or a BC envelope carrying a
+  // recognized array). Used as _viaCsr's `validate` for finders so a wrong-shape lib
+  // success (truthy but no docs[]) falls back to the direct call instead of emptying the UI.
+  _isUsableList(r) {
+    if (Array.isArray(r)) return true;
+    if (!r || typeof r !== 'object') return false;
+    return Array.isArray(r.docs) || Array.isArray(r.orders) || Array.isArray(r.payments)
+      || Array.isArray(r.orderHistories) || Array.isArray(r.data);
   }
 
   // csrWrapper.api.user.find — POST /database/search
@@ -162,7 +186,7 @@ class ApiWrapperCsrService {
     if (lastId) libArgs.lastId = lastId;
     if (perPage) libArgs.perPage = perPage;
     return await this._viaCsr('api.user.find', libArgs,
-      () => apiWrapper._csrPost('/database/search', body));
+      () => apiWrapper._csrPost('/database/search', body), { validate: this._isUsableList });
   }
 
   // CSR/admin staff list. Staff live in the `admins` collection (roles:['csr'],
@@ -175,7 +199,7 @@ class ApiWrapperCsrService {
   async csrFindCsReps(params = {}) {
     const { brandId, collectionName, isAdmin, ...rest } = params; // strip the legacy users/isAdmin/idlookup filters
     return await this._viaCsr('api.user.findAdmin', rest,
-      () => apiWrapper._csrPost('/database/search', { collectionName: 'admins', ...rest }));
+      () => apiWrapper._csrPost('/database/search', { collectionName: 'admins', ...rest }), { validate: this._isUsableList });
   }
 
   // csrWrapper.api.user.getUserDetail — POST /user/management/detail
@@ -210,7 +234,7 @@ class ApiWrapperCsrService {
     // whose own 404 path then runs the /database/search recovery strategies below.
     try {
       return await this._viaCsr('api.user.findOrders', params,
-        () => apiWrapper._csrPost('/commerceMgmt/userOrders', params));
+        () => apiWrapper._csrPost('/commerceMgmt/userOrders', params), { validate: this._isUsableList });
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
       const { userId, lastOrderId } = params;
@@ -403,7 +427,7 @@ class ApiWrapperCsrService {
     const body = { orderId };
     if (lastPaymentId) body.lastPaymentId = lastPaymentId;
     return await this._viaCsr('api.user.findOrderPayments', body,
-      () => apiWrapper._csrPost('/commerceMgmt/orderPayments', body));
+      () => apiWrapper._csrPost('/commerceMgmt/orderPayments', body), { validate: this._isUsableList });
   }
 
   // csrWrapper.api.user.findOrderHistories — POST /commerceMgmt/orderHistories
@@ -413,7 +437,7 @@ class ApiWrapperCsrService {
     const body = { orderId };
     if (lastRevisionId) body.lastRevisionId = lastRevisionId;
     return await this._viaCsr('api.user.findOrderHistories', body,
-      () => apiWrapper._csrPost('/commerceMgmt/orderHistories', body));
+      () => apiWrapper._csrPost('/commerceMgmt/orderHistories', body), { validate: this._isUsableList });
   }
 
   // csrWrapper.api.user.updateSchedule — POST /commerceMgmt/updateSchedule
@@ -495,7 +519,7 @@ class ApiWrapperCsrService {
       const qs = new URLSearchParams({ userId });
       if (lastId) qs.set('lastId', lastId);
       return await apiWrapper._csrGet(`/message/admin/findNotes?${qs.toString()}`);
-    });
+    }, { validate: this._isUsableList });
   }
 
   // csrWrapper.api.message.note.createUserAdminNote — POST /message/admin/createNote
@@ -661,7 +685,7 @@ class ApiWrapperCsrService {
     if (params.lastId) qs.set('lastId', params.lastId);
     const suffix = qs.toString() ? `?${qs.toString()}` : '';
     return await this._viaCsr('api.message.contact.find', params,
-      () => apiWrapper._csrGet(`/contactMessage/admin/find${suffix}`));
+      () => apiWrapper._csrGet(`/contactMessage/admin/find${suffix}`), { validate: this._isUsableList });
   }
 
   // csrWrapper.api.user.findUserContacts — POST /contactMessage/admin/find/:targetUserId
@@ -751,7 +775,7 @@ class ApiWrapperCsrService {
     if (params.contactMessageId) qs.set('contactMessageId', params.contactMessageId);
     if (params.lastId) qs.set('lastId', params.lastId);
     return await this._viaCsr('api.message.contact.histories', params,
-      () => apiWrapper._csrGet(`/contactMessage/admin/histories?${qs.toString()}`));
+      () => apiWrapper._csrGet(`/contactMessage/admin/histories?${qs.toString()}`), { validate: this._isUsableList });
   }
 
   // csrWrapper.api.message.contact.createCsrReply — POST /contactMessage/admin/csrReply
