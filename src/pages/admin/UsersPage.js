@@ -448,11 +448,10 @@ const UsersPage = () => {
               <thead><tr>
                 <th className={styles.th}>ID</th><th className={styles.th}>Name</th><th className={styles.th}>Email</th>
                 <th className={styles.th}>Status</th><th className={styles.th}>Tier</th>
-                <th className={styles.th}>Zip</th><th className={styles.th}>CC</th>
                 <th className={styles.th}>Joined</th><th className={styles.th}></th>
               </tr></thead>
               <tbody>{Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-                <tr key={i}><td colSpan={9} className={styles.td}><div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} /></td></tr>
+                <tr key={i}><td colSpan={7} className={styles.td}><div className={`${styles.skeletonLine} ${styles.skeletonTitle}`} /></td></tr>
               ))}</tbody>
             </table>
           </div>
