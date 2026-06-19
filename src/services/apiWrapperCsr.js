@@ -144,9 +144,17 @@ class ApiWrapperCsrService {
       () => apiWrapper._csrPost('/database/search', body));
   }
 
-  // csrWrapper.api.user.findAdmin — POST /database/search (CSR/admin users)
+  // CSR/admin staff list. Staff live in the `admins` collection (roles:['csr'],
+  // brandId:'bytecrtrs') — NOT in `users`. (`/database/search` IGNORES `isAdmin`, so the
+  // old `users`+isAdmin query returned regular CUSTOMERS as "reps".) Verified live
+  // 2026-06-18: `findAdmin({})` → 10 csr-role docs from `admins`; passing
+  // `brandId:'idlookup'` filters them ALL out (staff are brand 'bytecrtrs') → 0. So we
+  // drop any idlookup brand filter and go lib-first to findAdmin, with a direct `admins`
+  // fallback. (This was our bug, not a BC one — see BC_CSR_ASKS_PACKAGE.md.)
   async csrFindCsReps(params = {}) {
-    return await apiWrapper._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'users', isAdmin: true, ...params });
+    const { brandId, collectionName, isAdmin, ...rest } = params; // strip the legacy users/isAdmin/idlookup filters
+    return await this._viaCsr('api.user.findAdmin', rest,
+      () => apiWrapper._csrPost('/database/search', { collectionName: 'admins', ...rest }));
   }
 
   // csrWrapper.api.user.getUserDetail — POST /user/management/detail
