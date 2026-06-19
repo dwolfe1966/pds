@@ -93,34 +93,55 @@ class ApiWrapperCsrService {
   }
 
   /**
-   * Prefer the CSR IIFE method for a given dot-path; fall back to the
-   * supplied async function if the wrapper isn't loaded or the method
-   * doesn't exist (or throws). Use this anywhere we'd otherwise call
-   * _csrPost('/some/path', body) directly so BC's wrapper handles the
-   * canonical URL/auth/error envelope.
+   * Prefer the CSR IIFE method for a given dot-path; otherwise use `fallback`.
+   *
+   * ⚠️ MUTATION SAFETY: a throw from the IIFE method may occur AFTER the request
+   * was already sent (timeout / parse-fail), so re-running `fallback` would
+   * DOUBLE-EXECUTE the call (double sale / refund / reply / tag). So:
+   *   - ABSENT method or wrapper-load failure → fall back (nothing was sent — safe).
+   *   - post-invocation THROW → fall back ONLY when opts.retryOnError is true.
+   * Idempotent READS default to retryOnError:true (preserves resilience + the
+   * existing fallback test). EVERY MUTATING caller MUST pass { retryOnError: false }
+   * so a post-send error surfaces instead of being silently retried.
    *
    * @param {string} dotPath e.g. 'api.user.findOrders'
    * @param {*} args         passed straight through to the wrapper method
    * @param {() => Promise<*>} fallback
+   * @param {{retryOnError?: boolean}} [opts]
    */
-  async _viaCsr(dotPath, args, fallback) {
+  async _viaCsr(dotPath, args, fallback, opts = {}) {
+    const { retryOnError = true } = opts;
+    let fn = null, parent = null;
     try {
       const csr = await this.getCsrWrapper();
       if (csr) {
         const parts = dotPath.split('.');
-        let parent = csr;
+        parent = csr;
         for (let i = 0; i < parts.length - 1; i++) {
           parent = parent == null ? parent : parent[parts[i]];
         }
-        const fn = parent == null ? null : parent[parts[parts.length - 1]];
-        if (typeof fn === 'function') {
-          return _unwrapBcResponse(await fn.call(parent, args));
-        }
+        fn = parent == null ? null : parent[parts[parts.length - 1]];
       }
     } catch (err) {
-      dbg(`[CsrWrapper] ${dotPath} threw, falling back: ${err?.message}`);
+      // Wrapper failed to LOAD — nothing was sent — safe to use the direct fallback.
+      dbg(`[CsrWrapper] load failed for ${dotPath}, falling back: ${err?.message}`);
+      return await fallback();
     }
-    return await fallback();
+    if (typeof fn !== 'function') {
+      // Method ABSENT on this deployment — nothing was sent — safe to fall back.
+      return await fallback();
+    }
+    try {
+      return _unwrapBcResponse(await fn.call(parent, args));
+    } catch (err) {
+      if (retryOnError) {
+        dbg(`[CsrWrapper] ${dotPath} threw, retrying via fallback: ${err?.message}`);
+        return await fallback();
+      }
+      // Mutation: the request may already have committed — surface, never re-run.
+      dbg(`[CsrWrapper] ${dotPath} threw (mutation — NOT retried): ${err?.message}`);
+      throw err;
+    }
   }
 
   // csrWrapper.api.user.find — POST /database/search
@@ -166,13 +187,13 @@ class ApiWrapperCsrService {
   // csrWrapper.api.user.update — POST /user/management/update
   async csrUpdateUser(userId, body = {}) {
     return await this._viaCsr('api.user.update', { userId, ...body },
-      () => apiWrapper._csrPost('/user/management/update', { userId, ...body }));
+      () => apiWrapper._csrPost('/user/management/update', { userId, ...body }), { retryOnError: false });
   }
 
   // csrWrapper.api.user.create — POST /user/management/create
   async csrCreateUser(body = {}) {
     return await this._viaCsr('api.user.create', body,
-      () => apiWrapper._csrPost('/user/management/create', body));
+      () => apiWrapper._csrPost('/user/management/create', body), { retryOnError: false });
   }
 
   // csrWrapper.api.user.findOrders — POST /commerceMgmt/userOrders
@@ -360,7 +381,7 @@ class ApiWrapperCsrService {
   // flag: true = cancel, false = uncancel
   async csrCancelUncancelOrder(orderId, flag) {
     return await this._viaCsr('api.user.cancelUncancelOrder', { orderId, flag },
-      () => apiWrapper._csrPost('/commerceMgmt/cancelUncancelOrder', { orderId, flag }));
+      () => apiWrapper._csrPost('/commerceMgmt/cancelUncancelOrder', { orderId, flag }), { retryOnError: false });
   }
 
   // csrWrapper.api.user.refundVoidOrder — POST /commerceBilling/correct
@@ -372,7 +393,7 @@ class ApiWrapperCsrService {
       // not be empty" (the IIFE injects it on /commerceBilling/correct; type 'signup' per
       // the deployed wrapper). Reached only when the IIFE refundVoidOrder path is
       // unavailable/throws. MUST be validated with one real low-value refund before relying.
-      () => apiWrapper._csrPost('/commerceBilling/correct', params, { billingSeriesType: 'signup' }));
+      () => apiWrapper._csrPost('/commerceBilling/correct', params, { billingSeriesType: 'signup' }), { retryOnError: false });
   }
 
   // csrWrapper.api.user.findOrderPayments — POST /commerceMgmt/orderPayments
@@ -403,7 +424,7 @@ class ApiWrapperCsrService {
   async csrUpdateScheduleDueTimestamp(scheduleId, dueTimestamp, amount) {
     const payload = { scheduleId, dueTimestamp, ...(amount != null ? { amount } : {}) };
     return await this._viaCsr('api.user.updateSchedule', payload,
-      () => apiWrapper._csrPost('/commerceMgmt/updateSchedule', payload));
+      () => apiWrapper._csrPost('/commerceMgmt/updateSchedule', payload), { retryOnError: false });
   }
 
   // POST /commerce/offer/findByShmName — added 2026-04-21
@@ -424,7 +445,7 @@ class ApiWrapperCsrService {
     // consumer _saleViaProxy). _viaCsr target kept so it auto-uses the IIFE if BC adds
     // billing.sale. ⚠️ Validate with one real low-value CSR sale.
     return await this._viaCsr('api.billing.sale', params,
-      () => apiWrapper._csrPost('/commerceBilling/sale', params, { billingSeriesType: 'sale' }));
+      () => apiWrapper._csrPost('/commerceBilling/sale', params, { billingSeriesType: 'sale' }), { retryOnError: false });
   }
 
   // csrWrapper.api.optOut.find — POST /database/search
@@ -516,7 +537,7 @@ class ApiWrapperCsrService {
     const body = { contactMessageId, message, contentType };
     if (attachments) body.attachments = attachments;
     return await this._viaCsr('api.message.note.createContactAdminNote', body,
-      () => apiWrapper._csrPost('/message/admin/createNote', body));
+      () => apiWrapper._csrPost('/message/admin/createNote', body), { retryOnError: false });
   }
 
   // csrWrapper.api.message.note.updateAdminNote — POST /message/admin/updateNote
@@ -555,7 +576,7 @@ class ApiWrapperCsrService {
     // Multi-brand callers can override with brandId/shConId/shColId.
     const body = params.brandId || params.shConId ? params : { brandId: 'idlookup', ...params };
     return await this._viaCsr('api.message.contact.create', body,
-      () => apiWrapper._csrPost('/contactMessage/admin/create', body));
+      () => apiWrapper._csrPost('/contactMessage/admin/create', body), { retryOnError: false });
   }
 
   // csrWrapper.api.user.createCsrMail — DEPRECATED 2026-04-17
@@ -742,28 +763,28 @@ class ApiWrapperCsrService {
     const { contentType = 'text/html', ...rest } = params;
     const body = { contentType, ...rest };
     return await this._viaCsr('api.message.contact.createCsrReply', body,
-      () => apiWrapper._csrPostFormData('/contactMessage/admin/csrReply', body));
+      () => apiWrapper._csrPostFormData('/contactMessage/admin/csrReply', body), { retryOnError: false });
   }
 
   // csrWrapper.api.message.contact.setActor — POST /contactMessage/admin/setActor
   // Assigns an admin/CSR user to the contact message. actorId defaults to the caller.
   async csrSetContactActor(params = {}) {
     return await this._viaCsr('api.message.contact.setActor', params,
-      () => apiWrapper._csrPost('/contactMessage/admin/setActor', params));
+      () => apiWrapper._csrPost('/contactMessage/admin/setActor', params), { retryOnError: false });
   }
 
   // csrWrapper.api.message.contact.setTargetUser — POST /contactMessage/admin/setTargetUserId
   // Links a contactMessage to a specific user so it appears in findUserContacts.
   async csrSetContactTargetUser(params = {}) {
     return await this._viaCsr('api.message.contact.setTargetUser', params,
-      () => apiWrapper._csrPost('/contactMessage/admin/setTargetUserId', params));
+      () => apiWrapper._csrPost('/contactMessage/admin/setTargetUserId', params), { retryOnError: false });
   }
 
   // csrWrapper.api.message.contact.setTags — POST /contactMessage/admin/setTags
   // Replaces all tags (stored in message.index) with the provided array.
   async csrSetContactTags(params = {}) {
     return await this._viaCsr('api.message.contact.setTags', params,
-      () => apiWrapper._csrPost('/contactMessage/admin/setTags', params));
+      () => apiWrapper._csrPost('/contactMessage/admin/setTags', params), { retryOnError: false });
   }
 
   // csrWrapper.api.message.contact.replyLinkUrl — GET /contactMessage/admin/replyUrl
@@ -787,7 +808,7 @@ class ApiWrapperCsrService {
   // params: { managedContactId }
   async csrUnsubscribeManagedContact(managedContactId) {
     return await this._viaCsr('api.managedContact.unsubscribe', { managedContactId },
-      () => apiWrapper._csrPost('/managedContact/management/unsubscribe', { managedContactId }));
+      () => apiWrapper._csrPost('/managedContact/management/unsubscribe', { managedContactId }), { retryOnError: false });
   }
 
   // Visitor contact messages. Delegates to message.contact.find — verified live
@@ -813,7 +834,7 @@ class ApiWrapperCsrService {
   // BC_CSR_LIB_RESPONSE_MESSAGE.md item 2.7. (NB: this path is currently unused by any page.)
   async csrChangeContactToUserContact(params = {}) {
     return await this._viaCsr('api.contact.changeContactToUserContact', params,
-      () => apiWrapper._csrPost('/message/admin/user/changeContactToUserContact', params));
+      () => apiWrapper._csrPost('/message/admin/user/changeContactToUserContact', params), { retryOnError: false });
   }
 
   // csrWrapper.api.tracking.findUser — POST /database/search
