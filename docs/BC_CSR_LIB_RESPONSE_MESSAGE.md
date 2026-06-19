@@ -1,3 +1,7 @@
+> ⚠️ **SUPERSEDED 2026-06-18 — do NOT send to BC.** This predates the 2.2/2.3 reassessment and the
+> corrected 3.1 finding. Use **`BC_CSR_ASKS_PACKAGE.md`** (the consolidated 6-ask package with
+> app/page/function impact) as the single source of truth. Kept for history only.
+
 # Message to BC — CSR lib methods, our findings after live re-testing
 
 Hi — thanks for the suggestions on each item. We re-tested every one against the **deployed**

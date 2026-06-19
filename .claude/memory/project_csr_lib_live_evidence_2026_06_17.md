@@ -16,6 +16,26 @@ notes** — see [[csr-auth-state-2026-06-16]] (partially superseded).
 Test record: user `6a30a88dce24e4018b18e016` (`testingreg061526d@idlookup.ai`),
 order `6a30a88dce24e4018b18e032`, contactMessage `6a31ca36f009300c72f299b2`.
 
+**⚠️ FINAL TRUTH 2026-06-18 (supersedes ALL earlier findAdmin/tracking claims above — those were WRONG;
+the runnable demo `scripts/demo-bc-csr-asks.js` + recheck caught it):**
+- **`user.findAdmin` is NOT broken — it was OUR bug.** CSR staff live in the **`admins`** collection
+  (`roles:['csr']`, email `csr.NNNN@csr.pds`, **brandId `bytecrtrs`**), distinct from `users` (overlap 0).
+  `findAdmin({})`/`findAdmin({brandId:'bytecrtrs'})` → **10 staff**; `findAdmin({brandId:'idlookup'})` → **0**
+  (filters by `query.brandId='idlookup'`; staff are bytecrtrs). Our `csrFindCsReps` hardcoded
+  `{collectionName:'users', isAdmin:true, brandId:'idlookup'}` (wrong collection AND wrong brand).
+  FIXED: `csrFindCsReps` now goes lib-first to `findAdmin` (no idlookup brand) + direct `{collectionName:'admins'}`
+  fallback. UI-verified `/cs-reps` shows real csr staff, no customers. **NOT a BC ask.**
+- **`tracking.findUser` is NOT broken.** It scopes to the target user via `query.updaterId` (3 stable runs
+  → 7 docs, all target). The DIRECT call we use returns 100 across 12 users (top-level updaterId ignored).
+  Earlier "0 / caller's events" was a cold-session anomaly. **NOT a BC ask.** (Left our direct-call code as-is.)
+- Lesson: never assume a collection is empty without querying it directly; verify content not counts;
+  the `brandId:'idlookup'` vs `'bytecrtrs'` filter is a known trap (consumer brand ≠ staff/order brand).
+
+**REMAINING REAL BC ASKS (demo-gated, each verdict matches live BC output): A offer (CSR 403 "No offer"
+all brands, resolves for consumers; no csr offer ns), B CSR billing.sale (csr.billing absent; consumer
+sale has no payerId), C commerceOrder global (403 all brands), + CONFIRM userContact data model.
+Package: docs/BC_CSR_ASKS_PACKAGE.md. Demo: scripts/demo-bc-csr-asks.js.**
+
 **List C "lib broken" — REPRODUCED live, same session/userId (the contrast BC wanted):**
 Both lib methods POST to the SAME `/api/database/search` the direct call uses, yet return 0 →
 wrong query body, NOT a permission/transport issue.
