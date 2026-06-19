@@ -16,13 +16,27 @@
 const { chromium } = require('@playwright/test');
 const ADMIN = `https://${process.env.ADMIN_HOST || 'dev.admin.www.bytecrtrs.com'}`;
 const CONSUMER = process.env.CONSUMER_URL || 'https://dev.www.idlookup.ai';
-const USER = process.env.CSR_USER, PWD = process.env.CSR_PWD;
 const TEST_USER_ID = process.env.TEST_USER_ID || '6a30a88dce24e4018b18e016';
+
+// Shared DEV test account — used ONLY as a fallback when no creds are supplied AND only
+// against a *dev* host. For a definitive result (and for BC to run on their side), supply
+// your own CSR account via CSR_USER/CSR_PWD. Never used against a non-dev host.
+const DEV_DEFAULT = { user: 'frontend@csrManager.pds', pwd: 'bcEdgeApiPass123!@#' };
+let USER = process.env.CSR_USER, PWD = process.env.CSR_PWD;
+if (!USER || !PWD) {
+  if (/(^|\.)dev\./.test(ADMIN) || ADMIN.includes('//dev.')) {
+    USER = USER || DEV_DEFAULT.user; PWD = PWD || DEV_DEFAULT.pwd;
+    console.warn(`⚠  No CSR_USER/CSR_PWD supplied — falling back to the shared DEV test account (${DEV_DEFAULT.user}).`);
+    console.warn('   For a definitive result, re-run with your OWN CSR account:  CSR_USER=… CSR_PWD=… node scripts/demo-bc-csr-asks.js');
+  } else {
+    console.error(`Refusing to use the dev default against a non-dev host (${ADMIN}). Supply CSR_USER and CSR_PWD.`);
+    process.exit(1);
+  }
+}
 const line = (s = '') => console.log(s);
 const hr = () => line('─'.repeat(78));
 
 (async () => {
-  if (!USER || !PWD) { console.error('Set CSR_USER and CSR_PWD'); process.exit(1); }
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await ctx.newPage();
