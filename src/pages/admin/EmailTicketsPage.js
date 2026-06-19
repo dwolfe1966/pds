@@ -1183,7 +1183,7 @@ const EmailTicketsPage = () => {
                         // XSS-safe: customer/CSR message bodies are rendered as TEXT via JSX
                         // (auto-escaped); HTML bodies are tag-stripped to stay readable. No
                         // dangerouslySetInnerHTML on un-sanitized, partly customer-controlled content.
-                        const body = (contentType === 'text/html' ? stripHtml(rawBody) : rawBody) || '(No message body)';
+                        const body = ((contentType === 'text/html' || contentType === 'html') ? stripHtml(rawBody) : rawBody) || '(No message body)';
                         return (
                           <div key={msgId} className={`${styles.message} ${agent ? styles.messageAgent : styles.messageCustomer}`}>
                             <div className={styles.msgHeader}>

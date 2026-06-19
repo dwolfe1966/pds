@@ -2140,8 +2140,11 @@ const UserDetailPage = () => {
                             </span>
                           )}
                         </div>
-                        {n.contentType === 'text/html' && n.text.includes('<')
-                          ? <p className={styles.noteBody} dangerouslySetInnerHTML={{ __html: n.text }} />
+                        {/* XSS-safe: notes/messages include customer-authored userReply bodies
+                            (userContact collection), so never dangerouslySetInnerHTML. Render as
+                            text; tag-strip HTML content so it stays readable. */}
+                        {(n.contentType === 'text/html' || n.contentType === 'html')
+                          ? <p className={styles.noteBody} style={{ whiteSpace: 'pre-wrap' }}>{(n.text || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ')}</p>
                           : <p className={styles.noteBody}>{n.text}</p>
                         }
                         <div className={styles.noteMeta}>
