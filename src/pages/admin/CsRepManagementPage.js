@@ -454,7 +454,7 @@ const UpdateCsRepForm = ({ prefill, onSuccess }) => {
         <label className={styles.label}>User ID</label>
         <input
           className={`${styles.input} ${attempted && !userId.trim() ? styles.inputError : ''}`}
-          placeholder="Enter the BC user ID of the CS rep"
+          placeholder="Enter the CS rep's user ID"
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
           required

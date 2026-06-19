@@ -278,14 +278,14 @@ const MyDashboardPage = () => {
           <StatTile
             label="Replies you sent today"
             value={loading ? '…' : replyByMeToday.length}
-            sublabel="confirmed via latestReply"
+            sublabel="based on the latest reply"
             color={PAGE.brand}
             accent={PAGE.brand}
           />
           <StatTile
             label="Tickets you assigned today"
             value={loading ? '…' : myAssignedToday.length}
-            sublabel="based on updated timestamps"
+            sublabel="based on last activity"
           />
         </div>
 

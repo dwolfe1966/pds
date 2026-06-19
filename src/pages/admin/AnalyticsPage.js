@@ -132,7 +132,7 @@ const AnalyticsPage = () => {
 
     const ensure = (id) => {
       if (!byId.has(id)) {
-        byId.set(id, { id, name: id.slice(-8), email: '', assigned: 0, awaiting: 0, repliedToday: 0, repliedTotal: 0 });
+        byId.set(id, { id, name: 'Unknown rep', email: '', assigned: 0, awaiting: 0, repliedToday: 0, repliedTotal: 0 });
       }
       return byId.get(id);
     };
@@ -227,7 +227,7 @@ const AnalyticsPage = () => {
           )}
         </div>
         <p style={{ margin: '0.4rem 0.25rem 0', fontSize: '0.75rem', color: '#9ca3af' }}>
-          Derived from the current contactMessages page + CS rep directory. Reflects tickets where the rep is the actor or sent the latest reply.
+          Based on the tickets currently loaded — counts the tickets each rep is assigned to or last replied to.
         </p>
       </section>
 
