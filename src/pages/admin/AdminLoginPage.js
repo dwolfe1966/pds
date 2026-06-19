@@ -53,12 +53,12 @@ const AdminLoginPage = () => {
       <Link to="/" style={{ textDecoration: 'none', marginBottom: '2rem', textAlign: 'center' }}>
         <div style={{
           width: '48px', height: '48px', borderRadius: '12px',
-          background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #0d5d2f 0%, #1a7a4a 100%)', // designSystem primary green
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '1.3rem', fontWeight: 800, color: '#fff', margin: '0 auto 0.75rem',
-        }}>BC</div>
+        }}>IL</div>
         <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.02em' }}>
-          ByteCrtrs Admin
+          IDLookup Admin
         </div>
       </Link>
 
@@ -132,11 +132,11 @@ const AdminLoginPage = () => {
             disabled={loading}
             style={{
               width: '100%', padding: '0.8rem',
-              background: loading ? '#475569' : 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+              background: loading ? '#475569' : 'linear-gradient(135deg, #0d5d2f 0%, #1a7a4a 100%)',
               color: '#ffffff', border: 'none', borderRadius: '0.5rem',
               fontSize: '0.95rem', fontWeight: 700, cursor: loading ? 'wait' : 'pointer',
               transition: 'opacity 0.15s ease',
-              boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
+              boxShadow: '0 2px 12px rgba(13,93,47,0.35)',
             }}
           >
             {loading ? 'Signing in\u2026' : 'Sign In'}
@@ -147,7 +147,7 @@ const AdminLoginPage = () => {
           textAlign: 'center', marginTop: '1.25rem',
           fontSize: '0.78rem', color: '#475569',
         }}>
-          <Link to="/" style={{ color: '#818cf8', textDecoration: 'none', fontWeight: 500 }}>
+          <Link to="/" style={{ color: '#34d399', textDecoration: 'none', fontWeight: 500 }}>
             &larr; Back to home
           </Link>
         </div>

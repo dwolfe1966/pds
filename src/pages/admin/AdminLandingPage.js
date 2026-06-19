@@ -17,14 +17,14 @@ const AdminLandingPage = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
             width: '36px', height: '36px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, #0d5d2f 0%, #1a7a4a 100%)', // designSystem primary green
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '1rem', fontWeight: 800, color: '#fff',
-          }}>BC</div>
+          }}>IL</div>
           <span style={{
             fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9',
             letterSpacing: '-0.02em',
-          }}>ByteCrtrs</span>
+          }}>IDLookup</span>
         </div>
         <Link to="/login" style={{
           padding: '0.55rem 1.5rem', background: 'rgba(255,255,255,0.1)',
@@ -43,7 +43,7 @@ const AdminLandingPage = () => {
         padding: '3rem 1.5rem', textAlign: 'center',
       }}>
         <div style={{
-          fontSize: '0.7rem', fontWeight: 700, color: '#818cf8',
+          fontSize: '0.7rem', fontWeight: 700, color: '#34d399',
           letterSpacing: '0.2em', textTransform: 'uppercase',
           marginBottom: '1rem',
         }}>
@@ -56,8 +56,8 @@ const AdminLandingPage = () => {
           letterSpacing: '-0.04em', lineHeight: 1.1,
           maxWidth: '700px',
         }}>
-          ByteCrtrs<br />
-          <span style={{ color: '#818cf8' }}>Admin Dashboard</span>
+          IDLookup<br />
+          <span style={{ color: '#34d399' }}>Admin Dashboard</span>
         </h1>
 
         <p style={{
@@ -71,10 +71,10 @@ const AdminLandingPage = () => {
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link to="/login" style={{
             padding: '0.85rem 2.25rem',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, #0d5d2f 0%, #1a7a4a 100%)',
             color: '#ffffff', border: 'none', borderRadius: '0.5rem',
             fontSize: '1rem', fontWeight: 700, textDecoration: 'none',
-            boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+            boxShadow: '0 4px 20px rgba(13,93,47,0.35)',
             transition: 'all 0.2s ease',
           }}>
             Admin Login
