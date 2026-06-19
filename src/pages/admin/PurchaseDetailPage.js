@@ -98,6 +98,11 @@ const PurchaseDetailPage = () => {
       setActionMsg('Enter a valid refund amount.');
       return;
     }
+    // Real-money action — require an explicit confirmation before firing.
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function'
+        && !window.confirm(`Refund $${amount.toFixed(2)} to this customer? This cannot be undone.`)) {
+      return;
+    }
     setActing(true);
     setActionMsg('');
     try {

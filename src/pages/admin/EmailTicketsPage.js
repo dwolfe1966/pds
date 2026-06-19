@@ -123,6 +123,12 @@ const EmailTicketsPage = () => {
   // Thread history for a selected contactMessage (inbox mode)
   const [threadItems, setThreadItems] = useState([]);
   const [loadingThread, setLoadingThread] = useState(false);
+  const [threadError, setThreadError] = useState('');
+  const [threadReload, setThreadReload] = useState(0);
+  // Set when a SECONDARY message source (the role-gated userContact collection) is
+  // denied/fails while the primary (contactMessages) loads — so the UI shows a degraded
+  // banner instead of a misleading "no messages" empty state.
+  const [sourceWarning, setSourceWarning] = useState('');
 
   // Selection & compose. Initial value honors a `?contactMessageId=…` URL
   // param so deep-links (e.g. from UserDetailPage's Notes tab) open the
@@ -156,18 +162,21 @@ const EmailTicketsPage = () => {
     setItemsError('');
     try {
       const params = cursorId ? { lastId: cursorId } : {};
-      // Unified inbox: contactMessage docs (visitor contact form) +
-      // userContact docs (logged-in member messages + CSR mail). The two live
-      // in separate BC collections, so fetch in parallel and merge by date.
-      // Pagination on the merged view is by contactMessage's lastId only
-      // for now — userContact's first page is always re-fetched on load more.
-      const [cmRes, ucRes] = await Promise.all([
-        api.adminFindContactMessages(params).catch(() => ({ data: [] })),
-        // userContact list isn't paginated on the inbox view (yet) — fetch
-        // most recent page each time. Filtering inbound-only here keeps the
-        // queue focused on items actually awaiting a CSR response.
-        api.adminFindAllUserContacts({}).catch(() => ({ data: [] })),
+      // Unified inbox: contactMessage docs (PRIMARY) + userContact docs (SECONDARY,
+      // currently role-gated at BC). Fetch independently (allSettled) so: a failed
+      // PRIMARY fetch surfaces a real error, while a denied SECONDARY fetch degrades
+      // to a banner instead of faking an empty inbox.
+      setSourceWarning('');
+      const [cmR, ucR] = await Promise.allSettled([
+        api.adminFindContactMessages(params),
+        api.adminFindAllUserContacts({}),
       ]);
+      if (cmR.status === 'rejected') throw (cmR.reason || new Error('Failed to load messages.'));
+      const cmRes = cmR.value;
+      if (ucR.status === 'rejected') {
+        setSourceWarning('CSR-mail threads couldn’t be loaded (access denied) — showing contact tickets only.');
+      }
+      const ucRes = ucR.status === 'fulfilled' ? ucR.value : { data: [] };
       const cmDocs = cmRes?.data ?? cmRes?.docs ?? (Array.isArray(cmRes) ? cmRes : []);
       const ucDocsRaw = ucRes?.data ?? ucRes?.docs ?? (Array.isArray(ucRes) ? ucRes : []);
       // Inbox view: only inbound member messages (userContact) and outbound
@@ -280,19 +289,22 @@ const EmailTicketsPage = () => {
     let cancelled = false;
     (async () => {
       setLoadingThread(true);
+      setThreadError('');
       try {
         const res = await api.adminContactHistories({ contactMessageId: resolveId(selected) });
         if (cancelled) return;
         const docs = res?.data ?? res?.docs ?? [];
         setThreadItems(docs.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)));
       } catch (err) {
-        if (!cancelled) showToast(err.message || 'Failed to load thread history.');
+        // Persistent inline error (not just a transient toast) so the thread region
+        // doesn't go silently blank with a reply box and no message above it.
+        if (!cancelled) { setThreadItems([]); setThreadError(err.message || 'Failed to load thread history.'); }
       } finally {
         if (!cancelled) setLoadingThread(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [selected, mode, showToast]);
+  }, [selected, mode, threadReload]);
 
   // ── user search (user mode) ────────────────────────────────────────────────
 
@@ -718,11 +730,16 @@ const EmailTicketsPage = () => {
       )}
 
       {itemsError && <div className={styles.errorBox}>{itemsError}</div>}
+      {sourceWarning && !itemsError && (
+        <div role="status" style={{ margin: '0 0 0.75rem', padding: '0.6rem 0.9rem', background: '#fffbeb', border: '1px solid #f59e0b', borderRadius: '0.5rem', color: '#92400e', fontSize: '0.85rem' }}>
+          ⚠ {sourceWarning}
+        </div>
+      )}
 
       {/* Empty states */}
       {mode === 'user' && resolvedUser && !loadingItems && listItems.length === 0 && allItems.length > 0 && !itemsError && (
         <div className={styles.emptyState}>
-          <p className={styles.emptyIcon}>No mail threads found for this customer. Only admin notes exist.</p>
+          <p className={styles.emptyIcon}>No mail threads found for this customer.{sourceWarning ? ' (Some sources couldn’t be loaded — see notice above.)' : ''}</p>
         </div>
       )}
       {mode === 'user' && resolvedUser && !loadingItems && allItems.length === 0 && !itemsError && !searching && (
@@ -1147,14 +1164,26 @@ const EmailTicketsPage = () => {
                     {isContactMessage(selected.type) && loadingThread && (
                       <div className={styles.loadingState}>Loading thread...</div>
                     )}
-                    {isContactMessage(selected.type) && !loadingThread && threadItems.length > 0 ? (
+                    {isContactMessage(selected.type) && !loadingThread && threadError && (
+                      <div role="alert" style={{ padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '0.5rem', color: '#991b1b', fontSize: '0.85rem' }}>
+                        Couldn’t load this thread: {threadError}{' '}
+                        <button type="button" onClick={() => setThreadReload((n) => n + 1)} style={{ marginLeft: 8, textDecoration: 'underline', background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', font: 'inherit' }}>Retry</button>
+                      </div>
+                    )}
+                    {isContactMessage(selected.type) && !loadingThread && !threadError && threadItems.length > 0 ? (
                       threadItems.map((msg) => {
                         const msgId = resolveId(msg);
                         const agent = isCsrMail(msg.type) || isCsrReply(msg.type);
-                        const body = agent
-                          ? (msg.content?.message || '')
-                          : (msg.content?.input?.description || msg.content?.input?.message || msg.content?.message || JSON.stringify(msg.content?.input || {}, null, 2));
                         const contentType = msg.content?.contentType;
+                        const rawBody = agent
+                          ? (msg.content?.message || '')
+                          // Never JSON.stringify the body — that leaked the NOORDERID sentinel
+                          // and internal fields to the CSR. Fall back to a plain placeholder.
+                          : (msg.content?.input?.description || msg.content?.input?.message || msg.content?.message || '');
+                        // XSS-safe: customer/CSR message bodies are rendered as TEXT via JSX
+                        // (auto-escaped); HTML bodies are tag-stripped to stay readable. No
+                        // dangerouslySetInnerHTML on un-sanitized, partly customer-controlled content.
+                        const body = (contentType === 'text/html' ? stripHtml(rawBody) : rawBody) || '(No message body)';
                         return (
                           <div key={msgId} className={`${styles.message} ${agent ? styles.messageAgent : styles.messageCustomer}`}>
                             <div className={styles.msgHeader}>
@@ -1162,9 +1191,7 @@ const EmailTicketsPage = () => {
                               <span style={{ marginLeft: 8 }}>{formatDate(msg.createdAt)}</span>
                             </div>
                             <div className={styles.msgBody}>
-                              {contentType === 'text/html'
-                                ? <div dangerouslySetInnerHTML={{ __html: body }} />
-                                : <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{body}</pre>}
+                              <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{body}</pre>
                             </div>
                           </div>
                         );
@@ -1172,10 +1199,14 @@ const EmailTicketsPage = () => {
                     ) : !isContactMessage(selected.type) ? (
                       <div className={`${styles.message} ${isCsrMail(selected.type) ? styles.messageAgent : styles.messageCustomer}`}>
                         <div className={styles.msgBody}>
-                          {selected.content?.contentType === 'html' || selected.content?.contentType === 'text/html'
-                            ? <div dangerouslySetInnerHTML={{ __html: selected.content.message }} />
-                            : <p style={{ margin: 0 }}>{selected.content?.message || '(Empty message)'}</p>
-                          }
+                          {/* XSS-safe: render as text (HTML tag-stripped), never dangerouslySetInnerHTML. */}
+                          <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                            {(() => {
+                              const ct = selected.content?.contentType;
+                              const m = selected.content?.message || '';
+                              return ((ct === 'html' || ct === 'text/html') ? stripHtml(m) : m) || '(Empty message)';
+                            })()}
+                          </p>
                         </div>
                       </div>
                     ) : null}

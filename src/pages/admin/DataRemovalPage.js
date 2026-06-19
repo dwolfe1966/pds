@@ -99,6 +99,7 @@ function DataRemovalTab() {
   const [loadingMore, setLoadingMore]   = useState(false);
   const [error, setError]               = useState('');
   const [isEmpty, setIsEmpty]           = useState(false);
+  const [unavailable, setUnavailable]   = useState(false);
   const [noMoreDocs, setNoMoreDocs]     = useState(false);
   const [lastId, setLastId]             = useState(null);
   const [search, setSearch]             = useState('');
@@ -129,7 +130,9 @@ function DataRemovalTab() {
       .catch((err) => {
         if (cancelled) return;
         if (err.isMockUnavailable) {
-          setIsEmpty(true);
+          // Feature/endpoint not available for this account — NOT the same as
+          // "zero requests". Show an explicit notice instead of a fake-empty list.
+          setUnavailable(true);
         } else {
           setError(err.message || 'Failed to load data removal requests.');
         }
@@ -229,6 +232,12 @@ function DataRemovalTab() {
       {/* Table */}
       {loading ? (
         <SkeletonRows />
+      ) : unavailable ? (
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>🔒</div>
+          <p className={styles.emptyTitle}>Data-removal list isn’t available yet</p>
+          <p className={styles.emptyText}>This list isn’t enabled for this account/role yet — it’s not that there are zero requests.</p>
+        </div>
       ) : isEmpty ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon}>📋</div>

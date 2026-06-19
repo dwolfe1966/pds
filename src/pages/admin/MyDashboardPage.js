@@ -171,6 +171,7 @@ const MyDashboardPage = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
   // Resolve sender emails → user accounts so rows show real member status.
   const senderUsers = useTicketSenderUsers(tickets);
 
@@ -193,7 +194,7 @@ const MyDashboardPage = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [reload]);
 
   // Derived buckets
   const myTickets        = useMemo(() => tickets.filter((t) => isAssignedToCsr(t, csrId)), [tickets, csrId]);
@@ -233,8 +234,17 @@ const MyDashboardPage = () => {
             background: PAGE.dangerSoft, border: `1px solid ${PAGE.danger}`,
             color: PAGE.danger, borderRadius: 6, padding: '0.5rem 0.75rem',
             marginBottom: '1rem', fontSize: '0.85rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem',
           }}>
-            {error}
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => setReload((n) => n + 1)}
+              disabled={loading}
+              style={{ background: 'none', border: `1px solid ${PAGE.danger}`, color: PAGE.danger, borderRadius: 6, padding: '0.25rem 0.6rem', fontSize: '0.8rem', fontWeight: 600, cursor: loading ? 'default' : 'pointer' }}
+            >
+              {loading ? 'Retrying…' : 'Try again'}
+            </button>
           </div>
         )}
 

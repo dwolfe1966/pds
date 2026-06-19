@@ -324,6 +324,13 @@ const UserDetailPage = () => {
   // User-linked contact tickets (contactMessages with targetUserId === id)
   const [userTickets, setUserTickets] = useState([]);
   const [userTicketsLoading, setUserTicketsLoading] = useState(false);
+  // True when the tickets fetch errored — so the empty state distinguishes
+  // "failed/denied" from "genuinely none assigned".
+  const [userTicketsError, setUserTicketsError] = useState(false);
+  // True only when the legacy userContact thread fetch fails UNEXPECTEDLY (non-403).
+  // The 403 is the routine role-gate and that data is redundant with the Contact
+  // Tickets section, so we don't warn on it (would be permanent noise).
+  const [legacyMsgError, setLegacyMsgError] = useState(false);
 
   // Notes & Messages filter — 'all' | 'internal' | 'csrMail' | 'userReply'
   // Audit-prefixed notes are hidden from internal/all by default since the
@@ -428,13 +435,16 @@ const UserDetailPage = () => {
   const fetchUserTickets = useCallback(async () => {
     const reqId = ++ticketReqRef.current;
     setUserTicketsLoading(true);
+    setUserTicketsError(false);
     try {
       const res = await api.adminFindUserContactMessages({ userId: id, userEmail: user?.email || emailHint });
       if (reqId !== ticketReqRef.current) return; // superseded by a newer fetch
       const docs = res?.data || res?.docs || (Array.isArray(res) ? res : []);
       setUserTickets(docs);
+      setUserTicketsError(false);
     } catch {
-      if (reqId === ticketReqRef.current) setUserTickets([]);
+      // Distinguish "failed/denied" from "none assigned" so the empty state isn't misleading.
+      if (reqId === ticketReqRef.current) { setUserTickets([]); setUserTicketsError(true); }
     } finally {
       if (reqId === ticketReqRef.current) setUserTicketsLoading(false);
     }
@@ -495,9 +505,13 @@ const UserDetailPage = () => {
     setNotes(merged);
     // The admin-notes fetch is authoritative for CSR notes (incl. just-saved
     // ones). If it rejected (e.g. a transient 403), flag it so we don't show a
-    // misleading "no notes" empty state. The legacy contacts fetch is allowed to
-    // fail (its per-user endpoint 404s by design; messages fall back elsewhere).
+    // misleading "no notes" empty state.
     setNotesError(adminNotesRes.status === 'rejected');
+    // The legacy userContact thread is role-gated (403) by design and its data is
+    // redundant with the Contact Tickets section, so a 403/404 is expected and silent.
+    // Warn ONLY on an UNEXPECTED failure so a genuine outage isn't hidden.
+    const legacyStatus = legacyRes.status === 'rejected' ? legacyRes.reason?.status : null;
+    setLegacyMsgError(legacyRes.status === 'rejected' && legacyStatus !== 403 && legacyStatus !== 404);
   }, [id]);
 
   // ── Fetch login tracking ──────────────────────────────────
@@ -1352,6 +1366,9 @@ const UserDetailPage = () => {
             {activeTab === 'Timeline' && (() => {
               const events = buildTimeline({ user, orders, logins, activities, notes, tickets: userTickets });
               const stillLoading = ordersLoading || loginsLoading || activityLoading;
+              // The timeline merges several sources; if any failed/was denied, the
+              // history is PARTIAL — say so, so a thin timeline isn't read as complete.
+              const anyError = !!(ordersError || loginsError || activityError || userTicketsError || notesError);
               const COLORS = {
                 registration: '#1d4ed8', payment: '#16a34a', payment_failed: '#dc2626',
                 refund: '#d97706', canceled: '#6b7280', login: '#0891b2',
@@ -1362,8 +1379,15 @@ const UserDetailPage = () => {
                   <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: '0 0 1rem' }}>
                     Every recorded event for this customer, oldest first.{stillLoading ? ' Loading…' : ''}
                   </p>
+                  {anyError && (
+                    <div className={styles.errorState} role="alert" style={{ marginBottom: '0.75rem' }}>
+                      ⚠ Some sources couldn’t be loaded — this timeline may be incomplete.
+                    </div>
+                  )}
                   {events.length === 0 ? (
-                    <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>{stillLoading ? 'Loading events…' : 'No events recorded yet.'}</p>
+                    <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+                      {stillLoading ? 'Loading events…' : (anyError ? 'No events loaded (some sources failed — see notice above).' : 'No events recorded yet.')}
+                    </p>
                   ) : (
                     <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderLeft: '2px solid #e5e7eb', marginLeft: '160px' }}>
                       {events.map((e, i) => (
@@ -1880,7 +1904,14 @@ const UserDetailPage = () => {
                     <div className={styles.loadingState}>Loading tickets…</div>
                   )}
 
-                  {!userTicketsLoading && userTickets.length === 0 && (
+                  {!userTicketsLoading && userTicketsError && (
+                    <div className={styles.errorState} role="alert">
+                      Couldn’t load this customer’s contact tickets (request failed or was denied).{' '}
+                      <button type="button" onClick={fetchUserTickets} style={{ textDecoration: 'underline', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', font: 'inherit' }}>Retry</button>
+                    </div>
+                  )}
+
+                  {!userTicketsLoading && !userTicketsError && userTickets.length === 0 && (
                     <p style={{ fontSize: '0.85rem', color: '#9ca3af', margin: '0.25rem 0 0' }}>
                       No contact tickets are currently assigned to this user.
                     </p>
@@ -1939,6 +1970,11 @@ const UserDetailPage = () => {
 
                 <div className={styles.notesHeader}>
                   <h3 className={styles.notesTitle}>Notes & Messages</h3>
+                  {legacyMsgError && (
+                    <div className={styles.errorState} role="alert" style={{ marginBottom: '0.5rem' }}>
+                      Some message history couldn’t be loaded — this list may be incomplete.
+                    </div>
+                  )}
                   {!showNoteForm && (
                     <button
                       className={styles.addNoteBtn}
