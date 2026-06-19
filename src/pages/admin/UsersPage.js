@@ -478,8 +478,6 @@ const UsersPage = () => {
               <th className={styles.th}>Email</th>
               <th className={styles.th}>Status</th>
               <th className={styles.th}>Tier</th>
-              <th className={styles.th}>Zip</th>
-              <th className={styles.th}>CC</th>
               <th className={styles.th}>Joined</th>
               <th className={styles.th}></th>
             </tr></thead>
@@ -499,8 +497,6 @@ const UsersPage = () => {
                     <td className={styles.td}>{u.email || '—'}</td>
                     <td className={styles.td}><StatusBadge status={status} /></td>
                     <td className={styles.td}><TierBadge pro={pro} /></td>
-                    <td className={styles.td}>{u.zip || '—'}</td>
-                    <td className={styles.td}>{u.last4cc ? `····${u.last4cc}` : '—'}</td>
                     <td className={styles.td}>{formatDate(u.createdAt)}</td>
                     <td className={styles.td}>
                       <Link to={`/users/${uid}`} className={styles.tableViewBtn}>Details</Link>

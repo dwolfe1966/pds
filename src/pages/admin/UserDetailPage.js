@@ -115,6 +115,22 @@ function extractPayments(orders) {
   return payments;
 }
 
+// Map a raw/technical error to CSR-friendly copy. BC/mongo internals (cast errors,
+// stack-y strings, HTML error pages) must not surface to a CSR; status codes get plain
+// wording, anything else technical falls back to the caller's message.
+function friendlyError(err, fallback = 'Something went wrong. Please try again.') {
+  const status = err?.status ?? err?.response?.status;
+  if (status === 401) return 'Your session expired — please sign in again.';
+  if (status === 403) return 'Access denied for this account.';
+  if (status === 404) return 'Not found.';
+  const msg = String(err?.message || '');
+  if (!msg || msg.length > 140
+      || /cast to|objectid|mongo|econnrefused|<!doctype|\bat\s.+:\d+:\d+|cannot read prop|is not a function|unexpected token/i.test(msg)) {
+    return fallback;
+  }
+  return msg;
+}
+
 // Item viii — flatten every timestamped record this page already loads into one
 // newest-first time-series for the Timeline tab. No new BC calls.
 const TIMELINE_ACT_LABELS = {
@@ -393,7 +409,7 @@ const UserDetailPage = () => {
         setUser(null);
         setUserError('mock_unavailable');
       } else {
-        setUserError(err?.message || 'Failed to load user');
+        setUserError(friendlyError(err, 'Failed to load user'));
       }
     } finally {
       setUserLoading(false);
@@ -415,7 +431,7 @@ const UserDetailPage = () => {
       if (err?.isMockUnavailable) {
         setOrders([]);
       } else {
-        setOrdersError(err?.message || 'Unable to load transactions');
+        setOrdersError(friendlyError(err, 'Unable to load transactions'));
       }
     } finally {
       setOrdersLoading(false);
@@ -545,7 +561,7 @@ const UserDetailPage = () => {
       setLoginsLastId(last?._id || null);
       setLoginsNoMore(res?.noMoreDocs === true || raw.length === 0);
     } catch (err) {
-      setLoginsError(err?.message || 'Failed to load login history');
+      setLoginsError(friendlyError(err, 'Failed to load login history'));
     } finally {
       setLoginsLoading(false);
       setLoginsFetched(true);
@@ -580,7 +596,7 @@ const UserDetailPage = () => {
       setActivityLastId(last?._id || null);
       setActivityNoMore(res?.noMoreDocs === true || raw.length === 0);
     } catch (err) {
-      setActivityError(err?.message || 'Failed to load activity');
+      setActivityError(friendlyError(err, 'Failed to load activity'));
     } finally {
       setActivityLoading(false);
       setActivityFetched(true);
@@ -935,9 +951,7 @@ const UserDetailPage = () => {
   };
 
   // ── Actions tab handlers ──────────────────────────────────
-  const handlePasswordReset = () => {
-    showToast('Feature coming soon', 'info');
-  };
+  // (handlePasswordReset removed with its dead "coming soon" button.)
 
   const handleSuspendFromActions = async () => {
     await handleSuspend();
@@ -1048,7 +1062,7 @@ const UserDetailPage = () => {
       setShowEditUser(false);
       await fetchUser();
     } catch (err) {
-      setEditError(err?.message || 'Failed to update user.');
+      setEditError(friendlyError(err, 'Failed to update user.'));
     } finally {
       setEditSaving(false);
     }
@@ -2278,13 +2292,8 @@ const UserDetailPage = () => {
                     Request Data Removal
                   </button>
 
-                  <button
-                    className={styles.actionBtnGray}
-                    onClick={handlePasswordReset}
-                  >
-                    <span>✉</span>
-                    Send Password Reset Email
-                  </button>
+                  {/* "Send Password Reset Email" removed — no CSR-side reset endpoint exists yet
+                      (it was a dead 'coming soon' toast). Re-add when BC exposes one. */}
 
                   <button
                     className={styles.actionBtnRed}

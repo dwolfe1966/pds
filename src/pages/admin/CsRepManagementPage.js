@@ -217,6 +217,9 @@ const CsRepsList = ({ onEditRep, refreshKey }) => {
             </tbody>
           </table>
         </div>
+      ) : error ? (
+        // Don't also show "No CS reps found" when the load actually failed.
+        null
       ) : reps.length === 0 ? (
         <div className={styles.emptyState}>
           <p className={styles.emptyTitle}>No CS reps found</p>

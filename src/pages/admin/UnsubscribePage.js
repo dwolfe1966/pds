@@ -40,7 +40,7 @@ function SkeletonCard() {
   );
 }
 
-function UnsubscribeCard({ item, onUnsubscribe, removing }) {
+function UnsubscribeCard({ item, onUnsubscribe, removing, error }) {
   const id = resolveId(item);
   const unsub = isUnsubscribed(item);
 
@@ -67,6 +67,7 @@ function UnsubscribeCard({ item, onUnsubscribe, removing }) {
           {removing ? 'Unsubscribing…' : 'Unsubscribe'}
         </button>
       )}
+      {error && <p role="alert" style={{ margin: '0.4rem 0 0', color: '#b91c1c', fontSize: '0.8rem' }}>{error}</p>}
     </div>
   );
 }
@@ -89,6 +90,7 @@ const UnsubscribePage = () => {
   const [emailFilter, setEmailFilter]   = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [removingIds, setRemovingIds]   = useState(new Set());
+  const [rowErrors, setRowErrors]       = useState({}); // per-row unsubscribe failures (not a page-top banner)
 
   // ── fetch ──────────────────────────────────────────────────────────────────
 
@@ -137,13 +139,15 @@ const UnsubscribePage = () => {
     const id = resolveId(item);
     if (!window.confirm(`Unsubscribe ${item.contactAddress}?`)) return;
     setRemovingIds((prev) => new Set([...prev, id]));
+    setRowErrors((prev) => { const n = { ...prev }; delete n[id]; return n; });
     try {
       await api.adminUnsubscribeContact(id);
       setAllItems((prev) =>
         prev.map((r) => resolveId(r) === id ? { ...r, subStatus: 'unsubscribed' } : r)
       );
     } catch (err) {
-      setError(err.message || 'Failed to unsubscribe.');
+      // Per-row error next to the action, not a page-top banner that can scroll off.
+      setRowErrors((prev) => ({ ...prev, [id]: err?.message || 'Failed to unsubscribe.' }));
     } finally {
       setRemovingIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
     }
@@ -243,7 +247,7 @@ const UnsubscribePage = () => {
         <div className={styles.cardList}>
           {filtered.map((item) => {
             const id = resolveId(item);
-            return <UnsubscribeCard key={id || item.contactAddress} item={item} onUnsubscribe={handleUnsubscribe} removing={removingIds.has(id)} />;
+            return <UnsubscribeCard key={id || item.contactAddress} item={item} onUnsubscribe={handleUnsubscribe} removing={removingIds.has(id)} error={rowErrors[id]} />;
           })}
         </div>
       ) : (
@@ -272,6 +276,7 @@ const UnsubscribePage = () => {
                           {removingIds.has(id) ? 'Unsubscribing…' : 'Unsubscribe'}
                         </button>
                       )}
+                      {rowErrors[id] && <span role="alert" style={{ display: 'block', color: '#b91c1c', fontSize: '0.78rem', marginTop: '0.25rem' }}>{rowErrors[id]}</span>}
                     </td>
                   </tr>
                 );

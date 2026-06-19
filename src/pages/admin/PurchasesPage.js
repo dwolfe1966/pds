@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { getOrderCollected } from '../../utils/orderFinancials';
 import styles from './PurchasesPage.module.css';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -20,14 +21,17 @@ function formatDate(value) {
 }
 
 /**
- * Resolve amount from a BC order object.
- * Checks transient.amount.collected → amount → total in order.
+ * Resolve the collected amount from a BC order. Uses getOrderCollected (per-payment,
+ * excludes rejected attempts) — the SAME resolver OrdersPage uses — so the same order
+ * shows the same amount on both screens. transient.amount.collected counted rejected
+ * attempts, which made /orders and /purchases disagree.
  */
 function resolveAmount(order) {
-  const collected = order?.transient?.amount?.collected;
-  if (collected != null) return collected;
+  if (Array.isArray(order?.commercePayments)) return getOrderCollected(order);
   const amt = order?.amount;
   if (amt != null) return typeof amt === 'object' ? amt.collected ?? null : amt;
+  const collected = order?.transient?.amount?.collected;
+  if (collected != null) return collected;
   const total = order?.total;
   if (total != null) return total;
   return null;
