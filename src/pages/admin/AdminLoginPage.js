@@ -26,7 +26,11 @@ const AdminLoginPage = () => {
         setLoading(false);
         return;
       }
-      const redirect = searchParams.get('redirect') || '/users';
+      // Open-redirect guard: only honor a same-origin RELATIVE path — exactly one
+      // leading slash, next char not `/` or `\` (rejects `//evil.com`, `/\evil.com`,
+      // and any `scheme://` value). Anything else falls back to the default landing.
+      const raw = searchParams.get('redirect');
+      const redirect = /^\/[^/\\]/.test(raw || '') ? raw : '/users';
       navigate(redirect, { replace: true });
     } catch (err) {
       setError(err?.message || 'Login failed. Please check your credentials.');
