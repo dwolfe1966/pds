@@ -1,6 +1,6 @@
 # BC CSR asks — consolidated package (with a runnable proof)
 
-**Prepared 2026-06-18.** Every item is reproduced live against `dev.admin.www.bytecrtrs.com`. Rather
+**Prepared 2026-06-18 · re-verified live 2026-06-22 (no flips — A/B/C all still ❌, userContact still CONFIRM).** Every item is reproduced live against `dev.admin.www.bytecrtrs.com`. Rather
 than argue from a document, **run the demo** — it calls BC's own API and prints what it returns:
 
 ```
@@ -90,3 +90,59 @@ contacts in `contactMessage` (by `targetUserId`).
 We treat the runnable demo as a release gate: an ask only stays on the list if `demo-bc-csr-asks.js`
 prints a verdict that matches BC's live response. Two asks failed that gate (findAdmin was our brandId
 bug; tracking actually works) and were removed.
+
+---
+
+## Appendix 1 — library methods we explored per ask (and why each fails)
+
+Pulled from `src/services/apiWrapperCsr.js`; cross-checked against the live demo 2026-06-22.
+
+### ASK A — offer/price lookup
+| Method explored | Why it doesn't work |
+|---|---|
+| `csrWrapper.api.offer.findByShmName` | **Namespace absent** — `csrWrapper.api.offer` = `false` (live). |
+| direct `POST /commerce/offer/findByShmName` | **403 "No offer."** in a CSR session, all brands — role/clientId gate. |
+| consumer `ApiWrapper.api.offer` | Resolves (s0=$1) but only in the **consumer** session/context — not usable from the CSR app. |
+
+### ASK B — CSR billing sale
+| Method explored | Why it doesn't work |
+|---|---|
+| `csrWrapper.api.billing.sale` | **Namespace absent** — `csrWrapper.api.billing` = `false`. |
+| consumer `ApiWrapper.api.billing.sale` | Exists but has **no `payerId`** → bills the logged-in session user (the CSR); also needs the customer's full card (PCI). |
+| consumer `ApiWrapper.api.billing.tokenSale` | Charges the **session user's** stored token, not the customer's. |
+| direct `POST /commerceBilling/sale` | Works, but we must hand-build `billingSeriesId` or BC 406s (the refund-bug class). |
+
+### ASK C — global order search
+| Method explored | Why it doesn't work |
+|---|---|
+| `csrWrapper.api.user.findOrders` / `findUserOrders` | Exists but **per-user only** (requires `userId`) — not a global finder. |
+| direct `POST /database/search {collectionName:'commerceOrder'}` | **403 "Invalid Database Search Role."** all brands (also tried `commerceOrders` plural). |
+| *(no global `commerceOrder` finder on csrWrapper)* | — |
+
+### CONFIRM — `userContact` data model
+| Method explored | Why it doesn't work |
+|---|---|
+| `csrWrapper.api.user.findUserContacts({userId})` | Reads `GET /contactMessage/admin/find/:userId` → returns the **contactMessage** collection, not `userContact`. |
+| `csrWrapper.api.user.findUserAdminNotes` | Reads `GET /message/admin/findNotes` → returns **admin notes**, not `userContact`. |
+| direct `POST /database/search {collectionName:'userContact'}` | **403 "Invalid Database Search Role."** |
+
+---
+
+## Appendix 2 — calls already switched to the lib (`_viaCsr` lib-first, direct kept as fallback)
+
+**23 working lib-first migrations** (verified GREEN; lib succeeds → used, else falls back):
+
+| Domain | Method → lib target |
+|---|---|
+| **Users** | `csrFindUsers`→`user.find` · `csrFindCsReps`→`user.findAdmin` · `csrGetUserDetail`→`user.getUserDetail` · `csrUpdateUser`→`user.update` · `csrCreateUser`→`user.create` |
+| **Orders** | `csrFindUserOrders`→`user.findOrders` · `csrGetUserOrder`→`user.getOrder` · `csrCancelUncancelOrder`→`user.cancelUncancelOrder` · `csrRefundVoidOrder`→`user.refundVoidOrder` · `csrFindOrderPayments`→`user.findOrderPayments` · `csrFindOrderHistories`→`user.findOrderHistories` · `csrUpdateScheduleDueTimestamp`→`user.updateSchedule` |
+| **Notes** | `csrFindUserAdminNotes`→`user.findUserAdminNotes` · `csrCreateContactAdminNote`→`message.note.createContactAdminNote` |
+| **Contact/messages** | `csrCreateContactMessage`→`message.contact.create` · `csrFindContactMessages`→`message.contact.find` · `csrFindContactHistories`→`message.contact.histories` · `csrCreateCsrReply`→`message.contact.createCsrReply` · `csrSetContactActor`→`message.contact.setActor` · `csrSetContactTargetUser`→`message.contact.setTargetUser` · `csrSetContactTags`→`message.contact.setTags` · `csrGetContactReplyLinkUrl`→`message.contact.replyLinkUrl` |
+| **Managed contacts** | `csrUnsubscribeManagedContact`→`managedContact.unsubscribe` |
+
+**3 "fake lib-first"** — target points at a method that **doesn't exist**, so they *always* hit the direct fallback. These are the code-side footprint of the asks above:
+- `csrFindOfferByShmName`→`offer.findByShmName` *(absent — ASK A)*
+- `csrCreateOrder`→`billing.sale` *(absent — ASK B)*
+- `csrChangeContactToUserContact`→`contact.changeContactToUserContact` *(absent; dead plumbing, no page calls it)*
+
+**Still direct-only** (no lib path, or semantic-trap): `csrFindOrders` (ASK C), `csrFindUserContacts` / `csrFindAllUserContacts` (userContact gate), `csrFindOptOuts`, `csrFindManagedContacts`, `csrFindUserTracking`, `csrFindUserContactMessages`, `csrCreateAdminNote`, `csrCreateCsrMail`.
