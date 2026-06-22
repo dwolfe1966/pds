@@ -228,6 +228,11 @@ describe('csrFindUserAdminNotes — NOTES go IIFE-first', () => {
 // A top-level phone/email/etc. is ignored and BC returns the default list — which
 // rendered "users with empty phones" as fake matches (2026-06-05).
 describe('csrFindUsers — filters MUST be nested under query (not top-level)', () => {
+  // csrFindUsers is lib-first (api.user.find) with a direct /database/search fallback.
+  // These tests lock the DIRECT-FALLBACK body shape, so force the fallback by making the
+  // CSR IIFE unavailable (the lib-first path is covered live + by the findUserAdminNotes tests).
+  beforeEach(() => { jest.spyOn(apiWrapperCsr, 'getCsrWrapper').mockResolvedValue(null); });
+
   test('email/phone/zip/panLast4 go under query; lastId/perPage stay top-level', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 
@@ -256,6 +261,11 @@ describe('csrFindUsers — filters MUST be nested under query (not top-level)', 
 });
 
 describe('csrFindUserTracking — query shape (updaterId + perPage), returns verbatim', () => {
+  // csrFindUserTracking is lib-first as of 2026-06-22 (api.tracking.findUser, which scopes
+  // server-side to the target user — verified live). These tests lock the DIRECT-FALLBACK
+  // body shape, so force the fallback by making the CSR IIFE unavailable.
+  beforeEach(() => { jest.spyOn(apiWrapperCsr, 'getCsrWrapper').mockResolvedValue(null); });
+
   test('sends updaterId in the query AND requests a large perPage page', async () => {
     jest.spyOn(apiWrapper, '_csrPost').mockResolvedValue({ docs: [] });
 

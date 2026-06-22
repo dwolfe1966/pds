@@ -116,6 +116,19 @@ bad method):
 - Remove the dead `/database/search` probe ladders in #4/#6 once the lib path is confirmed.
 - Delete or repoint `csrChangeContactToUserContact` (#37) to `message.contact.setTargetUser`.
 
+**Migration status — 2026-06-22 (DONE):** the three direct-only reads are now lib-first
+(`_viaCsr` + guarded fallback), filter-verified live first:
+- `csrFindOptOuts` → `optOut.find` (proper envelope, `_isUsableList` passes).
+- `csrFindManagedContacts` → `managedContact.find` (honors `type` filter: email→10, phone→0).
+- `csrFindUserTracking` → `tracking.findUser` (scopes server-side to the target user; returns the
+  `data` field the activity tab renders) — stale "returns all users" comment corrected.
+- Dead `/database/search` commerceOrder ladders in `csrFindUserOrders`/`csrGetUserOrder` **removed**.
+Build `admin.aa9b4f63.js`; full jest suite green (335/335, also fixed 2 pre-existing `csrFindUsers`
+timeouts). `csrChangeContactToUserContact` repoint still pending (dead code, no page calls it).
+The 10 already-lib-first reads keep their guarded fallback for launch-week safety (lib is primary =
+compliant at runtime; direct only fires if the lib breaks) — strip those fallbacks as a verified
+follow-up once BC sets a direct-call cutover date.
+
 ---
 
 ## D. Runtime probe results (lib-vs-fallback ground truth)

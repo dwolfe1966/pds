@@ -222,143 +222,23 @@ class ApiWrapperCsrService {
 
   // csrWrapper.api.user.findOrders — POST /commerceMgmt/userOrders
   // Returns { orders: [...], perPage: N }
-  //
-  // Some BC deployments don't expose /commerceMgmt/userOrders (returns 404).
-  // When that happens, fall back to /database/search on the commerceOrder
-  // collection filtered by payerId, then normalize the response shape so
-  // callers see the same { orders, perPage } envelope either way.
   async csrFindUserOrders(params = {}) {
     // Lib-first (api.user.findOrders) — verified _id-equivalent to the direct
-    // /commerceMgmt/userOrders call 2026-06-16 (same {orders,perPage} envelope
-    // after getData()). On lib-absent/throw, falls through to the direct primary,
-    // whose own 404 path then runs the /database/search recovery strategies below.
+    // /commerceMgmt/userOrders call (same {orders,perPage} envelope after getData()).
+    // On lib-absent/throw → direct /commerceMgmt/userOrders primary.
+    //
+    // The old /database/search commerceOrder recovery ladder was removed 2026-06-22:
+    // it only ran on a (never-observed) 404 of /commerceMgmt/userOrders, it queried
+    // commerceOrder which is role-gated (403 — BC ASK C) so it never recovered anything,
+    // and the lib-only mandate forbids direct /database/search. On the theoretical 404 we
+    // return an empty envelope (same net result the ladder produced) rather than crash.
     try {
       return await this._viaCsr('api.user.findOrders', params,
         () => apiWrapper._csrPost('/commerceMgmt/userOrders', params), { validate: this._isUsableList });
     } catch (err) {
       if (err?.status !== 404 && err?.status !== 405) throw err;
-      const { userId, lastOrderId } = params;
-      if (!userId) throw err;
-
-      // BC's /database/search filter shape isn't documented for commerceOrder;
-      // try the most likely variants in sequence and return the first hit.
-      const baseBody = { collectionName: 'commerceOrder', brandId: 'idlookup' };
-      const strategies = [
-        { name: 'payerId',         body: { ...baseBody, payerId: userId } },
-        { name: 'payerId+filter',  body: { ...baseBody, filter: { payerId: userId } } },
-        { name: 'index payer',     body: { ...baseBody, index: `payer:${userId}` } },
-      ];
-      if (lastOrderId) strategies.forEach((s) => { s.body.lastId = lastOrderId; });
-
-      dbg(`[csrFindUserOrders] /commerceMgmt/userOrders → 404 for userId=${userId}; trying ${strategies.length + 1} /database/search variants`);
-
-      for (const strat of strategies) {
-        try {
-          const raw = await apiWrapper._csrPost('/database/search', strat.body);
-          const orders = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-          dbg(`[csrFindUserOrders] strategy "${strat.name}": ${orders.length} order(s); response keys=${Object.keys(raw || {}).join(',')}`);
-          if (orders.length > 0) {
-            return {
-              orders,
-              perPage: orders.length,
-              noMoreDocs: raw?.noMoreDocs ?? true,
-              _fallback: `database-search:${strat.name}`,
-            };
-          }
-        } catch (sErr) {
-          dbg(`[csrFindUserOrders] strategy "${strat.name}" failed: ${sErr?.message}`);
-        }
-      }
-
-      // Final brute-force: probe multiple collection / brandId combinations
-      // since BC may store orders under a different shape than the docs imply.
-      // First combination that returns >0 docs wins. Then filter by payerId
-      // client-side. Each probe is a single page so this stays bounded.
-      const probes = [
-        { collectionName: 'commerceOrder',   brandId: 'idlookup'  },
-        { collectionName: 'commerceOrder',   brandId: 'bytecrtrs' },
-        { collectionName: 'commerceOrder'                          },
-        { collectionName: 'commerceOrders',  brandId: 'idlookup'  },
-        { collectionName: 'orders',          brandId: 'idlookup'  },
-        // Diagnostic-only: if these return docs but commerceOrder doesn't,
-        // /database/search has selective collection-level gating on this BC.
-        { collectionName: 'commercePayment', brandId: 'idlookup'  },
-        { collectionName: 'commerceToken',   brandId: 'idlookup'  },
-      ];
-
-      let workingProbe = null;
-      for (const probe of probes) {
-        try {
-          const raw = await apiWrapper._csrPost('/database/search', {
-            ...probe,
-            sort: { createdAt: -1 },
-            sortBy: 'createdAt',
-            sortOrder: 'desc',
-          });
-          const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-          // Log the first doc's keys + brandId so we can see what BC actually has.
-          const firstDocKeys = docs[0] ? Object.keys(docs[0]).slice(0, 12).join(',') : 'n/a';
-          const firstDocBrand = docs[0]?.brandId || 'n/a';
-          const firstDocPayer = docs[0]?.payerId || 'n/a';
-          dbg(`[csrFindUserOrders] probe ${JSON.stringify(probe)} → ${docs.length} doc(s); first.brandId=${firstDocBrand} first.payerId=${firstDocPayer} keys=[${firstDocKeys}]`);
-          if (docs.length > 0) {
-            workingProbe = { probe, firstPage: docs };
-            break;
-          }
-        } catch (sErr) {
-          dbg(`[csrFindUserOrders] probe ${JSON.stringify(probe)} failed: ${sErr?.message}`);
-        }
-      }
-
-      if (!workingProbe) {
-        dbg('[csrFindUserOrders] no probe returned any commerceOrder docs — BC has no orders accessible to this session, or the schema differs from what we expect');
-        return { orders: [], perPage: 0, noMoreDocs: true, _fallback: 'database-search:no-data' };
-      }
-
-      // Page through using the working probe shape; client-filter each page;
-      // early-exit on first match.
-      try {
-        const aggregated = [...workingProbe.firstPage];
-        const earlyMatch0 = aggregated.find((o) => o?.payerId === userId);
-        if (!earlyMatch0) {
-          let cursor = aggregated[aggregated.length - 1]?._id;
-          const MAX_PAGES = 10;
-          for (let i = 1; i < MAX_PAGES && cursor; i++) {
-            const body = {
-              ...workingProbe.probe,
-              sort: { createdAt: -1 },
-              sortBy: 'createdAt',
-              sortOrder: 'desc',
-              lastId: cursor,
-            };
-            const raw = await apiWrapper._csrPost('/database/search', body);
-            const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-            if (docs.length === 0) break;
-            aggregated.push(...docs);
-            if (aggregated.some((o) => o?.payerId === userId)) break;
-            cursor = docs[docs.length - 1]?._id;
-            if (raw?.noMoreDocs || !cursor) break;
-          }
-        }
-        const matched = aggregated.filter((o) => o?.payerId === userId);
-        const oldestScanned = aggregated[aggregated.length - 1]?.createdAt;
-        const newestScanned = aggregated[0]?.createdAt;
-        dbg(`[csrFindUserOrders] working probe scan: ${matched.length} match(es) of ${aggregated.length} scanned (range: ${newestScanned || '?'} → ${oldestScanned || '?'})`);
-        if (matched.length > 0) {
-          return {
-            orders: matched,
-            perPage: matched.length,
-            noMoreDocs: true,
-            _fallback: `database-search:${workingProbe.probe.collectionName}`,
-            _scannedCount: aggregated.length,
-          };
-        }
-      } catch (sErr) {
-        dbg(`[csrFindUserOrders] working probe scan failed: ${sErr?.message}`);
-      }
-
-      dbg(`[csrFindUserOrders] all fallback strategies returned empty for userId=${userId}`);
-      return { orders: [], perPage: 0, noMoreDocs: true, _fallback: 'database-search:empty' };
+      dbg(`[csrFindUserOrders] /commerceMgmt/userOrders → ${err?.status}; no commerceOrder recovery (role-gated, ASK C) — returning empty`);
+      return { orders: [], perPage: 0, noMoreDocs: true, _fallback: 'no-recovery-path' };
     }
   }
 
@@ -371,34 +251,18 @@ class ApiWrapperCsrService {
 
   // csrWrapper.api.user.getOrder — POST /commerceMgmt/getUserOrder
   // params: { userId, orderId, lastPaymentId? }
-  //
-  // Same 404 risk as csrFindUserOrders on some BC deployments — fall back to
-  // /database/search filtered by order _id and normalize the response shape.
   async csrGetUserOrder(params = {}) {
     // Lib-first (api.user.getOrder) — verified _id-equivalent to the direct
-    // /commerceMgmt/getUserOrder call 2026-06-16 (same {order} payload). On
-    // lib-absent/throw → direct primary, whose 404 path runs the by-_id recovery below.
-    try {
-      return await this._viaCsr('api.user.getOrder', params,
-        () => apiWrapper._csrPost('/commerceMgmt/getUserOrder', params));
-    } catch (err) {
-      if (err?.status !== 404 && err?.status !== 405) throw err;
-      if (process.env.NODE_ENV === 'development') {
-        dbgWarn('[csrGetUserOrder] /commerceMgmt/getUserOrder unavailable, falling back to /database/search by _id');
-      }
-      const { orderId } = params;
-      if (!orderId) throw err;
-      const raw = await apiWrapper._csrPost('/database/search', {
-        collectionName: 'commerceOrder',
-        brandId: 'idlookup',
-        _id: orderId,
-      });
-      const docs = raw?.docs ?? raw?.orders ?? raw?.data ?? (Array.isArray(raw) ? raw : []);
-      return {
-        orders: docs.slice(0, 1),
-        _fallback: 'database-search',
-      };
-    }
+    // /commerceMgmt/getUserOrder call (same {order} payload). On lib-absent/throw →
+    // direct /commerceMgmt/getUserOrder.
+    //
+    // The old /database/search by-_id recovery was removed 2026-06-22: it queried the
+    // role-gated commerceOrder collection (403 → it threw anyway, never recovered) and the
+    // lib-only mandate forbids direct /database/search. /commerceMgmt/getUserOrder is the
+    // verified path; a real failure now surfaces to the caller (same as before, which
+    // re-threw the 403).
+    return await this._viaCsr('api.user.getOrder', params,
+      () => apiWrapper._csrPost('/commerceMgmt/getUserOrder', params));
   }
 
   // csrWrapper.api.user.cancelUncancelOrder — POST /commerceMgmt/cancelUncancelOrder
@@ -473,9 +337,15 @@ class ApiWrapperCsrService {
   }
 
   // csrWrapper.api.optOut.find — POST /database/search
-  // Direct only: same envelope issue as csrFindUsers.
+  // Lib-first as of 2026-06-22 (BC lib-only mandate): optOut.find verified live —
+  // returns the proper { docs, noMoreDocs, displayFields, dateFields } envelope
+  // (_isUsableList passes; dev set is empty). The lib builds the collectionName
+  // itself, so pass only brandId + paging. Direct /database/search retained as a
+  // guarded fallback so a wrong-shape lib success degrades to the known-good call.
   async csrFindOptOuts(params = {}) {
-    return await apiWrapper._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params });
+    return await this._viaCsr('api.optOut.find', { brandId: 'idlookup', ...params },
+      () => apiWrapper._csrPost('/database/search', { brandId: 'idlookup', collectionName: 'optOutRequest', ...params }),
+      { validate: this._isUsableList });
   }
 
   // Direct POST /database/search (collectionName: userContact) — returns the
@@ -824,8 +694,14 @@ class ApiWrapperCsrService {
 
   // csrWrapper.api.managedContact.find — POST /database/search (collectionName: managedContact)
   // params: { type ('email'|'phone'), contactAddress?, lastId? }
+  // Lib-first as of 2026-06-22 (BC lib-only mandate): managedContact.find verified live —
+  // HONORS the type filter (email→10 docs all type:email, phone→0) and returns full docs
+  // (type, contactAddress, status, …). The lib hits the same /database/search the direct
+  // call does, so the body shape matches. Direct kept as a guarded fallback.
   async csrFindManagedContacts(params = {}) {
-    return await apiWrapper._csrPost('/database/search', { collectionName: 'managedContact', ...params });
+    return await this._viaCsr('api.managedContact.find', params,
+      () => apiWrapper._csrPost('/database/search', { collectionName: 'managedContact', ...params }),
+      { validate: this._isUsableList });
   }
 
   // csrWrapper.api.managedContact.unsubscribe — POST /managedContact/management/unsubscribe
@@ -875,24 +751,24 @@ class ApiWrapperCsrService {
   //   USER:nameSearch, USER:phoneSearch, USER:login (2026-04-13).
   async csrFindUserTracking(params = {}) {
     const { type, lastId, updaterId } = params;
+    // Lib-first as of 2026-06-22 (BC lib-only mandate). The lib `tracking.findUser`
+    // DOES scope server-side to the target user — verified live: with `updaterId` it
+    // returned only that user's events (distinctUpdaterIds:1), and the docs carry the
+    // `data`/`createdAt`/`updaterId`/`trackingIds` fields the activity tab renders. This
+    // SUPERSEDES the older "the IIFE returns events for every user" note (that was the
+    // DIRECT /database/search path; the lib method behaves differently). Pass type +
+    // updaterId + a large perPage; the lib builds the {collectionName,query} body itself.
+    const libArgs = { perPage: 100 };
+    if (type) libArgs.type = type;
+    if (updaterId) libArgs.updaterId = updaterId;
+    if (lastId) libArgs.lastId = lastId;
+    // Guarded direct fallback: the historical hand-built body. The DIRECT call does NOT
+    // honor updaterId server-side (returns all users), which is why the caller still
+    // client-filters by updaterId — a harmless no-op when the lib already scoped, and the
+    // safety net if the lib path is unavailable. KEEP the caller's client filter.
     const query = {};
     if (type) query['data.type'] = type;
-    // We send updaterId, but BC's /database/search on `trackings` does NOT honor
-    // it (verified live 2026-06-05 AND re-verified 2026-06-08 — returns events
-    // across ALL users, mixed updaterIds, even though csrApi docs added `updaterId`
-    // to tracking.findUser on 2026-06-08; the doc is ahead of the backend). The caller
-    // filters the returned page by updaterId. KEEP this client filter — removing it on
-    // the strength of the doc alone would leak other users' events. The default page is capped at 10,
-    // which buried most users' events behind other users' (a user with reports
-    // showed none on their CSR detail). `perPage` IS honored (limit/size/pageSize
-    // are not), so request a large page so the per-user filter actually has the
-    // user's events to find. Real fix = BC server-side scoping
-    // (docs/BC_CSR_TRACKING_SCOPE.md); this is the stopgap.
     if (updaterId) query['updaterId'] = updaterId;
-    // Explicitly request `updaterId` (+ the fields the tabs render) in displayFields.
-    // The client-side scope filter is `d.updaterId === id`; if BC ever trims updaterId
-    // from the response the filter would wipe EVERY row, so we ask for it by name.
-    // (BC currently over-returns regardless, so this can't trim needed fields.)
     const body = {
       collectionName: 'trackings',
       query,
@@ -900,9 +776,9 @@ class ApiWrapperCsrService {
       displayFields: ['_id', 'createdAt', 'data', 'updaterId', 'trackingIds'],
     };
     if (lastId) body.lastId = lastId;
-    // Always direct-POST: the IIFE's tracking.findUser doesn't accept these
-    // filters, so going through it returns events for every user.
-    return await apiWrapper._csrPost('/database/search', body);
+    return await this._viaCsr('api.tracking.findUser', libArgs,
+      () => apiWrapper._csrPost('/database/search', body),
+      { validate: this._isUsableList });
   }
 }
 
