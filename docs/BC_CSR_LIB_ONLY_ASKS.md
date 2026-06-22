@@ -13,7 +13,8 @@ the direct fallback ourselves — no BC action). All 5 below are in the **CSR/Ad
 > param trap + an un-authenticated session. They migrate clean.
 
 Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods tried + why they fail ·
-(5) the direct call we use today · (6) what actually happens (user-facing symptom).
+(5) the direct call we use today · (6) what actually happens (user-facing symptom) · (7) our specific
+ask (method · params · return shape).
 
 ---
 
@@ -31,6 +32,13 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    s0/s1 price don't load** — the CSR sees blank/placeholder pricing and can't tell what the customer is
    (or should be) paying. No crash; the price info is just absent, which also blocks any price-aware CSR
    sale decision.
+7. **Our specific ask:**
+   - **Method:** add `csrWrapper.api.offer.findByShmName(params)` **and** grant the CSR clientId/role
+     permission to resolve offers (today it 403s "No offer.").
+   - **Params:** `{ shmName: string, key?: string }` (key defaults to `'main'`).
+   - **Return:** the offer object the consumer already gets — `{ shmName, extName, transient: {
+     priceInfo: { s0: { amount, code }, s1: { amount, code } } }, … }`. (Same payload
+     `ApiWrapper.api.offer.findByShmName` returns in the consumer context.)
 
 ## ASK B — CSR billing sale (order on behalf of a customer)
 1. **App:** CSR/Admin.
@@ -47,6 +55,14 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    action has no lib method, so a CSR **cannot place an order on behalf of a customer** (retention / comp /
    downsell are dead). Even today via the direct call it's fragile: forget the hand-built
    `billingSeriesId` and BC rejects the sale with a **406**.
+7. **Our specific ask:**
+   - **Method:** add `csrWrapper.api.billing.sale(params)` that bills the **customer** (not the CSR
+     session user) and **injects `billingSeriesId` server-side** (so we stop hand-building it / hitting 406).
+   - **Params:** `{ payerId: string, offerShmName: string, sequenceOption?: {…thin-match flags},
+     paymentMethodId?: string }` — charge the customer's **payment method on file** via `payerId` (no raw
+     PAN passed from the CSR, so no PCI surface). `billingSeriesId` is NOT a caller param (BC sets it).
+   - **Return:** the created order, same shape as the consumer sale — `{ success: true, order: { _id,
+     subStatus, dueTimestamp, … } }`.
 
 ## ASK C — Global order / purchase search
 1. **App:** CSR/Admin.
@@ -63,6 +79,14 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    show a stitched-together, capped per-user fan-out, not all orders. A CSR **can't answer "show me all
    orders/purchases" or sort/filter across customers** (e.g. "every order placed today"); they're limited
    to looking up one known customer at a time.
+7. **Our specific ask:** *(either is fine)*
+   - **(a)** open the `commerceOrder` collection to the CSR role on the existing
+     `POST /database/search` (today: 403 "Invalid Database Search Role."), **or**
+   - **(b)** add a dedicated finder `csrWrapper.api.order.findOrders(params)`.
+   - **Params:** `{ brandId?, perPage?, lastId?, query?: { createdAt?: {from,to}, subStatus?, email? } }`
+     (paginate via `lastId`; optional server-side date/status/email filter).
+   - **Return:** the standard list envelope — `{ docs: [ …commerceOrder ], noMoreDocs, displayFields }`
+     (same shape as `user.findOrders`, just not scoped to one `userId`).
 
 ## ASK D — `userContact` reads (member message / note history)
 1. **App:** CSR/Admin.
@@ -87,6 +111,16 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    rows. A CSR can believe they see the full history when they don't. *(Whether the gap is real depends on
    the data-model question above: if `userContact` is just `contactMessage`-by-`targetUserId`, nothing is
    missing.)*
+7. **Our specific ask:** *(first, answer the data-model question; then one of)*
+   - **If `userContact` is a separate store:** add **two** finders —
+     `csrWrapper.api.userContact.findByUser({ targetUserId, lastId?, perPage? })` (per-user) and
+     `csrWrapper.api.userContact.findAll({ lastId?, perPage?, query? })` (all-users inbox) — **or**
+     open the `userContact` collection to the CSR role on `POST /database/search`.
+   - **Return:** `{ docs: [ …userContact ], noMoreDocs, displayFields }` (each doc = a member reply or
+     `userContactCsrMail`, with `targetUserId`, `createdAt`, body/content).
+   - **If it is NOT a separate store** (all member messages are `contactMessage`-by-`targetUserId`):
+     **no new method needed** — just confirm, and we drop these two reads in favor of
+     `message.contact.find` (already working).
 
 ## ASK E — Server-side email filter on contactMessage lookup
 1. **App:** CSR/Admin.
@@ -106,6 +140,14 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    email — capped at **40 pages**. In low volume it's fine; in production a customer's older tickets sit
    **beyond the scan window and are never found** (e.g. a May ticket invisible when viewing the customer in
    June). The CSR sees a **partial ticket history**, plus up to 40 round-trips of latency each lookup.
+7. **Our specific ask:**
+   - **Method:** extend the existing `csrWrapper.api.message.contact.find(params)` to accept a
+     **server-side `email` (and/or `targetUserId`) filter** (no new method needed).
+   - **Params:** `{ email?: string, targetUserId?: string, lastId?, perPage? }` — when `email` is
+     supplied, BC returns only that member's contactMessages (matching `content.input.email`), so we stop
+     scanning the whole inbox.
+   - **Return:** the same envelope `message.contact.find` already returns — `{ docs: [ …contactMessage ],
+     noMoreDocs, displayFields }` — just server-side-filtered to the one member.
 
 ---
 
