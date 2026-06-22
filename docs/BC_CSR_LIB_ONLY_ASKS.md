@@ -13,7 +13,7 @@ the direct fallback ourselves — no BC action). All 5 below are in the **CSR/Ad
 > param trap + an un-authenticated session. They migrate clean.
 
 Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods tried + why they fail ·
-(5) the direct call we use today.
+(5) the direct call we use today · (6) what actually happens (user-facing symptom).
 
 ---
 
@@ -27,6 +27,10 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    - consumer `ApiWrapper.api.offer` — resolves, but only in the **consumer** session; not usable from CSR.
 5. **Direct call used:** `POST /commerce/offer/findByShmName { shmName }` → **403 "No offer."** in a CSR
    session (all brands).
+6. **What actually happens:** the plan/price panel can't resolve, so the customer's **plan name and
+   s0/s1 price don't load** — the CSR sees blank/placeholder pricing and can't tell what the customer is
+   (or should be) paying. No crash; the price info is just absent, which also blocks any price-aware CSR
+   sale decision.
 
 ## ASK B — CSR billing sale (order on behalf of a customer)
 1. **App:** CSR/Admin.
@@ -39,6 +43,10 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    - consumer `ApiWrapper.api.billing.tokenSale` — charges the **session user's** token, not the customer's.
 5. **Direct call used:** `POST /commerceBilling/sale { …saleBody, payerId, billingSeriesId:<hand-built> }`
    (must inject `billingSeriesId` or BC 406s).
+6. **What actually happens:** under the lib-only mandate there is **no working path** — the "create order"
+   action has no lib method, so a CSR **cannot place an order on behalf of a customer** (retention / comp /
+   downsell are dead). Even today via the direct call it's fragile: forget the hand-built
+   `billingSeriesId` and BC rejects the sale with a **406**.
 
 ## ASK C — Global order / purchase search
 1. **App:** CSR/Admin.
@@ -51,6 +59,10 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
 5. **Direct call used:** `POST /database/search { collectionName:'commerceOrder' }` → **403 "Invalid
    Database Search Role."** (all brands; also tried `commerceOrders` plural). Falls back to a capped
    per-user fan-out.
+6. **What actually happens:** there is **no true global order list** — the Orders/Purchases pages can only
+   show a stitched-together, capped per-user fan-out, not all orders. A CSR **can't answer "show me all
+   orders/purchases" or sort/filter across customers** (e.g. "every order placed today"); they're limited
+   to looking up one known customer at a time.
 
 ## ASK D — `userContact` reads (member message / note history)
 1. **App:** CSR/Admin.
@@ -66,6 +78,15 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
    with `targetUserId`; all-users without) → **403 "Invalid Database Search Role."**
    - **Data-model question:** if member messages are in fact all `contactMessage`-by-`targetUserId`, this
      downgrades to a migration and no new method is needed.
+6. **What actually happens:** the pages **don't crash** (the 403 is swallowed) — they render whatever the
+   *other*, working source provides. A customer's message history has two parallel sources: the
+   **contactMessage** collection (read via the working `message.contact.find` — contact-form submissions
+   + CSR thread replies) and the **userContact** collection (read only via the gated direct call —
+   CSR-outbound mail `userContactCsrMail` + member replies/notes stored there). So **common-case messages
+   still appear**, but any **userContact-collection records are silently missing** — no error, just absent
+   rows. A CSR can believe they see the full history when they don't. *(Whether the gap is real depends on
+   the data-model question above: if `userContact` is just `contactMessage`-by-`targetUserId`, nothing is
+   missing.)*
 
 ## ASK E — Server-side email filter on contactMessage lookup
 1. **App:** CSR/Admin.
@@ -79,6 +100,12 @@ Format per ask: (1) app · (2) use case + actor · (3) pages · (4) lib methods 
      consumer contact-form messages, which carry no `targetUserId` (linked only by sender email).
 5. **Direct call used:** per-user `POST /contactMessage/admin/find/:userId`, plus a bounded **client-side
    scan of up to 40 inbox pages** (`/contactMessage/admin/find`) filtering by email/`targetUserId`.
+6. **What actually happens:** a customer's **older tickets disappear from their Messages tab once the
+   inbox grows large.** Because consumer contact-form messages link to the member only by **sender email**
+   (no `targetUserId`), the only way to find them is to page the whole inbox client-side and match by
+   email — capped at **40 pages**. In low volume it's fine; in production a customer's older tickets sit
+   **beyond the scan window and are never found** (e.g. a May ticket invisible when viewing the customer in
+   June). The CSR sees a **partial ticket history**, plus up to 40 round-trips of latency each lookup.
 
 ---
 
