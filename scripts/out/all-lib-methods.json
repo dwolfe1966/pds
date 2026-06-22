@@ -1,0 +1,609 @@
+{
+  "surface": {
+    "request": "fn",
+    "login": "fn",
+    "logout": "fn",
+    "createUser": "fn",
+    "updateUser": "fn",
+    "getUserDetail": "fn",
+    "findUsers": "fn",
+    "findAdminUsers": "fn",
+    "findUserContacts": "fn",
+    "findUserAdminNotes": "fn",
+    "findAdminNotes": "fn",
+    "createAdminNoteContact": "fn",
+    "createAdminNoteUser": "fn",
+    "createAdminNote": "fn",
+    "updateAdminNote": "fn",
+    "findUserOrders": "fn",
+    "findUserOrderPayments": "fn",
+    "findUserOrderHistories": "fn",
+    "cancelUncancelOrder": "fn",
+    "refundVoidOrder": "fn",
+    "updateSchedule": "fn",
+    "getUserOrder": "fn",
+    "findOptOuts": "fn",
+    "createCsrReplyContactMessage": "fn",
+    "findContactMessages": "fn",
+    "setActorToContactMessage": "fn",
+    "setTargetUserToContactMessage": "fn",
+    "setTagsToContactMessage": "fn",
+    "getContactMessageHistories": "fn",
+    "getContactMessageReplyLinkUrl": "fn",
+    "createContactMessage": "fn",
+    "findManagedContacts": "fn",
+    "unsubscribeManagedContact": "fn",
+    "getBrandIds": "fn",
+    "downloadAttachment": "fn",
+    "removeAttachment": "fn",
+    "findUserTracking": "fn",
+    "auth": {
+      "login": "fn",
+      "logout": "fn"
+    },
+    "user": {
+      "create": "fn",
+      "update": "fn",
+      "getUserDetail": "fn",
+      "find": "fn",
+      "findAdmin": "fn",
+      "findUserContacts": "fn",
+      "findUserAdminNotes": "fn",
+      "findOrders": "fn",
+      "getOrder": "fn",
+      "findOrderPayments": "fn",
+      "findOrderHistories": "fn",
+      "cancelUncancelOrder": "fn",
+      "refundVoidOrder": "fn",
+      "updateSchedule": "fn"
+    },
+    "optOut": {
+      "find": "fn"
+    },
+    "message": {
+      "contact": {
+        "create": "fn",
+        "createCsrReply": "fn",
+        "find": "fn",
+        "histories": "fn",
+        "replyLinkUrl": "fn",
+        "setActor": "fn",
+        "setTargetUser": "fn",
+        "setTags": "fn"
+      },
+      "note": {
+        "createContactAdminNote": "fn",
+        "createUserAdminNote": "fn",
+        "updateAdminNote": "fn"
+      }
+    },
+    "managedContact": {
+      "find": "fn",
+      "unsubscribe": "fn"
+    },
+    "shape": {
+      "getBrandIds": "fn"
+    },
+    "attachment": {
+      "download": "fn",
+      "remove": "fn"
+    },
+    "tracking": {
+      "findUser": "fn"
+    }
+  },
+  "ids": {
+    "userId": "6a30a88dce24e4018b18e016",
+    "email": "testingreg061526d@idlookup.ai",
+    "userIdWithOrders": "6a30a88dce24e4018b18e016",
+    "orderId": "6a30a88dce24e4018b18e032",
+    "contactMessageId": "6a31ca36f009300c72f299b2",
+    "contactHash": "0e0eba5f4b1ff8f1d7a053df95f27b59",
+    "contactEmail": "dev@mail01.bytecrtrs.com"
+  },
+  "libMethods": {
+    "user.findUserContacts": {
+      "args": {
+        "userId": "6a30a88dce24e4018b18e016"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs"
+      ],
+      "docCount": 0,
+      "firstDoc": null
+    },
+    "user.findUserAdminNotes": {
+      "args": {
+        "userId": "6a30a88dce24e4018b18e016"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs"
+      ],
+      "docCount": 0,
+      "firstDoc": null
+    },
+    "user.find": {
+      "args": {
+        "brandId": "idlookup",
+        "perPage": 5
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "docCount": 10,
+      "firstDoc": {
+        "_id": "6a30a88dce24e4018b18e016",
+        "keys": [
+          "_id",
+          "uniqueId",
+          "index",
+          "status",
+          "referenceIds",
+          "permissionIds",
+          "brandId",
+          "shConId",
+          "shColId",
+          "shTimestamp",
+          "email",
+          "firstName",
+          "lastName",
+          "roles"
+        ]
+      }
+    },
+    "user.getUserDetail": {
+      "args": {
+        "userId": "6a30a88dce24e4018b18e016"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "_id",
+        "uniqueId",
+        "index",
+        "status",
+        "referenceIds",
+        "permissionIds",
+        "brandId",
+        "shConId"
+      ],
+      "docCount": null,
+      "firstDoc": null
+    },
+    "user.findOrders": {
+      "args": {
+        "userId": "6a30a88dce24e4018b18e016"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "orders",
+        "perPage"
+      ],
+      "docCount": 1,
+      "firstDoc": {
+        "_id": "6a30a88dce24e4018b18e032",
+        "keys": [
+          "_id",
+          "index",
+          "status",
+          "referenceIds",
+          "permissionIds",
+          "brandId",
+          "shConId",
+          "shColId",
+          "shTimestamp",
+          "data",
+          "payeeId",
+          "payerId",
+          "commerceTokens",
+          "commerceOffers"
+        ]
+      }
+    },
+    "user.getOrder": {
+      "args": {
+        "userId": "6a30a88dce24e4018b18e016",
+        "orderId": "6a30a88dce24e4018b18e032"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "order"
+      ],
+      "docCount": null,
+      "firstDoc": null
+    },
+    "user.findOrderPayments": {
+      "args": {
+        "orderId": "6a30a88dce24e4018b18e032"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "payments",
+        "perPage"
+      ],
+      "docCount": 1,
+      "firstDoc": {
+        "_id": "6a30a88dce24e4018b18e03b",
+        "type": "sale",
+        "keys": [
+          "_id",
+          "index",
+          "type",
+          "status",
+          "referenceIds",
+          "permissionIds",
+          "brandId",
+          "shConId",
+          "shColId",
+          "shTimestamp",
+          "data",
+          "childrenTypes",
+          "subTypes",
+          "billingId"
+        ]
+      }
+    },
+    "user.findOrderHistories": {
+      "args": {
+        "orderId": "6a30a88dce24e4018b18e032"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "orderHistories",
+        "perPage"
+      ],
+      "docCount": 1,
+      "firstDoc": {
+        "_id": "6a30a88fce24e4018b18e069",
+        "keys": [
+          "_id",
+          "status",
+          "statusReason",
+          "updaterId",
+          "createdAt",
+          "updaterName"
+        ]
+      }
+    },
+    "message.contact.find": {
+      "args": {},
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs"
+      ],
+      "docCount": 20,
+      "firstDoc": {
+        "_id": "6a31ca36f009300c72f299b2",
+        "type": "contact",
+        "keys": [
+          "_id",
+          "index",
+          "type",
+          "ownerHash",
+          "referenceIds",
+          "permissionIds",
+          "brandId",
+          "data",
+          "hash",
+          "content",
+          "attachments",
+          "createdAt",
+          "updatedAt",
+          "createdTimestamp"
+        ]
+      }
+    },
+    "message.contact.histories": {
+      "args": {
+        "contactMessageId": "6a31ca36f009300c72f299b2",
+        "hash": "0e0eba5f4b1ff8f1d7a053df95f27b59"
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs"
+      ],
+      "docCount": 1,
+      "firstDoc": {
+        "_id": "6a31ca36f009300c72f299b2",
+        "type": "contact",
+        "keys": [
+          "_id",
+          "index",
+          "type",
+          "ownerHash",
+          "referenceIds",
+          "permissionIds",
+          "brandId",
+          "data",
+          "hash",
+          "content",
+          "attachments",
+          "createdAt",
+          "updatedAt",
+          "createdTimestamp"
+        ]
+      }
+    },
+    "message.contact.replyLinkUrl": {
+      "args": {
+        "contactMessageId": "6a31ca36f009300c72f299b2"
+      },
+      "exists": true,
+      "errStatus": 400,
+      "errMsg": [
+        "messageId must be a mongodb id",
+        "messageId should not be empty"
+      ],
+      "topKeys": "undefined",
+      "docCount": null,
+      "firstDoc": null
+    },
+    "optOut.find": {
+      "args": {
+        "brandId": "idlookup",
+        "perPage": 5
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "docCount": 0,
+      "firstDoc": null
+    },
+    "managedContact.find": {
+      "args": {
+        "perPage": 5
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "docCount": 10,
+      "firstDoc": {
+        "_id": "6a315f028ba78bfa966dddfa",
+        "type": "email",
+        "keys": [
+          "_id",
+          "uniqueId",
+          "__v",
+          "brandId",
+          "contactAddress",
+          "createdAt",
+          "hash",
+          "index",
+          "permissionIds",
+          "referenceIds",
+          "sessionId",
+          "shColId",
+          "shConId",
+          "status"
+        ]
+      }
+    },
+    "user.findAdmin": {
+      "args": {
+        "brandId": "idlookup",
+        "perPage": 10
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "docCount": 0,
+      "firstDoc": null
+    },
+    "tracking.findUser": {
+      "args": {
+        "type": "USER:login",
+        "updaterId": "6a30a88dce24e4018b18e016",
+        "perPage": 100
+      },
+      "exists": true,
+      "errStatus": null,
+      "errMsg": null,
+      "topKeys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "docCount": 0,
+      "firstDoc": null
+    },
+    "billing.sale (absent?)": {
+      "args": {},
+      "exists": false,
+      "siblings": []
+    },
+    "offer.findByShmName (absent?)": {
+      "args": {
+        "shmName": "x"
+      },
+      "exists": false,
+      "siblings": []
+    },
+    "contact.find (absent?)": {
+      "args": {},
+      "exists": false,
+      "siblings": []
+    }
+  },
+  "directContrast": {
+    "findAdmin_direct": {
+      "status": 200,
+      "docCount": 10,
+      "msg": null
+    },
+    "tracking_direct": {
+      "status": 200,
+      "docCount": 100,
+      "msg": null
+    }
+  },
+  "urlsByPhase": [
+    {
+      "phase": "discover",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "yfJqae…"
+    },
+    {
+      "phase": "discover",
+      "method": "POST",
+      "path": "/api/commerceMgmt/userOrders",
+      "apiId": "kXFWVy…"
+    },
+    {
+      "phase": "discover",
+      "method": "GET",
+      "path": "/api/contactMessage/admin/find",
+      "apiId": "TS9lpK…"
+    },
+    {
+      "phase": "user.findUserContacts",
+      "method": "GET",
+      "path": "/api/contactMessage/admin/find/6a30a88dce24e4018b18e016",
+      "apiId": "5294Dn…"
+    },
+    {
+      "phase": "user.findUserAdminNotes",
+      "method": "GET",
+      "path": "/api/message/admin/findNotes",
+      "apiId": "wKhktx…"
+    },
+    {
+      "phase": "user.find",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "OwCUdQ…"
+    },
+    {
+      "phase": "user.getUserDetail",
+      "method": "POST",
+      "path": "/api/user/management/detail",
+      "apiId": "h9vJr5…"
+    },
+    {
+      "phase": "user.findOrders",
+      "method": "POST",
+      "path": "/api/commerceMgmt/userOrders",
+      "apiId": "PNsERE…"
+    },
+    {
+      "phase": "user.getOrder",
+      "method": "POST",
+      "path": "/api/commerceMgmt/getUserOrder",
+      "apiId": "ag9hVo…"
+    },
+    {
+      "phase": "user.findOrderPayments",
+      "method": "POST",
+      "path": "/api/commerceMgmt/orderPayments",
+      "apiId": "QbyYn1…"
+    },
+    {
+      "phase": "user.findOrderHistories",
+      "method": "POST",
+      "path": "/api/commerceMgmt/orderHistories",
+      "apiId": "wWAsm5…"
+    },
+    {
+      "phase": "message.contact.find",
+      "method": "GET",
+      "path": "/api/contactMessage/admin/find",
+      "apiId": "ujFiTW…"
+    },
+    {
+      "phase": "message.contact.histories",
+      "method": "GET",
+      "path": "/api/contactMessage/admin/histories",
+      "apiId": "pV45uQ…"
+    },
+    {
+      "phase": "message.contact.replyLinkUrl",
+      "method": "GET",
+      "path": "/api/contactMessage/admin/replyUrl",
+      "apiId": "CI6ilk…"
+    },
+    {
+      "phase": "optOut.find",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "r33me5…"
+    },
+    {
+      "phase": "managedContact.find",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "udRWBK…"
+    },
+    {
+      "phase": "user.findAdmin",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "baAaPT…"
+    },
+    {
+      "phase": "tracking.findUser",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "FJUchX…"
+    },
+    {
+      "phase": "direct-contrast",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "Iz1qZl…"
+    },
+    {
+      "phase": "direct-contrast",
+      "method": "POST",
+      "path": "/api/database/search",
+      "apiId": "Iz1qZl…"
+    }
+  ]
+}

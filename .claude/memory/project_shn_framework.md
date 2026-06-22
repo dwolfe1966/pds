@@ -72,6 +72,28 @@ detail.variant 'a'; optout "yes"→optOut true; thinmatch "yes"→zeroState 'thi
   silent-fail inline `api.searchPeople` (→ `/name/search-result?error=true`); ported
   the v3 `/name/loader` handoff. v3/v4/v6 now all reliable; v2/v5 NOT (still inline).
 
+**ROOT CAUSE 2026-06-15 — BC CTO: "your client loads only DEFAULT shN; load the correct
+shN."** The minted IDs the owner provided (incl. `6a22ff83ca16ad4ef68b84b5` Google Inmates
+Upper) do NOT resolve to their partner node in BC — BC falls back to its default shN, so
+`order.shColId` + `commercepayments…partner` come out internal/default (the "partner
+regression" Jerome/the analyst saw). Confirms our own 06-09 probe (6a22ff83 → DEFAULT
+container) — it was NOT a cache artifact. Our client mechanics are fine: index.js writes
+`attribution.shn` to sessionStorage before `getInstance`, which passes it as
+`initialShParams` (24-hex passes `isBcObjectId`). So the failure is at the BC boundary:
+either the value is wrong (authoritative shN is in the CTO sheet
+`1R7fE5Jp4TNt14BlwsbTqpxpUwNh1BxihGhfXqn0qNpQ` row 12 / B12:G12 — compare vs URL `6a22ff83`)
+**RESOLVED — client bug, fixed `apiWrapper.js` (bundle `public.e70d1364.js`, deploy
+pending).** Owner confirmed `6a22ff83` IS correct (default = `69a2380b53ecf9b049d01fbb`).
+CTO: we weren't calling a BC method to SET the shN after reading the URL. We passed
+`initialShParams` at `getInstance` — but **getInstance is a SINGLETON**, so if the instance
+already exists (IIFE auto-init on load / earlier call) our config is IGNORED → BC stays on
+default shN → orders resolve internal/default. **Fix = call
+`wrapper.api.shape.setShapeParams({shn,shl,cascade})`** (BC HowTo 2026-05-13, the documented
+post-init shape setter) right after getInstance, guarded + fire-and-forget. KEY LESSON:
+`initialShParams` ≠ guaranteed shN switch; always `setShapeParams` to be sure. Needs live
+$1-sale verify: `order.shConId==6a22ff83` & partner=google. See
+`docs/BC_COMMERCE_ATTRIBUTION_GAPS.md`. [[project_ads_conversion_2026_06_07]]
+
 **Still pending:** BC asks in `docs/BC_SHN_PARTNER_SHAPE.md` (#77-Q6 model partners,
 #77-Q4 expose names) to fully shift identity/offer to BC. (All 7 sheet tokens are
 wired; consumer bundle needs deploy to ship them.)

@@ -32,6 +32,45 @@ Google Ads conversion pipeline audit (consumer site), 2026-06-06/07. Full writeu
 - Ads: campaigns point to off-funnel domains `inmatessearcher.com` + `privaterecords.net` (not in
   GTM map, not our funnel) + some dev URLs → owner fixing.
 
+**UPDATE 2026-06-15 — live-test attribution gaps (employee DB scan of a real order):**
+- ✅ `commerceorders.refer` now non-empty (0→1): `refer_*` rides landing→`data.refer`→
+  sale `queryString`→order. Core #10 refer-level ask working.
+- **Gap 1 (gclid not on billable record) — FIXED our side, deploying.** `gclid`/utm rode
+  `trackings.data.refer` but not the order/payment. `buildReferQueryString()` now also emits
+  `gclid`/`fbclid`/`msclkid`/`utm_*` into the sale queryString (commit `35d7396`, bundle
+  **`public.ed680352.js`**, deploy pending). **Owner confirmed BC parses the full queryString**
+  (not a `refer_*` allowlist), so no BC change needed — gclid lands on `commerceorders.refer`
+  at order grain (order→payment joins on orderId; no payment-level field needed).
+- **Gap 2 (payment partner contradicts order refer) — BC-side, NOT code.** Payment seq0
+  resolved `commercepayments.data.tracking.partner={name:'internal',channel:'default'}` while
+  order `refer.partnerId='google'`. We never write payment.partner; BC writes it from the
+  shape tree (`comp.tracking.partner`) for the shn. Token `6a22ff83…` (Google Inmates Upper)
+  resolves to DEFAULT container — same symptom we spotted 2026-06-09. Fix = Kwan sets
+  `comp.tracking.partner.name=google`/`.channel` on that shape + sibling tokens. Then shape
+  path + refer_* path converge. Going-forward principle: `commerceorders.refer` is authoritative;
+  legacy partner path must agree (no client-side reconciliation).
+- BC asks doc: `docs/BC_COMMERCE_ATTRIBUTION_GAPS.md` (gap1 confirm-done + gap2 shape config).
+
+**UPDATE 2026-06-15 (later) — BOTH gaps fixed in code:**
+- **shN-default (gap2) RESOLVED:** root cause was `getInstance` singleton ignoring
+  `initialShParams`; fix = call `api.shape.setShapeParams({shn,shl,cascade})` after init
+  (`apiWrapper.js`). Deployed `e70d1364`; reporting analyst confirms #6 done end-to-end
+  (campaign signup → google/search ON THE PAYMENT, queryable). See [[shn-partner-attribution-framework]].
+- **gclid on order (gap1) FIXED + DEPLOYED (`public.e9ca7f91.js` live on dev):** key
+  learning — **BC ingests ONLY `refer_`-prefixed queryString params into
+  `commerceorders.refer`** (strips prefix). Raw `gclid=` was DROPPED (analyst verified:
+  refer_* reached commerce, raw gclid did not). Fix = send `refer_gclid`/`refer_fbclid`/
+  `refer_msclkid` (commit `1c94667`). **Client side VERIFIED live**: deployed bundle has the
+  logic, landing captures gclid→referralParams, emitted sale queryString =
+  `…&refer_gclid=<gclid>`. Only unverified link = BC persisting `refer_gclid`→`refer.gclid`
+  server-side (needs ONE $1 sale to read `commerceorders.refer.gclid`).
+- Reusable verify tool: `scripts/live-uat-shn-sale-verify.js` (headed network recorder —
+  human drives funnel/captcha/card, script dumps order shConId/refer/partner from the
+  intercepted sale + order responses). Runbook also in `docs/BC_COMMERCE_ATTRIBUTION_GAPS.md`.
+- **STATUS: #6 CLOSED (shN→partner, verified). #10 one $1-sale-read from closed (gclid).**
+  Both fixes deployed. Only open BC-side item across this work = csrWrapper live-hosting
+  (`docs/BC_CSRWRAPPER_HOSTING.md`), not a launch blocker.
+
 **Verify tool:** `node scripts/live-uat-gtm-shn.js` (BASE=… ; default dev). Read-only, no captcha —
 asserts shN→landing redirect, gclid/shn capture, dataLayer partner fields, no-shN control. 4/4 PASS.
 Conversion-FIRE test stays manual (GTM Preview/Tag Assistant — BC captcha gates the search step).

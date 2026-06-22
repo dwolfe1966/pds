@@ -1,0 +1,125 @@
+{
+  "2.6_offer": {
+    "csrWrapper_has_offer": false,
+    "ApiWrapper_has_offer": true,
+    "ApiWrapper_call": {
+      "err": "No offer.",
+      "keys": "undefined",
+      "priceInfo": null
+    }
+  },
+  "3.1_findAdmin": {
+    "direct_isAdmin": {
+      "status": 200,
+      "docCount": 10,
+      "msg": null
+    },
+    "lib_findAdmin": {
+      "docCount": 0,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_find_isAdmin_top": {
+      "docCount": 10,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_find_isAdmin_query": {
+      "docCount": 10,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_findAdmin_isAdmin": {
+      "docCount": 0,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    }
+  },
+  "3.2_tracking": {
+    "direct": {
+      "status": 200,
+      "docCount": 100,
+      "msg": null
+    },
+    "lib_updaterId_type": {
+      "docCount": 0,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_targetUserId": {
+      "docCount": 10,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_userId": {
+      "docCount": 10,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_query": {
+      "docCount": 10,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_dataType": {
+      "docCount": 10,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    },
+    "lib_noType_updaterId": {
+      "docCount": 10,
+      "keys": [
+        "docs",
+        "noMoreDocs",
+        "displayFields",
+        "dateFields"
+      ],
+      "err": null
+    }
+  }
+}

@@ -1,26 +1,30 @@
 ---
 name: security-deps-open-redirect-2026-06-16
-description: "Pre-launch security: react-router open-redirect (reachable via AdminLoginPage redirect param) + shell-quote critical (transitive build dep). Awaiting owner ack to bump."
+description: "RESOLVED 2026-06-22: react-router open-redirect + shell-quote/form-data Dependabot alerts all patched (bump + AdminLoginPage code guard). Bundles rebuilt + pushed."
 metadata:
   node_type: memory
   type: project
   originSessionId: current
 ---
 
-Surfaced by Dependabot on push 2026-06-16 (3 open alerts). NOT yet fixed — owner ack needed
-before bumping deps (repo rule).
+Surfaced by Dependabot 2026-06-16. **FULLY RESOLVED 2026-06-22 (commit `6651702`, pushed)** — owner
+OK'd "all of them."
 
-- **react-router (medium ×2) — SHIPPED + reachable, fix this.** Open-redirect: a same-origin
-  redirect to a `//`-prefixed path is reinterpreted as a protocol-relative URL → off-site.
-  Concretely reachable: `src/pages/admin/AdminLoginPage.js` does
-  `navigate(searchParams.get('redirect') || '/users')`, so `?redirect=//evil.com` could redirect
-  off-site after login. Check member `ProtectedRoute`/login redirects too. Fix = bump react-router
-  to the patched version (+ optionally sanitize redirect params to same-origin/relative only).
-- **shell-quote (critical) — low real risk.** Transitive **build-tool** dep (Parcel toolchain),
-  not in the shipped browser bundle. quote() newline-escaping bug. Easy bump, but not a runtime
-  exposure for the SPA. Launch-state memory previously noted "2 moderate Dependabot (post-launch)";
-  the critical is this build-only dep.
+- **react-router (medium ×2) — FIXED.** Bumped `react-router-dom` 6.30.3 → **6.30.4** in root
+  (builds both shipped bundles) AND `admin/`. Patch release whose changelog is exactly the
+  same-origin open-redirect fix (`//`-prefixed path reinterpreted as protocol-relative → off-site).
+  PLUS defense-in-depth code guard in `src/pages/admin/AdminLoginPage.js`: only honor a same-origin
+  RELATIVE redirect — `/^\/[^/\\]/.test(raw)` (one leading slash, next char not `/` or `\`) — else
+  fall back to `/users`. Rejects `//evil.com`, `/\evil.com`, `scheme://…`.
+- **shell-quote (critical) — FIXED.** Root `overrides: {"shell-quote":"^1.8.4"}` (transitive via
+  `concurrently`, dev/build-only — never bundled; the "critical" was label, not exposure).
+- **form-data (high) — FIXED.** `server/` `overrides: {"form-data":"^4.0.6"}` (transitive via
+  `axios`; server = dev mock API, not deployed). server + admin `npm audit` → 0 vulns.
 
-Recommended next action: bump react-router (shipped, reachable) + shell-quote, rebuild, verify
-admin login still redirects correctly. See [[project_csr_auth_state_2026_06_16]] for the bundles
-in flight.
+Verification: all 4 packages confirmed at patched versions; full jest suite 335/335 green; bundles
+rebuilt → **consumer `public.82f63273.js`, admin `admin.736a8551.js`** (BOTH carry the react-router
+patch — redeploy both to apply it at the library level, not just the admin guard).
+
+NOTE (separate, NOT these alerts): local `npm audit` still reports ~22 findings — all **dev-tooling**
+transitives (jsdom/jest chain), not shipped, not Dependabot-flagged. Don't `npm audit fix --force`
+(can break the build). Triage post-launch if desired.
