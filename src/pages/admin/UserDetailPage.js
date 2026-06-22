@@ -1495,7 +1495,12 @@ const UserDetailPage = () => {
                           <span className={styles.orderDate}>{formatDate(o.createdAt)}</span>
                           {schedule && (
                             <span className={styles.orderSchedule}>
+                              {/* Definitive upcoming price per Kwan (mtg 2026-06-23): the next
+                                  recurring charge lives on the order's schedule, not the offer
+                                  endpoint — schedule.data.totalPrice + schedule.dueTimestamp. */}
                               Next: {schedule.dueTimestamp ? formatDate(new Date(schedule.dueTimestamp).toISOString()) : '—'}
+                              {schedule.data?.totalPrice?.amount != null
+                                && ` — $${Number(schedule.data.totalPrice.amount).toFixed(2)}`}
                             </span>
                           )}
                         </div>

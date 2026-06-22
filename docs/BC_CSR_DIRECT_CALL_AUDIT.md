@@ -43,7 +43,7 @@ attachment, tracking` (+ flat aliases). **No `offer`, no `billing`, no top-level
 | 6 | `csrGetUserOrder` | `user.getOrder` → `/commerceMgmt/getUserOrder` (+ `/database/search` probe) | UserDetailPage / order detail | ✅ SAFE (unguarded lib) |
 | 7 | `csrFindOrderPayments` | `user.findOrderPayments` → `/commerceMgmt/orderPayments` | UserDetailPage / order detail | 🟡 CONFIRM (guarded) |
 | 8 | `csrFindOrderHistories` | `user.findOrderHistories` → `/commerceMgmt/orderHistories` | UserDetailPage / order detail | 🟡 CONFIRM (guarded) |
-| 9 | `csrFindOfferByShmName` | `offer.findByShmName` (**absent**) → `/commerce/offer/findByShmName` → **403 "No offer."** | UserDetailPage | 🔴 BC ASK A |
+| 9 | `csrFindOfferByShmName` | `offer.findByShmName` (**absent**) → `/commerce/offer/findByShmName` → **403 "No offer."** | UserDetailPage | ✅ ASK A RESOLVED 2026-06-23 — price comes from `user.getOrder` schedule; offer-template (new sales) folds into Ask B |
 | 10 | `csrFindOptOuts` | **direct-only** `/database/search {optOutRequest}` | DataRemovalPage | 🟠 MIGRATE → `optOut.findOptOuts` (verify shape/collection) |
 | 11 | `csrFindUserContacts` | **direct-only** `/database/search {userContact}` → **403** | UserDetailPage, MailActivityPage, NotesPage | 🔴 BC ASK D |
 | 12 | `csrFindAllUserContacts` | **direct-only** `/database/search {userContact}` all-users → **403** | EmailTicketsPage | 🔴 BC ASK D |
@@ -83,8 +83,10 @@ attachment, tracking` (+ flat aliases). **No `offer`, no `billing`, no top-level
 ## C. THE BC-FACING LIST (to reach zero direct calls)
 
 ### Hard asks — no usable lib path (BC must ADD / FIX / GRANT)
-1. **A — `offer.findByShmName` + CSR offer grant.** Add `csrWrapper.api.offer.findByShmName`; make
-   offer resolve in the CSR clientId/role (currently 403 "No offer." all brands). *(csrFindOfferByShmName)*
+1. ~~**A — `offer.findByShmName` + CSR offer grant.**~~ **RESOLVED 2026-06-23 (Kwan) — WITHDRAWN.** CSR
+   price panel uses `user.getOrder` instead: `order.schedule.data.totalPrice` (definitive recurring amount)
+   + `order.schedule.dueTimestamp`. Working lib method; live-verified (`probe-csr-getorder-price.js`); wired
+   into `UserDetailPage`. Offer-template lookup for NEW sales folds into Ask B (graceful fallback). **No BC action.**
 2. **B — CSR `billing.sale({payerId,…})`.** Add a `csrWrapper.api.billing.sale` that bills the
    *customer* (payerId) and injects `billingSeriesId`. *(csrCreateOrder)*
 3. **C — global order search.** Open `commerceOrder` to the CSR role, or add a global order finder

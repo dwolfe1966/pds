@@ -4,8 +4,9 @@
 — no direct `/api/...` calls. We audited the entire CSR direct-call surface (37 methods — full
 inventory in `BC_CSR_DIRECT_CALL_AUDIT.md`) and verified the lib live with an auth-gated probe.
 
-**Result: 5 asks.** Everything else either already runs on the lib or migrates on **our** side (we drop
-the direct fallback ourselves — no BC action). All 5 below are in the **CSR/Admin app**.
+**Result: 4 asks** (was 5 — **Ask A resolved by Kwan 2026-06-23**, see below). Everything else either
+already runs on the lib or migrates on **our** side (we drop the direct fallback ourselves — no BC
+action). All asks below are in the **CSR/Admin app**.
 
 > Two candidate asks (`findAdmin`/`/cs-reps` and `tracking.findUser` scoping) were investigated and
 > **dropped** — auth-gated probing proved `findAdmin({})` returns the real CSR staff and
@@ -18,7 +19,22 @@ ask (method · params · return shape).
 
 ---
 
-## ASK A — Offer / price lookup
+## ASK A — Offer / price lookup  ✅ RESOLVED 2026-06-23 (WITHDRAWN — no BC action)
+**Kwan's answer (mtg 2026-06-23):** don't use the offer endpoint for the CSR price panel — use
+**`csrWrapper.api.user.getOrder`** (already a working lib method we use). It carries the customer's
+**name** (via the user record) and the **definitive** price the customer is actually billed:
+- `order.schedule.data.totalPrice` → `{ amount, code }` — the next recurring charge (live-verified
+  `49.98 usd`). *(Better than the offer's `s0/s1` template — it's this customer's actual price.)*
+- `order.schedule.dueTimestamp` (+ `order.dueTimestamp`) → next/upcoming billing date.
+- `order.transient.amount.collected` → collected to date; `order.status` → active/canceled.
+
+Verified live 2026-06-22 (`scripts/probe-csr-getorder-price.js`). Implemented in `UserDetailPage` order
+card (surfaces `schedule.data.totalPrice` next to the existing "Next: {date}"). **No BC method needed.**
+The offer-template lookup (`adminFindOffer` for NEW retention/comp/signup sales) still 403s but it's the
+*create-order* catalog (folds into Ask B) and already degrades to hardcoded fallback prices.
+
+<details><summary>Original ask (kept for history — now withdrawn)</summary>
+
 1. **App:** CSR/Admin.
 2. **Use case + actor:** A CS agent views a customer's **plan name + price (s0/s1)** on their order — the
    lookup CSR sales rely on.
@@ -39,6 +55,8 @@ ask (method · params · return shape).
    - **Return:** the offer object the consumer already gets — `{ shmName, extName, transient: {
      priceInfo: { s0: { amount, code }, s1: { amount, code } } }, … }`. (Same payload
      `ApiWrapper.api.offer.findByShmName` returns in the consumer context.)
+
+</details>
 
 ## ASK B — CSR billing sale (order on behalf of a customer)
 1. **App:** CSR/Admin.
