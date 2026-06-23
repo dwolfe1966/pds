@@ -37,6 +37,7 @@ const SalesSearchResultsPage = () => {
   const [rawResponse, setRawResponse] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [paginationExhausted, setPaginationExhausted] = useState(false);
+  const [loadMoreCount, setLoadMoreCount] = useState(0); // GAP-5: pagination engagement
   const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState('relevance');
 
@@ -345,6 +346,9 @@ const SalesSearchResultsPage = () => {
                   disabled={loadingMore}
                   onClick={async () => {
                     setLoadingMore(true);
+                    const page = loadMoreCount + 1;
+                    setLoadMoreCount(page);
+                    track('load_more', { page }); // GAP-5: CLIENT:load_more{page}
                     try {
                       const more = await api.loadMoreSearchResults(rawResponse);
                       if (more?.data?.length) {

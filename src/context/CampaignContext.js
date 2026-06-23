@@ -83,7 +83,18 @@ function persistIdentity(campaign) {
 export const CampaignProvider = ({ children }) => {
   const [campaign, setCampaign] = useState(() => {
     const { shn, shl } = captureAttribution();
-    return resolveCampaign(shn, shl);
+    const resolved = resolveCampaign(shn, shl);
+    // GTM partner-race fix: set partnerName/partnerChannel in gtmContext SYNCHRONOUSLY
+    // here in the initializer — this runs during the provider's first render, BEFORE any
+    // child mounts and BEFORE ScrollToTop fires the first `virtualPageview`. Without this,
+    // partner attribution was set in a [campaign] effect that could run after the first
+    // pageview, leaving the landing pageview without partner. (The async BC-shape enrich
+    // below still refines it for subsequent events via persistIdentity.)
+    try {
+      const id = (resolved && resolved.identity) || {};
+      if (id.partner || id.channel) gtmSetCampaign({ name: id.partner || undefined, channel: id.channel || undefined });
+    } catch { /* never block render */ }
+    return resolved;
   });
 
   useEffect(() => { persistIdentity(campaign); }, [campaign]);

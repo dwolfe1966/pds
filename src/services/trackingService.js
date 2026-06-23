@@ -107,6 +107,22 @@ async function _sendToBC(eventName, payload, attempt = 0) {
   }
 }
 
+// GAP-7 (reporting): stamp logged-in state + userId on EVERY CLIENT:* event so
+// visitor-vs-member is unambiguous at the source (no need to infer from surrounding
+// events). Read straight from localStorage; never throw. BC's server-side USER:*
+// events already carry the user — this covers the client-emitted CLIENT:* stream.
+function memberContext() {
+  try {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const loggedIn = !!token;
+    let userId;
+    if (loggedIn) {
+      try { const u = JSON.parse(localStorage.getItem('user') || 'null'); userId = u?.id || u?._id || undefined; } catch { /* ignore */ }
+    }
+    return { loggedIn, ...(userId ? { userId } : {}) };
+  } catch { return { loggedIn: false }; }
+}
+
 export function track(eventName, properties = {}) {
   const sessionId = getSessionId();
   const timestamp = new Date().toISOString();
@@ -114,7 +130,8 @@ export function track(eventName, properties = {}) {
   // BC tracking — primary. `refer` carries first-touch attribution (shn/shl + ad
   // params) per BC's data.refer convention. Retries cover the cold-start window.
   const refer = buildRefer();
-  _sendToBC(eventName, { sessionId, timestamp, ...(refer ? { refer } : {}), ...properties });
+  const member = memberContext(); // GAP-7: loggedIn + userId on every event
+  _sendToBC(eventName, { sessionId, timestamp, ...member, ...(refer ? { refer } : {}), ...properties });
 
   // Local NDJSON mirror — dev-only. Shape unchanged for backwards compat with
   // the existing admin analytics page that reads this log.
@@ -123,7 +140,7 @@ export function track(eventName, properties = {}) {
       fetch(LOCAL_TRACKING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: eventName, timestamp, sessionId, properties: { ...(refer ? { refer } : {}), ...properties } }),
+        body: JSON.stringify({ event: eventName, timestamp, sessionId, ...member, properties: { ...(refer ? { refer } : {}), ...properties } }),
       }).catch(() => {});
     } catch (_) {}
   }
