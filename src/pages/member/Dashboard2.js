@@ -836,8 +836,10 @@ const Dashboard2 = () => {
           </div>
         </section>
 
-        {/* Trial transparency banner — the upcoming first charge, front and center. */}
-        {trialInfo && (
+        {/* Trial transparency banner — the upcoming first charge, front and center.
+            TEMPORARILY DISABLED 2026-06-23 (owner request: hide the yellow "free trial —
+            N days left / Manage subscription" bar for now). Re-enable by removing `false &&`. */}
+        {false && trialInfo && (
           <section style={{
             background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '0.75rem',
             padding: '1rem 1.25rem', marginBottom: '1rem',
