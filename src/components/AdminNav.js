@@ -22,8 +22,13 @@ const navLinks = [
 ];
 
 const AdminNav = () => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+
+  // Logged-in CSR identity: prefer a real name, fall back to email (staff/admin
+  // accounts often have no firstName/lastName), then a generic label.
+  const csrName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+  const csrIdentity = csrName || user?.email || 'Account';
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,6 +76,13 @@ const AdminNav = () => {
         ))}
       </div>
 
+      {/* Logged-in CSR identity */}
+      {user && (
+        <Link to="/my-dashboard" className={styles.userIdentity} title={user.email || csrIdentity}>
+          {csrIdentity}
+        </Link>
+      )}
+
       <button onClick={logout} className={styles.logoutBtn}>Sign out</button>
 
       {/* Mobile hamburger */}
@@ -104,6 +116,16 @@ const AdminNav = () => {
               {l.label}
             </Link>
           ))}
+          {user && (
+            <Link
+              to="/my-dashboard"
+              className={styles.mobileUser}
+              title={user.email || csrIdentity}
+              onClick={() => setMenuOpen(false)}
+            >
+              {csrIdentity}
+            </Link>
+          )}
           <button onClick={logout} className={styles.mobileLogout}>Sign out</button>
         </div>
       )}

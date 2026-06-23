@@ -87,6 +87,24 @@
   font-weight: 600;
 }
 
+.userIdentity {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.userIdentity:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
 .logoutBtn {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -153,6 +171,15 @@
   color: #fff;
 }
 
+.mobileUser {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 .mobileLogout {
   background: transparent;
   border: none;
@@ -167,6 +194,7 @@
 
 @media (max-width: 900px) {
   .links,
+  .userIdentity,
   .logoutBtn {
     display: none;
   }
