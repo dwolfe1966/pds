@@ -784,10 +784,6 @@ const api = {
    */
   submitContact: async (body) => {
     const category = body.category || 'general';
-    // Forward the member's id as targetUserId so BC can link the thread to them and
-    // getUserContacts (filters on content.targetUserId) can surface it. Callers set
-    // `userId` (e.g. ContactPage) — that name was previously dropped; accept either.
-    const targetUserId = body.targetUserId || body.userId;
     let contactBody;
     if (category === 'billing') {
       contactBody = {
@@ -799,12 +795,13 @@ const api = {
         last4: body.last4 || '',
         ...(body.phone ? { phone: body.phone } : {}),
         ...(body.orderId ? { orderId: body.orderId } : {}),
-        // Empirical test: pass targetUserId so BC's getUserContacts
-        // (added 2026-05-28) can surface this thread for the member.
-        // BC's contact.create doesn't auto-link member-submitted threads
-        // to the authenticated user's _id. If BC strips or rejects this
-        // field, see docs/BC_GETUSERCONTACTS_SCOPE.md for next ask.
-        ...(targetUserId ? { targetUserId } : {}),
+        // NOTE: do NOT send targetUserId on /contactMessage/create. BC's prod v3
+        // rejects it with 400 "Invalid params." (confirmed 2026-06-23: a logged-in
+        // member had it appended → EVERY member contact submit failed). It is not in
+        // BC's create param spec {category,topic,name,email,phone,description,orderId}.
+        // The thread still links to the member by EMAIL (the per-user finder email-
+        // merges) + the localStorage thread ref (persistContactThreadRef), so member
+        // visibility is preserved. Visitors never sent it, which is why only members broke.
       };
     } else {
       // BC's general-category 'orderId' is required by the doc but empty
@@ -836,12 +833,13 @@ const api = {
         orderId: body.orderId || 'NOORDERID0000',
         ...(body.zip ? { zip: body.zip } : {}),
         ...(body.last4 ? { last4: body.last4 } : {}),
-        // Empirical test: pass targetUserId so BC's getUserContacts
-        // (added 2026-05-28) can surface this thread for the member.
-        // BC's contact.create doesn't auto-link member-submitted threads
-        // to the authenticated user's _id. If BC strips or rejects this
-        // field, see docs/BC_GETUSERCONTACTS_SCOPE.md for next ask.
-        ...(targetUserId ? { targetUserId } : {}),
+        // NOTE: do NOT send targetUserId on /contactMessage/create. BC's prod v3
+        // rejects it with 400 "Invalid params." (confirmed 2026-06-23: a logged-in
+        // member had it appended → EVERY member contact submit failed). It is not in
+        // BC's create param spec {category,topic,name,email,phone,description,orderId}.
+        // The thread still links to the member by EMAIL (the per-user finder email-
+        // merges) + the localStorage thread ref (persistContactThreadRef), so member
+        // visibility is preserved. Visitors never sent it, which is why only members broke.
       };
     }
 
