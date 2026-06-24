@@ -7,6 +7,7 @@ import { setSearchContext, setIdentityContext, getSearchContext } from '../../se
 import { track } from '../../services/trackingService';
 import { readThinMatch } from '../../services/thinMatch';
 import { useCampaign } from '../../context/CampaignContext';
+import styles from './PhoneSearchResultsPage.module.css';
 
 // Partner bugs 15a/15b: phone SRP previously rendered unobscured owner details
 // via ResultCard and clicks led to a generic "signup free" preview. Phone
@@ -96,19 +97,8 @@ const PhoneSearchResultsPage = () => {
   };
 
   return (
-    <main style={{
-      background: 'linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%)',
-      padding: '2.5rem 0',
-      minHeight: '100vh'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '3rem',
-        backgroundColor: '#ffffff',
-        borderRadius: '0.75rem',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-      }}>
+    <main className={styles.page}>
+      <div className={styles.card}>
         {/* Header */}
         <div style={{
           marginBottom: '3rem',
