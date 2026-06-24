@@ -1,0 +1,70 @@
+<!--
+  Remarketing email #3 → trial sign-ups / guests who haven't converted. The "special
+  offer / discount" step of the series.
+
+  WHAT CHANGED vs the version you pasted:
+    1. ⭐ ADDED THE MISSING CTA BUTTON (same as #1/#2). "Claim Your Offer" →
+       ${code.baseUrl}${comp.client.paths.payment}. VERIFY the path key (see remarketing-1).
+    2. "Hi," (bare) → "Hi there,".
+    3. Fixed a dangling <hr> (the original ended with a divider and nothing after it) —
+       added a closing note, consistent with #1/#2.
+
+  ⚠️ THIS "SPECIAL OFFER" EMAIL STATES NO OFFER. The subject/heading promise a discount
+  ("a special offer", "your lowest price yet") but no actual discount amount or expiry is
+  shown. The repo version showed the winback discount + an expiry date for urgency. If
+  BC's remarketing hook exposes them, insert with ${...} syntax (NOT {{...}}):
+    - discount, e.g.  …get <strong>${code.<remarketing-hook>.winbackOffer}</strong> on your first month.
+    - expiry,  e.g.   This offer expires ${code.<remarketing-hook>.offerExpiryDate}.
+  Confirm the token paths first — a wrong ${...} can break the email. Without a real
+  offer, this email is just a weaker version of #2.
+
+  Tokens: globals comp.brand.name, comp.brand.customer.phone, comp.client.paths.payment
+  (VERIFY), code.baseUrl, comp.email.default.footer.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>A special offer to complete your ${comp.brand.name} membership</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">Here's a little something to get you started</h2>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Hi there, you're one step away from
+                full access — complete your ${comp.brand.name} membership now.</p>
+              <p style="margin:0 0 24px;color:#374151;line-height:1.6;">That's complete reports on 247M+ records,
+                unlimited searches, and up to 5 reports per day — at your lowest price yet.</p>
+              <a href="${code.baseUrl}${comp.client.paths.payment}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Claim
+                Your Offer</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Questions before you upgrade? Just reply
+                to this email or call ${comp.brand.customer.phone}, Monday–Friday, 9am–5pm ET.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
