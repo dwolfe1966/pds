@@ -1,0 +1,75 @@
+<!--
+  IDLookup signup / trial-welcome confirmation email — for BC's HTML upload tool.
+  Replaces the WRONG template currently risk of being in the signup slot (the
+  reactivation/uncancel copy). Matches BC's existing shell (header #1a56db,
+  ${comp.email.default.footer}).
+
+  TOKEN LEGEND (described without the ${} wrapper so BC's engine won't touch this comment):
+    CONFIRMED (copied verbatim from the live BC template you pasted):
+      comp.brand.name                      → brand name (IDLookup.AI)
+      comp.brand.customer.phone            → support phone (already 866-204-1902 in BC)
+      comp.email.default.footer            → shared footer (unsubscribe / privacy / ©)
+      code.baseUrl + comp.client.paths.dashboard → dashboard URL
+    BEST-GUESS — VERIFY against another BC signup/trial email:
+      code.order.signup.hook.firstName     → first name           (path "signup" mirrors the uncancel hook "canceled.or.uncanceled")
+      code.order.signup.hook.orderId       → order id
+      code.order.signup.hook.trialPrice    → first/trial charge (your email showed "$1")
+      code.order.signup.hook.price         → recurring price ("$49.98") — renders clean
+      code.order.signup.hook.period        → billing period — RENDERS RAW today ("30 Day"); find a clean variant
+      code.order.signup.hook.trialEndDate  → conversion date — RENDERS RAW today (ISO timestamp); find a formatted variant
+    NOTE: trialStartDate intentionally NOT shown — it rendered as an ugly ISO timestamp and
+    adds nothing ("active now" covers it). Re-add only if BC exposes a formatted date token.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Welcome to ${comp.brand.name} — your trial is active</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">Welcome, ${code.order.signup.hook.firstName}!</h2>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Your ${comp.brand.name} account is ready and your
+                Unlimited Search trial is now active.</p>
+              <p style="margin:0 0 24px;color:#374151;line-height:1.6;">You now have access to over 247 million records —
+                search by name, phone, or email, and view up to 5 full reports per day.</p>
+              <a href="${code.baseUrl}${comp.client.paths.dashboard}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Start
+                Searching</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0 0 16px;color:#6b7280;font-size:14px;line-height:1.6;">A quick note on billing: we charged
+                ${code.order.signup.hook.trialPrice} today for your first report (order
+                #${code.order.signup.hook.orderId}). When your trial ends on
+                <strong>${code.order.signup.hook.trialEndDate}</strong>, it converts to an Unlimited Search subscription at
+                ${code.order.signup.hook.price} every ${code.order.signup.hook.period}, unless you cancel first. You can
+                cancel anytime from your account — cancel before then and you won't be charged again.</p>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Need help? Reply to this email or call
+                ${comp.brand.customer.phone}, Monday–Friday, 9am–5pm ET.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
