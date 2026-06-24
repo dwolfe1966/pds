@@ -5,6 +5,24 @@ import { useAuth } from '../../context/AuthContext';
 import styles from './ContactPage.module.css';
 import { useBrand } from '../../services/brand';
 
+// BC enforces anti-abuse rules on /contactMessage/create (which email domains may
+// create messages + a per-domain daily cap). A tripped rule comes back as a 412 —
+// BC's Cloudflare Turnstile challenge — which we intentionally do NOT satisfy
+// client-side (it exists to block abuse/disposable domains). Detect it and show a
+// graceful, helpful message with the brand support number instead of a raw
+// "HTTP 412". For legit customers the rule doesn't fire, so they never see this.
+const isBlocked412 = (err) =>
+  err?.status === 412 ||
+  err?.originalError?.status === 412 ||
+  err?.data?.type === 'turnstile.v0' ||
+  err?.originalError?.data?.type === 'turnstile.v0' ||
+  /\b412\b/.test(err?.message || '') ||
+  /turnstile/i.test(err?.message || '');
+const contactErrorMessage = (err, supportPhone) =>
+  isBlocked412(err)
+    ? `We couldn't submit your message right now. Please try again later${supportPhone ? `, or call us at ${supportPhone} (Mon–Fri, 9am–5pm ET)` : ''} — sorry for the trouble.`
+    : (err?.message || 'Something went wrong. Please try again.');
+
 // When a member submits a contact form, BC returns the new contactMessage
 // doc with _id + hash. Persist those locally so Account → Messages can
 // resolve the thread via getContactHistories on next visit — BC has no
@@ -238,7 +256,7 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
         setThreadUrl(`${window.location.origin}/contact/thread/${result.threadId}`);
       }
     } catch (err) {
-      setSubmitError(err?.message || 'Something went wrong. Please try again.');
+      setSubmitError(contactErrorMessage(err, brand?.supportPhone));
     } finally {
       setLoading(false);
     }
@@ -449,6 +467,7 @@ const INITIAL_BILLING_FORM = {
 const BILLING_DESC_MAX = 250;
 
 const BillingQuestionModal = ({ isOpen, onClose, user, token }) => {
+  const brand = useBrand();
   const [form, setForm] = useState(INITIAL_BILLING_FORM);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
@@ -526,7 +545,7 @@ const BillingQuestionModal = ({ isOpen, onClose, user, token }) => {
         setThreadUrl(`${window.location.origin}/contact/thread/${result.threadId}`);
       }
     } catch (err) {
-      setSubmitError(err?.message || 'Something went wrong. Please try again.');
+      setSubmitError(contactErrorMessage(err, brand?.supportPhone));
     } finally {
       setLoading(false);
     }
