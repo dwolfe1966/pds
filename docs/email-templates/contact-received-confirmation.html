@@ -1,0 +1,77 @@
+<!--
+  Contact-form CONFIRMATION → to the CUSTOMER (the person who submitted the form).
+  Hook = code.contact.email.hook (input.* = the customer's submitted fields).
+
+  WHAT CHANGED vs the version you received:
+    1. WRONG MESSAGE: "You have a new message on your support request" implied the customer
+       RECEIVED a message — they SENT one. Now: "We received your message."
+    2. RAW FIELD DUMP REMOVED: the original echoed every field back, including internal
+       SENTINELS the customer must never see (orderId "NOORDERID0000", phone "2125550100")
+       and empty zip/last4. Now we show only a clean recap of what they actually wrote
+       (their topic + message). No internal fields, no sentinels, no empties.
+    3. Removed the billing/general ${if} branch — a customer confirmation doesn't need a
+       field-by-field echo. (BC's engine DOES support ${if}; we just don't need it here.)
+
+  Engine note (confirmed from the received email): BC evaluates JS in ${...}
+  (${expr} outputs; ${if(){}}/${}else{}/${}} is control flow). So inline formatting works.
+
+  Tokens: code.contact.email.hook.input.{name,topic,description}, .url.replyUrl;
+  globals comp.brand.name, comp.brand.customer.phone, comp.email.default.footer.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>We received your message — ${comp.brand.name}</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">We received your message</h2>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Hi ${code.contact.email.hook.input.name}, thanks for
+                reaching out to ${comp.brand.name}. We've received your message and a member of our team will get back to
+                you within one business day (Monday–Friday, 9am–5pm ET).</p>
+              <p style="margin:0 0 12px;color:#6b7280;font-size:14px;line-height:1.6;">Here's a copy for your records:</p>
+              <table width="100%" cellpadding="16" cellspacing="0"
+                style="background:#f9fafb;border-left:3px solid #1a56db;border-radius:6px;margin:0 0 24px;">
+                <tr>
+                  <td style="color:#374151;font-size:14px;line-height:1.6;">
+                    <strong style="color:#111827;">${code.contact.email.hook.input.topic}</strong><br>
+                    ${code.contact.email.hook.input.description}
+                  </td>
+                </tr>
+              </table>
+              <a href="${code.contact.email.hook.url.replyUrl}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">View
+                Your Conversation</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">You can also reply directly to this email —
+                your reply will be added to the same conversation. Need to talk to someone now? Call
+                ${comp.brand.customer.phone}, Monday–Friday, 9am–5pm ET.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
