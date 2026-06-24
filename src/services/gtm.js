@@ -67,6 +67,21 @@ function baseContext() {
   } catch {
     ctx.user_status = 'guest';
   }
+  // Funnel entry attribution — the ad-unit the user arrived on, persisted at
+  // landing by trackingService.persistFunnelEntry() (same `funnel.*` sessionStorage
+  // keys). Additive: lets the conversion events (purchase/sign_up) attribute back
+  // to the ad variant. Uses DISTINCT `funnel_`-prefixed names so it never collides
+  // with an event's own `search_type` param (which may be undefined and would
+  // otherwise clobber the entry value). `variant` alone is ambiguous (v2 exists for
+  // name/phone/email), so both dims are carried.
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const v = sessionStorage.getItem('funnel.variant');
+      const st = sessionStorage.getItem('funnel.searchType');
+      if (v) ctx.funnel_variant = v;
+      if (st) ctx.funnel_search_type = st;
+    }
+  } catch { /* ignore */ }
   return ctx;
 }
 

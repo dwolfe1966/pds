@@ -110,7 +110,7 @@ Unprefixed; these are the **conversion events**. Build Ads conversions / GA4 key
 | `login` | login | Login success |
 | `select_content` | select_content | Result selected |
 
-Each carries the 27 canonical GTM fields (incl. `orderId`, `transactionAmount`, `transactionCurrency`, partner/shn). **Note:** this surface DOES carry identity/target fields in the dataLayer state — do not blanket-forward all dataLayer variables to GA4; forward an explicit safe allowlist.
+Each carries the 27 canonical GTM fields (incl. `orderId`, `transactionAmount`, `transactionCurrency`, partner/shn) **plus** `funnel_variant` / `funnel_search_type` (the ad-unit entry point, for conversion attribution) and `user_status` (member/guest). **Note:** this surface DOES carry identity/target fields in the dataLayer state — do not blanket-forward all dataLayer variables to GA4; forward an explicit safe allowlist.
 
 ---
 
@@ -130,6 +130,6 @@ To join BC telemetry ↔ GA4 funnel events, use **`trackingSessionId`** (shared 
 
 1. **`variant` → conversion attribution: DONE for surface A, PENDING for surface B.**
    - The landing entry point (`search_type` + `variant`) is persisted to sessionStorage at landing (`funnel.variant` / `funnel.searchType`) and **auto-stamped on every surface-A `track()` event** — including `signup_complete` / `payment_complete` / `dashboard_*`. So `client_*` GA4 events and BC events now carry the ad-unit variant end-to-end. Session-scoped, last-touch (latest landing wins).
-   - **Still pending:** the surface-B Google Ads conversion events (`purchase`, `sign_up`) do **not** carry `variant` yet — that requires adding it to the `gtm.js` push payload (a deliberate, explicit change to the conversion-event shape; not done without sign-off). Until then, attribute Ads conversions to variant by joining surface-B `purchase` ↔ surface-A `client_payment_complete` on `trackingSessionId`/`userId`.
+   - **Surface B (Ads conversions) — DONE (2026-06-24).** Every surface-B event (incl. `purchase` / `sign_up`) now carries `funnel_variant` + `funnel_search_type` (added in `gtm.js` `baseContext()`, read from the same `funnel.*` sessionStorage). Distinct `funnel_`-prefixed names so they never collide with an event's own `search_type` param. So Google Ads / GA4 can attribute conversions directly to the ad unit — no join required. (Note the key-name difference by surface: surface A uses `variant`/`search_type`; surface B uses `funnel_variant`/`funnel_search_type`.)
 2. **GA4 property not yet created.** The `client_*` stream is flowing to `window.dataLayer` now, but there is no GA4 destination wired in GTM yet (task in progress). Google Ads gtag (`AW-18044069648`) is currently disabled.
 3. **Two session ids** (see §6) — unify post-launch if it simplifies Jerome's joins.
