@@ -11,6 +11,7 @@
 // inspection via the admin analytics pages.
 
 import api from '../api';
+import { getContextSnapshot } from './gtmContext';
 
 const SESSION_KEY = 'trackingSessionId';
 
@@ -119,8 +120,12 @@ function memberContext() {
     if (loggedIn) {
       try { const u = JSON.parse(localStorage.getItem('user') || 'null'); userId = u?.id || u?._id || undefined; } catch { /* ignore */ }
     }
-    return { loggedIn, ...(userId ? { userId } : {}) };
-  } catch { return { loggedIn: false }; }
+    // `actor` is the human-readable form of loggedIn for reporting: every search
+    // is either pre-signup ('visitor') or post-login ('member'). (We deliberately
+    // do NOT split out 'subscriber'/paid here — derived paid state isn't cached
+    // client-side; member vs visitor is the dimension we report on.)
+    return { loggedIn, actor: loggedIn ? 'member' : 'visitor', ...(userId ? { userId } : {}) };
+  } catch { return { loggedIn: false, actor: 'visitor' }; }
 }
 
 export function track(eventName, properties = {}) {
@@ -130,8 +135,43 @@ export function track(eventName, properties = {}) {
   // BC tracking — primary. `refer` carries first-touch attribution (shn/shl + ad
   // params) per BC's data.refer convention. Retries cover the cold-start window.
   const refer = buildRefer();
-  const member = memberContext(); // GAP-7: loggedIn + userId on every event
+  const member = memberContext(); // GAP-7: loggedIn + actor + userId on every event
   _sendToBC(eventName, { sessionId, timestamp, ...member, ...(refer ? { refer } : {}), ...properties });
+
+  // GA4/GTM bridge — surface every CLIENT event on window.dataLayer so the GTM
+  // container can forward it to GA4, segmentable by partner/channel and by
+  // `actor` (visitor vs member).
+  //
+  // We push a CURATED object straight to window.dataLayer — deliberately NOT via
+  // gtmContext.push(), which force-merges the full 27-field canonical state
+  // (email/phone/zip + the searched person's target*/search* fields). That PII
+  // must NEVER reach GA4 (Google ToS / property-suspension risk). So we whitelist:
+  //   - namespaced event `client_<eventName>` — never collides with gtm.js's
+  //     canonical conversion events (purchase/sign_up/login/search_submit/
+  //     payment_start/select_content) or GA4's reserved `page_view`.
+  //   - funnel dims (step/search_type/variant) — carried in `properties`.
+  //   - actor/loggedIn/userId — pseudonymous; userId IS GA4's `user_id`.
+  //   - attribution only (partnerName/partnerChannel/shn/shl/shnName).
+  //   - `trackingSessionId` — the BC stream's session key, exposed here as the
+  //     shared join key between the BC tracking store and GA4 (GTM has its own
+  //     UUID sessionId; we do NOT clobber it).
+  try {
+    if (typeof window !== 'undefined') {
+      const ctx = getContextSnapshot() || {};
+      const attribution = {};
+      ['partnerName', 'partnerChannel', 'shn', 'shl', 'shnName'].forEach((k) => {
+        if (ctx[k] != null && ctx[k] !== '') attribution[k] = ctx[k];
+      });
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: `client_${eventName}`,
+        trackingSessionId: sessionId,
+        ...member,
+        ...attribution,
+        ...properties,
+      });
+    }
+  } catch (_) {}
 
   // Local NDJSON mirror — dev-only. Shape unchanged for backwards compat with
   // the existing admin analytics page that reads this log.

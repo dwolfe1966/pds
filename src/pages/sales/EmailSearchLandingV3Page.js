@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
+import { track } from '../../services/trackingService';
 import styles from './NameSearchLandingV3Page.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -117,7 +118,7 @@ const EmailSearchLandingV3Page = () => {
   useEffect(() => {
     let timer;
     if (step === 'searching-one') {
-      timer = setTimeout(() => setStep('context'), 1700);
+      timer = setTimeout(() => { track('search_step', { step: 'context', search_type: 'email', variant: 'v3' }); setStep('context'); }, 1700);
     }
     return () => {
       if (timer) clearTimeout(timer);
@@ -192,10 +193,11 @@ const EmailSearchLandingV3Page = () => {
       setEmailError('Please enter a valid email address.');
       return;
     }
+    track('search_step', { step: 'searching-one', search_type: 'email', variant: 'v3' });
     setStep('searching-one');
   };
 
-  const continueFromContext = () => setStep('confirm');
+  const continueFromContext = () => { track('search_step', { step: 'confirm', search_type: 'email', variant: 'v3' }); setStep('confirm'); };
 
   const handleConfirm = () => {
     setAgreeError('');
@@ -203,6 +205,8 @@ const EmailSearchLandingV3Page = () => {
       setAgreeError('You must agree before continuing.');
       return;
     }
+    track('search_step', { step: 'final-search', search_type: 'email', variant: 'v3' });
+    track('fcra_agree', { search_type: 'email', variant: 'v3' });
     setStep('final-search');
   };
 

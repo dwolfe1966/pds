@@ -4,6 +4,7 @@ import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
+import { track } from '../../services/trackingService';
 import styles from './NameSearchLandingV2Page.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -89,10 +90,10 @@ const NameSearchLandingV2Page = () => {
   useEffect(() => {
     let timer;
     if (step === 'searching-one') {
-      timer = setTimeout(() => setStep('location'), 1700);
+      timer = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v2' }); setStep('location'); }, 1700);
     }
     if (step === 'searching-two') {
-      timer = setTimeout(() => setStep('details'), 1700);
+      timer = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v2' }); setStep('details'); }, 1700);
     }
     return () => {
       if (timer) {
@@ -182,6 +183,7 @@ const NameSearchLandingV2Page = () => {
       setNameError('Please enter a first and last name.');
       return;
     }
+    track('search_step', { step: 'searching-one', search_type: 'name', variant: 'v2' });
     setStep('searching-one');
   };
 
@@ -193,10 +195,12 @@ const NameSearchLandingV2Page = () => {
       return;
     }
     setLocationError('');
+    track('search_step', { step: 'searching-two', search_type: 'name', variant: 'v2' });
     setStep('searching-two');
   };
 
   const continueFromDetails = () => {
+    track('search_step', { step: 'confirm', search_type: 'name', variant: 'v2' });
     setStep('confirm');
   };
 
@@ -206,6 +210,8 @@ const NameSearchLandingV2Page = () => {
       setAgreeError('You must agree before continuing.');
       return;
     }
+    track('search_step', { step: 'final-search', search_type: 'name', variant: 'v2' });
+    track('fcra_agree', { search_type: 'name', variant: 'v2' });
     setStep('final-search');
     runSearch();
   };
