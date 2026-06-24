@@ -1,0 +1,88 @@
+<!--
+  Contact-form submission → notification to CUSTOMER SERVICE (the support team).
+  Hook = code.contact.email.hook (input.* = the customer's submitted fields).
+
+  WHAT CHANGED vs the version you pasted:
+    1. REMOVED the broken `${if (...) {}` / `${} else {}` / `${}}` block — that is NOT
+       valid JS template-literal syntax (you can't put an `if` STATEMENT inside ${}; only
+       expressions) and isn't simple-substitution either, so it would break the email.
+       Replaced with ONE clean table showing all fields; empty ones just render blank.
+       (No `if`/ternary, no inline JS — works regardless of how BC evaluates ${...}.)
+    2. RE-FRAMED for the support agent. The original greeted the AGENT by the CUSTOMER's
+       name ("Hi {input.name}, you have a new message on YOUR support request") — wrong
+       for an internal alert. Now reads as a new-ticket notification.
+    3. Formatted the raw `key : value` <ul> dump into a labeled table.
+
+  ⚠️ VERIFY RECIPIENT: I treated this as the CS/agent notification per your label "to CS".
+  If it actually goes to the CUSTOMER, this is the wrong shape — a customer confirmation
+  should NOT echo their last4/zip/orderId back; it should just say "we got your message,
+  we'll reply within 24h." Tell me and I'll produce that version instead.
+
+  Tokens: code.contact.email.hook.input.{topic,name,email,phone,description,orderId,zip,last4,date},
+  code.contact.email.hook.url.replyUrl; globals comp.brand.name, comp.email.default.footer.
+  (No comp.brand.customer.phone here — an internal alert doesn't need the support line.)
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>New ${comp.brand.name} support request</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">New support request</h2>
+              <p style="margin:0 0 24px;color:#374151;line-height:1.6;">A customer just submitted the contact form on
+                ${comp.brand.name}. Details below — open the ticket to reply.</p>
+              <table width="100%" cellpadding="0" cellspacing="0"
+                style="background:#f9fafb;border-left:3px solid #1a56db;border-radius:6px;margin:0 0 24px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <table width="100%" cellpadding="0" cellspacing="0"
+                      style="color:#374151;font-size:14px;line-height:1.6;border-collapse:collapse;">
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;width:120px;vertical-align:top;">Topic</td><td style="padding:6px 0;"><strong>${code.contact.email.hook.input.topic}</strong></td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">Name</td><td style="padding:6px 0;">${code.contact.email.hook.input.name}</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">Email</td><td style="padding:6px 0;">${code.contact.email.hook.input.email}</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">Phone</td><td style="padding:6px 0;">${code.contact.email.hook.input.phone}</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">Message</td><td style="padding:6px 0;">${code.contact.email.hook.input.description}</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">Order ID</td><td style="padding:6px 0;">${code.contact.email.hook.input.orderId}</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">ZIP</td><td style="padding:6px 0;">${code.contact.email.hook.input.zip}</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">Card last 4</td><td style="padding:6px 0;">${code.contact.email.hook.input.last4}</td></tr>
+                      <tr><td style="padding:6px 12px 6px 0;color:#6b7280;vertical-align:top;">Date</td><td style="padding:6px 0;">${code.contact.email.hook.input.date}</td></tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <a href="${code.contact.email.hook.url.replyUrl}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Open
+                &amp; Reply</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Replying to this email also posts to the
+                customer's thread.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
