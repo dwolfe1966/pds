@@ -27,7 +27,7 @@ export const BRANDS = {
     name: 'IDLookup.AI',
     domain: 'idlookup.ai',
     // Inbound support is routed through /contact — no public inbound email surfaces.
-    supportPhone: '833-861-9230',
+    supportPhone: '866-204-1902',
     // Pricing surfaced in checkout copy. BC's offer (findByShmName) is the
     // server-side source of truth for what actually gets charged; these
     // values are the marketing display + GTM transactionAmount. Keep in

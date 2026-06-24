@@ -80,7 +80,7 @@ ${alertRows || '<tr><td colspan="2" style="padding:10px 0;color:#9ca3af;font-siz
 
 // --- Shared helpers for lifecycle templates ---------------------------------
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
-const SUPPORT_PHONE = process.env.SUPPORT_PHONE || '833-861-9230';
+const SUPPORT_PHONE = process.env.SUPPORT_PHONE || '866-204-1902';
 
 function firstName(user) {
   return user && user.fullName ? user.fullName.split(' ')[0] : 'there';
