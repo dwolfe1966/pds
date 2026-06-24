@@ -1,0 +1,71 @@
+<!--
+  Remarketing email #2 → trial sign-ups / guests who haven't converted.
+
+  WHAT CHANGED vs the version you pasted:
+    1. ⭐ SUBJECT TOKEN WAS BROKEN SYNTAX. Original title used {{search_subject}} — that's
+       mustache/handlebars syntax, NOT BC's ${...}. BC would render it LITERALLY as
+       "{{search_subject}}'s full report is still waiting" in the subject line. Made the
+       subject generic + working ("Your full report is still waiting").
+       ⚠️ The searched person's name in the subject is a strong conversion lever. If BC's
+       remarketing hook exposes it, restore the personalized subject using ${...} syntax,
+       e.g. ${code.<remarketing-hook>.searchSubject}'s full report is still waiting —
+       NOT {{...}}. Confirm the real token path before using it (a wrong ${...} can break
+       the whole email).
+    2. ⭐ ADDED THE MISSING CTA BUTTON (same as remarketing #1 — no way to convert).
+       "See Full Reports" → ${code.baseUrl}${comp.client.paths.payment}. VERIFY the path
+       key (see remarketing-1.html notes); a broken CTA kills the email.
+    3. "Hi," (bare) → "Hi there,".
+
+  NOTE for the rest of the series (#3/#4): they likely have the same {{...}} tokens and
+  missing CTAs — watch for both.
+
+  Tokens: globals comp.brand.name, comp.brand.customer.phone, comp.client.paths.payment
+  (VERIFY), code.baseUrl, comp.email.default.footer.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Your full report is still waiting</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">Pick up where you left off</h2>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Hi there, the people you looked up are
+                still in our records — and there's a lot more we couldn't show you on the free preview.</p>
+              <p style="margin:0 0 24px;color:#374151;line-height:1.6;">Upgrade to a full membership for complete
+                reports, unlimited searches, and up to 5 reports a day.</p>
+              <a href="${code.baseUrl}${comp.client.paths.payment}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">See
+                Full Reports</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Questions before you upgrade? Call
+                ${comp.brand.customer.phone}, Monday–Friday, 9am–5pm ET.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
