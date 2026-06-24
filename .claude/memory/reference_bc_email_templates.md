@@ -20,4 +20,14 @@ BC sends prod transactional emails and (2026-06-24) has an **admin tool to uploa
 
 **Our deliverable:** `docs/email-templates/signup-confirmation.html` — corrected signup HTML for BC's tool. Reuses confirmed global tokens; best-guesses the signup hook as `code.order.signup.hook.*` (firstName/orderId/trialPrice/price/period/trialEndDate — VERIFY path against another BC signup/trial email); drops the raw trialStartDate. Don't hardcode price/trial terms — partner (shN) offers vary [[project_shn_framework]].
 
-**TODO:** owner hunting other BC emails for the real signup-hook token names + any pre-formatted date/period tokens. Next email to rewrite: purchase/receipt. [[project_bc_production_golive_2026_06_23]]
+**Rehabbed set (docs/email-templates/, 2026-06-24):** signup-confirmation, cancel-order, uncancel-order, contact-received-confirmation, reset-password, csr-reply-notification, remarketing-1..4. Each has a token legend + change notes in an HTML comment.
+
+**Recurring bugs found across templates:**
+- Hard-coded "IDLookup" in body copy (cancel, reset ×2, uncancel, signup, remarketing) — must be `${comp.brand.name}` (same bundle serves idlookup/peoplesearcher/inmatefinder).
+- Raw ISO dates / unformatted money / "30 Day" — fix inline (engine evals JS).
+- **`{{mustache}}` tokens** (remarketing-2 subject `{{search_subject}}`) — BC uses `${...}`, so `{{...}}` renders LITERALLY. The remarketing series was authored in a different templating system.
+- **ALL 4 remarketing emails were MISSING the CTA button** (the one thing a conversion email needs) — added "Unlock Full Access"/"See Full Reports"/"Claim Your Offer"/"Complete My Membership". remarketing-4 was nearly content-empty (no value prop either). HIGH business impact — these were live sends with no way to convert.
+
+**Hooks discovered:** signup/trial=`code.billing.sale.hook`; cancel/uncancel=`code.order.canceled.or.uncanceled.hook`; contact create=`code.contact.email.hook.input.*`; CSR reply=`code.contact.email.hook.{name,subject,message,url.replyUrl}`; reset=`code.user.resetPassword.hook`; remarketing=`code.campaign` (`code.campaign.to.email`, likely `code.campaign.to.firstName`).
+
+**OPEN for owner to supply/verify:** (1) the upgrade/payment path key — I used `comp.client.paths.payment` on all 4 remarketing CTAs (guess; signup used .dashboard, cancel used .account) — VERIFY or the CTAs break. (2) remarketing offer/expiry/searchSubject/firstName tokens under `code.campaign.*`. (3) reset CTA `url.login` must land on set-new-password page. (4) confirm `${...}` eval via a test send. Next: purchase/receipt template if it exists.
