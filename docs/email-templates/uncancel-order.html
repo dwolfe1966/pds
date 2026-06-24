@@ -1,0 +1,65 @@
+<!--
+  Uncancel / reactivation email — to the CUSTOMER. Hook = code.order.canceled.or.uncanceled.hook
+  (same hook as the cancel email; this is the "renewal turned back on" side).
+
+  WHAT CHANGED vs the version you pasted:
+    1. "your IDLookup membership" was HARD-CODED → ${comp.brand.name} (multi-brand).
+    2. billingDate raw ISO → formatted "June 30, 2026" (inline JS; engine evals ${...}).
+    3. billingAmount: the template had NO "$" in front of it, but BC's amount tokens are
+       raw numbers (signup uses `$${s1Price}`), so this likely rendered "at 49.98" with no
+       dollar sign. Now formatted to "$49.98" robustly — strips any stray non-numeric chars
+       first, so it's correct whether BC sends "49.98" OR "$49.98" (never "$NaN").
+
+  Tokens: code.order.canceled.or.uncanceled.hook.{firstName,orderId,billingDate,billingAmount};
+  globals comp.brand.name, comp.brand.customer.phone, comp.email.default.footer,
+  code.baseUrl + comp.client.paths.dashboard.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>You're all set — your ${comp.brand.name} membership is active again</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">You're all set!</h2>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Hi ${code.order.canceled.or.uncanceled.hook.firstName}, we've reactivated
+                auto-renewal on your ${comp.brand.name} membership (order #${code.order.canceled.or.uncanceled.hook.orderId}). Your access continues without
+                interruption.</p>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Your next billing date is
+                <strong>${new Date(code.order.canceled.or.uncanceled.hook.billingDate).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</strong> at $${Number(String(code.order.canceled.or.uncanceled.hook.billingAmount).replace(/[^0-9.]/g,'')).toFixed(2)}, and you'll keep full access to unlimited searches and up
+                to 5 reports per day.</p>
+              <a href="${code.baseUrl}${comp.client.paths.dashboard}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Go
+                to Dashboard</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Need help? Reply to this email or call
+                ${comp.brand.customer.phone}, Monday–Friday, 9am–5pm ET.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
