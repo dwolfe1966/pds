@@ -1,0 +1,69 @@
+<!--
+  Remarketing email #4 → trial sign-ups / guests who haven't converted. The FINAL
+  "last chance" step. Hook = code.campaign (note: ${code.campaign.to.email} = recipient).
+
+  WHAT CHANGED vs the version you pasted:
+    1. ⭐⭐ THE EMAIL HAD NO CONVERSION CONTENT. The heading says "Last call to unlock your
+       account" but the body was just "this is the last time we'll reach out (email)" then
+       unsubscribe — no value prop, no stakes, NO CTA. For the final push this is the worst
+       possible gap. Reconstructed the stakes paragraph and added the CTA button
+       "Complete My Membership" → ${code.baseUrl}${comp.client.paths.payment} (VERIFY path).
+    2. "Hi," (bare) → "Hi there,". (The hook is code.campaign, so the name token is likely
+       ${code.campaign.to.firstName} — use it across #1–#4 if it resolves.)
+    3. Kept the explicit unsubscribe (appropriate for the final email).
+
+  ⚠️ Heading says "about to expire" but no closing date is shown. If code.campaign exposes
+  an expiry/close date, add it with ${...} + date formatting for real urgency, e.g.:
+    …Complete your membership before <strong>${new Date(code.campaign.<expiryField>).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</strong> to keep your account.
+
+  Tokens: code.campaign.to.email, code.managedContact.unsubscribe.confirmation.url; globals
+  comp.brand.name, comp.client.paths.payment (VERIFY), code.baseUrl, comp.email.default.footer.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Last chance — your ${comp.brand.name} account is about to expire</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">Last call to unlock your account</h2>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Hi there, this is the last time we'll
+                reach out about the ${comp.brand.name} account you started (${code.campaign.to.email}).</p>
+              <p style="margin:0 0 24px;color:#374151;line-height:1.6;">You signed up but never unlocked full access.
+                Complete your membership now to keep your account and saved searches — complete reports on 247M+ records,
+                unlimited searches, and up to 5 reports a day. After this, we'll close the account out.</p>
+              <a href="${code.baseUrl}${comp.client.paths.payment}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Complete
+                My Membership</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Prefer to stop these emails? <a
+                  href="${code.managedContact.unsubscribe.confirmation.url}" style="color:#6b7280;">Unsubscribe here</a>.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
