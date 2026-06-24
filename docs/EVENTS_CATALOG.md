@@ -128,6 +128,8 @@ To join BC telemetry ↔ GA4 funnel events, use **`trackingSessionId`** (shared 
 
 ## 7. Known gaps / roadmap (for reporting design)
 
-1. **`variant` does not yet persist to conversion events.** It's on `landing_view` / `search_step`, but `signup_complete` / `payment_complete` / surface-B `purchase` don't carry the ad-unit `variant`. So today you can attribute **landing → step** by variant, but not **variant → conversion** in a single event. Fix (planned): persist `variant` to sessionStorage at landing and stamp it on downstream + conversion events. **This is the key enhancement for optimizing the paid funnels.**
+1. **`variant` → conversion attribution: DONE for surface A, PENDING for surface B.**
+   - The landing entry point (`search_type` + `variant`) is persisted to sessionStorage at landing (`funnel.variant` / `funnel.searchType`) and **auto-stamped on every surface-A `track()` event** — including `signup_complete` / `payment_complete` / `dashboard_*`. So `client_*` GA4 events and BC events now carry the ad-unit variant end-to-end. Session-scoped, last-touch (latest landing wins).
+   - **Still pending:** the surface-B Google Ads conversion events (`purchase`, `sign_up`) do **not** carry `variant` yet — that requires adding it to the `gtm.js` push payload (a deliberate, explicit change to the conversion-event shape; not done without sign-off). Until then, attribute Ads conversions to variant by joining surface-B `purchase` ↔ surface-A `client_payment_complete` on `trackingSessionId`/`userId`.
 2. **GA4 property not yet created.** The `client_*` stream is flowing to `window.dataLayer` now, but there is no GA4 destination wired in GTM yet (task in progress). Google Ads gtag (`AW-18044069648`) is currently disabled.
 3. **Two session ids** (see §6) — unify post-launch if it simplifies Jerome's joins.

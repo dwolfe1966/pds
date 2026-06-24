@@ -128,6 +128,34 @@ function memberContext() {
   } catch { return { loggedIn: false, actor: 'visitor' }; }
 }
 
+// Funnel attribution: the landing `variant` + `search_type` are persisted at the
+// landing page (useLandingTrack → persistFunnelEntry) so EVERY later event —
+// signup_complete, payment_complete, dashboard_*, etc. — can be attributed back
+// to the ad-unit variant the user arrived on, not just the landing/step events.
+// Read straight from sessionStorage; never throw. Session-scoped: a fresh tab
+// with no landing visit carries nothing (correct — no funnel entry this session).
+function funnelContext() {
+  if (typeof sessionStorage === 'undefined') return {};
+  try {
+    const out = {};
+    const variant = sessionStorage.getItem('funnel.variant');
+    const searchType = sessionStorage.getItem('funnel.searchType');
+    if (variant) out.variant = variant;
+    if (searchType) out.search_type = searchType;
+    return out;
+  } catch { return {}; }
+}
+
+// Persist the funnel entry point. Called once at landing mount. Last-touch within
+// the session wins (e.g. name/v2 then phone/v3 → phone/v3 is the entry of record).
+export function persistFunnelEntry(searchType, variant) {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    if (variant) sessionStorage.setItem('funnel.variant', variant);
+    if (searchType) sessionStorage.setItem('funnel.searchType', searchType);
+  } catch { /* ignore */ }
+}
+
 export function track(eventName, properties = {}) {
   const sessionId = getSessionId();
   const timestamp = new Date().toISOString();
@@ -136,7 +164,11 @@ export function track(eventName, properties = {}) {
   // params) per BC's data.refer convention. Retries cover the cold-start window.
   const refer = buildRefer();
   const member = memberContext(); // GAP-7: loggedIn + actor + userId on every event
-  _sendToBC(eventName, { sessionId, timestamp, ...member, ...(refer ? { refer } : {}), ...properties });
+  // Funnel entry (variant/search_type) on EVERY event for conversion attribution.
+  // Placed before ...properties so a per-call explicit value (landing_view /
+  // search_step pass their own) overrides — same value, so it's a no-op there.
+  const funnel = funnelContext();
+  _sendToBC(eventName, { sessionId, timestamp, ...member, ...funnel, ...(refer ? { refer } : {}), ...properties });
 
   // GA4/GTM bridge — surface every CLIENT event on window.dataLayer so the GTM
   // container can forward it to GA4, segmentable by partner/channel and by
@@ -167,6 +199,7 @@ export function track(eventName, properties = {}) {
         event: `client_${eventName}`,
         trackingSessionId: sessionId,
         ...member,
+        ...funnel,
         ...attribution,
         ...properties,
       });
@@ -180,7 +213,7 @@ export function track(eventName, properties = {}) {
       fetch(LOCAL_TRACKING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: eventName, timestamp, sessionId, ...member, properties: { ...(refer ? { refer } : {}), ...properties } }),
+        body: JSON.stringify({ event: eventName, timestamp, sessionId, ...member, properties: { ...funnel, ...(refer ? { refer } : {}), ...properties } }),
       }).catch(() => {});
     } catch (_) {}
   }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { track } from '../../services/trackingService';
+import { track, persistFunnelEntry } from '../../services/trackingService';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './NameSearchLandingPage.module.css';
 
@@ -12,6 +12,7 @@ const NameSearchLandingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    persistFunnelEntry('name', 'v1');
     track('landing_view', { search_type: 'name', variant: 'v1' });
   }, []);
   const [firstName, setFirstName] = useState('');
