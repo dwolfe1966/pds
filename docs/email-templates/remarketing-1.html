@@ -1,0 +1,64 @@
+<!--
+  Remarketing email #1 → trial sign-ups who haven't converted to a paid membership.
+  (No order/billing hook — it's a generic drip to "complete your membership".)
+
+  WHAT CHANGED vs the version you pasted:
+    1. ⭐ ADDED THE MISSING CTA BUTTON. The original had NO button/link — a conversion
+       email with no way to convert. Added "Unlock Full Access" → the upgrade/payment page.
+       ⚠️ VERIFY THE PATH TOKEN: I used ${code.baseUrl}${comp.client.paths.payment}. Confirm
+       `payment` is the real path key (signup used .dashboard, cancel used .account). If it
+       doesn't exist the link breaks — swap to your true upgrade/checkout path (or, as a
+       known-good fallback, ${comp.client.paths.dashboard}). A broken CTA kills this email.
+    2. "Hi," (bare, no name) → "Hi there," — reads like a dropped firstName token. If the
+       remarketing hook exposes a first name, use "Hi ${...firstName}," for better lift.
+
+  Tokens: globals comp.brand.name, comp.client.paths.payment (VERIFY), code.baseUrl,
+  comp.email.default.footer.
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>You're almost there — finish unlocking your ${comp.brand.name} report</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0"
+          style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#1a56db;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.5px;">${comp.brand.name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#111827;font-size:22px;">Your report is ready to unlock</h2>
+              <p style="margin:0 0 16px;color:#374151;line-height:1.6;">Hi there, you created your ${comp.brand.name}
+                account but haven't unlocked full access yet — the report you started is still waiting for you.</p>
+              <p style="margin:0 0 24px;color:#374151;line-height:1.6;">Become a member to see complete contact info,
+                addresses, relatives, and background records — plus unlimited searches across our 247M+ records.</p>
+              <a href="${code.baseUrl}${comp.client.paths.payment}"
+                style="display:inline-block;background:#1a56db;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Unlock
+                Full Access</a>
+              <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">Questions before you upgrade? Just reply
+                to this email — a real person reads every one.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb;text-align:center;">
+              ${comp.email.default.footer}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>
