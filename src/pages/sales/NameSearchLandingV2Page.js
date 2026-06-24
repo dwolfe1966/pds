@@ -30,7 +30,7 @@ const NameSearchLandingV2Page = () => {
   const [finalProgress, setFinalProgress] = useState(0);
 
   const usStates = [
-    { value: '', label: 'All States' },
+    { value: '', label: 'Select a state' },
     { value: 'AL', label: 'Alabama' },
     { value: 'AK', label: 'Alaska' },
     { value: 'AZ', label: 'Arizona' },

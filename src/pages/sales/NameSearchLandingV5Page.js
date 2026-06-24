@@ -61,7 +61,7 @@ const NameSearchLandingV5Page = () => {
   const [finalProgress, setFinalProgress] = useState(0);
 
   const usStates = [
-    { value: '', label: 'Select state (optional)' },
+    { value: '', label: 'Select a state' },
     { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
     { value: 'AZ', label: 'Arizona' }, { value: 'AR', label: 'Arkansas' },
     { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
@@ -258,7 +258,7 @@ const NameSearchLandingV5Page = () => {
           {step === 'location' && (
             <div className={styles.form}>
               <h2 className={styles.sectionTitle}>Where Did They Work or Study?</h2>
-              <p className={styles.helperText}>Providing a location helps us narrow results. Optional — you can skip.</p>
+              <p className={styles.helperText}>Your state is required for accurate results. City is optional.</p>
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v5-city">City (optional)</label>
                 <input id="v5-city" type="text" className={styles.input}

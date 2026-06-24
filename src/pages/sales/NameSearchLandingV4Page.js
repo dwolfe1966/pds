@@ -60,7 +60,7 @@ const NameSearchLandingV4Page = () => {
   const [finalProgress, setFinalProgress] = useState(0);
 
   const usStates = [
-    { value: '', label: 'Select state (optional)' },
+    { value: '', label: 'Select a state' },
     { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
     { value: 'AZ', label: 'Arizona' }, { value: 'AR', label: 'Arkansas' },
     { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
