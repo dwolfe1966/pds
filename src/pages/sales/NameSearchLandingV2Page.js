@@ -105,75 +105,32 @@ const NameSearchLandingV2Page = () => {
   // Search invoked directly from handleConfirm — NOT a useEffect. See
   // NameSearchLandingV5Page.js for explanation of why effect-based dispatch
   // silently drops the search.
-  const runSearch = async () => {
-    let progressTimer;
-    try {
-      setFinalStatus('Searching our database...');
-      setFinalProgress(10);
+  const runSearch = () => {
+    // Delegate the actual search to /name/loader — the reliable path V1/V3/V4/V6
+    // and /search/all use. The prior inline api.searchPeople bypassed the loader,
+    // so it fired NONE of the loader's conversion/measurement signals
+    // (gtmSearchSubmit, track('search_submit'), appendSearch, persistThinMatch) —
+    // leaving this PAID variant invisible to Ads and the thin-match/pricing stale.
+    // Handing off keeps this wizard's entry UX but uses the path that reports.
+    setFinalStatus('Searching our database...');
+    setFinalProgress(60);
+    gtmSetSearchInput({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      middleName: middleName.trim(),
+      city: city.trim(),
+      state: state.trim(),
+    });
+    try { sessionStorage.removeItem('nameSearchResults'); } catch {}
 
-      progressTimer = setInterval(() => {
-        setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
-      }, 200);
-
-      const searchParams = {
-        type: 'name',
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        middleName: middleName.trim(),
-        age: age.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        source: 'name-landing-v2'
-      };
-
-      gtmSetSearchInput({
-        firstName: searchParams.firstName,
-        lastName: searchParams.lastName,
-        middleName: searchParams.middleName,
-        city: searchParams.city,
-        state: searchParams.state,
-      });
-      // Clear any prior search's results so the downstream results page
-      // can't render stale data if this search fails.
-      try { sessionStorage.removeItem('nameSearchResults'); } catch {}
-
-      const response = await api.searchPeople(searchParams);
-      if (progressTimer) clearInterval(progressTimer);
-      setFinalProgress(100);
-      setFinalStatus('Search complete!');
-
-      const mappedResults = (response.data || []).map(result => ({
-        ...result,
-        id: result.id || result.extId,
-        extId: result.extId,
-        fullName: result.fullName || 'Unknown',
-        location: result.location || '',
-        ageRange: result.ageRange || '',
-        provider: result.provider
-      }));
-
-      sessionStorage.setItem('nameSearchResults', JSON.stringify({
-        results: mappedResults,
-        query: { firstName, lastName, middleName, age, city, state },
-        searchContext: response.searchContext || {},
-        pagination: response.pagination || {}
-      }));
-
-      if (response.searchContext) {
-        setSearchContext(response.searchContext);
-      }
-
-      setTimeout(() => {
-        navigate('/name/search-result');
-      }, 400);
-    } catch (error) {
-      if (progressTimer) clearInterval(progressTimer);
-      console.error('[V2 runSearch] error:', error);
-      setFinalStatus('Error occurred. Redirecting...');
-      setTimeout(() => {
-        navigate('/name/search-result?error=true');
-      }, 1500);
-    }
+    const params = new URLSearchParams();
+    params.set('firstName', firstName.trim());
+    params.set('lastName', lastName.trim());
+    if (state.trim()) params.set('state', state.trim());
+    if (middleName.trim()) params.set('middleName', middleName.trim());
+    if (age.trim()) params.set('age', age.trim());
+    if (city.trim()) params.set('city', city.trim());
+    navigate(`/name/loader?${params.toString()}`);
   };
 
   const startSearch = (event) => {

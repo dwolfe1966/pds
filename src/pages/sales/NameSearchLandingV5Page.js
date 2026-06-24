@@ -110,75 +110,33 @@ const NameSearchLandingV5Page = () => {
   // dispatched or its response was silently dropped, with no console.error
   // visible. Fix: trigger the search directly from handleConfirm so its
   // lifecycle isn't tied to React's effect dependency tracking.
-  const runSearch = async () => {
-    let progressTimer;
-    try {
-      setFinalStatus('Searching our database...');
-      setFinalProgress(10);
+  const runSearch = () => {
+    // Delegate the actual search to /name/loader — the reliable path V1/V3/V4/V6
+    // and /search/all use. The prior inline api.searchPeople bypassed the loader,
+    // so it fired NONE of the loader's conversion/measurement signals
+    // (gtmSearchSubmit, track('search_submit'), appendSearch, persistThinMatch) —
+    // leaving this PAID variant invisible to Ads and the thin-match/pricing stale.
+    // It also leaked raw upstream error text on failure; the loader shows a generic
+    // message. Handing off keeps this wizard's entry UX but uses the path that reports.
+    setFinalStatus('Searching our database...');
+    setFinalProgress(60);
+    gtmSetSearchInput({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      middleName: middleName.trim(),
+      city: city.trim(),
+      state: state.trim(),
+    });
+    try { sessionStorage.removeItem('nameSearchResults'); } catch {}
 
-      progressTimer = setInterval(() => {
-        setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
-      }, 200);
-
-      const searchParams = {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        type: 'name',
-        source: 'name-landing-v5',
-      };
-      if (middleName.trim()) searchParams.middleName = middleName.trim();
-      if (age.trim()) searchParams.age = age.trim();
-      if (city.trim()) searchParams.city = city.trim();
-      if (state.trim()) searchParams.state = state.trim();
-
-      gtmSetSearchInput({
-        firstName: searchParams.firstName,
-        lastName: searchParams.lastName,
-        middleName: searchParams.middleName,
-        city: searchParams.city,
-        state: searchParams.state,
-      });
-      try { sessionStorage.removeItem('nameSearchResults'); } catch {}
-
-      const response = await api.searchPeople(searchParams);
-      if (progressTimer) clearInterval(progressTimer);
-      setFinalProgress(100);
-      setFinalStatus('Search complete!');
-
-      const mappedResults = (response.data || []).map((result) => ({
-        ...result,
-        id: result.id || result.extId,
-        extId: result.extId || result.id,
-        fullName: result.fullName || 'Unknown',
-        location: result.location || '',
-        ageRange: result.ageRange || '',
-        provider: result.provider,
-      }));
-
-      sessionStorage.setItem('nameSearchResults', JSON.stringify({
-        results: mappedResults,
-        query: { firstName, lastName, middleName, age, city, state },
-        searchContext: response.searchContext || {},
-        pagination: response.pagination || {},
-      }));
-
-      if (response.searchContext) setSearchContext(response.searchContext);
-      setTimeout(() => navigate('/name/search-result'), 400);
-    } catch (error) {
-      if (progressTimer) clearInterval(progressTimer);
-      // babel-plugin-transform-remove-console strips console.* in prod,
-      // so attach the error to window for post-mortem inspection. Also
-      // surface the message in the UI so the user (and anyone debugging)
-      // can see WHY the search failed instead of getting a generic page.
-      try {
-        if (typeof window !== 'undefined') {
-          window._lastSearchError = { error, when: new Date().toISOString(), variant: 'v5' };
-        }
-      } catch {}
-      const msg = error?.message || (typeof error === 'string' ? error : 'Unknown error');
-      setFinalStatus(`Search failed: ${msg}`);
-      setTimeout(() => navigate('/name/search-result?error=true'), 1500);
-    }
+    const params = new URLSearchParams();
+    params.set('firstName', firstName.trim());
+    params.set('lastName', lastName.trim());
+    if (state.trim()) params.set('state', state.trim());
+    if (middleName.trim()) params.set('middleName', middleName.trim());
+    if (age.trim()) params.set('age', age.trim());
+    if (city.trim()) params.set('city', city.trim());
+    navigate(`/name/loader?${params.toString()}`);
   };
 
   const startSearch = (e) => {
