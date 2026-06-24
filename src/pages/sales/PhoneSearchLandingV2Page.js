@@ -144,41 +144,21 @@ const PhoneSearchLandingV2Page = () => {
           setFinalProgress((prev) => (prev >= 90 ? prev : prev + 10));
         }, 200);
 
-        const response = await api.searchPeople({ phone, type: 'phone' });
-
+        // Delegate to /phone/loader — the V1-proven path that fires the
+        // conversion/measurement signals (gtmSearchSubmit, search_submit,
+        // appendSearch, persistThinMatch) this inline search skipped, leaving the
+        // PAID phone variants invisible to Ads. The loader also carries ?phone=
+        // through to results on success AND error, fixing the prior dead end where
+        // a failed inline search dropped the number and bounced the visitor back
+        // to /phone/landing.
         if (isCancelled) return;
-
         clearInterval(progressTimer);
         setFinalProgress(100);
-        setFinalStatus('Search complete!');
-
-        const mappedResults = (response.data || []).map((r) => ({
-          ...r,
-          id: r.id || r.extId,
-          extId: r.extId || r.id,
-          fullName: r.fullName || 'Unknown',
-          location: r.location || '',
-          ageRange: r.ageRange || '',
-        }));
-
-        sessionStorage.setItem(
-          'phoneSearchResults',
-          JSON.stringify({
-            results: mappedResults,
-            query: { phone },
-            searchContext: response.searchContext || {},
-            pagination: response.pagination || {},
-          })
-        );
-
-        if (response.searchContext) setSearchContext(response.searchContext);
-
-        setTimeout(() => navigate('/phone/search-result'), 400);
-      } catch (error) {
-        console.error('Search error:', error);
+        navigate(`/phone/loader?phone=${encodeURIComponent(phone)}`);
+      } catch (e) {
         if (isCancelled) return;
-        setFinalStatus('Error occurred. Redirecting...');
-        setTimeout(() => navigate('/phone/search-result?error=true'), 1500);
+        clearInterval(progressTimer);
+        navigate(`/phone/loader?phone=${encodeURIComponent(phone)}`);
       }
     };
 
