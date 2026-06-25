@@ -1,7 +1,7 @@
 # IDLookup — Event Tracking Catalog
 
 **Audience:** Jerome (reporting) + anyone configuring GTM/GA4.
-**Last updated:** 2026-06-24 (consumer bundle `public.aec403bb.js`).
+**Last updated:** 2026-06-25 (consumer bundle `public.02c39dd8.js`).
 **Owner note:** this is the source-of-truth list of *what events we emit and where they go*. Keep it in sync when events are added/changed.
 
 ---
@@ -15,6 +15,38 @@
 | **C** | `src/services/gtmContext.js` → `push(...)` | `window.dataLayer` → GTM | Page/context events carrying the 27 canonical GTM fields. |
 
 > **Why two dataLayer event namespaces?** Surface **A** pushes events prefixed **`client_`** (e.g. `client_search_step`). Surface **B** pushes the **unprefixed canonical** names (`purchase`, `sign_up`, …). This is deliberate: it stops high-volume funnel telemetry from colliding with — and double-counting — the conversion events, and avoids GA4's reserved `page_view`. **In GTM: build conversion triggers on the unprefixed names only.**
+
+---
+
+## 1b. BC `trackings` collection — server-side schema (reporting source of truth)
+
+Provided by BC reporting (Big Bot, 2026-06-25). Every Surface-A event lands as one doc in the `trackings` collection:
+
+```
+data.type          // event name: "CLIENT:<name>" (frontend) | "USER:*"/"API:*"/"CAPTCHA:*" (server)
+data.sessionId     // per-visit session
+data.search_type   // page/vertical classifier — ENUM: name | phone | email | home   (no blanks)
+data.variant       // LP variant — ENUM: v1..v6 (vN)                                 (no blanks)
+data._from         // "client" | "server"
+data.value.{ referer, device, url, method, duration, ip, userAgent, brandId, hostname }
+data.caller        // emitting code location
+trackingIds.{ clientId, sessionId, trackingId, apiId }
+shConId, shColId, shTimestamp   // attribution → ObjectId refs to shapecontainers / shapecollections
+brandId
+```
+
+**Standardization rule (we satisfy this):** every page's `CLIENT:*` event carries a non-empty, enumerated `search_type` (name|phone|email|home) + `variant` (vN). Mechanism: `useLandingTrack` persists the funnel entry at the landing page; `funnelContext()` stamps `search_type`+`variant` onto every `track()` event.
+
+**Canonical `CLIENT:*` taxonomy** (names that must fire per page):
+- **LP:** `landing_view`
+- **Teaser/SRP:** `results_view`, `result_click`, `teaser_view`
+- **Signup:** `signup_start` → `signup_complete`  *(credentials accepted — NOT the sale)*
+- **Payment:** `payment_start` → `payment_complete` / `payment_error`
+- **Member:** `report_view`, `dashboard_view`, `dashboard_cta_click`, `dashboard_inline_search_submit`, `watchers_view`, `watchers_tab_change`, `login`/`login_error`, `cancel_lightbox_view`, `subscription_cancel`
+
+**Reporting cautions:**
+1. **`signup_complete` ≠ conversion** — it's the credentials step. The paid conversion is `payment_complete` / BC `CommerceBillingSale`. Do not key a conversion off `signup_complete`.
+2. **Scanner pollution** — `data.type`/`variant`/`search_type` can contain security-scanner (VikingCloud) XSS/header-injection payloads. Filter bots/scanners **at ingest** before any `distinct()`/funnel dashboard, or every grouping is garbage. *(BC ingest-side.)*
 
 ---
 
