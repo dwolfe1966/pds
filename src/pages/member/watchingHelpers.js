@@ -353,36 +353,16 @@ export function buildTrendSeries(events) {
 
 // ---------- Data broker mock data ----------
 //
-// The full broker directory (84 brokers in the real product). Short codes are
-// used as "logo" stand-ins on the dashboard tracker.
+// Scoped to the only brokers we name in-product: Spokeo and PeopleFinders.
+// (Other competitor brand names were removed — do not reintroduce them.)
+// Short codes are used as "logo" stand-ins on the dashboard tracker.
 export const DATA_BROKERS = [
-  { name: 'WhitePages', code: 'WP' },
   { name: 'Spokeo', code: 'SP' },
-  { name: 'BeenVerified', code: 'BV' },
-  { name: 'TruePeopleSearch', code: 'TP' },
-  { name: 'Intelius', code: 'IN' },
   { name: 'PeopleFinders', code: 'PF' },
-  { name: 'Radaris', code: 'RS' },
-  { name: 'FastPeopleSearch', code: 'FP' },
-  { name: 'MyLife', code: 'ML' },
-  { name: 'PeopleSearchNow', code: 'PS' },
-  { name: 'CheckPeople', code: 'CP' },
-  { name: 'InfoTracer', code: 'IT' },
-  { name: 'PublicRecords360', code: 'PR' },
-  { name: 'USSearch', code: 'US' },
-  { name: 'ZabaSearch', code: 'ZB' },
-  { name: 'AnyWho', code: 'AW' },
-  { name: 'BackgroundAlert', code: 'BA' },
-  { name: 'InstantCheckmate', code: 'IC' },
-  { name: 'Nuwber', code: 'NW' },
-  { name: 'PeekYou', code: 'PY' },
-  { name: 'ClustrMaps', code: 'CM' },
-  { name: 'Addresses', code: 'AD' },
-  { name: 'FamilyTreeNow', code: 'FT' },
-  { name: 'SmartBackgroundChecks', code: 'SB' },
 ];
 
-export const TOTAL_BROKER_COUNT = 84;
+// Kept consistent with the named-broker list above (was a placeholder 84).
+export const TOTAL_BROKER_COUNT = DATA_BROKERS.length;
 
 // Deterministic broker status list. Paid tier: ~30% removed, ~15% removing,
 // rest found. Free tier should only reveal the first N entries in the UI.
