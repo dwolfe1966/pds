@@ -25,7 +25,7 @@ const PrivacyPage = () => {
       <div className="contentContainer contentContainerNarrow">
         <h1 style={HEADING}>Privacy Policy</h1>
         <p style={{ marginBottom: '2rem', color: '#6b7280', fontStyle: 'italic' }}>
-          Last Updated: 6/8/2026
+          Last Updated: 6/25/2026
         </p>
 
         <p style={P}>

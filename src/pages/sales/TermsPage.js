@@ -43,7 +43,7 @@ const TermsPage = () => {
       <div className="contentContainer contentContainerNarrow">
         <h1 style={HEADING}>Terms of Service</h1>
         <p style={{ marginBottom: '2rem', color: '#6b7280', fontStyle: 'italic' }}>
-          Last Updated: 6/8/2026
+          Last Updated: 6/25/2026
         </p>
 
         <p style={{ ...P, fontWeight: 700, textTransform: 'uppercase' }}>
@@ -87,8 +87,8 @@ const TermsPage = () => {
         </p>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>1. Qualification and Jurisdiction</h2>
-          <h3 style={SUBHEAD}>1.1 Qualification</h3>
+          <h2 style={HEADING}>Qualification and Jurisdiction</h2>
+          <h3 style={SUBHEAD}>Qualification</h3>
           <p style={P}>
             To utilize the Services, you represent and warrant that you are of legal
             age and possess full legal capacity. If using the Services for a third
@@ -96,7 +96,7 @@ const TermsPage = () => {
             signifies that party's acceptance of these provisions. Access is prohibited
             if {brand.name} has previously banned you from the platform.
           </p>
-          <h3 style={SUBHEAD}>1.2 International Usage</h3>
+          <h3 style={SUBHEAD}>International Usage</h3>
           <p style={P}>
             {brand.name} operates and provides the Services from the United States. We
             make no claims regarding the suitability of the Services in other
@@ -107,8 +107,8 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>2. Ownership Rights</h2>
-          <h3 style={SUBHEAD}>2.1 Intellectual Property</h3>
+          <h2 style={HEADING}>Ownership Rights</h2>
+          <h3 style={SUBHEAD}>Intellectual Property</h3>
           <p style={P}>
             {brand.name} owns and manages the Services. The materials
             provided — derived from {brand.name}, its partners, and other sources — are
@@ -125,7 +125,7 @@ const TermsPage = () => {
             rights regarding trade secrets, patents, trademarks, and know-how remain
             the exclusive property of {brand.name}.
           </p>
-          <h3 style={SUBHEAD}>2.2 Usage of Marks</h3>
+          <h3 style={SUBHEAD}>Usage of Marks</h3>
           <p style={P}>
             You are prohibited from using {brand.name}'s trademarks, logos, or service
             marks in a way that suggests unauthorized association or ownership. You
@@ -134,8 +134,8 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>3. User-Provided Content and Input</h2>
-          <h3 style={SUBHEAD}>3.1 User Content</h3>
+          <h2 style={HEADING}>User-Provided Content and Input</h2>
+          <h3 style={SUBHEAD}>User Content</h3>
           <p style={P}>
             The platform may allow you to submit or "post" materials such as videos,
             photos, reviews, and comments ("User Content"). You agree that the
@@ -143,7 +143,7 @@ const TermsPage = () => {
             shared publicly or privately. You warrant that you hold all necessary
             rights to share such material without infringing on third parties.
           </p>
-          <h3 style={SUBHEAD}>3.2 Content Licensing</h3>
+          <h3 style={SUBHEAD}>Content Licensing</h3>
           <p style={P}>
             By posting User Content, you grant us a global, perpetual, irrevocable,
             royalty-free, non-exclusive, and sub-licensable license to reproduce, modify, distribute,
@@ -151,14 +151,14 @@ const TermsPage = () => {
             future. This includes the right to use the content for platform promotion.
             Your user name may be linked to your submissions.
           </p>
-          <h3 style={SUBHEAD}>3.3 Content Warranties</h3>
+          <h3 style={SUBHEAD}>Content Warranties</h3>
           <p style={P}>
             You warrant that you own or control all rights to your User Content. You
             agree to indemnify and defend {brand.name} against all claims arising from
             your submissions. We reserve the right to assume exclusive defense of such
             claims at our own cost, and you agree to assist us.
           </p>
-          <h3 style={SUBHEAD}>3.4 Content Oversight</h3>
+          <h3 style={SUBHEAD}>Content Oversight</h3>
           <p style={P}>
             We may, at our discretion, screen User Content but we have no requirement
             to do so. We reserve the right to move, edit, or delete any content for
@@ -169,7 +169,7 @@ const TermsPage = () => {
             third parties. You agree to follow the terms of any third-party services
             (e.g., Facebook, X) integrated into the platform.
           </p>
-          <h3 style={SUBHEAD}>3.5 User Input</h3>
+          <h3 style={SUBHEAD}>User Input</h3>
           <p style={P}>
             Any data or ideas sent via email or other channels are non-confidential.
             We hold no obligation to protect this information and are free to use,
@@ -178,14 +178,14 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>4. Licensing and Restricted Activities</h2>
-          <h3 style={SUBHEAD}>4.1 Your License</h3>
+          <h2 style={HEADING}>Licensing and Restricted Activities</h2>
+          <h3 style={SUBHEAD}>Your License</h3>
           <p style={P}>
             Subject to your adherence to these Terms, we provide a limited,
             non-exclusive, non-transferable, and revocable right to access the Services
             for your personal, non-commercial use.
           </p>
-          <h3 style={SUBHEAD}>4.2 Forbidden Uses</h3>
+          <h3 style={SUBHEAD}>Forbidden Uses</h3>
           <p style={P}>
             Engaging in illegal acts or any use not explicitly authorized here is
             strictly prohibited. You agree not to:
@@ -218,7 +218,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>5. Regulatory Adherence</h2>
+          <h2 style={HEADING}>Regulatory Adherence</h2>
           <p style={P}>
             You consent to {brand.name} accessing and disclosing your account data or
             User Content if required by law or in a good-faith belief that such action
@@ -229,7 +229,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>6. External Links</h2>
+          <h2 style={HEADING}>External Links</h2>
           <p style={P}>
             We may provide links to third-party websites for your convenience. We do
             not control these sites and assume no responsibility for their content,
@@ -239,7 +239,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>7. Mobile Platform Provisions</h2>
+          <h2 style={HEADING}>Mobile Platform Provisions</h2>
           <p style={P}>
             Text-based services are governed by these Terms. <strong>Note: Standard
             Message &amp; Data Rates Apply.</strong>
@@ -253,7 +253,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>8. Guarantees and Disclosures</h2>
+          <h2 style={HEADING}>Guarantees and Disclosures</h2>
           <p style={P}>YOU EXPRESSLY ACKNOWLEDGE AND CONSENT THAT:</p>
           <ul style={UL}>
             <li>ALL PRODUCT WARRANTIES ARE PROVIDED SOLELY BY THE THIRD-PARTY MANUFACTURERS.</li>
@@ -269,7 +269,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>9. Limitation of Liability</h2>
+          <h2 style={HEADING}>Limitation of Liability</h2>
           <p style={P}>
             {brand.name.toUpperCase()} AND ITS REPRESENTATIVES, INCLUDING ITS RESPECTIVE
             OFFICERS, DIRECTORS, EMPLOYEES, MEMBERS, SHAREHOLDERS (AND ALL SUCCESSORS
@@ -299,7 +299,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>10. Indemnification</h2>
+          <h2 style={HEADING}>Indemnification</h2>
           <p style={P}>
             You agree to defend and hold {brand.name}, including its respective
             officers, directors, employees, members, shareholders, or representatives
@@ -315,7 +315,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>11. Advertisers</h2>
+          <h2 style={HEADING}>Advertisers</h2>
           <p style={P}>
             Transactions or interactions with advertisers found on the Services are
             strictly between you and said advertiser. {brand.name} is not liable for
@@ -324,7 +324,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>12. Third-Party Services and Affiliates</h2>
+          <h2 style={HEADING}>Third-Party Services and Affiliates</h2>
           <p style={P}>
             The Services may contain affiliate marketing links. We may earn a
             commission if you make a purchase through these links. We are not liable
@@ -335,14 +335,14 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>13. Service Changes and Account Termination</h2>
-          <h3 style={SUBHEAD}>13.1 Modification</h3>
+          <h2 style={HEADING}>Service Changes and Account Termination</h2>
+          <h3 style={SUBHEAD}>Modification</h3>
           <p style={P}>
             We reserve the right to modify or end the Services at any time without
             notice. You agree that we shall not be liable to you or any third party
             for any modification, suspension or discontinuance of the Services.
           </p>
-          <h3 style={SUBHEAD}>13.2 Termination</h3>
+          <h3 style={SUBHEAD}>Termination</h3>
           <p style={P}>
             We may revoke your access for any reason, including: (a) Terms violations;
             (b) law enforcement requests; (c) discontinuance or material modification
@@ -358,7 +358,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>14. Obligatory Arbitration and Class Action Waiver</h2>
+          <h2 style={HEADING}>Obligatory Arbitration and Class Action Waiver</h2>
           <p style={P}>
             EXCEPT WHERE STATUTORILY FORBIDDEN, ALL DISPUTES BETWEEN YOU AND THE
             COMPANY (INCLUDING ITS AGENTS AND AFFILIATES) RELATING TO THE SERVICES,
@@ -388,7 +388,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>15. Fair Credit Reporting Act (FCRA) Compliance</h2>
+          <h2 style={HEADING}>Fair Credit Reporting Act (FCRA) Compliance</h2>
           <p style={{ ...P, fontWeight: 700 }}>
             {brand.name.toUpperCase()} IS NOT A CREDIT REPORTING AGENCY ("CRA") UNDER
             THE FCRA (15 U.S.C. § 1681 ET SEQ.).
@@ -412,7 +412,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>16. Website Orders</h2>
+          <h2 style={HEADING}>Website Orders</h2>
           <p style={P}>
             All transactions are subject to Company acceptance. After your order has
             been placed, we will provide you with an email confirming our acceptance
@@ -434,8 +434,8 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>17. Subscription Plans and Billing</h2>
-          <h3 style={SUBHEAD}>17.1 Standard Plans</h3>
+          <h2 style={HEADING}>Subscription Plans and Billing</h2>
+          <h3 style={SUBHEAD}>Standard Plans</h3>
           <ul style={UL}>
             <li>
               <strong>Trial:</strong> A {trialDays}-day trial for {trialPriceStr}. If
@@ -453,12 +453,12 @@ const TermsPage = () => {
               incur as a result of your Membership Plan.
             </li>
           </ul>
-          <h3 style={SUBHEAD}>17.2 Non-Standard Plans</h3>
+          <h3 style={SUBHEAD}>Non-Standard Plans</h3>
           <p style={P}>
             Promotional rates will be billed at the frequency and price disclosed
             during enrollment.
           </p>
-          <h3 style={SUBHEAD}>17.3 Authorization</h3>
+          <h3 style={SUBHEAD}>Authorization</h3>
           <p style={P}>
             By subscribing, you authorize recurring charges to your payment method
             without further notice. You acknowledge this involves a <strong>negative
@@ -478,7 +478,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>18. Cancellation</h2>
+          <h2 style={HEADING}>Cancellation</h2>
           <p style={P}>
             You may end your membership at any time by calling{' '}
             <strong>{brand.supportPhone}</strong> or via our{' '}
@@ -492,7 +492,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>19. Payment Logistics</h2>
+          <h2 style={HEADING}>Payment Logistics</h2>
           <ul style={UL}>
             <li><strong>Taxes:</strong> Orders are subject to state taxes based on residency.</li>
             <li><strong>Discounts and Promotions:</strong> Any applicable discounts or promotional prices will be noted at the time of purchase on the checkout page for your order.</li>
@@ -503,7 +503,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>20. Removing Your Information</h2>
+          <h2 style={HEADING}>Removing Your Information</h2>
           <p style={P}>
             You may request data removal via our{' '}
             <Link to="/opt-out" style={LINK}>Opt-Out Page</Link>.
@@ -511,7 +511,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>21. Performance and Disclaimers</h2>
+          <h2 style={HEADING}>Performance and Disclaimers</h2>
           <p style={P}>
             We use commercially reasonable efforts to provide information "AS IS."
             Data is sourced from third parties and may be inaccurate or incomplete.
@@ -527,7 +527,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>22. DMCA Compliance</h2>
+          <h2 style={HEADING}>DMCA Compliance</h2>
           <p style={P}>
             We respond to copyright infringement notices according to the Digital
             Millennium Copyright Act. Responses may include removing or disabling
@@ -603,7 +603,7 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>23. Electronic Signature</h2>
+          <h2 style={HEADING}>Electronic Signature</h2>
           <p style={P}>
             Agreeing to this contract digitally constitutes a binding electronic
             signature under the U.S. E-Sign Act. You consent to receive all notices
@@ -612,18 +612,18 @@ const TermsPage = () => {
         </section>
 
         <section style={SECTION}>
-          <h2 style={HEADING}>24. General Provisions</h2>
+          <h2 style={HEADING}>General Provisions</h2>
           <ul style={UL}>
             <li><strong>Governing Law:</strong> Interpreted under Delaware law.</li>
             <li><strong>Force Majeure:</strong> We are not liable for delays caused by events beyond our control.</li>
             <li><strong>Assignment:</strong> You may not delegate your rights; {brand.name} may assign its rights without restriction.</li>
             <li><strong>Entire Agreement:</strong> These Terms constitute the total agreement between the parties, superseding all prior versions. If you are using the Services for or on behalf of the U.S. government, your license rights do not exceed those granted to non-government consumers.</li>
-            <li><strong>Notices:</strong> We may deliver notice to you by e-mail, posting a notice on the Services or any other method we choose and such notice will be effective on dispatch. If you give notice to us, it will be effective when received and you must use the mailing address listed in Section 25 below.</li>
+            <li><strong>Notices:</strong> We may deliver notice to you by e-mail, posting a notice on the Services or any other method we choose and such notice will be effective on dispatch. If you give notice to us, it will be effective when received and you must use the mailing address listed in the Contact Information section below.</li>
           </ul>
         </section>
 
         <section style={SECTION} id="contact-information">
-          <h2 style={HEADING}>25. Contact Information</h2>
+          <h2 style={HEADING}>Contact Information</h2>
           <p style={P}>
             For inquiries regarding these notices or to exercise your rights, please
             contact:
