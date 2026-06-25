@@ -4,6 +4,7 @@ import SearchBar from '../../components/SearchBar';
 import styles from './HomePage.module.css';
 import { useBrand } from '../../services/brand';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
+import { useCampaign } from '../../context/CampaignContext';
 
 /**
  * Home page for public visitors.
@@ -13,9 +14,14 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 const HomePage = () => {
   const brand = useBrand();
   const navigate = useNavigate();
+  const campaign = useCampaign();
   // Visitor LP event (#63) — the homepage previously fired nothing. Carries
   // data.refer attribution via trackingService.
-  useLandingTrack('home', 'home');
+  // Suppress the `home/home` landing_view when this is a campaign that
+  // HomePageRedirect is about to send to a vertical LP — otherwise we double-fire
+  // (junk home/home then the real name/v3), polluting per-page funnel reporting.
+  const willRedirect = !!(campaign?.landing?.route && campaign.landing.route !== '/');
+  useLandingTrack('home', 'home', !willRedirect);
 
   return (
     <main className={styles.main}>
