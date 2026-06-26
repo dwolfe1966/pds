@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useCampaign } from './context/CampaignContext';
 import { useBrand } from './services/brand';
@@ -82,6 +82,7 @@ import SearchTestPage from './pages/SearchTestPage';
 const HomePageRedirect = () => {
   const { token } = useAuth();
   const campaign = useCampaign();
+  const location = useLocation();
   if (token) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -99,7 +100,12 @@ const HomePageRedirect = () => {
   } catch {}
   const campaignRoute = campaign?.landing?.route;
   if (shouldApply && campaignRoute && campaignRoute !== '/') {
-    return <Navigate to={campaignRoute} replace />;
+    // Carry the original query string (gclid, utm_*, shn) to the vertical LP.
+    // Without this, the redirect drops gclid before GTM's Conversion Linker can
+    // capture it → no _gcl_aw cookie → Google Ads can't attribute conversions to
+    // the ad click. Verified: direct LP?gclid sets _gcl_aw; redirect-without-params
+    // does not. (campaignRoute is a static path, never has its own query string.)
+    return <Navigate to={`${campaignRoute}${location.search}`} replace />;
   }
   return <HomePage />;
 };
