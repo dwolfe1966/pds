@@ -1223,8 +1223,10 @@ const EmailTicketsPage = () => {
                         // recordings: "liveCall_18.aac"); name/fileName are fallbacks.
                         const label = att.originalname || att.filename || att.name || att.fileName || `Attachment ${idx + 1}`;
                         // Audio (e.g. live-call recordings) → ask BC to PLAY inline via
-                        // playAudioFlag instead of forcing a download.
-                        const isAudio = /^audio\//.test(att.mimetype || att.mimeType || '');
+                        // playAudioFlag instead of forcing a download. Detect by mimetype
+                        // OR file extension (the rendered object may omit mimetype).
+                        const isAudio = /^audio\//.test(att.mimetype || att.mimeType || '')
+                          || /\.(aac|mp3|wav|m4a|ogg|oga|opus|amr|wma)$/i.test(label);
                         return attId ? (
                           <button
                             key={idx}
