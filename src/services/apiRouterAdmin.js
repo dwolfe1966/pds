@@ -31,6 +31,11 @@ export async function callAdminAPI(endpoint, params) {
       return await apiWrapperCsr.csrGetUserDetail(params.id);
     }
 
+    // csrWrapper.api.attachment.download → GET /api/attachment/download
+    case 'admin-download-attachment': {
+      return await apiWrapperCsr.csrDownloadAttachment(params.attachmentId);
+    }
+
     // csrWrapper.api.user.update → POST /user/management/update
     case 'admin-suspend-user': {
       return await apiWrapperCsr.csrUpdateUser(params.id, { status: 'suspended' });

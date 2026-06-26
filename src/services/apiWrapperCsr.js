@@ -208,6 +208,17 @@ class ApiWrapperCsrService {
       () => apiWrapper._csrPost('/user/management/detail', { userId }));
   }
 
+  // csrWrapper.api.attachment.download — GET /api/attachment/download.
+  // Per BC docs: attachments returned by Find User Contact carry an `attachmentId`;
+  // this downloads it. The IIFE manages the browser download (like downloadPdfReport),
+  // so the UI just awaits it. Lib-only — no direct-POST fallback for a binary GET, so
+  // error clearly if the CSR library isn't loaded.
+  async csrDownloadAttachment(attachmentId) {
+    return await this._viaCsr('api.attachment.download', { attachmentId },
+      () => { throw new Error('Attachment download requires the CSR library (not loaded).'); },
+      { retryOnError: false });
+  }
+
   // csrWrapper.api.user.update — POST /user/management/update
   async csrUpdateUser(userId, body = {}) {
     return await this._viaCsr('api.user.update', { userId, ...body },

@@ -316,6 +316,7 @@ async function _routeApiRequestInner(endpoint, params = {}) {
     'admin-find-contact-messages',
     'admin-find-user-contact-messages',
     'admin-contact-histories',
+    'admin-download-attachment',
     'admin-create-csr-reply',
     'admin-set-contact-actor',
     'admin-set-contact-target-user',

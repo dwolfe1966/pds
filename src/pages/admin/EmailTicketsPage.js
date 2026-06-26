@@ -1215,11 +1215,26 @@ const EmailTicketsPage = () => {
                   {selected.attachments && selected.attachments.length > 0 && (
                     <div className={styles.attachments}>
                       <p className={styles.attachmentsLabel}>Attachments ({selected.attachments.length}):</p>
-                      {selected.attachments.map((att, idx) => (
-                        <span key={idx} className={styles.attachmentItem}>
-                          {att.name || att.fileName || `Attachment ${idx + 1}`}
-                        </span>
-                      ))}
+                      {selected.attachments.map((att, idx) => {
+                        // BC returns an attachmentId on each attachment (Find User Contact);
+                        // download via api.adminDownloadAttachment → csrWrapper.api.attachment.download.
+                        const attId = att.id || att.attachmentId || att._id || att.attachment_id;
+                        const label = att.name || att.fileName || `Attachment ${idx + 1}`;
+                        return attId ? (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={styles.attachmentItem}
+                            style={{ cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#1a56db' }}
+                            title="Download attachment"
+                            onClick={() => { api.adminDownloadAttachment(attId).catch(() => {}); }}
+                          >
+                            📎 {label}
+                          </button>
+                        ) : (
+                          <span key={idx} className={styles.attachmentItem}>{label}</span>
+                        );
+                      })}
                     </div>
                   )}
 

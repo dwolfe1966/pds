@@ -745,6 +745,11 @@ const api = {
     return await routeApiRequest('admin-contact-histories', { queryParams: params });
   },
 
+  // CSR: download a message attachment by its BC attachmentId (IIFE-managed download).
+  adminDownloadAttachment: async (attachmentId) => {
+    return await routeApiRequest('admin-download-attachment', { attachmentId });
+  },
+
   // CSR: reply to a contact message thread.
   // params: { contactMessageId, subject, message, contentType?, attachments? }
   adminCreateCsrReply: async (body = {}) => {
