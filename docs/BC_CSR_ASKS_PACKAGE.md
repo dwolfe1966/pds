@@ -61,7 +61,14 @@ Search Role."** for **every** brand. We fall back to a capped per-user fan-out (
 | **Function chain** | `api.adminListOrdersGlobal` → `apiWrapperCsr.csrFindOrders` → `POST /database/search {collectionName:'commerceOrder'}` (403) → fan-out fallback |
 | **Feature impacted** | True global order/purchase search |
 
-## ASK D — `attachment.download` won't serve live-call recordings  (FIX or name-a-param)
+## ASK D — ✅ RESOLVED (no BC change) — live-call recordings play via `playAudioFlag`
+
+**✅ RESOLUTION (live, 2026-06-26):** the 404 only occurs on **download** (no flag). Calling
+`attachment.download({ attachmentId, playAudioFlag: true })` **SUCCEEDS** and plays the recording via
+BC's audio control — confirmed live (promise resolved `OK-PLAY` vs the download path's 404 AxiosError).
+So **no BC change is needed for playback.** Wired in commit `76b8536` (audio attachments → `playAudioFlag`,
+render ▶️). **Residual (low priority):** *downloading a recording to disk* (no flag) still 404s — only
+matters if a CSR needs to save vs. listen. Original download-path investigation kept below for record.
 
 **Demo (live, 2026-06-26):** `csrWrapper.api.attachment.download({ attachmentId })` → **"attachment
 not found"** for a **valid** attachmentId. Byte-verified: we sent `attachmentId:
