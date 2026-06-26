@@ -1,6 +1,6 @@
 # BC CSR asks — consolidated package (with a runnable proof)
 
-**Prepared 2026-06-18 · re-verified live 2026-06-22 (no flips — A/B/C all still ❌, userContact still CONFIRM).** Every item is reproduced live against `dev.admin.www.bytecrtrs.com`. Rather
+**Prepared 2026-06-18 · re-verified live 2026-06-22 (no flips — A/B/C all still ❌, userContact still CONFIRM) · ASK D added 2026-06-26 (live-call recording download).** Every item is reproduced live against `dev.admin.www.bytecrtrs.com`. Rather
 than argue from a document, **run the demo** — it calls BC's own API and prints what it returns:
 
 ```
@@ -8,7 +8,8 @@ CSR_USER='<csr account>' CSR_PWD='<pwd>' node scripts/demo-bc-csr-asks.js
 ```
 
 It prints, per ask: what we call → what BC returns → what we expected → verdict, plus a working
-contrast. Three asks + one question. **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
+contrast. Four asks + one question (ASK D is reproduced live but is not yet wired into the demo script
+— see its block below for the byte-verified evidence). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
 credentials — the runner supplies their own CSR account via env). (All re-checked across `idlookup` / `bytecrtrs` / no-brand so a
 brand filter can't be the cause.)
 
@@ -59,6 +60,36 @@ Search Role."** for **every** brand. We fall back to a capped per-user fan-out (
 | **App / Page** | CSR/Admin — `OrdersPage` (`/orders`), `PurchasesPage` (`/purchases`) |
 | **Function chain** | `api.adminListOrdersGlobal` → `apiWrapperCsr.csrFindOrders` → `POST /database/search {collectionName:'commerceOrder'}` (403) → fan-out fallback |
 | **Feature impacted** | True global order/purchase search |
+
+## ASK D — `attachment.download` won't serve live-call recordings  (FIX or name-a-param)
+
+**Demo (live, 2026-06-26):** `csrWrapper.api.attachment.download({ attachmentId })` → **"attachment
+not found"** for a **valid** attachmentId. Byte-verified: we sent `attachmentId:
+'6a3d7295d2a2310fd7ef9ed9'`, which **exactly equals** the attachment object's `id` field — so it is
+**not a client bug**. The attachment object (from `findUserContactMessages`/histories) is a real call
+recording:
+`{ originalname:'liveCall_27.aac', mimetype:'audio/aac', id:'6a3d7295d2a2310fd7ef9ed9',
+filename:'liveCall_27.aac', size:157037, bucketName:'attachments',
+metadata:{compressed:'zstd',…} }`.
+The discriminator is the **parent message** (`type:'contact'`, `data.type:'outbound'`, `liveCallId:27`,
+**`brandId:'unknown'`**, `trackingIds.clientId:'curl'`/`apiId:'cli'` — telephony backend). The recording
+sits in the **same** `bucketName:'attachments'` as ordinary attachments, so it is **not a bucket
+problem** — the brand-scoped lookup appears to exclude `brandId:'unknown'` (telephony) attachments. The
+deployed csrWrapper has **no** live-call/recording method (no `liveCall.*`/`recording.*`/`call.*`/
+`voice.*`); `attachment.download` is the **only** file-retrieval path.
+**Update (live, 2026-06-26) — param overrides ruled out:** with a FRESH authenticated session we
+forwarded both candidate params via the IIFE — `GET /attachment/download?attachmentId=6a3d7295…ed9&bucketName=attachments&brandId=unknown` — and BC returned **`404 Not Found`** (clean 404, auth passed;
+a stale-session attempt returns 403, so this is genuinely the attachment lookup, not auth). So **`bucketName` and `brandId` are NOT the override params** — path (b) with those is empirically dead.
+**Ask (either):** (a) **[now primary]** fix server-side retrieval so `attachment.download` serves
+telephony / `brandId:'unknown'` attachments; **or** (b) name the *actual* discriminating param/value we
+should forward (not `bucketName`/`brandId` — tested, still 404). The IIFE auto-forwards unknown params
+as GET params, so (b) needs **no IIFE change on our side**. (`playAudioFlag` is stripped pre-GET — not the fix.)
+
+| | |
+|---|---|
+| **App / Page** | CSR/Admin — `UserDetailPage` (`/users/:id`) ticket/Messages view (call-recording attachment link) |
+| **Function chain** | clickable attachment → `csrWrapper.api.attachment.download({ attachmentId })` → `GET /attachment/download` → **"attachment not found"** |
+| **Feature impacted** | Listening to / downloading live-call recordings from the ticket view (link shipped: commits `958acb0` + `bd3b5e0`) |
 
 ## CONFIRM — `userContact` data model (a question, not a defect)
 
@@ -118,6 +149,13 @@ Pulled from `src/services/apiWrapperCsr.js`; cross-checked against the live demo
 | `csrWrapper.api.user.findOrders` / `findUserOrders` | Exists but **per-user only** (requires `userId`) — not a global finder. |
 | direct `POST /database/search {collectionName:'commerceOrder'}` | **403 "Invalid Database Search Role."** all brands (also tried `commerceOrders` plural). |
 | *(no global `commerceOrder` finder on csrWrapper)* | — |
+
+### ASK D — live-call recording download
+| Method explored | Why it doesn't work |
+|---|---|
+| `csrWrapper.api.attachment.download({ attachmentId })` | **"attachment not found"** for a *valid* attachmentId (byte-verified == attachment `id`). Parent message `brandId:'unknown'` (telephony) → brand-scoped lookup appears to exclude it. |
+| extra GET param via auto-forward (`brandId` / `bucketName`) | **Available to us with no IIFE change** — the IIFE auto-forwards unknown params as GET params; we just need BC to name which one. (`playAudioFlag` is stripped pre-GET → not the fix.) |
+| `csrWrapper.api.liveCall.* / recording.* / call.* / voice.*` | **All absent** on the deployed csrWrapper — `attachment.download` is the only file-retrieval path. |
 
 ### CONFIRM — `userContact` data model
 | Method explored | Why it doesn't work |
