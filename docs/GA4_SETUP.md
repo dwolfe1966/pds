@@ -4,7 +4,24 @@
 
 **No code changes needed.** The app already pushes everything to `window.dataLayer`. This is 100% GTM + GA4 console config. See `docs/EVENTS_CATALOG.md` for the full event/param inventory this guide wires up.
 
-> Replace `G-XXXXXXXXXX` below with idlookup.ai's measurement ID.
+> The idlookup.ai measurement ID is **`G-P5GFMP05TS`** (confirmed live, 2026-06-26). Use it wherever this guide says `G-XXXXXXXXXX`.
+
+---
+
+## ⚠️ AUDIT FINDINGS (2026-06-26) — read this first
+
+Live inspection of prod + the GTM container (`GTM-THCSBJWN`):
+
+| Finding | State |
+|---|---|
+| GA4 property collecting? | **Yes** — `G-P5GFMP05TS` fires, `_ga`/`_ga_P5GFMP05TS` cookies set |
+| What reaches GA4 today? | **`page_view` ONLY** — zero custom events |
+| GA4 tags in GTM container? | **NONE** (`__gaawc` config / `__gaawe` event = 0). The page_view leaks in via the Google tag (`AW-18044069648`) having GA4 as a linked destination — there's no explicit GA4 config tag. |
+| `purchase` / `sign_up` reaching GA4? | **NO** → that's why "no conversions in GA." |
+| Funnel `client_*` events reaching GA4? | **NO** → no funnel analysis possible. |
+| SPA page_views (route changes)? | Only the **initial** page_view fires (no `virtualPageview` → GA4 wiring), so funnel-step pages aren't counted. |
+
+**So the fix is narrower than a from-scratch setup:** GA4 is already linked and getting page_view. The gap is **GA4 EVENT tags in GTM** — most importantly a `purchase` event tag (the conversion) plus the funnel events, and the SPA page_view fix. Build §3 below (config tag + event tags), then mark `purchase`/`sign_up` as Key Events (§4). The conversion tag for **Google Ads** (`__awct`) is separate and already configured — see the Ads workflow.
 
 ---
 
