@@ -33,7 +33,7 @@ export async function callAdminAPI(endpoint, params) {
 
     // csrWrapper.api.attachment.download → GET /api/attachment/download
     case 'admin-download-attachment': {
-      return await apiWrapperCsr.csrDownloadAttachment(params.attachmentId);
+      return await apiWrapperCsr.csrDownloadAttachment(params.attachmentId, { playAudioFlag: params.playAudioFlag });
     }
 
     // csrWrapper.api.user.update → POST /user/management/update

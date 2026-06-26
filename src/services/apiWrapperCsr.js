@@ -213,8 +213,11 @@ class ApiWrapperCsrService {
   // this downloads it. The IIFE manages the browser download (like downloadPdfReport),
   // so the UI just awaits it. Lib-only — no direct-POST fallback for a binary GET, so
   // error clearly if the CSR library isn't loaded.
-  async csrDownloadAttachment(attachmentId) {
-    return await this._viaCsr('api.attachment.download', { attachmentId },
+  // playAudioFlag: per BC docs, if true and the file is audio, the IIFE PLAYS it via an
+  // audio control instead of downloading (used for live-call recordings).
+  async csrDownloadAttachment(attachmentId, { playAudioFlag = false } = {}) {
+    const args = playAudioFlag ? { attachmentId, playAudioFlag: true } : { attachmentId };
+    return await this._viaCsr('api.attachment.download', args,
       () => { throw new Error('Attachment download requires the CSR library (not loaded).'); },
       { retryOnError: false });
   }

@@ -1222,16 +1222,19 @@ const EmailTicketsPage = () => {
                         // BC labels the file as originalname/filename (e.g. live-call
                         // recordings: "liveCall_18.aac"); name/fileName are fallbacks.
                         const label = att.originalname || att.filename || att.name || att.fileName || `Attachment ${idx + 1}`;
+                        // Audio (e.g. live-call recordings) → ask BC to PLAY inline via
+                        // playAudioFlag instead of forcing a download.
+                        const isAudio = /^audio\//.test(att.mimetype || att.mimeType || '');
                         return attId ? (
                           <button
                             key={idx}
                             type="button"
                             className={styles.attachmentItem}
                             style={{ cursor: 'pointer', textDecoration: 'underline', background: 'none', border: 'none', padding: 0, font: 'inherit', color: '#1a56db' }}
-                            title="Download attachment"
-                            onClick={() => { api.adminDownloadAttachment(attId).catch(() => {}); }}
+                            title={isAudio ? 'Play recording' : 'Download attachment'}
+                            onClick={() => { api.adminDownloadAttachment(attId, { playAudioFlag: isAudio }).catch(() => {}); }}
                           >
-                            📎 {label}
+                            {isAudio ? '▶️' : '📎'} {label}
                           </button>
                         ) : (
                           <span key={idx} className={styles.attachmentItem}>{label}</span>

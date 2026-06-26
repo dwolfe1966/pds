@@ -746,8 +746,9 @@ const api = {
   },
 
   // CSR: download a message attachment by its BC attachmentId (IIFE-managed download).
-  adminDownloadAttachment: async (attachmentId) => {
-    return await routeApiRequest('admin-download-attachment', { attachmentId });
+  // opts.playAudioFlag → BC plays audio files inline instead of downloading.
+  adminDownloadAttachment: async (attachmentId, opts = {}) => {
+    return await routeApiRequest('admin-download-attachment', { attachmentId, playAudioFlag: !!opts.playAudioFlag });
   },
 
   // CSR: reply to a contact message thread.
