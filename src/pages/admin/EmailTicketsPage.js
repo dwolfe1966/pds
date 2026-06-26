@@ -1219,7 +1219,9 @@ const EmailTicketsPage = () => {
                         // BC returns an attachmentId on each attachment (Find User Contact);
                         // download via api.adminDownloadAttachment → csrWrapper.api.attachment.download.
                         const attId = att.id || att.attachmentId || att._id || att.attachment_id;
-                        const label = att.name || att.fileName || `Attachment ${idx + 1}`;
+                        // BC labels the file as originalname/filename (e.g. live-call
+                        // recordings: "liveCall_18.aac"); name/fileName are fallbacks.
+                        const label = att.originalname || att.filename || att.name || att.fileName || `Attachment ${idx + 1}`;
                         return attId ? (
                           <button
                             key={idx}
