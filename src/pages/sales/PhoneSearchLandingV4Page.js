@@ -179,7 +179,7 @@ const PhoneSearchLandingV4Page = () => {
     e.preventDefault();
     setPhoneError('');
     if (phone.length < 10) {
-      setPhoneError('Please enter a valid 10-digit US phone number.');
+      setPhoneError('Please enter a valid 10-digit US phone number.'); track('validation_error', { reason: 'invalid_phone', step: 'phone' });
       return;
     }
     track('search_step', { step: 'searching-one', search_type: 'phone', variant: 'v4' });
@@ -191,7 +191,7 @@ const PhoneSearchLandingV4Page = () => {
   const handleConfirm = () => {
     setAgreeError('');
     if (!agree) {
-      setAgreeError('You must agree before continuing.');
+      setAgreeError('You must agree before continuing.'); track('validation_error', { reason: 'fcra_not_agreed', step: 'confirm' });
       return;
     }
     track('search_step', { step: 'final-search', search_type: 'phone', variant: 'v4' });

@@ -135,7 +135,7 @@ const NameSearchLandingV4Page = () => {
     e.preventDefault();
     setNameError('');
     if (!firstName.trim() || !lastName.trim()) {
-      setNameError('Please enter a first and last name to search.');
+      setNameError('Please enter a first and last name to search.'); track('validation_error', { reason: 'name_required', step: 'name' });
       return;
     }
     track('search_step', { step: 'searching-one', search_type: 'name', variant: 'v4' });
@@ -143,7 +143,7 @@ const NameSearchLandingV4Page = () => {
   };
 
   const continueFromLocation = () => {
-    if (!state.trim()) { setLocationError('Please select a state before continuing.'); return; }
+    if (!state.trim()) { setLocationError('Please select a state before continuing.'); track('validation_error', { reason: 'state_required', step: 'location' }); return; }
     setLocationError('');
     track('search_step', { step: 'searching-two', search_type: 'name', variant: 'v4' });
     setStep('searching-two');
@@ -152,7 +152,7 @@ const NameSearchLandingV4Page = () => {
 
   const handleConfirm = () => {
     setAgreeError('');
-    if (!agree) { setAgreeError('You must agree before continuing.'); return; }
+    if (!agree) { setAgreeError('You must agree before continuing.'); track('validation_error', { reason: 'fcra_not_agreed', step: 'confirm' }); return; }
     track('search_step', { step: 'final-search', search_type: 'name', variant: 'v4' });
     track('fcra_agree', { search_type: 'name', variant: 'v4' });
     setStep('final-search');

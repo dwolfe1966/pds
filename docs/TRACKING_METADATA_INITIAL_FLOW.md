@@ -28,15 +28,16 @@
 
 ### 1b. Attribution (`refer.*`) — first-touch, on every event
 
-`source` (from `utm_source`), `gclid`, `fbclid`, `msclkid`, `utm_medium`, `utm_campaign`, `refer_partnerId`, `refer_afid`, `refer_abc`, `shn`, `shl`, `shnName`, `partner`, `channel`.
+`source` (from `utm_source`), `gclid`, `fbclid`, `msclkid`, `utm_medium`, `utm_campaign`, **`utm_term`** (keyword), **`utm_content`** (creative), `refer_partnerId`, `refer_afid`, `refer_abc`, `shn`, `shl`, `shnName`, `partner`, `channel`.
 
 ### 1c. Per-event properties (initial flow)
 
 | Stage | Event (`CLIENT:*`) | Extra properties (on top of the envelope) | Notes |
 |---|---|---|---|
 | **Landing** | `landing_view` | `search_type`, `variant` | one per LP view |
-| **Onboarding (wizard)** | `search_step` | `step`, `search_type`, `variant` | `step` ∈ `searching-one, location, searching-two, details, context, confirm, final-search` (varies by vertical) |
+| **Onboarding (wizard)** | `search_step` | `step`, `search_type`, `variant`, **`step_duration_ms`** | `step` ∈ `searching-one, location, searching-two, details, context, confirm, final-search`. `step_duration_ms` = time on the previous step (added centrally). |
 | | `fcra_agree` | `search_type`, `variant` | FCRA checkbox accepted |
+| | `validation_error` | `reason`, `step` (+envelope) | drop-off cause: `reason` ∈ `fcra_not_agreed, state_required, name_required, invalid_phone, invalid_email`. **Note:** first-step empty-field gates (name/phone/email) are caught by native HTML5 `required`/disabled buttons before JS runs, so those rarely emit; the button-type gates (`fcra_not_agreed`, `state_required`) do emit reliably. |
 | **Search** | `search_submit` | `type` (=search_type), `resultCount` | fired from the loader after results return |
 | | `search_failed` | `type`, `errorMessage` | error path |
 | **Results / Teaser (SRP)** | `results_view` | `search_type`, **`query`** ⚠️PII, `state` | `query` = the raw searched value (name/phone/email) |
@@ -47,9 +48,15 @@
 | **Pay** | `payment_complete` | `plan`, `source` | |
 | | `payment_error` | `errorType`, `errorMessage`, `errorStatus` | |
 
-**Known emission gaps vs the canonical taxonomy** (worth closing for clean funnels):
-- `signup_start` and `payment_start` are not currently sent on the **BC** path (they exist on the GA4 path only). So the BC funnel can't measure "entered signup but didn't finish credentials" or "entered checkout but didn't pay" from BC data alone.
-- `results_view`/`teaser_view` don't carry `resultCount` (only `search_submit` does).
+**Correction:** `signup_start` (SignupPage) and `payment_start` (PaymentPage) **ARE** sent on the BC path (in `useEffect`s) — earlier draft said otherwise.
+
+**Remaining gap:** `results_view`/`teaser_view` don't carry `resultCount` (only `search_submit` does).
+
+### Implemented 2026-06-26 (the "why" instrumentation)
+- `utm_term` + `utm_content` now captured in `refer` (keyword/creative-level analysis).
+- `step_duration_ms` on every `search_step` (time-on-step → friction).
+- `validation_error{reason, step}` at the reachable funnel gates (`fcra_not_agreed`, `state_required` reliably; first-step `required`/disabled gates are native-handled).
+- `password_too_short` / `invalid_email` validation_errors on signup.
 
 ---
 

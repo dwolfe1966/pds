@@ -72,6 +72,7 @@ const SignupPage = ({ source = 'direct' }) => {
     // `testingreg052826c` before we burn a BC round-trip.
     if (!isValidEmail(form.email)) {
       setEmailError('Please enter a valid email address (e.g., name@example.com).');
+      track('validation_error', { reason: 'invalid_email', step: 'signup' });
       return;
     }
     const params = new URLSearchParams(location.search);

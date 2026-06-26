@@ -137,7 +137,7 @@ const NameSearchLandingV2Page = () => {
     event.preventDefault();
     setNameError('');
     if (!firstName.trim() || !lastName.trim()) {
-      setNameError('Please enter a first and last name.');
+      setNameError('Please enter a first and last name.'); track('validation_error', { reason: 'name_required', step: 'name' });
       return;
     }
     track('search_step', { step: 'searching-one', search_type: 'name', variant: 'v2' });
@@ -148,7 +148,7 @@ const NameSearchLandingV2Page = () => {
     // State is required on every name landing — first+last alone returns
     // unreliable BC matches.
     if (!state.trim()) {
-      setLocationError('Please select a state before continuing.');
+      setLocationError('Please select a state before continuing.'); track('validation_error', { reason: 'state_required', step: 'location' });
       return;
     }
     setLocationError('');
@@ -164,7 +164,7 @@ const NameSearchLandingV2Page = () => {
   const handleConfirm = () => {
     setAgreeError('');
     if (!agree) {
-      setAgreeError('You must agree before continuing.');
+      setAgreeError('You must agree before continuing.'); track('validation_error', { reason: 'fcra_not_agreed', step: 'confirm' });
       return;
     }
     track('search_step', { step: 'final-search', search_type: 'name', variant: 'v2' });

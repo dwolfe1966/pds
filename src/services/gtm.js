@@ -24,6 +24,10 @@ const REFERRAL_KEY = 'referralParams';
 const REFERRAL_FIELDS = [
   'refer_partnerId', 'refer_afid', 'refer_abc',
   'utm_source', 'utm_medium', 'utm_campaign',
+  // utm_term = the keyword, utm_content = the ad creative/variant. Captured so
+  // reporting can do keyword- and creative-level conversion analysis (previously
+  // dropped — e.g. utm_term=arrest+records was lost).
+  'utm_term', 'utm_content',
   // Ad-click IDs — captured for BC tracking `data.refer` attribution.
   // gclid = Google Ads, fbclid = Meta, msclkid = Microsoft Ads.
   'gclid', 'fbclid', 'msclkid',

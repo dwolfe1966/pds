@@ -190,7 +190,7 @@ const EmailSearchLandingV3Page = () => {
     e.preventDefault();
     setEmailError('');
     if (!EMAIL_REGEX.test(email.trim())) {
-      setEmailError('Please enter a valid email address.');
+      setEmailError('Please enter a valid email address.'); track('validation_error', { reason: 'invalid_email', step: 'email' });
       return;
     }
     track('search_step', { step: 'searching-one', search_type: 'email', variant: 'v3' });
@@ -202,7 +202,7 @@ const EmailSearchLandingV3Page = () => {
   const handleConfirm = () => {
     setAgreeError('');
     if (!agree) {
-      setAgreeError('You must agree before continuing.');
+      setAgreeError('You must agree before continuing.'); track('validation_error', { reason: 'fcra_not_agreed', step: 'confirm' });
       return;
     }
     track('search_step', { step: 'final-search', search_type: 'email', variant: 'v3' });

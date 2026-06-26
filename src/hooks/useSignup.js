@@ -90,6 +90,7 @@ export function useSignup() {
     const pwError = validatePassword(password);
     if (pwError) {
       setError(pwError);
+      track('validation_error', { reason: 'password_too_short', step: 'signup' });
       return false;
     }
     setLoading(true);

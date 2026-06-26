@@ -44,7 +44,9 @@ function buildRefer() {
     // BC sample uses `source`; alias from utm_source.
     if (params.utm_source) refer.source = params.utm_source;
     // Pass click IDs, utm, and refer_* through verbatim when present.
-    ['gclid', 'fbclid', 'msclkid', 'utm_medium', 'utm_campaign',
+    // utm_term (keyword) + utm_content (creative) added so reporting can analyze
+    // conversion by keyword/creative, not just campaign.
+    ['gclid', 'fbclid', 'msclkid', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
      'refer_partnerId', 'refer_afid', 'refer_abc'].forEach((k) => {
       if (params[k]) refer[k] = params[k];
     });
@@ -156,6 +158,31 @@ export function persistFunnelEntry(searchType, variant) {
   } catch { /* ignore */ }
 }
 
+// Funnel step timing — ms between consecutive funnel-progression events
+// (landing_view → search_step → search_step …). Computed centrally so no
+// per-wizard change is needed. landing_view starts the clock (no duration);
+// each search_step reports time-on-previous-step. Answers "which step is slow /
+// where do they hesitate" without touching every funnel file.
+function funnelStepDuration(eventName) {
+  if (typeof sessionStorage === 'undefined') return {};
+  if (eventName !== 'landing_view' && eventName !== 'search_step') return {};
+  try {
+    const now = Date.now();
+    const prev = parseInt(sessionStorage.getItem('funnel.lastStepTs') || '0', 10) || 0;
+    sessionStorage.setItem('funnel.lastStepTs', String(now));
+    return (eventName === 'search_step' && prev) ? { step_duration_ms: now - prev } : {};
+  } catch { return {}; }
+}
+
+// Fire a structured drop-off signal. `reason` is an enumerated cause (e.g.
+// 'fcra_not_agreed', 'name_required', 'state_required', 'invalid_phone',
+// 'invalid_email', 'password_too_short'). Carries search_type/variant/step via
+// the normal envelope so reporting can see WHY users stall at a step, not just
+// that they did.
+export function trackValidationError(reason, extra = {}) {
+  track('validation_error', { reason, ...extra });
+}
+
 export function track(eventName, properties = {}) {
   const sessionId = getSessionId();
   const timestamp = new Date().toISOString();
@@ -168,7 +195,8 @@ export function track(eventName, properties = {}) {
   // Placed before ...properties so a per-call explicit value (landing_view /
   // search_step pass their own) overrides — same value, so it's a no-op there.
   const funnel = funnelContext();
-  _sendToBC(eventName, { sessionId, timestamp, ...member, ...funnel, ...(refer ? { refer } : {}), ...properties });
+  const stepTiming = funnelStepDuration(eventName); // { step_duration_ms } on search_step
+  _sendToBC(eventName, { sessionId, timestamp, ...member, ...funnel, ...stepTiming, ...(refer ? { refer } : {}), ...properties });
 
   // GA4/GTM bridge — surface every CLIENT event on window.dataLayer so the GTM
   // container can forward it to GA4, segmentable by partner/channel and by
@@ -200,6 +228,7 @@ export function track(eventName, properties = {}) {
         trackingSessionId: sessionId,
         ...member,
         ...funnel,
+        ...stepTiming,
         ...attribution,
         ...properties,
       });
@@ -213,7 +242,7 @@ export function track(eventName, properties = {}) {
       fetch(LOCAL_TRACKING_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: eventName, timestamp, sessionId, ...member, properties: { ...funnel, ...(refer ? { refer } : {}), ...properties } }),
+        body: JSON.stringify({ event: eventName, timestamp, sessionId, ...member, properties: { ...funnel, ...stepTiming, ...(refer ? { refer } : {}), ...properties } }),
       }).catch(() => {});
     } catch (_) {}
   }
