@@ -1,0 +1,39 @@
+name: Delivery changelog → Google Sheet
+
+# Twice a day (01:00 & 13:00 UTC) + on-demand. Re-posts the 30-day window of delivered
+# commits; the Apps Script de-dupes by commit hash, so only new commits are appended.
+on:
+  schedule:
+    - cron: '0 1 * * *'
+    - cron: '0 13 * * *'
+  workflow_dispatch: {}
+
+# Avoid overlapping runs racing the same Sheet.
+concurrency:
+  group: changelog-sheet
+  cancel-in-progress: false
+
+jobs:
+  push-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for `git log --since`)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # REQUIRED — shallow clone would hide the 30-day window
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Push delivered commits to the Sheet
+        env:
+          CHANGELOG_SHEET_URL: ${{ secrets.CHANGELOG_SHEET_URL }}
+          CHANGELOG_SHEET_TOKEN: ${{ secrets.CHANGELOG_SHEET_TOKEN }}
+        run: |
+          if [ -z "$CHANGELOG_SHEET_URL" ]; then
+            echo "::error::CHANGELOG_SHEET_URL secret not set — add it in repo Settings → Secrets → Actions"
+            exit 1
+          fi
+          node scripts/changelog.js --format=json --webhook="$CHANGELOG_SHEET_URL"

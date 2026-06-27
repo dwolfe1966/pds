@@ -90,7 +90,10 @@ async function post(url, payload) {
 
 (async () => {
   if (args.webhook) {
-    await post(String(args.webhook), { rows: filtered });
+    // Token travels in the POST body (not the URL) so special chars (&, %, $, !) can't
+    // break the query string. Set CHANGELOG_SHEET_TOKEN (env) or pass --token=…
+    const token = args.token || process.env.CHANGELOG_SHEET_TOKEN || '';
+    await post(String(args.webhook), { token, rows: filtered });
     return;
   }
   if (format === 'json') {

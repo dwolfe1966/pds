@@ -25,15 +25,17 @@ node scripts/changelog.js --format=json --webhook="$CHANGELOG_SHEET_URL"   # pus
 4. Give me the URL (it embeds the token). I store it gitignored (`scripts/.changelog-webhook`) and as a GitHub Actions secret for the daily job. **Don't commit it.**
 
 ```javascript
-const TOKEN = 'CHANGE_ME_long_random_string';
+const TOKEN = 'PASTE_YOUR_TOKEN_HERE';  // any characters OK — read from the JSON body
 function doPost(e) {
-  if (!e || !e.parameter || e.parameter.token !== TOKEN) {
+  var body = {};
+  try { body = JSON.parse(e.postData.contents); } catch (err) {}
+  if (body.token !== TOKEN) {
     return ContentService.createTextOutput(JSON.stringify({ ok:false, error:'unauthorized' }))
       .setMimeType(ContentService.MimeType.JSON);
   }
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Changelog') || ss.getSheets()[0];
-  const rows = (JSON.parse(e.postData.contents).rows) || [];
+  const rows = body.rows || [];
   if (sheet.getLastRow() === 0) sheet.appendRow(['Date','Type','Area','Summary','Commit']);
   const last = sheet.getLastRow();
   const existing = last > 1 ? sheet.getRange(2,5,last-1,1).getValues().flat().map(String) : [];
@@ -49,9 +51,19 @@ function doPost(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 ```
+> ⚠️ The token rides in the **POST body**, never the URL — so special chars (`& % $ !`) are safe. Use the bare `…/exec` URL. **Never commit the token or the live URL** (use GitHub Secrets, below).
 
-The URL will look like `https://script.google.com/macros/s/AKfy…/exec?token=YOUR_TOKEN`.
+4. **Test it once locally:**
+   ```bash
+   node scripts/changelog.js --format=json --webhook="<exec URL>" --token="<your token>"
+   # → "webhook ok: {"ok":true,"added":N}"  and the Sheet fills in
+   ```
 
-## Daily automation (pick one)
-- **GitHub Action (recommended)** — runs on GitHub's infra daily, no machine/session needed. Stores the webhook URL as a repo secret. (Workflow added once the URL exists.)
-- **Local cron / each session** — simpler, but only runs when this machine/session is up.
+## Daily automation — GitHub Action (twice a day)
+`.github/workflows/changelog.yml` runs at **01:00 & 13:00 UTC** (plus on-demand via *Actions → Run workflow*). It re-posts the 30-day window each run; the Apps Script de-dupes by commit hash, so only new commits land.
+
+**Add two repo secrets** — GitHub → repo → *Settings → Secrets and variables → Actions → New repository secret*:
+- `CHANGELOG_SHEET_URL` = the bare `…/exec` web-app URL
+- `CHANGELOG_SHEET_TOKEN` = your token (any chars; rides in the POST body)
+
+(Local fallback: `CHANGELOG_SHEET_TOKEN=… node scripts/changelog.js --format=json --webhook="$URL"`.)
