@@ -4,6 +4,7 @@ import api from '../../api';
 import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } from '../../utils/orderFinancials';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
+import { getPlanState, isSuspendedStatus } from './userState';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -29,27 +30,6 @@ function getFullName(user) {
 
 function getStatus(user) {
   return user?.status || user?.transient?.status || 'active';
-}
-
-// BC suspends via status='blocked' (no 'suspended' in its enum). Treat 'suspended' too
-// for any legacy/edge data.
-function isSuspendedStatus(status) {
-  const s = (status || '').toLowerCase();
-  return s === 'blocked' || s === 'suspended';
-}
-
-// Paid status comes from BC ORDERS (the authority), not roles — BC roles don't carry
-// paid state, so a roles check renders "Free" even for paying customers. A user is Pro
-// if money was actually collected on any order (the $1 M0 trial counts) or a sale
-// payment is fulfilled; a failed/declined order collects nothing → stays Free.
-function getTier(orders) {
-  const paid = Array.isArray(orders) && orders.some((o) => {
-    const collected = o?.transient?.amount?.collected;
-    if (typeof collected === 'number' && collected > 0) return true;
-    const cps = Array.isArray(o?.commercePayments) ? o.commercePayments : [];
-    return cps.some((p) => p?.type === 'sale' && p?.status === 'fulfilled');
-  });
-  return paid ? 'Pro' : 'Free';
 }
 
 function formatDate(iso) {
@@ -1226,7 +1206,7 @@ const UserDetailPage = () => {
   const name      = getFullName(user);
   const initials  = getInitials(user);
   const status    = getStatus(user);
-  const tier      = ordersLoading ? null : getTier(orders);
+  const plan      = ordersLoading ? null : getPlanState(orders);
   const joinDate  = formatDate(user?.createdAt);
   const isSuspended = isSuspendedStatus(status);
 
@@ -1289,9 +1269,12 @@ const UserDetailPage = () => {
             <span className={isSuspended ? styles.badgeSuspended : styles.badgeActive}>
               {isSuspended ? 'Suspended' : 'Active'}
             </span>
-            {tier && (
-              <span className={tier === 'Pro' ? styles.badgePro : styles.badgeFree}>
-                {tier}
+            {plan && (
+              <span
+                className={styles.badge}
+                style={{ color: plan.color, background: plan.bg, padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}
+              >
+                {plan.label}
               </span>
             )}
           </div>

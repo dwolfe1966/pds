@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { isValidEmail } from '../../utils/email';
 import styles from './UsersPage.module.css';
+import { fetchPlanState } from './userState';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -30,12 +31,6 @@ function resolveStatus(u) {
   return (u.status || u.transient?.status || '').toLowerCase();
 }
 
-// NOTE: paid (Pro/Free) status is intentionally NOT shown in the list. It can only be
-// known from BC orders (getOrders per user), which the list doesn't load — deriving it
-// from account `status` or roles falsely marked every active account "Pro" (Hana's
-// report). The accurate account status (Active/Suspended) is shown via StatusBadge; the
-// user detail page shows the true Pro/Free from orders.
-
 // ─── sub-components ──────────────────────────────────────────────────────────
 
 function StatusBadge({ status }) {
@@ -43,6 +38,21 @@ function StatusBadge({ status }) {
   if (s === 'active') return <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
   if (s === 'suspended' || s === 'blocked') return <span className={`${styles.badge} ${styles.badgeSuspended}`}>Suspended</span>;
   return <span className={`${styles.badge} ${styles.badgeUnknown}`}>Unknown</span>;
+}
+
+// Plan state (Free/Trial/Subscriber/Cancelled/Expired). The list user objects don't carry
+// order data, so this lazy-loads the user's orders on mount (throttled + cached in
+// userState.js) and derives the true plan — replacing the old always-"Pro" guess.
+function PlanBadge({ userId }) {
+  const [plan, setPlan] = useState(null);
+  useEffect(() => {
+    let live = true;
+    fetchPlanState(userId).then((p) => { if (live) setPlan(p); });
+    return () => { live = false; };
+  }, [userId]);
+  const base = { padding: '2px 9px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' };
+  if (!plan) return <span className={styles.badge} style={{ ...base, opacity: 0.4 }}>…</span>;
+  return <span className={styles.badge} style={{ ...base, color: plan.color, background: plan.bg }}>{plan.label}</span>;
 }
 
 function SkeletonCard() {
@@ -69,6 +79,7 @@ function CustomerCard({ user }) {
         <h3 className={styles.customerName}>{name}</h3>
         <div className={styles.badgeRow}>
           <StatusBadge status={status} />
+          <PlanBadge userId={uid} />
         </div>
       </div>
 
@@ -467,6 +478,7 @@ const UsersPage = () => {
               <th className={styles.th}>Name</th>
               <th className={styles.th}>Email</th>
               <th className={styles.th}>Status</th>
+              <th className={styles.th}>Plan</th>
               <th className={styles.th}>Joined</th>
               <th className={styles.th}></th>
             </tr></thead>
@@ -484,6 +496,7 @@ const UsersPage = () => {
                     <td className={styles.td}>{name}</td>
                     <td className={styles.td}>{u.email || '—'}</td>
                     <td className={styles.td}><StatusBadge status={status} /></td>
+                    <td className={styles.td}><PlanBadge userId={uid} /></td>
                     <td className={styles.td}>{formatDate(u.createdAt)}</td>
                     <td className={styles.td}>
                       <Link to={`/users/${uid}`} className={styles.tableViewBtn}>Details</Link>
