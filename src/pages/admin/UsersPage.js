@@ -30,12 +30,11 @@ function resolveStatus(u) {
   return (u.status || u.transient?.status || '').toLowerCase();
 }
 
-function isTierPro(u) {
-  const status = resolveStatus(u);
-  if (status === 'active') return true;
-  if (Array.isArray(u.roles) && u.roles.includes('subscriber')) return true;
-  return false;
-}
+// NOTE: paid (Pro/Free) status is intentionally NOT shown in the list. It can only be
+// known from BC orders (getOrders per user), which the list doesn't load — deriving it
+// from account `status` or roles falsely marked every active account "Pro" (Hana's
+// report). The accurate account status (Active/Suspended) is shown via StatusBadge; the
+// user detail page shows the true Pro/Free from orders.
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
@@ -44,12 +43,6 @@ function StatusBadge({ status }) {
   if (s === 'active') return <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
   if (s === 'suspended') return <span className={`${styles.badge} ${styles.badgeSuspended}`}>Suspended</span>;
   return <span className={`${styles.badge} ${styles.badgeUnknown}`}>Unknown</span>;
-}
-
-function TierBadge({ pro }) {
-  return pro
-    ? <span className={`${styles.badge} ${styles.badgePro}`}>Pro</span>
-    : <span className={`${styles.badge} ${styles.badgeFree}`}>Free</span>;
 }
 
 function SkeletonCard() {
@@ -69,7 +62,6 @@ function CustomerCard({ user }) {
   const truncId = uid ? `${uid.slice(0, 8)}...` : '—';
   const name = getDisplayName(user);
   const status = resolveStatus(user);
-  const pro = isTierPro(user);
 
   return (
     <div className={styles.card}>
@@ -77,7 +69,6 @@ function CustomerCard({ user }) {
         <h3 className={styles.customerName}>{name}</h3>
         <div className={styles.badgeRow}>
           <StatusBadge status={status} />
-          <TierBadge pro={pro} />
         </div>
       </div>
 
@@ -476,7 +467,6 @@ const UsersPage = () => {
               <th className={styles.th}>Name</th>
               <th className={styles.th}>Email</th>
               <th className={styles.th}>Status</th>
-              <th className={styles.th}>Tier</th>
               <th className={styles.th}>Joined</th>
               <th className={styles.th}></th>
             </tr></thead>
@@ -486,7 +476,6 @@ const UsersPage = () => {
                 const truncId = uid ? `${uid.slice(0, 8)}...` : '—';
                 const name = getDisplayName(u);
                 const status = resolveStatus(u);
-                const pro = isTierPro(u);
                 return (
                   <tr key={uid} className={styles.tr}>
                     <td className={styles.td}>
@@ -495,7 +484,6 @@ const UsersPage = () => {
                     <td className={styles.td}>{name}</td>
                     <td className={styles.td}>{u.email || '—'}</td>
                     <td className={styles.td}><StatusBadge status={status} /></td>
-                    <td className={styles.td}><TierBadge pro={pro} /></td>
                     <td className={styles.td}>{formatDate(u.createdAt)}</td>
                     <td className={styles.td}>
                       <Link to={`/users/${uid}`} className={styles.tableViewBtn}>Details</Link>
