@@ -56,3 +56,6 @@ coverage/
 
 # Tracking API SQLite data
 tracking-api/data/
+
+# changelog → Google Sheet webhook URL (contains token — never commit)
+scripts/.changelog-webhook

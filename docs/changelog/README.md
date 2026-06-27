@@ -1,0 +1,57 @@
+# Delivery changelog → Google Sheet
+
+A daily, shareable log of **bugs + features delivered**, derived from git (the source of
+truth — our commit messages are Conventional Commits). The repo holds the generator + a
+versioned snapshot; a Google Sheet is the team-facing view.
+
+## How it works
+- `scripts/changelog.js` parses `git log` → structured rows (Date, Type, Area, Summary, Commit).
+- "Delivered" types: `fix`→Bug fix, `feat`→Feature, `perf`→Improvement, `polish`, `harden`→Security, `content`. (`docs`/`chore`/`test`/`refactor`/internal excluded unless `--all`.)
+- A Google Apps Script web app receives rows and appends them, **de-duping by commit hash** — so re-posting the full 30-day window daily only ever adds new commits (idempotent).
+
+## Commands
+```bash
+node scripts/changelog.js                          # CSV, last 30 days, delivered types
+node scripts/changelog.js --format=md              # markdown table
+node scripts/changelog.js --since="2026-05-01"     # custom window
+node scripts/changelog.js --all                    # include internal commits
+node scripts/changelog.js --format=json --webhook="$CHANGELOG_SHEET_URL"   # push to the Sheet
+```
+
+## One-time Sheet setup (≈5 min, no Google Cloud)
+1. Create a Google Sheet. Add a tab named **`Changelog`**.
+2. **Extensions → Apps Script**. Paste the script below; set your own `TOKEN`. Save.
+3. **Deploy → New deployment → Web app**: *Execute as* = **Me**, *Who has access* = **Anyone**. Deploy, authorize, copy the **Web app URL**.
+4. Give me the URL (it embeds the token). I store it gitignored (`scripts/.changelog-webhook`) and as a GitHub Actions secret for the daily job. **Don't commit it.**
+
+```javascript
+const TOKEN = 'CHANGE_ME_long_random_string';
+function doPost(e) {
+  if (!e || !e.parameter || e.parameter.token !== TOKEN) {
+    return ContentService.createTextOutput(JSON.stringify({ ok:false, error:'unauthorized' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Changelog') || ss.getSheets()[0];
+  const rows = (JSON.parse(e.postData.contents).rows) || [];
+  if (sheet.getLastRow() === 0) sheet.appendRow(['Date','Type','Area','Summary','Commit']);
+  const last = sheet.getLastRow();
+  const existing = last > 1 ? sheet.getRange(2,5,last-1,1).getValues().flat().map(String) : [];
+  const seen = new Set(existing);
+  let added = 0;
+  // oldest-first so the sheet reads chronologically
+  rows.slice().reverse().forEach(function(r){
+    if (seen.has(String(r.commit))) return;
+    sheet.appendRow([r.date, r.type, r.area, r.summary, r.commit]);
+    seen.add(String(r.commit)); added++;
+  });
+  return ContentService.createTextOutput(JSON.stringify({ ok:true, added }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+The URL will look like `https://script.google.com/macros/s/AKfy…/exec?token=YOUR_TOKEN`.
+
+## Daily automation (pick one)
+- **GitHub Action (recommended)** — runs on GitHub's infra daily, no machine/session needed. Stores the webhook URL as a repo secret. (Workflow added once the URL exists.)
+- **Local cron / each session** — simpler, but only runs when this machine/session is up.

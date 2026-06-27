@@ -1,0 +1,147 @@
+Date,Type,Area,Summary,Commit
+2026-06-27,Bug fix,csr,suspend account — use BC-valid status 'blocked' (Hana feedback A),d51cd1d
+2026-06-27,Bug fix,csr,drop misleading Pro/Free badge from user list (Hana feedback B),7fd92bb
+2026-06-27,Bug fix,csr,correct user/order status display (Hana feedback C/D/E),da1f422
+2026-06-26,Bug fix,csr,detect audio attachments by file extension too (not just mimetype),6a4c746
+2026-06-26,Feature,csr,play audio attachments inline via BC playAudioFlag (live-call recordings),76b8536
+2026-06-26,Bug fix,csr,attachment label reads BC originalname/filename (live-call recordings),bd3b5e0
+2026-06-26,Bug fix,csr,make message attachments clickable/downloadable,958acb0
+2026-06-26,Bug fix,ads,carry gclid/utm through the campaign redirect (Google Ads attribution),59ed936
+2026-06-26,Feature,tracking,"""why"" instrumentation — utm_term/content, step timing, validation_error",05b1d90
+2026-06-25,Bug fix,tracking,suppress spurious home landing_view on campaign redirects,1c3d6c3
+2026-06-25,Bug fix,member,trim data-broker list to Spokeo + PeopleFinders only,1b41999
+2026-06-25,Bug fix,legal,"bump Last Updated to 6/25/2026, remove Terms section numbering",7639300
+2026-06-24,Bug fix,funnel,responsive container for phone search-results page (mobile),b000932
+2026-06-24,Bug fix,funnel,honest state-required labeling on name landings,d96473b
+2026-06-24,Bug fix,funnel,Phone V2-V6 delegate search to /phone/loader (dead-end + Ads gap),1826c64
+2026-06-24,Bug fix,funnel,Name V2/V5 delegate search to /name/loader (was Ads-invisible),46b923b
+2026-06-24,Bug fix,consumer,graceful error on Contact Us 412 (BC anti-abuse rule block),7a71905
+2026-06-24,Feature,tracking,attribute Ads conversions to ad variant (surface B),106443d
+2026-06-24,Feature,tracking,persist landing variant for end-to-end conversion attribution,326d974
+2026-06-24,Feature,tracking,unique funnel-page IDs + visitor/member actor + GA4 dataLayer bridge,4434e0b
+2026-06-23,Feature,tracking,"GAP-7 (loggedIn/userId on every event), GAP-5 (load_more), GTM partner-race",86a5d52
+2026-06-23,Bug fix,consumer,contact form 400 'Invalid params' — stop sending targetUserId,84b48f6
+2026-06-23,Bug fix,member,disable yellow free-trial banner on dashboard (owner request),aee9111
+2026-06-23,Feature,csr,show logged-in CSR identity in top nav (left of Sign out),28b59c0
+2026-06-22,Feature,csr,Ask A resolved per Kwan — definitive price from getOrder schedule,85bf112
+2026-06-22,Bug fix,security,patch 4 Dependabot alerts (react-router open-redirect + 2 dev-only),6651702
+2026-06-19,Polish,csr,align admin login/landing to IDLookup green (19.a),98b48b6
+2026-06-19,Polish,csr,plain-language copy + drop id-fragment-as-name,af6d14e
+2026-06-19,Bug fix,csr,also drop Zip/CC from the UsersPage loading skeleton (col flicker),26077dc
+2026-06-19,Bug fix,csr,product-quality 🟡 batch (4 quick wins + 2 medium),fd6bc86
+2026-06-19,Bug fix,csr,_viaCsr falls back when a lib read returns a wrong/unusable shape,d46565b
+2026-06-19,Bug fix,csr,close remaining XSS sink in UserDetailPage notes + accept short 'html' contentType,2fdec44
+2026-06-19,Bug fix,csr,launch-blocking product-quality issues (A/B/C),34c8076
+2026-06-19,Bug fix,csr,_viaCsr must not re-run mutations on post-send throw,9a67e58
+2026-06-18,Bug fix,csr,"CS-rep list queries the admins collection, not users",181513e
+2026-06-18,Bug fix,csr,tickets user-mode no longer breaks on userContact 403,47925d3
+2026-06-18,Feature,csr,item 2.4 csrFindContacts → message.contact.find; document 2.7 setTargetUser caveat,3bcd960
+2026-06-16,Feature,csr,migrate 4 more reads to lib methods (getOrder + contact.find/histories/replyLinkUrl),7dcf942
+2026-06-16,Feature,csr,migrate 4 verified reads to csrWrapper lib methods (lib-first + direct fallback),03983be
+2026-06-16,Bug fix,admin-auth,recognize BC 'csrManager' (and any csr*/admin*) role on login,236ebeb
+2026-06-16,Bug fix,mobile,keep sliding-menu Sign out/Sign in on-screen (100dvh),fb8830b
+2026-06-15,Bug fix,attribution,send gclid as refer_gclid so it persists on the order,1c94667
+2026-06-15,Bug fix,attribution,call api.shape.setShapeParams so BC switches off default shN,b8e7f56
+2026-06-15,Feature,attribution,emit gclid/utm into billing.sale queryString + doc the 2 BC commerce-attribution asks,35d7396
+2026-06-14,Feature,report,handle judgment + professional special cases (expose-all sweep),e121007
+2026-06-14,Feature,report,expose-all for financial section + foreclosure special case + charge backfill,17bd2ae
+2026-06-14,Feature,report,expose all BC criminal + property fields; fix blank charge name,89d9aed
+2026-06-13,Bug fix,pricing,correct stale brand.js comment — BC's live offer charges $1/$49.98 (verified),3b8e6cb
+2026-06-13,Feature,resilience,graceful BC-outage handling — 'can't reach servers' instead of wiped account,311357b
+2026-06-12,Bug fix,csr,two broken CSR billing methods found by the library-migration survey,1778154
+2026-06-11,Bug fix,contact,actually send targetUserId on contact.create (was silently dropped),853c820
+2026-06-11,Bug fix,payment,406 on promo/thin-match sale — send all-false sequenceOption + 'Continue' CTA,cef2a47
+2026-06-11,Feature,thin-match,"app-style restyle, std password copy, signup → promo payment → dashboard",95e8611
+2026-06-11,Feature,csr,timeline events show the searched subject (name/phone),075b74c
+2026-06-10,Feature,dashboard,"search-as-hero reorder + a11y (contrast, focus rings)",2865d32
+2026-06-10,Feature,dashboard,trial-state transparency banner (anti-chargeback),de08490
+2026-06-10,Feature,member,thread-based organization in account Messages,e69ca27
+2026-06-10,Feature,csr,timeline oldest-first (chronological),365f47a
+2026-06-10,Bug fix,dashboard+messages,membership tile below green strip; gate inline reply to CSR-last threads,c221c14
+2026-06-10,Bug fix,dashboard,remove fabricated activity feed + hide empty stat tiles for free members,9a9618a
+2026-06-10,Feature,csr,UserDetail timeline — unified event time-series (item viii),4e795c3
+2026-06-10,Feature,csr,partial email search (item vii),146954c
+2026-06-10,Feature,,"optional phone on signup + dashboard complete-profile prompt (items v, vi)",67446e4
+2026-06-10,Feature,member,"account Messages — page all threads + inline reply (items ii, iii)",c39895f
+2026-06-10,Feature,compliance,email unsubscribe — public page + footer link + member tab (item i),2951b38
+2026-06-10,Bug fix,csr,refund fails 'billingSeriesId should not be empty',03c57d3
+2026-06-10,Feature,payment,show confirmation at /paymentconfirm URL,ee7b2f5
+2026-06-10,Feature,payment,confirmation summary — amount paid + order ID on success screen,0c7c4a5
+2026-06-10,Bug fix,tracking,disable our GTM loader + AW gtag — BC's init.header is the source,ea9aa06
+2026-06-10,Feature,tracking,add Google Ads gtag (AW-18044069648) to consumer page head,4e3c690
+2026-06-10,Bug fix,csr,inbox Member/Non-member filter uses resolved account status,3ad7231
+2026-06-10,Bug fix,csr,user-detail Notes & Messages missed older member tickets,fa785ed
+2026-06-09,Bug fix,csr,real member status on dashboard + link tickets to customer detail,2e53b7d
+2026-06-09,Bug fix,payment,optout flag toggles ONLY the consent checkbox + SUP disclosure,b2bbaab
+2026-06-09,Bug fix,shn,optout flag = payment SUP consent ONLY; remove funnel opt-out notice,3da34ea
+2026-06-09,Feature,dashboard,subscribe promo under the marketing strip for unpaid members,c654041
+2026-06-09,Feature,shn,organic/no-shn gets thinmatch promo + optout messaging (owner 2026-06-09),dea61d9
+2026-06-09,Feature,payment,gate SUP consent block on BC optout flag (campaign.optOut),a38e735
+2026-06-09,Bug fix,shn,gate BC theme override on real shn — keep organic traffic strict,c9f3cfc
+2026-06-09,Content,emails,reframe 4 remarketing emails for trial non-converters,054d935
+2026-06-09,Feature,shn,drive optOut + thinmatch zero-state from BC's comp.client.theme,81b26f8
+2026-06-09,Bug fix,emails,tokenize brand domain as {{brand_url}} in merge-field handoff set,541cbb2
+2026-06-09,Bug fix,emails,add welcome/payment/alert-digest to merge-field handoff; fix localhost links,382feeb
+2026-06-09,Bug fix,emails,tokenize price/period in signup + uncancel merge-field previews,1545ce7
+2026-06-09,Bug fix,csr,consumer messages missing from user-detail page (email-link regression),c1ae27c
+2026-06-09,Bug fix,member,CSR replies showed as the member's own messages,8a76f76
+2026-06-09,Feature,shn,wire 5 real Google partner tokens (inmates/death/divorce lower+upper),c9649ba
+2026-06-09,Feature,report,"show full transfer history per property, not just last sale",f412f49
+2026-06-09,Feature,csr,order:<id> search — BC now honors user.find orderId (verified live),8f9e5e5
+2026-06-08,Content,legal,bump Last Updated to 6/8/2026 + record alignment decisions,ae67ec0
+2026-06-08,Content,legal,align Terms/Privacy to compliance-authored source docs,d871f03
+2026-06-08,Bug fix,csr,brandId on contact.create; verify BC's new updaterId/orderId params (docs ahead of backend),1c73135
+2026-06-08,Feature,shn,wire real partner tokens + fix death/divorce funnel search,debe2e3
+2026-06-08,Bug fix,checkout,card/expiry/CVV not red on first load; only after touch/submit,03e874b
+2026-06-08,Feature,checkout,colored card-brand acceptance marks (TRX/card-brand requirement),df48985
+2026-06-07,Feature,report,criminal physical descriptors (height/weight/hair/eyes/race/sex/born),65525c6
+2026-06-07,Feature,report,"richer address rows — duration, apt, map link",02497cd
+2026-06-07,Feature,report,surface more BC data in report detail (gap fix),61ff71d
+2026-06-06,Feature,campaign,enable thinMatch zeroState for Google Inmates Upper (6a22ff83),f1e18dd
+2026-06-06,Bug fix,gtm,push resolved partner identity into gtmContext for conversion gate,db09727
+2026-06-06,Bug fix,tracking,stop double-loading GTM (was double-counting Ads conversions),c936086
+2026-06-06,Bug fix,shn,row #4 = Google Inmates Upper (6a22ff83) — retire 4:* placeholder,83f2faa
+2026-06-06,Security,admin,request updaterId in tracking displayFields + guard against trim,2ad278d
+2026-06-05,Bug fix,shn,6a22ff83… SUP variant → a; add opt-out link to VariantA,f79ad95
+2026-06-05,Bug fix,shn,6a22ff83… SUP variant c → d; add opt-out link to VariantD,eb5efa6
+2026-06-05,Bug fix,shn,6a22ff83… landing → /name/landing/v3 (inmate funnel),1856d45
+2026-06-05,Feature,shn,"wire optout ""yes"" → opt-out link in the funnel (SRP + SUP)",fd6f701
+2026-06-05,Feature,shn,register real partner shN 6a22ff83… (Google Inmates Upper),db7f3d4
+2026-06-05,Bug fix,admin,CSR user search — nest filters under `query` (was returning non-matches),3ec52d4
+2026-06-05,Feature,admin,collapse CSR customer search into ONE smart box (results match criteria),f604c20
+2026-06-05,Feature,admin,"dedicated CSR ""Search Results"" mode (only matches)",d65d945
+2026-06-05,Bug fix,search,member phone report via extId path — reversePhone 500s,b871059
+2026-06-05,Feature,admin,unified CSR customer search (email/zip/phone/last4/id/name),f025dfc
+2026-06-05,Bug fix,search,member phone report — run teaser first (BC requires teaserInput),34bd502
+2026-06-05,Bug fix,search,"phone teaser returned ""no results"" — adapter missed commerceContent.raws",6200ae8
+2026-06-05,Feature,,shN-driven payment checkbox (#34) + thin-match (#51); global CTA (#35),9331d3b
+2026-06-05,Bug fix,admin,CSR user tracking — request perPage:100 so a user's events show,606acdc
+2026-06-05,Bug fix,member,bug #42 remove address search; #70 track SRP load-more,16de1ec
+2026-06-05,Bug fix,payment,bug 53 — billing fields show red border by default,6504231
+2026-06-05,Bug fix,admin,SECURITY — scope CSR Searches/Reports/Logins to the viewed user,fa41893
+2026-06-04,Bug fix,checkout,send first-touch refer_* to commerceorders.refer (CTO Q2),b7939f7
+2026-06-04,Bug fix,admin,Notes empty-state distinguishes fetch-error from empty (row 38),8f91703
+2026-06-04,Bug fix,admin,CSR detail-page Zip + clearer search hint; triage 6/4 list,99f8c0d
+2026-06-04,Feature,emails,lifecycle/transactional email templates + service wrappers,a51f91b
+2026-06-03,Bug fix,admin,broken header logo — use inlined data URI (admin-side of #67),65cfdae
+2026-06-03,Bug fix,payment,pass the real billing street to BC when filled (#3),9ac6145
+2026-06-03,Feature,csr,expose all order data on the CSR order detail (#2),46c00ac
+2026-06-03,Feature,shn,partner registry + identity reporting (thin local bridge),a1685b4
+2026-06-03,Bug fix,landing,V3 inmate funnel hands search to /name/loader (reliability),679d1a9
+2026-06-03,Feature,pricing,BC-driven per-partner price via findByShmName,53d3915
+2026-06-03,Feature,tracking,partner-attributed conversions joinable to user/order (#2 / #77 workaround),45f1d9e
+2026-06-03,Bug fix,tracking,fire landing_view on the homepage (#63) + retry robustness,53f0625
+2026-06-03,Feature,tracking,BC data.refer attribution on every event + fire #63/#64/#65/#72,3756928
+2026-06-02,Bug fix,,cancel-at-period-end cluster (#50/#57/#59) + SRP total (#69) + state dropdown (#79),b5636d2
+2026-06-02,Bug fix,consumer,#67 broken/double logo on public header,a02f914
+2026-06-01,Bug fix,admin,Messages tab empty on UserDetail — stop routing through BC IIFE,a025577
+2026-05-31,Bug fix,admin,Notes & Messages tab — route through IIFE first,f156c11
+2026-05-31,Bug fix,admin,white page on UserDetail — paymentTimestamp.localeCompare crash,ab625e2
+2026-05-31,Bug fix,admin,CSR Searches/Reports/Logins tabs were empty — broken client-side filter,c22686e
+2026-05-31,Bug fix,admin,CSR tool Collected sum included rejected payment attempts,8620d33
+2026-05-30,Bug fix,admin,launch-gap audit items 8-11,b0308a8
+2026-05-30,Feature,member-nav,"surface /search-history as ""History"" tab",1b74242
+2026-05-30,Bug fix,launch,"pre-deploy hygiene — strip debug markers, drop dead routes/pages, brand-drive VariantB prices",f64f459
+2026-05-29,Bug fix,opt-out,"""Open Opt-Out Portal"" click was a no-op (wrong receiver + lost gesture)",1f8e647
+2026-05-29,Bug fix,search,#40 — pass contextKey on member phone search createReport,2ebe557
+2026-05-29,Bug fix,launch,consumer bug-list pass — payment/account/dashboard/search polish,797a579
