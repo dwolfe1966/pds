@@ -31,6 +31,13 @@ function getStatus(user) {
   return user?.status || user?.transient?.status || 'active';
 }
 
+// BC suspends via status='blocked' (no 'suspended' in its enum). Treat 'suspended' too
+// for any legacy/edge data.
+function isSuspendedStatus(status) {
+  const s = (status || '').toLowerCase();
+  return s === 'blocked' || s === 'suspended';
+}
+
 // Paid status comes from BC ORDERS (the authority), not roles — BC roles don't carry
 // paid state, so a roles check renders "Free" even for paying customers. A user is Pro
 // if money was actually collected on any order (the $1 M0 trial counts) or a sale
@@ -634,7 +641,7 @@ const UserDetailPage = () => {
 
   // ── Suspend / Unsuspend ───────────────────────────────────
   const handleSuspend = async () => {
-    const isSuspended = getStatus(user) === 'suspended';
+    const isSuspended = isSuspendedStatus(getStatus(user));
     const action = isSuspended ? 'unsuspend' : 'suspend';
     const confirmMsg = isSuspended
       ? `Unsuspend account for ${getFullName(user)}?`
@@ -1221,7 +1228,7 @@ const UserDetailPage = () => {
   const status    = getStatus(user);
   const tier      = ordersLoading ? null : getTier(orders);
   const joinDate  = formatDate(user?.createdAt);
-  const isSuspended = status === 'suspended';
+  const isSuspended = isSuspendedStatus(status);
 
   // New enriched fields
   const fullUserId = user?._id || user?.id || id;

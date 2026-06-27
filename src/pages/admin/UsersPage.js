@@ -41,7 +41,7 @@ function resolveStatus(u) {
 function StatusBadge({ status }) {
   const s = (status || '').toLowerCase();
   if (s === 'active') return <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
-  if (s === 'suspended') return <span className={`${styles.badge} ${styles.badgeSuspended}`}>Suspended</span>;
+  if (s === 'suspended' || s === 'blocked') return <span className={`${styles.badge} ${styles.badgeSuspended}`}>Suspended</span>;
   return <span className={`${styles.badge} ${styles.badgeUnknown}`}>Unknown</span>;
 }
 
@@ -399,7 +399,7 @@ const UsersPage = () => {
           >
             <option value="all">All statuses</option>
             <option value="active">Active</option>
-            <option value="suspended">Suspended</option>
+            <option value="blocked">Suspended</option>
           </select>
 
           <div className={styles.viewToggle}>

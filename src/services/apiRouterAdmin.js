@@ -37,8 +37,11 @@ export async function callAdminAPI(endpoint, params) {
     }
 
     // csrWrapper.api.user.update → POST /user/management/update
+    // BC's status enum has NO 'suspended' value (active|inactive|removed|blocked|banned|…),
+    // so the old 'suspended' write 400'd and suspend never worked. 'blocked' = reversible
+    // lose-access shutdown (unsuspend sets it back to 'active' below).
     case 'admin-suspend-user': {
-      return await apiWrapperCsr.csrUpdateUser(params.id, { status: 'suspended' });
+      return await apiWrapperCsr.csrUpdateUser(params.id, { status: 'blocked' });
     }
 
     // csrWrapper.api.user.update → POST /user/management/update (re-activate)
