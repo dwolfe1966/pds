@@ -1,4 +1,7 @@
 Date,Type,Area,Summary,Commit
+2026-06-27,Feature,tooling,twice-daily GitHub Action to push changelog → Google Sheet,1588ad5
+2026-06-27,Feature,csr,clear user state — plan (Free/Trial/Subscriber/Cancelled/Expired) + account status,11eb69e
+2026-06-27,Feature,tooling,delivery changelog generator + 30-day backfill (→ Google Sheet),ee1575a
 2026-06-27,Bug fix,csr,suspend account — use BC-valid status 'blocked' (Hana feedback A),d51cd1d
 2026-06-27,Bug fix,csr,drop misleading Pro/Free badge from user list (Hana feedback B),7fd92bb
 2026-06-27,Bug fix,csr,correct user/order status display (Hana feedback C/D/E),da1f422
@@ -145,3 +148,45 @@ Date,Type,Area,Summary,Commit
 2026-05-29,Bug fix,opt-out,"""Open Opt-Out Portal"" click was a no-op (wrong receiver + lost gesture)",1f8e647
 2026-05-29,Bug fix,search,#40 — pass contextKey on member phone search createReport,2ebe557
 2026-05-29,Bug fix,launch,consumer bug-list pass — payment/account/dashboard/search polish,797a579
+2026-05-27,Bug fix,admin,F8 — CSR refund email via new two-step BC flow + refresh BC docs,3387946
+2026-05-26,Bug fix,admin,two BC endpoint mismatches caught during launch QA (F11 + F12),66ebc75
+2026-05-26,Feature,report,"surface all data BC returns (criminal, financial, property, licences)",345530b
+2026-05-21,Bug fix,terms,wire SMS HELP/STOP lines to brand.supportPhone,ffa1e79
+2026-05-21,Feature,launch,"TRX-prep, brand updates, Terms/Privacy v2, resilience fixes",090c1ca
+2026-05-14,Feature,"campaign,gtm",shn/shl-driven campaign config; deprefix consumer admin,f2d7621
+2026-05-13,Feature,"search,gtm",SearchBar to first+last fields; 27-field dataLayer context,e7f10e5
+2026-05-08,Bug fix,dashboard,"dedupe ""You created your account"" in Recent Activity",e224189
+2026-05-08,Bug fix,consumer/messages,"show CSR replies via captured (id, hash) refs",aa6cf0d
+2026-05-08,Feature,dashboard,hybrid Recent Activity feed (own + anonymized cross-user),c14e7c0
+2026-05-08,Bug fix,consumer,"banner replies-via-email, drop member email from dashboard",c072b40
+2026-05-07,Feature,branding,drive Header bar + mobile nav active tint from brand,19db961
+2026-05-07,Feature,branding,apply per-brand palette to HomePage hero + feature cards,f3ead7e
+2026-05-07,Feature,branding,runtime multi-domain branding for IDLookup / PeopleSearcher / InmateFinder,199ed24
+2026-05-07,Bug fix,consumer,drop empty orderId on contact submit; surface BC errors; fix captcha verify,74bdace
+2026-05-07,Bug fix,consumer,mirror sent messages locally; rescue user fields when BC login returns flat shape,5edd9ba
+2026-05-07,Bug fix,consumer,swap support-message phone placeholder to a real-area-code fictional number,2524a55
+2026-05-07,Bug fix,consumer,drop required phone input from support compose; placeholder fallback at submit,832c03c
+2026-05-07,Bug fix,consumer,require phone in support compose; surface BC errors instead of swallowing,eaae48a
+2026-05-07,Bug fix,admin,match deployed CSR IIFE shapes; nav cleanup,cae62fb
+2026-05-07,Feature,admin,promote Searches and Reports to top-level tabs in UserDetailPage,c693b86
+2026-05-06,Bug fix,account,handle BC password.v0 captcha challenge in direct-POST fallback,159872e
+2026-05-06,Bug fix,account,wrap /contactMessage/create payload in { input } for direct POST,9dc2cfa
+2026-05-06,Bug fix,account,route in-account compose to /api/contactMessage/create,3395a24
+2026-05-06,Bug fix,account,fall back to direct POST when BC IIFE methods missing,e84150c
+2026-05-06,Feature,member,add Coming Soon banner to Who's Watching You page,952d646
+2026-05-06,Feature,account,wire Profile and Subscription tabs to BC,ae1239a
+2026-05-06,Bug fix,member,make BC getOrders() the sole source of subscription state,d096b11
+2026-05-05,Bug fix,admin,correct role check in AdminLoginPage post-login,7dc6e0f
+2026-05-05,Bug fix,admin,repoint API URL to /api so login works on dev.admin host,716ffdb
+2026-05-04,Feature,captcha,auto-fill BC password.v0 modal so users never see it,cd72064
+2026-05-04,Feature,admin,repath admin app from /admin/ to /csr/,c69e266
+2026-05-04,Feature,toast,shared ToastContext + migrate two admin pages,c87df84
+2026-05-04,Bug fix,build,restore absolute IIFE URLs so parcel can pass them through,9def3cb
+2026-05-04,Feature,teaser,"confidentiality reassurance, initials avatar, loading copy",c91c1cf
+2026-05-01,Bug fix,prod,make BC API + IIFE URLs path-relative for env-agnostic deploys,06b5ae5
+2026-05-01,Bug fix,prod,"point runtime hostnames at www.idlookup.ai, not dev",26cd1e2
+2026-04-29,Feature,consumer,persist visitor searches across signup transition,226bdc7
+2026-04-28,Polish,consumer,"drop dead root pages, improve ProfilePage inputs",44ce28f
+2026-04-28,Polish,consumer,use Link for in-app nav and email input on login,0e8d29f
+2026-03-24,Bug fix,,remove billingSignup from signup flow; fix subscription subStatus check,2a802df
+2026-03-24,Bug fix,,add proxy fallback for getUserOrders since IIFE is missing the method,3c9c44f

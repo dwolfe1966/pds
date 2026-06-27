@@ -7,11 +7,11 @@ versioned snapshot; a Google Sheet is the team-facing view.
 ## How it works
 - `scripts/changelog.js` parses `git log` → structured rows (Date, Type, Area, Summary, Commit).
 - "Delivered" types: `fix`→Bug fix, `feat`→Feature, `perf`→Improvement, `polish`, `harden`→Security, `content`. (`docs`/`chore`/`test`/`refactor`/internal excluded unless `--all`.)
-- A Google Apps Script web app receives rows and appends them, **de-duping by commit hash** — so re-posting the full 30-day window daily only ever adds new commits (idempotent).
+- A Google Apps Script web app receives rows and appends them, **de-duping by commit hash** — so re-posting the full 6-month window daily only ever adds new commits (idempotent).
 
 ## Commands
 ```bash
-node scripts/changelog.js                          # CSV, last 30 days, delivered types
+node scripts/changelog.js                          # CSV, last 6 months, delivered types
 node scripts/changelog.js --format=md              # markdown table
 node scripts/changelog.js --since="2026-05-01"     # custom window
 node scripts/changelog.js --all                    # include internal commits
@@ -21,8 +21,8 @@ node scripts/changelog.js --format=json --webhook="$CHANGELOG_SHEET_URL"   # pus
 ## One-time Sheet setup (≈5 min, no Google Cloud)
 1. Create a Google Sheet. Add a tab named **`Changelog`**.
 2. **Extensions → Apps Script**. Paste the script below; set your own `TOKEN`. Save.
-3. **Deploy → New deployment → Web app**: *Execute as* = **Me**, *Who has access* = **Anyone**. Deploy, authorize, copy the **Web app URL**.
-4. Give me the URL (it embeds the token). I store it gitignored (`scripts/.changelog-webhook`) and as a GitHub Actions secret for the daily job. **Don't commit it.**
+3. **Deploy → New deployment → Web app**: *Execute as* = **Me**, *Who has access* = **Anyone**. Deploy, authorize, copy the bare **`…/exec` Web app URL** (the token is NOT in the URL).
+4. Add the URL + token to **GitHub Secrets** (see "Daily automation" below) — never commit them.
 
 ```javascript
 const TOKEN = 'PASTE_YOUR_TOKEN_HERE';  // any characters OK — read from the JSON body
@@ -41,12 +41,15 @@ function doPost(e) {
   const existing = last > 1 ? sheet.getRange(2,5,last-1,1).getValues().flat().map(String) : [];
   const seen = new Set(existing);
   let added = 0;
-  // oldest-first so the sheet reads chronologically
-  rows.slice().reverse().forEach(function(r){
+  rows.forEach(function(r){
     if (seen.has(String(r.commit))) return;
     sheet.appendRow([r.date, r.type, r.area, r.summary, r.commit]);
     seen.add(String(r.commit)); added++;
   });
+  // Keep the whole sheet in reverse-chronological order (newest first). ISO
+  // YYYY-MM-DD in column A (Date) sorts correctly as strings.
+  var n = sheet.getLastRow();
+  if (n > 2) sheet.getRange(2, 1, n - 1, 5).sort({ column: 1, ascending: false });
   return ContentService.createTextOutput(JSON.stringify({ ok:true, added }))
     .setMimeType(ContentService.MimeType.JSON);
 }
@@ -60,7 +63,7 @@ function doPost(e) {
    ```
 
 ## Daily automation — GitHub Action (twice a day)
-`.github/workflows/changelog.yml` runs at **01:00 & 13:00 UTC** (plus on-demand via *Actions → Run workflow*). It re-posts the 30-day window each run; the Apps Script de-dupes by commit hash, so only new commits land.
+`.github/workflows/changelog.yml` runs at **01:00 & 13:00 UTC** (plus on-demand via *Actions → Run workflow*). It re-posts the 6-month window each run; the Apps Script de-dupes by commit hash, so only new commits land.
 
 **Add two repo secrets** — GitHub → repo → *Settings → Secrets and variables → Actions → New repository secret*:
 - `CHANGELOG_SHEET_URL` = the bare `…/exec` web-app URL

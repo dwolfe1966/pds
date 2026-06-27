@@ -18,7 +18,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/);
   return m ? [m[1], m[2] ?? true] : [a, true];
 }));
-const since = args.since || '30 days ago';
+const since = args.since || '6 months ago';
 const format = args.format || 'csv';
 const includeAll = !!args.all;
 
