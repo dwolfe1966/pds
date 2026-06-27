@@ -21,6 +21,10 @@ function fmtDate(iso) {
 
 function resolveStatus(order) {
   if (order?.transient?.canceled) return 'canceled';
+  // Cancel-at-period-end persists as subStatus=canceled while status stays 'active'.
+  // Without this, the badge reads "Active" on reload and the cancel looks like it
+  // didn't take (admin shows it correctly) — Hana's report.
+  if (order?.subStatus === 'canceled' || order?.subStatus === 'cancelled') return 'canceled';
   return (order?.status || '').toLowerCase() || 'unknown';
 }
 

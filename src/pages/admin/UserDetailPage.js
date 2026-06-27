@@ -31,10 +31,18 @@ function getStatus(user) {
   return user?.status || user?.transient?.status || 'active';
 }
 
-function getTier(user) {
-  const roles = Array.isArray(user?.roles) ? user.roles : [];
-  if (roles.includes('pro') || roles.includes('paid')) return 'Pro';
-  return 'Free';
+// Paid status comes from BC ORDERS (the authority), not roles — BC roles don't carry
+// paid state, so a roles check renders "Free" even for paying customers. A user is Pro
+// if money was actually collected on any order (the $1 M0 trial counts) or a sale
+// payment is fulfilled; a failed/declined order collects nothing → stays Free.
+function getTier(orders) {
+  const paid = Array.isArray(orders) && orders.some((o) => {
+    const collected = o?.transient?.amount?.collected;
+    if (typeof collected === 'number' && collected > 0) return true;
+    const cps = Array.isArray(o?.commercePayments) ? o.commercePayments : [];
+    return cps.some((p) => p?.type === 'sale' && p?.status === 'fulfilled');
+  });
+  return paid ? 'Pro' : 'Free';
 }
 
 function formatDate(iso) {
@@ -1211,7 +1219,7 @@ const UserDetailPage = () => {
   const name      = getFullName(user);
   const initials  = getInitials(user);
   const status    = getStatus(user);
-  const tier      = getTier(user);
+  const tier      = ordersLoading ? null : getTier(orders);
   const joinDate  = formatDate(user?.createdAt);
   const isSuspended = status === 'suspended';
 
@@ -1274,9 +1282,11 @@ const UserDetailPage = () => {
             <span className={isSuspended ? styles.badgeSuspended : styles.badgeActive}>
               {isSuspended ? 'Suspended' : 'Active'}
             </span>
-            <span className={tier === 'Pro' ? styles.badgePro : styles.badgeFree}>
-              {tier}
-            </span>
+            {tier && (
+              <span className={tier === 'Pro' ? styles.badgePro : styles.badgeFree}>
+                {tier}
+              </span>
+            )}
           </div>
 
           <div className={styles.metaTable}>
@@ -1463,7 +1473,9 @@ const UserDetailPage = () => {
                 {!ordersLoading && !ordersError && orders.length > 0 && orders.map((o) => {
                   const oid = getOrderId(o);
                   const oStatus = o.status || '—';
-                  const canceled = o.transient?.canceled;
+                  // subStatus=canceled is the cancel-at-period-end shape (status stays
+                  // 'active'); reflect it so a cancelled order doesn't read plain "active".
+                  const canceled = o.transient?.canceled || o.subStatus === 'canceled' || o.subStatus === 'cancelled';
                   const isExpanded = expandedOrders[oid];
                   const cpArray = Array.isArray(o?.commercePayments) ? o.commercePayments : [];
                   const extraData = extraPayments[oid];
