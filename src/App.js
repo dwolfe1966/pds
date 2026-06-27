@@ -1,8 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useCampaign } from './context/CampaignContext';
-import { useBrand } from './services/brand';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
@@ -111,10 +110,8 @@ const HomePageRedirect = () => {
 };
 
 const App = () => {
-  const brand = useBrand();
-  useEffect(() => {
-    document.title = brand.name;
-  }, [brand.name]);
+  // document.title is set per-route by ScrollToTop (titleForPath) so GA4's page_title
+  // dimension is unique per page — don't override it with a static brand name here.
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <BrandStyles />
