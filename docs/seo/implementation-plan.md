@@ -39,17 +39,22 @@ keep BC lookups ≈ one-per-page-per-revalidation-window, not one-per-crawl.
 
 ---
 
-## 2. URL scheme  **[TEARDOWN — confirm against Spokeo/MyLife patterns]**
+## 2. URL scheme  ✅ confirmed against Spokeo
 
-Provisional (refine from the teardown):
-- **Profile:** `/p/{first}-{last}/{state}/{city}` (e.g. `/p/john-smith/tx/dallas`)
-- **Surname hub:** `/name/{last}` → list of people with that surname
-- **Name index (crawl paths):** `/name/{a-z}` → `/name/{last}` (A–Z pagination)
-- **Location hub:** `/in/{state}` → `/in/{state}/{city}` → people in that city
-- Keep SEO namespace **disjoint** from app routes (no collision with `/name/landing`, `/people/:id`, etc.).
+**Progressive, geo-layered path** — each level is its own indexable page (own title/meta/schema):
+```
+/people/{First}-{Last}                      # name roll-up (the "money" page)
+/people/{First}-{Last}/{State}              # name × state
+/people/{First}-{Last}/{State}/{City}       # name × city
+/people/{First}-{Last}/{State}/{City}/{id}  # individual record (leaf)
+```
+Hub / crawl-distribution pages:
+- `/people/{letter}` — A–Z name index, paginated (Spokeo splits letter A into **864** pages)
+- `/{ST}` state hubs; vertical hubs (`/people-search`, `/reverse-phone`, `/email-search`)
 
-Decisions to lock: hyphen vs. underscore, ID-in-URL vs. clean slugs, trailing slash,
-canonical handling for duplicate name×location.
+Rules: hyphenated, lowercase-normalized slugs; canonical per level; the **interactive app/
+search surface stays on separate paths and is `Disallow`'d in robots.txt** (BeenVerified's
+`/seo/`-vs-app split) so the SEO tree is clean and never collides with `/name/landing`, `/people/:id`.
 
 ---
 
@@ -66,17 +71,35 @@ space; over time, IDIData (or a discovery pass) confirms which combos have real 
 
 ---
 
-## 4. Page template  **[TEARDOWN — confirm fields, gating, schema]**
+## 4. Page template  ✅ confirmed (Spokeo)
 
-Provisional teaser anatomy (refine from competitors):
-- **Visible (free):** name, approximate age, city/state, # of relatives/associates (initials),
-  partial phone/address — enough unique content to be non-thin.
-- **Gated:** full report → CTA into the existing signup funnel (`/signup?...`).
-- **Structured data:** BreadcrumbList for sure; **Person schema is a [TEARDOWN] decision**
-  (can be risky for non-notable individuals — see what incumbents actually use).
-- **Compliance on every page:** opt-out link, FCRA "not a consumer reporting agency" disclaimer
-  (we already have the language), privacy notice.
-- Reuse idlookup design tokens so it looks native + the CTA matches the funnel.
+Every page is **thick, not thin** via a data-driven template:
+- **Visible teaser (free):** name + aliases, age, city/state (current + prior cities),
+  **relatives by name (each links to their own page)**, and **counts not values**
+  — literally "Includes Address(3) Phone(10) Email(16)" (advertises how much exists).
+- **Gated:** exact addresses/phones/emails + full report → CTA into the signup funnel.
+- **FAQ engine (the anti-thin-content mechanism — build early):** a data-driven FAQ per page,
+  rendered as visible text **and** `FAQPage` JSON-LD ("How many people named X?", "Where do
+  they live?", "Criminal records?", census demographics). Per-name uniqueness is what keeps
+  pages out of doorway-penalty territory — the single most important quality lever.
+- **Schema (server-rendered):** `Organization` + `WebPage` + `BreadcrumbList` + `Person[]`
+  (each with `relatedTo` URLs to relatives) + `FAQPage`.
+- **Compliance every page:** prominent opt-out, FCRA non-CRA disclaimer (we have it), privacy.
+- Reuse idlookup design tokens; CTA matches the funnel.
+
+### ⚠️ THE central decision — PII in structured data (owner's call, blocks the template)
+Spokeo embeds the **clean full street address** in `Person`/`PostalAddress` **JSON-LD (indexed
+by Google)** while the rendered UI shows an **obfuscated teaser** ("RASC Fleetwood Dr", "(678)
+462-GUOB") behind "Unlock Profile". Net: **Google indexes the precise PII the human is paywalled
+out of.** That's the core ranking trick — but two real risks:
+1. **Google policy** — structured data must represent *visible* content; marking up data hidden
+   from users is a structured-data violation / cloaking-adjacent → manual-action risk.
+2. **Privacy/legal** — exact street addresses at scale = the most complaint/opt-out-generating
+   choice (CCPA + state privacy exposure).
+
+**Recommendation — the defensible middle:** index enough to win the "is this the right person?"
+long-tail (name, age, **city/state**, relatives, counts) **without** hiding full street addresses
+in schema that aren't visible. Go more aggressive only as a conscious, legally-reviewed decision.
 
 ---
 
@@ -114,12 +137,18 @@ crawl stats, BC API call volume/cost (the guardrail).
 ---
 
 ## 9. Open decisions / dependencies
-1. **Hosting for the Next app** — Vercel/Cloudflare (managed, easy ISR) vs. your VPS (Node process). 
-2. **CDN / reverse proxy** — Cloudflare in front for both apps.
-3. **BC API** — per-lookup cost + rate limits (sizes the caching/revalidation window).
-4. **URL scheme final** — [TEARDOWN].
-5. **IDIData** — timing + format for the richer seed.
-6. **Legal review** — public personal-data publishing.
+1. **🔴 PII-in-schema boundary** (§4) — how aggressive on indexed PII. Recommendation: the
+   defensible middle (no hidden full street addresses in schema). **Owner's call — blocks the template.**
+2. **BC data coverage** — confirm BC can return: name-aggregation ("all people named X"),
+   per-record location history, relatives *with profile URLs* (for `relatedTo`), per-name
+   counts, and demographic aggregates (for the FAQ engine). Likely the long pole → BC asks for gaps.
+3. **Hosting for the Next app** — Vercel/Cloudflare (managed ISR) vs. your VPS (Node process).
+4. **CDN / reverse proxy** — Cloudflare in front for both apps.
+5. **BC API cost/rate limits** — sizes the caching/revalidation window.
+6. **IDIData** — timing + format for the richer taxonomy seed.
+7. **Legal review** — public personal-data publishing (CCPA) before launch.
+8. **Re-run research with WebSearch/WebFetch enabled** — blocked this pass; missing Google
+   `site:` indexed counts, third-party traffic estimates, and MyLife's actual template.
 
 ---
 
