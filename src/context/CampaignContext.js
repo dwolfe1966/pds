@@ -45,16 +45,8 @@ function captureAttribution() {
     shl = urlShl;
   }
 
-  // Strip from URL after capture (cleaner shareable URLs; downstream
-  // tracking already has the values via sessionStorage + gtmContext + BC).
-  const hadAny = params.has('shn') || params.has('shl') || params.has('shConId') || params.has('shColId');
-  if (hadAny) {
-    ['shn', 'shl', 'shConId', 'shColId'].forEach((k) => params.delete(k));
-    const newSearch = params.toString();
-    const newUrl = url.pathname + (newSearch ? `?${newSearch}` : '') + url.hash;
-    try { window.history.replaceState({}, '', newUrl); } catch {}
-  }
-
+  // shn/shl are intentionally KEPT in the URL (not stripped) so they survive the
+  // campaign redirect and reach the tracking service from the landing URL.
   return { shn, shl };
 }
 

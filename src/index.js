@@ -24,8 +24,8 @@ captureReferralParams();
 // Capture shn/shl from URL and persist to sessionStorage BEFORE the BC IIFE
 // initializes — `apiWrapper.getInstance()` reads sessionStorage for the
 // `initialShParams` config. First-touch wins: once values are stored, later
-// URL params with different shn/shl are ignored. URL is stripped after
-// capture so shareable URLs stay clean.
+// URL params with different shn/shl are ignored. shn/shl are NOT stripped from
+// the URL — they must survive the campaign redirect to reach the tracking service.
 try {
   const url = new URL(window.location.href);
   const sp = url.searchParams;
@@ -34,18 +34,17 @@ try {
   // First-touch persistence: only set if not already present.
   if (urlShn && !sessionStorage.getItem('attribution.shn')) sessionStorage.setItem('attribution.shn', urlShn);
   if (urlShl && !sessionStorage.getItem('attribution.shl')) sessionStorage.setItem('attribution.shl', urlShl);
-  // One-shot landing-redirect flag — set ONLY when URL had attribution
-  // params on this load, cleared by HomePageRedirect after a single use.
-  // Without this, a stored shn/shl from a prior visit would keep
-  // redirecting `/` to the campaign landing forever.
-  if (urlShn || urlShl) {
+  // One-shot landing-redirect flag — set ONLY when `/` is loaded with attribution
+  // params (the redirect only fires from `/`), cleared by HomePageRedirect after a
+  // single use. Gated to pathname '/' so that — now that shn stays in the URL — a
+  // reload of a landing page (/name/landing/vN?shn=…) doesn't re-arm the redirect and
+  // bounce a later homepage visit.
+  if ((urlShn || urlShl) && url.pathname === '/') {
     sessionStorage.setItem('attribution.landingPending', '1');
   }
-  if (sp.has('shn') || sp.has('shl') || sp.has('shConId') || sp.has('shColId')) {
-    ['shn', 'shl', 'shConId', 'shColId'].forEach((k) => sp.delete(k));
-    const newSearch = sp.toString();
-    window.history.replaceState({}, '', url.pathname + (newSearch ? `?${newSearch}` : '') + url.hash);
-  }
+  // shn/shl are intentionally LEFT in the URL (not stripped) so they survive the
+  // campaign redirect (/?shn=… → /name/landing/vN?shn=…) and reach the tracking
+  // service from the landing URL. First-touch is already captured above.
 } catch {}
 
 // Seed partnerChannel / partnerName from URL on first boot. `?c=<key>` is the
