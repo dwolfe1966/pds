@@ -24,6 +24,46 @@ that registry is a local layer that can **drift from BC's ground truth**. So:
 - The real `shnName` is the registry's `identity.shnName` (resolved from shConId) — **NOT**
   `data.tracking.partner.name` (which is just the partner: Internal/Google).
 
+## Two attribution fields in the DB — an ID + a derived label (not two truths)
+
+`shConId/shColId` and `data.tracking.partner` are **not two competing attributions** — they're
+an **ID** and a **derived label**, same root (the shn from the URL):
+- **`shConId` / `shColId`** = BC's canonical campaign/collection **IDs** — the **source of truth**
+  (the key). BC's cohort engine keys on `shColId`.
+- **`data.tracking.partner.{name,channel}`** = our front-end's **resolved label** (Internal/Default,
+  Google/Search…), computed from the shn via the registry and attached at checkout — a
+  **denormalized convenience copy**, downstream of `shConId`.
+
+The risk of storing both: the label is a cached derivation that can **drift** from the key if the
+front-end registry lags BC. Right model — **one source of truth, label resolved from it:**
+- Key everything on **`shConId/shColId`**; resolve partner/channel/shnName **from** it via the
+  registry at read time. When the two disagree, **`shConId` wins.**
+- Project #3 (registry mirrors BC) collapses this: once the label always derives from the ID via
+  BC's mapping, the two fields **can't disagree** — one key + one resolution table.
+
+## Session vs payer attribution — which should reports use?
+
+Not two attribution *models* — the **same first-touch session attribution read from two places:**
+- **Session** = source captured when the visitor lands (shn → partner/channel/gclid), carried on
+  every event incl. the purchase → what **GTM/GA4/Ads** see.
+- **Payer** = that same session attribution **snapshotted onto the payment doc** at checkout
+  (`data.tracking.partner` + shConId/shColId).
+
+**Payer does NOT override primary attribution** — it's a copy of the session's first-touch value
+written at the sale. In a normal single-session conversion, **session == payer.**
+
+They diverge only on: **cascades/decliner-recovery**, **multi-session/multi-day** repeat visits, or
+**registry drift**.
+
+**Recommendation:**
+- **Acquisition funnel + eCPA/ROAS → SESSION attribution** — it must reconcile with Google Ads + GA4,
+  which attribute on session/click (Ads bills per gclid and credits that click). Running the funnel
+  off "payer" risks crediting a cascade/internal row instead of the Google campaign that paid for
+  the click → eCPA won't tie out.
+- **Cohort / retention (M1.x) → order `shColId`** (BC's cohort engine keys on it).
+- In the normal case these are the same value, so it's moot. Treat any session-vs-payer *difference*
+  in the sheet as a signal (cascade / multi-touch / drift), not two competing truths.
+
 ## shConId → identity lookup (front-end registry, current 2026-06-29)
 
 | shConId | shnName | partner | channel | brand | funnel | landing |
