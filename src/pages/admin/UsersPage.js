@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { isValidEmail } from '../../utils/email';
 import styles from './UsersPage.module.css';
-import { fetchPlanState } from './userState';
+import { fetchPlanState, PLAN_STATES } from './userState';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -138,7 +138,10 @@ const UsersPage = () => {
 
   // search + filter + view state
   const [searchQuery, setSearchQuery]   = useState(searchParams.get('q') || '');
-  const [statusFilter, setStatusFilter] = useState('all'); // filters results, not a search
+  const [statusFilter, setStatusFilter] = useState('all'); // account status filter
+  const [planFilter, setPlanFilter]     = useState('all'); // plan status filter (lazy-resolved)
+  const [planByUser, setPlanByUser]     = useState({});     // userId → plan key, eager-loaded while filtering
+  const planRequestedRef = useRef(new Set());
   const [view, setView]                 = useState('list'); // 'list' | 'cards'
   const [fetchGeneration, setFetchGeneration] = useState(0);
 
@@ -302,12 +305,35 @@ const UsersPage = () => {
 
   // Only the Status control filters the loaded results client-side; searching is
   // done server-side (or via the name scan) in runSmartSearch.
+  // When a plan-status filter is active, eager-load each loaded user's plan (from orders)
+  // so the filter is accurate, not partial. fetchPlanState is throttled (4 concurrent) +
+  // cached in userState — this also warms the PlanBadge cache. Ref-guarded to fetch once/id.
+  useEffect(() => {
+    if (planFilter === 'all') return undefined;
+    let live = true;
+    allUsers.forEach((u) => {
+      const id = u._id || u.id;
+      if (!id || planRequestedRef.current.has(id)) return;
+      planRequestedRef.current.add(id);
+      fetchPlanState(id).then((plan) => {
+        if (live && plan) setPlanByUser((prev) => ({ ...prev, [id]: plan.key }));
+      });
+    });
+    return () => { live = false; };
+  }, [planFilter, allUsers]);
+
   const filteredUsers = useMemo(() => {
     return allUsers.filter((u) => {
       if (statusFilter !== 'all' && resolveStatus(u) !== statusFilter) return false;
+      if (planFilter !== 'all' && planByUser[u._id || u.id] !== planFilter) return false;
       return true;
     });
-  }, [allUsers, statusFilter]);
+  }, [allUsers, statusFilter, planFilter, planByUser]);
+
+  // True while a plan filter is selected but some loaded users' plans haven't resolved yet
+  // (the list fills in progressively as orders load).
+  const planResolving = planFilter !== 'all'
+    && allUsers.some((u) => !((u._id || u.id) in planByUser));
 
   // A search is "active" when a server filter or a name scan is in effect — the
   // header then switches to a dedicated "Search Results" mode (only matches).
@@ -412,6 +438,25 @@ const UsersPage = () => {
             <option value="active">Active</option>
             <option value="blocked">Suspended</option>
           </select>
+
+          {/* Plan-status filter — plan is lazy-loaded per user, so selecting a plan
+              eager-loads orders to filter accurately (list fills in as they resolve). */}
+          <select
+            className={styles.filterSelect}
+            value={planFilter}
+            onChange={(e) => setPlanFilter(e.target.value)}
+            aria-label="Filter results by plan"
+          >
+            <option value="all">All plans</option>
+            {Object.values(PLAN_STATES).map((s) => (
+              <option key={s.key} value={s.key}>{s.label}</option>
+            ))}
+          </select>
+          {planResolving && (
+            <span className={styles.filterHint} style={{ fontSize: '0.78rem', color: '#6b7280', alignSelf: 'center' }}>
+              resolving plans…
+            </span>
+          )}
 
           <div className={styles.viewToggle}>
             <button className={`${styles.viewBtn} ${view === 'list' ? styles.viewBtnActive : ''}`} onClick={() => setView('list')}>List</button>
