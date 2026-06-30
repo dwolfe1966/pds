@@ -254,17 +254,23 @@ const PaymentPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
+    // Capture the submit click (true attempt intent). payment_start is page-view and
+    // payment_complete/_error only fire once validation passes + the BC call runs — so
+    // without this, every submit blocked by client-side validation is invisible. This +
+    // the per-field validation_error below make the card-step drop-off measurable
+    // (which field blocks, and clicks-vs-reached-BC).
+    track('payment_submit', { offer_key: SIGNUP_OFFER_KEY });
     // Bug #37 (2026-05-29): mark touched on submit-fail so the red border
     // appears on the specific field that's missing/invalid. Banner error
     // still fires for clarity, but the visual cue points at the offender.
-    if (!validation.billingFirstName) { setError('Please enter your first name.'); setTouched(t => ({ ...t, billingFirstName: true })); return; }
-    if (!validation.billingLastName) { setError('Please enter your last name.'); setTouched(t => ({ ...t, billingLastName: true })); return; }
-    if (!validation.cardNumber) { setError('Please enter a valid card number.'); setTouched(t => ({ ...t, cardNumber: true })); return; }
-    if (!validation.expiry) { setError('Please enter a valid expiration date (MM/YY, not in the past).'); setTouched(t => ({ ...t, expiry: true })); return; }
-    if (!validation.cvv) { setError('Please enter a valid CVV.'); setTouched(t => ({ ...t, cvv: true })); return; }
+    if (!validation.billingFirstName) { track('validation_error', { reason: 'billing_first_name', step: 'payment' }); setError('Please enter your first name.'); setTouched(t => ({ ...t, billingFirstName: true })); return; }
+    if (!validation.billingLastName) { track('validation_error', { reason: 'billing_last_name', step: 'payment' }); setError('Please enter your last name.'); setTouched(t => ({ ...t, billingLastName: true })); return; }
+    if (!validation.cardNumber) { track('validation_error', { reason: 'card_invalid', step: 'payment' }); setError('Please enter a valid card number.'); setTouched(t => ({ ...t, cardNumber: true })); return; }
+    if (!validation.expiry) { track('validation_error', { reason: 'expiry_invalid', step: 'payment' }); setError('Please enter a valid expiration date (MM/YY, not in the past).'); setTouched(t => ({ ...t, expiry: true })); return; }
+    if (!validation.cvv) { track('validation_error', { reason: 'cvv_invalid', step: 'payment' }); setError('Please enter a valid CVV.'); setTouched(t => ({ ...t, cvv: true })); return; }
     // Partner bug 17: copy previously said "we use your billing address on file"
     // even though it wasn't collected. ZIP is now explicitly required.
-    if (!validation.billingZip) { setError('Please enter a valid 5-digit ZIP code.'); setTouched(t => ({ ...t, billingZip: true })); setBillingOpen(true); return; }
+    if (!validation.billingZip) { track('validation_error', { reason: 'zip_invalid', step: 'payment' }); setError('Please enter a valid 5-digit ZIP code.'); setTouched(t => ({ ...t, billingZip: true })); setBillingOpen(true); return; }
     setError('');
     setLoading(true);
     setPaying(true);
