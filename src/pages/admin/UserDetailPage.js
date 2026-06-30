@@ -1354,6 +1354,7 @@ const UserDetailPage = () => {
           </div>
 
           <button
+            title={CSR_TERMS.suspend}
             className={`${styles.suspendBtn} ${isSuspended ? styles.unsuspend : styles.suspend}`}
             onClick={handleSuspend}
             disabled={suspending}

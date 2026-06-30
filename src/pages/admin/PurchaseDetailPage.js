@@ -4,6 +4,7 @@ import api from '../../api';
 import { getOrderCollected, getOrderRefunded } from '../../utils/orderFinancials';
 import styles from './PurchaseDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
+import { CSR_TERMS } from './userState';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -350,7 +351,7 @@ const PurchaseDetailPage = () => {
                     onChange={(e) => setRefundAmount(e.target.value)}
                     placeholder="0.00"
                   />
-                  <button className={styles.refundBtn} onClick={handleRefund} disabled={acting}>
+                  <button title={CSR_TERMS.refund} className={styles.refundBtn} onClick={handleRefund} disabled={acting}>
                     {acting ? '…' : 'Refund'}
                   </button>
                 </div>
@@ -359,6 +360,7 @@ const PurchaseDetailPage = () => {
 
                 {!canceled ? (
                   <button
+                    title={CSR_TERMS.cancel}
                     className={`${styles.actionBtn} ${styles.cancelBtn}`}
                     onClick={() => handleCancel(true)}
                     disabled={acting}
@@ -367,6 +369,7 @@ const PurchaseDetailPage = () => {
                   </button>
                 ) : (
                   <button
+                    title={CSR_TERMS.cancel}
                     className={`${styles.actionBtn} ${styles.reactivateBtn}`}
                     onClick={() => handleCancel(false)}
                     disabled={acting}
