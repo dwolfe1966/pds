@@ -13,6 +13,7 @@ import SearchDetailPreviewVariantB from './SearchDetailPreviewVariantB';
 import SearchDetailPreviewVariantC from './SearchDetailPreviewVariantC';
 import SearchDetailPreviewVariantD from './SearchDetailPreviewVariantD';
 import SearchDetailPreviewVariantE from './SearchDetailPreviewVariantE';
+import SearchDetailPreviewVariantG from './SearchDetailPreviewVariantG';
 import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -60,7 +61,7 @@ const SearchDetailPreviewPage = () => {
   const campaign = useCampaign();
   // Default is the v1 layout, with the campaign config able to override per
   // partner. Explicit `?v=a|b|c|d|e` URL wins over both.
-  const MARKETING_VARIANTS = ['a', 'b', 'c', 'd', 'e'];
+  const MARKETING_VARIANTS = ['a', 'b', 'c', 'd', 'e', 'g'];
   const campaignVariant = (campaign?.detail?.variant || '').toLowerCase();
   const variant = MARKETING_VARIANTS.includes(queryV)
     ? queryV
@@ -235,6 +236,10 @@ const SearchDetailPreviewPage = () => {
 
   if (variant === 'e') {
     return <SearchDetailPreviewVariantE person={person} id={id} />;
+  }
+
+  if (variant === 'g') {
+    return <SearchDetailPreviewVariantG person={person} id={id} />;
   }
 
   // ─── Inline signup form JSX — inlined here, NOT a sub-component ──────────────
