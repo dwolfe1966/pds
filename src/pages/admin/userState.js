@@ -16,6 +16,23 @@ export const PLAN_STATES = {
   expired:    { key: 'expired',    label: 'Expired',    color: '#7f1d1d', bg: '#fee2e2' },
 };
 
+// Hover-tooltip text for the status terms + actions — single source, mirrors
+// docs/admin/csr-glossary.md. Reused as `title` tooltips on badges/buttons so the in-app
+// definitions never drift from the glossary. Plan keys match PLAN_STATES (CSR_TERMS[plan.key]).
+export const CSR_TERMS = {
+  active:     'Account is active — the user can log in normally.',
+  suspended:  "Account shut down — the user can't log in (BC “blocked”). About access, not billing. Reversible via Unsuspend.",
+  free:       'Signed up but no payment collected — not a paying customer.',
+  trial:      'Active paid order, still in the trial — paid the trial price, not yet billed a full recurring cycle.',
+  subscriber: 'Active recurring subscription — a full cycle has billed.',
+  cancelled:  "Subscription set to stop — won't renew, no future charges — but keeps access until the current paid period ends (cancel-at-period-end).",
+  expired:    'Subscription has ended — no active paid order remains.',
+  suspend:    "Lock the account (user can't log in). Reversible via Unsuspend. Does not stop billing.",
+  cancel:     "Stop the subscription's future billing (cancel-at-period-end). Access continues until period end. Reversible via Reactivate.",
+  void:       'Kill a charge before it settles — no money moves.',
+  refund:     'Return money on a charge that already settled.',
+};
+
 function orderCollected(o) { return Number(o?.transient?.amount?.collected ?? 0); }
 function orderIsPaid(o) {
   if (orderCollected(o) > 0) return true;

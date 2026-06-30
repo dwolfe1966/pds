@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { isValidEmail } from '../../utils/email';
 import styles from './UsersPage.module.css';
-import { fetchPlanState, PLAN_STATES } from './userState';
+import { fetchPlanState, PLAN_STATES, CSR_TERMS } from './userState';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -35,8 +35,8 @@ function resolveStatus(u) {
 
 function StatusBadge({ status }) {
   const s = (status || '').toLowerCase();
-  if (s === 'active') return <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
-  if (s === 'suspended' || s === 'blocked') return <span className={`${styles.badge} ${styles.badgeSuspended}`}>Suspended</span>;
+  if (s === 'active') return <span title={CSR_TERMS.active} className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
+  if (s === 'suspended' || s === 'blocked') return <span title={CSR_TERMS.suspended} className={`${styles.badge} ${styles.badgeSuspended}`}>Suspended</span>;
   return <span className={`${styles.badge} ${styles.badgeUnknown}`}>Unknown</span>;
 }
 
@@ -52,7 +52,7 @@ function PlanBadge({ userId }) {
   }, [userId]);
   const base = { padding: '2px 9px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' };
   if (!plan) return <span className={styles.badge} style={{ ...base, opacity: 0.4 }}>…</span>;
-  return <span className={styles.badge} style={{ ...base, color: plan.color, background: plan.bg }}>{plan.label}</span>;
+  return <span title={CSR_TERMS[plan.key]} className={styles.badge} style={{ ...base, color: plan.color, background: plan.bg }}>{plan.label}</span>;
 }
 
 function SkeletonCard() {

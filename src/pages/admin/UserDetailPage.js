@@ -4,7 +4,7 @@ import api from '../../api';
 import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } from '../../utils/orderFinancials';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
-import { getPlanState, isSuspendedStatus } from './userState';
+import { getPlanState, isSuspendedStatus, CSR_TERMS } from './userState';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -1266,11 +1266,15 @@ const UserDetailPage = () => {
           <p className={styles.profileEmail}>{user?.email || '—'}</p>
 
           <div className={styles.badgeRow}>
-            <span className={isSuspended ? styles.badgeSuspended : styles.badgeActive}>
+            <span
+              title={isSuspended ? CSR_TERMS.suspended : CSR_TERMS.active}
+              className={isSuspended ? styles.badgeSuspended : styles.badgeActive}
+            >
               {isSuspended ? 'Suspended' : 'Active'}
             </span>
             {plan && (
               <span
+                title={CSR_TERMS[plan.key]}
                 className={styles.badge}
                 style={{ color: plan.color, background: plan.bg, padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}
               >
