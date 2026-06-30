@@ -5,6 +5,7 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { track } from '../../services/trackingService';
 import { useBrand } from '../../services/brand';
 import US_STATES from './usStates';
+import ColorLandingFooter from './ColorLandingFooter';
 
 /**
  * Name landing v7 — "Trust-blue" design exploration.
@@ -87,7 +88,7 @@ const NameSearchLandingV7Page = () => {
       {/* Blue hero band */}
       <div style={{ background: `linear-gradient(135deg, ${P.blue} 0%, ${P.blueDark} 100%)`, color: '#fff', padding: '1.6rem 1.1rem 3.5rem', textAlign: 'center' }}>
         <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, opacity: 0.85, letterSpacing: '0.04em' }}>🔍 {brand.name.toUpperCase()} PEOPLE SEARCH</p>
-        <h1 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1 }}>Find Anyone. Know More.</h1>
+        <h1 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1, color: '#ffffff' }}>Find Anyone. Know More.</h1>
         <p style={{ margin: 0, fontSize: '0.95rem', opacity: 0.92, maxWidth: 480, marginInline: 'auto' }}>
           Confidentially look up yourself, family, an old classmate, or an unknown caller.
         </p>
@@ -177,6 +178,7 @@ const NameSearchLandingV7Page = () => {
           {step === 'final-search' && <Searching title="Searching our database…" P={P} items={['Public records', 'Contact info', 'Court &amp; property records', 'Relatives &amp; associates']} />}
         </div>
       </div>
+      <ColorLandingFooter bg={P.blueDark} fg="rgba(255,255,255,0.78)" accent="#cfe6f2" />
     </main>
   );
 };

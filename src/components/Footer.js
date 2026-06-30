@@ -1,11 +1,16 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import styles from './Footer.module.css';
 import BrandLogo from './BrandLogo';
 import { useBrand } from '../services/brand';
+import { SELF_CHROME_PREFIXES } from './Header';
 
 const Footer = () => {
   const brand = useBrand();
+  const { pathname } = useLocation();
+  // Self-chrome color landings render their own in-palette footer (ColorLandingFooter);
+  // suppress the green global footer there so it doesn't clash with the landing's scheme.
+  if (SELF_CHROME_PREFIXES.some((p) => pathname.startsWith(p))) return null;
   return (
     <footer className={styles.footer}>
       <div className={styles.footerContent}>
