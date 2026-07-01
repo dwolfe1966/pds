@@ -1,109 +1,91 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSignup } from '../../hooks/useSignup';
-import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
 
 /**
- * Variant J — "Specificity/proof" (recs R5 + R7).
- * Hypothesis: showing the real DATA SHAPE with only payload characters masked (Spokeo's
- * winning move) converts better than counts alone. Renders char-masked rows ONLY when the
- * BC-derived person object carries partial values (_phonePartial/_emailPartial/_addressPartial
- * or a _relatives name list); otherwise degrades to honest counts — never fabricates a value.
- * Form stays at top. Tracking unchanged (parent teaser_view + submitSignup).
+ * Variant J — INMATE-focused signup teaser, "dark premium" palette (visually matches
+ * /name/landing/v3b). Self-contained inline styling (charcoal + amber). Form-first; gated
+ * categories are inmate-relevant. Tracking unchanged (parent teaser_view; submitSignup →
+ * signup_complete). Honesty: real name/age/location; inmate categories not fabricated.
  * Props: person, id
  */
-const maskTail = (s, keep = 0) => (typeof s === 'string' && s ? s : '');
+const P = { bg0: '#0f1629', bg1: '#16213e', panel: '#1e2a47', amber: '#f59e0b', amberDk: '#d97706', ink: '#eef2f9', mut: '#9aa7bd', line: 'rgba(255,255,255,0.12)' };
 
 const SearchDetailPreviewVariantJ = ({ person, id }) => {
   const brand = useBrand();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { submit: submitSignup, loading, error, success } = useSignup();
-  const firstName = (person.fullName || 'this person').split(/\s+/)[0];
+  const firstName = (person.fullName || 'this inmate').split(/\s+/)[0];
   const onSubmit = (e) => { e.preventDefault(); submitSignup({ email, password, optin: true, selectedPersonId: id || null }); };
+  const scrollToForm = (e) => { if (e) e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); };
 
-  // Build proof rows from REAL partials when present; mask only the payload characters.
-  const rows = [];
-  if (person._phonePartial) rows.push({ icon: '📞', label: 'Phone', value: `${maskTail(person._phonePartial)}••••`, tail: person._phoneCount });
-  if (person._emailPartial) rows.push({ icon: '✉️', label: 'Email', value: `${maskTail(person._emailPartial)}••••@${person._emailDomain || '•••'}`, tail: person._emailCount });
-  if (person._addressPartial) rows.push({ icon: '🏠', label: 'Address', value: `••• ${maskTail(person._addressPartial)}`, tail: person._addressCount });
-  const relatives = Array.isArray(person._relatives) ? person._relatives.slice(0, 4) : [];
-  const hasRealProof = rows.length > 0 || relatives.length > 0;
+  const input = { width: '100%', boxSizing: 'border-box', padding: '0.85rem 0.95rem', fontSize: '1rem', border: `1.5px solid ${P.line}`, borderRadius: 10, outline: 'none', background: 'rgba(255,255,255,0.06)', color: P.ink };
+  const btn = { width: '100%', padding: '0.95rem', fontSize: '1.02rem', fontWeight: 800, color: '#1a1206', background: `linear-gradient(180deg, ${P.amber}, ${P.amberDk})`, border: 'none', borderRadius: 10, cursor: 'pointer', boxShadow: '0 6px 18px rgba(245,158,11,0.35)' };
+  const label = { display: 'block', fontSize: '0.78rem', fontWeight: 700, color: P.mut, margin: '0 0 0.35rem' };
+
+  const cats = [
+    { icon: '🏛️', label: 'Current facility & location' },
+    { icon: '📋', label: 'Booking & arrest records' },
+    { icon: '⚖️', label: 'Charges & case details' },
+    { icon: '📸', label: 'Mugshots' },
+    { icon: '📅', label: 'Release status & dates' },
+  ];
 
   return (
-    <main className={styles.main} data-no-nav="true" style={{ background: '#f7f5ff', minHeight: '100vh' }}>
-      <div className={styles.miniHeader}>
-        <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
-        <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
+    <main style={{ minHeight: '100vh', background: `linear-gradient(180deg, ${P.bg0} 0%, ${P.bg1} 100%)`, color: P.ink }}>
+      {/* Dark mini header */}
+      <div style={{ padding: '0.7rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', borderBottom: `1px solid ${P.line}` }}>
+        <Link to="/name/search-result" style={{ color: P.mut, textDecoration: 'none' }}>← Back to Results</Link>
+        <span style={{ fontWeight: 700, color: P.amber }}>🔒 {brand.name}.ai</span>
       </div>
 
-      <div style={{ margin: '1rem 1rem 0.4rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#111827' }}>{person.fullName}</h1>
+      <div style={{ maxWidth: 500, margin: '0 auto', padding: '1rem 1rem 5rem' }}>
+        <h1 style={{ margin: '0.25rem 0 0.1rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>{person.fullName}</h1>
         {(person.ageRange || person.location) && (
-          <p style={{ margin: '0.15rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>
+          <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: P.mut }}>
             {person.ageRange ? `Age ${person.ageRange}` : ''}{person.ageRange && person.location ? ' · ' : ''}{person.location || ''}
           </p>
         )}
-      </div>
 
-      <div className={styles.signupFormCard} id="signup-form" style={{ background: 'linear-gradient(160deg,#5b21b6,#2e1065)', borderTop: '4px solid #c4b5fd' }}>
-        <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
-        <h2 className={styles.signupFormTitle} style={{ color: '#ffffff' }}>Unlock {firstName}&apos;s full report</h2>
-        <p className={styles.signupFormSubtitle}>The records below are real — sign up to reveal them in full.</p>
-        {success ? (<div className={styles.signupSuccessMsg}>✅ Account created! Redirecting…</div>) : (
-          <form onSubmit={onSubmit} noValidate>
-            <div className={styles.formGroup}>
-              <label className={styles.signupFormLabel} htmlFor="vj-email">Email address</label>
-              <input id="vj-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={styles.signupFormInput} placeholder="you@email.com" required autoComplete="email" />
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.signupFormLabel} htmlFor="vj-password">Create a password</label>
-              <input id="vj-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={styles.signupFormInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
-            </div>
-            {error && <div className={styles.formError}>{error === 'already_exists' ? (<>Account exists. <Link to="/login" className={styles.loginLink}>Log in</Link></>) : error}</div>}
-            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#8b5cf6' }}>{loading ? 'Creating account…' : 'Reveal Full Report →'}</button>
-            <p className={styles.loginLinkWrap}>Already have an account? <Link to="/login" className={styles.loginLink}>Sign in</Link></p>
-          </form>
-        )}
-        <div className={styles.trustRow}><span>🔒 SSL Encrypted</span><span>🚫 No spam</span></div>
-      </div>
+        {/* Form (top) */}
+        <div id="signup-form" style={{ background: P.bg1, border: `1px solid ${P.line}`, borderTop: `4px solid ${P.amber}`, borderRadius: 14, padding: '1.4rem 1.25rem' }}>
+          <div style={{ textAlign: 'center', fontSize: '1.5rem', marginBottom: '0.25rem' }}>🔓</div>
+          <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.15rem', fontWeight: 800, color: P.ink, textAlign: 'center' }}>Unlock {firstName}&apos;s inmate record</h2>
+          <p style={{ margin: '0 0 1rem', fontSize: '0.86rem', color: P.mut, textAlign: 'center' }}>Facility, booking, charges &amp; release status.</p>
+          {success ? (<div style={{ textAlign: 'center', color: P.amber, fontWeight: 700 }}>✅ Account created! Redirecting…</div>) : (
+            <form onSubmit={onSubmit} noValidate>
+              <label style={label} htmlFor="vj-email">Email address</label>
+              <input id="vj-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={{ ...input, marginBottom: '0.75rem' }} placeholder="you@email.com" required autoComplete="email" />
+              <label style={label} htmlFor="vj-password">Create a password</label>
+              <input id="vj-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ ...input, marginBottom: '1rem' }} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
+              {error && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{error === 'already_exists' ? (<>Account exists. <Link to="/login" style={{ color: P.amber }}>Log in</Link></>) : error}</p>}
+              <button type="submit" style={btn} disabled={loading}>{loading ? 'Creating account…' : '🔓 Unlock Record →'}</button>
+            </form>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.8rem', fontSize: '0.72rem', color: P.mut }}>
+            <span>🔒 SSL Encrypted</span><span>🚫 No spam</span><span>✓ Cancel anytime</span>
+          </div>
+        </div>
 
-      {/* Proof: masked-real rows (R5) when available, else honest counts */}
-      <div style={{ margin: '0.5rem 1rem 5rem' }}>
-        {hasRealProof ? (
-          <>
-            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', margin: '0 0 0.5rem' }}>Found for {firstName} (sign up to reveal):</p>
-            {rows.map((r) => (
-              <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0.75rem', background: '#f9fafb', border: '1px solid #f0f1f3', borderRadius: '0.5rem', marginBottom: '0.4rem', fontSize: '0.85rem' }}>
-                <span style={{ color: '#374151' }}>{r.icon} {r.label}: <span style={{ fontFamily: 'monospace', letterSpacing: '0.04em' }}>{r.value}</span></span>
-                {r.tail && <span style={{ fontSize: '0.72rem', color: '#92400e' }}>🔒 {r.tail}</span>}
-              </div>
-            ))}
-            {relatives.length > 0 && (
-              <div style={{ padding: '0.55rem 0.75rem', background: '#f9fafb', border: '1px solid #f0f1f3', borderRadius: '0.5rem', fontSize: '0.85rem' }}>
-                👥 Relatives: {relatives.join(', ')} <span style={{ color: '#92400e' }}>🔒 +details</span>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <p style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', margin: '0 0 0.5rem' }}>In {firstName}&apos;s report:</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-              {[['📞', person._phoneCount, 'phone numbers'], ['✉️', person._emailCount, 'emails'], ['🏠', person._addressCount, 'addresses'], ['👥', person._relativeCount, 'relatives']].map(([icon, c, l]) => (
-                <span key={l} style={{ fontSize: '0.78rem', color: '#374151', background: '#f9fafb', border: '1px solid #f0f1f3', borderRadius: 999, padding: '0.25rem 0.7rem' }}>{icon} {c ? <strong>{c} </strong> : ''}{l}</span>
-              ))}
+        {/* Gated inmate categories */}
+        <p style={{ fontSize: '0.8rem', fontWeight: 800, color: P.amber, margin: '1.1rem 0 0.5rem' }}>{firstName}&apos;s report includes:</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          {cats.map((c) => (
+            <div key={c.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0.75rem', background: P.panel, border: `1px solid ${P.line}`, borderRadius: 10, fontSize: '0.86rem', color: P.ink }}>
+              <span>{c.icon} {c.label}</span>
+              <a href="#signup-form" onClick={scrollToForm} style={{ color: P.amber, fontWeight: 700, fontSize: '0.76rem', textDecoration: 'none' }}>🔒 unlock »</a>
             </div>
-          </>
-        )}
-        <p style={{ fontSize: '0.66rem', color: '#9ca3af', margin: '0.6rem 0 0', lineHeight: 1.4 }}>
+          ))}
+        </div>
+
+        <p style={{ fontSize: '0.66rem', color: P.mut, margin: '1rem 0 0', lineHeight: 1.4 }}>
           {brand.name} is not a consumer reporting agency under the FCRA. Not for employment, tenant, or credit screening.
         </p>
       </div>
 
-      <div className={styles.stickyMobileCta}>
-        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={(e) => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ background: '#7c3aed' }}>🔓 Reveal Full Report →</a>
-      </div>
+      <a href="#signup-form" onClick={scrollToForm} style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: `linear-gradient(180deg, ${P.amber}, ${P.amberDk})`, color: '#1a1206', textAlign: 'center', padding: '0.9rem', fontWeight: 800, textDecoration: 'none' }}>🔓 Unlock Inmate Record — Create Account →</a>
     </main>
   );
 };
