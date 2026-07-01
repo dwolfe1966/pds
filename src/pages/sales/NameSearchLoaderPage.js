@@ -9,6 +9,7 @@ import { appendSearch } from '../../services/visitorSearchLog';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './LoaderPage.module.css';
 import { useBrand } from '../../services/brand';
+import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 
 const SCAN_PHASES = [
   'Searching 247 million records\u2026',
@@ -23,6 +24,7 @@ const SCAN_PHASES = [
  */
 const NameSearchLoaderPage = () => {
   const brand = useBrand();
+  const theme = useFunnelTheme(); // funnel palette (blue/dark) carried from the landing; null = green
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -168,13 +170,13 @@ const NameSearchLoaderPage = () => {
   }, [firstName, lastName, middleName, age, city, state, navigate]);
 
   return (
-    <main className={styles.loaderMain}>
+    <main className={styles.loaderMain} style={theme ? { background: theme.pageBg } : undefined}>
       <div className={styles.loaderCard}>
-        <div className={styles.spinner} />
+        <div className={styles.spinner} style={theme ? { borderTopColor: theme.accent } : undefined} />
         <h2 className={styles.heading}>Searching</h2>
         <p className={styles.phaseMessage}>{SCAN_PHASES[phaseIndex]}</p>
         <div className={styles.progressBarWrap}>
-          <span className={styles.progressBarFill} />
+          <span className={styles.progressBarFill} style={theme ? { background: theme.accent } : undefined} />
         </div>
         <div className={styles.dataPoints}>
           <span>Possible relatives</span>

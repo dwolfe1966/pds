@@ -4,7 +4,7 @@ import styles from './Footer.module.css';
 import BrandLogo from './BrandLogo';
 import { useBrand } from '../services/brand';
 import { useCampaign } from '../context/CampaignContext';
-import { SELF_CHROME_PREFIXES } from './Header';
+import { SELF_CHROME_PREFIXES, THEMED_FUNNEL_PREFIXES, funnelThemeActive } from './Header';
 
 // Signup-teaser variants that render their own in-palette footer (self-contained,
 // inmate-focused). The green global footer is suppressed for these so it doesn't clash.
@@ -18,6 +18,9 @@ const Footer = () => {
   // Self-chrome color landings render their own in-palette footer (ColorLandingFooter);
   // suppress the green global footer there so it doesn't clash with the landing's scheme.
   if (SELF_CHROME_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+  // Themed funnel pages (loader/results): suppress the green footer when a funnel theme is
+  // active so it doesn't clash with the themed page. Green funnels keep it.
+  if (funnelThemeActive() && THEMED_FUNNEL_PREFIXES.some((p) => pathname.startsWith(p))) return null;
   // Teaser pages (/search/:id): suppress the green footer only for variants that ship their
   // own (i/j). Other variants (incl. the live VariantA) keep the green footer's legal links.
   if (pathname.startsWith('/search/') && pathname !== '/search/all') {

@@ -12,9 +12,13 @@ import { track, persistFunnelEntry } from '../services/trackingService';
  *   to a vertical LP — avoids a spurious `home/home` landing_view polluting the
  *   per-page funnel reporting before the real vertical landing_view fires).
  */
-export function useLandingTrack(searchType, variant, enabled = true) {
+export function useLandingTrack(searchType, variant, enabled = true, theme = null) {
   useEffect(() => {
     if (!enabled) return;
+    // Funnel theme carries the landing's palette through the shared funnel pages
+    // (loader → results → SUP → payment). Set on EVERY landing so a themed entry can't
+    // leak onto a later green funnel — un-themed landings clear it back to default (green).
+    try { sessionStorage.setItem('funnel.theme', theme || ''); } catch {}
     persistFunnelEntry(searchType, variant);
     track('landing_view', { search_type: searchType, variant });
   }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps

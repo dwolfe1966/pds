@@ -8,7 +8,7 @@ import { gtmSelectContent } from '../services/gtm';
 import { setSearchTarget as gtmSetSearchTarget } from '../services/gtmContext';
 import styles from './ResultCard.module.css';
 
-const ResultCard = ({ result, onClick, isMember = false }) => {
+const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
   const navigate = useNavigate();
   const { token, isPaid } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -135,13 +135,13 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           width: '48px',
           height: '48px',
           borderRadius: '50%',
-          backgroundColor: '#ecfdf5',
-          border: '2px solid #d1fae5',
+          backgroundColor: theme ? (theme.onDark ? 'rgba(245,158,11,0.14)' : '#e6f3fa') : '#ecfdf5',
+          border: `2px solid ${theme ? theme.accent : '#d1fae5'}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          color: '#0d5d2f',
+          color: theme ? theme.accent : '#0d5d2f',
           fontWeight: 700,
           fontSize: '0.875rem',
           letterSpacing: '0.02em'
@@ -187,6 +187,7 @@ const ResultCard = ({ result, onClick, isMember = false }) => {
           onClick={handleViewDetails}
           className={styles.cardButton}
           disabled={loading}
+          style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
         >
           {loading ? 'Loading...' : 'View Full Report →'}
         </button>

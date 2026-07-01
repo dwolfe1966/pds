@@ -18,7 +18,7 @@ const getStepIndex = (s) => ({ name: 1, location: 2, details: 3, confirm: 4 }[s]
 
 const NameSearchLandingV3aPage = () => {
   const brand = useBrand();
-  useLandingTrack('name', 'v3a');
+  useLandingTrack('name', 'v3a', true, 'blue');
   const navigate = useNavigate();
   const location = useLocation();
   const q = useMemo(() => new URLSearchParams(location.search), [location.search]);

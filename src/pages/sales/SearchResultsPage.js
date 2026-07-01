@@ -11,6 +11,7 @@ import { readThinMatch } from '../../services/thinMatch';
 import { useCampaign } from '../../context/CampaignContext';
 import styles from './SearchResultsPage.module.css';
 import { useBrand } from '../../services/brand';
+import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 
 /**
  * Displays search results for public searches on the marketing funnel.
@@ -19,6 +20,7 @@ import { useBrand } from '../../services/brand';
  */
 const SalesSearchResultsPage = () => {
   const brand = useBrand();
+  const theme = useFunnelTheme(); // funnel palette carried from the landing; null = green
   const campaign = useCampaign(); // bug #51: shN drives thin-match vs no-records
   const location = useLocation();
   const navigate = useNavigate();
@@ -206,17 +208,17 @@ const SalesSearchResultsPage = () => {
   };
 
   return (
-    <main className={styles.main}>
+    <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
       <div className={styles.contentContainer}>
         {/* Header Section */}
         <div className={styles.header}>
-          <h1 className={styles.title}>
+          <h1 className={styles.title} style={theme ? { color: theme.ink } : undefined}>
             {results.length > 0 && countLabel
               ? `We found ${countLabel} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`
               : 'Search Results'}
           </h1>
           {(searchQuery.firstName || query) && (
-            <p className={styles.searchQuery}>
+            <p className={styles.searchQuery} style={theme ? { color: theme.mut } : undefined}>
               Results for: <strong>{searchQuery.firstName || query} {searchQuery.lastName}</strong>
               {searchQuery.state && <span> • {searchQuery.state}</span>}
             </p>
@@ -317,7 +319,7 @@ const SalesSearchResultsPage = () => {
                         ⭐ Most Likely Match
                       </div>
                     )}
-                    <ResultCard result={result} />
+                    <ResultCard result={result} theme={theme} />
                   </div>
                   {index === 2 && sortedResults.length > 3 && (
                     <div style={{
@@ -366,9 +368,9 @@ const SalesSearchResultsPage = () => {
                   style={{
                     padding: '0.75rem 2rem',
                     borderRadius: '0.375rem',
-                    border: '2px solid #0d5d2f',
+                    border: `2px solid ${theme ? theme.accent : '#0d5d2f'}`,
                     background: '#fff',
-                    color: '#0d5d2f',
+                    color: theme ? theme.accent : '#0d5d2f',
                     fontWeight: 600,
                     fontSize: '1rem',
                     cursor: loadingMore ? 'wait' : 'pointer',
