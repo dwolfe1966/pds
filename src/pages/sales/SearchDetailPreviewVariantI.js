@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSignup } from '../../hooks/useSignup';
 import { useBrand } from '../../services/brand';
+import ColorLandingFooter from './ColorLandingFooter';
 
 /**
  * Variant I — INMATE-focused signup teaser, "trust-blue" palette (visually matches
@@ -86,6 +87,9 @@ const SearchDetailPreviewVariantI = ({ person, id }) => {
           {brand.name} is not a consumer reporting agency under the FCRA. Not for employment, tenant, or credit screening.
         </p>
       </div>
+
+      <ColorLandingFooter bg={P.blueDark} fg="rgba(255,255,255,0.78)" accent="#cfe6f2" />
+      <div style={{ height: 60 }} aria-hidden="true" />
 
       <a href="#signup-form" onClick={scrollToForm} style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: P.orange, color: '#fff', textAlign: 'center', padding: '0.9rem', fontWeight: 800, textDecoration: 'none', boxShadow: '0 -4px 14px rgba(0,0,0,0.15)' }}>🔓 Unlock Inmate Record — Create Account →</a>
     </main>

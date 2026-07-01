@@ -1,16 +1,29 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import styles from './Footer.module.css';
 import BrandLogo from './BrandLogo';
 import { useBrand } from '../services/brand';
+import { useCampaign } from '../context/CampaignContext';
 import { SELF_CHROME_PREFIXES } from './Header';
+
+// Signup-teaser variants that render their own in-palette footer (self-contained,
+// inmate-focused). The green global footer is suppressed for these so it doesn't clash.
+const SELF_FOOTER_TEASER_VARIANTS = ['i', 'j'];
 
 const Footer = () => {
   const brand = useBrand();
   const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
+  const campaign = useCampaign();
   // Self-chrome color landings render their own in-palette footer (ColorLandingFooter);
   // suppress the green global footer there so it doesn't clash with the landing's scheme.
   if (SELF_CHROME_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+  // Teaser pages (/search/:id): suppress the green footer only for variants that ship their
+  // own (i/j). Other variants (incl. the live VariantA) keep the green footer's legal links.
+  if (pathname.startsWith('/search/') && pathname !== '/search/all') {
+    const v = (searchParams.get('v') || campaign?.detail?.variant || '').toLowerCase();
+    if (SELF_FOOTER_TEASER_VARIANTS.includes(v)) return null;
+  }
   return (
     <footer className={styles.footer}>
       <div className={styles.footerContent}>
