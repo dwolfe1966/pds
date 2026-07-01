@@ -32,7 +32,7 @@ const SearchDetailPreviewVariantJ = ({ person, id }) => {
   const hasRealProof = rows.length > 0 || relatives.length > 0;
 
   return (
-    <main className={styles.main} data-no-nav="true">
+    <main className={styles.main} data-no-nav="true" style={{ background: '#f7f5ff', minHeight: '100vh' }}>
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
         <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
@@ -47,9 +47,9 @@ const SearchDetailPreviewVariantJ = ({ person, id }) => {
         )}
       </div>
 
-      <div className={styles.signupFormCard} id="signup-form">
+      <div className={styles.signupFormCard} id="signup-form" style={{ background: '#1e293b', borderTop: '4px solid #a78bfa' }}>
         <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
-        <h2 className={styles.signupFormTitle}>Unlock {firstName}&apos;s full report</h2>
+        <h2 className={styles.signupFormTitle} style={{ color: '#ffffff' }}>Unlock {firstName}&apos;s full report</h2>
         <p className={styles.signupFormSubtitle}>The records below are real — sign up to reveal them in full.</p>
         {success ? (<div className={styles.signupSuccessMsg}>✅ Account created! Redirecting…</div>) : (
           <form onSubmit={onSubmit} noValidate>
@@ -62,7 +62,7 @@ const SearchDetailPreviewVariantJ = ({ person, id }) => {
               <input id="vj-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={styles.signupFormInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
             </div>
             {error && <div className={styles.formError}>{error === 'already_exists' ? (<>Account exists. <Link to="/login" className={styles.loginLink}>Log in</Link></>) : error}</div>}
-            <button type="submit" className={styles.signupSubmitBtn} disabled={loading}>{loading ? 'Creating account…' : 'Reveal Full Report →'}</button>
+            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#7c3aed' }}>{loading ? 'Creating account…' : 'Reveal Full Report →'}</button>
             <p className={styles.loginLinkWrap}>Already have an account? <Link to="/login" className={styles.loginLink}>Sign in</Link></p>
           </form>
         )}
@@ -102,7 +102,7 @@ const SearchDetailPreviewVariantJ = ({ person, id }) => {
       </div>
 
       <div className={styles.stickyMobileCta}>
-        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={(e) => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }}>🔓 Reveal Full Report →</a>
+        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={(e) => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ background: '#7c3aed' }}>🔓 Reveal Full Report →</a>
       </div>
     </main>
   );

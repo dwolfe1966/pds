@@ -27,7 +27,7 @@ const SearchDetailPreviewVariantI = ({ person, id }) => {
   };
 
   return (
-    <main className={styles.main} data-no-nav="true">
+    <main className={styles.main} data-no-nav="true" style={{ background: '#fff5f6', minHeight: '100vh' }}>
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
         <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
@@ -43,9 +43,9 @@ const SearchDetailPreviewVariantI = ({ person, id }) => {
       </div>
 
       {/* Email-first form (top) */}
-      <div className={styles.signupFormCard} id="signup-form">
+      <div className={styles.signupFormCard} id="signup-form" style={{ background: '#1e293b', borderTop: '4px solid #fb7185' }}>
         <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
-        <h2 className={styles.signupFormTitle}>See {firstName}&apos;s report</h2>
+        <h2 className={styles.signupFormTitle} style={{ color: '#ffffff' }}>See {firstName}&apos;s report</h2>
         <p className={styles.signupFormSubtitle}>Enter your email to create your free account and continue.</p>
         {success ? (
           <div className={styles.signupSuccessMsg}>✅ Account created! Redirecting…</div>
@@ -62,7 +62,7 @@ const SearchDetailPreviewVariantI = ({ person, id }) => {
               </div>
             )}
             {error && <div className={styles.formError}>{error === 'already_exists' ? (<>Account exists. <Link to="/login" className={styles.loginLink}>Log in</Link></>) : error}</div>}
-            <button type="submit" className={styles.signupSubmitBtn} disabled={loading}>
+            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#e11d48' }}>
               {loading ? 'Creating account…' : (stage === 1 ? 'Continue →' : 'Create My Account →')}
             </button>
             <p className={styles.loginLinkWrap}>Already have an account? <Link to="/login" className={styles.loginLink}>Sign in</Link></p>
@@ -85,7 +85,7 @@ const SearchDetailPreviewVariantI = ({ person, id }) => {
       </div>
 
       <div className={styles.stickyMobileCta}>
-        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={(e) => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }}>🔓 Unlock {firstName}&apos;s Report →</a>
+        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={(e) => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ background: '#e11d48' }}>🔓 Unlock {firstName}&apos;s Report →</a>
       </div>
     </main>
   );

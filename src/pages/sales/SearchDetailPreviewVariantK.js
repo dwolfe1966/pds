@@ -34,7 +34,7 @@ const SearchDetailPreviewVariantK = ({ person, id }) => {
 
   if (!revealed) {
     return (
-      <main className={styles.main} data-no-nav="true">
+      <main className={styles.main} data-no-nav="true" style={{ background: '#f0fdfa', minHeight: '100vh' }}>
         <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔎</div>
           <p style={{ fontSize: '1.05rem', fontWeight: 700, color: '#111827', margin: '0 0 0.25rem', textAlign: 'center' }}>
@@ -42,16 +42,16 @@ const SearchDetailPreviewVariantK = ({ person, id }) => {
           </p>
           <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0 0 1.25rem' }}>Searching public records</p>
           <div style={{ width: '220px', height: '8px', background: '#e5e7eb', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#1a7a42,#0d5d2f)', transition: 'width 0.18s ease' }} />
+            <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#14b8a6,#0d9488)', transition: 'width 0.18s ease' }} />
           </div>
-          <p style={{ fontSize: '0.8rem', color: '#1a7a42', fontWeight: 700, margin: '0.5rem 0 0' }}>{pct}%</p>
+          <p style={{ fontSize: '0.8rem', color: '#0d9488', fontWeight: 700, margin: '0.5rem 0 0' }}>{pct}%</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className={styles.main} data-no-nav="true">
+    <main className={styles.main} data-no-nav="true" style={{ background: '#f0fdfa', minHeight: '100vh' }}>
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
         <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
@@ -67,9 +67,9 @@ const SearchDetailPreviewVariantK = ({ person, id }) => {
         </p>
       </div>
 
-      <div className={styles.signupFormCard} id="signup-form">
+      <div className={styles.signupFormCard} id="signup-form" style={{ background: '#1e293b', borderTop: '4px solid #2dd4bf' }}>
         <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
-        <h2 className={styles.signupFormTitle}>Unlock {firstName}&apos;s full report</h2>
+        <h2 className={styles.signupFormTitle} style={{ color: '#ffffff' }}>Unlock {firstName}&apos;s full report</h2>
         <p className={styles.signupFormSubtitle}>Create your account to see everything we found.</p>
         {success ? (<div className={styles.signupSuccessMsg}>✅ Account created! Redirecting…</div>) : (
           <form onSubmit={onSubmit} noValidate>
@@ -82,7 +82,7 @@ const SearchDetailPreviewVariantK = ({ person, id }) => {
               <input id="vk-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={styles.signupFormInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
             </div>
             {error && <div className={styles.formError}>{error === 'already_exists' ? (<>Account exists. <Link to="/login" className={styles.loginLink}>Log in</Link></>) : error}</div>}
-            <button type="submit" className={styles.signupSubmitBtn} disabled={loading}>{loading ? 'Creating account…' : 'See Full Report →'}</button>
+            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#0d9488' }}>{loading ? 'Creating account…' : 'See Full Report →'}</button>
             <p className={styles.loginLinkWrap}>Already have an account? <Link to="/login" className={styles.loginLink}>Sign in</Link></p>
           </form>
         )}
@@ -94,7 +94,7 @@ const SearchDetailPreviewVariantK = ({ person, id }) => {
       </p>
 
       <div className={styles.stickyMobileCta}>
-        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={(e) => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }}>🔓 See Full Report →</a>
+        <a href="#signup-form" className={styles.stickyMobileCtaLink} onClick={(e) => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ background: '#0d9488' }}>🔓 See Full Report →</a>
       </div>
     </main>
   );
