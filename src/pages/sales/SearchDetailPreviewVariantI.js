@@ -43,7 +43,7 @@ const SearchDetailPreviewVariantI = ({ person, id }) => {
       </div>
 
       {/* Email-first form (top) */}
-      <div className={styles.signupFormCard} id="signup-form" style={{ background: '#1e293b', borderTop: '4px solid #fb7185' }}>
+      <div className={styles.signupFormCard} id="signup-form" style={{ background: 'linear-gradient(160deg,#9f1239,#4c0519)', borderTop: '4px solid #fda4af' }}>
         <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
         <h2 className={styles.signupFormTitle} style={{ color: '#ffffff' }}>See {firstName}&apos;s report</h2>
         <p className={styles.signupFormSubtitle}>Enter your email to create your free account and continue.</p>
@@ -62,7 +62,7 @@ const SearchDetailPreviewVariantI = ({ person, id }) => {
               </div>
             )}
             {error && <div className={styles.formError}>{error === 'already_exists' ? (<>Account exists. <Link to="/login" className={styles.loginLink}>Log in</Link></>) : error}</div>}
-            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#e11d48' }}>
+            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#f43f5e' }}>
               {loading ? 'Creating account…' : (stage === 1 ? 'Continue →' : 'Create My Account →')}
             </button>
             <p className={styles.loginLinkWrap}>Already have an account? <Link to="/login" className={styles.loginLink}>Sign in</Link></p>

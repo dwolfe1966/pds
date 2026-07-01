@@ -44,7 +44,7 @@ const SearchDetailPreviewVariantH = ({ person, id }) => {
       </p>
 
       {/* Form (top) */}
-      <div className={styles.signupFormCard} id="signup-form" style={{ background: '#1e293b', borderTop: '4px solid #3b82f6' }}>
+      <div className={styles.signupFormCard} id="signup-form" style={{ background: 'linear-gradient(160deg,#1e3a8a,#172554)', borderTop: '4px solid #60a5fa' }}>
         <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
         <h2 className={styles.signupFormTitle} style={{ color: '#ffffff' }}>Unlock {firstName}&apos;s full report</h2>
         <p className={styles.signupFormSubtitle}>Contact info, addresses, relatives &amp; records.</p>
@@ -61,7 +61,7 @@ const SearchDetailPreviewVariantH = ({ person, id }) => {
               <input id="vh-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={styles.signupFormInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
             </div>
             {error && <div className={styles.formError}>{error === 'already_exists' ? (<>Account exists. <Link to="/login" className={styles.loginLink}>Log in</Link></>) : error}</div>}
-            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#2563eb' }}>{loading ? 'Creating account…' : 'Create My Account →'}</button>
+            <button type="submit" className={styles.signupSubmitBtn} disabled={loading} style={{ background: '#3b82f6' }}>{loading ? 'Creating account…' : 'Create My Account →'}</button>
             <p className={styles.loginLinkWrap}>Already have an account? <Link to="/login" className={styles.loginLink}>Sign in</Link></p>
           </form>
         )}
