@@ -1,0 +1,79 @@
+Campaign report
+"June 23, 2026 - June 29, 2026"
+Day,Campaign status,Campaign,Budget,Budget name,Budget type,Currency code,Status,Status reasons,Cost,Clicks,Avg. CPC,Conversions,Cost / conv.,Conv. rate,Conv. value,Conv. value / cost,All conv.
+2026-06-23,Enabled,Death - Upper,50.00, --,Daily,USD,Eligible (Learning),bidding strategy learning; some ads limited by policy,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Enabled,Death - Upper,50.00, --,Daily,USD,Eligible (Learning),bidding strategy learning; some ads limited by policy,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Enabled,Death - Upper,50.00, --,Daily,USD,Eligible (Learning),bidding strategy learning; some ads limited by policy,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Enabled,Death - Upper,50.00, --,Daily,USD,Eligible (Learning),bidding strategy learning; some ads limited by policy,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Enabled,Death - Upper,50.00, --,Daily,USD,Eligible (Learning),bidding strategy learning; some ads limited by policy,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Enabled,Death - Upper,50.00, --,Daily,USD,Eligible (Learning),bidding strategy learning; some ads limited by policy,53.44,26,2.06,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Enabled,Death - Upper,50.00, --,Daily,USD,Eligible (Learning),bidding strategy learning; some ads limited by policy,54.05,33,1.64,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-23,Paused,Divorce - Lower,75.00, --,Daily,USD,Paused,campaign paused; All ads paused,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Paused,Divorce - Lower,75.00, --,Daily,USD,Paused,campaign paused; All ads paused,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Paused,Divorce - Lower,75.00, --,Daily,USD,Paused,campaign paused; All ads paused,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Paused,Divorce - Lower,75.00, --,Daily,USD,Paused,campaign paused; All ads paused,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Paused,Divorce - Lower,75.00, --,Daily,USD,Paused,campaign paused; All ads paused,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Paused,Divorce - Lower,75.00, --,Daily,USD,Paused,campaign paused; All ads paused,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Paused,Divorce - Lower,75.00, --,Daily,USD,Paused,campaign paused; All ads paused,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-23,Paused,Divorce - Upper,500.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Paused,Divorce - Upper,500.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Paused,Divorce - Upper,500.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Paused,Divorce - Upper,500.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Paused,Divorce - Upper,500.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Paused,Divorce - Upper,500.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Paused,Divorce - Upper,500.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-23,Paused,Death - Lower,1000.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Paused,Death - Lower,1000.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Paused,Death - Lower,1000.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Paused,Death - Lower,1000.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Paused,Death - Lower,1000.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Paused,Death - Lower,1000.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Paused,Death - Lower,1000.00, --,Daily,USD,Paused,campaign paused; All ads paused; campaign pending,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-23,Paused,Inmates - Lower,2600.00, --,Daily,USD,Paused,campaign paused; All ad groups paused; All ads paused; campaign pending; some ads disapproved,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Paused,Inmates - Lower,2600.00, --,Daily,USD,Paused,campaign paused; All ad groups paused; All ads paused; campaign pending; some ads disapproved,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Paused,Inmates - Lower,2600.00, --,Daily,USD,Paused,campaign paused; All ad groups paused; All ads paused; campaign pending; some ads disapproved,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Paused,Inmates - Lower,2600.00, --,Daily,USD,Paused,campaign paused; All ad groups paused; All ads paused; campaign pending; some ads disapproved,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Paused,Inmates - Lower,2600.00, --,Daily,USD,Paused,campaign paused; All ad groups paused; All ads paused; campaign pending; some ads disapproved,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Paused,Inmates - Lower,2600.00, --,Daily,USD,Paused,campaign paused; All ad groups paused; All ads paused; campaign pending; some ads disapproved,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Paused,Inmates - Lower,2600.00, --,Daily,USD,Paused,campaign paused; All ad groups paused; All ads paused; campaign pending; some ads disapproved,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-23,Enabled,Inmates - Upper,77.00, --,Daily,USD,Eligible (Learning),bidding strategy learning,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Enabled,Inmates - Upper,77.00, --,Daily,USD,Eligible (Learning),bidding strategy learning,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Enabled,Inmates - Upper,77.00, --,Daily,USD,Eligible (Learning),bidding strategy learning,54.21,34,1.59,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Enabled,Inmates - Upper,77.00, --,Daily,USD,Eligible (Learning),bidding strategy learning,42.92,33,1.30,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Enabled,Inmates - Upper,77.00, --,Daily,USD,Eligible (Learning),bidding strategy learning,81.60,42,1.94,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Enabled,Inmates - Upper,77.00, --,Daily,USD,Eligible (Learning),bidding strategy learning,80.01,50,1.60,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Enabled,Inmates - Upper,77.00, --,Daily,USD,Eligible (Learning),bidding strategy learning,85.50,29,2.95,0.00,0.00,0.00%,0.00,0.00,0.00
+ --,Total: Campaigns, --, --, --, --,USD, --,,451.72,247,1.83,0.00,0.00,0.00%,0.00,0.00,0.00
+ --,Total: Campaigns, --, --, --, --,USD, --,,0,0,0,0,0, --,0,0,0
+ --,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-23,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-24,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-25,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-26,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-27,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-28,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-29,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+ --,Total: Campaigns, --, --, --, --, --, --,,0,0,0,0,0, --,0,0,0
+2026-06-23,Total: Campaigns, --, --, --, --,USD, --,,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Total: Campaigns, --, --, --, --,USD, --,,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Total: Campaigns, --, --, --, --,USD, --,,54.21,34,1.59,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Total: Campaigns, --, --, --, --,USD, --,,42.92,33,1.30,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Total: Campaigns, --, --, --, --,USD, --,,81.60,42,1.94,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Total: Campaigns, --, --, --, --,USD, --,,133.45,76,1.76,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Total: Campaigns, --, --, --, --,USD, --,,139.54,62,2.25,0.00,0.00,0.00%,0.00,0.00,0.00
+,Total: Account,,,,,USD,,,451.72,247,1.83,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Total: Account,,,,,USD,,,133.45,76,1.76,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Total: Account,,,,,USD,,,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-23,Total: Account,,,,,USD,,,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Total: Account,,,,,USD,,,139.54,62,2.25,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Total: Account,,,,,USD,,,54.21,34,1.59,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Total: Account,,,,,USD,,,81.60,42,1.94,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Total: Account,,,,,USD,,,42.92,33,1.30,0.00,0.00,0.00%,0.00,0.00,0.00
+,Total: Search,,,,,USD,,,451.72,247,1.83,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-28,Total: Search,,,,,USD,,,133.45,76,1.76,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-26,Total: Search,,,,,USD,,,42.92,33,1.30,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-29,Total: Search,,,,,USD,,,139.54,62,2.25,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-24,Total: Search,,,,,USD,,,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-25,Total: Search,,,,,USD,,,54.21,34,1.59,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-23,Total: Search,,,,,USD,,,0.00,0,0,0.00,0.00,0.00%,0.00,0.00,0.00
+2026-06-27,Total: Search,,,,,USD,,,81.60,42,1.94,0.00,0.00,0.00%,0.00,0.00,0.00

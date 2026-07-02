@@ -327,3 +327,36 @@ The first run hit a login-timing glitch (session not fully authenticated → spu
 every `/database/search` call). The numbers in this doc are from the clean run where ID discovery
 succeeded and results are internally consistent (`user.find` returns data, dedicated endpoints return
 data, direct contrast returns 200 + rows). Tighten the login-wait in the probe before relying on it again.
+
+---
+
+## Addendum 2026-06-26 — ASK D: `attachment.download` won't serve live-call recordings
+
+**Live, byte-verified.** `csrWrapper.api.attachment.download({ attachmentId:'6a3d7295d2a2310fd7ef9ed9' })`
+→ **"attachment not found"**. The sent `attachmentId` **exactly equals** the attachment object's `id`
+field, so it is **not a client wiring bug** (client wiring confirmed complete — link shipped in commits
+`958acb0` + `bd3b5e0`, clickable + correct label).
+
+**Attachment object** (from `findUserContactMessages`/histories):
+`{ fieldname:'file', originalname:'liveCall_27.aac', mimetype:'audio/aac',
+id:'6a3d7295d2a2310fd7ef9ed9', filename:'liveCall_27.aac', size:157037, bucketName:'attachments',
+metadata:{compressed:'zstd', …} }`
+
+**Parent message:** `type:'contact'`, `data.type:'outbound'`, `liveCallId:27`, **`brandId:'unknown'`**,
+`trackingIds.clientId:'curl'` / `apiId:'cli'` (telephony backend).
+
+**Root cause (bc-iife-investigator, against the deployed csrWrapper bundle):**
+- NOT a bucket problem — recording is in `bucketName:'attachments'`, the same bucket as ordinary attachments.
+- Discriminator is parent-message **`brandId:'unknown'`** → the brand-scoped lookup appears to exclude
+  telephony attachments.
+- Deployed csrWrapper has **no** live-call/recording method (`liveCall.*`/`recording.*`/`call.*`/`voice.*`
+  all absent); `/attachment/download` is the only file-retrieval path.
+
+**Two resolution paths offered to BC:**
+- (a) Fix server-side retrieval so `attachment.download` serves telephony / `brandId:'unknown'` attachments; OR
+- (b) Name an extra param (e.g. `brandId` / `bucketName`) we should forward. The IIFE auto-forwards unknown
+  params as GET params (`const {playAudioFlag, ...o}=e; params:o`), so path (b) needs **no IIFE change on
+  our side**. `playAudioFlag` is stripped pre-GET → **not** the fix.
+
+**Status:** ❌ open. Reproduced live, not yet wired into `demo-bc-csr-asks.js` (the byte-verification above
+stands as the proof; add an attachment-download probe to the demo on next pass).
