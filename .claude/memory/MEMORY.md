@@ -71,3 +71,4 @@
 - [BC removed prod captcha 2026-06-24](project_bc_removed_prod_captcha.md) — password.v0 captcha is OFF on production; 412s are no longer captcha challenges
 - [BC email templates + tokens](reference_bc_email_templates.md) — BC ${...} token syntax, confirmed global tokens, signup-email findings (right template/raw values), our HTML in docs/email-templates/
 - [Ad-unit funnel review 2026-06-24](project_adunit_funnel_review.md) — name/phone/email V2-V6 review; FIXED: V2/V5 name + V2-V6 phone loader delegation (Ads-invisibility + phone dead-end); OUTSTANDING: promise→payoff mismatch, fake interstitials, discarded state step, etc.
+- [SEO concept model + locked decisions](project_seo_concept_decisions.md) — Spokeo playbook; 7 owner decisions 2026-07-02; exposed=search surface, gated=tease; next = BC probe + Phase 0

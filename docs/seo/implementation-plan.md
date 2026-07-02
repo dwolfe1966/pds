@@ -4,8 +4,41 @@
 profile + directory pages targeting the long-tail of name×location searches, each a
 teaser gated to the signup funnel.
 
-**Status:** architecture approved (Next.js SSR app + ISR). Competitive-teardown-dependent
-sections marked **[TEARDOWN]** — filled from `docs/seo/competitive-teardown.md` when ready.
+**Status:** architecture approved (Next.js SSR app + ISR); **concept-model decisions locked
+with owner 2026-07-02 (§0)**. Teardown folded in from `docs/seo/competitive-teardown.md`.
+
+---
+
+## 0. Concept-model decisions — locked with owner 2026-07-02
+
+Concept model: base nodes = profile pages (some attributes exposed, some obfuscated), strung
+together by multiple directory dimensions (name, location, school, employer, …), all pointing
+into the signup funnel. Framing: **exposed attributes = the search surface (the query universe
+we can win); obfuscated attributes = the conversion tease.** An attribute only ranks for
+"{name} + {attribute}" queries if it's visible text on the profile page.
+
+1. **Node = one profile page per BC record** (not per deduped human) to start. Entity
+   resolution / threading multiple data stores into logical person records is future work.
+   **We mint our own stable public IDs** (slug + ID layer mapped to BC record IDs) so the URL
+   space survives future re-keying, merges, and new data sources.
+2. **Exposed/gated split: mimic Spokeo initially.** Exposed: name, aliases, age, city/state
+   (current + prior), relatives-as-links, counts of gated data. Gated: exact street/phone/
+   email + full report. Mimicking Spokeo *includes* the clean-PII-in-JSON-LD tactic by
+   default — explicitly subject to the pre-launch legal validation (decision 7); it's the one
+   element carrying structured-data-policy + privacy risk (§4 ⚠️).
+3. **School/employer data exists in the source data; coverage unknown** → probe BC coverage
+   early. Not assumed for launch.
+4. **Launch directory dimensions = name + location.** School/employer directories are
+   explored in parallel; not a launch gate.
+5. **Staged rollout** — high-search-demand segments first; expand sitemap/index exposure as
+   quality signals accrue. NOT full-universe on day one (new domain, zero authority —
+   indexing is a growth curve to manage).
+6. **List/directory pages are first-class ranking surfaces**, not just crawl plumbing — e.g.
+   a "Newton, MA" hub carries the people list PLUS town content (news, statistics, meetups,
+   commerce). Location hubs become content destinations — a differentiation beyond Spokeo's
+   thin geo hubs. (Roadmap: per-hub content enrichment engine.)
+7. **Opt-out removes the person from the entire directory surface** (profile + every
+   directory listing + sitemaps). Full legal validation of the publishing model before launch.
 
 ---
 
@@ -137,18 +170,25 @@ crawl stats, BC API call volume/cost (the guardrail).
 ---
 
 ## 9. Open decisions / dependencies
-1. **🔴 PII-in-schema boundary** (§4) — how aggressive on indexed PII. Recommendation: the
-   defensible middle (no hidden full street addresses in schema). **Owner's call — blocks the template.**
+1. ~~🔴 PII-in-schema boundary~~ **RESOLVED by default 2026-07-02 (§0.2): mimic Spokeo,
+   including PII-in-JSON-LD — contingent on the pre-launch legal validation (§0.7).**
 2. **BC data coverage** — confirm BC can return: name-aggregation ("all people named X"),
    per-record location history, relatives *with profile URLs* (for `relatedTo`), per-name
-   counts, and demographic aggregates (for the FAQ engine). Likely the long pole → BC asks for gaps.
+   counts, demographic aggregates (for the FAQ engine), **and school/employer history
+   coverage (§0.3 — exists, coverage unknown)**. Likely the long pole → BC asks for gaps.
 3. **Hosting for the Next app** — Vercel/Cloudflare (managed ISR) vs. your VPS (Node process).
 4. **CDN / reverse proxy** — Cloudflare in front for both apps.
 5. **BC API cost/rate limits** — sizes the caching/revalidation window.
-6. **IDIData** — timing + format for the richer taxonomy seed.
-7. **Legal review** — public personal-data publishing (CCPA) before launch.
+6. **IDIData** — timing + format for the richer taxonomy seed (future entity-resolution
+   layer per §0.1; our own public IDs insulate URLs from it).
+7. **Legal validation** — the full publishing model (public personal-data pages, CCPA,
+   opt-out semantics, PII-in-schema) before launch (§0.7).
 8. **Re-run research with WebSearch/WebFetch enabled** — blocked this pass; missing Google
    `site:` indexed counts, third-party traffic estimates, and MyLife's actual template.
+9. **Own-ID minting scheme** (§0.1) — stable public ID + slug layer over BC record IDs;
+   design before Phase 0 URLs go live (URL churn is unrecoverable at scale).
+10. **List-page content engine** (§0.6) — what feeds location-hub content (news, stats,
+    meetups, commerce) and when; roadmap item, not Phase 0.
 
 ---
 
