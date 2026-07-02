@@ -86,30 +86,37 @@ export const CampaignProvider = ({ children }) => {
       const id = (resolved && resolved.identity) || {};
       if (id.partner || id.channel) gtmSetCampaign({ name: id.partner || undefined, channel: id.channel || undefined });
     } catch { /* never block render */ }
-    return resolved;
+    // _shapeSettled: false until the BC shape resolves/fails/times-out. The `/` boot
+    // redirect waits on this so it routes to the theme's A/B arm (v3a/v3b), not the
+    // registry's static fallback (which is all that's known pre-shape).
+    return { ...resolved, _shapeSettled: false };
   });
 
   useEffect(() => { persistIdentity(campaign); }, [campaign]);
 
   useEffect(() => {
-    // Best-effort BC shape fetch to enrich the resolved campaign with
-    // partner/brand metadata. Fire-and-forget — failure leaves the
-    // initial resolution intact (which uses local registry + defaults).
+    // Best-effort BC shape fetch to enrich the resolved campaign with partner/brand metadata
+    // AND the A/B theme (landing/sup). Fire-and-forget — failure/timeout leaves the initial
+    // registry resolution intact but still marks _shapeSettled so the boot redirect proceeds.
     let cancelled = false;
+    const settle = () => { if (!cancelled) setCampaign((prev) => (prev._shapeSettled ? prev : { ...prev, _shapeSettled: true })); };
+    // Backstop: never trap the boot redirect if the shape request hangs.
+    const timer = setTimeout(settle, 2500);
     apiWrapper.getShapeCompiled()
       .then((shape) => {
         if (cancelled) return;
         const { shn, shl } = captureAttribution();
         const enriched = resolveCampaign(shn, shl, { shape });
-        setCampaign(enriched);
+        setCampaign({ ...enriched, _shapeSettled: true });
         if (enriched._matchKey === 'default' && (shn || shl)) {
           // Visibility for marketing: flag campaigns that hit our site
           // without a registry entry, so we know to add or fix them.
           gtmPush('campaign_not_found', { shn, shl });
         }
       })
-      .catch(() => { /* shape unavailable — keep initial */ });
-    return () => { cancelled = true; };
+      .catch(() => { settle(); })
+      .finally(() => { clearTimeout(timer); });
+    return () => { cancelled = true; clearTimeout(timer); };
   }, []);
 
   return (

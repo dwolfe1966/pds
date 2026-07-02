@@ -50,6 +50,31 @@ function findRegistryEntry(shn, shl) {
  * is opaque to us; we read it via `getShComp(componentName)`. Add lookups
  * here as BC documents new comp names.
  */
+// SUP teaser variants that a BC theme may select (must mirror MARKETING_VARIANTS in
+// SearchDetailPreviewPage.js). Any other value is ignored (registry variant stands).
+const VALID_SUP_VARIANTS = new Set(['a', 'b', 'c', 'd', 'e', 'g', 'h', 'i', 'j', 'k']);
+
+// BC theme.landing → an app route. BC's A/B themes now send our real routes
+// (e.g. '/name/landing/v3a'); older themes sent '/name/landing/3' (no 'v'). Normalize the
+// legacy form, then whitelist to same-origin landing routes only — never redirect off an
+// arbitrary/external theme value.
+function normalizeLandingRoute(raw) {
+  if (typeof raw !== 'string') return undefined;
+  let r = raw.trim();
+  if (!r) return undefined;
+  if (r[0] !== '/') r = '/' + r;
+  // legacy '/name/landing/3' → '/name/landing/v3' (only when a bare digit follows /landing/)
+  r = r.replace(/^(\/(?:name|phone|email)\/landing\/)(\d)/i, '$1v$2');
+  return /^\/(?:name|phone|email)\/landing\/v[0-9]+[a-z]?$/i.test(r) ? r : undefined;
+}
+
+// BC theme.sup ('ver=i' | 'v=i' | 'i') → validated variant letter, else undefined.
+function parseSupVariant(raw) {
+  if (typeof raw !== 'string') return undefined;
+  const v = raw.trim().replace(/^ver\s*=|^v\s*=/i, '').trim().toLowerCase();
+  return VALID_SUP_VARIANTS.has(v) ? v : undefined;
+}
+
 function extractShapeProps(shape) {
   if (!shape || typeof shape.getShComp !== 'function') return {};
   const tryKey = (key) => {
@@ -74,8 +99,12 @@ function extractShapeProps(shape) {
     // promo + signup CTA on no-results) else 'noRecords' ("no results found").
     optOut:    theme ? yes(theme.optout) : undefined,
     zeroState: theme ? (yes(theme.thinmatch) ? 'thinMatch' : 'noRecords') : undefined,
-    // landing kept on the registry — BC's theme uses '/name/landing/3' while our
-    // routes are '/name/landing/v3'; don't drive routing off it without a mapping.
+    // A/B split fields — BC randomizes these per request (Control vs Challenger), so the
+    // theme MUST win over the registry's single static entry. Normalized/validated above.
+    landingRoute: theme ? normalizeLandingRoute(theme.landing) : undefined,
+    supVariant:   theme ? parseSupVariant(theme.sup) : undefined,
+    splitType:    theme && theme.split_type ? String(theme.split_type) : undefined,
+    splitName:    theme && theme.split_name ? String(theme.split_name) : undefined,
   };
 }
 
@@ -114,13 +143,18 @@ export function resolveCampaign(shn, shl, { shape = null } = {}) {
     ...entry.identity,
     ...(shapeProps.brandName ? { brand: shapeProps.brandName } : {}),
     ...(shapeProps.partnerName ? { partner: shapeProps.partnerName } : {}),
+    // A/B split assignment (for analytics — which arm this visitor got).
+    ...(shapeProps.splitType ? { splitType: shapeProps.splitType } : {}),
+    ...(shapeProps.splitName ? { splitName: shapeProps.splitName } : {}),
   };
   const resolved = {
     identity,
-    landing: { ...defaults.landing, ...entry.landing },
+    // BC's theme.landing (A/B arm) overrides the registry's static route when present.
+    landing: { ...defaults.landing, ...entry.landing, ...(shapeProps.landingRoute ? { route: shapeProps.landingRoute } : {}) },
     // BC's thinmatch flag overrides the registry when present (source of truth).
     search:  { ...defaults.search,  ...entry.search, ...(shapeProps.zeroState ? { zeroState: shapeProps.zeroState } : {}) },
-    detail:  { ...defaults.detail,  ...entry.detail  },
+    // BC's theme.sup (A/B arm) overrides the registry's static SUP variant when present.
+    detail:  { ...defaults.detail,  ...entry.detail, ...(shapeProps.supVariant ? { variant: shapeProps.supVariant } : {}) },
     signup:  { ...defaults.signup,  ...entry.signup  },
     payment: { ...defaults.payment, ...entry.payment },
     offer:   { ...defaults.offer,   ...entry.offer   },

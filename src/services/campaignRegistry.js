@@ -117,9 +117,13 @@ export const CAMPAIGN_REGISTRY = {
       shnName: 'Google Inmates Upper', brand: 'IDL', partner: 'Google', channel: 'Search',
       purpose: 'Capture search intent re: incarcerated individuals → capture trials',
     },
-    landing: { route: '/name/landing/v3' },     // "name/landing/3" → inmate funnel (reliable /name/loader path)
+    // A/B test: BC's theme randomizes landing (v3a/v3b) + sup (i/j) per request. awaitTheme
+    // makes the `/` boot redirect wait for the BC shape so it routes to the assigned arm
+    // instead of this static fallback. route/variant here are the safe fallback if the shape
+    // fails/times out. (Non-A/B campaigns omit awaitTheme → they redirect immediately.)
+    landing: { route: '/name/landing/v3', awaitTheme: true },
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },  // thinmatch: yes
-    detail:  { variant: 'a' },                  // sup: ver=a → SearchDetailPreviewVariantA
+    detail:  { variant: 'a' },                  // sup fallback; theme.sup (ver=i/j) overrides
     optOut:  true,                              // optout: yes
   },
 

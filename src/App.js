@@ -84,6 +84,15 @@ import SearchTestPage from './pages/SearchTestPage';
 
 // Component to redirect logged-in users from home to dashboard, OR redirect
 // visitors with an active campaign config to the campaign-specific landing.
+// Brief neutral boot loader shown on `/?shn=…` while we wait for the BC shape (which carries
+// the A/B split's landing arm). Theme-agnostic on purpose — we don't yet know the arm.
+const CampaignBootSplash = () => (
+  <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ width: 40, height: 40, border: '4px solid #e5e7eb', borderTopColor: '#6b7280', borderRadius: '50%', animation: 'campaignSpin 0.8s linear infinite' }} />
+    <style>{'@keyframes campaignSpin{to{transform:rotate(360deg)}}'}</style>
+  </div>
+);
+
 const HomePageRedirect = () => {
   const { token } = useAuth();
   const campaign = useCampaign();
@@ -91,25 +100,28 @@ const HomePageRedirect = () => {
   if (token) {
     return <Navigate to="/dashboard" replace />;
   }
-  // Campaign landing redirect is one-shot per landing — only fires when the
-  // URL had shn/shl params on the most recent boot. Without this gate, any
-  // future `/` visit in the same session would redirect again because shn/shl
-  // are persisted to sessionStorage for attribution. Read + clear the flag
-  // atomically so subsequent `/` visits stay on the homepage.
-  let shouldApply = false;
-  try {
-    if (sessionStorage.getItem('attribution.landingPending') === '1') {
-      sessionStorage.removeItem('attribution.landingPending');
-      shouldApply = true;
-    }
-  } catch {}
+  // Campaign landing redirect is one-shot per landing — only fires when the URL had shn/shl
+  // params on the most recent boot (persisted to sessionStorage for attribution). Peek at the
+  // flag WITHOUT consuming it yet — we may need to wait for the BC shape first.
+  let pending = false;
+  try { pending = sessionStorage.getItem('attribution.landingPending') === '1'; } catch {}
+  if (!pending) return <HomePage />;
+
   const campaignRoute = campaign?.landing?.route;
-  if (shouldApply && campaignRoute && campaignRoute !== '/') {
-    // Carry the original query string (gclid, utm_*, shn) to the vertical LP.
-    // Without this, the redirect drops gclid before GTM's Conversion Linker can
-    // capture it → no _gcl_aw cookie → Google Ads can't attribute conversions to
-    // the ad click. Verified: direct LP?gclid sets _gcl_aw; redirect-without-params
-    // does not. (campaignRoute is a static path, never has its own query string.)
+  const willRedirect = campaignRoute && campaignRoute !== '/';
+  // Only A/B campaigns (registry `landing.awaitTheme`) wait for the BC shape — so we route to
+  // the theme's assigned arm (v3a/v3b) instead of the static fallback. Every other campaign
+  // redirects immediately (its theme matches the registry, so there's nothing to wait for).
+  // _shapeSettled always flips true (shape success/fail/timeout) so this never hangs.
+  if (willRedirect && campaign?.landing?.awaitTheme && !campaign._shapeSettled) {
+    return <CampaignBootSplash />;
+  }
+  // Settled (or nothing to redirect to) — consume the one-shot flag now.
+  try { sessionStorage.removeItem('attribution.landingPending'); } catch {}
+  if (willRedirect) {
+    // Carry the original query string (gclid, utm_*, shn) to the vertical LP. Without this,
+    // the redirect drops gclid before GTM's Conversion Linker can capture it → no _gcl_aw
+    // cookie → Google Ads can't attribute conversions. (campaignRoute is a static path.)
     return <Navigate to={`${campaignRoute}${location.search}`} replace />;
   }
   return <HomePage />;
