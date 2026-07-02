@@ -23,9 +23,10 @@ we can win); obfuscated attributes = the conversion tease.** An attribute only r
    space survives future re-keying, merges, and new data sources.
 2. **Exposed/gated split: mimic Spokeo initially.** Exposed: name, aliases, age, city/state
    (current + prior), relatives-as-links, counts of gated data. Gated: exact street/phone/
-   email + full report. Mimicking Spokeo *includes* the clean-PII-in-JSON-LD tactic by
-   default — explicitly subject to the pre-launch legal validation (decision 7); it's the one
-   element carrying structured-data-policy + privacy risk (§4 ⚠️).
+   email + full report. Mimicking Spokeo *includes* the clean-PII-in-JSON-LD tactic —
+   **legality confirmed by owner 2026-07-02 from direct MyLife precedent (they pioneered it;
+   Spokeo replicated). We may expose MORE PII in the indexed JSON-LD than on the visible
+   page.** Residual watch-item is Google structured-data policy (§4), not legality.
 3. **School/employer data exists in the source data; coverage unknown** → probe BC coverage
    early. Not assumed for launch.
 4. **Launch directory dimensions = name + location.** School/employer directories are
@@ -39,6 +40,11 @@ we can win); obfuscated attributes = the conversion tease.** An attribute only r
    thin geo hubs. (Roadmap: per-hub content enrichment engine.)
 7. **Opt-out removes the person from the entire directory surface** (profile + every
    directory listing + sitemaps). Full legal validation of the publishing model before launch.
+8. **(addendum) Directory skeleton may be sourced OUTSIDE BC:** a third-party API, or
+   crawling incumbents (Spokeo was curl-fetchable in the teardown; Whitepages/MyLife/
+   BeenVerified are Cloudflare-gated), to build the high-level name + location directories —
+   with BC/IDI queried on-demand only for actual profile pages. Decouples the URL universe /
+   sitemaps from BC coverage limits. See §3.
 
 ---
 
@@ -96,7 +102,7 @@ search surface stays on separate paths and is `Disallow`'d in robots.txt** (Been
 | Need | Source | Notes |
 |---|---|---|
 | **Profile detail** (the teaser per page) | **BC API**, on-demand | cached via ISR; one lookup per page per revalidation window |
-| **Taxonomy / URL universe** (which pages to expose + sitemaps + hubs) | **Public seed now**: US Census surname file (~160k surnames), SSA first names, US gazetteer (states/cities). **IDIData later** for richer/verified seed | drives sitemaps + internal linking; do NOT expose URLs we can't back with real data |
+| **Taxonomy / URL universe** (which pages to expose + sitemaps + hubs) | **Public seed now**: US Census surname file (~160k surnames), SSA first names, US gazetteer (states/cities). **IDIData later** for richer/verified seed. **Also on the table (owner 2026-07-02): a third-party directory API, or crawling incumbents (Spokeo curl-fetchable; Whitepages/MyLife Cloudflare-gated), to build high-level name+location directories independent of BC — BC/IDI then queried on-demand for actual profiles** | drives sitemaps + internal linking; do NOT expose URLs we can't back with real data |
 | **Thin-page handling** | render → if data sparse/empty → **`noindex`** + exclude from sitemap | avoids doorway/thin-content penalties |
 
 The taxonomy seed answers "which URLs are worth exposing." Public datasets give the candidate
@@ -134,6 +140,12 @@ out of.** That's the core ranking trick — but two real risks:
 long-tail (name, age, **city/state**, relatives, counts) **without** hiding full street addresses
 in schema that aren't visible. Go more aggressive only as a conscious, legally-reviewed decision.
 
+**✅ RESOLVED 2026-07-02 — owner goes aggressive:** the tactic is legally valid per direct
+experience (owner pioneered it as CEO at MyLife; Spokeo replicated it). We may expose more PII
+in the indexed JSON-LD than the visible page shows. The remaining watch-item is risk #1 only
+(Google structured-data policy / manual-action exposure) — monitor GSC, have a fallback
+schema variant ready, but do not block the template on it.
+
 ---
 
 ## 5. SEO mechanics
@@ -170,8 +182,9 @@ crawl stats, BC API call volume/cost (the guardrail).
 ---
 
 ## 9. Open decisions / dependencies
-1. ~~🔴 PII-in-schema boundary~~ **RESOLVED by default 2026-07-02 (§0.2): mimic Spokeo,
-   including PII-in-JSON-LD — contingent on the pre-launch legal validation (§0.7).**
+1. ~~🔴 PII-in-schema boundary~~ **RESOLVED 2026-07-02 (§0.2, §4): mimic Spokeo incl.
+   PII-in-JSON-LD; owner validated legality (MyLife precedent). Watch-item: Google
+   structured-data policy only.**
 2. **BC data coverage** — confirm BC can return: name-aggregation ("all people named X"),
    per-record location history, relatives *with profile URLs* (for `relatedTo`), per-name
    counts, demographic aggregates (for the FAQ engine), **and school/employer history

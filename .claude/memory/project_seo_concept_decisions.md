@@ -18,14 +18,20 @@ ranks if it's visible text on the profile page.
 **Decisions locked 2026-07-02** (full record in `docs/seo/implementation-plan.md` §0):
 1. One profile page per BC record (entity resolution later); **mint our own stable public IDs**
    over BC record IDs — URL churn at scale is unrecoverable.
-2. Mimic Spokeo's exposed/gated split initially, **including PII-in-JSON-LD by default**,
-   contingent on pre-launch legal validation.
+2. Mimic Spokeo's exposed/gated split initially, **including PII-in-JSON-LD — owner confirmed
+   the tactic is LEGALLY VALID from direct experience (pioneered it at MyLife; Spokeo
+   replicated it). We may expose MORE PII in indexed JSON-LD than on the visible page.**
+   Residual watch-item = Google structured-data policy (manual-action risk), not legality.
 3. School/employer data exists in source; coverage unknown → probe BC early.
 4. Launch dimensions = name + location; school/employer parallel-track, not a gate.
 5. Staged rollout (high-demand segments first), not full-universe day one.
 6. List pages are first-class ranking surfaces — location hubs get real content (news, stats,
    meetups, commerce; "Newton, MA" example). Differentiator vs. Spokeo's thin geo hubs.
 7. Opt-out removes person from the ENTIRE directory surface; legal validation before launch.
+8. **Directory skeleton may be sourced OUTSIDE BC** (owner 2026-07-02): third-party API or
+   crawling incumbents (Spokeo was curl-fetchable; Whitepages/MyLife/BeenVerified are
+   Cloudflare-gated) to build the high-level name+location directories; BC/IDI queried
+   on-demand only for actual profile pages. Decouples URL universe from BC coverage.
 
 Docs: `docs/seo/implementation-plan.md` (architecture: separate Next.js SSR+ISR app split
 from the Parcel SPA by reverse proxy) + `docs/seo/competitive-teardown.md` (Spokeo fully
