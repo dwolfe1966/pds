@@ -245,12 +245,20 @@ const PaymentPage = () => {
     return exp >= now;
   })();
 
+  // BC billing.sale hard-rejects names outside this charset/length (both
+  // billingAddress and userInfo), answering with raw regex text (bug list 7/2
+  // #5 — 'testmc#4' reached BC and the regex spew hit the UI). Enforce the
+  // same rule client-side so the user gets a human message before the call.
+  const BC_NAME_RE = /^[a-zA-Z0-9 '-]{2,50}$/;
+
   const validation = {
     cardNumber: cardDigits.length === expectedLen && luhnCheck(form.cardNumber),
     expiry: expiryValid,
     cvv: cardType === 'amex' ? form.cvv.length === 4 : form.cvv.length === 3,
     billingFirstName: form.billingFirstName.trim().length > 0,
     billingLastName: form.billingLastName.trim().length > 0,
+    billingFirstNameChars: BC_NAME_RE.test(form.billingFirstName.trim()),
+    billingLastNameChars: BC_NAME_RE.test(form.billingLastName.trim()),
     billingZip: /^\d{5}$/.test(form.billingZip.trim()),
   };
 
@@ -268,6 +276,7 @@ const PaymentPage = () => {
     // still fires for clarity, but the visual cue points at the offender.
     if (!validation.billingFirstName) { track('validation_error', { reason: 'billing_first_name', step: 'payment' }); setError('Please enter your first name.'); setTouched(t => ({ ...t, billingFirstName: true })); return; }
     if (!validation.billingLastName) { track('validation_error', { reason: 'billing_last_name', step: 'payment' }); setError('Please enter your last name.'); setTouched(t => ({ ...t, billingLastName: true })); return; }
+    if (!validation.billingFirstNameChars || !validation.billingLastNameChars) { track('validation_error', { reason: 'name_chars', step: 'payment' }); setError("Names must be at least 2 characters and can only contain letters, numbers, spaces, apostrophes (') and hyphens (-)."); setTouched(t => ({ ...t, billingFirstName: true, billingLastName: true })); return; }
     if (!validation.cardNumber) { track('validation_error', { reason: 'card_invalid', step: 'payment' }); setError('Please enter a valid card number.'); setTouched(t => ({ ...t, cardNumber: true })); return; }
     if (!validation.expiry) { track('validation_error', { reason: 'expiry_invalid', step: 'payment' }); setError('Please enter a valid expiration date (MM/YY, not in the past).'); setTouched(t => ({ ...t, expiry: true })); return; }
     if (!validation.cvv) { track('validation_error', { reason: 'cvv_invalid', step: 'payment' }); setError('Please enter a valid CVV.'); setTouched(t => ({ ...t, cvv: true })); return; }
@@ -544,11 +553,27 @@ const PaymentPage = () => {
       } else if (status === 402 || /declin|insufficient|cvv|expired card|invalid card|card number/i.test(rawMsg)) {
         errorType = 'card_declined';
         message = 'Your card was declined. Please check your card details and try again, or use a different card.';
+      } else if (status === 406 || /status code 406/i.test(rawMsg)) {
+        // BC blocks repeat sale attempts for a while after several failures
+        // (payment history shows 'Blocked'); axios surfaces it as a bare 406
+        // (bug list 7/2 #6 — correct info still failing after bad attempts).
+        errorType = 'payment_blocked';
+        message = 'We couldn’t process this payment right now. This can happen after several attempts in a row — please wait a few minutes and try again. If it keeps happening, call us at 866-204-1902 and we’ll get you set up.';
+      } else if (/must match|regular expression/i.test(rawMsg)) {
+        // BC field-validation echo — never show the raw regex text.
+        errorType = 'invalid_fields';
+        message = "Some of your details contain characters we can't accept. Names can only use letters, numbers, spaces, apostrophes (') and hyphens (-). Please check the name fields and try again.";
       } else if (status >= 500) {
         errorType = 'server_error';
         message = "We're having trouble processing payments right now. Please try again in a moment.";
       } else {
-        message = rawMsg || "We couldn't complete your subscription. Please try again, or contact support if this keeps happening.";
+        // Fallback: only surface rawMsg when it reads like a human sentence —
+        // raw axios/BC internals (status-code strings, regexes, field paths)
+        // stay out of the UI.
+        const looksTechnical = !rawMsg || rawMsg.length > 160 || /status code|must match|regular expression|\/\^|request failed|billings\.|userinfo\./i.test(rawMsg);
+        message = looksTechnical
+          ? "We couldn't complete your subscription. Please double-check your details and try again, or contact support if this keeps happening."
+          : rawMsg;
       }
       track('payment_error', { errorType, errorMessage: err?.message, errorStatus: status });
       gtmEvent('payment_error', { error_type: errorType });

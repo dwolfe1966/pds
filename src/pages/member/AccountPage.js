@@ -671,7 +671,18 @@ const AccountPage = () => {
       setProfileSuccess(true);
       setTimeout(() => setProfileSuccess(false), 4000);
     } catch (err) {
-      setProfileError(err.message || 'Failed to save profile');
+      // BC answers 403 'Forbidden resource' when the session predates a real BC
+      // login (funnel signup issues a synthetic session; the BC user only exists
+      // after billing.sale). Raw 'Forbidden resource' means nothing to a member —
+      // give them the actionable path (bug list 7/2 #1).
+      const raw = err?.message || '';
+      const forbidden = err?.status === 403 || /forbidden/i.test(raw);
+      setProfileError(
+        forbidden
+          ? "We couldn't save your changes to this session. Please sign out, sign back in, and try again — if it still doesn't work, contact support and we'll update it for you."
+          : (raw || 'Failed to save profile')
+      );
+      track('profile_save_error', { forbidden, message: raw });
     } finally {
       setProfileSaving(false);
     }
