@@ -169,6 +169,13 @@ schema variant ready, but do not block the template on it.
 ## 7. Phases
 
 - **Phase 0 — Foundation (proof of crawl):** Next.js app skeleton; reverse-proxy/CDN routing alongside the Parcel SPA; ONE profile-page template rendering live from BC; ISR + edge cache; deploy; verify Googlebot gets server-rendered HTML (`view-source` + GSC URL Inspection).
+  **⏳ STARTED 2026-07-03 (`seo/` app):** leaf template `/people/{first}-{last}/{st}/{city}/{id}`
+  serving all content + 5 JSON-LD block types server-side (curl-verified, no JS);
+  aggressive PII split implemented (clean address in schema, obfuscated teaser);
+  data-driven FAQ engine v0; OUR public-ID layer (`p`+10 digits); 60-day ISR;
+  **noindex until staged rollout**. Data = fixtures behind the `lib/data.js` BC seam
+  (blocked on SEO ASK 0 — dev captcha / sample payloads). Remaining for Phase 0:
+  hosting pick (§9.3), path-split proxy, deploy, GSC URL-Inspection verification.
 - **Phase 1 — Taxonomy + sitemaps:** public seed → URL universe → sitemap index + child sitemaps → hub pages (surname, A–Z, location) → internal linking. Submit sitemaps in GSC.
 - **Phase 2 — Scale + quality:** schema, thin-page `noindex`, broader hub graph, opt-out suppression, monitoring (indexed count, coverage errors).
 - **Phase 3 — Optimize:** content depth, IDIData richer seed, teaser A/B, **SEO→signup conversion** (tie into the GA4/Ads tracking we just built — variant of teaser, conversion path).
