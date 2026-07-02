@@ -1,6 +1,6 @@
 # BC CSR asks — consolidated package (with a runnable proof)
 
-**Prepared 2026-06-18 · re-verified live 2026-06-22 (no flips — A/B/C all still ❌, userContact still CONFIRM) · ASK D added 2026-06-26 (live-call recording download).** Every item is reproduced live against `dev.admin.www.bytecrtrs.com`. Rather
+**Prepared 2026-06-18 · re-verified live 2026-06-22 (no flips — A/B/C all still ❌, userContact still CONFIRM) · ASK D added 2026-06-26 (live-call recording download; playback since ✅ via `playAudioFlag`, download residual) · ASKS E–H added 2026-07-02 (owner's prod CSR/consumer bug list — NOT yet sent to BC).** Every dev-demoable item is reproduced live against `dev.admin.www.bytecrtrs.com`. Rather
 than argue from a document, **run the demo** — it calls BC's own API and prints what it returns:
 
 ```
@@ -8,10 +8,12 @@ CSR_USER='<csr account>' CSR_PWD='<pwd>' node scripts/demo-bc-csr-asks.js
 ```
 
 It prints, per ask: what we call → what BC returns → what we expected → verdict, plus a working
-contrast. Four asks + one question (ASK D is reproduced live but is not yet wired into the demo script
-— see its block below for the byte-verified evidence). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
-credentials — the runner supplies their own CSR account via env). (All re-checked across `idlookup` / `bytecrtrs` / no-brand so a
+contrast. **Seven open asks + one question**: A/B/C (in the demo script), D-residual (byte-verified, download-to-disk only), and E/F/G/H (registered 2026-07-02 from **production** evidence — BC is live on prod since 2026-06-23, and we do NOT run mutation probes on prod, so E–H are evidenced by prod payloads/screenshots + cited artifacts rather than the dev demo script; see each block). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
+credentials — the runner supplies their own CSR account via env). (A/B/C re-checked across `idlookup` / `bytecrtrs` / no-brand so a
 brand filter can't be the cause.)
+
+> **Lettering note:** the older `BC_CSR_LIB_ONLY_ASKS.md` has its own internal "ASK E" (email filter).
+> THIS document is the canonical register — letters here (A–H) win when batching to BC.
 
 > **Two earlier asks were withdrawn after we re-tested them this way** — see "Resolved on our side"
 > below. We're deliberately handing you a *short, bulletproof* list.
@@ -98,6 +100,79 @@ as GET params, so (b) needs **no IIFE change on our side**. (`playAudioFlag` is 
 | **Function chain** | clickable attachment → `csrWrapper.api.attachment.download({ attachmentId })` → `GET /attachment/download` → **"attachment not found"** |
 | **Feature impacted** | Listening to / downloading live-call recordings from the ticket view (link shipped: commits `958acb0` + `bd3b5e0`) |
 
+## ASK E — voicemail contactMessages carry no caller ID and no transcription  (ADD)  ❌ open
+
+**Evidence (prod, 2026-07-02):** CSR Email Tickets — voicemail messages arrive from
+`dev@mail01.bytecrtrs.com`, subject `"Voice Mail"`, body containing **only a `stamp:` line**, sender
+rendered "No Name / Non-member", and a single `.aac` attachment (e.g. `voicemail_19.aac`). **No caller
+phone number (ANI) and no transcription anywhere in the payload.** A CSR cannot identify or call back
+the customer without listening to the audio and hoping they left a number.
+**Ask:** include the caller ID (ANI) on the voicemail contactMessage — e.g. `data.phone` or in the
+message body — and, if the telephony backend produces one, a transcription field.
+**Related:** ASK D — same telephony pipeline (`brandId:'unknown'`, `trackingIds.apiId:'cli'`). Playback
+works via `playAudioFlag`; this ask is about the *metadata*, not the audio. (Also verify: if voicemail
+attachments are `brandId:'unknown'` like live-call ones, download-to-disk will hit the ASK-D residual 404.)
+
+| | |
+|---|---|
+| **App / Page** | CSR/Admin — `EmailTicketsPage` (voicemail tickets), `UserDetailPage` Messages tab |
+| **Evidence** | Prod screenshot https://nimb.ws/pNzc7n6 · owner bug list `docs/bugs/CSR_bugs_7_2_2026.csv` row "Voicemail missing transcription and caller ID" |
+| **Feature impacted** | CSR triage/callback of voicemail tickets — currently no way to know who called |
+
+## ASK F — `billing.sale` 406 velocity/fraud block: document semantics + CSR unblock path  (DOCUMENT + ADD)  ❌ open
+
+**Evidence (prod, 2026-07-01):** user testmc#5 / Jim Galloway (userId `6a45…3c22`) — four $1.00 sale
+attempts 21:49–21:53 all show `blocked` in payment history; **subsequent attempts with CORRECTED valid
+card info still fail**, surfaced to the client as a **bare HTTP 406** (no distinguishing body). This is
+a *different* 406 from the documented `sequenceOption` 406 (thin-match flags) — and today they are
+indistinguishable on the wire. Consumer side now shows a friendly wait-and-retry message
+(commit `5ed93d9`, `PaymentPage.js` → `errorType:'payment_blocked'`), but we are guessing at the semantics.
+**Ask:** (a) document what triggers the velocity/fraud block, its **duration / reset conditions**;
+(b) whether a **CSR can clear it** (and via which method — nothing on csrWrapper looks like it);
+(c) a **distinguishable error body** (code or message) so clients can tell fraud-block 406 from
+sequenceOption 406 from any other 406.
+
+| | |
+|---|---|
+| **App / Page** | Consumer — `PaymentPage` (funnel checkout); CSR — `UserDetailPage` (no unblock tool exists) |
+| **Evidence** | Prod screenshots https://nimb.ws/1azUGoK (correct info still failing), https://nimb.ws/wYCiv6W (confusing error), https://nimb.ws/IwS84bJ (fresh incognito fail) · payment history shows 4× `blocked` Jul 1 21:49–21:53 |
+| **Feature impacted** | Customer recovery after typo'd card details — currently locked out for an unknown duration with no CSR remedy |
+
+## ASK G — consumer `user.update` → 403 "Forbidden resource" for never-paid (free) members  (FIX or DOCUMENT)  ❌ open
+
+**Evidence (prod, 2026-07-02):** free member testmc#4 — Account → Profile → save phone number →
+**403 "Forbidden resource"**. Context that may matter: our funnel signup is *synthetic* — the BC user is
+created inside `billing.sale`, and a **failed** sale still creates the BC user; so a never-paid member's
+session comes from that path, not a "normal" registration. (Note: the CSR-context `user.update` is fine —
+see "Resolved on our side" below; this is the **consumer** context for a free member.)
+**Ask:** confirm whether consumer `user.update` requires a session minted by a real login vs. is gated
+on **paid status**, and what the supported path is for a free member to update
+`firstName`/`lastName`/`phone`. **Owner requirement: free members MUST be able to maintain their
+profile** (freemium model — profile maintenance is not a paid feature).
+
+| | |
+|---|---|
+| **App / Page** | Consumer — Account → Profile (`user.update` via ApiWrapper) |
+| **Evidence** | Prod screenshot https://nimb.ws/E6DKZPc · owner bug list row 1 ("member unable to add phone number … free state") · friendly 403 message shipped consumer-side in commit `5ed93d9` |
+| **Feature impacted** | Free-member profile maintenance (phone/name) — hard-blocked today |
+
+## ASK H — user object (or order `billingAddress`) should carry city/state  (ADD)  ❌ open
+
+**Evidence (prod, 2026-07-02):** CSR customer profile can show **Zip only** — the BC user object omits
+address entirely; ZIP is recovered from the order `billingAddress`, and even there city/state are not
+reliably present/echoed. Tester ask: "Customer Profile needs to display city and state".
+**Ask:** return **city/state** (or the full billing address echo) on the user object — or consistently
+on the order `billingAddress` — so CSR screens can display customer location without a client-side
+zip→geo lookup. (We may interim-fix with a zip lookup table; the ask is for real data. Same
+data-exposure family as the earlier finding that search *filters* by zip/card/phone but doesn't
+*return* them.)
+
+| | |
+|---|---|
+| **App / Page** | CSR/Admin — `UserDetailPage` customer profile card; `UsersPage` list columns |
+| **Evidence** | Prod screenshot https://nimb.ws/4GonfZU · owner bug list row "Customer Profile needs to display city and state" · prior finding: user object omits zip/card/phone (zip lives only in order `billingAddress`) |
+| **Feature impacted** | CSR seeing where a customer is — identity confirmation, tax/region questions, callback hours |
+
 ## CONFIRM — `userContact` data model (a question, not a defect)
 
 **Demo (live):** `findUserContacts({userId})` reads `GET /contactMessage/admin/find/:userId` (returns the
@@ -106,6 +181,35 @@ contacts in `contactMessage` (by `targetUserId`).
 **Question:** is `userContact` a *separate* store with distinct data, or are member messages all
 `contactMessage`-by-`targetUserId`? Cheap discriminator: do `userContactCsrMail` CSR replies land as
 `contactMessage` thread histories or separate `userContact` docs? If not separate, nothing more is needed.
+
+---
+
+## Draft BC notes for E–H (staged 2026-07-02 — **NOT SENT**, hold for next batch)
+
+Minimalist per-ask notes, ready to paste once we batch. E/F/G/H are prod-evidenced (no dev demo —
+we don't run mutation probes on prod); each cites concrete artifacts instead.
+
+> **E (voicemail metadata):** CSR Email Tickets — voicemail contactMessages arrive with subject
+> "Voice Mail", body = only a `stamp:` line, sender "No Name / Non-member", one `.aac` attachment
+> (`voicemail_19.aac`). No caller number and no transcription in the payload, so a CSR can't identify
+> or call back the customer. Could you include the caller ID (ANI) on the message (e.g. `data.phone`
+> or the body) and, if the telephony backend produces one, a transcription field?
+
+> **F (sale 406 block):** prod userId `6a45…3c22` — four $1.00 sale attempts (Jul 1 21:49–21:53) show
+> `blocked`; retries with corrected valid card info still fail with a bare HTTP 406, indistinguishable
+> from the sequenceOption 406. Three questions: what triggers the block and how long does it last /
+> what resets it? Can a CSR clear it (we don't see a csrWrapper method)? And could the block return a
+> distinguishable error body so the client can show the right message?
+
+> **G (free-member user.update):** prod free member — consumer `user.update` (phone number save) →
+> **403 "Forbidden resource"**. Our signup creates the BC user inside `billing.sale` (a failed sale
+> still creates the user). Is consumer `user.update` gated on paid status, or on how the session was
+> minted? What's the supported path for a never-paid member to update firstName/lastName/phone? Free
+> members need to be able to maintain their profile.
+
+> **H (city/state):** the user object carries no address, so CSR screens can show Zip at best (dug out
+> of order `billingAddress`). Could the user object (or the order `billingAddress`, consistently) echo
+> city/state so CSRs can see customer location without a client-side zip→geo lookup?
 
 ---
 
