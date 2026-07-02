@@ -66,10 +66,12 @@ function contactMessageCallerPhone(item) {
   const c = item?.content || {};
   const d = c?.data || item?.data || {};
   const cands = [
-    d.phone, d.ani, d.callerId, d.caller, d.from, d.fromNumber, d.callerNumber,
-    d.callerPhone, d.number,
-    c?.input?.phone, c?.phone,
-    d?.trackingIds?.phone, item?.trackingIds?.phone,
+    // Confirmed against BC's own live-call sample (Api v3.csv): raw ANI in
+    // data.calleridnum (Asterisk CALLERID(num)), parsed dup in content.input.phone.
+    d.calleridnum, c?.input?.phone,
+    // Defensive fallbacks for the brandId:'unknown' voicemail shape (ASK E — not
+    // yet confirmed; those rendered blank on prod).
+    d.phone, d.ani, d.callerId, d.from, d.number, d?.trackingIds?.phone,
   ];
   const raw = cands.find((v) => v != null && String(v).trim() !== '');
   return raw ? String(raw).trim() : '';

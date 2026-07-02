@@ -23,9 +23,9 @@ export function ticketCallerPhone(item) {
   const c = item?.content || {};
   const d = c?.data || item?.data || {};
   const cands = [
-    d.phone, d.ani, d.callerId, d.caller, d.from, d.fromNumber, d.callerNumber,
-    d.callerPhone, d.number, c?.input?.phone, c?.phone,
-    d?.trackingIds?.phone, item?.trackingIds?.phone,
+    // Confirmed BC field: data.calleridnum (raw ANI); content.input.phone is the dup.
+    d.calleridnum, c?.input?.phone,
+    d.phone, d.ani, d.callerId, d.from, d.number, d?.trackingIds?.phone,
   ];
   const raw = cands.find((v) => v != null && String(v).trim() !== '');
   const digits = String(raw || '').replace(/\D/g, '');

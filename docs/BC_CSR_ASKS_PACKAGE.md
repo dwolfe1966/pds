@@ -107,11 +107,16 @@ as GET params, so (b) needs **no IIFE change on our side**. (`playAudioFlag` is 
 rendered "No Name / Non-member", and a single `.aac` attachment (e.g. `voicemail_19.aac`). **No caller
 phone number (ANI) and no transcription anywhere in the payload.** A CSR cannot identify or call back
 the customer without listening to the audio and hoping they left a number.
-**Ask:** include the caller ID (ANI) on the voicemail contactMessage — e.g. `data.phone` or in the
-message body — and, if the telephony backend produces one, a transcription field.
-**Related:** ASK D — same telephony pipeline (`brandId:'unknown'`, `trackingIds.apiId:'cli'`). Playback
-works via `playAudioFlag`; this ask is about the *metadata*, not the audio. (Also verify: if voicemail
-attachments are `brandId:'unknown'` like live-call ones, download-to-disk will hit the ASK-D residual 404.)
+**Sharpened 2026-07-03 (Kwan said caller ID is in the response; owner then verified all live-call
+numbers are IDENTICAL):** the field DOES exist — `data.calleridnum` (dup at `content.input.phone`),
+confirmed in BC's own doc `Api v3.csv:686` live-call sample (`calleridnum:"9546087693"`). It is the
+ONLY caller-number field in the entire API (grep of all doc CSVs: no `did`/`dnid`/`src`/`ani`/
+`calleridname`). **But it is populated with a CONSTANT placeholder, not the real ANI** — every
+voicemail shows the same number, paired with `name:"No Name"` + `email:"dev@mail01.bytecrtrs.com"`
+(both system placeholders). So the telephony backend isn't capturing the calling party's number.
+**Revised ask:** populate `data.calleridnum` with the REAL caller ANI (currently a fixed placeholder),
+and add a transcription field (genuinely absent — no `transcri*` anywhere in the docs). Our client
+already reads `data.calleridnum` → it will light up the moment BC sends real values (commit shipped).
 
 | | |
 |---|---|
