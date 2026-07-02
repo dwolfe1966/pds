@@ -5,6 +5,7 @@ import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } fr
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
 import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, CSR_TERMS } from './userState';
+import { useZipCity } from './zipCity';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -1189,6 +1190,10 @@ const UserDetailPage = () => {
     }
   };
 
+  // Billing ZIP → "City, ST" (hook — must sit ABOVE the early returns below).
+  const zip = getLatestBillingZip(orders) || user?.zip || null;
+  const zipCityLabel = useZipCity(zip);
+
   // ── Loading / error states ────────────────────────────────
   if (userLoading) {
     return (
@@ -1229,7 +1234,7 @@ const UserDetailPage = () => {
   // ZIP isn't on the BC user object (verified live 2026-06-04 — absent from both
   // /database/search and getUserDetail); pull it from the latest order billing
   // address. user.zip kept as a future-proof fallback if BC ever projects it.
-  const zip = getLatestBillingZip(orders) || user?.zip || null;
+  // (zip + zipCityLabel are declared above the early returns — hook ordering.)
   const lastActive = user?.lastLogin || user?.transient?.lastLogin || null;
 
   // Extract device & IP from most recent order's commercePayments.
@@ -1320,8 +1325,12 @@ const UserDetailPage = () => {
               </div>
             )}
             <div className={styles.metaRow}>
-              <span className={styles.metaLabel}>Zip</span>
-              <span className={styles.metaValue}>{zip || '—'}</span>
+              <span className={styles.metaLabel}>Location</span>
+              {/* City/state resolved locally from the billing ZIP (GeoNames data)
+                  until BC carries address fields on the user (ASK H). */}
+              <span className={styles.metaValue} title={zipCityLabel ? 'Derived from billing ZIP — data © GeoNames (CC BY 4.0)' : undefined}>
+                {zip ? `${zipCityLabel ? `${zipCityLabel} ` : ''}${zip}` : '—'}
+              </span>
             </div>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Last Active</span>
