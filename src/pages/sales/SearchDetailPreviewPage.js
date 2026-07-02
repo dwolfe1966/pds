@@ -220,6 +220,57 @@ const SearchDetailPreviewPage = () => {
     );
   }
 
+  // ─── Logged-in user WITHOUT a ready report ──────────────────────────────────
+  // Everything below this block is the anonymous funnel (signup forms). A user
+  // who already has an account must never see "Create Your Account" — the
+  // embedded signup would fork them into a second account (bug list 7/2 #3).
+  if (token) {
+    const handleUpgrade = () => {
+      try { sessionStorage.setItem('selectedPersonId', id); } catch { /* storage unavailable */ }
+      track('teaser_upgrade_click', { personId: id, paid: isPaid });
+      navigate('/payment?upgrade=1');
+    };
+    return (
+      <main className={styles.main} data-no-nav="true">
+        <div className={styles.miniHeader}>
+          <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
+          <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
+        </div>
+        <h1 className={styles.pageTitle}>{person.fullName}</h1>
+        <section className={styles.section}>
+          <div className={styles.ctaCard}>
+            {isPaid ? (
+              <>
+                {/* Paid member, but report creation failed above — recover via
+                    member search rather than dead-ending in the sales funnel. */}
+                <h3 className={styles.ctaTitle}>We couldn&apos;t open this report right now</h3>
+                <p className={styles.ctaText}>
+                  Your membership is active. Try opening <strong>{person.fullName}</strong> again
+                  from your member search.
+                </p>
+                <button type="button" className={styles.btnWhite} onClick={() => navigate('/people-search')}>
+                  Go to Member Search
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className={styles.ctaTitle}>Unlock the full report</h3>
+                <p className={styles.ctaText}>
+                  You&apos;re already signed in — no new account needed. Start your membership to
+                  see everything we found for <strong>{person.fullName}</strong>: phone numbers,
+                  addresses, relatives, criminal &amp; court records, and more.
+                </p>
+                <button type="button" className={styles.btnWhite} onClick={handleUpgrade}>
+                  Unlock with Membership →
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   // ─── Dispatch to standalone variant components ───────────────────────────────
 
   if (variant === 'a') {

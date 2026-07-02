@@ -17,8 +17,11 @@ jest.mock('react-router-dom', () => ({
   useLocation: () => ({ search: '', pathname: '/search' }),
 }));
 
+// Mutable so individual tests can flip the paid state — free members are routed
+// to teaser results instead of the direct createReportForPhone path.
+let mockIsPaid = true;
 jest.mock('../context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: '1', name: 'Test User' }, token: 'test-token' }),
+  useAuth: () => ({ user: { id: '1', name: 'Test User' }, token: 'test-token', isPaid: mockIsPaid }),
 }));
 
 jest.mock('../services/reportService', () => ({
@@ -49,6 +52,7 @@ beforeEach(() => {
   document.body.appendChild(container);
   mockNavigate.mockClear();
   createReportForPhone.mockClear();
+  mockIsPaid = true;
 });
 
 afterEach(() => {
@@ -290,6 +294,30 @@ describe('Phone search handler', () => {
 
     expect(createReportForPhone).toHaveBeenCalledWith('5551234567');
     expect(mockNavigate).toHaveBeenCalledWith('/people/abc-123');
+  });
+
+  test('free member (isPaid=false) routes to teaser results, never calls createReportForPhone', async () => {
+    mockIsPaid = false;
+
+    render();
+    clickTab('Phone');
+
+    const input = container.querySelector('input[type="tel"]');
+    act(() => {
+      const nativeSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype, 'value'
+      ).set;
+      nativeSetter.call(input, '5551234567');
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    await act(async () => {
+      const form = getForm();
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    expect(createReportForPhone).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith('/people-results?phone=5551234567');
   });
 
   test('shows error when phone number is too short', () => {

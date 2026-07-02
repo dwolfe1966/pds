@@ -83,7 +83,7 @@ const SEARCH_TIPS = {
 const MemberGeneralSearchPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isPaid } = useAuth();
   const [activeTab, setActiveTab] = useState('name');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -180,6 +180,14 @@ const MemberGeneralSearchPage = () => {
     setError('');
     if (!phone || phone.length < 10) {
       setError('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    // Free members can't create reports (BC 403s pre-payment), so the old
+    // direct-to-report path surfaced a fake system error (bug list 7/2 #4).
+    // Route them to teaser results instead — same phone teaser the sales
+    // funnel runs — and let the report gate upsell on result click.
+    if (!isPaid) {
+      navigate(`/people-results?phone=${encodeURIComponent(phone)}`);
       return;
     }
     setLoading(true);

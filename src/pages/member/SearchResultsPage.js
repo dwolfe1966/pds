@@ -23,6 +23,7 @@ const MemberSearchResultsPage = () => {
   const lastNameParam = params.get('lastName');
   const stateParam = params.get('state');
   const emailParam = params.get('email');
+  const phoneParam = params.get('phone');
   // Address search params
   const searchTypeParam = params.get('searchType');
   const cityParam = params.get('city');
@@ -198,6 +199,22 @@ const MemberSearchResultsPage = () => {
           return;
         }
 
+        // Phone flow: phone URL param (from MemberGeneralSearchPage phone tab —
+        // free members get teaser results here instead of the paid direct-to-report
+        // path; same sale.phone.teaser search the sales SRP runs)
+        if (phoneParam) {
+          const response = await api.searchPeople({ phone: phoneParam, type: 'phone' });
+          setResults(response.data || []);
+          setTotalCount(response.pagination?.total || (response.data?.length ?? 0));
+          setRawResponse(response.rawResponse || null);
+
+          if (response.searchContext) {
+            setSearchContext(response.searchContext);
+          }
+          setLoading(false);
+          return;
+        }
+
         // Email flow: email URL param (from MemberGeneralSearchPage email tab)
         if (emailParam) {
           const searchParams = {
@@ -290,13 +307,13 @@ const MemberSearchResultsPage = () => {
       }
     };
     fetchResults();
-  }, [firstNameParam, lastNameParam, stateParam, emailParam, query, zip, searchTypeParam, cityParam, zipParam]);
+  }, [firstNameParam, lastNameParam, stateParam, emailParam, phoneParam, query, zip, searchTypeParam, cityParam, zipParam]);
 
   const queryLabel = searchTypeParam === 'address'
     ? [cityParam, stateParam, zipParam].filter(Boolean).join(', ')
     : firstNameParam
       ? `${firstNameParam} ${lastNameParam}${stateParam ? `, ${stateParam}` : ''}`
-      : emailParam || query || '';
+      : emailParam || phoneParam || query || '';
 
   return (
     <main className={styles.main}>
