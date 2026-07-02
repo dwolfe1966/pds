@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
 import { createReportForIdentity, getExistingReportId } from '../../services/reportService';
@@ -70,7 +70,7 @@ const SearchDetailPreviewPage = () => {
   const variant = MARKETING_VARIANTS.includes(queryV)
     ? queryV
     : (MARKETING_VARIANTS.includes(campaignVariant) ? campaignVariant : '1');
-  const { token, isPaid } = useAuth();
+  const { token, isPaid, subscriptionLoading } = useAuth();
 
   const [person, setPerson] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -220,16 +220,33 @@ const SearchDetailPreviewPage = () => {
     );
   }
 
-  // ─── Logged-in user WITHOUT a ready report ──────────────────────────────────
-  // Everything below this block is the anonymous funnel (signup forms). A user
-  // who already has an account must never see "Create Your Account" — the
-  // embedded signup would fork them into a second account (bug list 7/2 #3).
-  if (token) {
-    const handleUpgrade = () => {
-      try { sessionStorage.setItem('selectedPersonId', id); } catch { /* storage unavailable */ }
-      track('teaser_upgrade_click', { personId: id, paid: isPaid });
-      navigate('/payment?upgrade=1');
-    };
+  // ─── Signed-in, unpaid → straight to checkout (NOT an interstitial) ─────────
+  // The funnel issues a synthetic token DURING signup (BC user is created inside
+  // billing.sale), so a brand-new user who just signed up to unlock this person
+  // has a token but no order. They must flow directly to /payment — an
+  // interstitial here stalls the funnel (regression report 2026-07-03). This
+  // also covers a returning free member: still the right destination (payment),
+  // never the "Create Your Account" signup form (bug list 7/2 #3).
+  // While a signed-in user's paid status is still resolving, hold on a spinner —
+  // never fall through to the anonymous signup form (which would flash "Create
+  // Your Account" at someone who already has an account).
+  if (token && subscriptionLoading) {
+    return (
+      <main className={styles.main} data-no-nav="true">
+        <div className={styles.loadingWrap}>
+          <div className={styles.loadingSpinner} aria-hidden="true" />
+          <p className={styles.loadingTitle}>One moment…</p>
+        </div>
+      </main>
+    );
+  }
+  if (token && !isPaid) {
+    try { sessionStorage.setItem('selectedPersonId', id); } catch { /* storage unavailable */ }
+    return <Navigate to="/payment?upgrade=1" replace />;
+  }
+
+  // ─── Paid member whose report create failed above → recover (not the funnel) ─
+  if (token && isPaid) {
     return (
       <main className={styles.main} data-no-nav="true">
         <div className={styles.miniHeader}>
@@ -239,32 +256,14 @@ const SearchDetailPreviewPage = () => {
         <h1 className={styles.pageTitle}>{person.fullName}</h1>
         <section className={styles.section}>
           <div className={styles.ctaCard}>
-            {isPaid ? (
-              <>
-                {/* Paid member, but report creation failed above — recover via
-                    member search rather than dead-ending in the sales funnel. */}
-                <h3 className={styles.ctaTitle}>We couldn&apos;t open this report right now</h3>
-                <p className={styles.ctaText}>
-                  Your membership is active. Try opening <strong>{person.fullName}</strong> again
-                  from your member search.
-                </p>
-                <button type="button" className={styles.btnWhite} onClick={() => navigate('/people-search')}>
-                  Go to Member Search
-                </button>
-              </>
-            ) : (
-              <>
-                <h3 className={styles.ctaTitle}>Unlock the full report</h3>
-                <p className={styles.ctaText}>
-                  You&apos;re already signed in — no new account needed. Start your membership to
-                  see everything we found for <strong>{person.fullName}</strong>: phone numbers,
-                  addresses, relatives, criminal &amp; court records, and more.
-                </p>
-                <button type="button" className={styles.btnWhite} onClick={handleUpgrade}>
-                  Unlock with Membership →
-                </button>
-              </>
-            )}
+            <h3 className={styles.ctaTitle}>We couldn&apos;t open this report right now</h3>
+            <p className={styles.ctaText}>
+              Your membership is active. Try opening <strong>{person.fullName}</strong> again
+              from your member search.
+            </p>
+            <button type="button" className={styles.btnWhite} onClick={() => navigate('/people-search')}>
+              Go to Member Search
+            </button>
           </div>
         </section>
       </main>
