@@ -35,6 +35,14 @@ ranks if it's visible text on the profile page.
 
 Docs: `docs/seo/implementation-plan.md` (architecture: separate Next.js SSR+ISR app split
 from the Parcel SPA by reverse proxy) + `docs/seo/competitive-teardown.md` (Spokeo fully
-reverse-engineered, verbatim JSON-LD/FAQ evidence). No code yet; next = BC coverage probe
-(name-aggregation, relatives-with-URLs, counts, school/employer) + Phase 0 proof-of-crawl.
+reverse-engineered) + `docs/seo/bc-coverage-probe.md` (8 verdicts: BC = per-profile
+on-demand source, NOT a directory generator — no bulk enumeration, TooManyMatches cap,
+counts fabricated client-side; **SEO ASK 0** = fix dev captcha or send sample payloads).
+
+**PAUSED 2026-07-03 mid-Phase-0** (owner tabled SEO for CSR bugs). `seo/` Next.js app
+committed (`1031d19`): leaf template SSR-verified with all 5 JSON-LD types, aggressive
+PII split, FAQ engine v0, own p-IDs, 60d ISR, **noindex until staged rollout**; fixtures
+behind `lib/data.js#getPerson` seam. **Resume point: owner picks hosting (VPS Node proc —
+recommended — vs Vercel), then path-split proxy + deploy + GSC URL-Inspection proof; send
+SEO ASK 0 with the E–H asks batch.**
 Related: [[project_bc_integration_boundary]], [[feedback_expose_all_report_data]].
