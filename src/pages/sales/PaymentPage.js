@@ -592,13 +592,13 @@ const PaymentPage = () => {
               background: theme ? (theme.onDark ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' : 'linear-gradient(135deg, #055a86 0%, #007cc2 100%)') : 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
               color: '#fff', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
             }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#bbf7d0' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: theme ? 'rgba(255,255,255,0.85)' : '#bbf7d0' }}>
                 {brand.name} Membership
               </div>
               <h2 style={{ margin: '0.25rem 0 0.4rem', fontSize: '1.3rem', fontWeight: 800, color: '#fff' }}>
                 Unlock unlimited people searches &amp; full reports
               </h2>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#dcfce7', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: theme ? 'rgba(255,255,255,0.9)' : '#dcfce7', lineHeight: 1.5 }}>
                 Contact info, addresses, relatives, and more — search as many people as you want and pull
                 up to 5 full reports a day.
               </p>
@@ -607,8 +607,8 @@ const PaymentPage = () => {
 
           {success ? (
             <div className={styles.successBox}>
-              <div className={styles.successIcon}>✓</div>
-              <h2 className={styles.successTitle}>You're in!</h2>
+              <div className={styles.successIcon} style={theme ? { background: theme.band } : undefined}>✓</div>
+              <h2 className={styles.successTitle} style={theme ? { color: theme.accentDark } : undefined}>You're in!</h2>
               <p className={styles.successText}>
                 Your {brand.name} Basic membership is now active. A receipt is on its way to <strong>{user?.email}</strong>.
               </p>
@@ -616,8 +616,9 @@ const PaymentPage = () => {
               {/* Payment confirmation — amount charged today + order id for the customer's records */}
               <div style={{
                 margin: '1rem auto 0', maxWidth: 380,
-                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.5rem',
-                padding: '0.75rem 1rem', fontSize: '0.9rem', color: '#166534', textAlign: 'left',
+                background: theme ? (theme.onDark ? 'rgba(245,158,11,0.1)' : '#e6f3fa') : '#f0fdf4',
+                border: `1px solid ${theme ? (theme.onDark ? 'rgba(245,158,11,0.3)' : '#cfe6f2') : '#bbf7d0'}`, borderRadius: '0.5rem',
+                padding: '0.75rem 1rem', fontSize: '0.9rem', color: theme ? theme.accentDark : '#166534', textAlign: 'left',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
                   <span>Amount paid today</span>
@@ -642,10 +643,10 @@ const PaymentPage = () => {
                     type="button"
                     onClick={() => navigate(`/people/${confirmedReportId}`)}
                     style={{
-                      background: '#0d5d2f', color: '#fff', border: 'none',
+                      background: theme ? theme.button : '#0d5d2f', color: '#fff', border: 'none',
                       padding: '0.9rem 1.25rem', borderRadius: '0.5rem',
                       fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(13,93,47,0.2)',
+                      boxShadow: theme ? '0 2px 4px rgba(0,0,0,0.2)' : '0 2px 4px rgba(13,93,47,0.2)',
                     }}
                   >
                     View {selectedPerson.fullName}'s report →
@@ -668,8 +669,8 @@ const PaymentPage = () => {
                   type="button"
                   onClick={() => navigate('/dashboard')}
                   style={{
-                    background: '#fff', color: '#0d5d2f',
-                    border: '2px solid #0d5d2f',
+                    background: theme && theme.onDark ? 'transparent' : '#fff', color: theme ? theme.accent : '#0d5d2f',
+                    border: `2px solid ${theme ? theme.accent : '#0d5d2f'}`,
                     padding: '0.9rem 1.25rem', borderRadius: '0.5rem',
                     fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
                   }}
@@ -688,7 +689,7 @@ const PaymentPage = () => {
                   onClick={() => navigate('/account')}
                   style={{
                     background: 'none', border: 'none', padding: 0,
-                    color: '#0d5d2f', fontWeight: 600, cursor: 'pointer',
+                    color: theme ? theme.accent : '#0d5d2f', fontWeight: 600, cursor: 'pointer',
                     textDecoration: 'underline',
                   }}
                 >Account Settings</button>.
