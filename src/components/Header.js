@@ -13,7 +13,7 @@ export const SELF_CHROME_PREFIXES = ['/name/landing/v7', '/name/landing/v8', '/n
 // Shared funnel pages that carry a funnel theme (loader, results). When a theme is active
 // (blue/dark, set by a themed landing), the green global nav/footer would clash — suppress
 // them here. Green funnels (no theme) keep the chrome. Payment added once it's themed.
-export const THEMED_FUNNEL_PREFIXES = ['/name/loader', '/name/search-result'];
+export const THEMED_FUNNEL_PREFIXES = ['/name/loader', '/name/search-result', '/payment'];
 export function funnelThemeActive() {
   try { return !!sessionStorage.getItem('funnel.theme'); } catch { return false; }
 }

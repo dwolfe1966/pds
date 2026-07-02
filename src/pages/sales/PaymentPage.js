@@ -9,6 +9,7 @@ import { track, buildReferQueryString } from '../../services/trackingService';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch, EMPTY_FLAGS } from '../../services/thinMatch';
+import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 
 // BC offer key — the actual price charged is enforced by BC's offer config
 // (findByShmName). Display values come from `brand.trialPrice` /
@@ -93,6 +94,7 @@ const PLAN_FEATURES = [
 
 const PaymentPage = () => {
   const brand = useBrand();
+  const theme = useFunnelTheme(); // funnel palette carried from landing; null = green (colors only)
   const campaign = useCampaign();
   // BC's per-shN "optout" flag (comp.client.theme.optout → campaign.optOut) toggles
   // ONLY the consent checkbox + the SUP pricing-disclosure paragraph below the "Terms
@@ -559,7 +561,7 @@ const PaymentPage = () => {
   if (authLoading) return null;
 
   return (
-    <main className={styles.main}>
+    <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
       <div className={styles.layout}>
 
         {/* ── Left: Form ───────────────────────────────────────── */}
@@ -585,7 +587,7 @@ const PaymentPage = () => {
               thin-match signup). After payment the success screen routes to the dashboard. */}
           {!selectedPersonId && !success && (
             <div style={{
-              background: 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
+              background: theme ? (theme.onDark ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' : 'linear-gradient(135deg, #055a86 0%, #007cc2 100%)') : 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
               color: '#fff', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
             }}>
               <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#bbf7d0' }}>
@@ -946,6 +948,7 @@ const PaymentPage = () => {
                     type="submit"
                     disabled={loading || (requireTermsCheckbox && !agreeTerms)}
                     className={styles.submitBtn}
+                    style={theme ? { background: theme.button } : undefined}
                   >
                     {loading ? (
                       <span className={styles.submitSpinner}>
