@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
-import { useTicketSenderUsers } from '../../hooks/useTicketSenderUsers';
+import { useTicketSenderUsers, useTicketCallerUsers, ticketCallerPhone } from '../../hooks/useTicketSenderUsers';
 import styles from './EmailTicketsPage.module.css';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -276,6 +276,8 @@ const EmailTicketsPage = () => {
   // link, AND the member/non-member filter). Resolved from allItems — NOT the filtered
   // listItems — so the filter can read it without a dependency cycle.
   const senderUsers = useTicketSenderUsers(allItems);
+  // Voicemail tickets have no email — resolve the customer by caller phone (item 13).
+  const callerUsers = useTicketCallerUsers(allItems);
   // True if a ticket maps to a registered account. Resolved object = member, null =
   // non-member; while the lookup is pending (undefined) fall back to the targetUserId hint.
   const memberStatus = (item) => {
@@ -984,6 +986,11 @@ const EmailTicketsPage = () => {
                 // Voicemail rows read "No Name / Non-member" — surface the caller
                 // phone inline so a CSR can identify/return the call from the list.
                 const callerPhone = isCM ? contactMessageCallerPhone(item) : '';
+                // If the caller phone matches a customer, link straight to them
+                // (voicemails carry no email, so this is the only join — item 13).
+                const callerDigits = isCM ? ticketCallerPhone(item) : '';
+                const callerMember = callerDigits ? callerUsers?.[callerDigits] : null;
+                const linkedMember = member || callerMember;
                 const senderLabel = isCM
                   ? `${callerPhone ? formatPhone(callerPhone) : contactMessageSenderName(item)}${memberSuffix}`
                   : (isCsrMail(item.type)
@@ -1040,9 +1047,9 @@ const EmailTicketsPage = () => {
                         {preview ? ` — ${preview.length > 60 ? preview.slice(0, 60) + '...' : preview}` : ''}
                       </div>
                     </button>
-                    {member && (
+                    {linkedMember && (
                       <Link
-                        to={`/users/${member.userId}${senderEmail ? `?email=${encodeURIComponent(senderEmail)}` : ''}`}
+                        to={`/users/${linkedMember.userId}${senderEmail ? `?email=${encodeURIComponent(senderEmail)}` : ''}`}
                         title="Open customer detail"
                         onClick={(e) => e.stopPropagation()}
                         style={{
@@ -1052,7 +1059,7 @@ const EmailTicketsPage = () => {
                           color: '#0d5d2f', fontWeight: 600, fontSize: '0.78rem', textDecoration: 'none',
                         }}
                       >
-                        View customer profile&nbsp;→
+                        {member ? 'View customer profile' : 'Caller matches a customer — view profile'}&nbsp;→
                       </Link>
                     )}
                   </div>
@@ -1102,6 +1109,18 @@ const EmailTicketsPage = () => {
                         &nbsp;&middot;&nbsp;
                         {formatDate(selected.createdAt)}
                       </p>
+                      {/* Caller matched to a customer by phone → jump to their profile. */}
+                      {isContactMessage(selected.type) && (() => {
+                        const cd = ticketCallerPhone(selected);
+                        const cm = cd ? callerUsers?.[cd] : null;
+                        return cm ? (
+                          <p className={styles.detailMeta} style={{ marginTop: 4 }}>
+                            <Link to={`/users/${cm.userId}`} style={{ color: '#0d5d2f', fontWeight: 600 }}>
+                              Caller matches a customer — view profile&nbsp;→
+                            </Link>
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                     <div className={styles.statusControls}>
                       {selected.content?.category && (
