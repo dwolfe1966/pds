@@ -1002,15 +1002,15 @@ const PaymentPage = () => {
         {!success && (
           <div className={styles.summaryCol}>
             <div className={styles.summaryCard}>
-              <div className={styles.summaryHeader}>
+              <div className={styles.summaryHeader} style={theme ? { background: theme.band } : undefined}>
                 <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
                 <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
               </div>
-              <p className={styles.summaryInstant}>⚡ Instant access after payment</p>
+              <p className={styles.summaryInstant} style={theme ? { background: theme.onDark ? 'rgba(245,158,11,0.12)' : '#e6f3fa', color: theme.accentDark } : undefined}>⚡ Instant access after payment</p>
               <ul className={styles.featureList}>
                 {PLAN_FEATURES.map((f, i) => (
                   <li key={i} className={styles.featureItem}>
-                    <span className={styles.featureCheck}>✓</span>
+                    <span className={styles.featureCheck} style={theme ? { color: theme.accent } : undefined}>✓</span>
                     {f}
                   </li>
                 ))}
