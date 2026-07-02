@@ -1,0 +1,17 @@
+Evidence/Screenshots,Issue,Notes,Status,Observation
+https://nimb.ws/E6DKZPc, member unable to add phone number,"I think if a member is in a ""free"" state they cant add phone number. Good bug 7/2",,"All of these concerns are really around the ""partially baked"" freemium model setup. Will audit experience,  but 
+(1) we want experience to be functional for fee member (able to add phone #)
+(2) we want paid feature engagement to ""upsell"" user into paid tier"
+https://nimb.ws/VzXMOeS,create use case benefits to enhance conversion,Good thoughts. You are thinking conversion opportunity when user not inpaid state.,,
+https://nimb.ws/MiNy6wS,https://www.idlookup.ai/alerts Free member conversion funnel creates ne account instead of leading to paid membership,,,
+https://nimb.ws/WhAiryf,Confusing UI not leading to conversion.,,,
+https://nimb.ws/osGzR6B,Ambiguous order state,,,
+https://nimb.ws/wYCiv6W,Confusing error message,Good bug,,
+https://nimb.ws/1azUGoK,"After multiple unsuccesful attempts with wrong info, subscriber unable to pay with correct info.",,,
+https://nimb.ws/IwS84bJ,New incognito fails payment with incorrect name,,,
+https://nimb.ws/UtvCOka,"https://nimb.ws/aoTLWPG UserID 6a44100827aa861231e1f567 order details page shows refunded account as inactive -expired, but Customer directory still show status Active.",,,
+https://nimb.ws/raEwxY9,"Customer Profie status is ambiguous. Perhaps better to grey out non-applicable state? It would also be nice if the Refund action was recorded in the Timeline instead of ""CSR Note""",,,
+https://nimb.ws/qrLlYIB,https://www.idlookup.ai/account Customer My Account > Subscription & Billing does not show CSR Refund / Expired account. Cancel Account action on Expired account - No confirmation message. ,,,
+https://nimb.ws/pNzc7n6,Emai Tickets > Voicemail missing transcription and caller ID,,,
+https://nimb.ws/cu2TmOJ,Order Detail - unable to enter email adress in greyed field,,,
+https://nimb.ws/4GonfZU,Customer Profile needs to display city and state ,,,
