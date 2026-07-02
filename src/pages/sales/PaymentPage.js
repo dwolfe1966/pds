@@ -561,12 +561,16 @@ const PaymentPage = () => {
       } else if (status === 402 || /declin|insufficient|cvv|expired card|invalid card|card number/i.test(rawMsg)) {
         errorType = 'card_declined';
         message = 'Your card was declined. Please check your card details and try again, or use a different card.';
-      } else if (status === 406 || /status code 406/i.test(rawMsg)) {
-        // BC blocks repeat sale attempts for a while after several failures
-        // (payment history shows 'Blocked'); axios surfaces it as a bare 406
-        // (bug list 7/2 #6 — correct info still failing after bad attempts).
-        errorType = 'payment_blocked';
-        message = 'We couldn’t process this payment right now. This can happen after several attempts in a row — please wait a few minutes and try again. If it keeps happening, call us at 866-204-1902 and we’ll get you set up.';
+      } else if (status === 406 || err?.data?.status === 'rejected' || /status code 406/i.test(rawMsg)) {
+        // BC returns HTTP 406 with body {status:'rejected'} for a rejected sale.
+        // Live-captured 2026-07-02: this covers BOTH a plain card decline (test
+        // card 4111…) AND an ineligible-offer rejection — a prior FAILED attempt
+        // still creates the BC user, after which the nonMemberOnly signup offer
+        // rejects every retry for that email (root cause of "correct info still
+        // fails", bug list 7/2 #6). The body can't tell them apart, so cover both
+        // and DON'T tell the user to "wait" — waiting fixes neither.
+        errorType = 'payment_rejected';
+        message = "We couldn't complete your payment. Please double-check your card number, expiry, and CVV, or try a different card. If you've already started signing up with this email, sign in instead — or call 866-204-1902 and we'll finish setting you up.";
       } else if (/must match|regular expression/i.test(rawMsg)) {
         // BC field-validation echo — never show the raw regex text.
         errorType = 'invalid_fields';
