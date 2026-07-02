@@ -211,9 +211,9 @@ const SalesSearchResultsPage = () => {
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
       <ThemedFunnelHeader theme={theme} />
-      <div className={styles.contentContainer}>
+      <div className={styles.contentContainer} style={theme ? { background: theme.surface, border: theme.onDark ? `1px solid ${theme.line}` : undefined } : undefined}>
         {/* Header Section */}
-        <div className={styles.header}>
+        <div className={styles.header} style={theme ? { borderBottomColor: theme.line } : undefined}>
           <h1 className={styles.title} style={theme ? { color: theme.ink } : undefined}>
             {results.length > 0 && countLabel
               ? `We found ${countLabel} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`
@@ -225,14 +225,6 @@ const SalesSearchResultsPage = () => {
               {searchQuery.state && <span> • {searchQuery.state}</span>}
             </p>
           )}
-          <div style={{ maxWidth: '600px' }}>
-            <SearchBar
-              initialFirstName={searchQuery.firstName || ''}
-              initialLastName={searchQuery.lastName || ''}
-              initialQuery={query || ''}
-              theme={theme}
-            />
-          </div>
         </div>
 
         {/* Loading State */}
@@ -268,11 +260,11 @@ const SalesSearchResultsPage = () => {
         {/* Results */}
         {!loading && !errorMessage && results && results.length > 0 ? (
           <div>
-            <div className={styles.resultsCount}>
+            <div className={styles.resultsCount} style={theme ? { color: theme.mut, borderTopColor: theme.accent } : undefined}>
               {totalCount > 30 ? (
-                <>Showing <strong>{results.length}</strong> of <strong>30+</strong> matches — refine your search below for a narrower list</>
+                <>Showing <strong style={theme ? { color: theme.accent } : undefined}>{results.length}</strong> of <strong style={theme ? { color: theme.accent } : undefined}>30+</strong> matches — refine your search below for a narrower list</>
               ) : (
-                <>Found <strong>{displayCount}</strong> {displayCount === 1 ? 'result' : 'results'} — select a name to view the full report</>
+                <>Found <strong style={theme ? { color: theme.accent } : undefined}>{displayCount}</strong> {displayCount === 1 ? 'result' : 'results'} — select a name to view the full report</>
               )}
             </div>
             <div style={{
@@ -395,6 +387,24 @@ const SalesSearchResultsPage = () => {
               : <ZeroResultsPanel searchType="name" query={searchQuery} theme={theme} />;
           })()
         ) : null}
+
+        {/* Refine search — moved below results so results are immediately visible (not pushed
+            down by a tall form). Matches the "refine your search below" copy above. */}
+        {!loading && (
+          <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: `1px solid ${theme ? theme.line : 'var(--color-border-light)'}` }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: theme ? theme.ink : 'var(--color-text-primary)' }}>
+              Not who you&apos;re looking for? Refine your search
+            </h2>
+            <div style={{ maxWidth: '600px' }}>
+              <SearchBar
+                initialFirstName={searchQuery.firstName || ''}
+                initialLastName={searchQuery.lastName || ''}
+                initialQuery={query || ''}
+                theme={theme}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
