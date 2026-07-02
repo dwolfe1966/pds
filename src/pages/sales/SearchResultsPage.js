@@ -228,18 +228,19 @@ const SalesSearchResultsPage = () => {
               initialFirstName={searchQuery.firstName || ''}
               initialLastName={searchQuery.lastName || ''}
               initialQuery={query || ''}
+              theme={theme}
             />
           </div>
         </div>
 
         {/* Loading State */}
         {loading && (
-          <div className={styles.loading}>
+          <div className={styles.loading} style={theme ? { color: theme.ink } : undefined}>
             <div style={{
               width: '60px',
               height: '60px',
-              border: '5px solid #e5e7eb',
-              borderTop: '5px solid var(--color-primary)',
+              border: `5px solid ${theme ? theme.line : '#e5e7eb'}`,
+              borderTop: `5px solid ${theme ? theme.accent : 'var(--color-primary)'}`,
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
               margin: '0 auto 1.5rem auto'
@@ -388,8 +389,8 @@ const SalesSearchResultsPage = () => {
           (() => {
             const flags = readThinMatch();
             return campaign?.search?.zeroState === 'thinMatch'
-              ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} />
-              : <ZeroResultsPanel searchType="name" query={searchQuery} />;
+              ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} />
+              : <ZeroResultsPanel searchType="name" query={searchQuery} theme={theme} />;
           })()
         ) : null}
       </div>

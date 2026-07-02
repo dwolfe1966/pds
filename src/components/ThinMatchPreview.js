@@ -79,7 +79,7 @@ function maskWord(text) {
     .join(' ');
 }
 
-const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
+const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme = null }) => {
   const variant = thinMatchVariant(flags) || 'default';
   const copy = VARIANT_COPY[variant] || VARIANT_COPY.default;
   const cards = useMemo(() => buildPreviewCards(searchType, query), [searchType, query]);
@@ -114,8 +114,8 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
           fontSize: '0.75rem',
           fontWeight: 700,
           letterSpacing: '0.05em',
-          color: '#0d5d2f',
-          background: '#dcfce7',
+          color: theme ? theme.accentDark : '#0d5d2f',
+          background: theme ? (theme.onDark ? 'rgba(245,158,11,0.15)' : '#e6f3fa') : '#dcfce7',
           padding: '0.25rem 0.625rem',
           borderRadius: '999px',
           marginBottom: '0.75rem',
@@ -190,7 +190,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {} }) => {
             {error && (
               <div style={{ color: '#b91c1c', fontSize: '0.8125rem' }}>{error}</div>
             )}
-            <button type="submit" disabled={loading} style={ctaStyle(loading)}>
+            <button type="submit" disabled={loading} style={ctaStyle(loading, theme)}>
               {loading ? 'Creating your account…' : 'Create account & continue'}
             </button>
             <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
@@ -250,9 +250,9 @@ const inputStyle = {
   outline: 'none',
 };
 
-const ctaStyle = (loading) => ({
+const ctaStyle = (loading, theme) => ({
   padding: '0.875rem 1rem',
-  background: loading ? '#94a3b8' : '#0d5d2f',
+  background: loading ? '#94a3b8' : (theme ? theme.button : '#0d5d2f'),
   color: '#fff',
   border: 'none',
   borderRadius: '0.5rem',
