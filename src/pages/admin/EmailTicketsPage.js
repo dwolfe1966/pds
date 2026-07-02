@@ -57,6 +57,40 @@ function contactMessageSenderName(item) {
   return item?.content?.input?.name || item?.content?.name || 'Anonymous';
 }
 
+// Caller ID (ANI) for voicemail/live-call contactMessages. Kwan (BC, 2026-07-03)
+// confirmed the caller phone IS in the API response; BC hasn't named the exact
+// field, so we read the likely telephony paths in priority order. Returns '' if
+// none present (renders nothing, as before). Tighten to the confirmed path once
+// bc-iife-investigator captures a live voicemail payload.
+function contactMessageCallerPhone(item) {
+  const c = item?.content || {};
+  const d = c?.data || item?.data || {};
+  const cands = [
+    d.phone, d.ani, d.callerId, d.caller, d.from, d.fromNumber, d.callerNumber,
+    d.callerPhone, d.number,
+    c?.input?.phone, c?.phone,
+    d?.trackingIds?.phone, item?.trackingIds?.phone,
+  ];
+  const raw = cands.find((v) => v != null && String(v).trim() !== '');
+  return raw ? String(raw).trim() : '';
+}
+
+// A voicemail/live-call message (telephony backend). Used to decide whether to
+// surface caller ID and to label the sender.
+function isVoiceMessage(item) {
+  const d = item?.content?.data || item?.data || {};
+  if (d.liveCallId != null) return true;
+  const subj = (item?.content?.subject || '').toLowerCase();
+  return /voice ?mail|live ?call/.test(subj);
+}
+
+// Format a raw phone (digits) as (NNN) NNN-NNNN when it's a US 10-digit number.
+function formatPhone(raw) {
+  const d = String(raw || '').replace(/\D/g, '');
+  const n = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
+  return n.length === 10 ? `(${n.slice(0, 3)}) ${n.slice(3, 6)}-${n.slice(6)}` : String(raw || '');
+}
+
 function contactMessageSenderEmail(item) {
   return item?.content?.input?.email || item?.content?.email || '';
 }
@@ -947,8 +981,11 @@ const EmailTicketsPage = () => {
                   : (member === null
                       ? (isMemberLinked(item) ? ' · Member' : ' · Non-member')
                       : '');
+                // Voicemail rows read "No Name / Non-member" — surface the caller
+                // phone inline so a CSR can identify/return the call from the list.
+                const callerPhone = isCM ? contactMessageCallerPhone(item) : '';
                 const senderLabel = isCM
-                  ? `${contactMessageSenderName(item)}${memberSuffix}`
+                  ? `${callerPhone ? formatPhone(callerPhone) : contactMessageSenderName(item)}${memberSuffix}`
                   : (isCsrMail(item.type)
                       ? (item.owner ? `${item.owner.firstName || ''} ${item.owner.lastName || ''}`.trim() : 'CSR')
                       : (userName || 'Customer'));
@@ -1055,6 +1092,13 @@ const EmailTicketsPage = () => {
                                 ? (selected.owner ? `${selected.owner.firstName || ''} ${selected.owner.lastName || ''}`.trim() : 'CSR')
                                 : (userName || 'Customer'))}
                         </strong>
+                        {/* Caller ID for voicemail/live-call tickets (BC now returns it). */}
+                        {isContactMessage(selected.type) && contactMessageCallerPhone(selected) && (
+                          <>
+                            &nbsp;&middot;&nbsp;
+                            📞 <a href={`tel:${contactMessageCallerPhone(selected)}`}>{formatPhone(contactMessageCallerPhone(selected))}</a>
+                          </>
+                        )}
                         &nbsp;&middot;&nbsp;
                         {formatDate(selected.createdAt)}
                       </p>
