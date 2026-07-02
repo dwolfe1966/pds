@@ -3,17 +3,24 @@
 import api from '../../api';
 
 // Plan state derived from a user's ORDERS (the authority — roles don't carry paid state):
-//   Free       — no order with collected money (just a signup)
-//   Trial      — active paid order, still in the trial (collected < one full recurring cycle)
-//   Subscriber — active recurring subscription (a full cycle has billed)
-//   Cancelled  — set to cancel at period end (subStatus=canceled / transient.canceled)
-//   Expired    — subscription ended (subStatus=expired) or no active paid order remains
+//   Free           — no orders at all (just a signup)
+//   Payment failed — orders exist but no payment ever settled (blocked/declined sales;
+//                    owner 2026-07-02: split from Free — these are recoverable checkouts)
+//   Trial          — active paid order, still in the trial (collected < one full recurring cycle)
+//   Subscriber     — active recurring subscription (a full cycle has billed)
+//   Cancelled      — set to cancel at period end (subStatus=canceled / transient.canceled)
+//   Refunded       — money was returned (refund payment settled / order type=refund).
+//                    Display state only — refund does NOT revoke access before dueTimestamp
+//                    (owner 2026-07-02); access remains whatever BC enforces.
+//   Expired        — subscription ended (subStatus=expired) or no active paid order remains
 export const PLAN_STATES = {
-  free:       { key: 'free',       label: 'Free',       color: '#374151', bg: '#e5e7eb' },
-  trial:      { key: 'trial',      label: 'Trial',      color: '#92400e', bg: '#fef3c7' },
-  subscriber: { key: 'subscriber', label: 'Subscriber', color: '#065f46', bg: '#d1fae5' },
-  cancelled:  { key: 'cancelled',  label: 'Cancelled',  color: '#9a3412', bg: '#ffedd5' },
-  expired:    { key: 'expired',    label: 'Expired',    color: '#7f1d1d', bg: '#fee2e2' },
+  free:           { key: 'free',           label: 'Free',           color: '#374151', bg: '#e5e7eb' },
+  payment_failed: { key: 'payment_failed', label: 'Payment failed', color: '#7c2d12', bg: '#fef2f2' },
+  trial:          { key: 'trial',          label: 'Trial',          color: '#92400e', bg: '#fef3c7' },
+  subscriber:     { key: 'subscriber',     label: 'Subscriber',     color: '#065f46', bg: '#d1fae5' },
+  cancelled:      { key: 'cancelled',      label: 'Cancelled',      color: '#9a3412', bg: '#ffedd5' },
+  refunded:       { key: 'refunded',       label: 'Refunded',       color: '#5b21b6', bg: '#ede9fe' },
+  expired:        { key: 'expired',        label: 'Expired',        color: '#7f1d1d', bg: '#fee2e2' },
 };
 
 // Hover-tooltip text for the status terms + actions — single source, mirrors
@@ -22,7 +29,9 @@ export const PLAN_STATES = {
 export const CSR_TERMS = {
   active:     'Account is active — the user can log in normally.',
   suspended:  "Account shut down — the user can't log in (BC “blocked”). About access, not billing. Reversible via Unsuspend.",
-  free:       'Signed up but no payment collected — not a paying customer.',
+  free:       'Signed up, never attempted payment — not a paying customer.',
+  payment_failed: 'Tried to pay but no charge ever settled (declined/blocked attempts) — a recoverable checkout, not a paying customer.',
+  refunded:   'Money was returned on a settled charge. Display state — access still runs to the period end unless the order was ended.',
   trial:      'Active paid order, still in the trial — paid the trial price, not yet billed a full recurring cycle.',
   subscriber: 'Active recurring subscription — a full cycle has billed.',
   cancelled:  "Subscription set to stop — won't renew, no future charges — but keeps access until the current paid period ends (cancel-at-period-end).",
@@ -40,11 +49,26 @@ function orderIsPaid(o) {
   return cps.some((p) => p?.type === 'sale' && p?.status === 'fulfilled');
 }
 
+// A refund happened when a refund payment settled, or BC marked the order itself
+// as a refund (order.type / statusReason carry 'refund' — observed live 2026-06-30
+// on order 6a44100827aa861231e1f584: type='refund', statusReason='correct|refund').
+export function orderIsRefunded(o) {
+  const norm = (s) => (s || '').toLowerCase();
+  if (norm(o?.type) === 'refund') return true;
+  if (/refund/.test(norm(o?.statusReason))) return true;
+  const refunded = Number(o?.transient?.amount?.refunded ?? 0);
+  if (refunded > 0) return true;
+  const cps = Array.isArray(o?.commercePayments) ? o.commercePayments : [];
+  return cps.some((p) => (p?.type || '').toLowerCase() === 'refund' && p?.status === 'fulfilled');
+}
+
 export function getPlanState(orders) {
   const list = Array.isArray(orders) ? orders : [];
   const norm = (s) => (s || '').toLowerCase();
   const paid = list.filter(orderIsPaid);
-  if (paid.length === 0) return PLAN_STATES.free;
+  // Never paid: split "never tried" from "tried and every charge failed/blocked"
+  // (owner 2026-07-02) — the latter are recoverable checkouts CSRs should spot.
+  if (paid.length === 0) return list.length === 0 ? PLAN_STATES.free : PLAN_STATES.payment_failed;
 
   const isCanceled = (o) => o?.transient?.canceled || norm(o?.subStatus) === 'canceled' || norm(o?.subStatus) === 'cancelled';
   const isExpired = (o) => norm(o?.subStatus) === 'expired';
@@ -58,6 +82,9 @@ export function getPlanState(orders) {
     const stillTrial = recurring > 0 ? collected < recurring : collected < 10;
     return stillTrial ? PLAN_STATES.trial : PLAN_STATES.subscriber;
   }
+  // No active order left — a settled refund beats cancelled/expired for display
+  // (it's the fact a CSR needs first; bug list 7/2 #8: refunded user read "Trial").
+  if (paid.some(orderIsRefunded)) return PLAN_STATES.refunded;
   if (paid.some(isCanceled)) return PLAN_STATES.cancelled;
   if (paid.some(isExpired)) return PLAN_STATES.expired;
   return PLAN_STATES.expired; // paid before, no active order
@@ -88,6 +115,13 @@ function runQueued(fn) {
     queue.push(() => fn().then(resolve, reject));
     pump();
   });
+}
+
+// Drop a user's cached plan after any billing mutation (refund/cancel) so list
+// views don't keep showing the pre-mutation state for the rest of the session
+// (bug list 7/2 #8: directory said Trial after a refund).
+export function invalidatePlanState(userId) {
+  if (userId) planCache.delete(userId);
 }
 
 export async function fetchPlanState(userId) {

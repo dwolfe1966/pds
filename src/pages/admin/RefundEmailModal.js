@@ -181,6 +181,10 @@ const RefundEmailModal = ({ userId, userEmail, userName, userPhone, orderId, amo
   const [agentNotes, setAgentNotes] = useState('');
   const [orderIdField, setOrderIdField] = useState(orderId || '');
   const [amountField, setAmountField] = useState(amount != null ? String(amount) : '');
+  // Editable when the order carries no customer email (e.g. a Failed $0 order) —
+  // a permanently-greyed empty field left CSRs unable to file the request
+  // (bug list 7/2 #12). Read-only when prefilled, as before.
+  const [emailField, setEmailField] = useState(userEmail || '');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -212,7 +216,7 @@ const RefundEmailModal = ({ userId, userEmail, userName, userPhone, orderId, amo
     lines.push(`Reason: ${reason}`);
     if (orderIdField.trim()) lines.push(`Order ID: ${orderIdField.trim()}`);
     if (amountField.trim()) lines.push(`Amount: $${amountField.trim()}`);
-    lines.push(`Customer Email: ${userEmail || 'N/A'}`);
+    lines.push(`Customer Email: ${emailField.trim() || 'N/A'}`);
     lines.push('');
     lines.push(`Description:`);
     lines.push(description.trim());
@@ -238,7 +242,7 @@ const RefundEmailModal = ({ userId, userEmail, userName, userPhone, orderId, amo
         // then replies to it. BC's create endpoint needs name/email/
         // phone/orderId; phone gets the 212-555-0100 sentinel if blank.
         userName,
-        userEmail,
+        userEmail: emailField.trim() || userEmail,
         userPhone,
         orderId,
       });
@@ -298,14 +302,17 @@ const RefundEmailModal = ({ userId, userEmail, userName, userPhone, orderId, amo
                 </select>
               </div>
 
-              {/* Customer Email */}
+              {/* Customer Email — read-only when prefilled from the user record;
+                  editable when the order has none (Failed $0 orders). */}
               <div style={fieldWrap}>
                 <label style={labelStyle}>Customer Email</label>
                 <input
-                  style={inputReadOnly}
-                  type="text"
-                  value={userEmail || ''}
-                  readOnly
+                  style={userEmail ? inputReadOnly : inputBase}
+                  type="email"
+                  value={emailField}
+                  onChange={(e) => setEmailField(e.target.value)}
+                  readOnly={!!userEmail}
+                  placeholder={userEmail ? undefined : 'customer@email.com'}
                 />
               </div>
 

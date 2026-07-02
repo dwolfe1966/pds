@@ -93,6 +93,7 @@ const AccountPage = () => {
   // ─── Subscription & Billing tab state ────────────────────────────────────────
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelError, setCancelError] = useState('');
+  const [cancelSuccess, setCancelSuccess] = useState('');
   // BC orders fed both the billing-history panel and the "Plan" display via
   // findOfferByShmName lookup (see fetchPlanName below).
   const [orders, setOrders] = useState([]);
@@ -742,7 +743,10 @@ const AccountPage = () => {
       track('subscription_cancel', { orderId: activeOrder._id || activeOrder.id });
       refreshSubscription();
       setCancelError('');
+      // The action previously completed with zero feedback (bug list 7/2 #11).
+      setCancelSuccess("Your subscription has been cancelled. You'll keep access until the end of your paid period — no further charges.");
     } catch (err) {
+      setCancelSuccess('');
       setCancelError(err?.message || err?.data?.error?.message || 'Failed to cancel subscription');
     }
   };
@@ -761,7 +765,9 @@ const AccountPage = () => {
       await api.cancelSubscription(subscription.orderId, { flag: false });
       refreshSubscription();
       setCancelError('');
+      setCancelSuccess('Your subscription is active again — auto-renew is back on.');
     } catch (err) {
+      setCancelSuccess('');
       setCancelError(err?.message || err?.data?.error?.message || 'Failed to reactivate subscription');
     }
   };
@@ -1218,6 +1224,11 @@ const AccountPage = () => {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Subscription</h2>
             {cancelError && <p className={styles.errorText}>{cancelError}</p>}
+            {cancelSuccess && (
+              <p style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: '0.5rem', padding: '0.65rem 0.9rem', fontSize: '0.9rem' }}>
+                ✓ {cancelSuccess}
+              </p>
+            )}
             {isPaid && subscription ? (
               <div>
                 <div className={styles.planInfo}>
@@ -1226,7 +1237,7 @@ const AccountPage = () => {
                   </span>
                   {subscription.subStatus === 'canceled' ? (
                     <span className={styles.subscriptionBadge} style={{ background: '#fef3c7', color: '#92400e' }}>
-                      Canceling
+                      Cancelled
                     </span>
                   ) : (
                     <span className={`${styles.subscriptionBadge} ${styles.active}`}>Active</span>
@@ -1277,7 +1288,21 @@ const AccountPage = () => {
               </div>
             ) : (
               <div>
-                <p style={{ color: '#6b7280', marginBottom: '1rem' }}>You do not have an active subscription.</p>
+                {/* Say WHY there's no subscription when we can tell (bug list 7/2 #11:
+                    a CSR-refunded/expired account read like the user never paid). */}
+                <p style={{ color: '#6b7280', marginBottom: '1rem' }}>
+                  {(() => {
+                    const list = orders || [];
+                    const refunded = list.some((o) =>
+                      Number(o?.transient?.amount?.refunded ?? 0) > 0
+                      || String(o?.type || '').toLowerCase() === 'refund'
+                      || /refund/i.test(o?.statusReason || ''));
+                    if (refunded) return 'Your subscription has ended and your payment was refunded.';
+                    const expired = list.some((o) => String(o?.subStatus || '').toLowerCase() === 'expired');
+                    if (expired) return 'Your subscription has expired.';
+                    return 'You do not have an active subscription.';
+                  })()}
+                </p>
                 <Link
                   to="/payment"
                   style={{
@@ -1336,7 +1361,7 @@ const AccountPage = () => {
                     || (o.createdAt ? new Date(o.createdAt).getTime() : 0)
                     || (o.createdTimestamp || 0);
                   if (!ts || trialPrice?.amount == null) return [];
-                  return [{
+                  const rows = [{
                     id: `synth-${o._id || o.id || ts}`,
                     ts,
                     amount: trialPrice.amount,
@@ -1344,6 +1369,21 @@ const AccountPage = () => {
                     type: 'sale',
                     status: 'paid',
                   }];
+                  // CSR refunds must show here too — the synthesized fallback
+                  // previously only ever produced the sale row, so a refunded
+                  // account still read "$1.00 Paid" (bug list 7/2 #11).
+                  const refundedAmt = Number(o?.transient?.amount?.refunded ?? 0);
+                  if (refundedAmt > 0) {
+                    rows.push({
+                      id: `synth-refund-${o._id || o.id || ts}`,
+                      ts: (o.updatedAt ? new Date(o.updatedAt).getTime() : 0) || ts,
+                      amount: refundedAmt,
+                      currency: (trialPrice.code || 'usd').toUpperCase(),
+                      type: 'refund',
+                      status: 'refunded',
+                    });
+                  }
+                  return rows;
                 })
                 .sort((a, b) => (b.ts || 0) - (a.ts || 0));
               if (payments.length === 0) {

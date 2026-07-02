@@ -4,7 +4,7 @@ import api from '../../api';
 import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } from '../../utils/orderFinancials';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
-import { getPlanState, isSuspendedStatus, CSR_TERMS } from './userState';
+import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, CSR_TERMS } from './userState';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -142,11 +142,18 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
   if (user?.createdAt) add(user.createdAt, 'registration', 'Account created');
   for (const p of extractPayments(orders || [])) {
     const s = String(p.status || '').toLowerCase();
-    const kind = /fail|declin|reject|error/.test(s) ? 'payment_failed'
+    const t = String(p.type || '').toLowerCase();
+    // Payment TYPE outranks status: a settled refund is type='refund' +
+    // status='fulfilled', so status-only logic filed it as a plain "Payment"
+    // and the tester couldn't find the refund in the Timeline (bug list 7/2 #10).
+    // 'blocked' (BC velocity gate) counts as a failed attempt, not a payment.
+    const kind = t === 'refund' ? 'refund'
+      : t === 'void' ? 'canceled'
+      : /fail|declin|reject|error|block/.test(s) ? 'payment_failed'
       : s === 'refunded' ? 'refund' : s === 'canceled' ? 'canceled' : 'payment';
     const label = kind === 'payment_failed' ? `Payment failed ${p.amount}`
       : kind === 'refund' ? `Refunded ${p.amount}`
-      : kind === 'canceled' ? 'Subscription canceled' : `Payment ${p.amount}`;
+      : kind === 'canceled' ? (t === 'void' ? `Voided ${p.amount}` : 'Subscription canceled') : `Payment ${p.amount}`;
     add(p.date, kind, label, `Order …${String(p.orderId || '').slice(-8)}${p.status ? ` · ${p.status}` : ''}`);
   }
   for (const l of logins || []) {
@@ -783,6 +790,7 @@ const UserDetailPage = () => {
         'success'
       );
       setRefundForm(null);
+      invalidatePlanState(id); // directory plan chip must not keep showing pre-refund state
       fetchOrders(); // Refresh orders to reflect new status
       fetchNotes();  // Refresh notes so Audit tab reflects this immediately
     } catch (err) {
@@ -936,6 +944,7 @@ const UserDetailPage = () => {
         shouldCancel ? 'Order canceled successfully.' : 'Order reactivated successfully.',
         'success'
       );
+      invalidatePlanState(id);
       fetchOrders();
       fetchNotes();
     } catch (err) {
@@ -1266,12 +1275,15 @@ const UserDetailPage = () => {
           <p className={styles.profileEmail}>{user?.email || '—'}</p>
 
           <div className={styles.badgeRow}>
-            <span
-              title={isSuspended ? CSR_TERMS.suspended : CSR_TERMS.active}
-              className={isSuspended ? styles.badgeSuspended : styles.badgeActive}
-            >
-              {isSuspended ? 'Suspended' : 'Active'}
-            </span>
+            {/* Account chip only when it carries information (suspended). A plain
+                'Active' next to 'Expired'/'Cancelled' read as a contradiction —
+                account status and subscription state are different dimensions
+                (bug list 7/2 #9/#10; docs/design/customer-state-model.md §3). */}
+            {isSuspended && (
+              <span title={CSR_TERMS.suspended} className={styles.badgeSuspended}>
+                Suspended
+              </span>
+            )}
             {plan && (
               <span
                 title={CSR_TERMS[plan.key]}
@@ -1493,11 +1505,19 @@ const UserDetailPage = () => {
                           <span className={styles.orderIdShort}>Order ...{oid.slice(-8)}</span>
                           <span className={styles.orderAmount}>{getAmount(o)}</span>
                           <span className={
-                            oStatus === 'active' ? styles.badgeActive
+                            orderIsRefunded(o) ? styles.badgeSuspended
+                            : oStatus === 'active' && !canceled ? styles.badgeActive
                             : canceled ? styles.badgeSuspended
                             : styles.badgeFree
                           }>
-                            {oStatus}{canceled ? ' (canceled)' : ''}
+                            {/* 'active (canceled)' read as a contradiction (bug list 7/2 #9)
+                                — say what actually happens and when. */}
+                            {orderIsRefunded(o) ? 'Refunded'
+                              : canceled && oStatus === 'active'
+                                ? `Active — cancels ${(o.schedule?.dueTimestamp || o.dueTimestamp) ? formatDate(new Date(o.schedule?.dueTimestamp || o.dueTimestamp).toISOString()) : 'at period end'}`
+                              : o.subStatus && String(o.subStatus).toLowerCase() !== String(oStatus).toLowerCase()
+                                ? `${oStatus} — ${o.subStatus}`
+                                : oStatus}
                           </span>
                           <span className={styles.orderDate}>{formatDate(o.createdAt)}</span>
                           {schedule && (

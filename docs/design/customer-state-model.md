@@ -1,6 +1,12 @@
 # Customer State Model — one derivation, every surface
 
-**Status: DRAFT for owner approval (2026-07-02).** Motivated by bug list 7/2 items 8–11:
+**Status: APPROVED + implemented CSR-side (2026-07-02).** Owner decisions: (1) split
+"Free" vs "Payment failed" — YES; (2) refund does NOT immediately revoke access —
+`refunded` is a display state, access enforcement stays with BC through `dueTimestamp`;
+(3) cancel-at-period-end copy defaults to "Cancelled — access until <date>" (owner can
+override). Implementation: `src/pages/admin/userState.js` (getPlanState ladder +
+orderIsRefunded + cache invalidation), UserDetailPage chips/badges/timeline, consumer
+AccountPage messaging. See commit history for details. Motivated by bug list 7/2 items 8–11:
 refunded user shown "Active/Trial" in the CSR directory, "active (canceled)" order badges,
 "Active + Expired" chip pairs, and a consumer billing tab that hides refunds. All four are
 the same defect: **every surface derives customer state its own way.**
@@ -54,10 +60,13 @@ semantics; no behavior change intended.)
 - **Non-goal:** no new stored flags anywhere — this stays a pure derivation from BC
   (feedback_subscription_state_authority).
 
-## 5. Open questions for owner
+## 5. Owner decisions (2026-07-02)
 
-1. Directory Plan column for never-paid users: one bucket ("Free") or split "Free" vs
-   "Payment failed"? (CSR triage value vs. clutter.)
-2. `refunded` + still-inside-paid-window: does a refund immediately revoke access
-   (isPaid=false) — assumed YES — or honor the window?
-3. Consumer copy for `canceling`: "Member until Jul 6" vs "Cancelled — access ends Jul 6".
+1. Directory Plan column: **split** "Free" (never attempted) vs "Payment failed"
+   (attempted, nothing settled — recoverable checkouts).
+2. Refund does **NOT** immediately revoke access. Note: BC currently marks the refunded
+   order `inactive/expired` at refund time, so BC-side enforcement may cut access before
+   `dueTimestamp` regardless of our display — flagged as a BC question if
+   access-until-period-end is to be guaranteed.
+3. Cancel-at-period-end copy: default **"Cancelled — access until <date>"** (badge
+   'Cancelled' + explicit access-until line). Owner may refine.
