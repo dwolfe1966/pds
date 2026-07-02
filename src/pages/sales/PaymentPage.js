@@ -10,6 +10,7 @@ import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch, EMPTY_FLAGS } from '../../services/thinMatch';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
+import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 
 // BC offer key — the actual price charged is enforced by BC's offer config
 // (findByShmName). Display values come from `brand.trialPrice` /
@@ -562,6 +563,7 @@ const PaymentPage = () => {
 
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
+      {theme && <div style={{ margin: '-2.5rem -1rem 1.5rem' }}><ThemedFunnelHeader theme={theme} /></div>}
       <div className={styles.layout}>
 
         {/* ── Left: Form ───────────────────────────────────────── */}

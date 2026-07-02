@@ -10,6 +10,7 @@ import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './LoaderPage.module.css';
 import { useBrand } from '../../services/brand';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
+import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 
 const SCAN_PHASES = [
   'Searching 247 million records\u2026',
@@ -170,10 +171,11 @@ const NameSearchLoaderPage = () => {
   }, [firstName, lastName, middleName, age, city, state, navigate]);
 
   return (
-    <main className={styles.loaderMain} style={theme ? { background: theme.pageBg } : undefined}>
+    <main className={styles.loaderMain} style={theme ? { background: theme.pageBg, position: 'relative' } : undefined}>
+      {theme && <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}><ThemedFunnelHeader theme={theme} /></div>}
       <div className={styles.loaderCard}>
         <div className={styles.spinner} style={theme ? { borderTopColor: theme.accent } : undefined} />
-        <h2 className={styles.heading}>Searching</h2>
+        <h2 className={styles.heading} style={theme ? { color: theme.accentDark } : undefined}>Searching</h2>
         <p className={styles.phaseMessage}>{SCAN_PHASES[phaseIndex]}</p>
         <div className={styles.progressBarWrap}>
           <span className={styles.progressBarFill} style={theme ? { background: theme.accent } : undefined} />
@@ -187,7 +189,7 @@ const NameSearchLoaderPage = () => {
         </div>
         <div className={styles.queryCard}>
           <p className={styles.queryLabel}>Searching for</p>
-          <p className={styles.queryValue}>
+          <p className={styles.queryValue} style={theme ? { color: theme.ink } : undefined}>
             {firstName} {middleName ? `${middleName} ` : ''}{lastName}
             {age && <span style={{ color: '#6b7280', fontWeight: 400 }}> &bull; {age}</span>}
             {city && <span style={{ color: '#6b7280', fontWeight: 400 }}> &bull; {city}</span>}
