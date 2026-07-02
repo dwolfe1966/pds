@@ -219,7 +219,9 @@ const SalesSearchResultsPage = () => {
               ? `We found ${countLabel} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`
               : 'Search Results'}
           </h1>
-          {(searchQuery.firstName || query) && (
+          {/* Context line only when the title is the generic "Search Results" — when results
+              are found the title already names the person, so this would just repeat it. */}
+          {!(results.length > 0 && countLabel) && (searchQuery.firstName || query) && (
             <p className={styles.searchQuery} style={theme ? { color: theme.mut } : undefined}>
               Results for: <strong style={theme ? { color: theme.accentDark } : undefined}>{searchQuery.firstName || query} {searchQuery.lastName}</strong>
               {searchQuery.state && <span> • {searchQuery.state}</span>}
