@@ -447,6 +447,14 @@ const PaymentPage = () => {
         pollDelay = Math.min(Math.round(pollDelay * 1.4), 2500);
       }
       if (!verifiedOrder) {
+        // 20s and no provisioned order. If billing.sale itself reported an
+        // error, the sale almost certainly failed — the changePassword
+        // heuristic above marks paymentSuccess even when BC only created the
+        // user account and rejected the charge (bug list 7/2 #7, incognito
+        // 'submitted but couldn't confirm'). Throw the REAL sale error so the
+        // classifier below shows the actual reason (decline/406/fields)
+        // instead of an ambiguous confirmation message.
+        if (saleError) throw saleError;
         throw new Error("Your payment was submitted but we couldn't confirm your subscription yet. Please refresh in a moment, or contact support if this persists.");
       }
 

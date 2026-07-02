@@ -42,9 +42,13 @@ All registered in `docs/BC_CSR_ASKS_PACKAGE.md` (drafts ready, NOT yet sent to K
 
 ## ⏳ REMAINING (ours, not started)
 
-1. **`IwS84bJ` repro** — incognito "payment submitted but couldn't confirm subscription."
-   The one ambiguous-charge scenario; wants a careful repro before any code change.
-   (Dev captcha outage currently blocks funnel E2E on dev.)
+1. ~~`IwS84bJ`~~ ✅ DIAGNOSED + FIXED in code (item 7): failed sale still creates the BC
+   user → post-sale changePassword succeeds → optimistic paymentSuccess → 20s order poll
+   finds nothing → ambiguous message thrown, REAL saleError discarded. Fix: when the poll
+   can't verify and a saleError was captured, throw the sale error through the friendly
+   classifier (decline/406/fields) instead. The ambiguous message now only appears when
+   the sale truly reported success but BC provisioning exceeded 20s. Live repro of the
+   full incognito path still worthwhile post-deploy.
 2. **Send the BC asks batch** (E–H drafts ready; batch with the open A/B/C asks) — owner call on timing.
 3. **Live UAT after deploy** — the state-model changes are unit-tested against recorded
    BC shapes; the CSR pages should be eyeballed against the refunded user
