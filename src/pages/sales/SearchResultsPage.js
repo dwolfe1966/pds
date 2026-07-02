@@ -12,6 +12,7 @@ import { useCampaign } from '../../context/CampaignContext';
 import styles from './SearchResultsPage.module.css';
 import { useBrand } from '../../services/brand';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
+import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 
 /**
  * Displays search results for public searches on the marketing funnel.
@@ -209,6 +210,7 @@ const SalesSearchResultsPage = () => {
 
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
+      <ThemedFunnelHeader theme={theme} />
       <div className={styles.contentContainer}>
         {/* Header Section */}
         <div className={styles.header}>
@@ -219,7 +221,7 @@ const SalesSearchResultsPage = () => {
           </h1>
           {(searchQuery.firstName || query) && (
             <p className={styles.searchQuery} style={theme ? { color: theme.mut } : undefined}>
-              Results for: <strong>{searchQuery.firstName || query} {searchQuery.lastName}</strong>
+              Results for: <strong style={theme ? { color: theme.accentDark } : undefined}>{searchQuery.firstName || query} {searchQuery.lastName}</strong>
               {searchQuery.state && <span> • {searchQuery.state}</span>}
             </p>
           )}
