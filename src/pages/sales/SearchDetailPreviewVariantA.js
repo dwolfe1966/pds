@@ -32,12 +32,17 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
     submitSignup({ email: signupEmail, password: signupPassword, optin: true, selectedPersonId: id || null });
   };
 
+  // Light-on-green copy under the form fields / CTA (the form card is dark green).
+  const microcopy = { margin: '0.35rem 0 0', fontSize: '0.75rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.72)' };
+  const trialLine = { margin: '0.9rem 0 0', fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255,255,255,0.95)', textAlign: 'center', lineHeight: 1.4 };
+  const satisfactionLine = { margin: '0.5rem 0 0', fontSize: '0.74rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 1.45 };
+
   return (
     <main className={styles.main} data-no-nav="true">
       {/* ── Mini header ── */}
       <div className={styles.miniHeader}>
         <Link to="/name/search-result" className={styles.miniHeaderBack}>← Back to Results</Link>
-        <span className={styles.miniHeaderBrand}>🔒 {brand.name}.ai</span>
+        <span className={styles.miniHeaderBrand}>🔒 {brand.name}</span>
       </div>
 
       {/* ── VCard ── */}
@@ -61,13 +66,16 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>
-              {person.fullName}
+              {person.fullName}{person.ageRange ? `, Age ${person.ageRange}` : ''}
             </h1>
-            {(person.ageRange || person.location) && (
-              <p style={{ margin: '0.3rem 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
-                {person.ageRange ? `Age ${person.ageRange}` : ''}
-                {person.ageRange && person.location ? ' · ' : ''}
-                {person.location || ''}
+            {Array.isArray(person.aliases) && person.aliases.length > 0 && (
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', fontStyle: 'italic', color: '#6b7280' }}>
+                AKA {person.aliases.slice(0, 3).join(', ')}
+              </p>
+            )}
+            {person.location && (
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
+                {person.location}
               </p>
             )}
           </div>
@@ -83,15 +91,20 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
           ✓ Profile verified in our database
         </div>
 
-        {/* Record counts */}
+        {/* What's in the report — honest availability, no fabricated counts.
+            (Real per-category counts need a BC teaser ask; today the teaser
+            doesn't return them, so we show availability, not invented numbers.) */}
+        <p style={{ margin: '0 0 0.6rem', fontSize: '0.8rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+          What&apos;s in the full report
+        </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {[
-            { icon: '📞', label: 'Phone Numbers', count: person._phoneCount || '2–4 found' },
-            { icon: '✉️', label: 'Email Addresses', count: person._emailCount || '1–3 found' },
-            { icon: '🏠', label: 'Address Records', count: person._addressCount || '3–7 found' },
-            { icon: '👥', label: 'Relatives & Associates', count: person._relativeCount || '3–8 found' },
-            { icon: '⚠️', label: 'Criminal & Court Records', count: 'Available' },
-          ].map(({ icon, label, count }) => (
+            { icon: '📞', label: 'Phone Numbers' },
+            { icon: '✉️', label: 'Email Addresses' },
+            { icon: '🏠', label: 'Address History' },
+            { icon: '👥', label: 'Relatives & Associates' },
+            { icon: '⚠️', label: 'Criminal & Court Records' },
+          ].map(({ icon, label }) => (
             <div key={label} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '0.5rem 0.75rem', background: '#f9fafb', borderRadius: '0.5rem',
@@ -104,7 +117,7 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
                 borderRadius: '999px', padding: '0.15rem 0.6rem',
                 fontSize: '0.73rem', fontWeight: 600,
               }}>
-                🔒 {count}
+                🔒 Available
               </span>
             </div>
           ))}
@@ -115,11 +128,8 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
       <div className={styles.signupFormCard} id="signup-form">
         <div className={styles.signupFormLockIcon} aria-hidden="true">🔓</div>
         <h2 className={styles.signupFormTitle}>
-          Create Your Account to Unlock
+          Unlock {person.fullName}&apos;s Report
         </h2>
-        <p className={styles.signupFormSubtitle}>
-          Get instant access to the full report for <strong>{person.fullName}</strong>.
-        </p>
 
         {success ? (
           <div className={styles.signupSuccessMsg}>
@@ -140,6 +150,7 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
                 required
                 autoComplete="email"
               />
+              <p style={microcopy}>So we can email your report to you.</p>
             </div>
             <div className={styles.formGroup}>
               <label className={styles.signupFormLabel} htmlFor="va-password">Create a password</label>
@@ -155,6 +166,7 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
                 minLength={8}
                 autoComplete="new-password"
               />
+              <p style={microcopy}>Keeps your report private and secure.</p>
             </div>
 
             {error && (
@@ -170,8 +182,18 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
               className={styles.signupSubmitBtn}
               disabled={loading}
             >
-              {loading ? 'Creating account…' : 'Create My Account →'}
+              {loading ? 'Unlocking…' : 'Unlock Report →'}
             </button>
+
+            {/* Value + reassurance under the CTA */}
+            <p style={trialLine}>
+              Your trial membership includes full access to name, phone, and email searches.
+            </p>
+            <p style={satisfactionLine}>
+              Your satisfaction is important to us. If you&apos;re not fully satisfied, call our
+              customer care team at <a href="tel:8662041902" style={{ color: '#fff', fontWeight: 600 }}>866-204-1902</a>.
+            </p>
+
             <p className={styles.loginLinkWrap}>
               Already have an account?{' '}
               <Link to="/login" className={styles.loginLink}>Sign in</Link>
@@ -192,7 +214,7 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
           className={styles.stickyMobileCtaLink}
           onClick={e => { e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); }}
         >
-          🔓 Unlock Full Report — Create Account →
+          🔓 Unlock Report →
         </a>
       </div>
     </main>
