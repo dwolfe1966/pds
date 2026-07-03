@@ -203,8 +203,14 @@ export function adaptIdentity(identity) {
     .filter(Boolean)
     .join('; ') || '';
 
-  // Extract age range if available
-  const ageRange = identity.ageRange || '';
+  // Extract age. BC identities carry age either as a flat `ageRange` OR via
+  // `dobList[0].age` — the paid report reads it the same robust way
+  // (utils/reportExtract.js). Reading only `ageRange` missed the dobList case,
+  // so age went blank on the SRP rows even though BC returned it.
+  const dobList = identity.dobList || [];
+  const ageRange = identity.ageRange
+    || (dobList[0] && dobList[0].age != null ? String(dobList[0].age) : '')
+    || '';
 
   return {
     id: identity.extId,
