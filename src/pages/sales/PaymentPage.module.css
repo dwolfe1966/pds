@@ -60,7 +60,8 @@
      form card and right-aligns with the pricing card on desktop. */
   max-width: 960px;
   margin: 0 auto 1.25rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  /* Pronounced, all-around shadow to lift the vCard off the page (owner). */
+  box-shadow: 0 6px 28px rgba(0,0,0,0.14);
 }
 
 .personPreviewLeft {
