@@ -8,6 +8,7 @@ import ScrollToTop from './components/ScrollToTop';
 import BrandStyles from './components/BrandStyles';
 // Sales pages
 import HomePage from './pages/sales/HomePage';
+import HomeV2Page from './pages/sales/HomeV2Page';
 import AboutPage from './pages/sales/AboutPage';
 import ContactPage from './pages/sales/ContactPage';
 import LandingPage from './pages/sales/LandingPage';
@@ -140,6 +141,8 @@ const App = () => {
         <Routes>
           {/* Sales/public routes */}
           <Route path="/" element={<HomePageRedirect />} />
+          {/* Home rebuild (search-first, benefit-led) — A/B at /home vs the SaaS-style / */}
+          <Route path="/home" element={<HomeV2Page />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/contact/thread/:threadId" element={<ContactThreadPage />} />
