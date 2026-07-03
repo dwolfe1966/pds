@@ -46,63 +46,100 @@
   letter-spacing: 0.06em;
 }
 
-/* ── Person preview ─────────────────────────────────────────── */
+/* ── Person preview (vCard) — the anchor of the checkout ─────── */
 .personPreview {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
+  justify-content: space-between;
+  gap: 1.5rem;
   background: #fff;
   border: 1px solid #d1fae5;
   border-radius: 0.875rem;
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   /* Constrain + center to the layout width so the vCard left-aligns with the
      form card and right-aligns with the pricing card on desktop. */
   max-width: 960px;
   margin: 0 auto 1.25rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+}
+
+.personPreviewLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .personPreviewAvatar {
-  width: 44px;
-  height: 44px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: #ecfdf5;
-  border: 2px solid #d1fae5;
+  background: linear-gradient(135deg, #0d5d2f 0%, #1a7a42 100%);
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.9rem;
-  color: #0d5d2f;
+  font-size: 1.35rem;
   flex-shrink: 0;
 }
 
 .personPreviewInfo {
-  flex: 1;
   min-width: 0;
 }
 
 .personPreviewName {
-  margin: 0 0 0.125rem;
-  font-weight: 700;
-  font-size: 0.975rem;
+  margin: 0 0 0.15rem;
+  font-weight: 800;
+  font-size: 1.35rem;
   color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.15;
 }
 
 .personPreviewMeta {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #6b7280;
 }
 
-.personPreviewLock {
+.personPreviewLatest {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Results May Include — 3-col × 2-row teaser grid on the right of the vCard. */
+.personPreviewResults {
+  flex-shrink: 0;
+}
+
+.resultsIncludeTitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.resultsIncludeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0.35rem 1.25rem;
+}
+
+.resultsIncludeItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.8rem;
-  color: #16a34a;
-  font-weight: 600;
+  color: #374151;
   white-space: nowrap;
+}
+
+.resultsIncludeCheck {
+  color: #16a34a;
+  font-weight: 700;
 }
 
 /* ── Form card ──────────────────────────────────────────────── */
@@ -686,6 +723,18 @@
       "form"
       "trust"
       "benefits";
+  }
+
+  /* vCard: person info on top, Results May Include grid below (2 cols). */
+  .personPreview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .resultsIncludeGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 1rem;
   }
 
   .featureList {

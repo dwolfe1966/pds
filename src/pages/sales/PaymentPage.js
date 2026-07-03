@@ -93,6 +93,12 @@ const PLAN_FEATURES = [
   'Cancel anytime — no lock-in',
 ];
 
+// "Results May Include" teaser on the person vCard — 3 columns × 2 rows.
+const RESULTS_MAY_INCLUDE = [
+  'Full Address', 'Family Members', 'Email Address',
+  'Marital Status', 'Phone Number', 'Location History',
+];
+
 const PaymentPage = () => {
   const brand = useBrand();
   const theme = useFunnelTheme(); // funnel palette carried from landing; null = green (colors only)
@@ -602,6 +608,10 @@ const PaymentPage = () => {
     }
   };
 
+  // Freshness signal — "latest report" dated 3 days before today (owner 2026-07-03).
+  const latestReportDate = new Date(Date.now() - 3 * 86400000)
+    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
   if (authLoading) return null;
 
   return (
@@ -618,16 +628,30 @@ const PaymentPage = () => {
           desktop (owner 2026-07-03). The person is the anchor, not the pricing. */}
       {selectedPerson && !success && (
         <div className={styles.personPreview}>
-          <div className={styles.personPreviewAvatar}>
-            {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
+          <div className={styles.personPreviewLeft}>
+            <div className={styles.personPreviewAvatar}>
+              {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
+            </div>
+            <div className={styles.personPreviewInfo}>
+              <p className={styles.personPreviewName}>
+                {selectedPerson.fullName}{selectedPerson.ageRange ? `, Age ${selectedPerson.ageRange}` : ''}
+              </p>
+              {selectedPerson.location && (
+                <p className={styles.personPreviewMeta}>{selectedPerson.location}</p>
+              )}
+              <p className={styles.personPreviewLatest}>Latest report: {latestReportDate}</p>
+            </div>
           </div>
-          <div className={styles.personPreviewInfo}>
-            <p className={styles.personPreviewName}>{selectedPerson.fullName}</p>
-            <p className={styles.personPreviewMeta}>
-              {[selectedPerson.ageRange && `Age ${selectedPerson.ageRange}`, selectedPerson.location].filter(Boolean).join(' · ')}
-            </p>
+          <div className={styles.personPreviewResults}>
+            <p className={styles.resultsIncludeTitle}>Results May Include</p>
+            <div className={styles.resultsIncludeGrid}>
+              {RESULTS_MAY_INCLUDE.map((item) => (
+                <span key={item} className={styles.resultsIncludeItem}>
+                  <span className={styles.resultsIncludeCheck}>✓</span>{item}
+                </span>
+              ))}
+            </div>
           </div>
-          <span className={styles.personPreviewLock}>🔓 Ready to unlock</span>
         </div>
       )}
 
