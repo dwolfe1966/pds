@@ -393,8 +393,6 @@ const PaymentPage = () => {
       // The IIFE then treats that failure as an error-state response, causing our wrapper
       // to throw — but the sale itself (step 5) may have succeeded. We must call
       // changePassword here to ensure the password is set on the newly-created account.
-      sessionStorage.removeItem('_pendingPw');
-      sessionStorage.removeItem('_signupOptin');
       if (pendingPassword) {
         try {
           const { default: apiWrapper } = await import('../../services/apiWrapper');
@@ -412,6 +410,15 @@ const PaymentPage = () => {
             console.warn('[Payment] changePassword after sale failed (non-fatal):', pwErr?.message);
           }
         }
+      }
+      // Only clear the stashed signup secrets once the sale has actually gone
+      // through. Clearing them unconditionally made every RETRY after a failed
+      // first attempt go out passwordless (line ~298 re-reads _pendingPw → null),
+      // so the second submit was malformed even with a corrected card — part of
+      // the "correct info still fails" bug. Keep them for the retry; drop them on success.
+      if (paymentSuccess) {
+        sessionStorage.removeItem('_pendingPw');
+        sessionStorage.removeItem('_signupOptin');
       }
 
       if (!paymentSuccess && simulateParam) {
