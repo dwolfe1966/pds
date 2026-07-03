@@ -58,12 +58,21 @@
 
 /* Mobile: the header stack (container padding + title + context + count) was pushing the
    first result below the fold. Tighten everything so the results start near the top. */
+/* Sort control — flex row on desktop, hidden on mobile (owner: too cramped). */
+.sortControl {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
 @media (max-width: 640px) {
+  .main { padding: 12px 0; }
   .contentContainer { padding: var(--spacing-md); }
-  .header { margin-bottom: var(--spacing-md); padding-bottom: var(--spacing-sm); }
-  .title { font-size: var(--font-size-2xl); margin-bottom: var(--spacing-sm); }
-  .searchQuery { font-size: var(--font-size-base); margin-bottom: var(--spacing-sm); }
+  .header { margin-bottom: var(--spacing-sm); padding-bottom: var(--spacing-xs); }
+  .title { font-size: var(--font-size-xl); margin-bottom: var(--spacing-xs); }
+  .searchQuery { font-size: var(--font-size-base); margin-bottom: var(--spacing-xs); }
   .resultsCount { margin-top: var(--spacing-sm); padding-top: var(--spacing-sm); }
+  .sortControl { display: none; }
 }
 
 .resultsList {

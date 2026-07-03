@@ -270,7 +270,7 @@ const SalesSearchResultsPage = () => {
                 All data sourced from publicly available records.
               </p>
               {results.length > 1 && (
-                <label style={{ fontSize: '0.825rem', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                <label className={styles.sortControl} style={{ fontSize: '0.825rem', color: '#374151' }}>
                   Sort:
                   <select
                     value={sortBy}
