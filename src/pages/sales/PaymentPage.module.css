@@ -12,14 +12,38 @@
 .layout {
   display: grid;
   grid-template-columns: 1fr 360px;
-  gap: 2rem;
+  grid-template-rows: min-content min-content 1fr;
+  grid-template-areas:
+    "form pricing"
+    "form benefits"
+    "form trust";
+  gap: 1rem 2rem;
   max-width: 960px;
   margin: 0 auto;
   align-items: start;
 }
 
+/* Grid-area assignments — let desktop columns and the mobile stack order differ.
+   Desktop right col: pricing → benefits → trust. Mobile: pricing → form → trust
+   → benefits (vCard sits above, full-width). */
+.gridPricing { grid-area: pricing; }
+.gridBenefits { grid-area: benefits; }
+.gridTrust { grid-area: trust; }
+
 .formCol {
+  grid-area: form;
   min-width: 0;
+}
+
+/* "Benefits" header on the split-out benefits card. */
+.benefitsTitle {
+  margin: 0;
+  padding: 1.125rem 1.5rem 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 /* ── Person preview ─────────────────────────────────────────── */
@@ -31,7 +55,10 @@
   border: 1px solid #d1fae5;
   border-radius: 0.875rem;
   padding: 1rem 1.25rem;
-  margin-bottom: 1.25rem;
+  /* Constrain + center to the layout width so the vCard left-aligns with the
+     form card and right-aligns with the pricing card on desktop. */
+  max-width: 960px;
+  margin: 0 auto 1.25rem;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
@@ -649,18 +676,16 @@
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Mobile stack order (owner 2026-07-03): today's charge → form → trust →
+     benefits (the vCard sits above the layout). */
   .layout {
     grid-template-columns: 1fr;
-  }
-
-  /* Summary appears above form on mobile */
-  .summaryCol {
-    position: static;
-    order: -1;
-  }
-
-  .summaryCard {
-    /* Compact on mobile */
+    grid-template-rows: auto;
+    grid-template-areas:
+      "pricing"
+      "form"
+      "trust"
+      "benefits";
   }
 
   .featureList {

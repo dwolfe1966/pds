@@ -1035,13 +1035,22 @@ const PaymentPage = () => {
 
         {/* ── Right: Order summary ──────────────────────────────── */}
         {!success && (
-          <div className={styles.summaryCol}>
-            <div className={styles.summaryCard}>
+          <>
+            {/* (a) Pricing / today's charge — 7-Day Trial $1 + instant + then-$49 */}
+            <div className={`${styles.summaryCard} ${styles.gridPricing}`}>
               <div className={styles.summaryHeader} style={theme ? { background: theme.band } : undefined}>
                 <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
                 <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
               </div>
               <p className={styles.summaryInstant} style={theme ? { background: theme.onDark ? 'rgba(245,158,11,0.12)' : '#e6f3fa', color: theme.accentDark } : undefined}>⚡ Instant access after payment</p>
+              <p className={styles.summaryCancel}>
+                Then {recurringPriceStr}/month after your {brand.trialDays}-day trial. Cancel anytime — no hidden fees.
+              </p>
+            </div>
+
+            {/* (b) Benefits — header + checklist */}
+            <div className={`${styles.summaryCard} ${styles.gridBenefits}`}>
+              <p className={styles.benefitsTitle}>Benefits</p>
               <ul className={styles.featureList}>
                 {PLAN_FEATURES.map((f, i) => (
                   <li key={i} className={styles.featureItem}>
@@ -1050,22 +1059,16 @@ const PaymentPage = () => {
                   </li>
                 ))}
               </ul>
-              <div className={styles.summaryTotal}>
-                <span>Today's charge</span>
-                <strong>{trialPriceStr}</strong>
-              </div>
-              <p className={styles.summaryCancel}>
-                Then {recurringPriceStr}/month after your {brand.trialDays}-day trial. Cancel anytime — no hidden fees.
-              </p>
             </div>
 
-            <div className={styles.summaryTrustCard}>
+            {/* Why people trust us */}
+            <div className={`${styles.summaryTrustCard} ${styles.gridTrust}`}>
               <p className={styles.summaryTrustTitle}>Why people trust us</p>
               <p className={styles.summaryTrustItem}>🔒 Your data is never sold or shared</p>
               <p className={styles.summaryTrustItem}>⭐ Trusted by 3M+ members</p>
               <p className={styles.summaryTrustItem}>📞 Live support available</p>
             </div>
-          </div>
+          </>
         )}
       </div>
     </main>
