@@ -124,24 +124,51 @@ already reads `data.calleridnum` → it will light up the moment BC sends real v
 | **Evidence** | Prod screenshot https://nimb.ws/pNzc7n6 · owner bug list `docs/bugs/CSR_bugs_7_2_2026.csv` row "Voicemail missing transcription and caller ID" |
 | **Feature impacted** | CSR triage/callback of voicemail tickets — currently no way to know who called |
 
-## ASK F — `billing.sale` 406 velocity/fraud block: document semantics + CSR unblock path  (DOCUMENT + ADD)  ❌ open
+## ASK F — signup velocity block traps a corrected-card retry (clientId-keyed)  (DOCUMENT + DECISION)  ❌ open
 
-**Evidence (prod, 2026-07-01):** user testmc#5 / Jim Galloway (userId `6a45…3c22`) — four $1.00 sale
-attempts 21:49–21:53 all show `blocked` in payment history; **subsequent attempts with CORRECTED valid
-card info still fail**, surfaced to the client as a **bare HTTP 406** (no distinguishing body). This is
-a *different* 406 from the documented `sequenceOption` 406 (thin-match flags) — and today they are
-indistinguishable on the wire. Consumer side now shows a friendly wait-and-retry message
-(commit `5ed93d9`, `PaymentPage.js` → `errorType:'payment_blocked'`), but we are guessing at the semantics.
-**Ask:** (a) document what triggers the velocity/fraud block, its **duration / reset conditions**;
-(b) whether a **CSR can clear it** (and via which method — nothing on csrWrapper looks like it);
-(c) a **distinguishable error body** (code or message) so clients can tell fraud-block 406 from
-sequenceOption 406 from any other 406.
+**ROOT CAUSE CONFIRMED 2026-07-02 from order-detail JSON (davidtest-7-2, userId `6a46…3941`).**
+The "correct info still fails on retry" symptom is BC's **signup velocity rules keyed on the clientId
+embedded in the billingId** (`sale|<clientId>|<apiId>|<ts>|<rand>`), which is stable for the whole
+session. So a user who retries after a decline keeps the same clientId and is blocked **even with a
+corrected card** — exactly what Kwan meant by "you're not changing the billingId."
+
+**The evidence chain (one session, clientId `AkhVfmyVOI7rbVQuXXFTvZMZqHWC1MVZ` throughout):**
+- **First attempt** (test card `4111…1111`) declines → BC's **cascade-decliner auto-retries** the
+  `membership.offer.cascade.1` ($0 validate) offer. Those `subType:'declinerRetry'`, `cascade:true`,
+  `immediateRetryCount:2` orders returned processor **`ResponseCode 65 "Activity Exceeded"`** (the shared
+  test card is exhausted — a REAL card won't hit this). *So the $0 rows in the timeline are BC's own
+  decliner cascade, not user resubmits.*
+- **Second manual attempt** (order `…9416d7bc`, a DIFFERENT/corrected card — JPMorgan business debit
+  ending 5888) → **`blocked`**, `gatewayTransactionSubStatus:"declineTooManySignupAttempts"`,
+  `velocityOptionKeys:[declineDisputeCcNumber, declineTooManySignupAttempts, declineDupSignup]`, **same
+  clientId**. This is the real-user bug: the velocity counter had already tripped on the stable clientId,
+  so the corrected card was blocked.
+- Also confirmed: a **declined first `billing.sale` still creates the BC user** ("Account created" and
+  the first "Payment failed" are stamped the same second), leaving a "Payment failed" account.
+
+**Our client mitigation (shipped, commit `[rotate-clientId]`):** on a **retry** (not the first attempt),
+we rotate `apiWrapper.clientId` before the sale so BC sees a fresh signup identity and `declineDupSignup`
+doesn't block a legit correction. First attempt keeps the session clientId (attribution intact).
+
+**Ask (this is a DECISION + DOCUMENT, since our mitigation defeats a fraud rule):**
+1. **Is client-side clientId rotation on a user-initiated retry the sanctioned fix**, or should BC's
+   velocity instead **distinguish a legit "same email, corrected card" retry from abuse** (e.g. reset /
+   not increment `declineDupSignup` when the payer email is unchanged and the card changed)? We don't want
+   to blanket-defeat fraud protection.
+2. **Document the velocity rules** `declineDupSignup` + `declineTooManySignupAttempts`: what each **keys
+   on** (clientId? IP? email? billingSeriesId?), the **window/threshold**, and **reset conditions** — so
+   we know exactly what our rotation affects and what it doesn't (IP-keyed rules won't rotate away).
+3. **Failed-sale-creates-user**: confirm intended? A declined first attempt leaves a "Payment failed"
+   account; does that state interact with `nonMemberOnly` on a later retry, and should a never-settled
+   user stay eligible for the signup offer?
+4. **CSR unblock path** + a **distinguishable 406 body** (velocity-block vs the `sequenceOption` 406 vs a
+   plain decline) so the client can message correctly — today they're indistinguishable on the wire.
 
 | | |
 |---|---|
 | **App / Page** | Consumer — `PaymentPage` (funnel checkout); CSR — `UserDetailPage` (no unblock tool exists) |
-| **Evidence** | Prod screenshots https://nimb.ws/1azUGoK (correct info still failing), https://nimb.ws/wYCiv6W (confusing error), https://nimb.ws/IwS84bJ (fresh incognito fail) · payment history shows 4× `blocked` Jul 1 21:49–21:53 |
-| **Feature impacted** | Customer recovery after typo'd card details — currently locked out for an unknown duration with no CSR remedy |
+| **Evidence** | davidtest-7-2 (userId `6a46…3941`) order details: `…9416d7bc` (corrected card → `declineTooManySignupAttempts`, blocked), `…62ed39e0` (declinerRetry → `ResponseCode 65 Activity Exceeded`); stable clientId `AkhVfmy…` across all. Earlier: Jim Galloway `6a45…3c22` 4× `blocked` Jul 1 21:49–21:53. Screenshots https://nimb.ws/1azUGoK · https://nimb.ws/IwS84bJ |
+| **Feature impacted** | Customer recovery after a typo'd/declined card — blocked even with corrected info; no CSR remedy |
 
 ## ASK G — consumer `user.update` → 403 "Forbidden resource" for never-paid (free) members  (FIX or DOCUMENT)  ❌ open
 
@@ -200,11 +227,21 @@ we don't run mutation probes on prod); each cites concrete artifacts instead.
 > or call back the customer. Could you include the caller ID (ANI) on the message (e.g. `data.phone`
 > or the body) and, if the telephony backend produces one, a transcription field?
 
-> **F (sale 406 block):** prod userId `6a45…3c22` — four $1.00 sale attempts (Jul 1 21:49–21:53) show
-> `blocked`; retries with corrected valid card info still fail with a bare HTTP 406, indistinguishable
-> from the sequenceOption 406. Three questions: what triggers the block and how long does it last /
-> what resets it? Can a CSR clear it (we don't see a csrWrapper method)? And could the block return a
-> distinguishable error body so the client can show the right message?
+> **F (signup velocity blocks a corrected-card retry — you were right about the billingId):**
+> We traced the "correct card still fails on retry" bug to the order details on `davidtest-7-2`
+> (userId `6a46…3941`). Across the whole session the **clientId is stable** (`AkhVfmy…`), so the
+> billingId (`sale|<clientId>|…`) never changes — and the velocity rules key on it. On the corrected-card
+> retry (order `…9416d7bc`) the payment is `blocked` with `declineTooManySignupAttempts` /
+> `declineDupSignup`, same clientId. (The $0 orders in between are your cascade-decliner's own
+> `declinerRetry`s — the test card `4111` returned processor code 65 "Activity Exceeded", i.e. exhausted;
+> not a real-card issue.) We shipped a client mitigation: on a **retry** we rotate the clientId so the
+> signup identity is fresh — but that defeats `declineDupSignup`, which is your fraud rule, so we want
+> your call. **Questions:** (1) Is rotating the clientId on a user-initiated retry the sanctioned fix, or
+> should the velocity instead not count a legit "same email, corrected card" retry? (2) What do
+> `declineDupSignup` / `declineTooManySignupAttempts` key on (clientId / IP / email?), and their
+> window/reset? (3) A declined first `billing.sale` still creates the user ("Payment failed") — intended,
+> and does it interact with `nonMemberOnly` on retry? (4) Can a CSR clear the block, and can the 406 carry
+> a distinguishable body vs the sequenceOption 406?
 
 > **G (free-member user.update):** prod free member — consumer `user.update` (phone number save) →
 > **403 "Forbidden resource"**. Our signup creates the BC user inside `billing.sale` (a failed sale
