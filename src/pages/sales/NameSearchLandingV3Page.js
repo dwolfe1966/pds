@@ -26,12 +26,6 @@ const TRUST_BADGES = [
   { label: 'Secure Search', icon: '🔒' },
 ];
 
-const BENEFIT_BULLETS = [
-  'County jails & state prisons',
-  'Current facility & location',
-  'Booking & release info',
-  'Inmate ID & status',
-];
 
 /**
  * Name search landing v3 – inmate-search themed flow with progress bar,
@@ -196,7 +190,6 @@ const NameSearchLandingV3Page = () => {
   return (
     <main className={styles.main}>
       <div className={styles.wrapper}>
-        <p className={styles.pageSubtitle}><span className={styles.pageSubtitleIcon} aria-hidden>🔍</span> Inmate Locator</p>
         {/* Trust badges – always visible */}
         <div className={styles.trustBadges}>
           {TRUST_BADGES.map((badge, i) => (
@@ -210,12 +203,16 @@ const NameSearchLandingV3Page = () => {
         {/* Single-column card */}
         <div className={styles.card}>
           <h1 className={styles.title}>Find an Inmate</h1>
+          {/* Brand value proposition — benefit-led (does NOT repeat the icons'
+              jails/prisons/secure info). It's a landing page, not just step 1. */}
           <p className={styles.subtitle}>
-            Search county jails, state prisons, and federal facilities. Enter a name to begin.
+            Reconnect with an incarcerated friend or family member — find where they&apos;re
+            held and what comes next.
           </p>
 
-          {/* Visible progress bar – only on the 4 form steps */}
-          {stepIndex >= 1 && stepIndex <= TOTAL_STEPS && (
+          {/* Progress bar — hidden on the first (name) step: "Step 1 of 4" up
+              front reads as work. Shows once the user has engaged (steps 2+). */}
+          {stepIndex >= 2 && stepIndex <= TOTAL_STEPS && (
             <div className={styles.progressSection}>
               <p className={styles.progressLabel}>Step {stepIndex} of {TOTAL_STEPS}</p>
               <div className={styles.progressBar} role="progressbar" aria-valuenow={stepIndex} aria-valuemin={1} aria-valuemax={TOTAL_STEPS}>
@@ -227,9 +224,6 @@ const NameSearchLandingV3Page = () => {
           {/* Step 1: Name */}
           {step === 'name' && (
             <form className={styles.form} onSubmit={startSearch}>
-              <h2 className={styles.sectionTitle}>Enter the Inmate&apos;s Name</h2>
-              <p className={styles.helperText}>Enter first and last name to search jails and prisons nationwide.</p>
-
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v3-firstName">First Name</label>
                 <input
@@ -238,7 +232,7 @@ const NameSearchLandingV3Page = () => {
                   className={styles.input}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First (ex. John)"
+                  placeholder="Inmate's First Name"
                   required
                 />
               </div>
@@ -250,7 +244,7 @@ const NameSearchLandingV3Page = () => {
                   className={styles.input}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last (ex. Smith)"
+                  placeholder="Inmate's Last Name"
                   required
                 />
               </div>
@@ -262,17 +256,11 @@ const NameSearchLandingV3Page = () => {
                   className={styles.input}
                   value={middleName}
                   onChange={(e) => setMiddleName(e.target.value)}
-                  placeholder="Middle name"
+                  placeholder="Inmate's Middle Name (optional)"
                 />
               </div>
 
               {nameError && <p className={styles.errorText}>{nameError}</p>}
-
-              <div className={styles.benefits}>
-                {BENEFIT_BULLETS.map((bullet, i) => (
-                  <span key={i} className={styles.benefitBullet}>{bullet}</span>
-                ))}
-              </div>
 
               <div className={styles.actions}>
                 <button type="submit" className={styles.buttonPrimary}>Search</button>
