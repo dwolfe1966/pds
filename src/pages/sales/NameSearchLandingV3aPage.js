@@ -83,16 +83,15 @@ const NameSearchLandingV3aPage = () => {
   return (
     <main style={{ minHeight: '100vh', background: `linear-gradient(180deg, ${P.bg} 0%, #ffffff 45%)` }}>
       <div style={{ background: `linear-gradient(135deg, ${P.blue} 0%, ${P.blueDark} 100%)`, color: '#fff', padding: '1.6rem 1.1rem 3.5rem', textAlign: 'center' }}>
-        <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, opacity: 0.85, letterSpacing: '0.04em' }}>🔍 {brand.name.toUpperCase()} INMATE LOCATOR</p>
-        <h1 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1, color: '#ffffff' }}>Find an Inmate.</h1>
+        <h1 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1, color: '#ffffff' }}>Find an Inmate</h1>
         <p style={{ margin: 0, fontSize: '0.95rem', opacity: 0.92, maxWidth: 480, marginInline: 'auto' }}>
-          Search county jails, state prisons, and federal facilities nationwide.
+          Reconnect with an incarcerated friend or family member — find where they&apos;re held and what comes next.
         </p>
       </div>
 
       <div style={{ maxWidth: 540, margin: '-2.5rem auto 0', padding: '0 1rem 3rem' }}>
         <div style={card}>
-          {stepIndex >= 1 && stepIndex <= TOTAL_STEPS && (
+          {stepIndex >= 2 && stepIndex <= TOTAL_STEPS && (
             <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: P.mut, marginBottom: 4 }}><span>Step {stepIndex} of {TOTAL_STEPS}</span></div>
               <div style={{ height: 6, background: P.bg, borderRadius: 999, overflow: 'hidden' }}><div style={{ width: `${(stepIndex / TOTAL_STEPS) * 100}%`, height: '100%', background: P.blue }} /></div>
@@ -104,8 +103,8 @@ const NameSearchLandingV3aPage = () => {
               <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.15rem', fontWeight: 800, color: P.ink }}>Who are you looking for?</h2>
               <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>Enter the inmate&apos;s first and last name to search jails and prisons.</p>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <input style={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" aria-label="First name" required />
-                <input style={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" aria-label="Last name" required />
+                <input style={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Inmate's First Name" aria-label="Inmate's first name" required />
+                <input style={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Inmate's Last Name" aria-label="Inmate's last name" required />
               </div>
               {nameError && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{nameError}</p>}
               <button type="submit" style={btnPrimary}>🔍 Search Now</button>

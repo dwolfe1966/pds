@@ -83,14 +83,13 @@ const NameSearchLandingV3bPage = () => {
   return (
     <main style={{ minHeight: '100vh', background: `linear-gradient(180deg, ${P.bg0} 0%, ${P.bg1} 100%)`, color: P.ink }}>
       <div style={{ padding: '1.6rem 1.1rem 0.5rem', maxWidth: 920, margin: '0 auto', textAlign: 'center' }}>
-        <p style={{ margin: 0, fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.08em', color: P.amber }}>◆ {brand.name.toUpperCase()} INMATE LOCATOR</p>
         <h1 style={{ margin: '0.4rem 0 0.3rem', fontSize: '1.85rem', fontWeight: 800, lineHeight: 1.1, color: P.ink }}>The complete inmate record.</h1>
         <p style={{ margin: 0, fontSize: '0.95rem', color: P.mut, maxWidth: 470, marginInline: 'auto' }}>Booking, facility, charges, and release status — from jails and prisons nationwide.</p>
       </div>
 
       <div style={{ maxWidth: 920, margin: '1rem auto 0', padding: '0 1rem 2.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
         <div style={{ ...cardStyle, flex: '1 1 320px' }}>
-          {stepIndex >= 1 && stepIndex <= TOTAL_STEPS && (
+          {stepIndex >= 2 && stepIndex <= TOTAL_STEPS && (
             <div style={{ marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.72rem', color: P.mut, marginBottom: 4 }}>Step {stepIndex} of {TOTAL_STEPS}</div>
               <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}><div style={{ width: `${(stepIndex / TOTAL_STEPS) * 100}%`, height: '100%', background: P.amber }} /></div>
@@ -102,9 +101,9 @@ const NameSearchLandingV3bPage = () => {
               <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.1rem', fontWeight: 800, color: P.ink }}>Search for an inmate</h2>
               <p style={{ margin: '0 0 1rem', fontSize: '0.86rem', color: P.mut }}>Enter the inmate&apos;s first and last name to begin.</p>
               <label style={label}>First name</label>
-              <input style={{ ...input, marginBottom: '0.7rem' }} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" required />
+              <input style={{ ...input, marginBottom: '0.7rem' }} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Inmate's First Name" required />
               <label style={label}>Last name</label>
-              <input style={{ ...input, marginBottom: '1rem' }} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" required />
+              <input style={{ ...input, marginBottom: '1rem' }} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Inmate's Last Name" required />
               {nameError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{nameError}</p>}
               <button type="submit" style={btnPrimary}>Search Records →</button>
               <p style={{ textAlign: 'center', fontSize: '0.72rem', color: P.mut, margin: '0.75rem 0 0' }}>🔒 256-bit SSL · Confidential · Instant</p>
