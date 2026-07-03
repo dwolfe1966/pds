@@ -956,6 +956,29 @@ class ApiWrapperService {
   }
 
   /**
+   * Rotate the wrapper's clientId. BC's signup velocity rules (declineDupSignup /
+   * declineTooManySignupAttempts) key on the clientId embedded in the billingId
+   * (`sale|<clientId>|<apiId>|<ts>|<rand>`), which is otherwise stable for the
+   * whole session. So a user who retries after a decline keeps the same clientId
+   * and trips the block even with a CORRECTED card — live-confirmed on
+   * davidtest-7-2 (order …9416d7bc: corrected card, subStatus
+   * declineTooManySignupAttempts, same clientId AkhVfmy…). Rotating the clientId
+   * before a RETRY sale presents a fresh signup identity so a legitimate
+   * correction isn't blocked. Both sale paths read this.wrapper.clientId (the
+   * proxy path directly; the IIFE interceptor as `this.clientId`), so setting it
+   * here covers both. Only call on a retry — the first attempt should keep the
+   * session clientId so normal purchases attribute correctly.
+   */
+  async rotateClientId() {
+    await this.getWrapper().catch(() => {});
+    const fresh = this._generateRandomId();
+    if (this.wrapper) {
+      try { this.wrapper.clientId = fresh; } catch { /* non-writable — ignore */ }
+    }
+    return fresh;
+  }
+
+  /**
    * Enumerate the logged-in user's contactMessage threads.
    * BC: apiWrapper.api.message.contact.getUserContacts({ lastId })
    *     → GET /api/contactMessage/getUserContacts

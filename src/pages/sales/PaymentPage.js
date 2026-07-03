@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
@@ -267,6 +267,10 @@ const PaymentPage = () => {
     billingZip: /^\d{5}$/.test(form.billingZip.trim()),
   };
 
+  // True once a sale attempt has failed — the next submit is a retry, on which we
+  // rotate the BC clientId to dodge the signup velocity block (see below).
+  const priorSaleFailedRef = useRef(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -373,6 +377,18 @@ const PaymentPage = () => {
       let paymentSuccess = false;
       let saleError = null;
       try {
+        // Retry after a prior failed sale: rotate the BC clientId so BC's signup
+        // velocity rules (declineDupSignup / declineTooManySignupAttempts) — which
+        // key on the stable clientId in the billingId — don't block a legitimate
+        // corrected-card retry. Live-confirmed root cause on davidtest-7-2 (order
+        // …9416d7bc: corrected card still blocked by declineTooManySignupAttempts).
+        // First attempt keeps the session clientId so normal purchases attribute.
+        if (priorSaleFailedRef.current) {
+          try {
+            const { default: apiWrapper } = await import('../../services/apiWrapper');
+            await apiWrapper.rotateClientId();
+          } catch { /* non-fatal — proceed with the current clientId */ }
+        }
         const saleResult = await api.billingSale(saleParams);
         const rawData = saleResult?.getData?.() ?? saleResult?.params?.response?.data ?? saleResult?.data ?? saleResult ?? {};
         if (process.env.NODE_ENV === 'development') {
@@ -599,6 +615,8 @@ const PaymentPage = () => {
           ? "We couldn't complete your subscription. Please double-check your details and try again, or contact support if this keeps happening."
           : rawMsg;
       }
+      // Mark that a sale attempt failed so the NEXT submit rotates the clientId.
+      priorSaleFailedRef.current = true;
       track('payment_error', { errorType, errorMessage: err?.message, errorStatus: status });
       gtmEvent('payment_error', { error_type: errorType });
       setError(message);
