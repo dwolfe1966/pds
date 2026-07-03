@@ -228,38 +228,38 @@ const NameSearchLandingV3Page = () => {
             <>
             <form className={styles.form} onSubmit={startSearch}>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v3-firstName">First Name</label>
+                <label className={styles.label} htmlFor="v3-firstName">Inmate First Name</label>
                 <input
                   id="v3-firstName"
                   type="text"
                   className={styles.input}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Inmate's First Name"
+                  placeholder="e.g. John"
                   required
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v3-lastName">Last Name</label>
+                <label className={styles.label} htmlFor="v3-lastName">Inmate Last Name</label>
                 <input
                   id="v3-lastName"
                   type="text"
                   className={styles.input}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Inmate's Last Name"
+                  placeholder="e.g. Smith"
                   required
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v3-middleName">Middle Name</label>
+                <label className={styles.label} htmlFor="v3-middleName">Inmate Middle Name</label>
                 <input
                   id="v3-middleName"
                   type="text"
                   className={styles.input}
                   value={middleName}
                   onChange={(e) => setMiddleName(e.target.value)}
-                  placeholder="Inmate's Middle Name (optional)"
+                  placeholder="e.g. Michael (optional)"
                 />
               </div>
 
