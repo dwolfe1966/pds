@@ -53,8 +53,9 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
   const catTitle = { fontSize: '0.85rem', fontWeight: 700, color: '#0d5d2f', marginBottom: '0.2rem' };
   const catItems = { fontSize: '0.73rem', color: '#6b7280', lineHeight: 1.4 };
   const formLabel = { display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: '0.3rem' };
+  // Inline field note — sits next to the label, same color/size, italic.
+  const labelNote = { fontWeight: 400, fontStyle: 'italic' };
   const formInput = { width: '100%', boxSizing: 'border-box', padding: '0.75rem 0.85rem', fontSize: '1rem', border: '1.5px solid #d1d5db', borderRadius: '0.5rem', outline: 'none', background: '#fff', color: '#111827' };
-  const microcopy = { margin: '0.3rem 0 0', fontSize: '0.75rem', fontStyle: 'italic', color: '#9ca3af' };
 
   return (
     <main className={styles.main} data-no-nav="true">
@@ -64,10 +65,19 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
         <span className={styles.miniHeaderBrand}>🔒 {brand.name}</span>
       </div>
 
+      {/* ── Hook line above the card ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '0.5rem',
+        margin: '1.1rem 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#111827',
+      }}>
+        <span style={{ color: '#0d5d2f', fontSize: '1.15rem' }} aria-hidden="true">✓</span>
+        Get Instant Information on {person.fullName}
+      </div>
+
       {/* ── VCard — the star ── */}
       <div style={{
         background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '0.875rem',
-        padding: '1.75rem 1.5rem', margin: '1.25rem 1rem 1rem', boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+        padding: '1.75rem 1.5rem', margin: '0.6rem 1rem 1rem', boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
           <div style={{
@@ -116,9 +126,9 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
 
       {/* ── Unlock form — light touch ── */}
       <div style={{
-        background: '#ffffff', border: '1px solid #e5e7eb', borderTop: '4px solid #0d5d2f',
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
         borderRadius: '0.875rem', padding: '1.75rem 1.5rem', margin: '0 1rem 1rem',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
       }} id="signup-form">
         <div style={{ textAlign: 'center', fontSize: '1.7rem', marginBottom: '0.25rem' }} aria-hidden="true">🔓</div>
         <h2 style={{ margin: '0 0 1.1rem', textAlign: 'center', fontSize: '1.35rem', fontWeight: 800, color: '#111827' }}>
@@ -132,18 +142,16 @@ const SearchDetailPreviewVariantA = ({ person, id }) => {
         ) : (
           <form onSubmit={handleSubmit} noValidate>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={formLabel} htmlFor="va-email">Email address</label>
+              <label style={formLabel} htmlFor="va-email">Email address <span style={labelNote}>— so we can email your report to you.</span></label>
               <input id="va-email" type="email" name="email" value={signupEmail}
                 onChange={e => setSignupEmail(e.target.value)} style={formInput}
                 placeholder="you@email.com" required autoComplete="email" />
-              <p style={microcopy}>So we can email your report to you.</p>
             </div>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={formLabel} htmlFor="va-password">Create a password</label>
+              <label style={formLabel} htmlFor="va-password">Create a password <span style={labelNote}>— keeps your report private and secure.</span></label>
               <input id="va-password" type="password" name="password" value={signupPassword}
                 onChange={e => setSignupPassword(e.target.value)} style={formInput}
                 placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
-              <p style={microcopy}>Keeps your report private and secure.</p>
             </div>
 
             {error && (
