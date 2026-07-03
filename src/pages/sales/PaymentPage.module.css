@@ -61,7 +61,7 @@
   max-width: 960px;
   margin: 0 auto 1.25rem;
   /* Pronounced, all-around shadow to lift the vCard off the page (owner). */
-  box-shadow: 0 6px 28px rgba(0,0,0,0.14);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.22);
 }
 
 .personPreviewLeft {
