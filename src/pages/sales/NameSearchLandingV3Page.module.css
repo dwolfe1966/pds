@@ -80,6 +80,20 @@
   line-height: var(--line-height-relaxed);
 }
 
+/* Brand value proposition — top of page, above the trust icons. */
+.brandTag {
+  text-align: center;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.brandName {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
 /* 3 benefit bullets under the headline — the "why" (benefit-led). */
 .valueProps {
   list-style: none;

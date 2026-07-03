@@ -83,7 +83,8 @@ const NameSearchLandingV3bPage = () => {
   return (
     <main style={{ minHeight: '100vh', background: `linear-gradient(180deg, ${P.bg0} 0%, ${P.bg1} 100%)`, color: P.ink }}>
       <div style={{ padding: '1.6rem 1.1rem 0.5rem', maxWidth: 920, margin: '0 auto', textAlign: 'center' }}>
-        <h1 style={{ margin: '0.4rem 0 0.3rem', fontSize: '1.85rem', fontWeight: 800, lineHeight: 1.1, color: P.ink }}>The complete inmate record.</h1>
+        <p style={{ margin: 0, fontSize: '0.86rem', fontWeight: 700, color: P.ink }}><span style={{ color: P.amber, fontWeight: 800 }}>{brand.name}</span> — Find Anyone, Anytime</p>
+        <h1 style={{ margin: '0.35rem 0 0.3rem', fontSize: '1.85rem', fontWeight: 800, lineHeight: 1.1, color: P.ink }}>The complete inmate record.</h1>
         <p style={{ margin: 0, fontSize: '0.95rem', color: P.mut, maxWidth: 470, marginInline: 'auto' }}>Booking, facility, charges, and release status — from jails and prisons nationwide.</p>
       </div>
 

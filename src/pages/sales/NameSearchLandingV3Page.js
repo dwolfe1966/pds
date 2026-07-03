@@ -190,6 +190,10 @@ const NameSearchLandingV3Page = () => {
   return (
     <main className={styles.main}>
       <div className={styles.wrapper}>
+        {/* Brand value proposition — up top, where the icons are (owner 2026-07-03). */}
+        <p className={styles.brandTag}>
+          <span className={styles.brandName}>{brand.name}</span> — Find Anyone, Anytime
+        </p>
         {/* Trust badges – always visible */}
         <div className={styles.trustBadges}>
           {TRUST_BADGES.map((badge, i) => (

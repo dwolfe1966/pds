@@ -83,7 +83,8 @@ const NameSearchLandingV3aPage = () => {
   return (
     <main style={{ minHeight: '100vh', background: `linear-gradient(180deg, ${P.bg} 0%, #ffffff 45%)` }}>
       <div style={{ background: `linear-gradient(135deg, ${P.blue} 0%, ${P.blueDark} 100%)`, color: '#fff', padding: '1.6rem 1.1rem 3.5rem', textAlign: 'center' }}>
-        <h1 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1, color: '#ffffff' }}>Find an Inmate</h1>
+        <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, opacity: 0.92 }}><strong>{brand.name}</strong> — Find Anyone, Anytime</p>
+        <h1 style={{ margin: '0.35rem 0 0.3rem', fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1, color: '#ffffff' }}>Find an Inmate</h1>
         <p style={{ margin: 0, fontSize: '0.95rem', opacity: 0.92, maxWidth: 480, marginInline: 'auto' }}>
           Reconnect with an incarcerated friend or family member — find where they&apos;re held and what comes next.
         </p>
