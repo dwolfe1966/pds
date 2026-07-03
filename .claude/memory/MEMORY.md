@@ -73,3 +73,4 @@
 - [Ad-unit funnel review 2026-06-24](project_adunit_funnel_review.md) — name/phone/email V2-V6 review; FIXED: V2/V5 name + V2-V6 phone loader delegation (Ads-invisibility + phone dead-end); OUTSTANDING: promise→payoff mismatch, fake interstitials, discarded state step, etc.
 - [SEO concept model + locked decisions](project_seo_concept_decisions.md) — Spokeo playbook; 7 owner decisions 2026-07-02; exposed=search surface, gated=tease; next = BC probe + Phase 0
 - [Funnel design principles](feedback_funnel_design_principles.md) — sell benefits not features; serve the info-need; consumer not SaaS; clean IA; peoplefinders build/verify/confirm model
+- [Funnel redesign 2026-07-03](project_funnel_redesign_2026_07_03.md) — landings/home(/home A-B)/SRP/SUP(vCard, SupTeaserA)/payment redesigned; pending deploy + alt SUPs + #2 bug (davidtest-7-2 lookup) + live teaser payload
