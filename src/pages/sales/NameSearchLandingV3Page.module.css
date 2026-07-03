@@ -80,6 +80,65 @@
   line-height: var(--line-height-relaxed);
 }
 
+/* 3 benefit bullets under the headline — the "why" (benefit-led). */
+.valueProps {
+  list-style: none;
+  margin: 0 0 var(--spacing-xl);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  text-align: left;
+}
+
+.valueProp {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+.valuePropIcon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* "What you'll find" payoff row under the search — the "what". */
+.whatYouFind {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.whatYouFindLabel {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--spacing-sm);
+}
+
+.whatYouFindRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.whatYouFindChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
 /* Progress bar */
 .progressSection {
   margin-bottom: var(--spacing-xl);

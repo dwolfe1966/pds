@@ -203,12 +203,24 @@ const NameSearchLandingV3Page = () => {
         {/* Single-column card */}
         <div className={styles.card}>
           <h1 className={styles.title}>Find an Inmate</h1>
-          {/* Brand value proposition — benefit-led (does NOT repeat the icons'
-              jails/prisons/secure info). It's a landing page, not just step 1. */}
-          <p className={styles.subtitle}>
-            Reconnect with an incarcerated friend or family member — find where they&apos;re
-            held and what comes next.
-          </p>
+          {/* Benefit bullets — the "why" (benefit-led, not feature/duplicative of
+              the icons). It's a landing page, not just step 1. Only on the landing. */}
+          {step === 'name' && (
+            <ul className={styles.valueProps}>
+              <li className={styles.valueProp}>
+                <span className={styles.valuePropIcon} aria-hidden>🤝</span>
+                <span>Reconnect with an incarcerated friend or family member</span>
+              </li>
+              <li className={styles.valueProp}>
+                <span className={styles.valuePropIcon} aria-hidden>📍</span>
+                <span>Find out where they&apos;re held — and what comes next</span>
+              </li>
+              <li className={styles.valueProp}>
+                <span className={styles.valuePropIcon} aria-hidden>🔎</span>
+                <span>A comprehensive scan of jails, prisons &amp; public records</span>
+              </li>
+            </ul>
+          )}
 
           {/* Progress bar — hidden on the first (name) step: "Step 1 of 4" up
               front reads as work. Shows once the user has engaged (steps 2+). */}
@@ -223,6 +235,7 @@ const NameSearchLandingV3Page = () => {
 
           {/* Step 1: Name */}
           {step === 'name' && (
+            <>
             <form className={styles.form} onSubmit={startSearch}>
               <div className={styles.fieldGroup}>
                 <label className={styles.label} htmlFor="v3-firstName">First Name</label>
@@ -249,7 +262,7 @@ const NameSearchLandingV3Page = () => {
                 />
               </div>
               <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="v3-middleName">Middle Name (optional)</label>
+                <label className={styles.label} htmlFor="v3-middleName">Middle Name</label>
                 <input
                   id="v3-middleName"
                   type="text"
@@ -266,6 +279,18 @@ const NameSearchLandingV3Page = () => {
                 <button type="submit" className={styles.buttonPrimary}>Search</button>
               </div>
             </form>
+            {/* "What you'll find" — the payoff (the "what"), reinforces the search. */}
+            <div className={styles.whatYouFind}>
+              <p className={styles.whatYouFindLabel}>What you&apos;ll find</p>
+              <div className={styles.whatYouFindRow}>
+                <span className={styles.whatYouFindChip}>📍 Current facility</span>
+                <span className={styles.whatYouFindChip}>📅 Booking &amp; release dates</span>
+                <span className={styles.whatYouFindChip}>⚖️ Charges</span>
+                <span className={styles.whatYouFindChip}>📸 Mugshot</span>
+                <span className={styles.whatYouFindChip}>🪪 Inmate ID &amp; status</span>
+              </div>
+            </div>
+            </>
           )}
 
           {/* Searching interstitial 1 */}
