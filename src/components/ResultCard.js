@@ -152,6 +152,14 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
           <h3 className={styles.cardTitle}>
             {result.fullName}
           </h3>
+          {/* Aliases / AKAs — a strong "is this the right person?" signal.
+              Only rendered when BC returns extra names (result.aliases). */}
+          {Array.isArray(result.aliases) && result.aliases.length > 0 && (
+            <p style={{ margin: '0.125rem 0 0.375rem', fontSize: '0.8rem', color: '#6b7280' }}>
+              <span style={{ fontWeight: 600 }}>AKA:</span> {result.aliases.slice(0, 3).join(', ')}
+              {result.aliases.length > 3 && ` +${result.aliases.length - 3} more`}
+            </p>
+          )}
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             {result.ageRange && (
               <p className={styles.cardInfo}>
@@ -189,7 +197,7 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
           disabled={loading}
           style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
         >
-          {loading ? 'Loading...' : 'View Full Report →'}
+          {loading ? 'Loading...' : 'View Details →'}
         </button>
       </div>
       {createError && (

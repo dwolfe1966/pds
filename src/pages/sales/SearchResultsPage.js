@@ -152,7 +152,7 @@ const SalesSearchResultsPage = () => {
   const countLabel = !displayCount
     ? null
     : displayCount > 30
-    ? 'More than 30 results — refine your search to narrow down'
+    ? 'more than 30 results'
     : `${displayCount} result${displayCount !== 1 ? 's' : ''}`;
 
   // Sorted view (bug 11). BC returns results in its own relevance order; we
@@ -262,13 +262,6 @@ const SalesSearchResultsPage = () => {
         {/* Results */}
         {!loading && !errorMessage && results && results.length > 0 ? (
           <div>
-            <div className={styles.resultsCount} style={theme ? { color: theme.mut, borderTopColor: theme.accent } : undefined}>
-              {totalCount > 30 ? (
-                <>Showing <strong style={theme ? { color: theme.accent } : undefined}>{results.length}</strong> of <strong style={theme ? { color: theme.accent } : undefined}>30+</strong> matches — refine your search below for a narrower list</>
-              ) : (
-                <>Found <strong style={theme ? { color: theme.accent } : undefined}>{displayCount}</strong> {displayCount === 1 ? 'result' : 'results'} — select a name to view the full report</>
-              )}
-            </div>
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               flexWrap: 'wrap', gap: '0.5rem', margin: '0 0 1rem', padding: 0,
@@ -332,7 +325,7 @@ const SalesSearchResultsPage = () => {
                       color: '#166534',
                     }}>
                       <span>🔒</span>
-                      <span>Your search is <strong>100% confidential</strong>. We never notify the person you searched.</span>
+                      <span>Your search is <strong>100% secure</strong>.</span>
                     </div>
                   )}
                 </div>

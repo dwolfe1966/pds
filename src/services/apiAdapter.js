@@ -183,6 +183,12 @@ export function adaptIdentity(identity) {
   // Extract name from nameList
   const nameList = identity.nameList || [];
   const fullName = nameList.length > 0 ? nameList[0].data : 'Unknown';
+  // Aliases / AKAs — any names past the primary. Dedupe against the primary
+  // (case-insensitive) so we don't echo it back. Empty when BC returns one name.
+  const aliases = nameList
+    .slice(1)
+    .map((n) => (n && n.data ? String(n.data).trim() : ''))
+    .filter((a) => a && a.toLowerCase() !== String(fullName).toLowerCase());
   
   // Extract location from addressList
   const addressList = identity.addressList || [];
@@ -204,6 +210,7 @@ export function adaptIdentity(identity) {
     id: identity.extId,
     extId: identity.extId,
     fullName,
+    aliases,
     location,
     ageRange,
     provider: identity.meta?.provider,
