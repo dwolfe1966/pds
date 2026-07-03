@@ -80,18 +80,25 @@
   line-height: var(--line-height-relaxed);
 }
 
-/* Brand value proposition — top of page, above the trust icons. */
-.brandTag {
+/* Brand value proposition — its own colored band, visually distinct from the
+   white search card below it. */
+.brandBanner {
+  display: block;
+  max-width: 520px;
+  margin: 0 auto var(--spacing-lg);
   text-align: center;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #16a34a 100%);
+  color: rgba(255, 255, 255, 0.92);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-xl);
   font-size: var(--font-size-lg);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-sm);
   font-weight: var(--font-weight-medium);
+  box-shadow: 0 4px 14px rgba(13, 93, 47, 0.18);
 }
 
 .brandName {
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  color: #fff;
 }
 
 /* 3 benefit bullets under the headline — the "why" (benefit-led). */

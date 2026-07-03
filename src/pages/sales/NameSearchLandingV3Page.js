@@ -19,12 +19,6 @@ const getStepIndex = (step) => {
 
 const TOTAL_STEPS = 4;
 
-/* Inmate-locator themed: trust badges and benefit bullets */
-const TRUST_BADGES = [
-  { label: 'Jails & Prisons', icon: '🏛️' },
-  { label: '12B+ Records', icon: '📋' },
-  { label: 'Secure Search', icon: '🔒' },
-];
 
 
 /**
@@ -190,18 +184,10 @@ const NameSearchLandingV3Page = () => {
   return (
     <main className={styles.main}>
       <div className={styles.wrapper}>
-        {/* Brand value proposition — up top, where the icons are (owner 2026-07-03). */}
-        <p className={styles.brandTag}>
+        {/* Brand value proposition — its own colored band, distinct from the
+            white search card (owner 2026-07-03). Trust icons removed. */}
+        <div className={styles.brandBanner}>
           <span className={styles.brandName}>{brand.name}</span> — Find Anyone, Anytime
-        </p>
-        {/* Trust badges – always visible */}
-        <div className={styles.trustBadges}>
-          {TRUST_BADGES.map((badge, i) => (
-            <span key={i} className={styles.trustBadge}>
-              <span className={styles.trustBadgeIcon} aria-hidden>{badge.icon}</span>
-              {badge.label}
-            </span>
-          ))}
         </div>
 
         {/* Single-column card */}
