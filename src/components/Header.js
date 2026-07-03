@@ -24,6 +24,9 @@ const Header = () => {
   // Suppress the global header on self-chrome landings (regardless of auth) so the green
   // nav never sits above a blue/charcoal hero.
   if (SELF_CHROME_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+  // Checkout: never the global member/sales nav — the payment page renders its own
+  // minimal SUP-style header so nothing competes with completing the purchase.
+  if (pathname.startsWith('/payment')) return null;
   // Themed funnel pages (loader/results) suppress the green nav when a theme is active.
   if (funnelThemeActive() && THEMED_FUNNEL_PREFIXES.some((p) => pathname.startsWith(p))) return null;
   // Signup teaser pages (/search/:id) render their own mini-header + a re-skinnable card;

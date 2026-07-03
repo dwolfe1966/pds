@@ -111,7 +111,6 @@ function fillValidPaymentForm() {
   setInputByName('cardNumber', '4111 1111 1111 1111');
   setInputByName('expiry', '12/30');
   setInputByName('cvv', '123');
-  setInputByName('street1', '123 Main St');
   setInputByName('billingFirstName', 'Jane');
   setInputByName('billingLastName', 'Doe');
   setInputByName('billingZip', '10001');
@@ -134,7 +133,8 @@ describe('PaymentPage — form rendering', () => {
     expect(container.querySelector('input[name="cvv"]')).not.toBeNull();
     expect(container.querySelector('input[name="billingFirstName"]')).not.toBeNull();
     expect(container.querySelector('input[name="billingLastName"]')).not.toBeNull();
-    expect(container.querySelector('input[name="street1"]')).not.toBeNull();
+    // Street address field intentionally removed (owner 2026-07-03) — not captured.
+    expect(container.querySelector('input[name="street1"]')).toBeNull();
     expect(container.querySelector('input[name="billingZip"]')).not.toBeNull();
   });
 

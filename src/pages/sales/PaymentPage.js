@@ -134,7 +134,6 @@ const PaymentPage = () => {
   // Billing address is expanded by default (partner bug 17 — the "uses address
   // on file" hint was misleading since we never collected one). ZIP is required;
   // Street is still optional.
-  const [billingOpen, setBillingOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -282,7 +281,7 @@ const PaymentPage = () => {
     if (!validation.cvv) { track('validation_error', { reason: 'cvv_invalid', step: 'payment' }); setError('Please enter a valid CVV.'); setTouched(t => ({ ...t, cvv: true })); return; }
     // Partner bug 17: copy previously said "we use your billing address on file"
     // even though it wasn't collected. ZIP is now explicitly required.
-    if (!validation.billingZip) { track('validation_error', { reason: 'zip_invalid', step: 'payment' }); setError('Please enter a valid 5-digit ZIP code.'); setTouched(t => ({ ...t, billingZip: true })); setBillingOpen(true); return; }
+    if (!validation.billingZip) { track('validation_error', { reason: 'zip_invalid', step: 'payment' }); setError('Please enter a valid 5-digit ZIP code.'); setTouched(t => ({ ...t, billingZip: true })); return; }
     setError('');
     setLoading(true);
     setPaying(true);
@@ -607,27 +606,35 @@ const PaymentPage = () => {
 
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
-      {theme && <div style={{ margin: '-2.5rem -1rem 1.5rem' }}><ThemedFunnelHeader theme={theme} /></div>}
+      {theme ? (
+        <div style={{ margin: '-2.5rem -1rem 1.5rem' }}><ThemedFunnelHeader theme={theme} /></div>
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-2.5rem -1rem 1.5rem', padding: '0.75rem 1rem', fontSize: '0.85rem', background: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+          <Link to="/name/search-result" style={{ color: '#0d5d2f', textDecoration: 'none' }}>← Back to Results</Link>
+          <span style={{ fontWeight: 700, color: '#0d5d2f' }}>🔒 {brand.name}</span>
+        </div>
+      )}
+      {/* Person preview — ALWAYS on top, above the two-column layout, mobile or
+          desktop (owner 2026-07-03). The person is the anchor, not the pricing. */}
+      {selectedPerson && !success && (
+        <div className={styles.personPreview}>
+          <div className={styles.personPreviewAvatar}>
+            {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
+          </div>
+          <div className={styles.personPreviewInfo}>
+            <p className={styles.personPreviewName}>{selectedPerson.fullName}</p>
+            <p className={styles.personPreviewMeta}>
+              {[selectedPerson.ageRange && `Age ${selectedPerson.ageRange}`, selectedPerson.location].filter(Boolean).join(' · ')}
+            </p>
+          </div>
+          <span className={styles.personPreviewLock}>🔓 Ready to unlock</span>
+        </div>
+      )}
+
       <div className={styles.layout}>
 
         {/* ── Left: Form ───────────────────────────────────────── */}
         <div className={styles.formCol}>
-
-          {/* Person preview */}
-          {selectedPerson && !success && (
-            <div className={styles.personPreview}>
-              <div className={styles.personPreviewAvatar}>
-                {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
-              </div>
-              <div className={styles.personPreviewInfo}>
-                <p className={styles.personPreviewName}>{selectedPerson.fullName}</p>
-                <p className={styles.personPreviewMeta}>
-                  {[selectedPerson.ageRange && `Age ${selectedPerson.ageRange}`, selectedPerson.location].filter(Boolean).join(' · ')}
-                </p>
-              </div>
-              <span className={styles.personPreviewLock}>🔓 Ready to unlock</span>
-            </div>
-          )}
 
           {/* General promotional teaser — shown when there's no target report (e.g. a
               thin-match signup). After payment the success screen routes to the dashboard. */}
@@ -742,7 +749,7 @@ const PaymentPage = () => {
           ) : (
             <>
               <div className={styles.formCard}>
-                <h2 className={styles.formCardTitle}>Payment Information</h2>
+                <h2 className={styles.formCardTitle}>Secure Checkout</h2>
 
                 {userInfo && (
                   <div className={styles.payingAs}>
@@ -879,50 +886,33 @@ const PaymentPage = () => {
                     </div>
                   </div>
 
-                  {/* Billing address — open by default; ZIP required */}
-                  <div className={styles.billingToggleRow}>
-                    <button
-                      type="button"
-                      className={styles.billingToggle}
-                      onClick={() => setBillingOpen(o => !o)}
-                    >
-                      <span>Billing Address</span>
-                      <span className={styles.billingToggleChevron}>{billingOpen ? '▲' : '▼'}</span>
-                    </button>
-                  </div>
-                  {billingOpen && (
-                    <div className={styles.billingFields}>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label} htmlFor="pay-street">Street Address (optional)</label>
-                        <input
-                          id="pay-street"
-                          type="text"
-                          name="street1"
-                          value={form.street1}
-                          onChange={handleChange}
-                          placeholder="123 Main St"
-                          autoComplete="billing street-address"
-                          className={styles.input}
-                        />
-                      </div>
-                      <div className={styles.fieldGroup}>
-                        <label className={styles.label} htmlFor="pay-zip">ZIP Code *</label>
-                        <input
-                          id="pay-zip"
-                          type="text"
-                          name="billingZip"
-                          value={form.billingZip}
-                          onChange={handleChange}
-                          required
-                          placeholder="12345"
-                          inputMode="numeric"
-                          autoComplete="billing postal-code"
-                          maxLength="5"
-                          className={`${styles.input} ${!validation.billingZip ? styles.inputError : ''}`}
-                        />
-                      </div>
+                  {/* ZIP — a normal field, right below Expiry/CVV. No billing-address
+                      dropdown, no street capture (owner 2026-07-03). */}
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.label} htmlFor="pay-zip">ZIP Code *</label>
+                    <div className={styles.inputWrap}>
+                      <input
+                        id="pay-zip"
+                        type="text"
+                        name="billingZip"
+                        value={form.billingZip}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        required
+                        placeholder="12345"
+                        inputMode="numeric"
+                        autoComplete="billing postal-code"
+                        maxLength="5"
+                        className={`${styles.input} ${touched.billingZip && !validation.billingZip ? styles.inputError : ''} ${touched.billingZip && validation.billingZip ? styles.inputValid : ''}`}
+                      />
+                      {touched.billingZip && (
+                        <span className={styles.fieldIndicator}>{validation.billingZip ? '✓' : '✗'}</span>
+                      )}
                     </div>
-                  )}
+                    {touched.billingZip && !validation.billingZip && (
+                      <p className={styles.fieldErrMsg}>Enter a valid 5-digit ZIP</p>
+                    )}
+                  </div>
 
                   {/* Error */}
                   {error && (
@@ -962,18 +952,18 @@ const PaymentPage = () => {
                         By clicking the button below, you agree to {brand.name}'s{' '}
                         <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</Link>,{' '}
                         <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link> and you authorize {brand.name} to
-                        charge your card <strong>{trialPriceStr} today</strong> for your report.
+                        charge your card {trialPriceStr} today for your report.
                         With your report, you get an Unlimited Search trial account for a full{' '}
-                        <strong>{brand.trialDays} Days</strong>. With Unlimited Search, you can
+                        {brand.trialDays} Days. With Unlimited Search, you can
                         search for as many reports as you want, and view and access up to 5 reports
-                        per day! If you cancel your trial before <strong>{trialEndDate}</strong>,
+                        per day! If you cancel your trial before {trialEndDate},
                         there will be no further charges. If you like what you see and wish to
                         search more reports on friends, relatives or anybody else in your life,
                         simply do nothing and we will automatically start your Unlimited Search
-                        subscription and charge your card just <strong>{recurringPriceStr}</strong> at
+                        subscription and charge your card just {recurringPriceStr} at
                         the end of the trial period and every 30 Days thereafter until you cancel.
-                        You may cancel at any time with our 100% hassle free cancellation. Just call
-                        us at <strong>{brand.supportPhone}</strong> or{' '}
+                        You may cancel at any time with our <strong>100% hassle free cancellation. Just call
+                        us at {brand.supportPhone}</strong> or{' '}
                         <Link to="/contact" target="_blank" rel="noopener noreferrer">visit our contact form</Link> anytime, 24 hours a day,
                         7 days a week.
                       </span>
