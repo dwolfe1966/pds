@@ -62,7 +62,38 @@ function CommunicationsTab({ email }) {
  * Unified Account page combining Profile, Security & Privacy, Subscription & Billing,
  * and Messages tabs.
  */
+// Cancellation reasons — captured to feed churn analytics (WHY people leave).
+const CANCEL_REASONS = [
+  { id: 'too_expensive', label: 'Too expensive' },
+  { id: 'not_found', label: "Didn't find what I was looking for" },
+  { id: 'found_it', label: 'Found what I needed (one-time use)' },
+  { id: 'not_using', label: 'Not using it enough' },
+  { id: 'technical', label: 'Technical problems' },
+  { id: 'other', label: 'Other' },
+];
+
+// Reason-tailored save pitch. HONEST saves only — no fake discounts/pauses we
+// can't actually honor via BC. Levers: value reframe, support/callback, keep-for-
+// later, and the (already true) cancel-at-period-end grace.
+function savePitch(reasonId, phone) {
+  switch (reasonId) {
+    case 'too_expensive':
+      return { emoji: '💬', title: "Let's see what we can do", body: `Before you go — our team can often help with your plan. Give us a call at ${phone} and we'll do our best to keep it working for you.` };
+    case 'not_found':
+      return { emoji: '🔎', title: 'We can help you find it', body: `Not finding the right person or record? Our support team at ${phone} can help you get more out of every search — that's what we're here for.` };
+    case 'technical':
+      return { emoji: '🛠️', title: 'Let us fix that', body: `Sorry you hit a snag. Call ${phone} and we'll sort it out — no need to lose your access over something we can fix.` };
+    case 'not_using':
+      return { emoji: '🔓', title: 'Your full access is still here', body: 'You have unlimited searches, monitoring, and reports whenever you need them — keep your membership ready for the next time.' };
+    case 'found_it':
+      return { emoji: '📌', title: 'Keep it for next time', body: 'People-search needs tend to come back around. Keep your membership for one-click access whenever you need it again — you can cancel anytime.' };
+    default:
+      return { emoji: '👋', title: 'Before you go', body: "You'll keep full access until the end of your billing period, and you can reactivate anytime with one click." };
+  }
+}
+
 const AccountPage = () => {
+  const brand = useBrand();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { token, user, setUser, subscription, isPaid, refreshSubscription } = useAuth();
@@ -92,6 +123,9 @@ const AccountPage = () => {
 
   // ─── Subscription & Billing tab state ────────────────────────────────────────
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelStep, setCancelStep] = useState(1);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReasonText, setCancelReasonText] = useState('');
   const [cancelError, setCancelError] = useState('');
   const [cancelSuccess, setCancelSuccess] = useState('');
   // BC orders fed both the billing-history panel and the "Plan" display via
@@ -740,7 +774,7 @@ const AccountPage = () => {
     setShowCancelModal(false);
     try {
       await api.cancelSubscription(activeOrder._id || activeOrder.id);
-      track('subscription_cancel', { orderId: activeOrder._id || activeOrder.id });
+      track('subscription_cancel', { orderId: activeOrder._id || activeOrder.id, reason: cancelReason || 'unspecified', reasonText: cancelReasonText || undefined });
       refreshSubscription();
       setCancelError('');
       // The action previously completed with zero feedback (bug list 7/2 #11).
@@ -890,38 +924,77 @@ const AccountPage = () => {
               boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             }}
           >
-            <h3 style={{ marginTop: 0, color: '#111827' }}>Cancel Subscription?</h3>
-            <p style={{ color: '#6b7280', lineHeight: '1.6' }}>
-              Your access will remain active until the end of your billing period. After that, you will lose access
-              to all reports and member features.
-            </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-              <button
-                onClick={() => { track('subscription_keep', {}); setShowCancelModal(false); }}
-                style={{
-                  padding: '0.6rem 1.25rem',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.375rem',
-                  background: '#fff',
-                  cursor: 'pointer',
-                }}
-              >
-                Keep Subscription
-              </button>
-              <button
-                onClick={handleCancelConfirm}
-                style={{
-                  padding: '0.6rem 1.25rem',
-                  background: '#dc2626',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                }}
-              >
-                Yes, Cancel
-              </button>
-            </div>
+            {cancelStep === 1 ? (
+              <>
+                <h3 style={{ marginTop: 0, color: '#111827' }}>We&apos;re sorry to see you go</h3>
+                <p style={{ color: '#6b7280', lineHeight: '1.6', margin: '0 0 1rem' }}>
+                  Help us improve — what&apos;s the main reason you&apos;re cancelling?
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem' }}>
+                  {CANCEL_REASONS.map((r) => (
+                    <label key={r.id} style={{
+                      display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem',
+                      border: `1px solid ${cancelReason === r.id ? '#0d5d2f' : '#e5e7eb'}`,
+                      background: cancelReason === r.id ? '#f0fdf4' : '#fff',
+                      borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#374151',
+                    }}>
+                      <input type="radio" name="cancelReason" checked={cancelReason === r.id} onChange={() => setCancelReason(r.id)} />
+                      {r.label}
+                    </label>
+                  ))}
+                  {cancelReason === 'other' && (
+                    <textarea
+                      value={cancelReasonText}
+                      onChange={(e) => setCancelReasonText(e.target.value)}
+                      placeholder="Tell us more (optional)"
+                      rows={2}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', fontSize: '0.9rem', resize: 'vertical' }}
+                    />
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => { track('subscription_keep', { step: 1 }); setShowCancelModal(false); }}
+                    style={{ padding: '0.6rem 1.25rem', border: '1px solid #d1d5db', borderRadius: '0.375rem', background: '#fff', cursor: 'pointer' }}
+                  >
+                    Keep Subscription
+                  </button>
+                  <button
+                    disabled={!cancelReason}
+                    onClick={() => { track('subscription_cancel_reason', { reason: cancelReason }); setCancelStep(2); }}
+                    style={{ padding: '0.6rem 1.25rem', background: cancelReason ? '#374151' : '#d1d5db', color: '#fff', border: 'none', borderRadius: '0.375rem', cursor: cancelReason ? 'pointer' : 'not-allowed' }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </>
+            ) : (() => {
+              const pitch = savePitch(cancelReason, brand.supportPhone);
+              return (
+                <>
+                  <div style={{ fontSize: '2rem', lineHeight: 1 }} aria-hidden="true">{pitch.emoji}</div>
+                  <h3 style={{ margin: '0.5rem 0 0.5rem', color: '#111827' }}>{pitch.title}</h3>
+                  <p style={{ color: '#6b7280', lineHeight: '1.6', margin: '0 0 0.75rem' }}>{pitch.body}</p>
+                  <p style={{ color: '#9ca3af', fontSize: '0.82rem', lineHeight: '1.5', margin: 0 }}>
+                    If you still cancel, you&apos;ll keep access until the end of your billing period — no further charges — then lose your saved reports and member features.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                    <button
+                      onClick={handleCancelConfirm}
+                      style={{ padding: '0.6rem 1rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: '0.9rem' }}
+                    >
+                      No thanks, cancel
+                    </button>
+                    <button
+                      onClick={() => { track('subscription_save', { reason: cancelReason }); setShowCancelModal(false); }}
+                      style={{ padding: '0.6rem 1.25rem', background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      Keep my membership
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1281,7 +1354,7 @@ const AccountPage = () => {
                     Reactivate Subscription
                   </button>
                 ) : (
-                  <button className={styles.cancelBtn} onClick={() => { track('cancel_lightbox_view', {}); setShowCancelModal(true); }}>
+                  <button className={styles.cancelBtn} onClick={() => { track('cancel_lightbox_view', {}); setCancelStep(1); setCancelReason(''); setCancelReasonText(''); setShowCancelModal(true); }}>
                     Cancel Subscription
                   </button>
                 )}
