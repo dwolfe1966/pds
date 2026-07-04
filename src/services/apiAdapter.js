@@ -212,6 +212,58 @@ export function adaptIdentity(identity) {
     || (dobList[0] && dobList[0].age != null ? String(dobList[0].age) : '')
     || '';
 
+  // BC's teaser (sourced from IDI) returns a REAL per-identity data footprint —
+  // scalar *Count fields + has*/is* flags. Live-confirmed payload 2026-07-04.
+  // Surface these HONESTLY on the SUP (real numbers, never fabricated). Missing
+  // fields coerce to 0/false so pre-count teasers degrade gracefully.
+  const num = (v) => (Number.isFinite(+v) ? +v : 0);
+  const records = {
+    phone: num(identity.phoneCount),
+    email: num(identity.emailCount),
+    address: num(identity.addressCount),
+    property: num(identity.propertyCount),
+    criminal: num(identity.criminalCount),
+    relatives: num(identity.relativeCount),
+    employment: num(identity.employmentCount),
+    professionalLicense: num(identity.professionalLicenseCount),
+    bankruptcy: num(identity.bankruptcyCount),
+    lien: num(identity.lienCount),
+    judgment: num(identity.judgmentCount),
+    foreclosure: num(identity.foreclosureCount),
+    business: num(identity.associatedBusinessCount),
+    ip: num(identity.ipCount),
+  };
+  const flags = {
+    isCriminal: !!identity.isCriminal,
+    isPropertyOwner: !!identity.isPropertyOwner,
+    hasEmail: !!identity.hasEmail,
+    hasPhone: !!identity.hasPhone,
+    hasRelatives: !!identity.hasRelatives,
+    hasEmployment: !!identity.hasEmployment,
+    hasVehicle: !!identity.hasVehicle,
+    hasAddress: !!identity.hasAddress,
+    hasBankruptcy: !!identity.hasBankruptcy,
+    hasLien: !!identity.hasLien,
+    hasJudgment: !!identity.hasJudgment,
+    hasForeclosure: !!identity.hasForeclosure,
+    hasProfessionalLicense: !!identity.hasProfessionalLicense,
+  };
+  // Earliest year this identity appears on record (nameList meta.firstSeen is a
+  // YYYYMMDD int) — an honest "on record since" tenure signal.
+  const seenYears = nameList
+    .map((n) => n && n.meta && n.meta.firstSeen)
+    .filter(Boolean)
+    .map((d) => Math.floor(d / 10000))
+    .filter((y) => y > 1900 && y <= new Date().getFullYear());
+  const onRecordSince = seenYears.length ? Math.min(...seenYears) : null;
+  // Real relative names from relationshipList (not fabricated).
+  const relatives = (identity.relationshipList || [])
+    .map((r) => ({
+      name: [r && r.name && r.name.first, r && r.name && r.name.last].filter(Boolean).join(' ').trim(),
+      relation: (r && r.relationshipName) || null,
+    }))
+    .filter((r) => r.name);
+
   return {
     id: identity.extId,
     extId: identity.extId,
@@ -220,6 +272,11 @@ export function adaptIdentity(identity) {
     location,
     ageRange,
     provider: identity.meta?.provider,
+    // Real teaser data footprint (honest value signals for the SUP/SRP).
+    records,
+    flags,
+    onRecordSince,
+    relatives,
     // Store full identity for later use (e.g., report creation)
     _rawIdentity: identity
   };

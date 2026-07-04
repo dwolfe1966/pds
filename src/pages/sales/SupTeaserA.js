@@ -46,6 +46,31 @@ const SupTeaserA = ({ person, id, palette: P }) => {
   const updatedDate = new Date(Date.now() - 3 * 86400000)
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
+  // Real per-identity data footprint from the BC teaser (honest — never fabricated;
+  // 0/absent categories are simply not shown, never claimed). Degrades gracefully
+  // when a person object predates the counts (all fall back to masked generics).
+  const R = person.records || {};
+  const Fl = person.flags || {};
+  const plural = (n, s, p) => `${n} ${n === 1 ? s : (p || s + 's')}`;
+  const addressVal = R.address > 0
+    ? `${plural(R.address, 'address', 'addresses')} on record${cityState ? ` · ${cityState}` : ''}`
+    : addressObf;
+  const phoneVal = R.phone > 0 ? `${plural(R.phone, 'number')} found · (•••) •••-••••` : '(•••) •••-••••';
+  const emailVal = R.email > 0 ? `${plural(R.email, 'address', 'addresses')} on file` : 'See available information';
+  const foundChips = [];
+  if (Fl.isCriminal || R.criminal > 0) foundChips.push('⚖️ Criminal record');
+  if (Fl.isPropertyOwner || R.property > 0) foundChips.push(R.property > 0 ? `🏠 ${plural(R.property, 'property', 'properties')}` : '🏠 Property owner');
+  if (R.relatives > 0) foundChips.push(`👥 ${plural(R.relatives, 'relative')}`);
+  if (Fl.hasEmployment || R.employment > 0) foundChips.push('💼 Employment history');
+  if (Fl.hasProfessionalLicense || R.professionalLicense > 0) foundChips.push('📜 Professional license');
+  if (R.bankruptcy > 0) foundChips.push('📉 Bankruptcy');
+  if (R.lien > 0) foundChips.push('📑 Lien');
+  if (R.judgment > 0) foundChips.push('⚖️ Judgment');
+  if (R.foreclosure > 0) foundChips.push('🏚️ Foreclosure');
+  if (Fl.hasVehicle) foundChips.push('🚗 Vehicle record');
+  if (R.business > 0) foundChips.push('🏢 Associated business');
+  const chip = { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: P.onDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.05)', color: P.ink2, borderRadius: '999px', padding: '0.25rem 0.7rem', fontSize: '0.75rem', fontWeight: 600 };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     submitSignup({ email, password, optin: true, selectedPersonId: id || null });
@@ -107,15 +132,22 @@ const SupTeaserA = ({ person, id, palette: P }) => {
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: P.verifiedBg, color: P.verifiedText, border: `1px solid ${P.verifiedBorder}`, borderRadius: '999px', padding: '0.2rem 0.65rem', fontSize: '0.73rem', fontWeight: 600 }}>
               🛡️ Verified in our database
             </span>
+            {person.onRecordSince && <span style={{ fontSize: '0.73rem', color: P.muted }}>📁 On record since {person.onRecordSince}</span>}
             <span style={{ fontSize: '0.73rem', color: P.muted }}>🕓 Last updated {updatedDate}</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-            {contactRow('Current Address', addressObf)}
-            {contactRow('Past Addresses', 'More addresses available')}
-            {contactRow('Phone Number', '(•••) •••-••••')}
-            {contactRow('Email Address', 'See available information')}
+            {contactRow('Addresses', addressVal)}
+            {contactRow('Phone Numbers', phoneVal)}
+            {contactRow('Email Addresses', emailVal)}
           </div>
+
+          {foundChips.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.9rem', paddingTop: '0.9rem', borderTop: `1px solid ${P.onDark ? 'rgba(255,255,255,0.1)' : 'rgba(17,24,39,0.08)'}` }}>
+              <span style={{ width: '100%', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: P.muted, marginBottom: '0.15rem' }}>Also on file</span>
+              {foundChips.map((c) => <span key={c} style={chip}>{c}</span>)}
+            </div>
+          )}
         </div>
 
         {/* Compressed record categories — white cards, accent line, hover lift */}
