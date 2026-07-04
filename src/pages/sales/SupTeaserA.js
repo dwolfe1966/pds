@@ -65,8 +65,9 @@ const COPY = {
   },
 };
 
-const SupTeaserA = ({ person, id, palette: P, tone }) => {
+const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
   const aggressive = tone === 'aggressive';
+  const mapLayout = layout === 'map';
   const T = COPY[tone] || COPY.default;
   const cats = aggressive ? CATEGORIES_AGGRESSIVE : CATEGORIES;
   const brand = useBrand();
@@ -115,6 +116,18 @@ const SupTeaserA = ({ person, id, palette: P, tone }) => {
   if (Fl.hasVehicle) foundChips.push('🚗 Vehicle record');
   if (R.business > 0) foundChips.push('🏢 Associated business');
   const chip = { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: P.onDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.05)', color: P.ink2, borderRadius: '999px', padding: '0.25rem 0.7rem', fontSize: '0.75rem', fontWeight: 600 };
+
+  // Variant D (map layout): Spokeo-style colored-dot category legend from REAL
+  // counts. Buckets that sum to 0 drop out; "And more" always shows.
+  const n0 = (v) => v || 0; // defensive: undefined terms would NaN-out a sum
+  const legend = [
+    { color: '#2563eb', label: 'Phone & Email', n: n0(R.phone) + n0(R.email) },
+    { color: '#7c3aed', label: 'Addresses', n: n0(R.address) },
+    { color: '#dc2626', label: 'Court & Records', n: n0(R.criminal) + n0(R.lien) + n0(R.judgment) + n0(R.bankruptcy) + n0(R.foreclosure) },
+    { color: '#16a34a', label: 'Relatives', n: n0(R.relatives) },
+    { color: '#0891b2', label: 'Work & Licenses', n: n0(R.employment) + n0(R.professionalLicense) },
+    { color: '#6b7280', label: 'And more', n: null },
+  ].filter((x) => x.n === null || x.n > 0);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -202,7 +215,60 @@ const SupTeaserA = ({ person, id, palette: P, tone }) => {
           )}
         </div>
 
+        {/* Variant D (map layout): location map panel — stylized, self-contained
+            (no map SDK/key). City/state is REAL; the streets are a decorative
+            motif, so the caption keeps precision honest (city-level). */}
+        {mapLayout && (
+          <>
+            <div style={{ background: P.cardBg, borderRadius: '1.125rem', overflow: 'hidden', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 8px 24px rgba(17,24,39,0.08)' }}>
+              <div style={{ position: 'relative', height: '190px' }}>
+                <svg viewBox="0 0 400 190" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} aria-hidden="true">
+                  <rect width="400" height="190" fill="#e9f1ec" />
+                  <path d="M0 140 Q 110 122 210 146 T 400 138 V190 H0 Z" fill="#d6e8f0" />
+                  <rect x="34" y="26" width="78" height="46" rx="5" fill="#dcebd7" />
+                  <rect x="250" y="34" width="96" height="58" rx="5" fill="#dcebd7" />
+                  <rect x="150" y="96" width="70" height="40" rx="5" fill="#dcebd7" />
+                  <g stroke="#ffffff" strokeWidth="7" opacity="0.95" strokeLinecap="round">
+                    <line x1="-10" y1="78" x2="410" y2="70" />
+                    <line x1="-10" y1="120" x2="410" y2="128" />
+                    <line x1="120" y1="-10" x2="150" y2="200" />
+                    <line x1="285" y1="-10" x2="262" y2="200" />
+                  </g>
+                  <g stroke="#f4d06f" strokeWidth="3.5" opacity="0.9" strokeLinecap="round">
+                    <line x1="-10" y1="99" x2="410" y2="96" />
+                  </g>
+                </svg>
+                <div style={{ position: 'absolute', left: '50%', top: '46%', transform: 'translate(-50%,-50%)', width: '46px', height: '46px', borderRadius: '50%', background: 'rgba(21,128,61,0.18)' }} />
+                <div style={{ position: 'absolute', left: '50%', top: '44%', transform: 'translate(-50%,-100%)', fontSize: '2.3rem', filter: 'drop-shadow(0 3px 3px rgba(0,0,0,0.3))', lineHeight: 1 }} aria-hidden="true">📍</div>
+                <div style={{ position: 'absolute', left: '50%', top: '52%', transform: 'translateX(-50%)', background: '#fff', borderRadius: '8px', padding: '0.35rem 0.75rem', fontSize: '0.82rem', fontWeight: 800, color: P.ink, boxShadow: '0 3px 10px rgba(0,0,0,0.22)', whiteSpace: 'nowrap' }}>
+                  {cityState || 'United States'}
+                </div>
+              </div>
+              <div style={{ padding: '0.85rem 1.4rem' }}>
+                <p style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: P.ink }}>📌 {R.address > 0 ? `${plural(R.address, 'location')} on record` : 'Location on record'}</p>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: P.mut }}>Full street address &amp; interactive map unlock with the report.</p>
+              </div>
+            </div>
+
+            {legend.length > 0 && (
+              <div style={{ background: P.cardBg, borderRadius: '1.125rem', padding: '1.25rem 1.5rem', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 8px 24px rgba(17,24,39,0.08)' }}>
+                <p style={{ margin: '0 0 0.85rem', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: P.muted }}>What&apos;s in the full report</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem 1rem' }}>
+                  {legend.map((item) => (
+                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: P.ink2 }}>
+                      <span style={{ width: '9px', height: '9px', borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                      <span style={{ fontWeight: 600 }}>{item.label}</span>
+                      {item.n != null && <span style={{ color: P.mut }}>({item.n})</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {/* Compressed record categories — white cards, accent line, hover lift */}
+        {!mapLayout && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '1rem' }}>
           {cats.map((c) => (
             <div key={c.title} onMouseEnter={catHoverIn} onMouseLeave={catHoverOut}
@@ -212,6 +278,7 @@ const SupTeaserA = ({ person, id, palette: P, tone }) => {
             </div>
           ))}
         </div>
+        )}
 
         {/* Variant C: redacted "locked report" preview — shows there's a full report
             behind the paywall (blurred bars are decorative, never fake values). */}

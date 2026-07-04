@@ -1,0 +1,133 @@
+- generic [ref=f14e3]:
+  - main [ref=f14e5]:
+    - generic [ref=f14e6]:
+      - link "← Back to Results" [ref=f14e7] [cursor=pointer]:
+        - /url: /name/search-result
+      - generic [ref=f14e8]: 🔒 IDLookup.AI
+    - generic [ref=f14e9]:
+      - generic [ref=f14e10]:
+        - generic [ref=f14e11]: ✓
+        - text: Get Instant Information on David Wexler
+      - generic [ref=f14e12]:
+        - generic [ref=f14e13]:
+          - generic [ref=f14e14]: DW
+          - generic [ref=f14e15]:
+            - heading "David Wexler" [level=1] [ref=f14e16]
+            - paragraph [ref=f14e17]:
+              - text: Age 72
+              - generic [ref=f14e18]: · aka David B Wexler
+        - generic [ref=f14e19]:
+          - generic [ref=f14e20]: 🛡️ Verified in our database
+          - generic [ref=f14e21]: 📁 On record since 1983
+          - generic [ref=f14e22]: 🕓 Last updated Jul 1, 2026
+        - generic [ref=f14e23]:
+          - generic [ref=f14e24]:
+            - generic [ref=f14e25]: ✓
+            - generic [ref=f14e26]:
+              - strong [ref=f14e27]: "Addresses:"
+              - text: 2 addresses on record · Simi Valley, CA
+          - generic [ref=f14e28]:
+            - generic [ref=f14e29]: ✓
+            - generic [ref=f14e30]:
+              - strong [ref=f14e31]: "Phone Numbers:"
+              - text: 3 numbers found (residential) · (•••) •••-••••
+          - generic [ref=f14e32]:
+            - generic [ref=f14e33]: ✓
+            - generic [ref=f14e34]:
+              - strong [ref=f14e35]: "Email Addresses:"
+              - text: 2 addresses on file
+        - generic [ref=f14e36]:
+          - generic [ref=f14e37]: Also on file
+          - generic [ref=f14e38]: ⚖️ Criminal record
+          - generic [ref=f14e39]: 🏠 2 properties
+          - generic [ref=f14e40]: 👥 3 relatives incl. Alan W.
+          - generic [ref=f14e41]: 💼 Employment history
+          - generic [ref=f14e42]: 📑 Lien
+      - generic [ref=f14e43]:
+        - generic [ref=f14e44]:
+          - img [ref=f14e45]
+          - generic [ref=f14e59]: 📍
+          - generic [ref=f14e60]: Simi Valley, CA
+        - generic [ref=f14e61]:
+          - paragraph [ref=f14e62]: 📌 2 locations on record
+          - paragraph [ref=f14e63]: Full street address & interactive map unlock with the report.
+      - generic [ref=f14e64]:
+        - paragraph [ref=f14e65]: What's in the full report
+        - generic [ref=f14e66]:
+          - generic [ref=f14e67]:
+            - generic [ref=f14e69]: Phone & Email
+            - generic [ref=f14e70]: (5)
+          - generic [ref=f14e71]:
+            - generic [ref=f14e73]: Addresses
+            - generic [ref=f14e74]: (2)
+          - generic [ref=f14e75]:
+            - generic [ref=f14e77]: Relatives
+            - generic [ref=f14e78]: (3)
+          - generic [ref=f14e81]: And more
+      - generic [ref=f14e82]:
+        - generic [ref=f14e83]: 🔓
+        - heading "Unlock David Wexler's Report" [level=2] [ref=f14e84]
+        - generic [ref=f14e85]:
+          - generic [ref=f14e86]:
+            - generic [ref=f14e87]: Email address — so we can email your report to you.
+            - textbox "Email address — so we can email your report to you." [ref=f14e88]:
+              - /placeholder: you@email.com
+          - generic [ref=f14e89]:
+            - generic [ref=f14e90]: Create a password — keeps your report private and secure.
+            - textbox "Create a password — keeps your report private and secure." [ref=f14e91]:
+              - /placeholder: Min. 8 characters
+          - button "Unlock Report →" [ref=f14e92] [cursor=pointer]
+          - paragraph [ref=f14e93]:
+            - text: Already have an account?
+            - link "Sign in" [ref=f14e94] [cursor=pointer]:
+              - /url: /login
+        - generic [ref=f14e95]:
+          - generic [ref=f14e96]: 🔒 SSL Encrypted
+          - generic [ref=f14e97]: 🚫 No spam
+      - list [ref=f14e98]:
+        - listitem [ref=f14e99]: Your trial membership includes full access to name, phone, and email searches.
+        - listitem [ref=f14e100]:
+          - text: Your satisfaction is important to us. If you're not fully satisfied, call our customer care team at
+          - link "866-204-1902" [ref=f14e101] [cursor=pointer]:
+            - /url: tel:8662041902
+          - text: .
+    - link "🔓 Unlock Report →" [ref=f14e103] [cursor=pointer]:
+      - /url: "#signup-form"
+  - contentinfo [ref=f14e104]:
+    - generic [ref=f14e105]:
+      - generic [ref=f14e106]:
+        - generic [ref=f14e107]:
+          - img "IDLookup.AI" [ref=f14e109]
+          - heading "IDLookup.AI" [level=4] [ref=f14e110]
+          - paragraph [ref=f14e111]: Find people and monitor who searches for you. Access comprehensive public records and stay informed.
+        - generic [ref=f14e112]:
+          - heading "Legal" [level=5] [ref=f14e113]
+          - generic [ref=f14e114]:
+            - link "Privacy Policy" [ref=f14e115] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=f14e116] [cursor=pointer]:
+              - /url: /terms
+        - generic [ref=f14e117]:
+          - heading "Resources" [level=5] [ref=f14e118]
+          - generic [ref=f14e119]:
+            - link "Opt Out" [ref=f14e120] [cursor=pointer]:
+              - /url: /opt-out
+            - link "Unsubscribe" [ref=f14e121] [cursor=pointer]:
+              - /url: /unsubscribe
+            - link "Suppression List" [ref=f14e122] [cursor=pointer]:
+              - /url: /suppression-list
+            - link "Partner With Us" [ref=f14e123] [cursor=pointer]:
+              - /url: /partner
+        - generic [ref=f14e124]:
+          - heading "Support" [level=5] [ref=f14e125]
+          - generic [ref=f14e126]:
+            - link "Contact Us" [ref=f14e127] [cursor=pointer]:
+              - /url: /contact
+            - link "About" [ref=f14e128] [cursor=pointer]:
+              - /url: /about
+          - generic [ref=f14e129]:
+            - text: Our customer support team is available Monday–Friday, 9am–5pm ET. For account issues, billing questions, or data removal requests, please visit our
+            - link "contact page" [ref=f14e130] [cursor=pointer]:
+              - /url: /contact
+            - text: .
+      - generic [ref=f14e132]: © 2026 IDLookup.AI. All rights reserved.
