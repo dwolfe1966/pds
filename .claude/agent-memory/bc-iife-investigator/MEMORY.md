@@ -1,0 +1,5 @@
+- [CSR attachment.download surface](reference_csr_attachment_download.md) — only file-retrieval path; no recording method; playAudioFlag stripped; `...o` params spread = client passthrough lever
+- [CSR live-call attachment 404](project_csr_attachment_livecall_404.md) — BC-side bug: /attachment/download 404s telephony recordings (brandId "unknown"); our wiring correct; two-path BC ask drafted
+- [/shape/compiled full surface](reference_shape_compiled_surface.md) — creds-free GET probe; backs getShComp; registry→shape 3-bucket map (retireable / empty shN-sheet / real gap=shnName); resolver partner-fallback dead code
+- [Voicemail caller-ID field](reference_voicemail_callerid_field.md) — ANI at data.calleridnum (+ content.input.phone dup); no transcription in any CSV; sample is brandId:idlookup, blank-prod voicemail (brandId:unknown) still unconfirmed
+- [Sale 2nd-submit billingId 406](reference_sale_billingid_dedup.md) — BC billingId = full billingSeriesId; dedup on STABLE clientId segment; prod=IIFE path; fix=rotate wrapper.clientId post-406 (hypothesis, attribution risk)

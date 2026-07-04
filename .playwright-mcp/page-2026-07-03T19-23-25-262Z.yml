@@ -1,0 +1,192 @@
+- generic [ref=f68e3]:
+  - banner [ref=f68e4]:
+    - navigation [ref=f68e5]:
+      - link "IDLookup.AI IDLookup.AI" [ref=f68e7] [cursor=pointer]:
+        - /url: /
+        - img "IDLookup.AI" [ref=f68e8]
+        - text: IDLookup.AI
+      - generic [ref=f68e9]:
+        - link "Home" [ref=f68e10] [cursor=pointer]:
+          - /url: /
+        - link "Search" [ref=f68e11] [cursor=pointer]:
+          - /url: /search/all
+        - link "About" [ref=f68e12] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=f68e13] [cursor=pointer]:
+          - /url: /contact
+      - generic [ref=f68e14]:
+        - link "Login" [ref=f68e15] [cursor=pointer]:
+          - /url: /login
+        - link "Sign Up" [ref=f68e16] [cursor=pointer]:
+          - /url: /signup
+  - main [ref=f68e18]:
+    - generic [ref=f68e19]:
+      - heading "We found 12 results for \"John Smith\"" [level=1] [ref=f68e21]
+      - generic [ref=f68e22]:
+        - generic [ref=f68e23]:
+          - text: Found
+          - strong [ref=f68e24]: "12"
+          - text: results — select a name to view the full report
+        - generic [ref=f68e25]:
+          - paragraph [ref=f68e26]: All data sourced from publicly available records.
+          - generic [ref=f68e27]:
+            - text: "Sort:"
+            - combobox "Sort:" [ref=f68e28]:
+              - option "Most relevant" [selected]
+              - option "Age (youngest first)"
+              - option "Age (oldest first)"
+              - option "Name (A-Z)"
+        - generic [ref=f68e29]:
+          - generic [ref=f68e31] [cursor=pointer]:
+            - generic [ref=f68e32]: ⭐ Most Likely Match
+            - generic [ref=f68e34]:
+              - generic [ref=f68e35]: JM
+              - generic [ref=f68e36]:
+                - heading "John Michael Smith" [level=3] [ref=f68e37]
+                - generic [ref=f68e38]:
+                  - paragraph [ref=f68e39]:
+                    - generic [ref=f68e40]: Age
+                    - text: "58"
+                  - paragraph [ref=f68e41]:
+                    - generic [ref=f68e42]: Location
+                    - text: Los Angeles, CA
+              - button "View Full Report →" [ref=f68e43]
+          - generic [ref=f68e47] [cursor=pointer]:
+            - generic [ref=f68e48]: JA
+            - generic [ref=f68e49]:
+              - heading "John A Smith" [level=3] [ref=f68e50]
+              - generic [ref=f68e51]:
+                - paragraph [ref=f68e52]:
+                  - generic [ref=f68e53]: Age
+                  - text: "42"
+                - paragraph [ref=f68e54]:
+                  - generic [ref=f68e55]: Location
+                  - text: San Diego, CA
+            - button "View Full Report →" [ref=f68e56]
+          - generic [ref=f68e57]:
+            - generic [ref=f68e60] [cursor=pointer]:
+              - generic [ref=f68e61]: JR
+              - generic [ref=f68e62]:
+                - heading "John Robert Smith" [level=3] [ref=f68e63]
+                - generic [ref=f68e64]:
+                  - paragraph [ref=f68e65]:
+                    - generic [ref=f68e66]: Age
+                    - text: "67"
+                  - paragraph [ref=f68e67]:
+                    - generic [ref=f68e68]: Location
+                    - text: Sacramento, CA
+              - button "View Full Report →" [ref=f68e69]
+            - generic [ref=f68e70]:
+              - generic [ref=f68e71]: 🔒
+              - generic [ref=f68e72]:
+                - text: Your search is
+                - strong [ref=f68e73]: 100% confidential
+                - text: . We never notify the person you searched.
+          - generic [ref=f68e77] [cursor=pointer]:
+            - generic [ref=f68e78]: JD
+            - generic [ref=f68e79]:
+              - heading "John D Smith" [level=3] [ref=f68e80]
+              - generic [ref=f68e81]:
+                - paragraph [ref=f68e82]:
+                  - generic [ref=f68e83]: Age
+                  - text: "35"
+                - paragraph [ref=f68e84]:
+                  - generic [ref=f68e85]: Location
+                  - text: San Jose, CA
+            - button "View Full Report →" [ref=f68e86]
+      - generic [ref=f68e87]:
+        - heading "Not who you're looking for? Refine your search" [level=2] [ref=f68e88]
+        - generic [ref=f68e91]:
+          - textbox "First name" [ref=f68e92]
+          - textbox "Last name" [ref=f68e93]
+          - combobox "State" [ref=f68e94] [cursor=pointer]:
+            - option "State *" [selected]
+            - option "AL"
+            - option "AK"
+            - option "AZ"
+            - option "AR"
+            - option "CA"
+            - option "CO"
+            - option "CT"
+            - option "DE"
+            - option "FL"
+            - option "GA"
+            - option "HI"
+            - option "ID"
+            - option "IL"
+            - option "IN"
+            - option "IA"
+            - option "KS"
+            - option "KY"
+            - option "LA"
+            - option "ME"
+            - option "MD"
+            - option "MA"
+            - option "MI"
+            - option "MN"
+            - option "MS"
+            - option "MO"
+            - option "MT"
+            - option "NE"
+            - option "NV"
+            - option "NH"
+            - option "NJ"
+            - option "NM"
+            - option "NY"
+            - option "NC"
+            - option "ND"
+            - option "OH"
+            - option "OK"
+            - option "OR"
+            - option "PA"
+            - option "RI"
+            - option "SC"
+            - option "SD"
+            - option "TN"
+            - option "TX"
+            - option "UT"
+            - option "VT"
+            - option "VA"
+            - option "WA"
+            - option "WV"
+            - option "WI"
+            - option "WY"
+          - button "Search Now" [ref=f68e95] [cursor=pointer]
+  - contentinfo [ref=f68e96]:
+    - generic [ref=f68e97]:
+      - generic [ref=f68e98]:
+        - generic [ref=f68e99]:
+          - img "IDLookup.AI" [ref=f68e101]
+          - heading "IDLookup.AI" [level=4] [ref=f68e102]
+          - paragraph [ref=f68e103]: Find people and monitor who searches for you. Access comprehensive public records and stay informed.
+        - generic [ref=f68e104]:
+          - heading "Legal" [level=5] [ref=f68e105]
+          - generic [ref=f68e106]:
+            - link "Privacy Policy" [ref=f68e107] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=f68e108] [cursor=pointer]:
+              - /url: /terms
+        - generic [ref=f68e109]:
+          - heading "Resources" [level=5] [ref=f68e110]
+          - generic [ref=f68e111]:
+            - link "Opt Out" [ref=f68e112] [cursor=pointer]:
+              - /url: /opt-out
+            - link "Unsubscribe" [ref=f68e113] [cursor=pointer]:
+              - /url: /unsubscribe
+            - link "Suppression List" [ref=f68e114] [cursor=pointer]:
+              - /url: /suppression-list
+            - link "Partner With Us" [ref=f68e115] [cursor=pointer]:
+              - /url: /partner
+        - generic [ref=f68e116]:
+          - heading "Support" [level=5] [ref=f68e117]
+          - generic [ref=f68e118]:
+            - link "Contact Us" [ref=f68e119] [cursor=pointer]:
+              - /url: /contact
+            - link "About" [ref=f68e120] [cursor=pointer]:
+              - /url: /about
+          - generic [ref=f68e121]:
+            - text: Our customer support team is available Monday–Friday, 9am–5pm ET. For account issues, billing questions, or data removal requests, please visit our
+            - link "contact page" [ref=f68e122] [cursor=pointer]:
+              - /url: /contact
+            - text: .
+      - generic [ref=f68e124]: © 2026 IDLookup.AI. All rights reserved.

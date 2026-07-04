@@ -1,0 +1,83 @@
+- generic [ref=f165e3]:
+  - banner [ref=f165e4]:
+    - navigation [ref=f165e5]:
+      - link "IDLookup.AI IDLookup.AI" [ref=f165e7] [cursor=pointer]:
+        - /url: /
+        - img "IDLookup.AI" [ref=f165e8]
+        - text: IDLookup.AI
+      - button "Toggle menu" [ref=f165e9] [cursor=pointer]
+  - main [ref=f165e14]:
+    - generic [ref=f165e15]:
+      - generic [ref=f165e16]: IDLookup.AI — Find Anyone, Anytime
+      - generic [ref=f165e17]:
+        - heading "Find an Inmate" [level=1] [ref=f165e18]
+        - list [ref=f165e19]:
+          - listitem [ref=f165e20]:
+            - generic [ref=f165e21]: 🤝
+            - generic [ref=f165e22]: Reconnect with an incarcerated friend or family member
+          - listitem [ref=f165e23]:
+            - generic [ref=f165e24]: 📍
+            - generic [ref=f165e25]: Find out where they're held — and what comes next
+          - listitem [ref=f165e26]:
+            - generic [ref=f165e27]: 🔎
+            - generic [ref=f165e28]: A comprehensive scan of jails, prisons & public records
+        - generic [ref=f165e29]:
+          - generic [ref=f165e30]:
+            - generic [ref=f165e31]: Inmate First Name
+            - textbox "Inmate First Name" [ref=f165e32]:
+              - /placeholder: e.g. John
+          - generic [ref=f165e33]:
+            - generic [ref=f165e34]: Inmate Last Name
+            - textbox "Inmate Last Name" [ref=f165e35]:
+              - /placeholder: e.g. Smith
+          - generic [ref=f165e36]:
+            - generic [ref=f165e37]: Inmate Middle Name
+            - textbox "Inmate Middle Name" [ref=f165e38]:
+              - /placeholder: e.g. Michael (optional)
+          - button "Search" [ref=f165e40] [cursor=pointer]
+        - generic [ref=f165e41]:
+          - paragraph [ref=f165e42]: What you'll find
+          - generic [ref=f165e43]:
+            - generic [ref=f165e44]: 📍 Current facility
+            - generic [ref=f165e45]: 📅 Booking & release dates
+            - generic [ref=f165e46]: ⚖️ Charges
+            - generic [ref=f165e47]: 📸 Mugshot
+            - generic [ref=f165e48]: 🪪 Inmate ID & status
+  - contentinfo [ref=f165e49]:
+    - generic [ref=f165e50]:
+      - generic [ref=f165e51]:
+        - generic [ref=f165e52]:
+          - img "IDLookup.AI" [ref=f165e54]
+          - heading "IDLookup.AI" [level=4] [ref=f165e55]
+          - paragraph [ref=f165e56]: Find people and monitor who searches for you. Access comprehensive public records and stay informed.
+        - generic [ref=f165e57]:
+          - heading "Legal" [level=5] [ref=f165e58]
+          - generic [ref=f165e59]:
+            - link "Privacy Policy" [ref=f165e60] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=f165e61] [cursor=pointer]:
+              - /url: /terms
+        - generic [ref=f165e62]:
+          - heading "Resources" [level=5] [ref=f165e63]
+          - generic [ref=f165e64]:
+            - link "Opt Out" [ref=f165e65] [cursor=pointer]:
+              - /url: /opt-out
+            - link "Unsubscribe" [ref=f165e66] [cursor=pointer]:
+              - /url: /unsubscribe
+            - link "Suppression List" [ref=f165e67] [cursor=pointer]:
+              - /url: /suppression-list
+            - link "Partner With Us" [ref=f165e68] [cursor=pointer]:
+              - /url: /partner
+        - generic [ref=f165e69]:
+          - heading "Support" [level=5] [ref=f165e70]
+          - generic [ref=f165e71]:
+            - link "Contact Us" [ref=f165e72] [cursor=pointer]:
+              - /url: /contact
+            - link "About" [ref=f165e73] [cursor=pointer]:
+              - /url: /about
+          - generic [ref=f165e74]:
+            - text: Our customer support team is available Monday–Friday, 9am–5pm ET. For account issues, billing questions, or data removal requests, please visit our
+            - link "contact page" [ref=f165e75] [cursor=pointer]:
+              - /url: /contact
+            - text: .
+      - generic [ref=f165e77]: © 2026 IDLookup.AI. All rights reserved.

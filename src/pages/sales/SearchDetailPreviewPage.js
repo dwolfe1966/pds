@@ -10,14 +10,8 @@ import { gtmTeaserView } from '../../services/gtm';
 import { setSearchTarget as gtmSetSearchTarget } from '../../services/gtmContext';
 import SearchDetailPreviewVariantA from './SearchDetailPreviewVariantA';
 import SearchDetailPreviewVariantB from './SearchDetailPreviewVariantB';
-import SearchDetailPreviewVariantC from './SearchDetailPreviewVariantC';
-import SearchDetailPreviewVariantD from './SearchDetailPreviewVariantD';
-import SearchDetailPreviewVariantE from './SearchDetailPreviewVariantE';
-import SearchDetailPreviewVariantG from './SearchDetailPreviewVariantG';
-import SearchDetailPreviewVariantH from './SearchDetailPreviewVariantH';
 import SearchDetailPreviewVariantI from './SearchDetailPreviewVariantI';
 import SearchDetailPreviewVariantJ from './SearchDetailPreviewVariantJ';
-import SearchDetailPreviewVariantK from './SearchDetailPreviewVariantK';
 import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -63,13 +57,15 @@ const SearchDetailPreviewPage = () => {
   const [searchParams] = useSearchParams();
   const queryV = searchParams.get('v');
   const campaign = useCampaign();
-  // Default is the v1 layout, with the campaign config able to override per
-  // partner. Explicit `?v=a|b|c|d|e` URL wins over both.
-  const MARKETING_VARIANTS = ['a', 'b', 'c', 'd', 'e', 'g', 'h', 'i', 'j', 'k'];
+  // Every live teaser now uses the shared SupTeaserA design (a=green default,
+  // b=green, i=blue, j=dark). Dead marketing experiments c/d/e/g/h/k were removed
+  // 2026-07-04. Default falls back to 'a' so no campaign gets the old inline layout.
+  // Explicit `?v=a|b|i|j` URL wins over the campaign config.
+  const MARKETING_VARIANTS = ['a', 'b', 'i', 'j'];
   const campaignVariant = (campaign?.detail?.variant || '').toLowerCase();
   const variant = MARKETING_VARIANTS.includes(queryV)
     ? queryV
-    : (MARKETING_VARIANTS.includes(campaignVariant) ? campaignVariant : '1');
+    : (MARKETING_VARIANTS.includes(campaignVariant) ? campaignVariant : 'a');
   const { token, isPaid, subscriptionLoading } = useAuth();
 
   const [person, setPerson] = useState(null);
@@ -280,36 +276,12 @@ const SearchDetailPreviewPage = () => {
     return <SearchDetailPreviewVariantB person={person} id={id} />;
   }
 
-  if (variant === 'c') {
-    return <SearchDetailPreviewVariantC person={person} id={id} />;
-  }
-
-  if (variant === 'd') {
-    return <SearchDetailPreviewVariantD person={person} id={id} />;
-  }
-
-  if (variant === 'e') {
-    return <SearchDetailPreviewVariantE person={person} id={id} />;
-  }
-
-  if (variant === 'g') {
-    return <SearchDetailPreviewVariantG person={person} id={id} />;
-  }
-
-  if (variant === 'h') {
-    return <SearchDetailPreviewVariantH person={person} id={id} />;
-  }
-
   if (variant === 'i') {
     return <SearchDetailPreviewVariantI person={person} id={id} />;
   }
 
   if (variant === 'j') {
     return <SearchDetailPreviewVariantJ person={person} id={id} />;
-  }
-
-  if (variant === 'k') {
-    return <SearchDetailPreviewVariantK person={person} id={id} />;
   }
 
   // ─── Inline signup form JSX — inlined here, NOT a sub-component ──────────────

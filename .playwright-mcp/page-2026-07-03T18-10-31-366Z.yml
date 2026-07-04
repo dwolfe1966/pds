@@ -1,0 +1,220 @@
+- generic [active] [ref=f4e1]:
+  - navigation [ref=f4e2]:
+    - generic "PeopleFinders" [ref=f4e6]:
+      - img [ref=f4e8]
+    - link "LOG IN" [ref=f4e13] [cursor=pointer]:
+      - /url: /login
+  - generic [ref=f4e15]:
+    - generic [ref=f4e17]:
+      - generic [ref=f4e18]:
+        - heading "Get an Instant Report" [level=1] [ref=f4e20]
+        - generic [ref=f4e22]:
+          - text: Your Search is Confidential.
+          - img [ref=f4e24]
+      - generic [ref=f4e26]:
+        - list [ref=f4e28]:
+          - listitem [ref=f4e29]:
+            - text: Age
+            - list [ref=f4e30]:
+              - listitem [ref=f4e31]:
+                - generic [ref=f4e32]:
+                  - img [ref=f4e33]
+                  - text: Available!
+          - listitem [ref=f4e35]:
+            - list [ref=f4e36]:
+              - listitem [ref=f4e37]:
+                - generic [ref=f4e38]: "Current Address:"
+              - listitem [ref=f4e39]:
+                - generic [ref=f4e40]:
+                  - img [ref=f4e41]
+                  - text: Available!
+          - listitem [ref=f4e43]:
+            - list [ref=f4e44]:
+              - listitem [ref=f4e45]:
+                - generic [ref=f4e46]: "Phone:"
+              - listitem [ref=f4e47]:
+                - generic [ref=f4e48]:
+                  - img [ref=f4e49]
+                  - text: Available!
+          - listitem [ref=f4e51]:
+            - list [ref=f4e52]:
+              - listitem [ref=f4e53]:
+                - generic [ref=f4e54]: "Background Info:"
+              - listitem [ref=f4e55]:
+                - generic [ref=f4e56]:
+                  - img [ref=f4e57]
+                  - text: Available!
+          - listitem [ref=f4e59]:
+            - list [ref=f4e60]:
+              - listitem [ref=f4e61]:
+                - generic [ref=f4e62]: "Also Known As (AKAs):"
+              - generic [ref=f4e63]:
+                - img [ref=f4e64]
+                - text: Available!
+          - listitem [ref=f4e66]:
+            - list [ref=f4e67]:
+              - listitem [ref=f4e68]:
+                - generic [ref=f4e69]: "Lived In:"
+              - generic [ref=f4e70]:
+                - img [ref=f4e71]
+                - text: Available!
+          - listitem [ref=f4e73]:
+            - list [ref=f4e74]:
+              - listitem [ref=f4e75]:
+                - generic [ref=f4e76]: "Family:"
+              - generic [ref=f4e77]:
+                - img [ref=f4e78]
+                - text: Available!
+        - generic [ref=f4e81]:
+          - generic [ref=f4e82]:
+            - generic [ref=f4e83]: Search Report
+            - generic [ref=f4e84]:
+              - list [ref=f4e85]:
+                - listitem [ref=f4e86]:
+                  - img [ref=f4e88]
+                  - text: Full Name
+                - listitem [ref=f4e90]:
+                  - img [ref=f4e92]
+                  - text: Current Address
+                - listitem [ref=f4e94]:
+                  - img [ref=f4e96]
+                  - text: Phone Number
+                - listitem [ref=f4e98]:
+                  - img [ref=f4e100]
+                  - text: Prior Residences
+                - listitem [ref=f4e102]:
+                  - img [ref=f4e104]
+                  - text: Relatives
+                - listitem [ref=f4e106]:
+                  - img [ref=f4e108]
+                  - text: Aliases & AKAs
+                - listitem [ref=f4e110]:
+                  - img [ref=f4e112]
+                  - text: Age / Birth Month & Year
+                - listitem [ref=f4e114]:
+                  - img [ref=f4e115]
+                  - deletion [ref=f4e117]: Neighbors
+                - listitem [ref=f4e118]:
+                  - img [ref=f4e119]
+                  - deletion [ref=f4e121]: Property Records
+                - listitem [ref=f4e122]:
+                  - img [ref=f4e123]
+                  - deletion [ref=f4e125]: Bankruptcies
+                - listitem [ref=f4e126]:
+                  - img [ref=f4e127]
+                  - deletion [ref=f4e129]: Judgments & Liens
+                - listitem [ref=f4e130]:
+                  - img [ref=f4e131]
+                  - deletion [ref=f4e133]: Business & Professional
+                - listitem [ref=f4e134]:
+                  - img [ref=f4e135]
+                  - deletion [ref=f4e137]: Deceased Indicator
+                - listitem [ref=f4e138]:
+                  - img [ref=f4e139]
+                  - deletion [ref=f4e141]: Misdemeanors
+                - listitem [ref=f4e142]:
+                  - img [ref=f4e143]
+                  - deletion [ref=f4e145]: Criminal Check
+                - listitem [ref=f4e146]:
+                  - img [ref=f4e147]
+                  - deletion [ref=f4e149]: Sex Offender Records
+              - generic [ref=f4e150]:
+                - 'heading "Special Offer: 3-Day Trial" [level=5] [ref=f4e151]'
+                - paragraph [ref=f4e152]: Includes full access to Phone Searches and People Searches. After the trial, you will be billed $24.97 per month.
+            - list [ref=f4e153]:
+              - listitem [ref=f4e154]:
+                - generic [ref=f4e155]:
+                  - list [ref=f4e157]:
+                    - listitem [ref=f4e158]: $0.95 Report + Trial
+                  - link "Continue" [ref=f4e160] [cursor=pointer]:
+                    - /url: /checkout/people?city=antelope&state=ca&dynamicPricingPage=search-name&id=G8487355160685434596&productMenuName=search-name-report&productOfferId=1
+          - generic [ref=f4e161]:
+            - generic [ref=f4e162]:
+              - text: Background Report
+              - generic [ref=f4e164]:
+                - img [ref=f4e166]
+                - generic [ref=f4e168]:
+                  - text: 87%
+                  - text: "OFF"
+            - generic [ref=f4e170]:
+              - list [ref=f4e171]:
+                - listitem [ref=f4e172]:
+                  - img [ref=f4e174]
+                  - text: Full Name
+                - listitem [ref=f4e176]:
+                  - img [ref=f4e178]
+                  - text: Current Address
+                - listitem [ref=f4e180]:
+                  - img [ref=f4e182]
+                  - text: Phone Number
+                - listitem [ref=f4e184]:
+                  - img [ref=f4e186]
+                  - text: Prior Residences
+                - listitem [ref=f4e188]:
+                  - img [ref=f4e190]
+                  - text: Relatives
+                - listitem [ref=f4e192]:
+                  - img [ref=f4e194]
+                  - text: Aliases & AKAs
+                - listitem [ref=f4e196]:
+                  - img [ref=f4e198]
+                  - text: Age / Birth Month & Year
+                - listitem [ref=f4e200]:
+                  - img [ref=f4e202]
+                  - text: Neighbors
+                - listitem [ref=f4e204]:
+                  - img [ref=f4e206]
+                  - text: Property Records
+                - listitem [ref=f4e208]:
+                  - img [ref=f4e210]
+                  - text: Bankruptcies
+                - listitem [ref=f4e212]:
+                  - img [ref=f4e214]
+                  - text: Judgments & Liens
+                - listitem [ref=f4e216]:
+                  - img [ref=f4e218]
+                  - text: Business & Professional
+                - listitem [ref=f4e220]:
+                  - img [ref=f4e222]
+                  - text: Deceased Indicator
+                - listitem [ref=f4e224]:
+                  - img [ref=f4e226]
+                  - text: Misdemeanors
+                - listitem [ref=f4e228]:
+                  - img [ref=f4e230]
+                  - text: Criminal Check
+                - listitem [ref=f4e232]:
+                  - img [ref=f4e234]
+                  - text: Sex Offender Check
+              - generic [ref=f4e236]:
+                - 'heading "Special Offer: 3-Day Trial" [level=5] [ref=f4e237]'
+                - generic [ref=f4e238]: Includes full access to Comprehensive Background Reports, People, Phone and Property Searches. After the trial, you will be billed $29.97 per month.
+            - list [ref=f4e239]:
+              - listitem [ref=f4e240]:
+                - generic [ref=f4e241]:
+                  - list [ref=f4e243]:
+                    - listitem [ref=f4e244]: Limited Time Offer!
+                    - listitem [ref=f4e245]: $3.95 Report + Trial (regularly $29.97)
+                  - link "Continue" [ref=f4e247] [cursor=pointer]:
+                    - /url: /checkout/background-check?city=antelope&state=ca&dynamicPricingPage=search-name&id=G8487355160685434596&productMenuName=search-name-report&productOfferId=2
+    - contentinfo [ref=f4e248]:
+      - generic [ref=f4e251]:
+        - generic [ref=f4e252]:
+          - text: PeopleFinders is dedicated to helping you find people and learn more about them in a safe and responsible manner. PeopleFinders is not a Consumer Reporting Agency (CRA) as defined by the
+          - link "Fair Credit Reporting Act (FCRA)" [ref=f4e253] [cursor=pointer]:
+            - /url: https://en.wikipedia.org/wiki/Fair_Credit_Reporting_Act
+          - text: . This site can't be used for employment, credit or tenant screening, or related purpose. To learn more, visit our
+          - link "Terms of Service" [ref=f4e254] [cursor=pointer]:
+            - /url: /about/terms
+          - text: and
+          - link "Privacy Policy" [ref=f4e255] [cursor=pointer]:
+            - /url: /about/privacy
+          - text: . Copyright © 2002-2026 PeopleFinders.com. All Rights Reserved.
+        - list [ref=f4e256]:
+          - listitem [ref=f4e257]:
+            - link "Do Not Sell My Personal Information" [ref=f4e258] [cursor=pointer]:
+              - /url: /do-not-sell
+          - listitem [ref=f4e259]:
+            - button "Open accessibility interface" [ref=f4e261] [cursor=pointer]:
+              - text: Accessibility
+              - img [ref=f4e262]

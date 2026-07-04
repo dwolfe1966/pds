@@ -1,0 +1,175 @@
+- generic [ref=f201e3]:
+  - main [ref=f201e5]:
+    - generic [ref=f201e6]:
+      - link "← Back to Results" [ref=f201e7] [cursor=pointer]:
+        - /url: /name/search-result
+      - generic [ref=f201e8]: 🔒 IDLookup.AI
+    - generic [ref=f201e9]:
+      - generic [ref=f201e10]:
+        - generic [ref=f201e11]: TC
+        - generic [ref=f201e12]:
+          - paragraph [ref=f201e13]: Tim Chin, Age 49
+          - paragraph [ref=f201e14]: Salinas, CA
+          - paragraph [ref=f201e15]: "Latest report: Jun 30, 2026"
+      - generic [ref=f201e16]:
+        - paragraph [ref=f201e17]: Results May Include
+        - generic [ref=f201e18]:
+          - generic [ref=f201e19]:
+            - generic [ref=f201e20]: ✓
+            - text: Full Address
+          - generic [ref=f201e21]:
+            - generic [ref=f201e22]: ✓
+            - text: Family Members
+          - generic [ref=f201e23]:
+            - generic [ref=f201e24]: ✓
+            - text: Email Address
+          - generic [ref=f201e25]:
+            - generic [ref=f201e26]: ✓
+            - text: Marital Status
+          - generic [ref=f201e27]:
+            - generic [ref=f201e28]: ✓
+            - text: Phone Number
+          - generic [ref=f201e29]:
+            - generic [ref=f201e30]: ✓
+            - text: Location History
+    - generic [ref=f201e31]:
+      - generic [ref=f201e32]:
+        - generic [ref=f201e33]:
+          - heading "Secure Checkout" [level=2] [ref=f201e34]
+          - generic [ref=f201e35]:
+            - generic [ref=f201e36]: Paying as
+            - generic [ref=f201e37]: test@test.com
+          - generic [ref=f201e38]:
+            - generic [ref=f201e39]:
+              - generic [ref=f201e40]:
+                - generic [ref=f201e41]: First Name *
+                - textbox "First Name *" [ref=f201e42]:
+                  - /placeholder: First
+              - generic [ref=f201e43]:
+                - generic [ref=f201e44]: Last Name *
+                - textbox "Last Name *" [ref=f201e45]:
+                  - /placeholder: Last
+            - generic [ref=f201e46]:
+              - generic [ref=f201e47]:
+                - generic [ref=f201e48]: Card Number
+                - group "Accepted cards" [ref=f201e49]:
+                  - img "Visa" [ref=f201e51]:
+                    - generic [ref=f201e53]: VISA
+                  - img "Mastercard" [ref=f201e55]
+                  - img "American Express" [ref=f201e61]:
+                    - generic [ref=f201e63]: AMEX
+                  - img "Discover" [ref=f201e65]:
+                    - generic [ref=f201e67]: DISCOVER
+              - textbox "Card Number" [ref=f201e70]:
+                - /placeholder: 1234 5678 9012 3456
+            - generic [ref=f201e71]:
+              - generic [ref=f201e72]:
+                - generic [ref=f201e73]: Expiry
+                - textbox "Expiry" [ref=f201e75]:
+                  - /placeholder: MM/YY
+              - generic [ref=f201e76]:
+                - generic [ref=f201e77]:
+                  - text: CVV
+                  - generic "3-digit code on the back of your card (4 digits for Amex)" [ref=f201e78]: "?"
+                - textbox "CVV ?" [ref=f201e80]:
+                  - /placeholder: "123"
+            - generic [ref=f201e81]:
+              - generic [ref=f201e82]: ZIP Code *
+              - textbox "ZIP Code *" [ref=f201e84]:
+                - /placeholder: "12345"
+            - generic [ref=f201e85]:
+              - paragraph [ref=f201e86]:
+                - strong [ref=f201e87]: "*Terms of Use and Pricing Information"
+              - generic [ref=f201e88] [cursor=pointer]:
+                - checkbox [checked] [ref=f201e89]
+                - generic [ref=f201e90]:
+                  - text: By clicking the button below, you agree to IDLookup.AI's
+                  - link "Terms of Use" [ref=f201e91]:
+                    - /url: /terms
+                  - text: ","
+                  - link "Privacy Policy" [ref=f201e92]:
+                    - /url: /privacy
+                  - text: and you authorize IDLookup.AI to charge your card $1.00 today for your report. With your report, you get an Unlimited Search trial account for a full 7 Days. With Unlimited Search, you can search for as many reports as you want, and view and access up to 5 reports per day! If you cancel your trial before Jul 10, 2026, there will be no further charges. If you like what you see and wish to search more reports on friends, relatives or anybody else in your life, simply do nothing and we will automatically start your Unlimited Search subscription and charge your card just $49.98 at the end of the trial period and every 30 Days thereafter until you cancel. You may cancel at any time with our
+                  - strong [ref=f201e93]: 100% hassle free cancellation. Just call us at 866-204-1902
+                  - text: or
+                  - link "visit our contact form" [ref=f201e94]:
+                    - /url: /contact
+                  - text: anytime, 24 hours a day, 7 days a week.
+              - paragraph [ref=f201e95]: You also understand and agree that IDLookup.AI is not a "consumer reporting agency", as defined in the Fair Credit Reporting Act (15 U.S.C. § 1681, et seq.) ("FCRA") and does not provide "consumer reports", as defined in FCRA. You understand and represent that you are not purchasing and will not use IDLookup.AI's products or services for any purpose in connection with determining a person's eligibility for credit, insurance, employment or for any other eligibility determination subject to FCRA.
+            - button "I Agree, View Report Now" [ref=f201e96] [cursor=pointer]
+        - generic [ref=f201e97]:
+          - generic [ref=f201e98]: 🔒 256-bit SSL
+          - generic [ref=f201e99]: ✓ PCI Compliant
+          - generic [ref=f201e100]: 🔐 Encrypted
+        - paragraph [ref=f201e101]:
+          - button "I'll upgrade later — go to my dashboard" [ref=f201e102] [cursor=pointer]
+      - generic [ref=f201e103]:
+        - generic [ref=f201e104]:
+          - paragraph [ref=f201e105]: 7-Day Trial
+          - paragraph [ref=f201e106]: $1.00 today
+        - paragraph [ref=f201e107]: ⚡ Instant access after payment
+        - paragraph [ref=f201e108]: Then $49.98/month after your 7-day trial. Cancel anytime — no hidden fees.
+      - generic [ref=f201e109]:
+        - paragraph [ref=f201e110]: Benefits
+        - list [ref=f201e111]:
+          - listitem [ref=f201e112]:
+            - generic [ref=f201e113]: ✓
+            - text: Unlimited background report access
+          - listitem [ref=f201e114]:
+            - generic [ref=f201e115]: ✓
+            - text: Reverse phone & email lookups
+          - listitem [ref=f201e116]:
+            - generic [ref=f201e117]: ✓
+            - text: Address history & current location
+          - listitem [ref=f201e118]:
+            - generic [ref=f201e119]: ✓
+            - text: Criminal & court record checks
+          - listitem [ref=f201e120]:
+            - generic [ref=f201e121]: ✓
+            - text: Relatives & family connections
+          - listitem [ref=f201e122]:
+            - generic [ref=f201e123]: ✓
+            - text: Cancel anytime — no lock-in
+      - generic [ref=f201e124]:
+        - paragraph [ref=f201e125]: Why people trust us
+        - paragraph [ref=f201e126]: 🔒 Your data is never sold or shared
+        - paragraph [ref=f201e127]: ⭐ Trusted by 3M+ members
+        - paragraph [ref=f201e128]: 📞 Live support available
+  - contentinfo [ref=f201e129]:
+    - generic [ref=f201e130]:
+      - generic [ref=f201e131]:
+        - generic [ref=f201e132]:
+          - img "IDLookup.AI" [ref=f201e134]
+          - heading "IDLookup.AI" [level=4] [ref=f201e135]
+          - paragraph [ref=f201e136]: Find people and monitor who searches for you. Access comprehensive public records and stay informed.
+        - generic [ref=f201e137]:
+          - heading "Legal" [level=5] [ref=f201e138]
+          - generic [ref=f201e139]:
+            - link "Privacy Policy" [ref=f201e140] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=f201e141] [cursor=pointer]:
+              - /url: /terms
+        - generic [ref=f201e142]:
+          - heading "Resources" [level=5] [ref=f201e143]
+          - generic [ref=f201e144]:
+            - link "Opt Out" [ref=f201e145] [cursor=pointer]:
+              - /url: /opt-out
+            - link "Unsubscribe" [ref=f201e146] [cursor=pointer]:
+              - /url: /unsubscribe
+            - link "Suppression List" [ref=f201e147] [cursor=pointer]:
+              - /url: /suppression-list
+            - link "Partner With Us" [ref=f201e148] [cursor=pointer]:
+              - /url: /partner
+        - generic [ref=f201e149]:
+          - heading "Support" [level=5] [ref=f201e150]
+          - generic [ref=f201e151]:
+            - link "Contact Us" [ref=f201e152] [cursor=pointer]:
+              - /url: /contact
+            - link "About" [ref=f201e153] [cursor=pointer]:
+              - /url: /about
+          - generic [ref=f201e154]:
+            - text: Our customer support team is available Monday–Friday, 9am–5pm ET. For account issues, billing questions, or data removal requests, please visit our
+            - link "contact page" [ref=f201e155] [cursor=pointer]:
+              - /url: /contact
+            - text: .
+      - generic [ref=f201e157]: © 2026 IDLookup.AI. All rights reserved.

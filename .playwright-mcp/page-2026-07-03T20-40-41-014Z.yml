@@ -1,0 +1,96 @@
+- generic [ref=f127e3]:
+  - banner [ref=f127e4]:
+    - navigation [ref=f127e5]:
+      - link "IDLookup.AI IDLookup.AI" [ref=f127e7] [cursor=pointer]:
+        - /url: /
+        - img "IDLookup.AI" [ref=f127e8]
+        - text: IDLookup.AI
+      - generic [ref=f127e9]:
+        - link "Home" [ref=f127e10] [cursor=pointer]:
+          - /url: /
+        - link "Search" [ref=f127e11] [cursor=pointer]:
+          - /url: /search/all
+        - link "About" [ref=f127e12] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=f127e13] [cursor=pointer]:
+          - /url: /contact
+      - generic [ref=f127e14]:
+        - link "Login" [ref=f127e15] [cursor=pointer]:
+          - /url: /login
+        - link "Sign Up" [ref=f127e16] [cursor=pointer]:
+          - /url: /signup
+  - main [ref=f127e18]:
+    - generic [ref=f127e19]:
+      - generic [ref=f127e20]: IDLookup.AI — Find Anyone, Anytime
+      - generic [ref=f127e21]:
+        - heading "Find an Inmate" [level=1] [ref=f127e22]
+        - list [ref=f127e23]:
+          - listitem [ref=f127e24]:
+            - generic [ref=f127e25]: 🤝
+            - generic [ref=f127e26]: Reconnect with an incarcerated friend or family member
+          - listitem [ref=f127e27]:
+            - generic [ref=f127e28]: 📍
+            - generic [ref=f127e29]: Find out where they're held — and what comes next
+          - listitem [ref=f127e30]:
+            - generic [ref=f127e31]: 🔎
+            - generic [ref=f127e32]: A comprehensive scan of jails, prisons & public records
+        - generic [ref=f127e33]:
+          - generic [ref=f127e34]:
+            - generic [ref=f127e35]: Inmate First Name
+            - textbox "Inmate First Name" [ref=f127e36]:
+              - /placeholder: e.g. John
+          - generic [ref=f127e37]:
+            - generic [ref=f127e38]: Inmate Last Name
+            - textbox "Inmate Last Name" [ref=f127e39]:
+              - /placeholder: e.g. Smith
+          - generic [ref=f127e40]:
+            - generic [ref=f127e41]: Inmate Middle Name
+            - textbox "Inmate Middle Name" [ref=f127e42]:
+              - /placeholder: e.g. Michael (optional)
+          - button "Search" [ref=f127e44] [cursor=pointer]
+        - generic [ref=f127e45]:
+          - paragraph [ref=f127e46]: What you'll find
+          - generic [ref=f127e47]:
+            - generic [ref=f127e48]: 📍 Current facility
+            - generic [ref=f127e49]: 📅 Booking & release dates
+            - generic [ref=f127e50]: ⚖️ Charges
+            - generic [ref=f127e51]: 📸 Mugshot
+            - generic [ref=f127e52]: 🪪 Inmate ID & status
+  - contentinfo [ref=f127e53]:
+    - generic [ref=f127e54]:
+      - generic [ref=f127e55]:
+        - generic [ref=f127e56]:
+          - img "IDLookup.AI" [ref=f127e58]
+          - heading "IDLookup.AI" [level=4] [ref=f127e59]
+          - paragraph [ref=f127e60]: Find people and monitor who searches for you. Access comprehensive public records and stay informed.
+        - generic [ref=f127e61]:
+          - heading "Legal" [level=5] [ref=f127e62]
+          - generic [ref=f127e63]:
+            - link "Privacy Policy" [ref=f127e64] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=f127e65] [cursor=pointer]:
+              - /url: /terms
+        - generic [ref=f127e66]:
+          - heading "Resources" [level=5] [ref=f127e67]
+          - generic [ref=f127e68]:
+            - link "Opt Out" [ref=f127e69] [cursor=pointer]:
+              - /url: /opt-out
+            - link "Unsubscribe" [ref=f127e70] [cursor=pointer]:
+              - /url: /unsubscribe
+            - link "Suppression List" [ref=f127e71] [cursor=pointer]:
+              - /url: /suppression-list
+            - link "Partner With Us" [ref=f127e72] [cursor=pointer]:
+              - /url: /partner
+        - generic [ref=f127e73]:
+          - heading "Support" [level=5] [ref=f127e74]
+          - generic [ref=f127e75]:
+            - link "Contact Us" [ref=f127e76] [cursor=pointer]:
+              - /url: /contact
+            - link "About" [ref=f127e77] [cursor=pointer]:
+              - /url: /about
+          - generic [ref=f127e78]:
+            - text: Our customer support team is available Monday–Friday, 9am–5pm ET. For account issues, billing questions, or data removal requests, please visit our
+            - link "contact page" [ref=f127e79] [cursor=pointer]:
+              - /url: /contact
+            - text: .
+      - generic [ref=f127e81]: © 2026 IDLookup.AI. All rights reserved.

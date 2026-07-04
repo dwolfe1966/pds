@@ -55,12 +55,20 @@ const SupTeaserA = ({ person, id, palette: P }) => {
   const addressVal = R.address > 0
     ? `${plural(R.address, 'address', 'addresses')} on record${cityState ? ` · ${cityState}` : ''}`
     : addressObf;
-  const phoneVal = R.phone > 0 ? `${plural(R.phone, 'number')} found · (•••) •••-••••` : '(•••) •••-••••';
+  // Phone type detail (residential/mobile) when it accounts for the whole count.
+  const phoneType = R.residentialPhone === R.phone && R.phone > 0 ? ' residential'
+    : R.mobilePhone === R.phone && R.phone > 0 ? ' mobile' : '';
+  const phoneVal = R.phone > 0 ? `${plural(R.phone, 'number')} found${phoneType ? ` (${phoneType.trim()})` : ''} · (•••) •••-••••` : '(•••) •••-••••';
   const emailVal = R.email > 0 ? `${plural(R.email, 'address', 'addresses')} on file` : 'See available information';
+  // A real relative's name, masked to first name + last initial (honest tease).
+  const firstRel = (person.relatives || [])[0];
+  const relNameMasked = firstRel && firstRel.name
+    ? firstRel.name.trim().split(/\s+/).map((w, i, a) => (i === a.length - 1 && a.length > 1 ? `${w[0]}.` : w)).join(' ')
+    : null;
   const foundChips = [];
   if (Fl.isCriminal || R.criminal > 0) foundChips.push('⚖️ Criminal record');
   if (Fl.isPropertyOwner || R.property > 0) foundChips.push(R.property > 0 ? `🏠 ${plural(R.property, 'property', 'properties')}` : '🏠 Property owner');
-  if (R.relatives > 0) foundChips.push(`👥 ${plural(R.relatives, 'relative')}`);
+  if (R.relatives > 0) foundChips.push(`👥 ${plural(R.relatives, 'relative')}${relNameMasked ? ` incl. ${relNameMasked}` : ''}`);
   if (Fl.hasEmployment || R.employment > 0) foundChips.push('💼 Employment history');
   if (Fl.hasProfessionalLicense || R.professionalLicense > 0) foundChips.push('📜 Professional license');
   if (R.bankruptcy > 0) foundChips.push('📉 Bankruptcy');

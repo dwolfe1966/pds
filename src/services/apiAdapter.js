@@ -219,6 +219,8 @@ export function adaptIdentity(identity) {
   const num = (v) => (Number.isFinite(+v) ? +v : 0);
   const records = {
     phone: num(identity.phoneCount),
+    mobilePhone: num(identity.mobilePhoneCount),
+    residentialPhone: num(identity.residentialPhoneCount),
     email: num(identity.emailCount),
     address: num(identity.addressCount),
     property: num(identity.propertyCount),

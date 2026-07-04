@@ -36,7 +36,7 @@ export const CAMPAIGN_REGISTRY = {
     // organic/no-shn gets the promo too). BC's per-shN thinmatch flag overrides this;
     // an shN with thinmatch:'no' resolves to 'noRecords' ("no results found").
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },
-    detail:  { variant: '1' },                  // matches the v1 layout default in SearchDetailPreviewPage
+    detail:  { variant: 'a' },                  // shared SupTeaserA design (green); legacy '1' inline layout retired 2026-07-04
 
     signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },
     // requireTermsCheckbox (bug #34): on the default shN we SHOW + REQUIRE the

@@ -1,0 +1,163 @@
+- generic [ref=f48e3]:
+  - banner [ref=f48e4]:
+    - navigation [ref=f48e5]:
+      - link "IDLookup.AI IDLookup.AI" [ref=f48e7] [cursor=pointer]:
+        - /url: /
+        - img "IDLookup.AI" [ref=f48e8]
+        - text: IDLookup.AI
+      - button "Toggle menu" [ref=f48e9] [cursor=pointer]
+  - main [ref=f48e14]:
+    - generic [ref=f48e15]:
+      - generic [ref=f48e16]: IDLookup.AI — Find Anyone, Anytime
+      - heading "Find the whole story on anyone." [level=1] [ref=f48e17]
+      - paragraph [ref=f48e18]: Reconnect with people from your past, find out who you're really dealing with, and see who's searching for you — from billions of public records.
+      - generic [ref=f48e21]:
+        - textbox "First name" [ref=f48e22]
+        - textbox "Last name" [ref=f48e23]
+        - combobox "State" [ref=f48e24] [cursor=pointer]:
+          - option "State *" [selected]
+          - option "AL"
+          - option "AK"
+          - option "AZ"
+          - option "AR"
+          - option "CA"
+          - option "CO"
+          - option "CT"
+          - option "DE"
+          - option "FL"
+          - option "GA"
+          - option "HI"
+          - option "ID"
+          - option "IL"
+          - option "IN"
+          - option "IA"
+          - option "KS"
+          - option "KY"
+          - option "LA"
+          - option "ME"
+          - option "MD"
+          - option "MA"
+          - option "MI"
+          - option "MN"
+          - option "MS"
+          - option "MO"
+          - option "MT"
+          - option "NE"
+          - option "NV"
+          - option "NH"
+          - option "NJ"
+          - option "NM"
+          - option "NY"
+          - option "NC"
+          - option "ND"
+          - option "OH"
+          - option "OK"
+          - option "OR"
+          - option "PA"
+          - option "RI"
+          - option "SC"
+          - option "SD"
+          - option "TN"
+          - option "TX"
+          - option "UT"
+          - option "VT"
+          - option "VA"
+          - option "WA"
+          - option "WV"
+          - option "WI"
+          - option "WY"
+        - button "Search Now" [ref=f48e25] [cursor=pointer]
+      - generic [ref=f48e26]:
+        - generic [ref=f48e27]:
+          - strong [ref=f48e28]: 12B+
+          - text: Public Records
+        - generic [ref=f48e29]:
+          - strong [ref=f48e30]: 100M+
+          - text: People Searched
+        - generic [ref=f48e31]:
+          - strong [ref=f48e32]: 24/7
+          - text: Instant Access
+    - generic [ref=f48e33]:
+      - heading "What you can find" [level=2] [ref=f48e34]
+      - paragraph [ref=f48e35]: One search pulls together everything public records know about a person.
+      - generic [ref=f48e36]:
+        - generic [ref=f48e37]:
+          - generic [ref=f48e38]: 📍
+          - text: Addresses
+        - generic [ref=f48e39]:
+          - generic [ref=f48e40]: 📞
+          - text: Phone numbers
+        - generic [ref=f48e41]:
+          - generic [ref=f48e42]: 📧
+          - text: Email addresses
+        - generic [ref=f48e43]:
+          - generic [ref=f48e44]: 👪
+          - text: Relatives
+        - generic [ref=f48e45]:
+          - generic [ref=f48e46]: ⚖️
+          - text: Criminal & court records
+        - generic [ref=f48e47]:
+          - generic [ref=f48e48]: 🏠
+          - text: Property records
+        - generic [ref=f48e49]:
+          - generic [ref=f48e50]: 🌐
+          - text: Social profiles
+        - generic [ref=f48e51]:
+          - generic [ref=f48e52]: 🪪
+          - text: Age & aliases
+    - generic [ref=f48e54]:
+      - generic [ref=f48e55]:
+        - generic [ref=f48e56]: 🤝
+        - heading "Reconnect with your past" [level=3] [ref=f48e57]
+        - paragraph [ref=f48e58]: Find an old friend, lost family, a military buddy, or someone you’ve fallen out of touch with.
+      - generic [ref=f48e59]:
+        - generic [ref=f48e60]: 🔍
+        - heading "Know who you’re dealing with" [level=3] [ref=f48e61]
+        - paragraph [ref=f48e62]: Check out a new date, an online buyer, a neighbor, or a business contact before you trust them.
+      - generic [ref=f48e63]:
+        - generic [ref=f48e64]: 👁️
+        - heading "Protect yourself" [level=3] [ref=f48e65]
+        - paragraph [ref=f48e66]: See who’s searching for you and keep an eye on what your own public records reveal.
+    - generic [ref=f48e67]:
+      - heading "Ready to find someone?" [level=2] [ref=f48e68]
+      - paragraph [ref=f48e69]: It's free to search — enter a name and see what comes up.
+      - link "Start Your Search →" [ref=f48e70] [cursor=pointer]:
+        - /url: /name/landing
+  - contentinfo [ref=f48e71]:
+    - generic [ref=f48e72]:
+      - generic [ref=f48e73]:
+        - generic [ref=f48e74]:
+          - img "IDLookup.AI" [ref=f48e76]
+          - heading "IDLookup.AI" [level=4] [ref=f48e77]
+          - paragraph [ref=f48e78]: Find people and monitor who searches for you. Access comprehensive public records and stay informed.
+        - generic [ref=f48e79]:
+          - heading "Legal" [level=5] [ref=f48e80]
+          - generic [ref=f48e81]:
+            - link "Privacy Policy" [ref=f48e82] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=f48e83] [cursor=pointer]:
+              - /url: /terms
+        - generic [ref=f48e84]:
+          - heading "Resources" [level=5] [ref=f48e85]
+          - generic [ref=f48e86]:
+            - link "Opt Out" [ref=f48e87] [cursor=pointer]:
+              - /url: /opt-out
+            - link "Unsubscribe" [ref=f48e88] [cursor=pointer]:
+              - /url: /unsubscribe
+            - link "Suppression List" [ref=f48e89] [cursor=pointer]:
+              - /url: /suppression-list
+            - link "Partner With Us" [ref=f48e90] [cursor=pointer]:
+              - /url: /partner
+        - generic [ref=f48e91]:
+          - heading "Support" [level=5] [ref=f48e92]
+          - generic [ref=f48e93]:
+            - link "Contact Us" [ref=f48e94] [cursor=pointer]:
+              - /url: /contact
+            - link "About" [ref=f48e95] [cursor=pointer]:
+              - /url: /about
+          - generic [ref=f48e96]:
+            - text: Our customer support team is available Monday–Friday, 9am–5pm ET. For account issues, billing questions, or data removal requests, please visit our
+            - link "contact page" [ref=f48e97] [cursor=pointer]:
+              - /url: /contact
+            - text: .
+      - generic [ref=f48e99]: © 2026 IDLookup.AI. All rights reserved.

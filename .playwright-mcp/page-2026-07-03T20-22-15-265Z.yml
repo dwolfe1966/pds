@@ -1,0 +1,437 @@
+- generic [active] [ref=f108e1]:
+  - banner [ref=f108e6]:
+    - generic [ref=f108e8]:
+      - link "Spokeo Logo" [ref=f108e10] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f108e14]:
+        - generic [ref=f108e15]:
+          - generic [ref=f108e16] [cursor=pointer]: Spokeo Business
+          - text: LoginSign Up
+        - text: 
+  - generic [ref=f108e17]:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - img "avatar"
+          - generic: David Wolfe, Age 49
+        - generic: Unlock Profile
+    - list "Breadcrumbs" [ref=f108e20]:
+      - listitem [ref=f108e21]:
+        - navigation [ref=f108e22]:
+          - link "People Search" [ref=f108e23] [cursor=pointer]:
+            - /url: /
+            - generic [ref=f108e24]: People Search
+          - generic [ref=f108e25]: 
+      - listitem [ref=f108e26]:
+        - navigation [ref=f108e27]:
+          - link "Wolfe" [ref=f108e28] [cursor=pointer]:
+            - /url: /people/WXYZ0001
+            - generic [ref=f108e29]: Wolfe
+          - generic [ref=f108e30]: 
+      - listitem [ref=f108e31]:
+        - navigation [ref=f108e32]:
+          - link "David Wolfe" [ref=f108e33] [cursor=pointer]:
+            - /url: /David-Wolfe
+            - generic [ref=f108e34]: David Wolfe
+          - generic [ref=f108e35]: 
+      - listitem [ref=f108e36]:
+        - navigation [ref=f108e37]:
+          - link "California" [ref=f108e38] [cursor=pointer]:
+            - /url: /David-Wolfe/California
+            - generic [ref=f108e39]: California
+          - generic [ref=f108e40]: 
+      - listitem [ref=f108e41]:
+        - navigation [ref=f108e42]:
+          - link "Salinas" [ref=f108e43] [cursor=pointer]:
+            - /url: /David-Wolfe/California/Salinas
+            - generic [ref=f108e44]: Salinas
+          - generic [ref=f108e45]: 
+      - listitem:
+        - generic: David Wolfe
+    - generic [ref=f108e50]:
+      - img "avatar" [ref=f108e53]
+      - generic [ref=f108e54]:
+        - generic [ref=f108e55]:
+          - heading "David Wolfe, Age 49" [level=1] [ref=f108e56]:
+            - text: David Wolfe,
+            - generic [ref=f108e57]: Age 49
+          - generic [ref=f108e58]: aka David Wolse, David Henry Wolfe
+          - generic [ref=f108e59]:
+            - generic [ref=f108e61]: 
+            - generic [ref=f108e62]:
+              - text: "Current Address:"
+              - generic [ref=f108e63]: XRJA Wheeler Dr, Salinas, CA
+          - generic [ref=f108e64]:
+            - generic [ref=f108e66]: 
+            - generic [ref=f108e67]: "Past Addresses: Salinas CA, Chino CA +1 more"
+          - generic [ref=f108e68]:
+            - generic [ref=f108e70]: 
+            - generic [ref=f108e71]:
+              - text: "Phone Number:"
+              - generic [ref=f108e72]: (831) 998-UVIW
+          - generic [ref=f108e73]:
+            - generic [ref=f108e75]: 
+            - generic [ref=f108e76]: "Email Address: See available information"
+        - generic [ref=f108e78]: UNLOCK PROFILE
+    - generic [ref=f108e81]:
+      - list [ref=f108e82]:
+        - listitem [ref=f108e83]: Phone & Email(1)
+      - list [ref=f108e84]:
+        - listitem [ref=f108e85]: All Addresses(4)
+      - list [ref=f108e86]:
+        - listitem [ref=f108e87]: Family
+      - list [ref=f108e88]:
+        - listitem [ref=f108e89]: Social
+      - list [ref=f108e90]:
+        - listitem [ref=f108e91]: Court
+      - list [ref=f108e92]:
+        - listitem [ref=f108e93]: And More
+    - generic [ref=f108e95]:
+      - generic [ref=f108e96]:
+        - generic [ref=f108e97]:
+          - generic [ref=f108e99]:
+            - heading "Phone & Email" [level=2] [ref=f108e100]
+            - generic [ref=f108e101]: (1)
+          - generic [ref=f108e102]: We found 1 phone number and email address.
+          - text: See David's contact info now »
+        - generic [ref=f108e103]:
+          - generic [ref=f108e105]:
+            - img "VOIP" [ref=f108e106]
+            - generic [ref=f108e107]:
+              - paragraph [ref=f108e108]: (831) 998-WXYZ
+              - paragraph [ref=f108e109]: Salinas, CA • Comcast
+          - generic [ref=f108e111]:
+            - generic [ref=f108e112]: SEE CONTACT DETAILS
+            - img "arrow right" [ref=f108e113]
+      - generic [ref=f108e114]:
+        - generic [ref=f108e115]:
+          - generic [ref=f108e117]:
+            - heading "Address History" [level=2] [ref=f108e118]
+            - generic [ref=f108e119]: (4)
+          - generic [ref=f108e120]: We found 4 addresses for David.
+          - text: See where David has lived »
+        - generic [ref=f108e122]:
+          - img "google static map" [ref=f108e123]
+          - generic [ref=f108e124]:
+            - img "google logo" [ref=f108e125]
+            - generic [ref=f108e126]: Map data ©2026 Google
+        - generic [ref=f108e129]:
+          - generic [ref=f108e130]: "Address information for David may include:"
+          - list [ref=f108e131]:
+            - listitem [ref=f108e132]:
+              - generic [ref=f108e134]: 
+              - generic [ref=f108e135]: Current Address
+            - listitem [ref=f108e136]:
+              - generic [ref=f108e138]: 
+              - generic [ref=f108e139]: Past Addresses
+            - listitem [ref=f108e140]:
+              - generic [ref=f108e142]: 
+              - generic [ref=f108e143]: Property Owner
+            - listitem [ref=f108e144]:
+              - generic [ref=f108e146]: 
+              - generic [ref=f108e147]: Home Value
+        - generic [ref=f108e149]:
+          - generic [ref=f108e151]: 
+          - generic [ref=f108e153]: 
+          - generic [ref=f108e155]:
+            - generic [ref=f108e157]:
+              - generic [ref=f108e158]:
+                - img "address icon" [ref=f108e159]
+                - generic [ref=f108e160]: "1"
+              - generic [ref=f108e161]:
+                - generic [ref=f108e162]: WXYZ Wheeler Dr
+                - generic [ref=f108e163]: SALINAS, CA•2008-2023
+                - text: This home is the most recent address for David.
+                - generic [ref=f108e165]: View more
+            - generic [ref=f108e167]:
+              - generic [ref=f108e168]:
+                - img "address icon" [ref=f108e169]
+                - generic [ref=f108e170]: "2"
+              - generic [ref=f108e171]:
+                - generic [ref=f108e172]: WXYZ Lang St
+                - generic [ref=f108e173]: SALINAS, CA•1998-2002
+                - text: David moved out of this home in 2002.
+                - generic [ref=f108e175]: View more
+            - generic [ref=f108e177]:
+              - generic [ref=f108e178]:
+                - img "address icon" [ref=f108e179]
+                - generic [ref=f108e180]: "3"
+              - generic [ref=f108e181]:
+                - generic [ref=f108e182]: WXYZ Heather Cir
+                - generic [ref=f108e183]: SALINAS, CA•1999-1999
+                - text: David left this home in 1999.
+                - generic [ref=f108e185]: View more
+            - generic [ref=f108e187]:
+              - generic [ref=f108e188]:
+                - img "address icon" [ref=f108e189]
+                - generic [ref=f108e190]: "4"
+              - generic [ref=f108e191]:
+                - generic [ref=f108e192]: WXYZ Harrison St
+                - generic [ref=f108e193]: CHINO, CA•1999-1999
+                - text: David left this 3 bed / 2 bath home in 1999.
+                - generic [ref=f108e195]: View more
+      - generic [ref=f108e196]:
+        - generic [ref=f108e197]:
+          - heading "Family Members" [level=2] [ref=f108e200]
+          - generic [ref=f108e201]: Locate relatives by name and age.
+          - text: Search for David's family members »
+        - generic [ref=f108e203]:
+          - generic [ref=f108e205]: D
+          - img "tree background" [ref=f108e206]
+        - generic [ref=f108e209]:
+          - generic [ref=f108e210]: "Family member details may include:"
+          - list [ref=f108e211]:
+            - listitem [ref=f108e212]:
+              - generic [ref=f108e214]: 
+              - generic [ref=f108e215]: Name & Age
+            - listitem [ref=f108e216]:
+              - generic [ref=f108e218]: 
+              - generic [ref=f108e219]: Contact Info
+            - listitem [ref=f108e220]:
+              - generic [ref=f108e222]: 
+              - generic [ref=f108e223]: Work & Education
+            - listitem [ref=f108e224]:
+              - generic [ref=f108e226]: 
+              - generic [ref=f108e227]: Address History
+        - generic [ref=f108e229]:
+          - img "people tree" [ref=f108e231]
+          - generic [ref=f108e232]:
+            - text: Historical Records*
+            - generic [ref=f108e233]: 3.9 BILLION RECORDS
+            - text: Search for birth, death, marriage, divorce, US Census, and military records.
+            - generic [ref=f108e235]: View more
+      - generic [ref=f108e236]:
+        - generic [ref=f108e237]:
+          - heading "Social Profiles" [level=2] [ref=f108e240]
+          - generic [ref=f108e241]: Search for profiles by email and username.
+          - text: See David's photos, videos, and more »
+        - generic [ref=f108e243]:
+          - img "linkedin icon" [ref=f108e244]
+          - img "facebook icon" [ref=f108e245]
+          - img "linkedin icon" [ref=f108e246]
+          - img "linkedin icon" [ref=f108e247]
+          - img "linkedin icon" [ref=f108e248]
+          - img "social networks" [ref=f108e249]
+        - generic [ref=f108e252]:
+          - generic [ref=f108e253]: "Social information for David may include:"
+          - list [ref=f108e254]:
+            - listitem [ref=f108e255]:
+              - generic [ref=f108e257]: 
+              - generic [ref=f108e258]: Online Aliases
+            - listitem [ref=f108e259]:
+              - generic [ref=f108e261]: 
+              - generic [ref=f108e262]: Photos and Videos
+            - listitem [ref=f108e263]:
+              - generic [ref=f108e265]: 
+              - generic [ref=f108e266]: Social Profiles
+            - listitem [ref=f108e267]:
+              - generic [ref=f108e269]: 
+              - generic [ref=f108e270]: Posts and Wish Lists
+        - generic [ref=f108e272]:
+          - img "network icon" [ref=f108e274]
+          - generic [ref=f108e275]:
+            - text: Online Social Data
+            - generic [ref=f108e276]: 120+ SOCIAL NETWORKS
+            - text: Powerful social search locates profiles on social networks, dating sites, online shopping, web forums, music platforms, etc.
+            - generic [ref=f108e278]: View more
+      - generic [ref=f108e279]:
+        - generic [ref=f108e280]:
+          - heading "Court Records" [level=2] [ref=f108e283]
+          - generic [ref=f108e284]: Spokeo accesses over 620 million court records.
+          - text: Search for criminal records now »
+        - img "court summary image" [ref=f108e287]
+        - generic [ref=f108e290]:
+          - generic [ref=f108e291]: "Court record search results may include:"
+          - list [ref=f108e292]:
+            - listitem [ref=f108e293]:
+              - generic [ref=f108e295]: 
+              - generic [ref=f108e296]: Arrests
+            - listitem [ref=f108e297]:
+              - generic [ref=f108e299]: 
+              - generic [ref=f108e300]: Sex Offenders
+            - listitem [ref=f108e301]:
+              - generic [ref=f108e303]: 
+              - generic [ref=f108e304]: Traffic Violations
+            - listitem [ref=f108e305]:
+              - generic [ref=f108e307]: 
+              - generic [ref=f108e308]: Felonies
+        - generic [ref=f108e310]:
+          - img "court building" [ref=f108e312]
+          - generic [ref=f108e313]:
+            - text: Nationwide & State Records
+            - generic [ref=f108e314]: UPDATED MONTHLY
+            - text: Spokeo searches nationwide and local databases for court records, including available offense details, dates, and convictions.
+            - generic [ref=f108e316]: View more
+      - generic [ref=f108e317]:
+        - generic [ref=f108e318]:
+          - heading "Additional Details" [level=2] [ref=f108e321]
+          - text: Personal details for David may include »
+        - generic [ref=f108e322]:
+          - generic [ref=f108e324]:
+            - img "birth" [ref=f108e326]
+            - generic [ref=f108e327]:
+              - text: Personal Information
+              - generic [ref=f108e328]: VITAL INFO & HISTORICAL RECORDS
+              - text: View details about birth, marriage, and divorce. Find census, military, and other historical records.*
+          - generic [ref=f108e330]:
+            - img "Wealth" [ref=f108e332]
+            - generic [ref=f108e333]:
+              - text: Property Data and Assets
+              - generic [ref=f108e334]: PROPERTY DETAILS & VALUES
+              - text: View owned properties, estimated values, and related records.
+          - generic [ref=f108e336]:
+            - img "Work" [ref=f108e338]
+            - generic [ref=f108e339]:
+              - text: Work and Education
+              - generic [ref=f108e340]: EMPLOYMENT & SCHOOL HISTORY
+              - text: Discover work experience, schools attended, and more.
+    - generic [ref=f108e341]: "* Historical, vital, and court records and search results may require an additional purchase. Spokeo's database, while extensive, does not contain all U.S. warrant, arrest, court, or other related records. The presence or absence of records for any individual is not a guarantee of any kind. Results for this person or the person you are looking for are not guaranteed to appear in search results. Counts may not reflect the number of records that will appear in search results."
+    - generic [ref=f108e342]:
+      - heading "Customer Testimonials" [level=2] [ref=f108e343]
+      - generic [ref=f108e347]:
+        - generic [ref=f108e351]:
+          - paragraph [ref=f108e352]: “As a diligent investigator looking to get all data and decide for myself what is important to my case, Spokeo has set me leaps and bounds ahead of my peers in desktop investigation.”
+          - generic [ref=f108e353]:
+            - img "avatar icon" [ref=f108e357]
+            - generic [ref=f108e358]:
+              - generic [ref=f108e359]: Rick M.
+              - generic [ref=f108e360]: Verified Customer
+        - generic [ref=f108e364]:
+          - paragraph [ref=f108e365]: “The services and search filters worked great for me. I used them to find my biological father, whom I had never met, after 29 years. I will continue to refer people to Spokeo.”
+          - generic [ref=f108e366]:
+            - img "avatar icon" [ref=f108e370]
+            - generic [ref=f108e371]:
+              - generic [ref=f108e372]: Edward M.
+              - generic [ref=f108e373]: Verified Customer
+        - generic [ref=f108e377]:
+          - paragraph [ref=f108e378]: “WOW! Just looked up my best friend from childhood and found her phone number!! Shockingly awesome and quick!”
+          - generic [ref=f108e379]:
+            - img "avatar icon" [ref=f108e383]
+            - generic [ref=f108e384]:
+              - generic [ref=f108e385]: Annie S.
+              - generic [ref=f108e386]: Verified Customer
+    - generic [ref=f108e387]:
+      - heading "Spokeo Has Been Featured On" [level=2] [ref=f108e388]
+      - generic [ref=f108e389]:
+        - img "CNBC" [ref=f108e391]
+        - img "NewYorkTimes" [ref=f108e393]
+        - img "Inc" [ref=f108e395]
+        - img "HuffPost" [ref=f108e397]
+        - img "Forbes" [ref=f108e399]
+        - img "Catfish" [ref=f108e401]
+      - generic [ref=f108e402]: "Disclaimer: Reference to these media outlets or TV shows should not be construed to imply an endorsement or sponsorship of Spokeo or its products."
+  - contentinfo [ref=f108e403]:
+    - generic [ref=f108e404]:
+      - generic [ref=f108e405]: † Information on this page marked with a light teal hollow checkmark meets our highest-quality data standards.
+      - generic [ref=f108e406]: Do not use any information obtained through Spokeo to determine a person's eligibility for credit, insurance, employment, housing (tenant screening), or for any other purpose covered under the Fair Credit Reporting Act (FCRA). Spokeo is not a consumer reporting agency and does not offer consumer reports. Spokeo gathers information from public sources, which may not be complete, comprehensive, accurate or even up-to-date. This service is not a substitute for your own due diligence, especially if you have concerns about a person's criminal history. Spokeo does not verify or evaluate each piece of data, and makes no warranties or guarantees about the information offered.
+    - generic [ref=f108e407]:
+      - generic [ref=f108e408]:
+        - generic [ref=f108e410]:
+          - link "Email Lookup" [ref=f108e411] [cursor=pointer]:
+            - /url: /email-search
+          - link "|Phone Lookup Directory|" [ref=f108e412] [cursor=pointer]:
+            - /url: /directory#reverse_phone
+        - generic [ref=f108e413]: "Name:"
+        - link "A" [ref=f108e414] [cursor=pointer]:
+          - /url: /people/A0001
+          - generic [ref=f108e415]: A
+        - link "B" [ref=f108e416] [cursor=pointer]:
+          - /url: /people/B0001
+          - generic [ref=f108e417]: B
+        - link "C" [ref=f108e418] [cursor=pointer]:
+          - /url: /people/C0001
+          - generic [ref=f108e419]: C
+        - link "D" [ref=f108e420] [cursor=pointer]:
+          - /url: /people/D0001
+          - generic [ref=f108e421]: D
+        - link "E F" [ref=f108e422] [cursor=pointer]:
+          - /url: /people/EF0001
+          - generic [ref=f108e423]: E
+          - generic [ref=f108e424]: F
+        - link "G" [ref=f108e425] [cursor=pointer]:
+          - /url: /people/G0001
+          - generic [ref=f108e426]: G
+        - link "H" [ref=f108e427] [cursor=pointer]:
+          - /url: /people/H0001
+          - generic [ref=f108e428]: H
+        - link "I J" [ref=f108e429] [cursor=pointer]:
+          - /url: /people/IJ0001
+          - generic [ref=f108e430]: I
+          - generic [ref=f108e431]: J
+        - link "K" [ref=f108e432] [cursor=pointer]:
+          - /url: /people/K0001
+          - generic [ref=f108e433]: K
+        - link "L" [ref=f108e434] [cursor=pointer]:
+          - /url: /people/L0001
+          - generic [ref=f108e435]: L
+        - link "M" [ref=f108e436] [cursor=pointer]:
+          - /url: /people/M0001
+          - generic [ref=f108e437]: M
+        - link "N O" [ref=f108e438] [cursor=pointer]:
+          - /url: /people/NO0001
+          - generic [ref=f108e439]: "N"
+          - generic [ref=f108e440]: O
+        - link "P" [ref=f108e441] [cursor=pointer]:
+          - /url: /people/P0001
+          - generic [ref=f108e442]: P
+        - link "Q R" [ref=f108e443] [cursor=pointer]:
+          - /url: /people/QR0001
+          - generic [ref=f108e444]: Q
+          - generic [ref=f108e445]: R
+        - link "S" [ref=f108e446] [cursor=pointer]:
+          - /url: /people/S0001
+          - generic [ref=f108e447]: S
+        - link "T U V" [ref=f108e448] [cursor=pointer]:
+          - /url: /people/TUV0001
+          - generic [ref=f108e449]: T
+          - generic [ref=f108e450]: U
+          - generic [ref=f108e451]: V
+        - link "W X Y Z" [ref=f108e452] [cursor=pointer]:
+          - /url: /people/WXYZ0001
+          - generic [ref=f108e453]: W
+          - generic [ref=f108e454]: X
+          - generic [ref=f108e455]: "Y"
+          - generic [ref=f108e456]: Z
+        - separator [ref=f108e457]
+      - generic [ref=f108e458]:
+        - link "About" [ref=f108e459] [cursor=pointer]:
+          - /url: /about
+        - link "Terms" [ref=f108e460] [cursor=pointer]:
+          - /url: /terms-of-use
+        - link "Privacy" [ref=f108e461] [cursor=pointer]:
+          - /url: /privacy
+        - link "Contact" [ref=f108e462] [cursor=pointer]:
+          - /url: /contact
+        - link "Careers" [ref=f108e463] [cursor=pointer]:
+          - /url: /careers
+        - link "Help" [ref=f108e464] [cursor=pointer]:
+          - /url: https://help.spokeo.com
+        - link "Blog" [ref=f108e465] [cursor=pointer]:
+          - /url: /compass/
+        - link "Affiliates" [ref=f108e466] [cursor=pointer]:
+          - /url: http://www.spokeoaffiliates.com
+        - link "API" [ref=f108e467] [cursor=pointer]:
+          - /url: https://www.spokeo.com/business/api
+      - generic [ref=f108e468]:
+        - link "Spokeo Instagram Channel" [ref=f108e469] [cursor=pointer]:
+          - /url: https://www.instagram.com/spokeo
+          - generic [ref=f108e470]: 
+        - link "Spokeo Youtube Channel" [ref=f108e471] [cursor=pointer]:
+          - /url: https://www.youtube.com/user/spokeo
+          - generic [ref=f108e472]: 
+        - link "Spokeo TikTok Channel" [ref=f108e473] [cursor=pointer]:
+          - /url: https://www.tiktok.com/@spokeo
+          - generic [ref=f108e474]: 
+        - link "Spokeo Twitter Channel" [ref=f108e475] [cursor=pointer]:
+          - /url: https://x.com/spokeo
+          - generic [ref=f108e476]: 
+        - link "Spokeo Facebook Channel" [ref=f108e477] [cursor=pointer]:
+          - /url: https://www.facebook.com/Spokeo
+          - generic [ref=f108e478]: 
+        - link "Spokeo Linkedin Channel" [ref=f108e479] [cursor=pointer]:
+          - /url: https://www.linkedin.com/company/spokeo
+          - generic [ref=f108e480]: 
+      - text: Copyright © 2006-2026 Spokeo, Inc.
+  - alert [ref=f108e481]

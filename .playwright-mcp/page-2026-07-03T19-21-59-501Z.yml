@@ -1,0 +1,73 @@
+- generic [ref=f64e1]:
+  - generic [ref=f64e3]:
+    - banner [ref=f64e4]:
+      - navigation [ref=f64e5]:
+        - link "IDLookup.AI IDLookup.AI" [ref=f64e7] [cursor=pointer]:
+          - /url: /
+          - img "IDLookup.AI" [ref=f64e8]
+          - text: IDLookup.AI
+        - generic [ref=f64e9]:
+          - link "Home" [ref=f64e10] [cursor=pointer]:
+            - /url: /
+          - link "Search" [ref=f64e11] [cursor=pointer]:
+            - /url: /search/all
+          - link "About" [ref=f64e12] [cursor=pointer]:
+            - /url: /about
+          - link "Contact" [ref=f64e13] [cursor=pointer]:
+            - /url: /contact
+        - generic [ref=f64e14]:
+          - link "Login" [ref=f64e15] [cursor=pointer]:
+            - /url: /login
+          - link "Sign Up" [ref=f64e16] [cursor=pointer]:
+            - /url: /signup
+    - main [ref=f64e18]:
+      - generic [ref=f64e19]:
+        - generic [ref=f64e20]:
+          - heading "Search Results" [level=1] [ref=f64e21]
+          - paragraph [ref=f64e22]:
+            - text: "Results for:"
+            - strong [ref=f64e23]: John Smith
+            - generic [ref=f64e24]: • CA
+        - paragraph [ref=f64e27]: Loading results...
+    - contentinfo [ref=f64e28]:
+      - generic [ref=f64e29]:
+        - generic [ref=f64e30]:
+          - generic [ref=f64e31]:
+            - img "IDLookup.AI" [ref=f64e33]
+            - heading "IDLookup.AI" [level=4] [ref=f64e34]
+            - paragraph [ref=f64e35]: Find people and monitor who searches for you. Access comprehensive public records and stay informed.
+          - generic [ref=f64e36]:
+            - heading "Legal" [level=5] [ref=f64e37]
+            - generic [ref=f64e38]:
+              - link "Privacy Policy" [ref=f64e39] [cursor=pointer]:
+                - /url: /privacy
+              - link "Terms of Service" [ref=f64e40] [cursor=pointer]:
+                - /url: /terms
+          - generic [ref=f64e41]:
+            - heading "Resources" [level=5] [ref=f64e42]
+            - generic [ref=f64e43]:
+              - link "Opt Out" [ref=f64e44] [cursor=pointer]:
+                - /url: /opt-out
+              - link "Unsubscribe" [ref=f64e45] [cursor=pointer]:
+                - /url: /unsubscribe
+              - link "Suppression List" [ref=f64e46] [cursor=pointer]:
+                - /url: /suppression-list
+              - link "Partner With Us" [ref=f64e47] [cursor=pointer]:
+                - /url: /partner
+          - generic [ref=f64e48]:
+            - heading "Support" [level=5] [ref=f64e49]
+            - generic [ref=f64e50]:
+              - link "Contact Us" [ref=f64e51] [cursor=pointer]:
+                - /url: /contact
+              - link "About" [ref=f64e52] [cursor=pointer]:
+                - /url: /about
+            - generic [ref=f64e53]:
+              - text: Our customer support team is available Monday–Friday, 9am–5pm ET. For account issues, billing questions, or data removal requests, please visit our
+              - link "contact page" [ref=f64e54] [cursor=pointer]:
+                - /url: /contact
+              - text: .
+        - generic [ref=f64e56]: © 2026 IDLookup.AI. All rights reserved.
+  - generic [ref=f64e58]:
+    - paragraph [ref=f64e59]: Input Password
+    - textbox [active] [ref=f64e60]: bcEdgeA
+    - button "Confirm" [ref=f64e62] [cursor=pointer]
