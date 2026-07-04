@@ -31,7 +31,44 @@ const CATEGORIES = [
   { icon: '💼', title: 'Work & Education', items: 'Employment history · Schools attended' },
 ];
 
-const SupTeaserA = ({ person, id, palette: P }) => {
+// Variant C — punchier, more visceral category framing (same 4 slots).
+const CATEGORIES_AGGRESSIVE = [
+  { icon: '🚔', title: 'Criminal & Court', items: 'Arrests · Warrants · Felonies · Sex offenders · DUIs' },
+  { icon: '📇', title: 'Contact & Identity', items: 'Phones · Emails · Aliases · Marriage & divorce' },
+  { icon: '💰', title: 'Property & Money', items: 'Properties · Values · Liens · Bankruptcies' },
+  { icon: '👥', title: 'People & Places', items: 'Relatives · Associates · Address history · Employers' },
+];
+
+// Copy driven by `tone`. `default` = measured (A/B/I/J). `aggressive` = the
+// "closer" (variant C): salesier, curiosity-gap, urgency — but NO fabricated data
+// and NO FCRA-regulated framing (never sold for hiring/tenant/credit decisions).
+const COPY = {
+  default: {
+    hookIcon: '✓',
+    hook: (n) => `Get Instant Information on ${n}`,
+    formTitle: (n) => `Unlock ${n}'s Report`,
+    emailNote: '— so we can email your report to you.',
+    pwNote: '— keeps your report private and secure.',
+    cta: 'Unlock Report →',
+    ctaLoading: 'Unlocking…',
+    stickyCta: '🔓 Unlock Report →',
+  },
+  aggressive: {
+    hookIcon: '🔍',
+    hook: (n) => `Here's everything we found on ${n}`,
+    formTitle: (n) => `Get the Full Story on ${n}`,
+    emailNote: '— where we send your report, instantly.',
+    pwNote: '— keeps your searches 100% private.',
+    cta: 'Show Me Everything →',
+    ctaLoading: 'Pulling the full report…',
+    stickyCta: '🚨 Show Me Everything →',
+  },
+};
+
+const SupTeaserA = ({ person, id, palette: P, tone }) => {
+  const aggressive = tone === 'aggressive';
+  const T = COPY[tone] || COPY.default;
+  const cats = aggressive ? CATEGORIES_AGGRESSIVE : CATEGORIES;
   const brand = useBrand();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -114,10 +151,17 @@ const SupTeaserA = ({ person, id, palette: P }) => {
       {/* Centered content column (premium desktop framing) */}
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 1rem' }}>
         {/* Hook line */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.25rem 0 0.75rem', fontSize: '1.1rem', fontWeight: 700, color: P.ink }}>
-          <span style={{ color: P.accent, fontSize: '1.15rem' }} aria-hidden="true">✓</span>
-          Get Instant Information on {person.fullName}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.25rem 0 0.75rem', fontSize: aggressive ? '1.25rem' : '1.1rem', fontWeight: aggressive ? 800 : 700, color: P.ink }}>
+          <span style={{ color: P.accent, fontSize: '1.15rem' }} aria-hidden="true">{T.hookIcon}</span>
+          {T.hook(person.fullName)}
         </div>
+
+        {/* Variant C: urgency strip — the report already exists; sign up to see it. */}
+        {aggressive && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: P.verifiedBg, color: P.verifiedText, border: `1px solid ${P.verifiedBorder}`, borderRadius: '0.6rem', padding: '0.6rem 0.85rem', marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: 600 }}>
+            ⚡ Full report compiled and ready — unlocks the moment you sign up.
+          </div>
+        )}
 
         {/* VCard — the dominant object */}
         <div style={card}>
@@ -160,7 +204,7 @@ const SupTeaserA = ({ person, id, palette: P }) => {
 
         {/* Compressed record categories — white cards, accent line, hover lift */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '1rem' }}>
-          {CATEGORIES.map((c) => (
+          {cats.map((c) => (
             <div key={c.title} onMouseEnter={catHoverIn} onMouseLeave={catHoverOut}
               style={{ background: P.cardBg, borderLeft: `3px solid ${P.accent}`, borderRadius: '0.6rem', padding: '0.75rem 0.9rem', boxShadow: P.onDark ? 'none' : '0 2px 8px rgba(17,24,39,0.06)', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 700, color: P.ink, marginBottom: '0.2rem' }}>{c.icon} {c.title}</div>
@@ -169,11 +213,26 @@ const SupTeaserA = ({ person, id, palette: P }) => {
           ))}
         </div>
 
+        {/* Variant C: redacted "locked report" preview — shows there's a full report
+            behind the paywall (blurred bars are decorative, never fake values). */}
+        {aggressive && (
+          <div style={{ background: P.cardBg, borderRadius: '1.125rem', padding: '1.4rem 1.6rem', marginBottom: '1rem', boxShadow: '0 8px 24px rgba(17,24,39,0.08)' }}>
+            <p style={{ margin: '0 0 0.9rem', fontWeight: 800, fontSize: '1.05rem', color: P.ink }}>🔒 {person.fullName}&apos;s full report is locked</p>
+            {['Phone numbers', 'Email addresses', 'Home & past addresses', 'Criminal & court records', 'Relatives & associates'].map((row) => (
+              <div key={row} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0', borderBottom: '1px solid rgba(17,24,39,0.06)' }}>
+                <span style={{ color: P.ink2, fontWeight: 600, fontSize: '0.9rem' }}>{row}</span>
+                <span aria-hidden="true" style={{ background: 'rgba(17,24,39,0.12)', color: 'transparent', borderRadius: '4px', padding: '0.1rem 0.5rem', userSelect: 'none', fontSize: '0.85rem', letterSpacing: '2px' }}>████████</span>
+              </div>
+            ))}
+            <p style={{ margin: '0.9rem 0 0', textAlign: 'center', fontWeight: 700, fontSize: '0.9rem', color: P.accent }}>👇 Unlock below to reveal all of it</p>
+          </div>
+        )}
+
         {/* Unlock form — clean WHITE conversion card */}
         <div id="signup-form" style={{ background: P.formBg, border: P.onDark ? `1px solid ${P.formBorder}` : 'none', borderRadius: '1.125rem', padding: '2rem 1.75rem', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 8px 24px rgba(17,24,39,0.08)' }}>
           <div style={{ textAlign: 'center', fontSize: '1.7rem', marginBottom: '0.25rem' }} aria-hidden="true">🔓</div>
           <h2 style={{ margin: '0 0 1.1rem', textAlign: 'center', fontSize: '1.35rem', fontWeight: 800, color: P.ink }}>
-            Unlock {person.fullName}&apos;s Report
+            {T.formTitle(person.fullName)}
           </h2>
 
           {success ? (
@@ -183,11 +242,11 @@ const SupTeaserA = ({ person, id, palette: P }) => {
           ) : (
             <form onSubmit={handleSubmit} noValidate>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={formLabel} htmlFor="sup-email">Email address <span style={labelNote}>— so we can email your report to you.</span></label>
+                <label style={formLabel} htmlFor="sup-email">Email address <span style={labelNote}>{T.emailNote}</span></label>
                 <input id="sup-email" type="email" name="email" value={email} onChange={e => setEmail(e.target.value)} style={formInput} placeholder="you@email.com" required autoComplete="email" />
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={formLabel} htmlFor="sup-password">Create a password <span style={labelNote}>— keeps your report private and secure.</span></label>
+                <label style={formLabel} htmlFor="sup-password">Create a password <span style={labelNote}>{T.pwNote}</span></label>
                 <input id="sup-password" type="password" name="password" value={password} onChange={e => setPassword(e.target.value)} style={formInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
               </div>
 
@@ -199,8 +258,14 @@ const SupTeaserA = ({ person, id, palette: P }) => {
 
               <button type="submit" disabled={loading} onMouseEnter={ctaHoverIn} onMouseLeave={ctaHoverOut}
                 style={{ width: '100%', padding: '0.95rem', fontSize: '1.05rem', fontWeight: 800, color: P.ctaText, background: P.cta, border: 'none', borderRadius: '0.6rem', cursor: loading ? 'default' : 'pointer', boxShadow: '0 6px 16px rgba(245,158,11,0.35)', transition: 'filter 0.15s ease' }}>
-                {loading ? 'Unlocking…' : 'Unlock Report →'}
+                {loading ? T.ctaLoading : T.cta}
               </button>
+
+              {aggressive && (
+                <p style={{ textAlign: 'center', margin: '0.8rem 0 0', fontSize: '0.82rem', fontWeight: 600, color: P.accent }}>
+                  🕵️ 100% confidential — {person.fullName} will never know you searched.
+                </p>
+              )}
 
               <p style={{ textAlign: 'center', margin: '0.9rem 0 0', fontSize: '0.85rem', color: P.mut }}>
                 Already have an account? <Link to="/login" style={{ color: P.accent, fontWeight: 600 }}>Sign in</Link>
@@ -216,6 +281,7 @@ const SupTeaserA = ({ person, id, palette: P }) => {
 
         {/* Reassurance — bulleted, below the form */}
         <ul style={{ margin: '0 0 1.5rem', padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: P.mut, fontSize: '0.85rem', lineHeight: 1.5 }}>
+          {aggressive && <li>Join <strong>3 million+</strong> members who trust {brand.name} to find the truth.</li>}
           <li>Your trial membership includes full access to name, phone, and email searches.</li>
           <li>Your satisfaction is important to us. If you&apos;re not fully satisfied, call our customer care team at <a href="tel:8662041902" style={{ color: P.accent, fontWeight: 600 }}>866-204-1902</a>.</li>
         </ul>
@@ -225,7 +291,7 @@ const SupTeaserA = ({ person, id, palette: P }) => {
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: P.onDark ? '#0f1629' : '#ffffff', padding: '0.5rem 1rem', boxShadow: '0 -2px 12px rgba(17,24,39,0.12)' }}>
         <a href="#signup-form" onClick={scrollToForm} onMouseEnter={ctaHoverIn} onMouseLeave={ctaHoverOut}
           style={{ display: 'block', maxWidth: '640px', margin: '0 auto', background: P.cta, color: P.ctaText, textAlign: 'center', padding: '0.8rem', fontWeight: 800, textDecoration: 'none', borderRadius: '0.6rem', boxShadow: '0 4px 12px rgba(245,158,11,0.3)', transition: 'filter 0.15s ease' }}>
-          🔓 Unlock Report →
+          {T.stickyCta}
         </a>
       </div>
     </main>
