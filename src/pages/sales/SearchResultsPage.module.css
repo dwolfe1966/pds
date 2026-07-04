@@ -3,7 +3,9 @@
  */
 
 .main {
-  background: linear-gradient(135deg, rgb(236, 253, 245) 0%, rgb(239, 246, 255) 100%);
+  /* Neutral canvas (surface-system consistency w/ the SUP) — was a mint→blue
+     gradient. Themed funnels override via inline theme.pageBg. */
+  background: #f5f7fa;
   padding: 40px 0;
   min-height: 100vh;
 }

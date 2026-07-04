@@ -4,7 +4,9 @@
 
 .main {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%);
+  /* Neutral canvas (surface-system consistency w/ the SUP) — was a mint→blue
+     gradient. White cards + elevation carry the hierarchy; green stays for trust. */
+  background: #f5f7fa;
   padding: 2.5rem 1rem 4rem;
 }
 
@@ -53,7 +55,7 @@
   justify-content: space-between;
   gap: 1.5rem;
   background: #fff;
-  border: 1px solid #d1fae5;
+  border: 1px solid rgba(17,24,39,0.08);
   border-radius: 0.875rem;
   padding: 1.25rem 1.5rem;
   /* Constrain + center to the layout width so the vCard left-aligns with the
@@ -147,7 +149,7 @@
 .formCard {
   background: #fff;
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(17,24,39,0.08);
   padding: 2rem;
   margin-bottom: 1rem;
 }
@@ -548,7 +550,7 @@
 .successBox {
   background: #fff;
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(17,24,39,0.08);
   padding: 3rem 2rem;
   text-align: center;
 }
@@ -593,7 +595,7 @@
 .summaryCard {
   background: #fff;
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(17,24,39,0.08);
   overflow: hidden;
 }
 
