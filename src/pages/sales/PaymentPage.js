@@ -156,6 +156,9 @@ const PaymentPage = () => {
   const [reportProvisioning, setReportProvisioning] = useState(false);
   // BC order id for the confirmation receipt shown on the success screen.
   const [confirmedOrderId, setConfirmedOrderId] = useState(null);
+  // Email-only signup: the auto-generated password to reveal on the confirmation
+  // screen (only set when the password was system-generated, never a user's own).
+  const [confirmedPassword, setConfirmedPassword] = useState(null);
   // Suppresses the "already paid → redirect to dashboard" guard while a purchase
   // is mid-flight. AuthContext refetches subscription on token change, so the
   // billing.sale-issued token can flip isPaid mid-handler — without this flag,
@@ -438,8 +441,14 @@ const PaymentPage = () => {
       // so the second submit was malformed even with a corrected card — part of
       // the "correct info still fails" bug. Keep them for the retry; drop them on success.
       if (paymentSuccess) {
+        // Email-only flow: reveal the auto-generated password on the confirmation
+        // screen (before we wipe it). Only shown when it was system-generated.
+        if (pendingPassword && sessionStorage.getItem('_pwAuto') === '1') {
+          setConfirmedPassword(pendingPassword);
+        }
         sessionStorage.removeItem('_pendingPw');
         sessionStorage.removeItem('_signupOptin');
+        sessionStorage.removeItem('_pwAuto');
       }
 
       if (!paymentSuccess && simulateParam) {
@@ -724,6 +733,35 @@ const PaymentPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Email-only signup: reveal the auto-generated login details so the
+                  customer can sign in again later. They're signed in now (token in
+                  localStorage), so this is a save-it-for-later backup. */}
+              {confirmedPassword && (
+                <div style={{
+                  margin: '1rem auto 0', maxWidth: 380, textAlign: 'left',
+                  background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '0.5rem', padding: '0.85rem 1rem',
+                }}>
+                  <p style={{ margin: '0 0 0.6rem', fontWeight: 700, color: '#92400e', fontSize: '0.9rem' }}>🔑 Save your login details</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', fontSize: '0.88rem', marginBottom: '0.3rem' }}>
+                    <span style={{ color: '#78716c' }}>Email</span>
+                    <strong style={{ wordBreak: 'break-all', textAlign: 'right' }}>{user?.email}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', fontSize: '0.88rem', alignItems: 'center' }}>
+                    <span style={{ color: '#78716c' }}>Password</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <strong style={{ fontFamily: 'monospace', letterSpacing: '0.03em' }}>{confirmedPassword}</strong>
+                      <button type="button" onClick={() => { try { navigator.clipboard?.writeText(confirmedPassword); } catch { /* clipboard unavailable */ } }}
+                        style={{ border: '1px solid #fcd34d', background: '#fff', borderRadius: '0.35rem', padding: '0.15rem 0.45rem', fontSize: '0.72rem', fontWeight: 600, color: '#92400e', cursor: 'pointer' }}>
+                        Copy
+                      </button>
+                    </span>
+                  </div>
+                  <p style={{ margin: '0.6rem 0 0', fontSize: '0.78rem', color: '#78716c' }}>
+                    You&apos;re signed in now — keep these to sign in again later. You can change your password anytime in <Link to="/account" style={{ color: '#92400e', fontWeight: 600 }}>Account settings</Link>.
+                  </p>
+                </div>
+              )}
 
               {/* Primary CTA varies by whether report creation succeeded.
                   confirmedReportId → direct jump to the report they wanted.

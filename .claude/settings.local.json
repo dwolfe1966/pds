@@ -377,7 +377,8 @@
       "Bash(awk 'NR>=10 && NR<=240' \"docs/new-api/bc client library - Api.csv\")",
       "Bash(awk 'NR>=10 && NR<=70' \"docs/new-api/bc client library - Api.csv\")",
       "WebFetch(domain:www.spokeo.com)",
-      "Bash(xargs -n1 basename)"
+      "Bash(xargs -n1 basename)",
+      "Bash(signup)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSignup } from '../../hooks/useSignup';
+import { useSignup, generatePassword } from '../../hooks/useSignup';
 import { useBrand } from '../../services/brand';
 
 /**
@@ -65,10 +65,11 @@ const COPY = {
   },
 };
 
-const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
+const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
   const aggressive = tone === 'aggressive';
   const realMap = layout === 'realmap';
   const mapLayout = layout === 'map' || realMap;
+  const emailOnly = signup === 'email-only';
   const T = COPY[tone] || COPY.default;
   const cats = aggressive ? CATEGORIES_AGGRESSIVE : CATEGORIES;
   const brand = useBrand();
@@ -132,6 +133,14 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (emailOnly) {
+      // Autogenerate a password (no field). Flag it so PaymentPage knows to reveal
+      // it on the confirmation screen (only auto-generated ones are shown).
+      const pw = generatePassword();
+      try { sessionStorage.setItem('_pwAuto', '1'); } catch { /* storage unavailable */ }
+      submitSignup({ email, password: pw, optin: true, selectedPersonId: id || null });
+      return;
+    }
     submitSignup({ email, password, optin: true, selectedPersonId: id || null });
   };
   const scrollToForm = (e) => { if (e) e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); };
@@ -329,10 +338,17 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
                 <label style={formLabel} htmlFor="sup-email">Email address <span style={labelNote}>{T.emailNote}</span></label>
                 <input id="sup-email" type="email" name="email" value={email} onChange={e => setEmail(e.target.value)} style={formInput} placeholder="you@email.com" required autoComplete="email" />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={formLabel} htmlFor="sup-password">Create a password <span style={labelNote}>{T.pwNote}</span></label>
-                <input id="sup-password" type="password" name="password" value={password} onChange={e => setPassword(e.target.value)} style={formInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
-              </div>
+              {emailOnly ? (
+                <p style={{ margin: '0 0 1rem', fontSize: '0.8rem', color: P.mut, display: 'flex', gap: '0.4rem', alignItems: 'flex-start' }}>
+                  <span style={{ color: P.accent }}>🔒</span>
+                  No password to create — we&apos;ll set up secure access and show your login details right after checkout.
+                </p>
+              ) : (
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={formLabel} htmlFor="sup-password">Create a password <span style={labelNote}>{T.pwNote}</span></label>
+                  <input id="sup-password" type="password" name="password" value={password} onChange={e => setPassword(e.target.value)} style={formInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
+                </div>
+              )}
 
               {error && (
                 <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', fontSize: '0.85rem', marginBottom: '0.75rem' }}>

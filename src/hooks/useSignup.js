@@ -40,6 +40,20 @@ export function validatePassword(pw) {
 }
 
 /**
+ * Generate a strong, readable password for the email-only signup flow (no BC
+ * change — it rides the existing _pendingPw → billing.sale/changePassword path,
+ * and BC's policy is min-8/no-complexity). Unambiguous charset (no 0/O/1/l/I),
+ * grouped `xxxx-xxxx-xxxx` for easy reading/copying off the confirmation screen.
+ */
+export function generatePassword() {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const arr = new Uint32Array(12);
+  crypto.getRandomValues(arr);
+  const r = Array.from(arr, (v) => cs[v % cs.length]).join('');
+  return `${r.slice(0, 4)}-${r.slice(4, 8)}-${r.slice(8, 12)}`;
+}
+
+/**
  * Shared signup logic for SignupPage, SignupPageStepped, and the embedded
  * form in SearchDetailPreviewPage.
  *
