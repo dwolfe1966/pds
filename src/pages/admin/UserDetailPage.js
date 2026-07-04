@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } from '../../utils/orderFinancials';
+import { getOrderCard } from '../../utils/orderCard';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
 import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, CSR_TERMS } from './userState';
@@ -1500,6 +1501,7 @@ const UserDetailPage = () => {
                   const schedule = o.schedule;
                   const eligible = getEligiblePayments(o);
                   const hasEligible = eligible.length > 0;
+                  const card = getOrderCard(o);
 
                   return (
                     <div key={oid} className={styles.orderCard}>
@@ -1529,6 +1531,14 @@ const UserDetailPage = () => {
                                 : oStatus}
                           </span>
                           <span className={styles.orderDate}>{formatDate(o.createdAt)}</span>
+                          {card && (
+                            <span
+                              title={[card.expiry && `Exp ${card.expiry}`, [card.type, card.level].filter(Boolean).join(' '), card.bank, card.country].filter(Boolean).join(' · ')}
+                              style={{ fontSize: '0.78rem', color: '#374151', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '999px', padding: '0.1rem 0.55rem', whiteSpace: 'nowrap' }}
+                            >
+                              💳 {card.brand || 'Card'} ••{card.last4}
+                            </span>
+                          )}
                           {schedule && (
                             <span className={styles.orderSchedule}>
                               {/* Definitive upcoming price per Kwan (mtg 2026-06-23): the next
