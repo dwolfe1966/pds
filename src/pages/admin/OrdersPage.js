@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getOrderCollected } from '../../utils/orderFinancials';
+import { getOrderCard } from '../../utils/orderCard';
 import styles from './OrdersPage.module.css';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -61,7 +62,7 @@ function StatusBadge({ status }) {
 function SkeletonRows({ count = 6 }) {
   return Array.from({ length: count }).map((_, i) => (
     <tr key={i} aria-hidden="true">
-      {[1, 2, 3, 4, 5, 6].map((j) => (
+      {[1, 2, 3, 4, 5, 6, 7].map((j) => (
         <td key={j} className={styles.td}>
           <div className={styles.skeletonLine} style={{ width: `${35 + (j * 10) % 40}%` }} />
         </td>
@@ -456,6 +457,7 @@ const OrdersPage = () => {
                       <th className={styles.th}>Amount</th>
                       <th className={styles.th}>Status</th>
                       <th className={styles.th}>Type</th>
+                      <th className={styles.th}>Card</th>
                       <th className={styles.th}>Date</th>
                       <th className={styles.th}>Actions</th>
                     </tr>
@@ -481,6 +483,19 @@ const OrdersPage = () => {
                               <StatusBadge status={resolveStatus(order)} />
                             </td>
                             <td className={styles.td}>{resolveType(order)}</td>
+                            <td className={styles.td}>
+                              {(() => {
+                                const c = getOrderCard(order);
+                                if (!c) return '—';
+                                const meta = [c.expiry && `Exp ${c.expiry}`, [c.type, c.level].filter(Boolean).join(' '), c.bank, c.country].filter(Boolean).join(' · ');
+                                return (
+                                  <span title={meta}>
+                                    <span style={{ fontWeight: 600 }}>{c.brand || 'Card'} ••{c.last4}</span>
+                                    {c.bank && <span style={{ display: 'block', fontSize: '0.72rem', color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>{c.bank}</span>}
+                                  </span>
+                                );
+                              })()}
+                            </td>
                             <td className={styles.td}>{formatDate(order.createdAt)}</td>
                             <td className={styles.td}>
                               <Link

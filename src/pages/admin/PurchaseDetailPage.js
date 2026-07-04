@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { getOrderCollected, getOrderRefunded } from '../../utils/orderFinancials';
+import { getOrderCard } from '../../utils/orderCard';
 import styles from './PurchaseDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
 import { CSR_TERMS } from './userState';
@@ -278,6 +279,8 @@ const PurchaseDetailPage = () => {
   const backHref  = userId ? `/users/${userId}` : '/orders';
   // Decoded failure summaries for every non-fulfilled payment attempt on the order.
   const failures  = order ? (order.commercePayments || []).map(getPaymentFailure).filter(Boolean) : [];
+  // Card / payment method on the order (shown regardless of success or failure).
+  const card      = order ? getOrderCard(order) : null;
 
   return (
     <main className={styles.page}>
@@ -359,6 +362,23 @@ const PurchaseDetailPage = () => {
                   </tbody>
                 </table>
               </div>
+
+              {/* Payment method — card attributes, shown for success OR failure. */}
+              {card && (
+                <div className={styles.card}>
+                  <p className={styles.cardTitle}>Payment Method</p>
+                  <table className={styles.detailTable}>
+                    <tbody>
+                      <tr><td>Card</td><td><strong>{card.brand || 'Card'} •••• {card.last4}</strong></td></tr>
+                      {card.expiry && <tr><td>Expires</td><td>{card.expiry}</td></tr>}
+                      {(card.type || card.level) && <tr><td>Card type</td><td>{[card.type, card.level].filter(Boolean).join(' · ')}</td></tr>}
+                      {card.bank && <tr><td>Issuing bank</td><td>{card.bank}</td></tr>}
+                      {card.country && <tr><td>Country</td><td>{card.country}</td></tr>}
+                      {card.bin && <tr><td>BIN</td><td style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>{card.bin}</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {/* Payment history */}
               {(order.commercePayments || []).length > 0 && (
