@@ -75,3 +75,4 @@
 - [Funnel design principles](feedback_funnel_design_principles.md) — sell benefits not features; serve the info-need; consumer not SaaS; clean IA; peoplefinders build/verify/confirm model
 - [Funnel redesign 2026-07-03](project_funnel_redesign_2026_07_03.md) — landings/home(/home A-B)/SRP/SUP(vCard, SupTeaserA)/payment redesigned; pending deploy + alt SUPs + #2 bug (davidtest-7-2 lookup) + live teaser payload
 - [Always push to main](feedback_always_push_to_main.md) — after every commit, push origin main; do not gate on the push
+- [SUP challenger variants](project_sup_challenger_variants.md) — one shared SupTeaserA, 3 axes (tone/layout/signup); variants a–j; real counts, no fabrication
