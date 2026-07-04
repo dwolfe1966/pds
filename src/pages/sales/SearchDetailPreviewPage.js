@@ -12,6 +12,8 @@ import SearchDetailPreviewVariantA from './SearchDetailPreviewVariantA';
 import SearchDetailPreviewVariantB from './SearchDetailPreviewVariantB';
 import SearchDetailPreviewVariantC from './SearchDetailPreviewVariantC';
 import SearchDetailPreviewVariantD from './SearchDetailPreviewVariantD';
+import SearchDetailPreviewVariantE from './SearchDetailPreviewVariantE';
+import SearchDetailPreviewVariantF from './SearchDetailPreviewVariantF';
 import SearchDetailPreviewVariantI from './SearchDetailPreviewVariantI';
 import SearchDetailPreviewVariantJ from './SearchDetailPreviewVariantJ';
 import styles from './SearchDetailPreviewPage.module.css';
@@ -63,7 +65,7 @@ const SearchDetailPreviewPage = () => {
   // b=green, i=blue, j=dark). Dead marketing experiments c/d/e/g/h/k were removed
   // 2026-07-04. Default falls back to 'a' so no campaign gets the old inline layout.
   // Explicit `?v=a|b|i|j` URL wins over the campaign config.
-  const MARKETING_VARIANTS = ['a', 'b', 'c', 'd', 'i', 'j'];
+  const MARKETING_VARIANTS = ['a', 'b', 'c', 'd', 'e', 'f', 'i', 'j'];
   const campaignVariant = (campaign?.detail?.variant || '').toLowerCase();
   const variant = MARKETING_VARIANTS.includes(queryV)
     ? queryV
@@ -284,6 +286,14 @@ const SearchDetailPreviewPage = () => {
 
   if (variant === 'd') {
     return <SearchDetailPreviewVariantD person={person} id={id} />;
+  }
+
+  if (variant === 'e') {
+    return <SearchDetailPreviewVariantE person={person} id={id} />;
+  }
+
+  if (variant === 'f') {
+    return <SearchDetailPreviewVariantF person={person} id={id} />;
   }
 
   if (variant === 'i') {

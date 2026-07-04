@@ -67,7 +67,8 @@ const COPY = {
 
 const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
   const aggressive = tone === 'aggressive';
-  const mapLayout = layout === 'map';
+  const realMap = layout === 'realmap';
+  const mapLayout = layout === 'map' || realMap;
   const T = COPY[tone] || COPY.default;
   const cats = aggressive ? CATEGORIES_AGGRESSIVE : CATEGORIES;
   const brand = useBrand();
@@ -221,6 +222,20 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
         {mapLayout && (
           <>
             <div style={{ background: P.cardBg, borderRadius: '1.125rem', overflow: 'hidden', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 8px 24px rgba(17,24,39,0.08)' }}>
+              {realMap ? (
+                /* Real map via the keyless Google Maps embed (city/state query —
+                   no API key, no dependency, no coordinate dataset). City-level
+                   only. NOTE: this legacy embed is fine for a challenger test;
+                   production scale should move to the official Maps Embed API
+                   (needs a key) or bundled coords + OSM tiles. */
+                <iframe
+                  title={`Map of ${cityState || 'the United States'}`}
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(cityState || 'United States')}&z=11&output=embed`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  style={{ display: 'block', width: '100%', height: '230px', border: 0 }}
+                />
+              ) : (
               <div style={{ position: 'relative', height: '190px' }}>
                 <svg viewBox="0 0 400 190" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} aria-hidden="true">
                   <rect width="400" height="190" fill="#e9f1ec" />
@@ -244,6 +259,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
                   {cityState || 'United States'}
                 </div>
               </div>
+              )}
               <div style={{ padding: '0.85rem 1.4rem' }}>
                 <p style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700, color: P.ink }}>📌 {R.address > 0 ? `${plural(R.address, 'location')} on record` : 'Location on record'}</p>
                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: P.mut }}>Full street address &amp; interactive map unlock with the report.</p>
@@ -281,8 +297,9 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout }) => {
         )}
 
         {/* Variant C: redacted "locked report" preview — shows there's a full report
-            behind the paywall (blurred bars are decorative, never fake values). */}
-        {aggressive && (
+            behind the paywall (blurred bars are decorative, never fake values).
+            Suppressed in map layouts (F), where the category legend already does this. */}
+        {aggressive && !mapLayout && (
           <div style={{ background: P.cardBg, borderRadius: '1.125rem', padding: '1.4rem 1.6rem', marginBottom: '1rem', boxShadow: '0 8px 24px rgba(17,24,39,0.08)' }}>
             <p style={{ margin: '0 0 0.9rem', fontWeight: 800, fontSize: '1.05rem', color: P.ink }}>🔒 {person.fullName}&apos;s full report is locked</p>
             {['Phone numbers', 'Email addresses', 'Home & past addresses', 'Criminal & court records', 'Relatives & associates'].map((row) => (
