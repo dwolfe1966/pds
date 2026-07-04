@@ -59,3 +59,6 @@ tracking-api/data/
 
 # changelog → Google Sheet webhook URL (contains token — never commit)
 scripts/.changelog-webhook
+
+# Playwright MCP screenshot/snapshot artifacts
+.playwright-mcp/
