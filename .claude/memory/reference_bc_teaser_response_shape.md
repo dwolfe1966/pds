@@ -14,6 +14,24 @@ first teaser POST returns a **captcha challenge** (`{type:'password.v0', action:
 'NO_DESC_IN_RULE', captchaId, step:'0-0'}`); the IIFE solves it and the SECOND
 POST returns the data. Confirmed live 2026-06-05 (phone 9096637878 → 2 identities).
 
+**Each teaser identity carries a REAL per-person data footprint (IDI-sourced) —
+confirmed via live prod payload 2026-07-04 (name "david wexler ca").** Alongside
+`nameList` (with `meta.firstSeen`/`lastSeen` YYYYMMDD), `dobList` (`age`, masked
+`XX/XX/XXXX`), `addressList` (city/state), `relationshipList` (real relative
+names + `relationshipName`), and `extId`, every identity includes **17 scalar
+`*Count` fields** — `phoneCount`, `mobilePhoneCount`, `residentialPhoneCount`,
+`emailCount`, `addressCount`, `ipCount`, `propertyCount`, `criminalCount`,
+`relativeCount`, `bankruptcyCount`, `lienCount`, `judgmentCount`,
+`foreclosureCount`, `employmentCount`, `professionalLicenseCount`,
+`associatedBusinessCount`, `aircraftCount` — plus **18 `has*`/`is*` booleans**
+(`isCriminal`, `isPropertyOwner`, `hasEmail`, `hasPhone`, `hasRelatives`,
+`hasVehicle`, `hasEmployment`, …). These are HONEST value signals — surfaced on
+the SUP via `adaptIdentity` → `records`/`flags`/`onRecordSince`/`relatives`
+(commit 5c97250). This CORRECTS an earlier doc-based conclusion that the teaser
+had no counts (BC's Api.csv only documents `extId`). ⚠️ Variants G/H still render
+FABRICATED `_phoneCount` seeded ranges — migrate them to `person.records`.
+Top-level `transient.total` = people matching the name, NOT per-person counts.
+
 **The phone-search "no results" bug (fixed 6200ae8):** `adaptTeaserResponse`
 (src/services/apiAdapter.js) only looked at `raws[0].transient` and a
 `getData().raws[0]` path that was gated behind `if (development)` — so in
