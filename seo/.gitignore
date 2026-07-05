@@ -1,4 +1,6 @@
-node_modules/
-.next/
-out/
+.cache/
 .env*.local
+.next/
+data/name-pairs.ndjson
+node_modules/
+out/

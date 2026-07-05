@@ -1,0 +1,32 @@
+{
+  "generatedNote": "US name skeleton — public-domain Census data. estPeople = firstCount*lastCount/POP (independence prior).",
+  "firstNames": 53615,
+  "lastNames": 162253,
+  "theoreticalCombos": 8699194595,
+  "firstNameOccurrences": 283236830,
+  "lastNameOccurrences": 265667228,
+  "populationBase": 265667228,
+  "viablePairs_estPeople_ge_1": 27153253,
+  "addressableProfilePages_est": 213739549,
+  "topN_written": 200000,
+  "sampleTopFirst": [
+    "MICHAEL(3,476,721)",
+    "JOHN(3,125,123)",
+    "JAMES(2,996,421)",
+    "DAVID(2,813,017)",
+    "ROBERT(2,759,339)",
+    "WILLIAM(2,240,114)",
+    "MARY(1,768,343)",
+    "MARIA(1,652,966)"
+  ],
+  "sampleTopLast": [
+    "SMITH(2,442,977)",
+    "JOHNSON(1,932,812)",
+    "WILLIAMS(1,625,252)",
+    "BROWN(1,437,026)",
+    "JONES(1,425,470)",
+    "GARCIA(1,166,120)",
+    "MILLER(1,161,437)",
+    "DAVIS(1,116,357)"
+  ]
+}
