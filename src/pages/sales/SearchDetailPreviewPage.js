@@ -126,15 +126,28 @@ const SearchDetailPreviewPage = () => {
         }
       } else {
         // Cold link (e.g. a direct link from an SEO profile page) — no sessionStorage.
-        // Re-hydrate this person by re-running the name teaser with the fn/ln/st URL
-        // params, then matching the extId in `id`. Reuses the exact search the SRP uses.
+        // Re-hydrate by re-running the name teaser. IMPORTANT: BC's obf1 extId is
+        // ephemeral (re-encrypted on every search), so we CANNOT match on it — we
+        // match on STABLE attributes passed in the URL: city (+ first-seen year),
+        // the same key the SEO public id is minted from. The matched result carries
+        // the CURRENT extId, used downstream for report creation.
         const fn = searchParams.get('fn');
         const ln = searchParams.get('ln');
         const st = searchParams.get('st');
+        const cityParam = searchParams.get('city');
+        const fsParam = searchParams.get('fs');
         if (fn && ln) {
           try {
             const res = await api.searchPeople({ type: 'name', firstName: fn, lastName: ln, state: st ? st.toUpperCase() : undefined });
-            const match = (res?.data || []).find((r) => r.id === id || r.extId === id) || null;
+            const list = res?.data || [];
+            const slugify = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const cityOf = (r) => (r._rawIdentity?.addressList?.[0]?.city) || String(r.location || '').split(',')[0];
+            let match = null;
+            if (cityParam) {
+              match = list.find((r) => slugify(cityOf(r)) === cityParam && (!fsParam || String(r.onRecordSince || '') === fsParam))
+                || list.find((r) => slugify(cityOf(r)) === cityParam);
+            }
+            if (!match) match = list[0] || null; // last resort so the page still renders someone
             if (match) {
               setPerson(match);
               try { sessionStorage.setItem(`result_${id}`, JSON.stringify(match)); } catch { /* storage unavailable */ }

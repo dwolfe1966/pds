@@ -4,9 +4,16 @@
 // re-fetches, and relatives cross-link by minting the relative's extId the same way.
 import { createHash } from 'node:crypto';
 
-export function mintPublicId(extId) {
-  const h = createHash('sha1').update(String(extId || '')).digest();
-  // First 5 bytes → a number, mod 1e10, zero-padded to 10 digits.
+// Mint a STABLE public id from natural attributes — NOT the BC obf1 extId, which
+// is re-encrypted on every teaser call (verified: two back-to-back searches for
+// the same person return different extIds). `parts` = e.g. [first,last,city,state,
+// firstSeenYear]. Deterministic → URLs persist across re-fetches, and the SUP can
+// re-find the person by the same attributes.
+export function mintPublicId(parts) {
+  const key = (Array.isArray(parts) ? parts : [parts])
+    .map((p) => String(p == null ? '' : p).toLowerCase().trim())
+    .join('|');
+  const h = createHash('sha1').update(key).digest();
   const n = h.readUIntBE(0, 5) % 10_000_000_000;
   return 'p' + String(n).padStart(10, '0');
 }

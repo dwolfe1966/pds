@@ -53,14 +53,19 @@ export function adaptIdentity(identity, nameStats) {
   if (!current) return null; // no location → no URL → skip
 
   const relatives = (identity.relationshipList || []).map((r) => ({
-    id: r.name?.extId ? mintPublicId(r.name.extId) : null,
+    // Relatives lack a location in the teaser → mint from name only (best-effort;
+    // they link to a name hub, not a specific profile).
+    id: r.name?.first ? mintPublicId([titleCase(r.name.first), titleCase(r.name.last)]) : null,
     fullName: titleCase([r.name?.first, r.name?.last].filter(Boolean).join(' ')),
     relation: r.relationshipName || null,
   })).filter((r) => r.fullName);
 
+  const onRecordSince = earliestYear(nameList);
+
   return {
-    id: mintPublicId(identity.extId),
-    extId: identity.extId,
+    // STABLE id from natural attributes (name+city+state+first-seen). NOT the
+    // ephemeral extId. This survives re-fetches AND lets the SUP re-find the person.
+    id: mintPublicId([firstName, lastName, current.city, current.state, onRecordSince]),
     firstName,
     lastName,
     fullName,

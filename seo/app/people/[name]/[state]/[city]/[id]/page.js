@@ -5,7 +5,7 @@
 
 import { notFound } from 'next/navigation';
 import { getPerson } from '../../../../../../lib/data';
-import { personPath, namePath } from '../../../../../../lib/ids';
+import { personPath, namePath, citySlug } from '../../../../../../lib/ids';
 import {
   webPageJsonLd, breadcrumbJsonLd, personJsonLd, buildFaq, faqJsonLd,
   pageTitle, pageDescription, obfuscateStreet,
@@ -20,12 +20,11 @@ export const revalidate = 5184000; // 60d — REVALIDATE_SECONDS (Next needs a l
 const SITE = 'https://www.idlookup.ai';
 function unlockHref(person) {
   const utm = 'utm_source=seo&utm_medium=organic';
-  if (person.extId) {
-    // Raw extId in the path (NOT encoded) — matches how the consumer app navigates
-    // (`/search/${result.id}`); encoding the colon → %3A broke client routing.
-    return `${SITE}/search/${person.extId}?fn=${encodeURIComponent(person.firstName)}&ln=${encodeURIComponent(person.lastName)}&st=${(person.state || '').toLowerCase()}&${utm}`;
-  }
-  return `${SITE}/name/landing/v3?${utm}&sel=${person.id}`;
+  const enc = encodeURIComponent;
+  // Direct to THIS person's SUP. The obf1 extId is ephemeral (re-encrypted on every
+  // search), so we DON'T send it — the SUP re-finds the person in a fresh teaser by
+  // name + city + first-seen (the same stable key the public id is minted from).
+  return `${SITE}/search/${person.id}?fn=${enc(person.firstName)}&ln=${enc(person.lastName)}&st=${(person.state || '').toLowerCase()}&city=${citySlug(person.city)}&fs=${person.onRecordSince || ''}&${utm}`;
 }
 
 export async function generateMetadata({ params }) {
