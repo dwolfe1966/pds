@@ -1,0 +1,28 @@
+{
+  "generatedNote": "US location skeleton — Census 2023 Gazetteer joined to SUB-EST 2024 population.",
+  "totalPlaces": 32329,
+  "placesWithPopulation": 19484,
+  "states": 52,
+  "totalPopulationCovered": 210685238,
+  "placesOver": {
+    "100k": 333,
+    "50k": 801,
+    "25k": 1580,
+    "10k": 3179,
+    "5k": 4833,
+    "1k": 10219
+  },
+  "top10": [
+    "New York, NY (8,258,035)",
+    "Los Angeles, CA (3,820,914)",
+    "Chicago, IL (2,664,452)",
+    "Houston, TX (2,314,157)",
+    "Phoenix, AZ (1,650,070)",
+    "Philadelphia, PA (1,550,542)",
+    "San Antonio, TX (1,495,295)",
+    "San Diego, CA (1,388,320)",
+    "Dallas, TX (1,302,868)",
+    "Jacksonville, FL (985,843)"
+  ],
+  "note_nameLocationSurface": "Name×location hub pages (/name/state/city) are derived from BC/IDI at mint time (where a name's people actually live) — not pre-computed from Census. Location-only hubs (decision #6) = one per place = totalPlaces."
+}
