@@ -5,3 +5,4 @@ data/name-pairs.ndjson
 node_modules/
 out/
 scripts/.real-*.json
+scripts/.batch*.json

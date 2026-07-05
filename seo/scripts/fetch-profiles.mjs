@@ -66,16 +66,34 @@ async function fromLive(n) {
   return all;
 }
 
+// --batch: adapt a captured batch file = [{first,last,state,identities:[...],total}]
+// (produced by the headless name×state sweep). Each entry → one teaser payload.
+async function fromBatch(file) {
+  const rows = JSON.parse(readFileSync(file, 'utf8'));
+  const all = [];
+  for (const r of rows) {
+    const payload = { commerceContent: { raws: [{ transient: { identities: r.identities || [], total: r.total } }] } };
+    const { profiles } = adaptTeaserResponse(payload, { first: r.first, last: r.last, state: r.state });
+    all.push(...profiles);
+  }
+  console.log(`  batch → ${rows.length} searches → ${all.length} profiles`);
+  return all;
+}
+
 (async () => {
   const sample = arg('--sample');
+  const batch = arg('--batch');
   const namesN = arg('--names');
+  const merge = process.argv.includes('--merge');
   let profiles;
   if (sample) profiles = await fromSample(sample);
+  else if (batch) profiles = await fromBatch(batch);
   else if (namesN) profiles = await fromLive(parseInt(namesN, 10));
-  else { console.error('Usage: --sample <file> | --names <N>'); process.exit(1); }
+  else { console.error('Usage: --sample <file> | --batch <file> [--merge] | --names <N>'); process.exit(1); }
 
-  // Key by public id; last-writer-wins on dupes (same extId → same id → idempotent).
-  const byId = {};
+  // Key by public id; last-writer-wins on dupes (stable id → idempotent). --merge
+  // keeps existing profiles (accumulate across batches).
+  const byId = merge && existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : {};
   for (const p of profiles) byId[p.id] = p;
   writeFileSync(OUT, JSON.stringify(byId, null, 0));
   console.log(`\n✓ wrote ${Object.keys(byId).length} real profiles → seo/data/profiles.json`);
