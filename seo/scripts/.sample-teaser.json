@@ -1,0 +1,51 @@
+{
+  "_comment": "Representative name-teaser payload (shape from the live prod 'david wexler ca' capture, 2026-07-04). Used to test the adapter/pipeline before the live searchTeaser client is wired. Real fetches replace this.",
+  "commerceContent": {
+    "raws": [
+      {
+        "transient": {
+          "total": 44,
+          "perPage": 5,
+          "identities": [
+            {
+              "nameList": [{ "meta": { "firstSeen": 20151204, "lastSeen": 20151204, "rank": 0 }, "data": "DAVID WEXLER", "first": "DAVID", "last": "WEXLER" }],
+              "dobList": [{ "date": { "data": "XX/XX/XXXX" }, "age": "72" }],
+              "addressList": [{ "city": "SIMI VALLEY", "state": "CA" }],
+              "relationshipList": [],
+              "extId": "obf1:sample-simivalley-72",
+              "isCriminal": false, "isPropertyOwner": false, "hasEmail": true, "hasPhone": true, "hasRelatives": false, "hasEmployment": false, "hasVehicle": true,
+              "propertyCount": 0, "criminalCount": 0, "emailCount": 2, "phoneCount": 3, "residentialPhoneCount": 3, "addressCount": 1, "relativeCount": 0, "ipCount": 3
+            },
+            {
+              "nameList": [{ "meta": { "firstSeen": 19961201, "lastSeen": 20231222 }, "data": "DAVID WEXLER", "first": "DAVID", "last": "WEXLER" }],
+              "dobList": [],
+              "addressList": [{ "city": "PASADENA", "state": "CA" }],
+              "relationshipList": [],
+              "extId": "obf1:sample-pasadena-a",
+              "isCriminal": false, "isPropertyOwner": true, "hasEmail": false, "hasPhone": false, "hasRelatives": false,
+              "propertyCount": 1, "criminalCount": 0, "emailCount": 0, "phoneCount": 0, "addressCount": 2, "relativeCount": 0
+            },
+            {
+              "nameList": [{ "meta": { "firstSeen": 19930101, "lastSeen": 19961201 }, "data": "DAVID WEXLER", "first": "DAVID", "last": "WEXLER" }],
+              "dobList": [],
+              "addressList": [{ "city": "SHERMAN OAKS", "state": "CA" }],
+              "relationshipList": [{ "name": { "meta": { "firstSeen": 19910101 }, "first": "ALAN", "last": "WEXLER", "extId": "obf1:sample-alan" }, "type": "R", "relationshipName": "Other Relative" }],
+              "extId": "obf1:sample-shermanoaks",
+              "isCriminal": true, "isPropertyOwner": false, "hasEmail": false, "hasPhone": false, "hasRelatives": true,
+              "propertyCount": 0, "criminalCount": 1, "emailCount": 0, "phoneCount": 0, "addressCount": 1, "relativeCount": 1
+            },
+            {
+              "nameList": [{ "meta": { "firstSeen": 19831231, "lastSeen": 19931001 }, "data": "DAVID B WEXLER", "first": "DAVID", "last": "WEXLER", "middle": "B" }],
+              "dobList": [],
+              "addressList": [{ "city": "CARDIFF BY THE SEA", "state": "CA" }],
+              "relationshipList": [],
+              "extId": "obf1:sample-cardiff",
+              "isCriminal": false, "isPropertyOwner": false, "hasEmployment": true,
+              "propertyCount": 0, "criminalCount": 0, "emailCount": 0, "phoneCount": 0, "addressCount": 1, "relativeCount": 0, "employmentCount": 2
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

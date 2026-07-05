@@ -8,8 +8,13 @@
 // live, BC sees ≈ one lookup per page per window — crawler traffic never fans
 // out to per-hit API calls.
 
-import { PEOPLE } from './fixtures';
+import { PEOPLE as FIXTURES } from './fixtures';
+import REAL from '../data/profiles.json';
 import { isPublicId, nameSlug, citySlug } from './ids';
+
+// Serve REAL BC-teaser profiles (seo/scripts/fetch-profiles.mjs → data/profiles.json)
+// when present; fall back to fixtures for local dev / before the first fetch.
+const PEOPLE = REAL && Object.keys(REAL).length ? REAL : FIXTURES;
 
 export const REVALIDATE_SECONDS = 60 * 60 * 24 * 60; // 60 days — people data is slow-changing
 
