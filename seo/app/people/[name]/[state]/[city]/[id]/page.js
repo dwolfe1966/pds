@@ -21,7 +21,9 @@ const SITE = 'https://www.idlookup.ai';
 function unlockHref(person) {
   const utm = 'utm_source=seo&utm_medium=organic';
   if (person.extId) {
-    return `${SITE}/search/${encodeURIComponent(person.extId)}?fn=${encodeURIComponent(person.firstName)}&ln=${encodeURIComponent(person.lastName)}&st=${(person.state || '').toLowerCase()}&${utm}`;
+    // Raw extId in the path (NOT encoded) — matches how the consumer app navigates
+    // (`/search/${result.id}`); encoding the colon → %3A broke client routing.
+    return `${SITE}/search/${person.extId}?fn=${encodeURIComponent(person.firstName)}&ln=${encodeURIComponent(person.lastName)}&st=${(person.state || '').toLowerCase()}&${utm}`;
   }
   return `${SITE}/name/landing/v3?${utm}&sel=${person.id}`;
 }
