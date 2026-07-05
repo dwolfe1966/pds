@@ -31,7 +31,18 @@ and the big `name-pairs.ndjson` queue are gitignored (regenerate via the scripts
 - Name×location hub count (/name/state/city) is DERIVED from BC/IDI at mint time
   (where a name's people actually live), NOT pre-computed from Census.
 
-**NEXT (not yet done):** (1) BC name+location probe — does adding a city beat
-`TooManyMatches`? closes the enumeration question. (2) Vercel prep for the `seo/`
-Next app. (3) BC ASK 0 = live data to replace fixtures. (4) wire the skeleton into
-the app (`getPerson` seam + hub routes + sitemaps). Hosting decision = Vercel.
+**Hub graph BUILT (2026-07-05):** `/people` index + `/people/{name}`, `/{name}/{state}`,
+`/{name}/{state}/{city}` hubs — server-rendered, JSON-LD (CollectionPage/ItemList +
+breadcrumbs), on-demand+ISR, 404 thin-combo gate. Seams in `lib/data.js`
+(getPeopleByName/…ByNameState/…ByNameCity/getNameIndex/getSitemapUrls, fixture-backed,
+TODO(BC)→searchTeaser). New libs: states.js, ui.js. Leaf's links now resolve.
+**Vercel deploy kit BUILT:** next.config.js, app/sitemap.js (idlookup.ai canonical
+URLs), app/robots.js, layout metadataBase, and `seo/DEPLOY.md` runbook. `next build`
+clean (6 routes + robots.txt + sitemap.xml).
+
+**NEXT — mostly OWNER actions + BC (code is ready):** (1) deploy `seo/` to Vercel
+(root=seo/); (2) Cloudflare path-split `/people/*`+`/sitemap.xml`→Vercel, rest→SPA;
+(3) update MAIN-site idlookup.ai/robots.txt to `Allow: /people` + sitemap ref;
+(4) BC ASK 0 = live data to swap fixtures; (5) GSC URL-Inspection proof; (6) flip
+noindex→index (layout.js robots) for the first staged batch. Also open: BC
+name+location probe (does adding a city beat `TooManyMatches`?). See seo/DEPLOY.md.
