@@ -38,7 +38,7 @@ function earliestYear(nameList) {
 export function adaptIdentity(identity, nameStats) {
   const nameList = identity.nameList || [];
   const primary = nameList[0];
-  if (!primary || !identity.extId) return null;
+  if (!primary) return null; // extId is ephemeral + unused → not required
 
   const firstName = titleCase(primary.first);
   const lastName = titleCase(primary.last);
