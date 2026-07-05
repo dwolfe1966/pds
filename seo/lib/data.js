@@ -76,6 +76,24 @@ export async function getPeopleByNameCity(slug, state, city) {
   return { ...stateHub, cityName: people[0].city, people };
 }
 
+// Site-relative URLs for the sitemap (persons + name/state/city hubs). Fixture-
+// backed for Phase 0. TODO(BC): at scale this becomes a chunked sitemap index
+// streamed from the Layer-1 skeleton × the names BC actually returns people for
+// (thin combos excluded — they 404 and never enter the sitemap).
+export async function getSitemapUrls() {
+  const urls = new Set(['/people']);
+  const bySlug = new Map();
+  for (const p of allPeople()) {
+    const slug = nameSlug(p.firstName, p.lastName);
+    urls.add(`/people/${slug}`);
+    urls.add(`/people/${slug}/${p.state.toLowerCase()}`);
+    urls.add(`/people/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}`);
+    urls.add(`/people/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}/${p.id}`);
+    bySlug.set(slug, true);
+  }
+  return [...urls];
+}
+
 // The /people index — available name hubs. TODO(BC): back with the top-N of the
 // Layer-1 ranked skeleton (seo/data/name-pairs.ndjson). Fixtures list distinct names.
 export async function getNameIndex() {
