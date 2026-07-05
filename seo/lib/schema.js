@@ -129,9 +129,13 @@ export function pageDescription(person) {
   return `${person.fullName}, age ${person.age}, lives in ${person.city}, ${person.state}. Find ${person.firstName}'s phone number, address history, email, and relatives on IDLookup.`;
 }
 
-// Visible-teaser obfuscation (Spokeo model): house number replaced with a token.
+// Visible-teaser obfuscation (Spokeo model): house number → token. When we have no
+// street at all (teaser is city-level), show a fully-masked street so the line reads
+// as a tease ("•••• ••••••, Simi Valley, CA") rather than a stray leading comma.
 export function obfuscateStreet(street) {
-  return String(street || '').replace(/^\S+/, '••••');
+  const s = String(street || '').trim();
+  if (!s) return '•••• ••••••';
+  return s.replace(/^\S+/, '••••');
 }
 
 // ── Hub schema (directory levels: name → state → city) ────────────────────────
