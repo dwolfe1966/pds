@@ -78,3 +78,4 @@
 - [SUP challenger variants](project_sup_challenger_variants.md) — one shared SupTeaserA, 3 axes (tone/layout/signup); variants a–j; real counts, no fabrication
 - [SEO: IDI licensed for public display + indexing](project_seo_idi_display_license.md) — data layer = BC/IDI; opt-out from index; only enumeration-for-common-names remains
 - [SEO Layer 1 built](project_seo_layer1_built.md) — name+location skeleton from Census; ~27M name hubs, ~214M profiles, 32k places; pipelines in seo/scripts
+- [BC extId is ephemeral](reference_bc_extid_ephemeral.md) — obf1 extId re-encrypted every call; match people on stable attributes (name+city+first-seen), never extId
