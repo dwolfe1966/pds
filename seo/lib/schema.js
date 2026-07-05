@@ -133,3 +133,39 @@ export function pageDescription(person) {
 export function obfuscateStreet(street) {
   return String(street || '').replace(/^\S+/, '••••');
 }
+
+// ── Hub schema (directory levels: name → state → city) ────────────────────────
+// Generic breadcrumb from [{name, path}] (path is site-relative or absolute).
+export function crumbsJsonLd(crumbs) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: c.name,
+      item: c.path.startsWith('http') ? c.path : `${SITE}${c.path}`,
+    })),
+  };
+}
+
+// CollectionPage + ItemList for a hub. `items` = [{name, path}] (people or sub-hubs).
+export function collectionJsonLd({ name, description, url, items }) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name,
+    description,
+    url,
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: items.length,
+      itemListElement: items.map((it, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: it.name,
+        url: it.path.startsWith('http') ? it.path : `${SITE}${it.path}`,
+      })),
+    },
+  };
+}

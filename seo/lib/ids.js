@@ -31,3 +31,23 @@ export function personPath(p) {
 export function namePath(p) {
   return `/people/${nameSlug(p.firstName, p.lastName)}`;
 }
+
+// Hub path builders (name → state → city). Take a name slug + raw state/city.
+export function nameStatePath(slug, state) {
+  return `/people/${slug}/${String(state).toLowerCase()}`;
+}
+
+export function nameCityPath(slug, state, city) {
+  return `/people/${slug}/${String(state).toLowerCase()}/${citySlug(city)}`;
+}
+
+// Split a "first-last" name slug back into display-cased first/last words. Best-
+// effort (multi-word names collapse to first token / rest) — used for hub H1s.
+export function nameFromSlug(slug) {
+  const parts = String(slug || '').split('-').filter(Boolean);
+  if (!parts.length) return { firstName: '', lastName: '', display: '' };
+  const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+  const firstName = cap(parts[0]);
+  const lastName = parts.slice(1).map(cap).join(' ');
+  return { firstName, lastName, display: [firstName, lastName].filter(Boolean).join(' ') };
+}
