@@ -13,7 +13,18 @@ import {
 
 export const revalidate = 5184000; // 60d — REVALIDATE_SECONDS (Next needs a literal here)
 
-const FUNNEL = 'https://www.idlookup.ai/name/landing/v3';
+// The CTA goes DIRECTLY to this person's SUP/teaser page (/search/{extId}), not
+// the start of onboarding. Name params let the SUP re-hydrate on a cold link
+// (SearchDetailPreviewPage cold-load). Falls back to the name landing only when
+// we have no extId (e.g. fixture data).
+const SITE = 'https://www.idlookup.ai';
+function unlockHref(person) {
+  const utm = 'utm_source=seo&utm_medium=organic';
+  if (person.extId) {
+    return `${SITE}/search/${encodeURIComponent(person.extId)}?fn=${encodeURIComponent(person.firstName)}&ln=${encodeURIComponent(person.lastName)}&st=${(person.state || '').toLowerCase()}&${utm}`;
+  }
+  return `${SITE}/name/landing/v3?${utm}&sel=${person.id}`;
+}
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -76,7 +87,7 @@ export default async function PersonPage({ params }) {
         <p style={{ margin: '10px 0 14px', fontWeight: 700 }}>
           Includes Address({person.counts.addresses}) Phone({person.counts.phones}) Email({person.counts.emails})
         </p>
-        <a href={`${FUNNEL}?utm_source=seo&utm_medium=organic&sel=${person.id}`} style={cta}>Unlock Full Profile →</a>
+        <a href={unlockHref(person)} style={cta}>Unlock Full Profile →</a>
       </section>
 
       {person.priorCities.length > 0 && (

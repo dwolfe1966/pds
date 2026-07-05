@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link, useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
+import api from '../../api';
 import { createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext } from '../../services/searchContext';
 import { useSignup } from '../../hooks/useSignup';
@@ -122,6 +123,28 @@ const SearchDetailPreviewPage = () => {
           }
         } catch (err) {
           console.error('Error parsing stored person:', err);
+        }
+      } else {
+        // Cold link (e.g. a direct link from an SEO profile page) — no sessionStorage.
+        // Re-hydrate this person by re-running the name teaser with the fn/ln/st URL
+        // params, then matching the extId in `id`. Reuses the exact search the SRP uses.
+        const fn = searchParams.get('fn');
+        const ln = searchParams.get('ln');
+        const st = searchParams.get('st');
+        if (fn && ln) {
+          try {
+            const res = await api.searchPeople({ type: 'name', firstName: fn, lastName: ln, state: st ? st.toUpperCase() : undefined });
+            const match = (res?.data || []).find((r) => r.id === id || r.extId === id) || null;
+            if (match) {
+              setPerson(match);
+              try { sessionStorage.setItem(`result_${id}`, JSON.stringify(match)); } catch { /* storage unavailable */ }
+              gtmSetSearchTarget({ ...match, extId: match.extId || id });
+              track('teaser_view', { personId: id, source: 'seo_direct' });
+              gtmTeaserView({ identity_id: id, search_type: 'name' });
+            }
+          } catch (e) {
+            // teaser failed (captcha/network) — person stays null; the page handles it.
+          }
         }
       }
       setLoading(false);
