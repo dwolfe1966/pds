@@ -79,3 +79,4 @@
 - [SEO: IDI licensed for public display + indexing](project_seo_idi_display_license.md) — data layer = BC/IDI; opt-out from index; only enumeration-for-common-names remains
 - [SEO Layer 1 built](project_seo_layer1_built.md) — name+location skeleton from Census; ~27M name hubs, ~214M profiles, 32k places; pipelines in seo/scripts
 - [BC extId is ephemeral](reference_bc_extid_ephemeral.md) — obf1 extId re-encrypted every call; match people on stable attributes (name+city+first-seen), never extId
+- [SEO LIVE on idlookup.me](project_seo_live_idlookup_me.md) — indexable people-search directory (Vercel + Neon); name×state beats TooManyMatches; sweep needs HEADED; prototype for idlookup.ai/people
