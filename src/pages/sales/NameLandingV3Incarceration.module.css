@@ -30,8 +30,8 @@
 
 /* ---- hero ---- */
 .hero { text-align: center; margin-bottom: 1.4rem; }
-.headline { margin: 0 0 0.6rem; font-size: 2.15rem; line-height: 1.12; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
-.sub { margin: 0 auto 0.85rem; max-width: 34rem; font-size: 1.02rem; line-height: 1.5; color: #475569; }
+.headline { margin: 0 0 0.35rem; font-size: 2.15rem; line-height: 1.12; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
+.sub { margin: 0 auto 0.95rem; max-width: 34rem; font-size: 1.02rem; line-height: 1.5; color: #475569; }
 .trustLine { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; font-size: 0.85rem; font-weight: 600; color: #0d5d2f; background: #eaf5ee; border: 1px solid #cfe9d8; border-radius: 999px; padding: 0.4rem 0.9rem; }
 
 /* ---- card ---- */

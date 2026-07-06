@@ -184,7 +184,7 @@ const NameSearchLandingV3Page = () => {
           <div className={s.hero}>
             <h1 className={s.headline}>Find Someone in Jail or Prison</h1>
             <p className={s.sub}>Search current and historical incarceration records from correctional facilities and public-record sources.</p>
-            <p className={s.trustLine}><Icon name="lock" className={s.vpChipIcon} /> Private searches • No one is notified • Results in seconds</p>
+            <p className={s.trustLine}><Icon name="lock" className={s.vpChipIcon} /> Results in Seconds</p>
           </div>
         )}
 
@@ -236,7 +236,7 @@ const NameSearchLandingV3Page = () => {
 
                 {/* Value preview — the payoff, ABOVE the CTA (spec) */}
                 <div className={s.valuePreview}>
-                  <p className={s.vpLabel}>What you&apos;ll find</p>
+                  <p className={s.vpLabel}>What you may find</p>
                   <div className={s.vpGrid}>
                     {VALUE_PREVIEW.map(([ic, label]) => (
                       <span key={label} className={s.vpChip}><Icon name={ic} className={s.vpChipIcon} />{label}</span>
@@ -244,15 +244,8 @@ const NameSearchLandingV3Page = () => {
                   </div>
                 </div>
 
-                <button type="submit" className={s.cta}><Icon name="search" className={s.ctaIcon} /> Search Incarceration Records</button>
+                <button type="submit" className={s.cta}><Icon name="search" className={s.ctaIcon} /> Search Records</button>
               </form>
-
-              {/* Trust block — directly beneath the CTA */}
-              <div className={s.trustBlock}>
-                <div className={s.trustItem}><Icon name="file" className={s.trustItemIcon} /> Searches public records only.</div>
-                <div className={s.trustItem}><Icon name="eyeOff" className={s.trustItemIcon} /> No one is notified that you searched.</div>
-                <div className={s.trustItem}><Icon name="clock" className={s.trustItemIcon} /> Typical search completes in under 10 seconds.</div>
-              </div>
 
               <p className={s.social}>Used by families, attorneys, journalists, and concerned individuals to locate incarceration records.</p>
             </>
