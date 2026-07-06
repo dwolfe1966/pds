@@ -7,11 +7,11 @@ import { personPath } from '../../../../../lib/ids';
 import { stateName } from '../../../../../lib/states';
 import { collectionJsonLd, crumbsJsonLd } from '../../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../../lib/ui';
+import { SITE, MAIN } from '../../../../../lib/site';
 
 export const revalidate = 5184000; // 60d
 
-const SITE = 'https://www.idlookup.ai';
-const FUNNEL = `${SITE}/name/landing/v3`;
+const FUNNEL = `${MAIN}/name/landing/v3`;
 
 export async function generateMetadata({ params }) {
   const { name, state, city } = await params;

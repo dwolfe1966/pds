@@ -5,10 +5,9 @@
 import { getNameIndex } from '../../lib/data';
 import { collectionJsonLd, crumbsJsonLd } from '../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../lib/ui';
+import { SITE } from '../../lib/site';
 
 export const revalidate = 5184000; // 60d
-
-const SITE = 'https://www.idlookup.ai';
 
 export async function generateMetadata() {
   return {

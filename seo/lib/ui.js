@@ -2,7 +2,7 @@
 // FCRA/opt-out footer). Server components — no client JS. Keeps the generated
 // hub pages visually + legally consistent without duplicating markup.
 
-const SITE = 'https://www.idlookup.ai';
+import { MAIN } from './site';
 
 export const ui = {
   main: { maxWidth: 760, margin: '0 auto', padding: '32px 16px' },
@@ -36,9 +36,9 @@ export function FcraFooter() {
         credit, insurance, or any other purpose covered by the FCRA.
       </p>
       <p>
-        <a href={`${SITE}/optout`} style={ui.link}>Remove my information</a>
+        <a href={`${MAIN}/optout`} style={ui.link}>Remove my information</a>
         {' · '}
-        <a href={`${SITE}/privacy`} style={ui.link}>Privacy Policy</a>
+        <a href={`${MAIN}/privacy`} style={ui.link}>Privacy Policy</a>
       </p>
     </footer>
   );

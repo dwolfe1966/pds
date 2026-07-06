@@ -6,6 +6,7 @@
 import { notFound } from 'next/navigation';
 import { getPerson } from '../../../../../../lib/data';
 import { personPath, namePath, citySlug } from '../../../../../../lib/ids';
+import { SITE, MAIN } from '../../../../../../lib/site';
 import {
   webPageJsonLd, breadcrumbJsonLd, personJsonLd, buildFaq, faqJsonLd,
   pageTitle, pageDescription, obfuscateStreet,
@@ -13,18 +14,16 @@ import {
 
 export const revalidate = 5184000; // 60d — REVALIDATE_SECONDS (Next needs a literal here)
 
-// The CTA goes DIRECTLY to this person's SUP/teaser page (/search/{extId}), not
-// the start of onboarding. Name params let the SUP re-hydrate on a cold link
-// (SearchDetailPreviewPage cold-load). Falls back to the name landing only when
-// we have no extId (e.g. fixture data).
-const SITE = 'https://www.idlookup.ai';
+// The CTA goes DIRECTLY to this person's SUP/teaser page on the MAIN app (the
+// funnel lives on idlookup.ai regardless of where the SEO surface is hosted).
+// Name params let the SUP re-hydrate on a cold link (SearchDetailPreviewPage).
 function unlockHref(person) {
   const utm = 'utm_source=seo&utm_medium=organic';
   const enc = encodeURIComponent;
   // Direct to THIS person's SUP. The obf1 extId is ephemeral (re-encrypted on every
   // search), so we DON'T send it — the SUP re-finds the person in a fresh teaser by
   // name + city + first-seen (the same stable key the public id is minted from).
-  return `${SITE}/search/${person.id}?fn=${enc(person.firstName)}&ln=${enc(person.lastName)}&st=${(person.state || '').toLowerCase()}&city=${citySlug(person.city)}&fs=${person.onRecordSince || ''}&${utm}`;
+  return `${MAIN}/search/${person.id}?fn=${enc(person.firstName)}&ln=${enc(person.lastName)}&st=${(person.state || '').toLowerCase()}&city=${citySlug(person.city)}&fs=${person.onRecordSince || ''}&${utm}`;
 }
 
 export async function generateMetadata({ params }) {
@@ -34,7 +33,7 @@ export async function generateMetadata({ params }) {
   return {
     title: pageTitle(person),
     description: pageDescription(person),
-    alternates: { canonical: `https://www.idlookup.ai${personPath(person)}` },
+    alternates: { canonical: `${SITE}${personPath(person)}` },
   };
 }
 
@@ -52,7 +51,7 @@ export default async function PersonPage({ params }) {
 
   const paths = { person: personPath(person), name: namePath(person) };
   const faqs = buildFaq(person);
-  const url = `https://www.idlookup.ai${paths.person}`;
+  const url = `${SITE}${paths.person}`;
   const jsonLd = [
     webPageJsonLd(person, url),
     breadcrumbJsonLd(person, paths),
@@ -147,9 +146,9 @@ export default async function PersonPage({ params }) {
           credit, insurance, or any other purpose covered by the FCRA.
         </p>
         <p>
-          <a href="https://www.idlookup.ai/optout" style={{ color: '#0d5d2f' }}>Remove my information</a>
+          <a href={`${MAIN}/optout`} style={{ color: '#0d5d2f' }}>Remove my information</a>
           {' · '}
-          <a href="https://www.idlookup.ai/privacy" style={{ color: '#0d5d2f' }}>Privacy Policy</a>
+          <a href={`${MAIN}/privacy`} style={{ color: '#0d5d2f' }}>Privacy Policy</a>
         </p>
       </footer>
     </main>

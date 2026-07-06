@@ -3,8 +3,7 @@
 // becomes a chunked sitemap index streamed from the Layer-1 skeleton × the names
 // BC returns real people for.
 import { getSitemapUrls } from '../lib/data';
-
-const SITE = 'https://www.idlookup.ai';
+import { SITE } from '../lib/site';
 
 export default async function sitemap() {
   const urls = await getSitemapUrls();

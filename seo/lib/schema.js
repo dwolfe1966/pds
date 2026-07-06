@@ -3,7 +3,7 @@
 // visible teaser obfuscates it — the aggressive Spokeo model, owner-validated
 // 2026-07-02 (plan §0.2/§4). FAQPage is the anti-thin-content engine (§4).
 
-const SITE = 'https://www.idlookup.ai';
+import { SITE } from './site';
 
 export function orgJsonLd() {
   return {

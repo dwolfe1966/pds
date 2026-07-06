@@ -1,17 +1,15 @@
 import { orgJsonLd } from '../lib/schema';
+import { SITE } from '../lib/site';
 
-// Canonicals + sitemap resolve against the PUBLIC domain (idlookup.ai), never the
-// vercel.app deploy URL — the SEO tree lives on idlookup.ai via the Cloudflare
-// path-split. See seo/DEPLOY.md.
+// Canonicals + sitemap resolve against SITE (the SEO surface's own domain —
+// idlookup.me for the prototype), never the vercel.app deploy URL. See lib/site.js.
 export const metadata = {
-  metadataBase: new URL('https://www.idlookup.ai'),
-  title: 'IDLookup.AI People Search',
-  // Phase 0: the whole surface ships noindex — proof-of-crawl (GSC URL
-  // Inspection, view-source) works without indexing. Indexing switches on with
-  // the STAGED rollout (plan §0.5), deliberately, not by default. Flip this to
-  // { index: true, follow: true } for the first staged batch (or override
-  // per-route) once the deploy + GSC proof is done.
-  robots: { index: false, follow: false },
+  metadataBase: new URL(SITE),
+  title: 'IDLookup People Search',
+  // Prototype on idlookup.me is INDEXABLE — the whole point is to watch real
+  // crawl + indexing in GSC. Thin combos still 404 (never enter the sitemap).
+  // (On idlookup.ai this returns to a staged flip behind the path-split.)
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }) {
