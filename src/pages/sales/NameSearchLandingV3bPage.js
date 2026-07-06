@@ -6,11 +6,12 @@ import { track } from '../../services/trackingService';
 import { useBrand } from '../../services/brand';
 import US_STATES from './usStates';
 import ColorLandingFooter from './ColorLandingFooter';
+import { Icon, BENEFITS, VALUE_PREVIEW } from './landingIcons';
 
 /**
- * Name landing v3b — "Dark premium split" design (visually matches v8) with INMATE-focused
- * language. Same charcoal + amber palette + split layout as v8; the preview panel lists
- * inmate-relevant records. Self-chrome. Wizard + tracking identical (variant 'v3b').
+ * Name landing v3b — the v3 incarceration redesign in v3b's DARK PREMIUM scheme,
+ * keeping the two-column split (form left, "what you may find" panel right).
+ * Self-chrome. Wizard + tracking identical (variant 'v3b').
  */
 const P = { bg0: '#0f1629', bg1: '#16213e', panel: '#1e2a47', amber: '#f59e0b', amberDk: '#d97706', ink: '#eef2f9', mut: '#9aa7bd', line: 'rgba(255,255,255,0.12)' };
 const TOTAL_STEPS = 4;
@@ -46,7 +47,7 @@ const NameSearchLandingV3bPage = () => {
 
   const runSearch = () => {
     gtmSetSearchInput({ firstName: firstName.trim(), lastName: lastName.trim(), middleName: middleName.trim(), city: city.trim(), state: state.trim() });
-    try { sessionStorage.removeItem('nameSearchResults'); } catch {}
+    try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
     params.set('lastName', lastName.trim());
@@ -58,7 +59,7 @@ const NameSearchLandingV3bPage = () => {
   };
   const startSearch = (e) => {
     e.preventDefault(); setNameError('');
-    if (!firstName.trim() || !lastName.trim()) { setNameError("Please enter the inmate's first and last name."); track('validation_error', { reason: 'name_required', step: 'name' }); return; }
+    if (!firstName.trim() || !lastName.trim()) { setNameError('Please enter a first and last name to search.'); track('validation_error', { reason: 'name_required', step: 'name' }); return; }
     track('search_step', { step: 'searching-one', search_type: 'name', variant: 'v3b' }); setStep('searching-one');
   };
   const continueFromLocation = () => {
@@ -75,94 +76,111 @@ const NameSearchLandingV3bPage = () => {
   };
 
   const input = { width: '100%', boxSizing: 'border-box', padding: '0.85rem 0.95rem', fontSize: '1rem', border: `1.5px solid ${P.line}`, borderRadius: 10, outline: 'none', background: 'rgba(255,255,255,0.06)', color: P.ink };
-  const btnPrimary = { width: '100%', padding: '0.95rem', fontSize: '1.02rem', fontWeight: 800, color: '#1a1206', background: `linear-gradient(180deg, ${P.amber}, ${P.amberDk})`, border: 'none', borderRadius: 10, cursor: 'pointer', boxShadow: '0 6px 18px rgba(245,158,11,0.35)' };
-  const btnGhost = { ...btnPrimary, background: 'transparent', color: P.amber, boxShadow: 'none', border: `1.5px solid ${P.amber}` };
+  const cta = { width: '100%', minHeight: 56, marginTop: '0.4rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '1.04rem', fontWeight: 800, color: '#1a1206', background: `linear-gradient(180deg, ${P.amber}, ${P.amberDk})`, border: 'none', borderRadius: 11, cursor: 'pointer', boxShadow: '0 6px 18px rgba(245,158,11,0.35)' };
+  const btnGhost = { ...cta, minHeight: 46, marginTop: '0.6rem', background: 'transparent', color: P.amber, boxShadow: 'none', border: `1.5px solid ${P.amber}`, fontSize: '0.95rem', fontWeight: 600 };
   const label = { display: 'block', fontSize: '0.78rem', fontWeight: 700, color: P.mut, margin: '0 0 0.35rem' };
   const cardStyle = { background: P.bg1, border: `1px solid ${P.line}`, borderRadius: 16, padding: '1.5rem 1.35rem' };
+  const h2 = { margin: '0 0 0.2rem', fontSize: '1.2rem', fontWeight: 800, color: P.ink };
 
   return (
     <main style={{ minHeight: '100vh', background: `linear-gradient(180deg, ${P.bg0} 0%, ${P.bg1} 100%)`, color: P.ink }}>
-      <div style={{ padding: '1.6rem 1.1rem 0.5rem', maxWidth: 920, margin: '0 auto', textAlign: 'center' }}>
-        <p style={{ margin: 0, fontSize: '0.86rem', fontWeight: 700, color: P.ink }}><span style={{ color: P.amber, fontWeight: 800 }}>{brand.name}</span> — Find Anyone, Anytime</p>
-        <h1 style={{ margin: '0.35rem 0 0.3rem', fontSize: '1.85rem', fontWeight: 800, lineHeight: 1.1, color: P.ink }}>The complete inmate record.</h1>
-        <p style={{ margin: 0, fontSize: '0.95rem', color: P.mut, maxWidth: 470, marginInline: 'auto' }}>Booking, facility, charges, and release status — from jails and prisons nationwide.</p>
+      <div style={{ padding: '1.8rem 1.1rem 0.5rem', maxWidth: 920, margin: '0 auto', textAlign: 'center' }}>
+        <h1 style={{ margin: '0 0 0.7rem', fontSize: '2rem', fontWeight: 800, lineHeight: 1.12, letterSpacing: '-0.02em', color: P.ink }}>Find Someone in Jail or Prison</h1>
+        <p style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', margin: 0, fontSize: '0.85rem', fontWeight: 600, color: P.amber, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 999, padding: '0.4rem 0.9rem' }}>
+          <Icon name="lock" style={{ width: 15, height: 15 }} /> Results in Seconds
+        </p>
       </div>
 
-      <div style={{ maxWidth: 920, margin: '1rem auto 0', padding: '0 1rem 2.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
-        <div style={{ ...cardStyle, flex: '1 1 320px' }}>
+      <div style={{ maxWidth: 920, margin: '1.1rem auto 0', padding: '0 1rem 2.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
+        {/* LEFT — the wizard */}
+        <div style={{ ...cardStyle, flex: '1 1 340px' }}>
           {stepIndex >= 2 && stepIndex <= TOTAL_STEPS && (
-            <div style={{ marginBottom: '1rem' }}>
-              <div style={{ fontSize: '0.72rem', color: P.mut, marginBottom: 4 }}>Step {stepIndex} of {TOTAL_STEPS}</div>
-              <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' }}><div style={{ width: `${(stepIndex / TOTAL_STEPS) * 100}%`, height: '100%', background: P.amber }} /></div>
+            <div style={{ marginBottom: '1.2rem' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: P.mut, marginBottom: 6 }}>Step {stepIndex} of {TOTAL_STEPS}</div>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                {[1, 2, 3, 4].map((n) => <div key={n} style={{ flex: 1, height: 6, borderRadius: 999, background: n <= stepIndex ? P.amber : 'rgba(255,255,255,0.1)' }} />)}
+              </div>
             </div>
           )}
 
           {step === 'name' && (
-            <form onSubmit={startSearch}>
-              <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.1rem', fontWeight: 800, color: P.ink }}>Search for an inmate</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.86rem', color: P.mut }}>Enter the inmate&apos;s first and last name to begin.</p>
-              <label style={label}>First name</label>
-              <input style={{ ...input, marginBottom: '0.7rem' }} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Inmate's First Name" required />
-              <label style={label}>Last name</label>
-              <input style={{ ...input, marginBottom: '1rem' }} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Inmate's Last Name" required />
-              {nameError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{nameError}</p>}
-              <button type="submit" style={btnPrimary}>Search Records →</button>
-              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: P.mut, margin: '0.75rem 0 0' }}>🔒 256-bit SSL · Confidential · Instant</p>
-            </form>
+            <>
+              <ul style={{ listStyle: 'none', margin: '0 0 1.2rem', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {BENEFITS.map(([ic, text]) => (
+                  <li key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.92rem', lineHeight: 1.4, color: P.ink }}>
+                    <Icon name={ic} style={{ width: 20, height: 20, color: P.amber, flexShrink: 0, marginTop: 1 }} /><span>{text}</span>
+                  </li>
+                ))}
+              </ul>
+              <form onSubmit={startSearch} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <div><label style={label} htmlFor="v3b-fn">First name</label><input id="v3b-fn" style={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" required /></div>
+                <div><label style={label} htmlFor="v3b-ln">Last name</label><input id="v3b-ln" style={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Smith" required /></div>
+                <details open={!!middleName} style={{ borderTop: `1px solid ${P.line}`, paddingTop: '0.4rem' }}>
+                  <summary style={{ cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: P.amber, listStyle: 'none' }}>+ Advanced search</summary>
+                  <div style={{ marginTop: '0.7rem' }}><label style={label} htmlFor="v3b-mn">Middle name (optional)</label><input id="v3b-mn" style={input} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Michael" /></div>
+                </details>
+                {nameError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: 0 }}>{nameError}</p>}
+                <button type="submit" style={cta}><Icon name="search" style={{ width: 20, height: 20 }} /> Search Records</button>
+              </form>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', margin: '1.1rem 0 0', fontSize: '0.84rem', lineHeight: 1.5, color: P.mut }}>
+                <Icon name="seal" style={{ width: 22, height: 22, color: P.amber, flexShrink: 0 }} /> Used by families, attorneys, journalists, and concerned individuals to locate incarceration records.
+              </p>
+            </>
           )}
 
-          {step === 'searching-one' && <Searching title="Searching jails & prisons…" P={P} />}
+          {step === 'searching-one' && <Searching title="Searching jails &amp; prisons…" P={P} />}
           {step === 'location' && (
             <div>
-              <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.05rem', fontWeight: 800, color: P.ink }}>Which state?</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: P.mut }}>Narrows to the right facilities. City optional.</p>
+              <h2 style={h2}>Which state?</h2>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>Narrows to the right facilities. City is optional.</p>
               <label style={label}>City (optional)</label>
               <input style={{ ...input, marginBottom: '0.7rem' }} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
-              <label style={label}>State *</label>
+              <label style={label}>State</label>
               <select style={{ ...input, marginBottom: '1rem', borderColor: locationError ? '#fca5a5' : P.line }} value={state} onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}>
                 {US_STATES.map((o) => <option key={o.value} value={o.value} style={{ color: '#111' }}>{o.label}</option>)}
               </select>
               {locationError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{locationError}</p>}
-              <button type="button" style={btnPrimary} onClick={continueFromLocation}>Continue</button>
+              <button type="button" style={cta} onClick={continueFromLocation}>Continue</button>
             </div>
           )}
           {step === 'searching-two' && <Searching title={`Finding inmate matches for ${firstName} ${lastName}…`} P={P} />}
           {step === 'details' && (
             <div>
-              <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.05rem', fontWeight: 800, color: P.ink }}>Possible inmate matches</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: P.mut }}>Add age or middle name to narrow. Optional.</p>
+              <h2 style={h2}>Possible inmate matches found</h2>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>Add age or middle name to narrow results. All fields optional.</p>
               <label style={label}>Age (optional)</label>
               <input style={{ ...input, marginBottom: '0.7rem' }} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
               <label style={label}>Middle name (optional)</label>
               <input style={{ ...input, marginBottom: '1rem' }} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Middle name" />
-              <button type="button" style={{ ...btnPrimary, marginBottom: '0.5rem' }} onClick={continueFromDetails}>Continue</button>
+              <button type="button" style={cta} onClick={continueFromDetails}>Continue</button>
               <button type="button" style={btnGhost} onClick={continueFromDetails}>Skip</button>
             </div>
           )}
           {step === 'confirm' && (
             <div>
-              <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.05rem', fontWeight: 800, color: P.ink }}>Confirm to view inmate results</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.83rem', color: P.mut }}>{brand.name} reports are not for employment, tenant, credit, or other FCRA purposes.</p>
-              <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.83rem', marginBottom: '1rem', cursor: 'pointer' }}>
+              <h2 style={h2}>Confirm to view inmate results</h2>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: P.mut }}>{brand.name} reports are not for employment, tenant screening, credit, or other FCRA purposes.</p>
+              <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.84rem', marginBottom: '1rem', cursor: 'pointer' }}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ marginTop: 3 }} />
-                <span>I will not use {brand.name} information for any purpose restricted by the FCRA.</span>
+                <span>I will not use {brand.name} information for employment, insurance, tenant screening, consumer credit, or any purpose restricted by the FCRA.</span>
               </label>
               {agreeError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{agreeError}</p>}
-              <button type="button" style={{ ...btnPrimary, marginBottom: '0.5rem' }} onClick={handleConfirm}>I Agree — View Results</button>
+              <button type="button" style={cta} onClick={handleConfirm}>I Agree — View Results</button>
               <button type="button" style={btnGhost} onClick={() => setStep('details')}>Back</button>
             </div>
           )}
           {step === 'final-search' && <Searching title="Searching our database…" P={P} />}
         </div>
 
-        <div style={{ ...cardStyle, flex: '1 1 240px', background: P.panel }}>
-          <p style={{ margin: '0 0 0.75rem', fontSize: '0.78rem', fontWeight: 800, letterSpacing: '0.04em', color: P.amber }}>EVERY INMATE REPORT INCLUDES</p>
-          {[['🏛️', 'Current facility & location'], ['📋', 'Booking & arrest records'], ['⚖️', 'Charges & case details'], ['📸', 'Mugshots'], ['📅', 'Release status & dates'], ['🔎', 'Criminal & court history']].map(([icon, l]) => (
-            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0', borderBottom: `1px solid ${P.line}`, fontSize: '0.88rem' }}>
-              <span>{icon}</span><span style={{ color: P.ink }}>{l}</span>
+        {/* RIGHT — value preview panel (two-column construct kept) */}
+        <div style={{ ...cardStyle, flex: '1 1 250px', background: P.panel }}>
+          <p style={{ margin: '0 0 0.85rem', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: P.amber }}>What you may find</p>
+          {VALUE_PREVIEW.map(([ic, l]) => (
+            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.5rem 0', borderBottom: `1px solid ${P.line}`, fontSize: '0.88rem' }}>
+              <Icon name={ic} style={{ width: 18, height: 18, color: P.amber, flexShrink: 0 }} /><span style={{ color: P.ink }}>{l}</span>
             </div>
           ))}
-          <p style={{ margin: '0.75rem 0 0', fontSize: '0.72rem', color: P.mut }}>Sourced from county, state &amp; federal facilities across 50 states.</p>
+          <p style={{ margin: '0.85rem 0 0', fontSize: '0.72rem', color: P.mut }}>Sourced from county, state &amp; federal facilities across 50 states.</p>
         </div>
       </div>
 
@@ -173,9 +191,9 @@ const NameSearchLandingV3bPage = () => {
 
 const Searching = ({ title, P }) => (
   <div style={{ textAlign: 'center', padding: '1.5rem 0.5rem' }}>
-    <div style={{ width: 44, height: 44, border: `4px solid rgba(255,255,255,0.12)`, borderTopColor: P.amber, borderRadius: '50%', margin: '0 auto 1rem', animation: 'spin 0.8s linear infinite' }} />
-    <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: P.ink }}>{title}</h2>
-    <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', color: P.mut }}>✓ County jails ✓ State prisons ✓ Federal facilities</p>
+    <div style={{ width: 46, height: 46, border: '4px solid rgba(255,255,255,0.12)', borderTopColor: P.amber, borderRadius: '50%', margin: '0 auto 1.1rem', animation: 'spin 0.8s linear infinite' }} />
+    <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: P.ink }} dangerouslySetInnerHTML={{ __html: title }} />
+    <p style={{ margin: '0.6rem 0 0', fontSize: '0.85rem', color: P.mut }}>✓ County jails ✓ State prisons ✓ Federal facilities</p>
     <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
   </div>
 );
