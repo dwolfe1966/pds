@@ -1,4 +1,12 @@
 /**
+ * ⚠️ DEPRECATED — NOT in the production path (2026-07). The consumer app only
+ * calls this when REACT_APP_TRACKING_API_URL is set, which is commented out in
+ * .env.production. Real analytics go to BC (createTracking) + GA4/GTM dataLayer.
+ * Kept for reference / the optional Admin Analytics page only. Also note: it now
+ * requires better-sqlite3 (a NATIVE module) and won't start on newer Node (Node
+ * 26 → ERR_DLOPEN_FAILED). Do not wire into launch; delete once Admin Analytics
+ * is retired or repointed at BC/GA4.
+ *
  * IDLookup Tracking + Fallback API
  *
  * Expanded from minimal event ingestion into a full standalone backend

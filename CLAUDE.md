@@ -77,5 +77,7 @@ Certain endpoints (`create-report`, `get-report`, `report-list`, `opt-out-search
 ### Mock server
 `server/index.js` is a standalone Express app with its own `node_modules` (install separately via `npm run install-server`). It uses an in-memory data store seeded from `server/seed.js`. Auth uses `jsonwebtoken` via `server/middleware/auth.js`.
 
-### Tracking API
-`tracking-api/index.js` is an independently deployable Express service (port 3002) with its own `node_modules` (install via `npm run install-tracking`). Uses **NDJSON file storage** (`tracking-api/events.ndjson`) — zero native dependencies, works on any Node 18+ without Python/node-gyp. The React client posts events via `src/services/trackingService.js` → `REACT_APP_TRACKING_API_URL/track`. Admin summary endpoint at `/events/summary` requires `x-admin-key` header (`REACT_APP_TRACKING_ADMIN_KEY`). This service has no dependency on `/server` and can be deployed independently in production. Swap storage layer to a real DB by replacing `appendEvent()`/`readEvents()` in `tracking-api/index.js`.
+### Tracking API — ⚠️ DEPRECATED (not in the production path, 2026-07)
+`tracking-api/index.js` is a standalone Express service (port 3002). **It is NOT used in production**: the consumer client only posts to it when `REACT_APP_TRACKING_API_URL` is set, which is **commented out in `.env.production`**. Real analytics go to **BC** (`createTracking`) + **GA4/GTM dataLayer** (the live conversion tracking). The client's dev auto-fallback to `:3002` was removed (`src/services/trackingService.js`), so local dev no longer errors on it.
+
+Note: despite older docs, storage is now **SQLite via `better-sqlite3`** (a NATIVE module) — so it **won't start on newer Node** (Node 26 → `ERR_DLOPEN_FAILED`). Kept only for the optional Admin Analytics page; delete once that's retired or repointed at BC/GA4.

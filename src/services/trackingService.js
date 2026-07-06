@@ -6,9 +6,10 @@
 // are distinct from BC's server-recorded `USER:*` events and can be queried
 // in admin via csrWrapper.api.tracking.findUser.
 //
-// Dev-only mirror: if REACT_APP_TRACKING_API_URL is set (or NODE_ENV=development
-// and port 3002 is running), also posts to the local NDJSON service for
-// inspection via the admin analytics pages.
+// Optional mirror to the standalone tracking-api (DEPRECATED — not in the prod
+// path; real analytics go to BC via createTracking + GA4/GTM). Only fires when
+// REACT_APP_TRACKING_API_URL is explicitly set; no dev auto-fallback to :3002
+// (that just threw connection-refused noise since the service isn't run).
 
 import api from '../api';
 import { getContextSnapshot } from './gtmContext';
@@ -17,7 +18,7 @@ const SESSION_KEY = 'trackingSessionId';
 
 const LOCAL_TRACKING_URL = process.env.REACT_APP_TRACKING_API_URL
   ? `${process.env.REACT_APP_TRACKING_API_URL}/track`
-  : (process.env.NODE_ENV === 'development' ? 'http://localhost:3002/track' : null);
+  : null;
 
 function getSessionId() {
   let id = sessionStorage.getItem(SESSION_KEY);
