@@ -14,12 +14,15 @@ if (!URL) { console.error('✗ Set DATABASE_URL (the Neon connection string) fir
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const schema = readFileSync(path.join(HERE, '..', 'db', 'schema.sql'), 'utf8');
 const sql = neon(URL);
+// The HTTP driver only runs tagged templates. Execute a raw (no-param) statement
+// by handing it a synthetic template-strings array (.raw marks it as a literal).
+const raw = (text) => sql(Object.assign([text], { raw: [text] }));
 
-// Split into statements; drop chunks that are only comments/whitespace.
-const stmts = schema.split(';')
+// Strip line comments (no string literals contain '--' in this DDL), then split.
+const stmts = schema.replace(/--[^\n]*/g, '').split(';')
   .map((s) => s.trim())
-  .filter((s) => s.replace(/--.*$/gm, '').trim().length > 0);
+  .filter(Boolean);
 
 let n = 0;
-for (const s of stmts) { await sql.query(s); n++; }
+for (const s of stmts) { await raw(s); n++; }
 console.log(`✓ applied ${n} statements to ${URL.replace(/:[^:@/]+@/, ':****@')}`);
