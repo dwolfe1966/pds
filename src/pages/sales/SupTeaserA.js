@@ -145,8 +145,11 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
   };
   const scrollToForm = (e) => { if (e) e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); };
 
-  // White surfaces, elevation instead of borders (border only on dark palette).
-  const card = { background: P.cardBg, border: P.onDark ? `1px solid ${P.cardBorder}` : 'none', borderRadius: '1.125rem', padding: '2rem 1.75rem', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 8px 24px rgba(17,24,39,0.08)' };
+  // Emphasis hierarchy (light palette): the vCard is TIER 1 — the most elevated
+  // surface + a brand accent top-bar so it reads as the star. Category rects are
+  // tier 2 (medium elevation); the unlock form is tier 3 (recessed, tinted). Dark
+  // palette keeps its bordered look.
+  const card = { background: P.cardBg, border: P.onDark ? `1px solid ${P.cardBorder}` : 'none', borderTop: P.onDark ? `1px solid ${P.cardBorder}` : `4px solid ${P.accent}`, borderRadius: '1.125rem', padding: '2rem 1.75rem', marginBottom: '1.5rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.4)' : '0 20px 48px rgba(17,24,39,0.18), 0 4px 12px rgba(17,24,39,0.07)' };
   const formLabel = { display: 'block', fontSize: '0.85rem', fontWeight: 600, color: P.ink2, marginBottom: '0.3rem' };
   const labelNote = { fontWeight: 400, fontStyle: 'italic' };
   const formInput = { width: '100%', boxSizing: 'border-box', padding: '0.75rem 0.85rem', fontSize: '1rem', border: `1.5px solid ${P.inputBorder}`, borderRadius: '0.5rem', outline: 'none', background: P.inputBg, color: P.ink };
@@ -159,7 +162,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
   );
 
   const catHoverIn = (e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = P.onDark ? '0 8px 20px rgba(0,0,0,0.4)' : '0 8px 18px rgba(17,24,39,0.12)'; };
-  const catHoverOut = (e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = P.onDark ? 'none' : '0 2px 8px rgba(17,24,39,0.06)'; };
+  const catHoverOut = (e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = P.onDark ? 'none' : '0 4px 14px rgba(17,24,39,0.08)'; };
   const ctaHoverIn = (e) => { e.currentTarget.style.filter = 'brightness(0.93)'; };
   const ctaHoverOut = (e) => { e.currentTarget.style.filter = 'none'; };
 
@@ -294,10 +297,10 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
 
         {/* Compressed record categories — white cards, accent line, hover lift */}
         {!mapLayout && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '1.5rem' }}>
           {cats.map((c) => (
             <div key={c.title} onMouseEnter={catHoverIn} onMouseLeave={catHoverOut}
-              style={{ background: P.cardBg, borderLeft: `3px solid ${P.accent}`, borderRadius: '0.6rem', padding: '0.75rem 0.9rem', boxShadow: P.onDark ? 'none' : '0 2px 8px rgba(17,24,39,0.06)', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}>
+              style={{ background: P.cardBg, borderLeft: `3px solid ${P.accent}`, borderRadius: '0.6rem', padding: '0.75rem 0.9rem', boxShadow: P.onDark ? 'none' : '0 4px 14px rgba(17,24,39,0.08)', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 700, color: P.ink, marginBottom: '0.2rem' }}>{c.icon} {c.title}</div>
               <div style={{ fontSize: '0.73rem', color: P.mut, lineHeight: 1.4 }}>{c.items}</div>
             </div>
@@ -321,8 +324,9 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
           </div>
         )}
 
-        {/* Unlock form — clean WHITE conversion card */}
-        <div id="signup-form" style={{ background: P.formBg, border: P.onDark ? `1px solid ${P.formBorder}` : 'none', borderRadius: '1.125rem', padding: '2rem 1.75rem', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 8px 24px rgba(17,24,39,0.08)' }}>
+        {/* Unlock form — TIER 3: recessed tinted panel (light palette). Sits below
+            the vCard + rects in emphasis; white inputs + orange CTA pop against it. */}
+        <div id="signup-form" style={{ background: P.onDark ? P.formBg : '#e9edf3', border: P.onDark ? `1px solid ${P.formBorder}` : '1px solid rgba(17,24,39,0.06)', borderRadius: '1.125rem', padding: '2rem 1.75rem', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 1px 2px rgba(17,24,39,0.04)' }}>
           <div style={{ textAlign: 'center', fontSize: '1.7rem', marginBottom: '0.25rem' }} aria-hidden="true">🔓</div>
           <h2 style={{ margin: '0 0 1.1rem', textAlign: 'center', fontSize: '1.35rem', fontWeight: 800, color: P.ink }}>
             {T.formTitle(person.fullName)}
