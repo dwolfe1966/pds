@@ -51,7 +51,7 @@ async function* topNames(n) {
 // Runs IN THE BROWSER: one teaser, returns trimmed identities the adapter needs.
 function inPageTeaser({ first, last, state }) {
   const w = window.ApiWrapper.getInstance({ endpointUrl: '/api' });
-  const CK = ['isCriminal','isPropertyOwner','hasEmployment','hasVehicle','propertyCount','criminalCount','emailCount','phoneCount','addressCount','relativeCount'];
+  const CK = ['isCriminal','criminalCount','isPropertyOwner','propertyCount','hasForeclosure','foreclosureCount','hasBankruptcy','bankruptcyCount','hasLien','lienCount','hasJudgment','judgmentCount','hasVehicle','vehicleCount','hasAircraft','aircraftCount','hasAssociatedBusiness','associatedBusinessCount','hasProfessionalLicense','professionalLicenseCount','hasEmployment','employmentCount','emailCount','phoneCount','addressCount','relativeCount','hasRelatives'];
   return w.api.idLookup.searchTeaser({ type: 'name', fName: first, lName: last, state, contextKey: 'sale.name.teaser' }).then((res) => {
     const failed = res && res.getFailedCode ? res.getFailedCode() : null;
     const d = res && res.getData ? res.getData() : res;

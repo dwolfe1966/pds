@@ -91,6 +91,21 @@ export default async function PersonPage({ params }) {
         <a href={unlockHref(person)} style={cta}>Unlock Full Profile →</a>
       </section>
 
+      {person.categories?.length > 0 && (
+        <section style={card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Records that may be available</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10 }}>
+            {person.categories.map((c) => (
+              <div key={c.key} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 600, fontSize: 14 }}>{c.label}</span>
+                <span style={{ color: '#0d5d2f', fontWeight: 700, fontSize: 13 }}>{c.count > 0 ? `${c.count} 🔒` : 'Available 🔒'}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ margin: '12px 0 0', fontSize: 13, color: '#6b7280' }}>Unlock the full report to view criminal, property, financial, and other record details.</p>
+        </section>
+      )}
+
       {person.priorCities.length > 0 && (
         <section style={card}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>Location history</h2>

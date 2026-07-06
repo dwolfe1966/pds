@@ -106,6 +106,29 @@ export function buildFaq(person) {
       a: `Known relatives of ${person.fullName} include ${person.relatives.map((r) => r.fullName).join(', ')}.`,
     });
   }
+  // Category FAQ — only for record types actually present (never assert absence).
+  const cats = person.categories || [];
+  const has = (k) => cats.find((c) => c.key === k);
+  if (has('criminal')) {
+    faqs.push({
+      q: `Does ${name} have a criminal record?`,
+      a: `Our public-records index indicates criminal or traffic records may be available for ${person.fullName} in ${person.city}, ${person.state}. Unlock the full report to view any available details.`,
+    });
+  }
+  const prop = has('property');
+  if (prop) {
+    faqs.push({
+      q: `Does ${name} own property?`,
+      a: `We found ${prop.count > 0 ? `${prop.count} property record${prop.count === 1 ? '' : 's'}` : 'property records'} that may be associated with ${person.fullName}. Unlock the full report for addresses and ownership details.`,
+    });
+  }
+  const fin = ['bankruptcy', 'lien', 'judgment', 'foreclosure'].map(has).filter(Boolean);
+  if (fin.length) {
+    faqs.push({
+      q: `Does ${name} have any financial or court records?`,
+      a: `Available financial and court records for ${person.fullName} may include ${fin.map((c) => c.label.toLowerCase()).join(', ')}. Unlock the full report to view details.`,
+    });
+  }
   return faqs;
 }
 

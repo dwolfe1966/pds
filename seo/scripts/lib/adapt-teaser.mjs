@@ -62,6 +62,26 @@ export function adaptIdentity(identity, nameStats) {
 
   const onRecordSince = earliestYear(nameList);
 
+  // Full per-category record signals from the teaser (presence flag + count). We
+  // surface only categories that are PRESENT (never assert absence), gated as a
+  // tease — the Spokeo model, on our licensed IDI data. label = display heading.
+  const CATS = [
+    ['criminal',    'Criminal & Traffic Records', identity.isCriminal,               identity.criminalCount],
+    ['property',    'Property & Real Estate',      identity.isPropertyOwner,          identity.propertyCount],
+    ['foreclosure', 'Foreclosures',                identity.hasForeclosure,           identity.foreclosureCount],
+    ['bankruptcy',  'Bankruptcies',                identity.hasBankruptcy,            identity.bankruptcyCount],
+    ['lien',        'Liens',                       identity.hasLien,                  identity.lienCount],
+    ['judgment',    'Judgments',                   identity.hasJudgment,              identity.judgmentCount],
+    ['vehicle',     'Vehicles',                    identity.hasVehicle,               identity.vehicleCount],
+    ['aircraft',    'Aircraft',                    identity.hasAircraft,              identity.aircraftCount],
+    ['business',    'Associated Businesses',       identity.hasAssociatedBusiness,    identity.associatedBusinessCount],
+    ['license',     'Professional Licenses',       identity.hasProfessionalLicense,   identity.professionalLicenseCount],
+    ['employment',  'Employment History',          identity.hasEmployment,            identity.employmentCount],
+  ];
+  const categories = CATS
+    .map(([key, label, flag, count]) => ({ key, label, count: toInt(count), present: !!flag || toInt(count) > 0 }))
+    .filter((c) => c.present);
+
   return {
     // STABLE id from natural attributes (name+city+state+first-seen). NOT the
     // ephemeral extId. This survives re-fetches AND lets the SUP re-find the person.
@@ -83,15 +103,11 @@ export function adaptIdentity(identity, nameStats) {
     },
     relatives,
     employers: [],
-    onRecordSince: earliestYear(nameList),
-    // Honest per-category presence, straight from the teaser (for chips/FAQ).
-    found: {
-      criminal: !!identity.isCriminal || toInt(identity.criminalCount) > 0,
-      property: !!identity.isPropertyOwner || toInt(identity.propertyCount) > 0,
-      relatives: toInt(identity.relativeCount),
-      employment: !!identity.hasEmployment,
-      vehicle: !!identity.hasVehicle,
-    },
+    onRecordSince,
+    // Present record categories (criminal/property/financial/vehicle/business/…),
+    // straight from the teaser flags+counts. Drives the "Available records" section
+    // + category FAQ. Only present categories are included.
+    categories,
     nameStats,
   };
 }
