@@ -1,0 +1,132 @@
+/* Redesigned /name/landing/v3 — incarceration-intent landing (spec 2026-07).
+   Self-chromed (see SELF_CHROME_PREFIXES). Standalone module — does NOT share the
+   old NameSearchLandingV3Page.module.css (which the email landings still use). */
+
+.page {
+  min-height: 100vh;
+  background: #f4f6f9;
+  color: #111827;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- self-chrome header ---- */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.logo { font-size: 1.15rem; font-weight: 800; color: #0d5d2f; text-decoration: none; letter-spacing: -0.01em; }
+.navLinks { display: flex; gap: 1.25rem; }
+.navLink { font-size: 0.9rem; color: #4b5563; text-decoration: none; font-weight: 500; }
+.navLink:hover { color: #0d5d2f; }
+
+/* ---- layout ---- */
+.wrapper { flex: 1; width: 100%; max-width: 620px; margin: 0 auto; padding: 1.75rem 1rem 2.5rem; box-sizing: border-box; }
+
+/* ---- hero ---- */
+.hero { text-align: center; margin-bottom: 1.4rem; }
+.headline { margin: 0 0 0.6rem; font-size: 2.15rem; line-height: 1.12; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
+.sub { margin: 0 auto 0.85rem; max-width: 34rem; font-size: 1.02rem; line-height: 1.5; color: #475569; }
+.trustLine { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; font-size: 0.85rem; font-weight: 600; color: #0d5d2f; background: #eaf5ee; border: 1px solid #cfe9d8; border-radius: 999px; padding: 0.4rem 0.9rem; }
+
+/* ---- card ---- */
+.card { background: #ffffff; border-radius: 16px; padding: 1.6rem 1.5rem; box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08), 0 2px 6px rgba(17, 24, 39, 0.04); }
+.cardTitle { margin: 0 0 1rem; font-size: 1.35rem; font-weight: 800; color: #0f172a; }
+
+/* ---- redesigned segmented progress ---- */
+.progress { margin-bottom: 1.3rem; }
+.progressLabel { margin: 0 0 0.5rem; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
+.progressTrack { display: flex; gap: 0.4rem; }
+.progressSeg { flex: 1; height: 6px; border-radius: 999px; background: #e5e7eb; transition: background 0.3s ease; }
+.progressSegOn { background: #16a34a; }
+
+/* ---- benefits (SVG icons) ---- */
+.benefits { list-style: none; margin: 0 0 1.3rem; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.benefit { display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.95rem; line-height: 1.4; color: #334155; }
+.benefitIcon { flex-shrink: 0; width: 22px; height: 22px; color: #16a34a; margin-top: 1px; }
+
+/* ---- form ---- */
+.form { display: flex; flex-direction: column; gap: 0.9rem; }
+.nameRow { display: flex; gap: 0.75rem; }
+.nameRow > * { flex: 1; }
+.field { display: flex; flex-direction: column; gap: 0.3rem; }
+.label { font-size: 0.82rem; font-weight: 600; color: #374151; }
+.input, .select {
+  width: 100%; box-sizing: border-box; padding: 0.85rem 0.9rem; font-size: 1rem;
+  border: 1.5px solid #d1d5db; border-radius: 10px; outline: none; background: #fff; color: #111827;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input:focus, .select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12); }
+
+/* ---- advanced search (expandable) ---- */
+.advanced { border-top: 1px solid #f1f5f9; padding-top: 0.4rem; }
+.advancedSummary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #0d5d2f; list-style: none; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0; }
+.advancedSummary::-webkit-details-marker { display: none; }
+.advancedBody { margin-top: 0.7rem; }
+
+/* ---- value preview (above CTA) ---- */
+.valuePreview { margin: 0.4rem 0 0.2rem; }
+.vpLabel { margin: 0 0 0.6rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
+.vpGrid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.vpChip { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.83rem; font-weight: 600; color: #334155; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 999px; padding: 0.4rem 0.75rem; }
+.vpChipIcon { width: 15px; height: 15px; color: #0d5d2f; flex-shrink: 0; }
+
+/* ---- primary CTA ---- */
+.cta {
+  width: 100%; min-height: 58px; margin-top: 0.4rem; padding: 0 1.25rem;
+  font-size: 1.08rem; font-weight: 800; color: #fff; letter-spacing: 0.01em;
+  background: #16a34a; border: none; border-radius: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35); transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+}
+.cta:hover { background: #15803d; box-shadow: 0 10px 24px rgba(22, 163, 74, 0.42); }
+.cta:active { transform: translateY(1px); }
+.ctaIcon { width: 20px; height: 20px; }
+
+.buttonSecondary { width: 100%; min-height: 46px; margin-top: 0.6rem; font-size: 0.95rem; font-weight: 600; color: #475569; background: transparent; border: 1.5px solid #d1d5db; border-radius: 10px; cursor: pointer; }
+.buttonSecondary:hover { background: #f8fafc; }
+.actions { margin-top: 0.4rem; }
+
+/* ---- trust block (below CTA) ---- */
+.trustBlock { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid #f1f5f9; }
+.trustItem { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; color: #475569; }
+.trustItemIcon { width: 17px; height: 17px; color: #16a34a; flex-shrink: 0; }
+
+/* ---- social proof ---- */
+.social { margin: 1.1rem 0 0; text-align: center; font-size: 0.85rem; line-height: 1.5; color: #64748b; }
+
+/* ---- interstitial / searching ---- */
+.searching { text-align: center; padding: 1.5rem 0.5rem; }
+.spinner { width: 46px; height: 46px; margin: 0 auto 1.1rem; border: 4px solid #e5e7eb; border-top-color: #16a34a; border-radius: 50%; animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sectionTitle { margin: 0 0 0.5rem; font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+.helper { margin: 0.35rem 0; font-size: 0.95rem; color: #475569; }
+.searchList { list-style: none; margin: 1rem auto 0; padding: 0; max-width: 18rem; text-align: left; display: flex; flex-direction: column; gap: 0.4rem; }
+.searchList li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #334155; }
+.searchList li::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #16a34a; flex-shrink: 0; }
+
+/* ---- FCRA checkbox ---- */
+.checkboxRow { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem; line-height: 1.45; color: #475569; margin-top: 0.4rem; }
+.checkboxRow input { margin-top: 0.2rem; width: 18px; height: 18px; flex-shrink: 0; accent-color: #16a34a; }
+
+.errorText { margin: 0.2rem 0 0; color: #b91c1c; font-size: 0.85rem; font-weight: 500; }
+
+/* ---- minimal footer ---- */
+.footer { background: #ffffff; border-top: 1px solid #e5e7eb; padding: 1.25rem 1rem; text-align: center; }
+.footerLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1rem; margin-bottom: 0.6rem; }
+.footerLink { font-size: 0.85rem; color: #4b5563; text-decoration: none; }
+.footerLink:hover { color: #0d5d2f; }
+.fcra { margin: 0 auto; max-width: 40rem; font-size: 0.72rem; line-height: 1.5; color: #94a3b8; }
+
+/* ---- responsive ---- */
+@media (max-width: 480px) {
+  .headline { font-size: 1.75rem; }
+  .wrapper { padding-top: 1.25rem; }
+  .card { padding: 1.3rem 1.1rem; }
+  .nameRow { flex-direction: column; gap: 0.9rem; }
+}
