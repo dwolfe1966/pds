@@ -28,9 +28,11 @@ const ALL_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID',
 const arg = (f) => { const i = process.argv.indexOf(f); return i >= 0 ? process.argv[i + 1] : null; };
 const NAMES_N = parseInt(arg('--names') || '50', 10);
 const LIMIT = parseInt(arg('--limit') || '1000000', 10);
+const TARGET = parseInt(arg('--target') || '0', 10); // stop once the DB reaches this many profiles
 const STATES = arg('--states') ? arg('--states').split(',').map((s) => s.trim().toUpperCase()) : ALL_STATES;
 const HEADED = process.env.HEADED === '1';
-const DELAY = parseInt(process.env.SWEEP_DELAY_MS || '350', 10);
+// SLOW by default — pacing is what keeps Turnstile passing invisibly. ~1 call / 4.5s.
+const DELAY = parseInt(process.env.SWEEP_DELAY_MS || '4500', 10);
 
 if (!hasDb) { console.error('✗ Set DATABASE_URL (the Neon connection string) first.'); process.exit(1); }
 
@@ -66,13 +68,34 @@ function inPageTeaser({ first, last, state }) {
   }).catch((e) => ({ failed: 'ERR', total: 0, identities: [], err: String(e && e.message || e) }));
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let browser = null, page = null;
+
+// (Re)establish a trusted browser session. Retries FOREVER with backoff — so the
+// run rides through a Turnstile flag / IP cooldown instead of dying.
+async function ensureSession() {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      if (browser) { try { await browser.close(); } catch { /* ignore */ } }
+      browser = await chromium.launch({ headless: !HEADED });
+      page = await browser.newPage();
+      await page.goto('https://www.idlookup.ai/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.waitForFunction(() => !!window.ApiWrapper, { timeout: 25000 });
+      if (attempt > 1) console.log('  ✓ session re-established');
+      return;
+    } catch (e) {
+      const wait = Math.min(60000 * attempt, 300000); // 1min → 5min cap
+      console.warn(`  session launch failed (attempt ${attempt}: ${String(e.message).slice(0, 70)}) — likely Turnstile/cooldown; waiting ${Math.round(wait / 1000)}s`);
+      await sleep(wait);
+    }
+  }
+}
+
 (async () => {
   const swept = await dbSweptSet();
-  console.log(`Sweep: top ${NAMES_N} names × ${STATES.length} states · ${swept.size} combos already done · headed=${HEADED}`);
-  const browser = await chromium.launch({ headless: !HEADED });
-  const page = await browser.newPage();
-  await page.goto('https://www.idlookup.ai/', { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.ApiWrapper, { timeout: 30000 });
+  const startCount = await dbCount();
+  console.log(`Sweep: top ${NAMES_N} names × ${STATES.length} states · ${swept.size} combos done · db=${startCount}${TARGET ? ` · target=${TARGET}` : ''} · delay=${DELAY}ms · headed=${HEADED}`);
+  await ensureSession();
 
   let searches = 0, upserts = 0, skipped = 0, fails = 0, streak = 0;
   outer:
@@ -81,29 +104,44 @@ function inPageTeaser({ first, last, state }) {
     for (const state of STATES) {
       if (swept.has(`${nameSlug}|${state}`)) { skipped++; continue; }
       if (searches >= LIMIT) break outer;
-      const r = await page.evaluate(inPageTeaser, { first, last, state });
+      if (TARGET && searches % 20 === 0 && (await dbCount()) >= TARGET) { console.log(`  target ${TARGET} reached`); break outer; }
+
+      let r;
+      try {
+        r = await page.evaluate(inPageTeaser, { first, last, state });
+      } catch (e) {
+        console.warn(`  evaluate failed (${String(e.message).slice(0, 50)}) — relaunching…`);
+        await ensureSession();
+        try { r = await page.evaluate(inPageTeaser, { first, last, state }); } catch { r = { failed: 'ERR' }; }
+      }
       searches++;
-      if (r && !r.failed && r.identities.length) {
+
+      if (r && !r.failed && r.identities && r.identities.length) {
         const payload = { commerceContent: { raws: [{ transient: { identities: r.identities, total: r.total } }] } };
         const { profiles } = adaptTeaserResponse(payload, { first, last, state });
         for (const p of profiles) { await dbUpsertProfile(p); upserts++; }
         await dbLogSweep(nameSlug, state, r.total, profiles.length);
         streak = 0;
+      } else if (r && r.failed === 'TooManyMatches') {
+        await dbLogSweep(nameSlug, state, r.total || 0, 0); // legit empty — mark done
+        streak = 0;
       } else {
-        // TooManyMatches (no state should be needed here) / captcha / empty.
-        await dbLogSweep(nameSlug, state, r?.total || 0, 0);
-        if (r?.failed && r.failed !== 'TooManyMatches') { fails++; streak++; }
+        // captcha / blocked / transient — do NOT mark done (retry next run); back off.
+        fails++; streak++;
       }
-      if (searches % 25 === 0) console.log(`  ${searches} searches · ${upserts} profiles · ${fails} non-TMM fails`);
-      // Failure burst → likely Turnstile. Pause so a human (headed) can solve.
-      if (streak >= 8) {
-        console.warn(`  ⚠ ${streak} failures in a row — likely a Turnstile challenge. Pausing 45s${HEADED ? ' (solve it in the window)' : ' — rerun with HEADED=1 if this persists'}…`);
-        await page.waitForTimeout(45000);
+
+      if (searches % 10 === 0) console.log(`  ${searches} searches · +${upserts} profiles · db≈${startCount + upserts} · ${fails} fails`);
+
+      // Failure burst → Turnstile re-challenging: cool down + relaunch a fresh session.
+      if (streak >= 5) {
+        console.warn(`  ⚠ ${streak} fails in a row — cooling 2min + relaunching (Turnstile)…`);
+        await sleep(120000);
+        await ensureSession();
         streak = 0;
       }
-      await page.waitForTimeout(DELAY + Math.floor(Math.random() * 250));
+      await sleep(DELAY + Math.floor(Math.random() * 1500));
     }
   }
-  console.log(`\n✓ done: ${searches} searches · ${upserts} upserts · ${skipped} already-done · db holds ${await dbCount()}`);
-  await browser.close();
+  console.log(`\n✓ done: ${searches} searches · +${upserts} upserts · ${skipped} already-done · db holds ${await dbCount()}`);
+  try { await browser.close(); } catch { /* ignore */ }
 })().catch((e) => { console.error('FAILED:', e.message); process.exit(1); });
