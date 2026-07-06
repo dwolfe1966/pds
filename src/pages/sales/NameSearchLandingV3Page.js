@@ -34,6 +34,7 @@ const ICON_PATHS = {
   eyeOff: <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.12 9.12 0 0 0 5.39-1.61M1 1l22 22" />,
   clock: <><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>,
   file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></>,
+  seal: <><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m9 12 2 2 4-4" /></>,
 };
 const Icon = ({ name, className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON_PATHS[name]}</svg>
@@ -183,7 +184,6 @@ const NameSearchLandingV3Page = () => {
         {step === 'name' && (
           <div className={s.hero}>
             <h1 className={s.headline}>Find Someone in Jail or Prison</h1>
-            <p className={s.sub}>Search current and historical incarceration records from correctional facilities and public-record sources.</p>
             <p className={s.trustLine}><Icon name="lock" className={s.vpChipIcon} /> Results in Seconds</p>
           </div>
         )}
@@ -247,7 +247,7 @@ const NameSearchLandingV3Page = () => {
                 <button type="submit" className={s.cta}><Icon name="search" className={s.ctaIcon} /> Search Records</button>
               </form>
 
-              <p className={s.social}>Used by families, attorneys, journalists, and concerned individuals to locate incarceration records.</p>
+              <p className={s.social}><Icon name="seal" className={s.socialIcon} /> Used by families, attorneys, journalists, and concerned individuals to locate incarceration records.</p>
             </>
           )}
 

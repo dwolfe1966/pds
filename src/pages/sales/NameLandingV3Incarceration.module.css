@@ -30,7 +30,7 @@
 
 /* ---- hero ---- */
 .hero { text-align: center; margin-bottom: 1.4rem; }
-.headline { margin: 0 0 0.35rem; font-size: 2.15rem; line-height: 1.12; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
+.headline { margin: 0 0 0.75rem; font-size: 2.15rem; line-height: 1.12; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
 .sub { margin: 0 auto 0.95rem; max-width: 34rem; font-size: 1.02rem; line-height: 1.5; color: #475569; }
 .trustLine { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; font-size: 0.85rem; font-weight: 600; color: #0d5d2f; background: #eaf5ee; border: 1px solid #cfe9d8; border-radius: 999px; padding: 0.4rem 0.9rem; }
 
@@ -98,7 +98,8 @@
 .trustItemIcon { width: 17px; height: 17px; color: #16a34a; flex-shrink: 0; }
 
 /* ---- social proof ---- */
-.social { margin: 1.1rem 0 0; text-align: center; font-size: 0.85rem; line-height: 1.5; color: #64748b; }
+.social { display: flex; align-items: center; justify-content: center; gap: 0.55rem; margin: 1.1rem 0 0; font-size: 0.85rem; line-height: 1.5; color: #64748b; text-align: left; }
+.socialIcon { width: 22px; height: 22px; color: #16a34a; flex-shrink: 0; }
 
 /* ---- interstitial / searching ---- */
 .searching { text-align: center; padding: 1.5rem 0.5rem; }
