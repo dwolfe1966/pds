@@ -306,7 +306,7 @@ const NameSearchLandingV3Page = () => {
           {step === 'confirm' && (
             <div className={s.form}>
               <h2 className={s.sectionTitle}>Confirm to view inmate results</h2>
-              <p className={s.helper}>Please confirm before we show your results. {brand.name} reports are not for employment, tenant screening, credit, or other FCRA purposes.</p>
+              <p className={s.helper}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
               <label className={s.checkboxRow}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
                 <span>I will not use information from {brand.name} for employment, insurance, tenant screening, consumer credit, or any other purpose restricted by the Fair Credit Reporting Act (FCRA).</span>

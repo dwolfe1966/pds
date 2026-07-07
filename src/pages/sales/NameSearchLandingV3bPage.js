@@ -152,7 +152,7 @@ const NameSearchLandingV3bPage = () => {
           {step === 'confirm' && (
             <div>
               <h2 style={h2}>Confirm to view inmate results</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: P.mut }}>{brand.name} reports are not for employment, tenant screening, credit, or other FCRA purposes.</p>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: P.mut }}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
               <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', fontSize: '0.84rem', marginBottom: '1rem', cursor: 'pointer' }}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ marginTop: 3 }} />
                 <span>I will not use {brand.name} information for employment, insurance, tenant screening, consumer credit, or any purpose restricted by the FCRA.</span>
