@@ -669,16 +669,6 @@ const PaymentPage = () => {
               <p className={styles.personPreviewLatest}>Latest report: {latestReportDate}</p>
             </div>
           </div>
-          <div className={styles.personPreviewResults}>
-            <p className={styles.resultsIncludeTitle}>Results May Include</p>
-            <div className={styles.resultsIncludeGrid}>
-              {RESULTS_MAY_INCLUDE.map((item) => (
-                <span key={item} className={styles.resultsIncludeItem}>
-                  <span className={styles.resultsIncludeCheck}>✓</span>{item}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
@@ -831,18 +821,11 @@ const PaymentPage = () => {
               <div className={styles.formCard}>
                 <h2 className={styles.formCardTitle}>Secure Checkout</h2>
 
-                {userInfo && (
-                  <div className={styles.payingAs}>
-                    <span className={styles.payingAsLabel}>Paying as</span>
-                    <span className={styles.payingAsValue}>{userInfo.email}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} noValidate>
+                <form id="payForm" onSubmit={handleSubmit} noValidate>
                   {/* Cardholder name — always visible; used as userInfo.firstName/lastName for BC */}
                   <div className={styles.fieldRow}>
                     <div className={styles.fieldGroup}>
-                      <label className={styles.label} htmlFor="pay-bfirst">First Name *</label>
+                      <label className={styles.label} htmlFor="pay-bfirst">First Name</label>
                       <input
                         id="pay-bfirst"
                         type="text"
@@ -856,7 +839,7 @@ const PaymentPage = () => {
                       />
                     </div>
                     <div className={styles.fieldGroup}>
-                      <label className={styles.label} htmlFor="pay-blast">Last Name *</label>
+                      <label className={styles.label} htmlFor="pay-blast">Last Name</label>
                       <input
                         id="pay-blast"
                         type="text"
@@ -969,7 +952,7 @@ const PaymentPage = () => {
                   {/* ZIP — a normal field, right below Expiry/CVV. No billing-address
                       dropdown, no street capture (owner 2026-07-03). */}
                   <div className={styles.fieldGroup}>
-                    <label className={styles.label} htmlFor="pay-zip">ZIP Code *</label>
+                    <label className={styles.label} htmlFor="pay-zip">Billing ZIP Code</label>
                     <div className={styles.inputWrap}>
                       <input
                         id="pay-zip"
@@ -1075,7 +1058,7 @@ const PaymentPage = () => {
                       // Bug #35: compliance-led CTA directly above the SUP/terms
                       // disclosure — the button text states the agreement. When there's no
                       // target report (general/promo signup), it just continues to the dashboard.
-                      (selectedPersonId ? 'I Agree, View Report Now' : 'I Agree, Continue')
+                      (selectedPersonId ? 'I Agree, Unlock Report Now' : 'I Agree, Continue')
                     )}
                   </button>
 
@@ -1123,9 +1106,6 @@ const PaymentPage = () => {
                 <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
               </div>
               <p className={styles.summaryInstant} style={theme ? { background: theme.onDark ? 'rgba(245,158,11,0.12)' : '#e6f3fa', color: theme.accentDark } : undefined}>⚡ Instant access after payment</p>
-              <p className={styles.summaryCancel}>
-                Then {recurringPriceStr}/month after your {brand.trialDays}-day trial. Cancel anytime — no hidden fees.
-              </p>
             </div>
 
             {/* (b) Benefits — header + checklist */}
@@ -1151,6 +1131,19 @@ const PaymentPage = () => {
           </>
         )}
       </div>
+      {/* Mobile-only scroll-locked CTA bar (owner) — submits the payment form. */}
+      {!success && (
+        <div className={styles.mobileCtaBar}>
+          <button
+            type="submit"
+            form="payForm"
+            disabled={loading || (requireTermsCheckbox && !agreeTerms)}
+            className={styles.mobileCtaBtn}
+          >
+            {loading ? 'Processing…' : (selectedPersonId ? 'I Agree, Unlock Report Now' : 'I Agree, Continue')}
+          </button>
+        </div>
+      )}
     </main>
   );
 };

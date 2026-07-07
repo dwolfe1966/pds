@@ -779,3 +779,30 @@
     padding: 0.9375rem 1.25rem;
   }
 }
+
+/* Mobile-only scroll-locked CTA bar (#7) — hidden on desktop, fixed at bottom on mobile. */
+.mobileCtaBar { display: none; }
+@media (max-width: 640px) {
+  .mobileCtaBar {
+    display: block;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #ffffff;
+    padding: 0.6rem 1rem;
+    box-shadow: 0 -2px 12px rgba(17, 24, 39, 0.14);
+    z-index: 50;
+  }
+  .mobileCtaBtn {
+    width: 100%;
+    padding: 0.9rem;
+    background: #f59e0b;
+    color: #111827;
+    border: none;
+    border-radius: 0.6rem;
+    font-size: 1.02rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .mobileCtaBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .layout { padding-bottom: 5rem; }
+}
