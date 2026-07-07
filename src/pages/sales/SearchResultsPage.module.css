@@ -74,7 +74,8 @@
   .title { font-size: var(--font-size-xl); margin-bottom: var(--spacing-xs); }
   .searchQuery { font-size: var(--font-size-base); margin-bottom: var(--spacing-xs); }
   .resultsCount { margin-top: var(--spacing-sm); padding-top: var(--spacing-sm); }
-  .sortControl { display: none; }
+  /* Keep sort visible on mobile (owner). */
+  .sortControl { display: flex; }
 }
 
 .resultsList {

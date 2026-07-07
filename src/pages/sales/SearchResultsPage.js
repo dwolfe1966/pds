@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
-import SearchBar from '../../components/SearchBar';
+import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext } from '../../services/searchContext';
@@ -12,7 +12,6 @@ import { useCampaign } from '../../context/CampaignContext';
 import styles from './SearchResultsPage.module.css';
 import { useBrand } from '../../services/brand';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
-import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 
 /**
  * Displays search results for public searches on the marketing funnel.
@@ -31,6 +30,8 @@ const SalesSearchResultsPage = () => {
   const firstNameParam = params.get('firstName') || '';
   const lastNameParam = params.get('lastName') || '';
   const state = params.get('state');
+  const cityParam = params.get('city') || '';
+  const ageParam = params.get('age') || '';
   const error = params.get('error');
   
   const [results, setResults] = useState([]);
@@ -75,7 +76,7 @@ const SalesSearchResultsPage = () => {
             try { sessionStorage.removeItem('nameSearchResults'); } catch {}
           } else {
             setResults(data.results || []);
-            setSearchQuery(data.query || {});
+            setSearchQuery({ ...(data.query || {}), city: cityParam || (data.query && data.query.city) || '', age: ageParam || (data.query && data.query.age) || '' });
             setTotalCount(data.pagination?.total || 0);
             if (data.searchContext) {
               setSearchContext(data.searchContext);
@@ -114,8 +115,8 @@ const SalesSearchResultsPage = () => {
           return;
         }
         
-        setSearchQuery({ firstName, lastName, state: state || '' });
-        
+        setSearchQuery({ firstName, lastName, state: state || '', city: cityParam, age: ageParam });
+
         // Build search parameters for new API
         const searchParams = {
           firstName,
@@ -125,6 +126,7 @@ const SalesSearchResultsPage = () => {
         if (state && state.trim()) {
           searchParams.state = state.trim();
         }
+        if (cityParam.trim()) searchParams.city = cityParam.trim();
         
         const response = await api.searchPeople(searchParams);
 
@@ -208,9 +210,39 @@ const SalesSearchResultsPage = () => {
     navigate(`/search/${result.id}`);
   };
 
+  // Refine search — editable first/last/state/city/age (previously name-only).
+  // Submitting re-runs the search and narrows by city/age (narrowedResults).
+  const [refine, setRefine] = useState({ firstName: '', lastName: '', state: '', city: '', age: '' });
+  useEffect(() => {
+    setRefine({
+      firstName: searchQuery.firstName || firstNameParam || '',
+      lastName: searchQuery.lastName || lastNameParam || '',
+      state: searchQuery.state || state || '',
+      city: searchQuery.city || cityParam || '',
+      age: searchQuery.age || ageParam || '',
+    });
+  }, [searchQuery.firstName, searchQuery.lastName, searchQuery.state, searchQuery.city, searchQuery.age]); // eslint-disable-line react-hooks/exhaustive-deps
+  const submitRefine = (e) => {
+    e.preventDefault();
+    const p = new URLSearchParams();
+    if (refine.firstName.trim()) p.set('firstName', refine.firstName.trim());
+    if (refine.lastName.trim()) p.set('lastName', refine.lastName.trim());
+    if (refine.state.trim()) p.set('state', refine.state.trim());
+    if (refine.city.trim()) p.set('city', refine.city.trim());
+    if (refine.age.trim()) p.set('age', refine.age.trim());
+    try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
+    track('refine_search', { has_city: !!refine.city.trim(), has_age: !!refine.age.trim() });
+    navigate(`/name/search-result?${p.toString()}`);
+  };
+  const rInput = { width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.7rem', fontSize: '0.95rem', border: `1.5px solid ${theme ? theme.line : '#d1d5db'}`, borderRadius: 8, outline: 'none', background: theme && theme.onDark ? 'rgba(255,255,255,0.06)' : '#fff', color: theme ? theme.ink : '#111827' };
+  const rLabel = { display: 'block', fontSize: '0.72rem', fontWeight: 600, color: theme ? theme.mut : '#6b7280', marginBottom: '0.25rem' };
+
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
-      <ThemedFunnelHeader theme={theme} />
+      {/* Minimal self-chrome header — matches the landing wizard (logo only, no nav). */}
+      <header style={{ display: 'flex', alignItems: 'center', padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#ffffff', borderBottom: `1px solid ${theme ? theme.line : '#e5e7eb'}` }}>
+        <a href="/" style={{ fontSize: '1.15rem', fontWeight: 800, color: theme ? theme.accent : '#0d5d2f', textDecoration: 'none', letterSpacing: '-0.01em' }}>{brand.name}</a>
+      </header>
       <div className={styles.contentContainer} style={theme ? { background: theme.surface, border: theme.onDark ? `1px solid ${theme.line}` : undefined } : undefined}>
         {/* Header Section */}
         <div className={styles.header} style={theme ? { borderBottomColor: theme.line } : undefined}>
@@ -298,17 +330,6 @@ const SalesSearchResultsPage = () => {
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    {index === 0 && sortBy === 'relevance' && (
-                      <div style={{
-                        position: 'absolute', top: '-10px', left: '1rem', zIndex: 1,
-                        background: '#d97706', color: '#fff',
-                        fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em',
-                        padding: '0.2rem 0.625rem', borderRadius: '9999px',
-                        textTransform: 'uppercase', boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                      }}>
-                        ⭐ Most Likely Match
-                      </div>
-                    )}
                     <ResultCard result={result} theme={theme} />
                   </div>
                   {index === 2 && sortedResults.length > 3 && (
@@ -390,14 +411,16 @@ const SalesSearchResultsPage = () => {
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: theme ? theme.ink : 'var(--color-text-primary)' }}>
               Not who you&apos;re looking for? Refine your search
             </h2>
-            <div style={{ maxWidth: '600px' }}>
-              <SearchBar
-                initialFirstName={searchQuery.firstName || ''}
-                initialLastName={searchQuery.lastName || ''}
-                initialQuery={query || ''}
-                theme={theme}
-              />
-            </div>
+            <form onSubmit={submitRefine} style={{ maxWidth: '640px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div><label style={rLabel}>First name</label><input style={rInput} value={refine.firstName} onChange={(e) => setRefine((r) => ({ ...r, firstName: e.target.value }))} placeholder="First name" /></div>
+                <div><label style={rLabel}>Last name</label><input style={rInput} value={refine.lastName} onChange={(e) => setRefine((r) => ({ ...r, lastName: e.target.value }))} placeholder="Last name" /></div>
+                <div><label style={rLabel}>State</label><select style={rInput} value={refine.state} onChange={(e) => setRefine((r) => ({ ...r, state: e.target.value }))}>{US_STATES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
+                <div><label style={rLabel}>City</label><input style={rInput} value={refine.city} onChange={(e) => setRefine((r) => ({ ...r, city: e.target.value }))} placeholder="City (optional)" /></div>
+                <div><label style={rLabel}>Age</label><input style={rInput} value={refine.age} onChange={(e) => setRefine((r) => ({ ...r, age: e.target.value }))} placeholder="Age (optional)" inputMode="numeric" /></div>
+              </div>
+              <button type="submit" style={{ marginTop: '0.85rem', padding: '0.7rem 1.5rem', fontSize: '0.95rem', fontWeight: 700, color: '#fff', background: theme ? theme.button : '#0d5d2f', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Refine search</button>
+            </form>
           </div>
         )}
       </div>

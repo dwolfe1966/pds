@@ -203,6 +203,15 @@ export function adaptIdentity(identity) {
     .filter(Boolean)
     .join('; ') || '';
 
+  // Distinct "City, ST" list for the SRP card (array form; the `location` string
+  // above is kept for back-compat). BC's addressList carries multiple addresses.
+  const locations = [...new Set(addressList
+    .map((a) => [a.city, a.state].filter(Boolean).join(', '))
+    .filter(Boolean))];
+  // Gender if BC supplies it (maps M/F) — else undefined → the card shows a neutral avatar.
+  const rawSex = String(identity.sex || identity.gender || '').trim().toLowerCase();
+  const gender = rawSex.startsWith('m') ? 'male' : rawSex.startsWith('f') ? 'female' : undefined;
+
   // Extract age. BC identities carry age either as a flat `ageRange` OR via
   // `dobList[0].age` — the paid report reads it the same robust way
   // (utils/reportExtract.js). Reading only `ageRange` missed the dobList case,
@@ -272,6 +281,8 @@ export function adaptIdentity(identity) {
     fullName,
     aliases,
     location,
+    locations,
+    gender,
     ageRange,
     provider: identity.meta?.provider,
     // Real teaser data footprint (honest value signals for the SUP/SRP).

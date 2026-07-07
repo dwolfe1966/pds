@@ -124,81 +124,124 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
     .join('')
     .toUpperCase();
 
+  // Gender tint for the avatar circle (4.b). BC may not supply gender → neutral.
+  const g = String(result.gender || '').toLowerCase();
+  const gt = (g === 'male' || g === 'm')
+    ? { bg: '#eaf1fb', ring: '#bcd3f0', fg: '#2563eb', sym: '♂' }
+    : (g === 'female' || g === 'f')
+    ? { bg: '#fbeaf2', ring: '#f0c6da', fg: '#db2777', sym: '♀' }
+    : { bg: '#eef2f5', ring: '#dfe5ea', fg: '#64748b', sym: '' };
+
+  // Locations (4.d): up to two, then "+N more".
+  const locs = (Array.isArray(result.locations) && result.locations.length ? result.locations : [result.location].filter(Boolean));
+  const locShown = locs.slice(0, 2);
+  const locExtra = Math.max(locs.length - 2, 0);
+
+  // Relatives (4.e): up to two names, then "+N more".
+  const rels = (Array.isArray(result.relatives) ? result.relatives : []).map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean);
+  const relShown = rels.slice(0, 2);
+  const relExtra = Math.max(rels.length - 2, 0);
+
+  // Record bubbles (4.f): any other info on file, as chips.
+  const R = result.records || {};
+  const Fl = result.flags || {};
+  const bubbles = [];
+  if (Fl.isCriminal || R.criminal > 0) bubbles.push(R.criminal > 0 ? `${R.criminal} criminal` : 'Criminal record');
+  if (Fl.isPropertyOwner || R.property > 0) bubbles.push(R.property > 0 ? `${R.property} propert${R.property > 1 ? 'ies' : 'y'}` : 'Property');
+  if (R.judgment > 0) bubbles.push('Judgment');
+  if (R.lien > 0) bubbles.push('Lien');
+  if (R.bankruptcy > 0) bubbles.push('Bankruptcy');
+  if (Fl.hasEmployment || R.employment > 0) bubbles.push('Employment');
+  if (Fl.hasProfessionalLicense || R.professionalLicense > 0) bubbles.push('License');
+  if (Fl.hasVehicle) bubbles.push('Vehicle');
+  if (R.business > 0) bubbles.push('Business');
+  if (R.phone > 0) bubbles.push(`${R.phone} phone${R.phone > 1 ? 's' : ''}`);
+  if (R.email > 0) bubbles.push(`${R.email} email${R.email > 1 ? 's' : ''}`);
+
+  const ageText = result.age ? `Age ${result.age}` : (result.ageRange ? `Age ${result.ageRange}` : '');
+  const subLabel = { fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', fontWeight: 700, marginRight: '0.35rem' };
+
   return (
     <div
       className={styles.card}
       onClick={!onClick ? handleViewDetails : undefined}
     >
-      <div className={styles.cardRow}>
-        {/* Avatar placeholder */}
-        <div style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '50%',
-          backgroundColor: theme ? (theme.onDark ? 'rgba(245,158,11,0.14)' : '#e6f3fa') : '#ecfdf5',
-          border: `2px solid ${theme ? theme.accent : '#d1fae5'}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          color: theme ? theme.accent : '#0d5d2f',
-          fontWeight: 700,
-          fontSize: '0.875rem',
-          letterSpacing: '0.02em'
-        }}>
-          {initials || '?'}
+      <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
+        {/* Avatar — initials in a gender-tinted circle + gender symbol badge (4.b) */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '50%',
+            backgroundColor: gt.bg, border: `2px solid ${gt.ring}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: gt.fg, fontWeight: 700, fontSize: '0.95rem', letterSpacing: '0.02em',
+          }}>
+            {initials || '?'}
+          </div>
+          {gt.sym && (
+            <span aria-hidden="true" style={{
+              position: 'absolute', bottom: '-2px', right: '-2px',
+              width: '20px', height: '20px', borderRadius: '50%',
+              background: '#fff', border: `1.5px solid ${gt.ring}`, color: gt.fg,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.8rem', lineHeight: 1, fontWeight: 700,
+            }}>{gt.sym}</span>
+          )}
         </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 className={styles.cardTitle}>
-            {result.fullName}
-          </h3>
-          {/* Aliases / AKAs — a strong "is this the right person?" signal.
-              Only rendered when BC returns extra names (result.aliases). */}
+          {/* Name (left) + Age (right) — top row (4.a / 4.c) */}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
+            <h3 className={styles.cardTitle} style={{ margin: 0 }}>{result.fullName}</h3>
+            {ageText && <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap', flexShrink: 0 }}>{ageText}</span>}
+          </div>
+
           {Array.isArray(result.aliases) && result.aliases.length > 0 && (
-            <p style={{ margin: '0.125rem 0 0.375rem', fontSize: '0.8rem', color: '#6b7280' }}>
+            <p style={{ margin: '0.15rem 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
               <span style={{ fontWeight: 600 }}>AKA:</span> {result.aliases.slice(0, 3).join(', ')}
               {result.aliases.length > 3 && ` +${result.aliases.length - 3} more`}
             </p>
           )}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            {result.ageRange && (
-              <p className={styles.cardInfo}>
-                <span style={{
-                  fontSize: '0.6875rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: '#9ca3af',
-                  fontWeight: 600,
-                  display: 'block',
-                  marginBottom: '0.125rem'
-                }}>Age</span>
-                {result.ageRange}
-              </p>
-            )}
-            {result.location && (
-              <p className={styles.cardInfo}>
-                <span style={{
-                  fontSize: '0.6875rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: '#9ca3af',
-                  fontWeight: 600,
-                  display: 'block',
-                  marginBottom: '0.125rem'
-                }}>Location</span>
-                {result.location}
-              </p>
-            )}
+
+          {/* Locations under name (4.d) */}
+          {locShown.length > 0 && (
+            <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
+              <span style={subLabel}>Location</span>
+              {locShown.join(' · ')}{locExtra > 0 && <span style={{ color: '#6b7280' }}> +{locExtra} more</span>}
+            </p>
+          )}
+
+          {/* Relatives under location (4.e) */}
+          {relShown.length > 0 && (
+            <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
+              <span style={subLabel}>Relatives</span>
+              {relShown.join(', ')}{relExtra > 0 && <span style={{ color: '#6b7280' }}> +{relExtra} more</span>}
+            </p>
+          )}
+
+          {/* Other info bubbles (4.f) */}
+          {bubbles.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.55rem' }}>
+              {bubbles.map((b) => (
+                <span key={b} style={{
+                  fontSize: '0.72rem', fontWeight: 600, color: '#475569',
+                  background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '999px',
+                  padding: '0.15rem 0.55rem',
+                }}>{b}</span>
+              ))}
+            </div>
+          )}
+
+          <div style={{ marginTop: '0.75rem' }}>
+            <button
+              onClick={handleViewDetails}
+              className={styles.cardButton}
+              disabled={loading}
+              style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
+            >
+              {loading ? 'Loading...' : 'View Details →'}
+            </button>
           </div>
         </div>
-        <button
-          onClick={handleViewDetails}
-          className={styles.cardButton}
-          disabled={loading}
-          style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
-        >
-          {loading ? 'Loading...' : 'View Details →'}
-        </button>
       </div>
       {createError && (
         <div

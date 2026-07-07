@@ -1370,14 +1370,22 @@ function mockSearchResults(firstName, lastName, stateFilter, cityFilter) {
       relatives.push({ name: `${REL_FIRST[rnd(i * 3 + r, REL_FIRST.length)]} ${REL_LAST[rnd(i + r + 1, REL_LAST.length)]}` });
     }
     const ageBase = Math.floor(age / 5) * 5;
+    const locCount = 1 + rnd(i + 6, 4);
+    const locations = [`${city}, ${state}`];
+    for (let l = 1; l < locCount; l++) {
+      const ls = STATES[rnd(i * 4 + l + 1, STATES.length)];
+      const lpool = STATE_CITIES[ls] || FALLBACK_CITIES;
+      locations.push(`${lpool[rnd(i + l + 2, lpool.length)]}, ${ls}`);
+    }
+    const gender = rnd(i * 2 + 3, 2) === 0 ? 'male' : 'female';
     out.push({
       id: `mock-${firstName}-${lastName}-${i}`.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       extId: `mockext-${firstName}${lastName}${i}`.replace(/[^A-Za-z0-9]/g, ''),
-      firstName, lastName, middleName: middle,
+      firstName, lastName, middleName: middle, gender,
       fullName,
       aliases: hasMiddle ? [`${firstName} ${lastName}`] : [],
       age, ageRange: `${ageBase}-${ageBase + 4}`,
-      city, state, location: `${city}, ${state}`,
+      city, state, location: `${city}, ${state}`, locations,
       address: '••••• ••••••',
       phone: '(•••) •••-••••', phones: phoneCount,
       records: {
