@@ -49,9 +49,9 @@ const COPY = {
     formTitle: (n) => `Unlock ${n}'s Report`,
     emailNote: '— so we can email your report to you.',
     pwNote: '— keeps your report private and secure.',
-    cta: 'Unlock Report →',
-    ctaLoading: 'Unlocking…',
-    stickyCta: '🔓 Unlock Report →',
+    cta: 'View Report →',
+    ctaLoading: 'Loading…',
+    stickyCta: 'View Report →',
   },
   aggressive: {
     hookIcon: '🔍',
@@ -65,7 +65,7 @@ const COPY = {
   },
 };
 
-const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
+const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = false }) => {
   const aggressive = tone === 'aggressive';
   const realMap = layout === 'realmap';
   const mapLayout = layout === 'map' || realMap;
@@ -176,11 +176,13 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
 
       {/* Centered content column (premium desktop framing) */}
       <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 1rem' }}>
-        {/* Hook line */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.25rem 0 0.75rem', fontSize: aggressive ? '1.25rem' : '1.1rem', fontWeight: aggressive ? 800 : 700, color: P.ink }}>
-          <span style={{ color: P.accent, fontSize: '1.15rem' }} aria-hidden="true">{T.hookIcon}</span>
-          {T.hook(person.fullName)}
-        </div>
+        {/* Hook line — removed on every variant except C (owner). */}
+        {showHook && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.25rem 0 0.75rem', fontSize: aggressive ? '1.25rem' : '1.1rem', fontWeight: aggressive ? 800 : 700, color: P.ink }}>
+            <span style={{ color: P.accent, fontSize: '1.15rem' }} aria-hidden="true">{T.hookIcon}</span>
+            {T.hook(person.fullName)}
+          </div>
+        )}
 
         {/* Variant C: urgency strip — the report already exists; sign up to see it. */}
         {aggressive && (
@@ -342,12 +344,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
                 <label style={formLabel} htmlFor="sup-email">Email address <span style={labelNote}>{T.emailNote}</span></label>
                 <input id="sup-email" type="email" name="email" value={email} onChange={e => setEmail(e.target.value)} style={formInput} placeholder="you@email.com" required autoComplete="email" />
               </div>
-              {emailOnly ? (
-                <p style={{ margin: '0 0 1rem', fontSize: '0.8rem', color: P.mut, display: 'flex', gap: '0.4rem', alignItems: 'flex-start' }}>
-                  <span style={{ color: P.accent }}>🔒</span>
-                  No password to create — we&apos;ll set up secure access and show your login details right after checkout.
-                </p>
-              ) : (
+              {!emailOnly && (
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={formLabel} htmlFor="sup-password">Create a password <span style={labelNote}>{T.pwNote}</span></label>
                   <input id="sup-password" type="password" name="password" value={password} onChange={e => setPassword(e.target.value)} style={formInput} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
@@ -383,12 +380,13 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup }) => {
           </div>
         </div>
 
-        {/* Reassurance — bulleted, below the form */}
-        <ul style={{ margin: '0 0 1.5rem', padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: P.mut, fontSize: '0.85rem', lineHeight: 1.5 }}>
-          {aggressive && <li>Join <strong>3 million+</strong> members who trust {brand.name} to find the truth.</li>}
-          <li>Your trial membership includes full access to name, phone, and email searches.</li>
-          <li>Your satisfaction is important to us. If you&apos;re not fully satisfied, call our customer care team at <a href="tel:8662041902" style={{ color: P.accent, fontWeight: 600 }}>866-204-1902</a>.</li>
-        </ul>
+        {/* Reassurance — the trial + satisfaction bullets were removed (owner). The
+            social-proof line stays only on the aggressive tone. */}
+        {aggressive && (
+          <ul style={{ margin: '0 0 1.5rem', padding: '0 0 0 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: P.mut, fontSize: '0.85rem', lineHeight: 1.5 }}>
+            <li>Join <strong>3 million+</strong> members who trust {brand.name} to find the truth.</li>
+          </ul>
+        )}
       </div>
 
       {/* Sticky mobile CTA — reduced weight: white footer with an inset orange button */}

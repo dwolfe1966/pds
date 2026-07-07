@@ -8,7 +8,7 @@ import SupTeaserA, { SUP_PALETTE_GREEN } from './SupTeaserA';
 // duplicated layout, and it inherits the same REAL teaser-count logic (no fake
 // data). Re-created 2026-07-04 per owner (the old dead C was deleted earlier).
 const SearchDetailPreviewVariantC = ({ person, id }) => (
-  <SupTeaserA person={person} id={id} palette={SUP_PALETTE_GREEN} tone="aggressive" />
+  <SupTeaserA person={person} id={id} palette={SUP_PALETTE_GREEN} tone="aggressive" showHook />
 );
 
 export default SearchDetailPreviewVariantC;
