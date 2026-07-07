@@ -274,6 +274,30 @@ const PaymentPage = () => {
   // rotate the BC clientId to dodge the signup velocity block (see below).
   const priorSaleFailedRef = useRef(false);
 
+  // ── Abandoned-checkout trigger ──────────────────────────────────────────────
+  // A signed-up user reaches this page with an email already captured (the SUP
+  // signup created their account). Fire a `checkout_abandoned` signal when they
+  // leave WITHOUT completing — the highest-intent recovery audience there is.
+  // NB: this only fires the SIGNAL. The recovery email is sent DOWNSTREAM (a BC
+  // abandoned-cart flow or an email platform listening for this event) — email
+  // logic does not live in the SPA (architecture decision). No PII is pushed to
+  // the dataLayer; BC already holds the user's email from signup.
+  const successRef = useRef(false);
+  const abandonFiredRef = useRef(false);
+  useEffect(() => { successRef.current = success; }, [success]);
+  useEffect(() => {
+    const fireAbandon = () => {
+      if (successRef.current || abandonFiredRef.current) return;
+      abandonFiredRef.current = true;
+      let hasTarget = false;
+      try { hasTarget = !!sessionStorage.getItem('selectedPersonId'); } catch { /* ignore */ }
+      track('checkout_abandoned', { offer_key: SIGNUP_OFFER_KEY, has_target: hasTarget });
+      gtmEvent('checkout_abandoned', { funnel_step: 'payment' });
+    };
+    window.addEventListener('pagehide', fireAbandon);
+    return () => { window.removeEventListener('pagehide', fireAbandon); fireAbandon(); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
