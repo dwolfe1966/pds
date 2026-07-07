@@ -124,13 +124,19 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
     .join('')
     .toUpperCase();
 
-  // Gender tint for the avatar circle (4.b). BC may not supply gender → neutral.
+  // Avatar background varies per result (deterministic by id/name).
+  const AV_BGS = [
+    { bg: '#eef2ff', fg: '#4f46e5' }, { bg: '#ecfdf5', fg: '#059669' },
+    { bg: '#fff7ed', fg: '#c2410c' }, { bg: '#fdf2f8', fg: '#be185d' },
+    { bg: '#eff6ff', fg: '#2563eb' }, { bg: '#f5f3ff', fg: '#7c3aed' },
+    { bg: '#fefce8', fg: '#a16207' }, { bg: '#f0fdfa', fg: '#0d9488' },
+  ];
+  let _h = 0;
+  for (const c of String(result.id || result.fullName || '')) _h = (_h * 31 + c.charCodeAt(0)) >>> 0;
+  const av = AV_BGS[_h % AV_BGS.length];
+  // Gender symbol if known (BC sex or inferred from name); else a neutral person icon.
   const g = String(result.gender || '').toLowerCase();
-  const gt = (g === 'male' || g === 'm')
-    ? { bg: '#eaf1fb', ring: '#bcd3f0', fg: '#2563eb', sym: '♂' }
-    : (g === 'female' || g === 'f')
-    ? { bg: '#fbeaf2', ring: '#f0c6da', fg: '#db2777', sym: '♀' }
-    : { bg: '#eef2f5', ring: '#dfe5ea', fg: '#64748b', sym: '' };
+  const genderSym = (g === 'male' || g === 'm') ? '♂' : (g === 'female' || g === 'f') ? '♀' : null;
 
   // Locations (4.d): up to two, then "+N more".
   const locs = (Array.isArray(result.locations) && result.locations.length ? result.locations : [result.location].filter(Boolean));
@@ -166,82 +172,69 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
       className={styles.card}
       onClick={!onClick ? handleViewDetails : undefined}
     >
-      <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-        {/* Avatar — initials in a gender-tinted circle + gender symbol badge (4.b) */}
+      {/* Top row: avatar + name + age (4.a–4.c) */}
+      <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <div style={{
-            width: '52px', height: '52px', borderRadius: '50%',
-            backgroundColor: gt.bg, border: `2px solid ${gt.ring}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: gt.fg, fontWeight: 700, fontSize: '0.95rem', letterSpacing: '0.02em',
+            width: '40px', height: '40px', borderRadius: '50%',
+            backgroundColor: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: av.fg, fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.02em',
           }}>
-            {initials || '?'}
+            {genderSym ? (initials || '?') : (
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
+            )}
           </div>
-          {gt.sym && (
+          {genderSym && (
             <span aria-hidden="true" style={{
-              position: 'absolute', bottom: '-2px', right: '-2px',
-              width: '20px', height: '20px', borderRadius: '50%',
-              background: '#fff', border: `1.5px solid ${gt.ring}`, color: gt.fg,
+              position: 'absolute', bottom: '-3px', right: '-3px',
+              width: '17px', height: '17px', borderRadius: '50%',
+              background: '#fff', border: `1.5px solid ${av.bg}`, color: av.fg,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.8rem', lineHeight: 1, fontWeight: 700,
-            }}>{gt.sym}</span>
+              fontSize: '0.72rem', lineHeight: 1, fontWeight: 700, boxShadow: '0 1px 2px rgba(0,0,0,0.14)',
+            }}>{genderSym}</span>
           )}
         </div>
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name (left) + Age (right) — top row (4.a / 4.c) */}
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
-            <h3 className={styles.cardTitle} style={{ margin: 0 }}>{result.fullName}</h3>
-            {ageText && <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap', flexShrink: 0 }}>{ageText}</span>}
-          </div>
-
-          {Array.isArray(result.aliases) && result.aliases.length > 0 && (
-            <p style={{ margin: '0.15rem 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
-              <span style={{ fontWeight: 600 }}>AKA:</span> {result.aliases.slice(0, 3).join(', ')}
-              {result.aliases.length > 3 && ` +${result.aliases.length - 3} more`}
-            </p>
-          )}
-
-          {/* Locations under name (4.d) */}
-          {locShown.length > 0 && (
-            <p style={{ margin: '0.4rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
-              <span style={subLabel}>Location</span>
-              {locShown.join(' · ')}{locExtra > 0 && <span style={{ color: '#6b7280' }}> +{locExtra} more</span>}
-            </p>
-          )}
-
-          {/* Relatives under location (4.e) */}
-          {relShown.length > 0 && (
-            <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
-              <span style={subLabel}>Relatives</span>
-              {relShown.join(', ')}{relExtra > 0 && <span style={{ color: '#6b7280' }}> +{relExtra} more</span>}
-            </p>
-          )}
-
-          {/* Other info bubbles (4.f) */}
-          {bubbles.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.55rem' }}>
-              {bubbles.map((b) => (
-                <span key={b} style={{
-                  fontSize: '0.72rem', fontWeight: 600, color: '#475569',
-                  background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '999px',
-                  padding: '0.15rem 0.55rem',
-                }}>{b}</span>
-              ))}
-            </div>
-          )}
-
-          <div style={{ marginTop: '0.75rem' }}>
-            <button
-              onClick={handleViewDetails}
-              className={styles.cardButton}
-              disabled={loading}
-              style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
-            >
-              {loading ? 'Loading...' : 'View Details →'}
-            </button>
-          </div>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <h3 className={styles.cardTitle} style={{ margin: 0 }}>{result.fullName}</h3>
+          {ageText && <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap', flexShrink: 0 }}>{ageText}</span>}
         </div>
+      </div>
+
+      {/* Below — full-width, left-aligned to the card's left edge (owner) */}
+      {Array.isArray(result.aliases) && result.aliases.length > 0 && (
+        <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
+          <span style={{ fontWeight: 600 }}>AKA:</span> {result.aliases.slice(0, 3).join(', ')}
+          {result.aliases.length > 3 && ` +${result.aliases.length - 3} more`}
+        </p>
+      )}
+      {locShown.length > 0 && (
+        <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
+          <span style={subLabel}>Location</span>
+          {locShown.join(' · ')}{locExtra > 0 && <span style={{ color: '#6b7280' }}> +{locExtra} more</span>}
+        </p>
+      )}
+      {relShown.length > 0 && (
+        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
+          <span style={subLabel}>Relatives</span>
+          {relShown.join(', ')}{relExtra > 0 && <span style={{ color: '#6b7280' }}> +{relExtra} more</span>}
+        </p>
+      )}
+      {bubbles.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.55rem' }}>
+          {bubbles.map((b) => (
+            <span key={b} style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '999px', padding: '0.15rem 0.55rem' }}>{b}</span>
+          ))}
+        </div>
+      )}
+      <div style={{ marginTop: '0.85rem' }}>
+        <button
+          onClick={handleViewDetails}
+          className={styles.cardButton}
+          disabled={loading}
+          style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
+        >
+          {loading ? 'Loading...' : 'View Details →'}
+        </button>
       </div>
       {createError && (
         <div

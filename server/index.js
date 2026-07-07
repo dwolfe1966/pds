@@ -1377,7 +1377,8 @@ function mockSearchResults(firstName, lastName, stateFilter, cityFilter) {
       const lpool = STATE_CITIES[ls] || FALLBACK_CITIES;
       locations.push(`${lpool[rnd(i + l + 2, lpool.length)]}, ${ls}`);
     }
-    const gender = rnd(i * 2 + 3, 2) === 0 ? 'male' : 'female';
+    const gr = rnd(i * 2 + 3, 4); // ~25% unknown → neutral person icon on the card
+    const gender = gr === 0 ? undefined : (rnd(i + 1, 2) === 0 ? 'male' : 'female');
     out.push({
       id: `mock-${firstName}-${lastName}-${i}`.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       extId: `mockext-${firstName}${lastName}${i}`.replace(/[^A-Za-z0-9]/g, ''),

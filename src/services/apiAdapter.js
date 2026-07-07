@@ -4,6 +4,7 @@
  * Transforms responses from the new API to match the format expected by the application.
  * This allows components to work with a consistent data structure regardless of which API is used.
  */
+import { inferGender } from '../utils/inferGender';
 
 /**
  * Transform teaser search response from new API to application format
@@ -210,7 +211,8 @@ export function adaptIdentity(identity) {
     .filter(Boolean))];
   // Gender if BC supplies it (maps M/F) — else undefined → the card shows a neutral avatar.
   const rawSex = String(identity.sex || identity.gender || '').trim().toLowerCase();
-  const gender = rawSex.startsWith('m') ? 'male' : rawSex.startsWith('f') ? 'female' : undefined;
+  const gender = rawSex.startsWith('m') ? 'male' : rawSex.startsWith('f') ? 'female'
+    : inferGender(identity.nameList && identity.nameList[0] && identity.nameList[0].first);
 
   // Extract age. BC identities carry age either as a flat `ageRange` OR via
   // `dobList[0].age` — the paid report reads it the same robust way
