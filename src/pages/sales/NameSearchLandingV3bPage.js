@@ -85,10 +85,7 @@ const NameSearchLandingV3bPage = () => {
   return (
     <main style={{ minHeight: '100vh', background: `linear-gradient(180deg, ${P.bg0} 0%, ${P.bg1} 100%)`, color: P.ink }}>
       <div style={{ padding: '1.8rem 1.1rem 0.5rem', maxWidth: 920, margin: '0 auto', textAlign: 'center' }}>
-        <h1 style={{ margin: '0 0 0.7rem', fontSize: '2rem', fontWeight: 800, lineHeight: 1.12, letterSpacing: '-0.02em', color: P.ink }}>Find Someone in Jail or Prison</h1>
-        <p style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', margin: 0, fontSize: '0.85rem', fontWeight: 600, color: P.amber, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 999, padding: '0.4rem 0.9rem' }}>
-          <Icon name="lock" style={{ width: 15, height: 15 }} /> Results in Seconds
-        </p>
+        <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, lineHeight: 1.12, letterSpacing: '-0.02em', color: P.ink }}>Find Someone in Jail or Prison</h1>
       </div>
 
       <div style={{ maxWidth: 920, margin: '1.1rem auto 0', padding: '0 1rem 2.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-start' }}>
@@ -113,12 +110,8 @@ const NameSearchLandingV3bPage = () => {
                 ))}
               </ul>
               <form onSubmit={startSearch} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                <div><label style={label} htmlFor="v3b-fn">First name</label><input id="v3b-fn" style={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" required /></div>
-                <div><label style={label} htmlFor="v3b-ln">Last name</label><input id="v3b-ln" style={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Smith" required /></div>
-                <details open={!!middleName} style={{ borderTop: `1px solid ${P.line}`, paddingTop: '0.4rem' }}>
-                  <summary style={{ cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: P.amber, listStyle: 'none' }}>+ Advanced search</summary>
-                  <div style={{ marginTop: '0.7rem' }}><label style={label} htmlFor="v3b-mn">Middle name (optional)</label><input id="v3b-mn" style={input} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Michael" /></div>
-                </details>
+                <div><label style={label} htmlFor="v3b-fn">Inmate First name</label><input id="v3b-fn" style={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="ex. John" required /></div>
+                <div><label style={label} htmlFor="v3b-ln">Inmate Last name</label><input id="v3b-ln" style={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="ex. Smith" required /></div>
                 {nameError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: 0 }}>{nameError}</p>}
                 <button type="submit" style={cta}><Icon name="search" style={{ width: 20, height: 20 }} /> Search Records</button>
               </form>

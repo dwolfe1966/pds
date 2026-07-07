@@ -24,9 +24,9 @@ export const Icon = ({ name, className, style }) => (
 
 // The three benefit bullets (step 1) and the "What you may find" value-preview list.
 export const BENEFITS = [
-  ['users', 'Reconnect with an incarcerated friend or family member'],
-  ['pin', "Find out where they're held — and what comes next"],
-  ['search', 'A comprehensive scan of jails, prisons & public records'],
+  ['users', 'Reconnect with a loved one'],
+  ['pin', "Find out where they're held"],
+  ['search', 'Comprehensive Scan'],
 ];
 
 export const VALUE_PREVIEW = [

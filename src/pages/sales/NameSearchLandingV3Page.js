@@ -173,10 +173,6 @@ const NameSearchLandingV3Page = () => {
       {/* self-chrome minimal header (spec: no Login / Sign Up) */}
       <header className={s.nav}>
         <a href="/" className={s.logo}>{brand.name}</a>
-        <nav className={s.navLinks}>
-          <a href="/privacy" className={s.navLink}>Privacy</a>
-          <a href="/contact" className={s.navLink}>Support</a>
-        </nav>
       </header>
 
       <div className={s.wrapper}>
@@ -184,7 +180,6 @@ const NameSearchLandingV3Page = () => {
         {step === 'name' && (
           <div className={s.hero}>
             <h1 className={s.headline}>Find Someone in Jail or Prison</h1>
-            <p className={s.trustLine}><Icon name="lock" className={s.vpChipIcon} /> Results in Seconds</p>
           </div>
         )}
 
@@ -205,49 +200,39 @@ const NameSearchLandingV3Page = () => {
           {step === 'name' && (
             <>
               <ul className={s.benefits}>
-                <li className={s.benefit}><Icon name="users" className={s.benefitIcon} /><span>Reconnect with an incarcerated friend or family member</span></li>
-                <li className={s.benefit}><Icon name="pin" className={s.benefitIcon} /><span>Find out where they&apos;re held — and what comes next</span></li>
-                <li className={s.benefit}><Icon name="search" className={s.benefitIcon} /><span>A comprehensive scan of jails, prisons &amp; public records</span></li>
+                <li className={s.benefit}><Icon name="users" className={s.benefitIcon} /><span>Reconnect with a loved one</span></li>
+                <li className={s.benefit}><Icon name="pin" className={s.benefitIcon} /><span>Find out where they&apos;re held</span></li>
+                <li className={s.benefit}><Icon name="search" className={s.benefitIcon} /><span>Comprehensive Scan</span></li>
               </ul>
 
               <form className={s.form} onSubmit={startSearch}>
                 <div className={s.nameRow}>
                   <div className={s.field}>
-                    <label className={s.label} htmlFor="v3-firstName">First name</label>
-                    <input id="v3-firstName" type="text" className={s.input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" required />
+                    <label className={s.label} htmlFor="v3-firstName">Inmate First name</label>
+                    <input id="v3-firstName" type="text" className={s.input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="ex. John" required />
                   </div>
                   <div className={s.field}>
-                    <label className={s.label} htmlFor="v3-lastName">Last name</label>
-                    <input id="v3-lastName" type="text" className={s.input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Smith" required />
+                    <label className={s.label} htmlFor="v3-lastName">Inmate Last name</label>
+                    <input id="v3-lastName" type="text" className={s.input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="ex. Smith" required />
                   </div>
                 </div>
-
-                <details className={s.advanced} open={!!middleName}>
-                  <summary className={s.advancedSummary}>+ Advanced search</summary>
-                  <div className={s.advancedBody}>
-                    <div className={s.field}>
-                      <label className={s.label} htmlFor="v3-middleName">Middle name (optional)</label>
-                      <input id="v3-middleName" type="text" className={s.input} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Michael" />
-                    </div>
-                  </div>
-                </details>
 
                 {nameError && <p className={s.errorText}>{nameError}</p>}
-
-                {/* Value preview — the payoff, ABOVE the CTA (spec) */}
-                <div className={s.valuePreview}>
-                  <p className={s.vpLabel}>What you may find</p>
-                  <div className={s.vpGrid}>
-                    {VALUE_PREVIEW.map(([ic, label]) => (
-                      <span key={label} className={s.vpChip}><Icon name={ic} className={s.vpChipIcon} />{label}</span>
-                    ))}
-                  </div>
-                </div>
 
                 <button type="submit" className={s.cta}><Icon name="search" className={s.ctaIcon} /> Search Records</button>
               </form>
 
               <p className={s.social}><Icon name="seal" className={s.socialIcon} /> Used by families, attorneys, journalists, and concerned individuals to locate incarceration records.</p>
+
+              {/* Value preview — moved BELOW the social proof (owner) */}
+              <div className={s.valuePreview}>
+                <p className={s.vpLabel}>What you may find</p>
+                <div className={s.vpGrid}>
+                  {VALUE_PREVIEW.map(([ic, label]) => (
+                    <span key={label} className={s.vpChip}><Icon name={ic} className={s.vpChipIcon} />{label}</span>
+                  ))}
+                </div>
+              </div>
             </>
           )}
 

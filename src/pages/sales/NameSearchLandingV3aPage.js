@@ -87,10 +87,7 @@ const NameSearchLandingV3aPage = () => {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '1.75rem 1rem 2.5rem' }}>
         {step === 'name' && (
           <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
-            <h1 style={{ margin: '0 0 0.75rem', fontSize: '2.1rem', lineHeight: 1.12, fontWeight: 800, letterSpacing: '-0.02em', color: P.ink }}>Find Someone in Jail or Prison</h1>
-            <p style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', margin: 0, fontSize: '0.85rem', fontWeight: 600, color: P.blueDark, background: '#e3f1f9', border: '1px solid #c6e3f2', borderRadius: 999, padding: '0.4rem 0.9rem' }}>
-              <Icon name="lock" style={{ width: 15, height: 15, color: P.blue }} /> Results in Seconds
-            </p>
+            <h1 style={{ margin: 0, fontSize: '2.1rem', lineHeight: 1.12, fontWeight: 800, letterSpacing: '-0.02em', color: P.ink }}>Find Someone in Jail or Prison</h1>
           </div>
         )}
 
@@ -116,26 +113,23 @@ const NameSearchLandingV3aPage = () => {
 
               <form onSubmit={startSearch} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <div style={{ flex: 1 }}><label style={label} htmlFor="v3a-fn">First name</label><input id="v3a-fn" style={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" required /></div>
-                  <div style={{ flex: 1 }}><label style={label} htmlFor="v3a-ln">Last name</label><input id="v3a-ln" style={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Smith" required /></div>
+                  <div style={{ flex: 1 }}><label style={label} htmlFor="v3a-fn">Inmate First name</label><input id="v3a-fn" style={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="ex. John" required /></div>
+                  <div style={{ flex: 1 }}><label style={label} htmlFor="v3a-ln">Inmate Last name</label><input id="v3a-ln" style={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="ex. Smith" required /></div>
                 </div>
-                <details open={!!middleName} style={{ borderTop: '1px solid #eef3f7', paddingTop: '0.4rem' }}>
-                  <summary style={{ cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600, color: P.blue, listStyle: 'none' }}>+ Advanced search</summary>
-                  <div style={{ marginTop: '0.7rem' }}><label style={label} htmlFor="v3a-mn">Middle name (optional)</label><input id="v3a-mn" style={input} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Michael" /></div>
-                </details>
                 {nameError && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: 0 }}>{nameError}</p>}
-                <div>
-                  <p style={secLabel}>What you may find</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {VALUE_PREVIEW.map(([ic, l]) => <span key={l} style={chip}><Icon name={ic} style={{ width: 15, height: 15, color: P.blueDark, flexShrink: 0 }} />{l}</span>)}
-                  </div>
-                </div>
                 <button type="submit" style={cta}><Icon name="search" style={{ width: 20, height: 20 }} /> Search Records</button>
               </form>
 
               <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem', margin: '1.1rem 0 0', fontSize: '0.85rem', lineHeight: 1.5, color: P.mut, textAlign: 'left' }}>
                 <Icon name="seal" style={{ width: 22, height: 22, color: P.blue, flexShrink: 0 }} /> Used by families, attorneys, journalists, and concerned individuals to locate incarceration records.
               </p>
+
+              <div style={{ marginTop: '1.3rem', paddingTop: '1.3rem', borderTop: '1px solid #eef3f7' }}>
+                <p style={secLabel}>What you may find</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {VALUE_PREVIEW.map(([ic, l]) => <span key={l} style={chip}><Icon name={ic} style={{ width: 15, height: 15, color: P.blueDark, flexShrink: 0 }} />{l}</span>)}
+                </div>
+              </div>
             </>
           )}
 
