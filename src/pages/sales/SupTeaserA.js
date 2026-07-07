@@ -46,7 +46,7 @@ const COPY = {
   default: {
     hookIcon: '✓',
     hook: (n) => `Get Instant Information on ${n}`,
-    formTitle: (n) => `Unlock ${n}'s Report`,
+    formTitle: (n) => `View ${n}'s Report`,
     emailNote: '— so we can email your report to you.',
     pwNote: '— keeps your report private and secure.',
     cta: 'View Report →',
@@ -329,7 +329,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
         {/* Unlock form — TIER 3: recessed tinted panel (light palette). Sits below
             the vCard + rects in emphasis; white inputs + orange CTA pop against it. */}
         <div id="signup-form" style={{ background: P.onDark ? P.formBg : '#e9edf3', border: P.onDark ? `1px solid ${P.formBorder}` : '1px solid rgba(17,24,39,0.06)', borderRadius: '1.125rem', padding: '2rem 1.75rem', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 1px 2px rgba(17,24,39,0.04)' }}>
-          <div style={{ textAlign: 'center', fontSize: '1.7rem', marginBottom: '0.25rem' }} aria-hidden="true">🔓</div>
+          <div style={{ textAlign: 'center', fontSize: '1.7rem', marginBottom: '0.25rem' }} aria-hidden="true">🔍</div>
           <h2 style={{ margin: '0 0 1.1rem', textAlign: 'center', fontSize: '1.35rem', fontWeight: 800, color: P.ink }}>
             {T.formTitle(person.fullName)}
           </h2>
@@ -408,7 +408,7 @@ export const SUP_PALETTE_GREEN = {
   formBg: '#ffffff', formBorder: 'rgba(17,24,39,0.08)', inputBg: '#ffffff', inputBorder: '#d1d5db',
   cta: '#f59e0b', ctaText: '#111827',
   verifiedBg: '#ecfdf3', verifiedText: '#15803d', verifiedBorder: 'rgba(21,128,61,0.25)',
-  headerBg: '#ffffff', headerText: '#15803d', onDark: false,
+  headerBg: '#0d5d2f', headerText: '#ffffff', onDark: false,
 };
 
 export const SUP_PALETTE_BLUE = {
