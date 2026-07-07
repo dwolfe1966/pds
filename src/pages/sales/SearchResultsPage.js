@@ -379,16 +379,16 @@ const SalesSearchResultsPage = () => {
                   style={{
                     padding: '0.75rem 2rem',
                     borderRadius: '0.375rem',
-                    border: `2px solid ${theme ? theme.accent : '#0d5d2f'}`,
+                    border: `2px solid ${theme ? theme.accent : '#16a34a'}`,
                     background: '#fff',
-                    color: theme ? theme.accent : '#0d5d2f',
+                    color: theme ? theme.accent : '#16a34a',
                     fontWeight: 600,
                     fontSize: '1rem',
                     cursor: loadingMore ? 'wait' : 'pointer',
                     transition: 'all 0.2s ease'
                   }}
-                  onMouseEnter={(e) => { if (!loadingMore) { e.currentTarget.style.backgroundColor = '#0d5d2f'; e.currentTarget.style.color = '#fff'; }}}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#0d5d2f'; }}
+                  onMouseEnter={(e) => { if (!loadingMore) { e.currentTarget.style.backgroundColor = '#16a34a'; e.currentTarget.style.color = '#fff'; }}}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#16a34a'; }}
                 >
                   {loadingMore ? 'Loading…' : 'Load more results'}
                 </button>
@@ -419,7 +419,7 @@ const SalesSearchResultsPage = () => {
                 <div><label style={rLabel}>City</label><input style={rInput} value={refine.city} onChange={(e) => setRefine((r) => ({ ...r, city: e.target.value }))} placeholder="City (optional)" /></div>
                 <div><label style={rLabel}>Age</label><input style={rInput} value={refine.age} onChange={(e) => setRefine((r) => ({ ...r, age: e.target.value }))} placeholder="Age (optional)" inputMode="numeric" /></div>
               </div>
-              <button type="submit" style={{ marginTop: '0.85rem', padding: '0.7rem 1.5rem', fontSize: '0.95rem', fontWeight: 700, color: '#fff', background: theme ? theme.button : '#0d5d2f', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Refine search</button>
+              <button type="submit" style={{ marginTop: '0.85rem', padding: '0.7rem 1.5rem', fontSize: '0.95rem', fontWeight: 700, color: '#fff', background: theme ? theme.button : '#16a34a', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Refine search</button>
             </form>
           </div>
         )}

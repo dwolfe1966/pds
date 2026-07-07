@@ -408,8 +408,9 @@
 .submitBtn {
   width: 100%;
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%);
-  color: #fff;
+  /* Unlock/commit orange — matches the SUP "View Report" CTA (green = find, orange = pay). */
+  background: #f59e0b;
+  color: #111827;
   border: none;
   border-radius: 0.625rem;
   font-size: 1.0625rem;

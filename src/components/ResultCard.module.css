@@ -52,7 +52,8 @@
 .cardButton {
   margin-top: 0;
   padding: 0.625rem 1.25rem;
-  background-color: var(--color-primary);
+  /* Discovery green — brighter than the dark chrome so it pops off the card + header. */
+  background-color: #16a34a;
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
