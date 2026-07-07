@@ -240,7 +240,7 @@ const SalesSearchResultsPage = () => {
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
       {/* Minimal self-chrome header — matches the landing wizard (logo only, no nav). */}
-      <header style={{ display: 'flex', alignItems: 'center', padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#0d5d2f', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
+      <header style={{ display: 'flex', alignItems: 'center', padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#16a34a', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
         <a href="/" style={{ fontSize: '1.15rem', fontWeight: 800, color: theme && theme.onDark ? theme.accent : '#ffffff', textDecoration: 'none', letterSpacing: '-0.01em' }}>{brand.name}</a>
       </header>
       <div className={styles.contentContainer} style={theme ? { background: theme.surface, border: theme.onDark ? `1px solid ${theme.line}` : undefined } : undefined}>

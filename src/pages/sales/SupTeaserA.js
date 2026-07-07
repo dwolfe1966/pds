@@ -174,8 +174,9 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
         <span style={{ fontWeight: 700 }}>🔒 {brand.name}</span>
       </div>
 
-      {/* Centered content column (premium desktop framing) */}
-      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '0 1rem' }}>
+      {/* Centered content column (premium desktop framing). Top padding lifts the
+          vCard off the green header so the two greens don't butt together (owner). */}
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '1.75rem 1rem 0' }}>
         {/* Hook line — removed on every variant except C (owner). */}
         {showHook && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '1.25rem 0 0.75rem', fontSize: aggressive ? '1.25rem' : '1.1rem', fontWeight: aggressive ? 800 : 700, color: P.ink }}>
@@ -389,13 +390,8 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
         )}
       </div>
 
-      {/* Sticky mobile CTA — reduced weight: white footer with an inset orange button */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: P.onDark ? '#0f1629' : '#ffffff', padding: '0.5rem 1rem', boxShadow: '0 -2px 12px rgba(17,24,39,0.12)' }}>
-        <a href="#signup-form" onClick={scrollToForm} onMouseEnter={ctaHoverIn} onMouseLeave={ctaHoverOut}
-          style={{ display: 'block', maxWidth: '640px', margin: '0 auto', background: P.cta, color: P.ctaText, textAlign: 'center', padding: '0.8rem', fontWeight: 800, textDecoration: 'none', borderRadius: '0.6rem', boxShadow: '0 4px 12px rgba(245,158,11,0.3)', transition: 'filter 0.15s ease' }}>
-          {T.stickyCta}
-        </a>
-      </div>
+      {/* Sticky mobile CTA removed (owner) — the orange anchored button conflicted
+          with the green chrome; the in-form CTA carries the conversion. */}
     </main>
   );
 };
@@ -408,7 +404,7 @@ export const SUP_PALETTE_GREEN = {
   formBg: '#ffffff', formBorder: 'rgba(17,24,39,0.08)', inputBg: '#ffffff', inputBorder: '#d1d5db',
   cta: '#f59e0b', ctaText: '#111827',
   verifiedBg: '#ecfdf3', verifiedText: '#15803d', verifiedBorder: 'rgba(21,128,61,0.25)',
-  headerBg: '#0d5d2f', headerText: '#ffffff', onDark: false,
+  headerBg: '#16a34a', headerText: '#ffffff', onDark: false,
 };
 
 export const SUP_PALETTE_BLUE = {
