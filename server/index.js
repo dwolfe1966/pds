@@ -1318,8 +1318,89 @@ app.get('/api/v1/search/by-address', (req, res) => {
 });
 
 // GET /api/v1/search
+// Dev-only: fabricate a realistic, RICH result set for any name search, so the
+// sales funnel (SERP → SUP → Payment) can be reviewed locally with close-to-real
+// data. Deterministic per name (same search → same people). Mirrors the BC teaser-
+// adapted shape the SUP/Payment consume (records/flags/relatives/onRecordSince).
+function mockSearchResults(firstName, lastName, stateFilter, cityFilter) {
+  const STATE_CITIES = {
+    AL: ['Birmingham', 'Montgomery', 'Mobile'], AK: ['Anchorage', 'Juneau', 'Fairbanks'], AZ: ['Phoenix', 'Tucson', 'Mesa'], AR: ['Little Rock', 'Fayetteville', 'Fort Smith'],
+    CA: ['Los Angeles', 'San Diego', 'San Jose', 'Sacramento', 'Fresno'], CO: ['Denver', 'Colorado Springs', 'Aurora', 'Boulder'], CT: ['Bridgeport', 'Hartford', 'New Haven'],
+    DE: ['Wilmington', 'Dover', 'Newark'], FL: ['Miami', 'Orlando', 'Tampa', 'Jacksonville'], GA: ['Atlanta', 'Augusta', 'Savannah', 'Macon'], HI: ['Honolulu', 'Hilo', 'Kailua'],
+    ID: ['Boise', 'Nampa', 'Meridian'], IL: ['Chicago', 'Aurora', 'Springfield', 'Peoria'], IN: ['Indianapolis', 'Fort Wayne', 'Evansville'], IA: ['Des Moines', 'Cedar Rapids', 'Davenport'],
+    KS: ['Wichita', 'Overland Park', 'Topeka'], KY: ['Louisville', 'Lexington', 'Bowling Green'], LA: ['New Orleans', 'Baton Rouge', 'Shreveport'], ME: ['Portland', 'Lewiston', 'Bangor'],
+    MD: ['Baltimore', 'Rockville', 'Annapolis'], MA: ['Boston', 'Worcester', 'Springfield'], MI: ['Detroit', 'Grand Rapids', 'Ann Arbor'], MN: ['Minneapolis', 'Saint Paul', 'Rochester'],
+    MS: ['Jackson', 'Gulfport', 'Biloxi'], MO: ['Kansas City', 'St. Louis', 'Springfield'], MT: ['Billings', 'Missoula', 'Bozeman'], NE: ['Omaha', 'Lincoln', 'Bellevue'],
+    NV: ['Las Vegas', 'Reno', 'Henderson'], NH: ['Manchester', 'Nashua', 'Concord'], NJ: ['Newark', 'Jersey City', 'Trenton'], NM: ['Albuquerque', 'Santa Fe', 'Las Cruces'],
+    NY: ['New York', 'Buffalo', 'Rochester', 'Albany'], NC: ['Charlotte', 'Raleigh', 'Greensboro', 'Durham'], ND: ['Fargo', 'Bismarck', 'Grand Forks'], OH: ['Columbus', 'Cleveland', 'Cincinnati'],
+    OK: ['Oklahoma City', 'Tulsa', 'Norman'], OR: ['Portland', 'Salem', 'Eugene'], PA: ['Philadelphia', 'Pittsburgh', 'Allentown'], RI: ['Providence', 'Warwick', 'Cranston'],
+    SC: ['Columbia', 'Charleston', 'Greenville'], SD: ['Sioux Falls', 'Rapid City', 'Pierre'], TN: ['Nashville', 'Memphis', 'Knoxville'], TX: ['Houston', 'Dallas', 'Austin', 'San Antonio'],
+    UT: ['Salt Lake City', 'Provo', 'Ogden'], VT: ['Burlington', 'Montpelier', 'Rutland'], VA: ['Virginia Beach', 'Richmond', 'Norfolk'], WA: ['Seattle', 'Spokane', 'Tacoma'],
+    WV: ['Charleston', 'Huntington', 'Morgantown'], WI: ['Milwaukee', 'Madison', 'Green Bay'], WY: ['Cheyenne', 'Casper', 'Laramie'], DC: ['Washington'],
+  };
+  const STATES = Object.keys(STATE_CITIES);
+  const FALLBACK_CITIES = ['Springfield', 'Franklin', 'Clinton', 'Salem', 'Madison', 'Georgetown'];
+  const MIDDLES = ['A', 'J', 'M', 'R', 'L', 'D', 'E', 'T', 'W', 'C'];
+  const REL_FIRST = ['Sarah', 'Michael', 'Linda', 'James', 'Patricia', 'Robert', 'Mary', 'David', 'Angela', 'Thomas'];
+  const REL_LAST = [lastName, 'Johnson', 'Brown', 'Davis', 'Miller', 'Wilson', 'Garcia'];
+  let seed = 0;
+  for (const c of `${firstName}${lastName}`.toLowerCase()) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+  const rnd = (i, mod) => ((seed + (i + 1) * 2654435761) >>> 0) % mod;
+  const count = 5 + (seed % 4); // 5–8 matches
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const state = stateFilter || STATES[rnd(i * 7, STATES.length)];
+    const cityPool = STATE_CITIES[state] || FALLBACK_CITIES;
+    const dcity = cityPool[rnd(i * 5 + 1, cityPool.length)];
+    const city = (cityFilter && i < 2) ? cityFilter.replace(/\b\w/g, (m) => m.toUpperCase()) : dcity;
+    const age = 22 + rnd(i * 3 + 1, 55);
+    const hasMiddle = rnd(i, 3) > 0;
+    const middle = hasMiddle ? MIDDLES[rnd(i + 1, MIDDLES.length)] : '';
+    const fullName = [firstName, middle, lastName].filter(Boolean).join(' ');
+    const phoneCount = 1 + rnd(i + 2, 4);
+    const emailCount = rnd(i + 4, 3);
+    const addrCount = 1 + rnd(i + 1, 4);
+    const relCount = rnd(i + 5, 4);
+    const isCriminal = rnd(i * 2 + 1, 4) === 0;
+    const criminalCount = isCriminal ? 1 + rnd(i, 3) : 0;
+    const isProp = rnd(i + 3, 3) === 0;
+    const propCount = isProp ? 1 + rnd(i, 2) : 0;
+    const relatives = [];
+    for (let r = 0; r < Math.min(relCount, 3); r++) {
+      relatives.push({ name: `${REL_FIRST[rnd(i * 3 + r, REL_FIRST.length)]} ${REL_LAST[rnd(i + r + 1, REL_LAST.length)]}` });
+    }
+    const ageBase = Math.floor(age / 5) * 5;
+    out.push({
+      id: `mock-${firstName}-${lastName}-${i}`.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+      extId: `mockext-${firstName}${lastName}${i}`.replace(/[^A-Za-z0-9]/g, ''),
+      firstName, lastName, middleName: middle,
+      fullName,
+      aliases: hasMiddle ? [`${firstName} ${lastName}`] : [],
+      age, ageRange: `${ageBase}-${ageBase + 4}`,
+      city, state, location: `${city}, ${state}`,
+      address: '••••• ••••••',
+      phone: '(•••) •••-••••', phones: phoneCount,
+      records: {
+        address: addrCount, phone: phoneCount, residentialPhone: phoneCount, mobilePhone: 0,
+        email: emailCount, criminal: criminalCount, property: propCount, relatives: relCount,
+        employment: rnd(i, 3) === 0 ? 1 + rnd(i, 2) : 0, professionalLicense: rnd(i + 2, 4) === 0 ? 1 : 0,
+        bankruptcy: 0, lien: rnd(i + 1, 8) === 0 ? 1 : 0, judgment: rnd(i, 6) === 0 ? 1 : 0,
+        foreclosure: 0, business: rnd(i + 1, 5) === 0 ? 1 : 0,
+      },
+      flags: {
+        isCriminal, isPropertyOwner: isProp, hasEmployment: rnd(i, 3) === 0,
+        hasProfessionalLicense: rnd(i + 2, 4) === 0, hasVehicle: rnd(i, 2) === 0,
+      },
+      relatives,
+      onRecordSince: 1998 + rnd(i * 2, 26),
+      provider: 'mock',
+    });
+  }
+  return out;
+}
+
 app.get('/api/v1/search', (req, res) => {
-  let { firstName, lastName, name, state, city, zip, page = 1, limit = 20 } = req.query;
+  let { firstName, lastName, name, state, city, page = 1, limit = 20 } = req.query;
 
   // Support both formats: firstName/lastName or single "name" parameter
   if (name && !firstName && !lastName) {
@@ -1338,43 +1419,17 @@ app.get('/api/v1/search', (req, res) => {
     });
   }
 
-  // Normalize filters - only use if they're non-empty strings
   const stateFilter = state && state.trim() ? state.trim().toUpperCase() : null;
-  const cityFilter = city && city.trim() ? city.trim().toLowerCase() : null;
-  const zipFilter = zip && zip.trim() ? zip.trim() : null;
+  const cityFilter = city && city.trim() ? city.trim() : null;
 
-  // More flexible search - match if full name contains both first and last name
-  let results = dataStore.people.filter(p => {
-    const fullNameLower = p.fullName.toLowerCase();
-    const searchFirst = firstName.toLowerCase().trim();
-    const searchLast = lastName.toLowerCase().trim();
-    const searchFull = `${searchFirst} ${searchLast}`.toLowerCase();
-
-    // Match if full name contains the complete search string (first + last)
-    // This ensures "John Smith" matches "John Smith" but not just "John" or "Smith"
-    const nameMatch = fullNameLower.includes(searchFull);
-
-    // Filter by state/city/zip if provided (check addresses)
-    const stateMatch = !stateFilter || (p.addresses && p.addresses.some(a => a.state === stateFilter));
-    const cityMatch = !cityFilter || (p.addresses && p.addresses.some(a => (a.city || '').toLowerCase().includes(cityFilter)));
-    const zipMatch = !zipFilter || (p.addresses && p.addresses.some(a => a.zip === zipFilter));
-
-    return nameMatch && stateMatch && cityMatch && zipMatch;
-  });
-
+  const results = mockSearchResults(firstName.trim(), lastName.trim(), stateFilter, cityFilter);
   const pageNum = parseInt(page);
   const limitNum = Math.min(parseInt(limit), 100);
   const start = (pageNum - 1) * limitNum;
   const end = start + limitNum;
-  const paginatedResults = results.slice(start, end);
 
   res.json({
-    data: paginatedResults.map(p => ({
-      id: p.id,
-      fullName: p.fullName,
-      ageRange: p.ageRange,
-      location: p.location
-    })),
+    data: results.slice(start, end),
     pagination: {
       limit: limitNum,
       page: pageNum,
