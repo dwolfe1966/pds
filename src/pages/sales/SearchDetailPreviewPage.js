@@ -86,6 +86,13 @@ const SearchDetailPreviewPage = () => {
 
   const signupFormRef = useRef(null);
 
+  // Persist the SUP marketing variant (a–j) so downstream signup + purchase events
+  // can attribute back to it. Previously only the LANDING variant (funnel.variant)
+  // was captured, leaving the whole 9-way SUP test invisible to conversion analytics.
+  useEffect(() => {
+    try { sessionStorage.setItem('funnel.supVariant', variant); } catch { /* ignore */ }
+  }, [variant]);
+
   useEffect(() => {
     const loadPersonAndCreateReport = async () => {
       const storedPerson = sessionStorage.getItem(`result_${id}`);
@@ -97,7 +104,7 @@ const SearchDetailPreviewPage = () => {
           // case where the user reached the teaser via a direct URL (back/share
           // link) and didn't go through a ResultCard click.
           gtmSetSearchTarget({ ...personData, extId: personData.extId || id });
-          track('teaser_view', { personId: id });
+          track('teaser_view', { personId: id, sup_variant: variant });
           gtmTeaserView({ identity_id: id, search_type: personData?.searchType || undefined });
 
           // Only create report if user has an active paid subscription (BC session exists).

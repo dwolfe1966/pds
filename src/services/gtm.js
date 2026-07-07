@@ -82,8 +82,10 @@ function baseContext() {
     if (typeof sessionStorage !== 'undefined') {
       const v = sessionStorage.getItem('funnel.variant');
       const st = sessionStorage.getItem('funnel.searchType');
+      const sv = sessionStorage.getItem('funnel.supVariant');
       if (v) ctx.funnel_variant = v;
       if (st) ctx.funnel_search_type = st;
+      if (sv) ctx.funnel_sup_variant = sv;
     }
   } catch { /* ignore */ }
   return ctx;

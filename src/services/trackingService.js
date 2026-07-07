@@ -143,8 +143,10 @@ function funnelContext() {
     const out = {};
     const variant = sessionStorage.getItem('funnel.variant');
     const searchType = sessionStorage.getItem('funnel.searchType');
+    const supVariant = sessionStorage.getItem('funnel.supVariant');
     if (variant) out.variant = variant;
     if (searchType) out.search_type = searchType;
+    if (supVariant) out.sup_variant = supVariant;
     return out;
   } catch { return {}; }
 }
