@@ -125,14 +125,14 @@ const NameSearchLandingV3bPage = () => {
           {step === 'location' && (
             <div>
               <h2 style={h2}>Which state?</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>Narrows to the right facilities. City is optional.</p>
-              <label style={label}>City (optional)</label>
-              <input style={{ ...input, marginBottom: '0.7rem' }} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>State helps us locate the inmate. Adding a city improves the results.</p>
               <label style={label}>State</label>
               <select style={{ ...input, marginBottom: '1rem', borderColor: locationError ? '#fca5a5' : P.line }} value={state} onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}>
                 {US_STATES.map((o) => <option key={o.value} value={o.value} style={{ color: '#111' }}>{o.label}</option>)}
               </select>
               {locationError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{locationError}</p>}
+              <label style={label}>City (optional)</label>
+              <input style={{ ...input, marginBottom: '1rem' }} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
               <button type="button" style={cta} onClick={continueFromLocation}>Continue</button>
             </div>
           )}

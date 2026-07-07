@@ -252,17 +252,17 @@ const NameSearchLandingV3Page = () => {
           {step === 'location' && (
             <div className={s.form}>
               <h2 className={s.sectionTitle}>Which state?</h2>
-              <p className={s.helper}>State narrows the search to county jails and state prisons. City is optional.</p>
-              <div className={s.field}>
-                <label className={s.label} htmlFor="v3-city">City (optional)</label>
-                <input id="v3-city" type="text" className={s.input} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
-              </div>
+              <p className={s.helper}>State helps us locate the inmate. Adding a city improves the results.</p>
               <div className={s.field}>
                 <label className={s.label} htmlFor="v3-state">State</label>
                 <select id="v3-state" className={s.select} value={state} onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }} aria-invalid={!!locationError} style={locationError ? { borderColor: '#b91c1c' } : undefined}>
                   {usStates.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
                 </select>
                 {locationError && <p className={s.errorText} role="alert">{locationError}</p>}
+              </div>
+              <div className={s.field}>
+                <label className={s.label} htmlFor="v3-city">City (optional)</label>
+                <input id="v3-city" type="text" className={s.input} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
               </div>
               <div className={s.actions}>
                 <button type="button" className={s.cta} onClick={continueFromLocation}>Continue</button>

@@ -138,14 +138,14 @@ const NameSearchLandingV3aPage = () => {
           {step === 'location' && (
             <div>
               <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>Which state?</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>Narrows the search to the right county jails &amp; state prisons. City is optional.</p>
-              <label style={label} htmlFor="v3a-city">City (optional)</label>
-              <input id="v3a-city" style={{ ...input, marginBottom: '0.75rem' }} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>State helps us locate the inmate. Adding a city improves the results.</p>
               <label style={label} htmlFor="v3a-state">State</label>
               <select id="v3a-state" style={{ ...input, marginBottom: '1rem', borderColor: locationError ? '#b91c1c' : P.line }} value={state} onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }}>
                 {US_STATES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
               {locationError && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{locationError}</p>}
+              <label style={label} htmlFor="v3a-city">City (optional)</label>
+              <input id="v3a-city" style={{ ...input, marginBottom: '1rem' }} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
               <button type="button" style={cta} onClick={continueFromLocation}>Continue</button>
             </div>
           )}
