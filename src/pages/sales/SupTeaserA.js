@@ -75,7 +75,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
   const brand = useBrand();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { submit: submitSignup, loading, error, success } = useSignup();
+  const { submit: submitSignup, loading, error, success, setError } = useSignup();
 
   const initials = (person.fullName || '?')
     .split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?';
@@ -133,15 +133,26 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Validate here — the form is noValidate, so the HTML `required`/type=email
+    // checks don't fire and an empty email would otherwise submit.
+    const emailTrim = email.trim();
+    if (!emailTrim || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+      if (setError) setError('Please enter a valid email address.');
+      return;
+    }
+    if (!emailOnly && (!password || password.length < 8)) {
+      if (setError) setError('Please create a password of at least 8 characters.');
+      return;
+    }
     if (emailOnly) {
       // Autogenerate a password (no field). Flag it so PaymentPage knows to reveal
       // it on the confirmation screen (only auto-generated ones are shown).
       const pw = generatePassword();
       try { sessionStorage.setItem('_pwAuto', '1'); } catch { /* storage unavailable */ }
-      submitSignup({ email, password: pw, optin: true, selectedPersonId: id || null });
+      submitSignup({ email: emailTrim, password: pw, optin: true, selectedPersonId: id || null });
       return;
     }
-    submitSignup({ email, password, optin: true, selectedPersonId: id || null });
+    submitSignup({ email: emailTrim, password, optin: true, selectedPersonId: id || null });
   };
   const scrollToForm = (e) => { if (e) e.preventDefault(); document.getElementById('signup-form')?.scrollIntoView({ behavior: 'smooth' }); };
 
@@ -402,7 +413,7 @@ export const SUP_PALETTE_GREEN = {
   accent: '#15803d', accentGrad: 'linear-gradient(135deg, #0d5d2f 0%, #1a7a42 100%)',
   cardBg: '#ffffff', cardBorder: 'rgba(17,24,39,0.08)', chipBg: '#ffffff',
   formBg: '#ffffff', formBorder: 'rgba(17,24,39,0.08)', inputBg: '#ffffff', inputBorder: '#d1d5db',
-  cta: '#f59e0b', ctaText: '#111827',
+  cta: '#16a34a', ctaText: '#ffffff',
   verifiedBg: '#ecfdf3', verifiedText: '#15803d', verifiedBorder: 'rgba(21,128,61,0.25)',
   headerBg: '#0d5d2f', headerText: '#ffffff', onDark: false,
 };

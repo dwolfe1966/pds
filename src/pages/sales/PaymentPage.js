@@ -663,9 +663,18 @@ const PaymentPage = () => {
               <p className={styles.personPreviewName}>
                 {selectedPerson.fullName}{selectedPerson.ageRange ? `, Age ${selectedPerson.ageRange}` : ''}
               </p>
-              {selectedPerson.location && (
-                <p className={styles.personPreviewMeta}>{selectedPerson.location}</p>
-              )}
+              {(() => {
+                const locs = (Array.isArray(selectedPerson.locations) && selectedPerson.locations.length)
+                  ? selectedPerson.locations
+                  : [selectedPerson.location].filter(Boolean);
+                if (!locs.length) return null;
+                const extra = Math.max(locs.length - 2, 0);
+                return (
+                  <p className={styles.personPreviewMeta}>
+                    {locs.slice(0, 2).join(' · ')}{extra > 0 ? ` +${extra} more` : ''}
+                  </p>
+                );
+              })()}
               <p className={styles.personPreviewLatest}>Latest report: {latestReportDate}</p>
             </div>
           </div>
