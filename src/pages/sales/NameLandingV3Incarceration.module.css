@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.85rem 1.25rem;
-  background: #16a34a;
+  background: #0d5d2f;
   border-bottom: none;
 }
 .logo { font-size: 1.15rem; font-weight: 800; color: #ffffff; text-decoration: none; letter-spacing: -0.01em; }
@@ -118,7 +118,7 @@
 .errorText { margin: 0.2rem 0 0; color: #b91c1c; font-size: 0.85rem; font-weight: 500; }
 
 /* ---- minimal footer ---- */
-.footer { background: #16a34a; border-top: none; padding: 1.25rem 1rem; text-align: center; }
+.footer { background: #0d5d2f; border-top: none; padding: 1.25rem 1rem; text-align: center; }
 .footerLinks { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1rem; margin-bottom: 0.6rem; }
 .footerLink { font-size: 0.85rem; color: rgba(255, 255, 255, 0.85); text-decoration: none; }
 .footerLink:hover { color: #ffffff; }

@@ -404,7 +404,7 @@ export const SUP_PALETTE_GREEN = {
   formBg: '#ffffff', formBorder: 'rgba(17,24,39,0.08)', inputBg: '#ffffff', inputBorder: '#d1d5db',
   cta: '#f59e0b', ctaText: '#111827',
   verifiedBg: '#ecfdf3', verifiedText: '#15803d', verifiedBorder: 'rgba(21,128,61,0.25)',
-  headerBg: '#16a34a', headerText: '#ffffff', onDark: false,
+  headerBg: '#0d5d2f', headerText: '#ffffff', onDark: false,
 };
 
 export const SUP_PALETTE_BLUE = {

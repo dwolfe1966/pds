@@ -646,7 +646,7 @@ const PaymentPage = () => {
       {theme ? (
         <div style={{ margin: '-2.5rem -1rem 1.5rem' }}><ThemedFunnelHeader theme={theme} /></div>
       ) : (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-2.5rem -1rem 1.5rem', padding: '0.75rem 1rem', fontSize: '0.85rem', background: '#16a34a', borderBottom: 'none' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-2.5rem -1rem 1.5rem', padding: '0.75rem 1rem', fontSize: '0.85rem', background: '#0d5d2f', borderBottom: 'none' }}>
           <Link to="/name/search-result" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back to Results</Link>
           <span style={{ fontWeight: 700, color: '#ffffff' }}>🔒 {brand.name}</span>
         </div>

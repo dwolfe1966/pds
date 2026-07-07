@@ -240,7 +240,7 @@ const SalesSearchResultsPage = () => {
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
       {/* Minimal self-chrome header — matches the landing wizard (logo only, no nav). */}
-      <header style={{ display: 'flex', alignItems: 'center', padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#16a34a', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
+      <header style={{ display: 'flex', alignItems: 'center', padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#0d5d2f', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
         <a href="/" style={{ fontSize: '1.15rem', fontWeight: 800, color: theme && theme.onDark ? theme.accent : '#ffffff', textDecoration: 'none', letterSpacing: '-0.01em' }}>{brand.name}</a>
       </header>
       <div className={styles.contentContainer} style={theme ? { background: theme.surface, border: theme.onDark ? `1px solid ${theme.line}` : undefined } : undefined}>
@@ -424,6 +424,17 @@ const SalesSearchResultsPage = () => {
           </div>
         )}
       </div>
+      {/* Minimal footer — was missing on the SERP; matches the landing chrome. */}
+      <footer style={{ background: theme && theme.onDark ? theme.surface : '#0d5d2f', padding: '1.5rem 1rem 2rem', textAlign: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.4rem 1rem', marginBottom: '0.6rem' }}>
+          <a href="/privacy" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>Privacy Policy</a>
+          <a href="/terms" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>Terms</a>
+          <a href="/contact" style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>Contact</a>
+        </div>
+        <p style={{ margin: '0 auto', maxWidth: '40rem', fontSize: '0.72rem', lineHeight: 1.5, color: 'rgba(255,255,255,0.62)' }}>
+          {brand.name} is not a consumer reporting agency as defined by the Fair Credit Reporting Act (FCRA). Do not use this site for employment, tenant screening, credit, or any other FCRA-regulated purpose.
+        </p>
+      </footer>
     </main>
   );
 };
