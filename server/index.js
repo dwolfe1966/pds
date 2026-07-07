@@ -1340,6 +1340,12 @@ function mockSearchResults(firstName, lastName, stateFilter, cityFilter) {
   };
   const STATES = Object.keys(STATE_CITIES);
   const FALLBACK_CITIES = ['Springfield', 'Franklin', 'Clinton', 'Salem', 'Madison', 'Georgetown'];
+  // Gender inferred from the searched first name (mirrors the real adapter). Uncommon
+  // names → unknown → the card shows a neutral person icon.
+  const MALE_N = new Set(['john', 'james', 'robert', 'michael', 'david', 'william', 'richard', 'joseph', 'thomas', 'charles', 'daniel', 'mark', 'paul', 'steven', 'kevin', 'brian', 'george', 'jason', 'ryan', 'eric', 'justin', 'scott', 'brandon', 'matthew', 'anthony', 'donald', 'kenneth', 'joshua', 'andrew', 'tyler', 'jacob', 'gary', 'jose', 'frank', 'peter', 'patrick', 'dennis', 'aaron', 'henry', 'adam', 'nathan', 'zachary', 'kyle']);
+  const FEMALE_N = new Set(['mary', 'patricia', 'jennifer', 'linda', 'elizabeth', 'barbara', 'susan', 'jessica', 'sarah', 'karen', 'nancy', 'lisa', 'betty', 'sandra', 'ashley', 'dorothy', 'kimberly', 'emily', 'donna', 'michelle', 'carol', 'amanda', 'melissa', 'deborah', 'stephanie', 'rebecca', 'laura', 'maria', 'angela', 'emma', 'olivia', 'sophia', 'grace', 'hannah', 'samantha', 'victoria', 'natalie', 'abigail', 'isabella', 'madison', 'charlotte', 'amber', 'danielle', 'brittany']);
+  const fnl = firstName.toLowerCase();
+  const inferredGender = MALE_N.has(fnl) ? 'male' : FEMALE_N.has(fnl) ? 'female' : undefined;
   const MIDDLES = ['A', 'J', 'M', 'R', 'L', 'D', 'E', 'T', 'W', 'C'];
   const REL_FIRST = ['Sarah', 'Michael', 'Linda', 'James', 'Patricia', 'Robert', 'Mary', 'David', 'Angela', 'Thomas'];
   const REL_LAST = [lastName, 'Johnson', 'Brown', 'Davis', 'Miller', 'Wilson', 'Garcia'];
@@ -1377,8 +1383,7 @@ function mockSearchResults(firstName, lastName, stateFilter, cityFilter) {
       const lpool = STATE_CITIES[ls] || FALLBACK_CITIES;
       locations.push(`${lpool[rnd(i + l + 2, lpool.length)]}, ${ls}`);
     }
-    const gr = rnd(i * 2 + 3, 4); // ~25% unknown → neutral person icon on the card
-    const gender = gr === 0 ? undefined : (rnd(i + 1, 2) === 0 ? 'male' : 'female');
+    const gender = inferredGender;
     out.push({
       id: `mock-${firstName}-${lastName}-${i}`.toLowerCase().replace(/[^a-z0-9-]/g, ''),
       extId: `mockext-${firstName}${lastName}${i}`.replace(/[^A-Za-z0-9]/g, ''),
