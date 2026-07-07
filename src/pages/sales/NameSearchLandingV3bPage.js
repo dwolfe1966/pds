@@ -140,7 +140,7 @@ const NameSearchLandingV3bPage = () => {
           {step === 'details' && (
             <div>
               <h2 style={h2}>Inmate matches found</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>Add more detail to refine your search.</p>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>A few more details help us surface the exact person.</p>
               <label style={label}>Age (optional)</label>
               <input style={{ ...input, marginBottom: '0.7rem' }} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
               <label style={label}>Middle name (optional)</label>

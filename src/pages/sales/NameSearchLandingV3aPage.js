@@ -155,7 +155,7 @@ const NameSearchLandingV3aPage = () => {
           {step === 'details' && (
             <div>
               <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>Inmate matches found</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>Add more detail to refine your search.</p>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>A few more details help us surface the exact person.</p>
               <label style={label} htmlFor="v3a-age">Age (optional)</label>
               <input id="v3a-age" style={{ ...input, marginBottom: '0.75rem' }} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
               <label style={label} htmlFor="v3a-mid2">Middle name (optional)</label>

@@ -286,7 +286,7 @@ const NameSearchLandingV3Page = () => {
           {step === 'details' && (
             <div className={s.form}>
               <h2 className={s.sectionTitle}>Inmate matches found</h2>
-              <p className={s.helper}>Add more detail to refine your search.</p>
+              <p className={s.helper}>A few more details help us surface the exact person.</p>
               <div className={s.field}>
                 <label className={s.label} htmlFor="v3-age">Age (optional)</label>
                 <input id="v3-age" type="text" className={s.input} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
