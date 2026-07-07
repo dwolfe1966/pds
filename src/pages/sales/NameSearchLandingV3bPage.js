@@ -139,8 +139,8 @@ const NameSearchLandingV3bPage = () => {
           {step === 'searching-two' && <Searching title={`Finding inmate matches for ${firstName} ${lastName}…`} P={P} />}
           {step === 'details' && (
             <div>
-              <h2 style={h2}>Possible inmate matches found</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>Add age or middle name to narrow results. All fields optional.</p>
+              <h2 style={h2}>Inmate matches found</h2>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>Add more detail to refine your search.</p>
               <label style={label}>Age (optional)</label>
               <input style={{ ...input, marginBottom: '0.7rem' }} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
               <label style={label}>Middle name (optional)</label>
