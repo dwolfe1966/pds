@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSignup, generatePassword } from '../../hooks/useSignup';
 import { useBrand } from '../../services/brand';
+import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 
 /**
  * Shared "default SUP" teaser (the variant-A design), driven by a `palette` so
@@ -206,17 +207,16 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
         {/* VCard — the dominant object */}
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ width: '72px', height: '72px', borderRadius: '50%', flexShrink: 0, background: P.accentGrad, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', fontWeight: 700 }}>{initials}</div>
+            <PersonAvatar person={person} size={72} />
             <div style={{ minWidth: 0 }}>
               <h1 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800, color: P.ink, lineHeight: 1.1 }}>
-                {person.fullName}
+                {properCaseName(person.fullName)}{(person.age || person.ageRange) ? `, ${person.age || person.ageRange}` : ''}
               </h1>
-              <p style={{ margin: '0.25rem 0 0', fontSize: '0.95rem', fontWeight: 500, color: P.mut }}>
-                {person.ageRange ? `Age ${person.ageRange}` : ''}
-                {Array.isArray(person.aliases) && person.aliases.length > 0 && (
-                  <span style={{ fontStyle: 'italic' }}>{person.ageRange ? ' · ' : ''}aka {person.aliases.slice(0, 3).join(', ')}</span>
-                )}
-              </p>
+              {Array.isArray(person.aliases) && person.aliases.length > 0 && (
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.95rem', fontWeight: 500, color: P.mut, fontStyle: 'italic' }}>
+                  aka {person.aliases.slice(0, 3).join(', ')}
+                </p>
+              )}
             </div>
           </div>
 

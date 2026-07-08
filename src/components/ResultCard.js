@@ -7,6 +7,7 @@ import { track } from '../services/trackingService';
 import { gtmSelectContent } from '../services/gtm';
 import { setSearchTarget as gtmSetSearchTarget } from '../services/gtmContext';
 import styles from './ResultCard.module.css';
+import { PersonAvatar, properCaseName } from './PersonAvatar';
 
 const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
   const navigate = useNavigate();
@@ -115,29 +116,6 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
     }
   };
 
-  // Extract initials for avatar
-  const initials = (result.fullName || '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
-
-  // Avatar background varies per result (deterministic by id/name).
-  const AV_BGS = [
-    { bg: '#eef2ff', fg: '#4f46e5' }, { bg: '#ecfdf5', fg: '#059669' },
-    { bg: '#fff7ed', fg: '#c2410c' }, { bg: '#fdf2f8', fg: '#be185d' },
-    { bg: '#eff6ff', fg: '#2563eb' }, { bg: '#f5f3ff', fg: '#7c3aed' },
-    { bg: '#fefce8', fg: '#a16207' }, { bg: '#f0fdfa', fg: '#0d9488' },
-  ];
-  let _h = 0;
-  for (const c of String(result.id || result.fullName || '')) _h = (_h * 31 + c.charCodeAt(0)) >>> 0;
-  const av = AV_BGS[_h % AV_BGS.length];
-  // Gender symbol if known (BC sex or inferred from name); else a neutral person icon.
-  const g = String(result.gender || '').toLowerCase();
-  const genderSym = (g === 'male' || g === 'm') ? '♂' : (g === 'female' || g === 'f') ? '♀' : null;
-
   // Locations (4.d): up to two, then "+N more".
   const locs = (Array.isArray(result.locations) && result.locations.length ? result.locations : [result.location].filter(Boolean));
   const locShown = locs.slice(0, 2);
@@ -174,28 +152,9 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
     >
       {/* Top row: avatar + name + age (4.a–4.c) */}
       <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <div style={{
-            width: '40px', height: '40px', borderRadius: '50%',
-            backgroundColor: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: av.fg, fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.02em',
-          }}>
-            {genderSym ? (initials || '?') : (
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></svg>
-            )}
-          </div>
-          {genderSym && (
-            <span aria-hidden="true" style={{
-              position: 'absolute', bottom: '-3px', right: '-3px',
-              width: '17px', height: '17px', borderRadius: '50%',
-              background: '#fff', border: `1.5px solid ${av.bg}`, color: av.fg,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.72rem', lineHeight: 1, fontWeight: 700, boxShadow: '0 1px 2px rgba(0,0,0,0.14)',
-            }}>{genderSym}</span>
-          )}
-        </div>
+        <PersonAvatar person={result} size={40} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
-          <h3 className={styles.cardTitle} style={{ margin: 0 }}>{result.fullName}</h3>
+          <h3 className={styles.cardTitle} style={{ margin: 0 }}>{properCaseName(result.fullName)}</h3>
           {ageText && <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap', flexShrink: 0 }}>{ageText}</span>}
         </div>
       </div>

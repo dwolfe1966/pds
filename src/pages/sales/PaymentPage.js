@@ -6,6 +6,7 @@ import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
 import { track, buildReferQueryString } from '../../services/trackingService';
+import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch, EMPTY_FLAGS } from '../../services/thinMatch';
@@ -687,11 +688,9 @@ const PaymentPage = () => {
             <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
           </div>
           <div className={styles.mobileVcardBody}>
-            <div className={styles.personPreviewAvatar}>
-              {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
-            </div>
+            <PersonAvatar person={selectedPerson} size={48} />
             <div className={styles.personPreviewInfo}>
-              <p className={styles.personPreviewName}>{selectedPerson.fullName}{selectedPerson.ageRange ? `, Age ${selectedPerson.ageRange}` : ''}</p>
+              <p className={styles.personPreviewName}>{properCaseName(selectedPerson.fullName)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}</p>
               {(() => {
                 const locs = (Array.isArray(selectedPerson.locations) && selectedPerson.locations.length) ? selectedPerson.locations : [selectedPerson.location].filter(Boolean);
                 if (!locs.length) return null;
@@ -707,12 +706,10 @@ const PaymentPage = () => {
       {selectedPerson && !success && (
         <div className={styles.personPreview}>
           <div className={styles.personPreviewLeft}>
-            <div className={styles.personPreviewAvatar}>
-              {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
-            </div>
+            <PersonAvatar person={selectedPerson} size={48} />
             <div className={styles.personPreviewInfo}>
               <p className={styles.personPreviewName}>
-                {selectedPerson.fullName}{selectedPerson.ageRange ? `, Age ${selectedPerson.ageRange}` : ''}
+                {properCaseName(selectedPerson.fullName)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}
               </p>
               {(() => {
                 const locs = (Array.isArray(selectedPerson.locations) && selectedPerson.locations.length)
