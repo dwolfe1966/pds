@@ -1061,12 +1061,14 @@ const styles = {
     fontSize: '0.9rem', fontWeight: 600, whiteSpace: 'nowrap',
   },
   btnPrimary: {
-    padding: '0.5rem 1rem', backgroundColor: '#0e123b', color: '#fff',
+    padding: '0.5rem 1rem', backgroundColor: '#0d5d2f', color: '#fff',
     border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem',
   },
+  // Teal "discovery" outline — used by "New Search" and the error-state
+  // "Back to Search" (both are search-nav, so teal is consistent).
   btnSecondary: {
-    padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#374151',
-    border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem',
+    padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#0d9488',
+    border: '1px solid #0d9488', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem',
   },
   pdfErrorBanner: {
     margin: '0 0 1rem', padding: '0.75rem 1rem',

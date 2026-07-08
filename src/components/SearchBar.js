@@ -12,7 +12,7 @@ import { setSearchInput as gtmSetSearchInput } from '../services/gtmContext';
  *
  * Emits URL: `/search-results?firstName=X&lastName=Y&state=ZZ`
  */
-const SearchBar = ({ initialQuery = '', initialFirstName = '', initialLastName = '', theme = null }) => {
+const SearchBar = ({ initialQuery = '', initialFirstName = '', initialLastName = '', theme = null, variant = null }) => {
   // Seed from explicit first/last props when provided, otherwise split the
   // legacy `initialQuery` on whitespace so existing call-sites still work.
   const seed = (() => {
@@ -105,7 +105,11 @@ const SearchBar = ({ initialQuery = '', initialFirstName = '', initialLastName =
             </option>
           ))}
         </select>
-        <button type="submit" className={styles.searchButton} style={theme ? { background: theme.button } : undefined}>
+        <button
+          type="submit"
+          className={`${styles.searchButton}${variant === 'teal' ? ` ${styles.searchButtonTeal}` : ''}`}
+          style={theme ? { background: theme.button } : undefined}
+        >
           Search Now
         </button>
       </form>

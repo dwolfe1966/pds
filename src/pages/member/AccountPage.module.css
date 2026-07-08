@@ -136,9 +136,12 @@
 
 /* ─── Buttons ────────────────────────────────────────────────────────────── */
 
+/* Teal "discovery" fill — drives "View Report". The "PDF" button reuses
+   .viewBtn but carries a full inline green-outline override, so it is
+   unaffected by this base color (and its inline background wins on hover). */
 .viewBtn {
   padding: 0.45rem 1rem;
-  background-color: var(--color-primary);
+  background-color: #0d9488;
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
@@ -151,7 +154,7 @@
 }
 
 .viewBtn:hover {
-  background-color: var(--color-primary-hover);
+  background-color: #0f766e;
 }
 
 .loadMoreBtn {
@@ -176,6 +179,18 @@
 .loadMoreBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Teal "discovery" outline variant — Load More Reports only. Load More
+   Messages keeps the base green .loadMoreBtn (support messaging = green). */
+.loadMoreBtnTeal {
+  color: #0d9488;
+  border-color: #0d9488;
+}
+
+.loadMoreBtnTeal:hover:not(:disabled) {
+  background-color: #0d9488;
+  color: var(--color-text-inverse);
 }
 
 .cancelBtn {

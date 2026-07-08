@@ -93,7 +93,7 @@
 .addBtn {
   flex-shrink: 0;
   padding: 0.625rem 1.25rem;
-  background-color: var(--color-primary);
+  background-color: #0d9488;
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
@@ -105,7 +105,7 @@
 }
 
 .addBtn:hover:not(:disabled) {
-  background-color: var(--color-primary-hover);
+  background-color: #0f766e;
   transform: translateY(-1px);
 }
 

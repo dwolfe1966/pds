@@ -1342,8 +1342,8 @@ const AccountPage = () => {
                     onClick={handleReactivate}
                     style={{
                       padding: '0.75rem 1.5rem',
-                      background: '#0d5d2f',
-                      color: '#fff',
+                      background: '#f59e0b',
+                      color: '#111827',
                       border: 'none',
                       borderRadius: '0.5rem',
                       fontWeight: 600,
@@ -1381,8 +1381,8 @@ const AccountPage = () => {
                   style={{
                     display: 'inline-block',
                     padding: '0.75rem 1.5rem',
-                    background: '#0d5d2f',
-                    color: '#fff',
+                    background: '#f59e0b',
+                    color: '#111827',
                     borderRadius: '0.5rem',
                     textDecoration: 'none',
                     fontWeight: 600,
@@ -1577,7 +1577,7 @@ const AccountPage = () => {
 
                 {hasMoreReports ? (
                   <button
-                    className={styles.loadMoreBtn}
+                    className={`${styles.loadMoreBtn} ${styles.loadMoreBtnTeal}`}
                     onClick={handleLoadMoreReports}
                     disabled={reportsLoading}
                   >

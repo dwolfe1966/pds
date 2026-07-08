@@ -56,3 +56,12 @@
   transform: translateY(-1px);
 }
 
+/* Teal "discovery" variant — member area only (see variant="teal"). */
+.searchButtonTeal {
+  background-color: #0d9488;
+}
+
+.searchButtonTeal:hover {
+  background-color: #0f766e;
+}
+

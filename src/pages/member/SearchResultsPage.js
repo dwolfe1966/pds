@@ -329,6 +329,7 @@ const MemberSearchResultsPage = () => {
             initialFirstName={firstNameParam || ''}
             initialLastName={lastNameParam || ''}
             initialQuery={query || ''}
+            variant="teal"
           />
         </div>
       </div>
@@ -434,7 +435,7 @@ const MemberSearchResultsPage = () => {
               gap: '0.5rem',
             }}>
               <span>Viewing full reports requires a Pro subscription.</span>
-              <Link to="/payment" style={{ color: '#0d5d2f', fontWeight: 600, textDecoration: 'underline' }}>Upgrade now</Link>
+              <Link to="/payment" style={{ color: '#b45309', fontWeight: 600, textDecoration: 'underline' }}>Upgrade now</Link>
             </div>
           )}
           {filteredResults.map((result) => (

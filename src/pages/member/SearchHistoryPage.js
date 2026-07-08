@@ -101,7 +101,7 @@ const SearchHistoryPage = () => {
                     onClick={() => handleReRun(item)}
                     style={{
                       padding: '0.35rem 0.75rem', borderRadius: '0.375rem',
-                      background: '#0d5d2f', color: '#fff', border: 'none',
+                      background: '#0d9488', color: '#fff', border: 'none',
                       fontSize: '0.8rem', cursor: 'pointer', fontWeight: 500
                     }}
                   >

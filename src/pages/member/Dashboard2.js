@@ -29,6 +29,10 @@ const PAGE = {
   brandSoft: '#dcfce7',
   accent: '#1a56db',
   accentSoft: '#dbeafe',
+  // CTA re-map: teal = discovery, orange = commit (dark text on orange).
+  teal: '#0d9488',
+  orange: '#f59e0b',
+  orangeText: '#111827',
   warn: '#92400e',
   warnSoft: '#fef3c7',
 };
@@ -153,9 +157,10 @@ function SubscriptionTile({ subscription, orders, planDisplayName, navigate }) {
         // keep the original "Manage subscription" affordance.
         onClick={() => navigate(isFree ? '/people-search' : '/account')}
         style={{
-          background: isFree ? PAGE.brand : PAGE.card,
-          color: isFree ? '#fff' : PAGE.brand,
-          border: `1px solid ${PAGE.brand}`,
+          // FREE → orange "commit" CTA (dark text); PAID "Manage subscription" stays green.
+          background: isFree ? PAGE.orange : PAGE.card,
+          color: isFree ? PAGE.orangeText : PAGE.brand,
+          border: `1px solid ${isFree ? PAGE.orange : PAGE.brand}`,
           padding: '0.5rem 0.875rem',
           borderRadius: '0.375rem',
           fontSize: '0.85rem',
@@ -277,7 +282,7 @@ function InlineNameSearch({ navigate }) {
         <button
           type="submit"
           style={{
-            background: PAGE.brand, color: '#fff', border: 'none',
+            background: PAGE.teal, color: '#fff', border: 'none',
             padding: '0.55rem 1rem', borderRadius: '0.375rem',
             fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer',
           }}
@@ -363,7 +368,7 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
           <button
             onClick={() => navigate('/people-search')}
             style={{
-              background: PAGE.brand, color: '#fff', border: 'none',
+              background: PAGE.teal, color: '#fff', border: 'none',
               padding: '0.6rem 1.1rem', borderRadius: '0.375rem',
               fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
             }}
@@ -412,7 +417,7 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
                 <Link
                   to={id ? `/people/${id}` : '#'}
                   style={{
-                    fontSize: '0.82rem', color: PAGE.accent, textDecoration: 'none', fontWeight: 600,
+                    fontSize: '0.82rem', color: '#fff', background: PAGE.teal, textDecoration: 'none', fontWeight: 600,
                     padding: '0.35rem 0.6rem', borderRadius: 4,
                   }}
                   onClick={() => track('dashboard_report_open', { reportId: id, fresh: fresh.label })}
@@ -908,7 +913,7 @@ const Dashboard2 = () => {
               type="button"
               onClick={() => { track('dashboard_cta_click', { target: 'subscribe' }); navigate('/payment?upgrade=1'); }}
               style={{
-                background: PAGE.brand, color: '#fff', border: 'none',
+                background: PAGE.orange, color: PAGE.orangeText, border: 'none',
                 padding: '0.7rem 1.4rem', borderRadius: '0.5rem',
                 fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
               }}
