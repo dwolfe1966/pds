@@ -44,6 +44,10 @@ const SalesSearchResultsPage = () => {
   const [loadMoreCount, setLoadMoreCount] = useState(0); // GAP-5: pagination engagement
   const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState('relevance');
+  // Client-side refine filters on the data BC already returns (no extra teaser call).
+  const [filters, setFilters] = useState({ criminal: false, property: false, relatives: false, employment: false, gender: '' });
+  const toggleFilter = (k) => setFilters((f) => ({ ...f, [k]: !f[k] }));
+  const clearFilters = () => setFilters({ criminal: false, property: false, relatives: false, employment: false, gender: '' });
 
   useEffect(() => {
     track('results_view', { search_type: 'name', query: query || '', state: state || '' });
@@ -173,18 +177,27 @@ const SalesSearchResultsPage = () => {
   const narrowedResults = useMemo(() => {
     const cityQ = (searchQuery.city || '').trim().toLowerCase();
     const ageQ = parseAge(searchQuery.age);
-    if (!cityQ && ageQ == null) return results;
-    const filtered = results.filter((r) => {
+    const anyFilter = cityQ || ageQ != null || filters.criminal || filters.property
+      || filters.relatives || filters.employment || filters.gender;
+    if (!anyFilter) return results;
+    // Explicit filters can legitimately return nothing — no silent fall-back to the
+    // full list (that would show everyone despite an active "criminal" filter).
+    return results.filter((r) => {
       if (cityQ && !(r.location || '').toLowerCase().includes(cityQ)) return false;
       if (ageQ != null) {
         const rAge = parseAge(r.ageRange);
-        if (rAge == null) return false;
-        if (Math.abs(rAge - ageQ) > 5) return false;
+        if (rAge == null || Math.abs(rAge - ageQ) > 5) return false;
       }
+      const R = r.records || {};
+      const Fl = r.flags || {};
+      if (filters.criminal && !(Fl.isCriminal || R.criminal > 0)) return false;
+      if (filters.property && !(Fl.isPropertyOwner || R.property > 0)) return false;
+      if (filters.relatives && !((r.relatives || []).length > 0 || R.relatives > 0)) return false;
+      if (filters.employment && !(Fl.hasEmployment || R.employment > 0)) return false;
+      if (filters.gender && String(r.gender || '').toLowerCase() !== filters.gender) return false;
       return true;
     });
-    return filtered.length > 0 ? filtered : results;
-  }, [results, searchQuery.city, searchQuery.age]);
+  }, [results, searchQuery.city, searchQuery.age, filters]);
 
   const sortedResults = useMemo(() => {
     if (sortBy === 'relevance') return narrowedResults;
@@ -321,6 +334,36 @@ const SalesSearchResultsPage = () => {
                 </label>
               )}
             </div>
+            {/* Client-side refine filters on data BC already returns (owner). */}
+            {results.length > 1 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af' }}>Filter</span>
+                {[['criminal', '⚖️ Criminal'], ['property', '🏠 Property'], ['relatives', '👥 Relatives'], ['employment', '💼 Employment']].map(([key, label]) => {
+                  const on = filters[key];
+                  return (
+                    <button key={key} type="button" onClick={() => toggleFilter(key)}
+                      style={{ fontSize: '0.8rem', fontWeight: 600, padding: '0.3rem 0.7rem', borderRadius: '999px', cursor: 'pointer', border: `1.5px solid ${on ? '#16a34a' : '#d1d5db'}`, background: on ? '#16a34a' : '#fff', color: on ? '#fff' : '#374151' }}>
+                      {label}
+                    </button>
+                  );
+                })}
+                <select value={filters.gender} onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))}
+                  style={{ fontSize: '0.8rem', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1.5px solid #d1d5db', background: '#fff', color: '#374151' }}>
+                  <option value="">Any gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+                {(filters.criminal || filters.property || filters.relatives || filters.employment || filters.gender) && (
+                  <button type="button" onClick={clearFilters} style={{ fontSize: '0.78rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Clear</button>
+                )}
+              </div>
+            )}
+            {sortedResults.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#6b7280' }}>
+                <p style={{ margin: '0 0 0.75rem' }}>No results match your filters.</p>
+                <button type="button" onClick={clearFilters} style={{ fontSize: '0.9rem', fontWeight: 600, color: '#16a34a', background: 'none', border: '1.5px solid #16a34a', borderRadius: 8, padding: '0.5rem 1.25rem', cursor: 'pointer' }}>Clear filters</button>
+              </div>
+            )}
             <div className={styles.resultsList}>
               {sortedResults.map((result, index) => (
                 <div key={result.id}>
