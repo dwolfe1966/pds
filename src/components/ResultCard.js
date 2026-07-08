@@ -150,8 +150,8 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
       className={styles.card}
       onClick={!onClick ? handleViewDetails : undefined}
     >
-      {/* Top row: avatar + name + age (4.a–4.c) */}
-      <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
+      {/* Ribbon header — avatar + name + age, banded to separate stacked cards (owner). */}
+      <div className={styles.ribbon}>
         <PersonAvatar person={result} size={40} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
           <h3 className={styles.cardTitle} style={{ margin: 0 }}>{properCaseName(result.fullName)}</h3>
@@ -159,59 +159,61 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
         </div>
       </div>
 
-      {/* Below — full-width, left-aligned to the card's left edge (owner) */}
-      {Array.isArray(result.aliases) && result.aliases.length > 0 && (
-        <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
-          <span style={{ fontWeight: 600 }}>AKA:</span> {result.aliases.slice(0, 3).join(', ')}
-          {result.aliases.length > 3 && ` +${result.aliases.length - 3} more`}
-        </p>
-      )}
-      {locShown.length > 0 && (
-        <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
-          <span style={subLabel}>Location</span>
-          {locShown.join(' · ')}{locExtra > 0 && <span style={{ color: '#6b7280' }}> +{locExtra} more</span>}
-        </p>
-      )}
-      {relShown.length > 0 && (
-        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
-          <span style={subLabel}>Relatives</span>
-          {relShown.join(', ')}{relExtra > 0 && <span style={{ color: '#6b7280' }}> +{relExtra} more</span>}
-        </p>
-      )}
-      {bubbles.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.55rem' }}>
-          {bubbles.map((b) => (
-            <span key={b} style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '999px', padding: '0.15rem 0.55rem' }}>{b}</span>
-          ))}
+      {/* Body — records + CTA */}
+      <div className={styles.cardBody}>
+        {Array.isArray(result.aliases) && result.aliases.length > 0 && (
+          <p style={{ margin: '0 0 0', fontSize: '0.78rem', color: '#6b7280' }}>
+            <span style={{ fontWeight: 600 }}>AKA:</span> {result.aliases.slice(0, 3).join(', ')}
+            {result.aliases.length > 3 && ` +${result.aliases.length - 3} more`}
+          </p>
+        )}
+        {locShown.length > 0 && (
+          <p style={{ margin: result.aliases?.length ? '0.4rem 0 0' : '0', fontSize: '0.85rem', color: '#374151' }}>
+            <span style={subLabel}>Location</span>
+            {locShown.join(' · ')}{locExtra > 0 && <span style={{ color: '#6b7280' }}> +{locExtra} more</span>}
+          </p>
+        )}
+        {relShown.length > 0 && (
+          <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#374151' }}>
+            <span style={subLabel}>Relatives</span>
+            {relShown.join(', ')}{relExtra > 0 && <span style={{ color: '#6b7280' }}> +{relExtra} more</span>}
+          </p>
+        )}
+        {bubbles.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.55rem' }}>
+            {bubbles.map((b) => (
+              <span key={b} style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '999px', padding: '0.15rem 0.55rem' }}>{b}</span>
+            ))}
+          </div>
+        )}
+        <div style={{ marginTop: '0.85rem' }}>
+          <button
+            onClick={handleViewDetails}
+            className={styles.cardButton}
+            disabled={loading}
+            style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
+          >
+            {loading ? 'Loading...' : 'View Details →'}
+          </button>
         </div>
-      )}
-      <div style={{ marginTop: '0.85rem' }}>
-        <button
-          onClick={handleViewDetails}
-          className={styles.cardButton}
-          disabled={loading}
-          style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
-        >
-          {loading ? 'Loading...' : 'View Details →'}
-        </button>
+        {createError && (
+          <div
+            role="alert"
+            style={{
+              marginTop: '0.75rem',
+              padding: '0.625rem 0.75rem',
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: 6,
+              color: '#991b1b',
+              fontSize: '0.875rem',
+              lineHeight: 1.5,
+            }}
+          >
+            {createError}
+          </div>
+        )}
       </div>
-      {createError && (
-        <div
-          role="alert"
-          style={{
-            marginTop: '0.75rem',
-            padding: '0.625rem 0.75rem',
-            background: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: 6,
-            color: '#991b1b',
-            fontSize: '0.875rem',
-            lineHeight: 1.5,
-          }}
-        >
-          {createError}
-        </div>
-      )}
     </div>
   );
 };
