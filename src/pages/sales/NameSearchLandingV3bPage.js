@@ -40,8 +40,8 @@ const NameSearchLandingV3bPage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
   useEffect(() => {
     let t;
-    if (step === 'searching-one') t = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v3b' }); setStep('location'); }, 1700);
-    if (step === 'searching-two') t = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v3b' }); setStep('details'); }, 1700);
+    if (step === 'searching-one') t = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v3b' }); setStep('location'); }, 5000);
+    if (step === 'searching-two') t = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v3b' }); setStep('details'); }, 5000);
     return () => { if (t) clearTimeout(t); };
   }, [step]);
 

@@ -105,10 +105,10 @@ const NameSearchLandingV3Page = () => {
   useEffect(() => {
     let timer;
     if (step === 'searching-one') {
-      timer = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v3' }); setStep('location'); }, 1700);
+      timer = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v3' }); setStep('location'); }, 5000);
     }
     if (step === 'searching-two') {
-      timer = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v3' }); setStep('details'); }, 1700);
+      timer = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v3' }); setStep('details'); }, 5000);
     }
     return () => { if (timer) clearTimeout(timer); };
   }, [step]);
