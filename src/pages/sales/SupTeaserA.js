@@ -413,7 +413,7 @@ export const SUP_PALETTE_GREEN = {
   accent: '#15803d', accentGrad: 'linear-gradient(135deg, #0d5d2f 0%, #1a7a42 100%)',
   cardBg: '#ffffff', cardBorder: 'rgba(17,24,39,0.08)', chipBg: '#ffffff',
   formBg: '#ffffff', formBorder: 'rgba(17,24,39,0.08)', inputBg: '#ffffff', inputBorder: '#d1d5db',
-  cta: '#2563eb', ctaText: '#ffffff',
+  cta: '#0d9488', ctaText: '#ffffff',
   verifiedBg: '#ecfdf3', verifiedText: '#15803d', verifiedBorder: 'rgba(21,128,61,0.25)',
   headerBg: '#0d5d2f', headerText: '#ffffff', onDark: false,
 };
