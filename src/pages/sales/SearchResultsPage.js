@@ -334,30 +334,8 @@ const SalesSearchResultsPage = () => {
                 </label>
               )}
             </div>
-            {/* Client-side refine filters on data BC already returns (owner). */}
-            {results.length > 1 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af' }}>Filter</span>
-                {[['criminal', '⚖️ Criminal'], ['property', '🏠 Property'], ['relatives', '👥 Relatives'], ['employment', '💼 Employment']].map(([key, label]) => {
-                  const on = filters[key];
-                  return (
-                    <button key={key} type="button" onClick={() => toggleFilter(key)}
-                      style={{ fontSize: '0.8rem', fontWeight: 600, padding: '0.3rem 0.7rem', borderRadius: '999px', cursor: 'pointer', border: `1.5px solid ${on ? '#16a34a' : '#d1d5db'}`, background: on ? '#16a34a' : '#fff', color: on ? '#fff' : '#374151' }}>
-                      {label}
-                    </button>
-                  );
-                })}
-                <select value={filters.gender} onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))}
-                  style={{ fontSize: '0.8rem', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1.5px solid #d1d5db', background: '#fff', color: '#374151' }}>
-                  <option value="">Any gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-                {(filters.criminal || filters.property || filters.relatives || filters.employment || filters.gender) && (
-                  <button type="button" onClick={clearFilters} style={{ fontSize: '0.78rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Clear</button>
-                )}
-              </div>
-            )}
+            {/* Filters moved to the Refine region at the bottom (owner — top placement
+                pushed the results down on mobile). */}
             {sortedResults.length === 0 && (
               <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#6b7280' }}>
                 <p style={{ margin: '0 0 0.75rem' }}>No results match your filters.</p>
@@ -451,6 +429,32 @@ const SalesSearchResultsPage = () => {
             down by a tall form). Matches the "refine your search below" copy above. */}
         {!loading && (
           <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: `1px solid ${theme ? theme.line : 'var(--color-border-light)'}` }}>
+            {/* Filter the current results — client-side, on data BC already returned. */}
+            {results.length > 1 && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 700, margin: '0 0 0.6rem', color: theme ? theme.ink : 'var(--color-text-primary)' }}>Filter these results</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+                  {[['criminal', '⚖️ Criminal'], ['property', '🏠 Property'], ['relatives', '👥 Relatives'], ['employment', '💼 Employment']].map(([key, label]) => {
+                    const on = filters[key];
+                    return (
+                      <button key={key} type="button" onClick={() => toggleFilter(key)}
+                        style={{ fontSize: '0.8rem', fontWeight: 600, padding: '0.3rem 0.7rem', borderRadius: '999px', cursor: 'pointer', border: `1.5px solid ${on ? '#16a34a' : '#d1d5db'}`, background: on ? '#16a34a' : '#fff', color: on ? '#fff' : '#374151' }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                  <select value={filters.gender} onChange={(e) => setFilters((f) => ({ ...f, gender: e.target.value }))}
+                    style={{ fontSize: '0.8rem', padding: '0.3rem 0.55rem', borderRadius: '999px', border: '1.5px solid #d1d5db', background: '#fff', color: '#374151' }}>
+                    <option value="">Any gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                  {(filters.criminal || filters.property || filters.relatives || filters.employment || filters.gender) && (
+                    <button type="button" onClick={clearFilters} style={{ fontSize: '0.78rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Clear</button>
+                  )}
+                </div>
+              </div>
+            )}
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: theme ? theme.ink : 'var(--color-text-primary)' }}>
               Not who you&apos;re looking for? Refine your search
             </h2>
