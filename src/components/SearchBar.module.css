@@ -65,3 +65,21 @@
   background-color: #0f766e;
 }
 
+/* Mobile only: 2×2 grid. DOM order (First, Last, State, Search Now) flows into a
+   two-column grid so State sits under First (same width) and Search Now under Last
+   (same width), each left-aligned in its column (owner). */
+@media (max-width: 640px) {
+  .searchForm {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+  }
+  .searchInput,
+  .stateSelect,
+  .searchButton {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
