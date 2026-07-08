@@ -108,7 +108,7 @@
   padding: 0.75rem 2rem;
   border-radius: 0.5rem;
   border: 2px solid #0d5d2f;
-  background: #e6f4ec;
+  background: #ffffff;
   color: #0d5d2f;
   font-weight: 600;
   font-size: 1rem;
@@ -117,7 +117,7 @@
 }
 
 .loadMoreBtn:hover:not(:disabled) {
-  background: #d9ede2;
+  background: #e6f4ec;
   color: #0d5d2f;
 }
 

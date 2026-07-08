@@ -417,7 +417,7 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
                 <Link
                   to={id ? `/people/${id}` : '#'}
                   style={{
-                    fontSize: '0.82rem', color: '#0d5d2f', background: '#e6f4ec', border: '2px solid #0d5d2f', textDecoration: 'none', fontWeight: 600,
+                    fontSize: '0.82rem', color: '#0d5d2f', background: '#ffffff', border: '2px solid #0d5d2f', textDecoration: 'none', fontWeight: 600,
                     padding: '0.35rem 0.6rem', borderRadius: 4,
                   }}
                   onClick={() => track('dashboard_report_open', { reportId: id, fresh: fresh.label })}

@@ -141,7 +141,7 @@
    unaffected by this base color (and its inline background wins on hover). */
 .viewBtn {
   padding: 0.45rem 1rem;
-  background-color: #e6f4ec;
+  background-color: #ffffff;
   color: #0d5d2f;
   border: 2px solid #0d5d2f;
   border-radius: var(--radius-md);
@@ -154,7 +154,7 @@
 }
 
 .viewBtn:hover {
-  background-color: #d9ede2;
+  background-color: #e6f4ec;
 }
 
 .loadMoreBtn {
@@ -184,13 +184,13 @@
 /* Teal "discovery" outline variant — Load More Reports only. Load More
    Messages keeps the base green .loadMoreBtn (support messaging = green). */
 .loadMoreBtnTeal {
-  background-color: #e6f4ec;
+  background-color: #ffffff;
   color: #0d5d2f;
   border-color: #0d5d2f;
 }
 
 .loadMoreBtnTeal:hover:not(:disabled) {
-  background-color: #d9ede2;
+  background-color: #e6f4ec;
   color: #0d5d2f;
 }
 

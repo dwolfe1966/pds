@@ -467,7 +467,7 @@
   padding: 0.65rem 1.5rem;
   border-radius: var(--radius-md);
   border: 2px solid #0d5d2f;
-  background: #e6f4ec;
+  background: #ffffff;
   color: #0d5d2f;
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
@@ -476,7 +476,7 @@
 }
 
 .showMoreButton:hover {
-  background: #d9ede2;
+  background: #e6f4ec;
 }
 
 /* ---------- Skeleton loaders ---------- */
