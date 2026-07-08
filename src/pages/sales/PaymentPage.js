@@ -677,6 +677,33 @@ const PaymentPage = () => {
       )}
       {/* Person preview — ALWAYS on top, above the two-column layout, mobile or
           desktop (owner 2026-07-03). The person is the anchor, not the pricing. */}
+      {/* Mobile-only: combine the $1 trial rectangle with the vCard into one card
+          (owner) — 7-Day Trial $1 on top, vCard in the middle, instant-access at the
+          bottom. The separate personPreview + pricing card are hidden on mobile. */}
+      {selectedPerson && !success && (
+        <div className={styles.mobilePriceVcard}>
+          <div className={styles.summaryHeader} style={theme ? { background: theme.band } : undefined}>
+            <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
+            <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
+          </div>
+          <div className={styles.mobileVcardBody}>
+            <div className={styles.personPreviewAvatar}>
+              {(selectedPerson.fullName || '?').split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?'}
+            </div>
+            <div className={styles.personPreviewInfo}>
+              <p className={styles.personPreviewName}>{selectedPerson.fullName}{selectedPerson.ageRange ? `, Age ${selectedPerson.ageRange}` : ''}</p>
+              {(() => {
+                const locs = (Array.isArray(selectedPerson.locations) && selectedPerson.locations.length) ? selectedPerson.locations : [selectedPerson.location].filter(Boolean);
+                if (!locs.length) return null;
+                const extra = Math.max(locs.length - 2, 0);
+                return <p className={styles.personPreviewMeta}>{locs.slice(0, 2).join(' · ')}{extra > 0 ? ` +${extra} more` : ''}</p>;
+              })()}
+              <p className={styles.personPreviewLatest}>Latest report: {latestReportDate}</p>
+            </div>
+          </div>
+          <p className={styles.summaryInstant} style={theme ? { background: theme.onDark ? 'rgba(245,158,11,0.12)' : '#e6f3fa', color: theme.accentDark } : undefined}>⚡ Instant access after payment</p>
+        </div>
+      )}
       {selectedPerson && !success && (
         <div className={styles.personPreview}>
           <div className={styles.personPreviewLeft}>

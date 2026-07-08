@@ -806,3 +806,21 @@
   .mobileCtaBtn:disabled { opacity: 0.55; cursor: not-allowed; }
   .layout { padding-bottom: 5rem; }
 }
+
+/* Mobile-only: $1-trial rectangle merged with the vCard into one card (owner). */
+.mobilePriceVcard { display: none; }
+@media (max-width: 640px) {
+  .mobilePriceVcard {
+    display: block;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--color-border-light);
+    box-shadow: 0 4px 14px rgba(17, 24, 39, 0.08);
+    margin-bottom: 1.25rem;
+    background: #fff;
+  }
+  .mobileVcardBody { display: flex; align-items: center; gap: 0.85rem; padding: 1rem 1.1rem; }
+  /* On mobile the combined card above replaces the standalone vCard + pricing card. */
+  .personPreview { display: none; }
+  .gridPricing { display: none; }
+}
