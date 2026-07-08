@@ -52,18 +52,19 @@
 .cardButton {
   margin-top: 0;
   padding: 0.625rem 1.25rem;
-  /* Neutral secondary — filled light-slate. A real (clickable) button, but muted so it
-     sits clearly below green-primary and orange-commit. The "View / explore" tier. */
-  background-color: #f1f5f9;
-  color: #334155;
-  border: 1px solid #dde3ea;
+  /* Secondary discovery — soft light-green fill (matches the home top rectangle #e6f4ec)
+     with the dark-green outline kept. Reads as a clear "explore" CTA, still below the
+     green-primary fill and orange-commit. */
+  background-color: #e6f4ec;
+  color: #0d5d2f;
+  border: 2px solid #0d5d2f;
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   transition: all var(--transition-base);
 }
-.cardButton:hover { background-color: #e5eaf0; border-color: #cbd5e1; }
+.cardButton:hover { background-color: #d9ede2; border-color: #0a4a26; }
 
 .cardButton:hover {
   background-color: var(--color-primary-hover);
