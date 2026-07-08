@@ -68,10 +68,10 @@
 .cardButton {
   margin-top: 0;
   padding: 0.625rem 1.25rem;
-  /* Secondary discovery — soft light-green fill (matches the home top rectangle #e6f4ec)
-     with the dark-green outline kept. Reads as a clear "explore" CTA, still below the
-     green-primary fill and orange-commit. */
-  background-color: #e6f4ec;
+  /* Secondary discovery — outline only (no fill) against the green ribbon + white body.
+     Dark-green border + text; light-green fill only on hover. Three distinct layers:
+     green ribbon (who) → white body (what) → outlined CTA (act). */
+  background-color: #ffffff;
   color: #0d5d2f;
   border: 2px solid #0d5d2f;
   border-radius: var(--radius-md);
@@ -80,7 +80,7 @@
   font-weight: var(--font-weight-semibold);
   transition: all var(--transition-base);
 }
-.cardButton:hover { background-color: #d9ede2; border-color: #0a4a26; }
+.cardButton:hover { background-color: #e6f4ec; }
 
 .cardButton:hover {
   background-color: var(--color-primary-hover);
