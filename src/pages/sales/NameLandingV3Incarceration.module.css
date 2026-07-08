@@ -80,11 +80,11 @@
 .cta {
   width: 100%; min-height: 58px; margin-top: 0.4rem; padding: 0 1.25rem;
   font-size: 1.08rem; font-weight: 800; color: #fff; letter-spacing: 0.01em;
-  background: #16a34a; border: none; border-radius: 12px; cursor: pointer;
+  background: #2563eb; border: none; border-radius: 12px; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.35); transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35); transition: background 0.15s ease, transform 0.05s ease, box-shadow 0.15s ease;
 }
-.cta:hover { background: #15803d; box-shadow: 0 10px 24px rgba(22, 163, 74, 0.42); }
+.cta:hover { background: #1d4ed8; box-shadow: 0 10px 24px rgba(37, 99, 235, 0.42); }
 .cta:active { transform: translateY(1px); }
 .ctaIcon { width: 20px; height: 20px; }
 
