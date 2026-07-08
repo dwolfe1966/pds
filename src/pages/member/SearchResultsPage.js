@@ -329,7 +329,6 @@ const MemberSearchResultsPage = () => {
             initialFirstName={firstNameParam || ''}
             initialLastName={lastNameParam || ''}
             initialQuery={query || ''}
-            variant="teal"
           />
         </div>
       </div>

@@ -29,8 +29,8 @@ const PAGE = {
   brandSoft: '#dcfce7',
   accent: '#1a56db',
   accentSoft: '#dbeafe',
-  // CTA re-map: teal = discovery, orange = commit (dark text on orange).
-  teal: '#0d9488',
+  // CTA re-map: green = discovery, orange = commit (dark text on orange).
+  greenFill: '#0d5d2f',
   orange: '#f59e0b',
   orangeText: '#111827',
   warn: '#92400e',
@@ -282,7 +282,7 @@ function InlineNameSearch({ navigate }) {
         <button
           type="submit"
           style={{
-            background: PAGE.teal, color: '#fff', border: 'none',
+            background: PAGE.greenFill, color: '#fff', border: 'none',
             padding: '0.55rem 1rem', borderRadius: '0.375rem',
             fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer',
           }}
@@ -368,7 +368,7 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
           <button
             onClick={() => navigate('/people-search')}
             style={{
-              background: PAGE.teal, color: '#fff', border: 'none',
+              background: PAGE.greenFill, color: '#fff', border: 'none',
               padding: '0.6rem 1.1rem', borderRadius: '0.375rem',
               fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
             }}
@@ -417,7 +417,7 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
                 <Link
                   to={id ? `/people/${id}` : '#'}
                   style={{
-                    fontSize: '0.82rem', color: '#fff', background: PAGE.teal, textDecoration: 'none', fontWeight: 600,
+                    fontSize: '0.82rem', color: '#0d5d2f', background: '#e6f4ec', border: '2px solid #0d5d2f', textDecoration: 'none', fontWeight: 600,
                     padding: '0.35rem 0.6rem', borderRadius: 4,
                   }}
                   onClick={() => track('dashboard_report_open', { reportId: id, fresh: fresh.label })}

@@ -466,9 +466,9 @@
 .showMoreButton {
   padding: 0.65rem 1.5rem;
   border-radius: var(--radius-md);
-  border: 1px solid #0d9488;
-  background: var(--color-bg-default);
-  color: #0d9488;
+  border: 2px solid #0d5d2f;
+  background: #e6f4ec;
+  color: #0d5d2f;
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   font-size: var(--font-size-sm);
@@ -476,7 +476,7 @@
 }
 
 .showMoreButton:hover {
-  background: rgba(13, 148, 136, 0.08);
+  background: #d9ede2;
 }
 
 /* ---------- Skeleton loaders ---------- */
