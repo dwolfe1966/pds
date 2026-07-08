@@ -339,7 +339,7 @@ const SalesSearchResultsPage = () => {
             {sortedResults.length === 0 && (
               <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#6b7280' }}>
                 <p style={{ margin: '0 0 0.75rem' }}>No results match your filters.</p>
-                <button type="button" onClick={clearFilters} style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0d9488', background: 'none', border: '1.5px solid #0d9488', borderRadius: 8, padding: '0.5rem 1.25rem', cursor: 'pointer' }}>Clear filters</button>
+                <button type="button" onClick={clearFilters} style={{ fontSize: '0.9rem', fontWeight: 600, color: '#0d5d2f', background: 'none', border: '1.5px solid #0d5d2f', borderRadius: 8, padding: '0.5rem 1.25rem', cursor: 'pointer' }}>Clear filters</button>
               </div>
             )}
             <div className={styles.resultsList}>
@@ -400,16 +400,16 @@ const SalesSearchResultsPage = () => {
                   style={{
                     padding: '0.75rem 2rem',
                     borderRadius: '0.375rem',
-                    border: `2px solid ${theme ? theme.accent : '#0d9488'}`,
+                    border: `2px solid ${theme ? theme.accent : '#0d5d2f'}`,
                     background: '#fff',
-                    color: theme ? theme.accent : '#0d9488',
+                    color: theme ? theme.accent : '#0d5d2f',
                     fontWeight: 600,
                     fontSize: '1rem',
                     cursor: loadingMore ? 'wait' : 'pointer',
                     transition: 'all 0.2s ease'
                   }}
-                  onMouseEnter={(e) => { if (!loadingMore) { e.currentTarget.style.backgroundColor = '#0d9488'; e.currentTarget.style.color = '#fff'; }}}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#0d9488'; }}
+                  onMouseEnter={(e) => { if (!loadingMore) { e.currentTarget.style.backgroundColor = '#0d5d2f'; e.currentTarget.style.color = '#fff'; }}}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#0d5d2f'; }}
                 >
                   {loadingMore ? 'Loading…' : 'Load more results'}
                 </button>
@@ -438,7 +438,7 @@ const SalesSearchResultsPage = () => {
                     const on = filters[key];
                     return (
                       <button key={key} type="button" onClick={() => toggleFilter(key)}
-                        style={{ fontSize: '0.8rem', fontWeight: 600, padding: '0.3rem 0.7rem', borderRadius: '999px', cursor: 'pointer', border: `1.5px solid ${on ? '#0d9488' : '#d1d5db'}`, background: on ? '#0d9488' : '#fff', color: on ? '#fff' : '#374151' }}>
+                        style={{ fontSize: '0.8rem', fontWeight: 600, padding: '0.3rem 0.7rem', borderRadius: '999px', cursor: 'pointer', border: `1.5px solid ${on ? '#0d5d2f' : '#d1d5db'}`, background: on ? '#0d5d2f' : '#fff', color: on ? '#fff' : '#374151' }}>
                         {label}
                       </button>
                     );
@@ -466,7 +466,7 @@ const SalesSearchResultsPage = () => {
                 <div><label style={rLabel}>City</label><input style={rInput} value={refine.city} onChange={(e) => setRefine((r) => ({ ...r, city: e.target.value }))} placeholder="City (optional)" /></div>
                 <div><label style={rLabel}>Age</label><input style={rInput} value={refine.age} onChange={(e) => setRefine((r) => ({ ...r, age: e.target.value }))} placeholder="Age (optional)" inputMode="numeric" /></div>
               </div>
-              <button type="submit" style={{ marginTop: '0.85rem', padding: '0.7rem 1.5rem', fontSize: '0.95rem', fontWeight: 700, color: '#fff', background: theme ? theme.button : '#0d9488', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Refine search</button>
+              <button type="submit" style={{ marginTop: '0.85rem', padding: '0.7rem 1.5rem', fontSize: '0.95rem', fontWeight: 700, color: '#fff', background: theme ? theme.button : '#0d5d2f', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Refine search</button>
             </form>
           </div>
         )}

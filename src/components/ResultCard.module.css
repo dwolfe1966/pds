@@ -52,17 +52,18 @@
 .cardButton {
   margin-top: 0;
   padding: 0.625rem 1.25rem;
-  /* Teal — the discovery action color (distinct from green chrome + orange commit). */
-  background-color: #0d9488;
-  color: var(--color-text-inverse);
-  border: none;
+  /* Secondary discovery — outlined forest green. Reads as an invitation to keep
+     exploring, not a commit; keeps a list of results calm vs a wall of filled buttons. */
+  background-color: #ffffff;
+  color: #0d5d2f;
+  border: 2px solid #0d5d2f;
   border-radius: var(--radius-md);
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   transition: all var(--transition-base);
-  box-shadow: var(--shadow-sm);
 }
+.cardButton:hover { background-color: #f1f9f3; }
 
 .cardButton:hover {
   background-color: var(--color-primary-hover);
