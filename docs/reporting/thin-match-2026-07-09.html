@@ -1,0 +1,128 @@
+<style>
+  :root{
+    --ink:#0f172a; --body:#334155; --muted:#64748b; --faint:#94a3b8;
+    --line:#e2e8f0; --line2:#eef2f7; --ground:#ffffff; --panel:#f8fafc;
+    --pos:#0d5d2f; --posbg:#e6f4ec; --neg:#b91c1c; --negbg:#fdeaea;
+    --warn:#b45309; --warnbg:#fdf1e3; --accent:#0d5d2f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0}
+  .wrap{max-width:940px;margin:0 auto;padding:40px 28px 72px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--body);line-height:1.55;font-size:15px;background:var(--ground);
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  h1{font-size:27px;line-height:1.2;color:var(--ink);margin:6px 0 4px;letter-spacing:-.02em;font-weight:800;text-wrap:balance}
+  h2{font-size:19px;color:var(--ink);margin:40px 0 12px;letter-spacing:-.01em;font-weight:700;padding-top:16px;border-top:1px solid var(--line)}
+  h3{font-size:15.5px;color:var(--ink);margin:20px 0 4px;font-weight:700}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 4px}
+  p{margin:10px 0}
+  strong{color:var(--ink);font-weight:700}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:#0f172a}
+  ul{margin:8px 0;padding-left:20px}
+  li{margin:6px 0}
+  .tldr{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:18px 20px;margin:22px 0}
+  .tldr ul{margin:8px 0 0}
+  .stat{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+  .stat .c{flex:1 1 150px;border:1px solid var(--line);border-radius:10px;padding:12px 15px;background:var(--panel)}
+  .stat .big{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+  .stat .lab{font-size:12px;color:var(--muted);margin-top:2px}
+  .scroll{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:600px}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line2);vertical-align:top}
+  th{background:var(--panel);color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+  tbody tr:last-child td{border-bottom:none}
+  .yes{color:var(--pos);font-weight:700}
+  .no{color:var(--neg);font-weight:700}
+  .chip{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px}
+  .p1{background:var(--posbg);color:var(--pos)}
+  .p2{background:var(--warnbg);color:var(--warn)}
+  .p3{background:#eef2f7;color:var(--muted)}
+  .lever{border:1px solid var(--line);border-radius:10px;padding:4px 18px 12px;margin:12px 0;background:var(--ground)}
+  .foot{color:var(--muted);font-size:12px;margin-top:6px}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">IDLookup.AI · Conversion</div>
+  <h1>Thin-Match: The #1 Ad-CVR Leak — Findings &amp; Fix Plan</h1>
+  <p class="sub">Prepared 2026-07-09 · sources: 7/08 daily KPI (paid channel), BC/IDI teaser behavior, competitor research (BeenVerified, PeopleFinders)</p>
+
+  <div class="tldr">
+    <strong>Bottom line</strong>
+    <ul>
+      <li><strong>Thin-match is where paid conversion dies.</strong> Yesterday <strong>62% of paid searches</strong> returned no records, and that branch converted to <strong>0 paid trials</strong> — every conversion came from the records branch.</li>
+      <li><strong>Root cause:</strong> paid keywords skew to common names → IDI's teaser returns <code>TooManyMatches</code> (0 records). The search is too broad and we don't reliably narrow it.</li>
+      <li><strong>The incumbents don't solve this.</strong> BeenVerified and PeopleFinders have <strong>no fuzzy matching, no "did you mean," no nickname expansion</strong> — they dead-end and tell the user to fix it. That's a competitive opening, not just a problem.</li>
+      <li><strong>Two levers:</strong> reduce the <em>rate</em> (get records back for common names) — the bigger prize — and improve the <em>experience</em> when it still happens (already partly shipped).</li>
+    </ul>
+  </div>
+
+  <h2>1 · The problem, in numbers (7/08 paid Search)</h2>
+  <div class="stat">
+    <div class="c"><div class="big">62%</div><div class="lab">of paid searches → thin-match (24/39)</div></div>
+    <div class="c"><div class="big">0</div><div class="lab">paid trials from thin-match</div></div>
+    <div class="c"><div class="big">100%</div><div class="lab">of conversions came from the records branch</div></div>
+  </div>
+  <p>Thin-match is <strong>paid-specific</strong>: yesterday all thin-match views were in the paid channel, while non-paid search went almost entirely to records. Paid ad clicks disproportionately land on the no-records page — so this is precisely the lever for the Google-Ads CVR gap (our ~1–2% vs competitors' ~5%). <span class="foot">(62% is an anomalously high day, +169% vs day-of-week; steady-state is ~12–20% blended — but the paid-skew pattern is durable.)</span></p>
+
+  <h2>2 · Root cause</h2>
+  <ul>
+    <li><strong>Common names overflow the provider.</strong> "John Smith / TX" → IDI teaser returns <code>status:"failed", total:0</code> (<code>TooManyMatches</code>). The teaser refuses to return a too-large set.</li>
+    <li><strong>We send name + state; the funnel also passes city/age/middle to the teaser query</strong> — but it's unconfirmed whether IDI actually <em>narrows</em> on city/DOB server-side or treats them as client-side filters only. <strong>This is the key open question</strong> and it gates the biggest fix.</li>
+    <li><strong>Misspellings &amp; nicknames dead-end too.</strong> A wrong spelling ("Micheal", "Smyth") or a nickname ("Bob" vs "Robert") returns nothing — no correction, no expansion.</li>
+  </ul>
+
+  <h2>3 · What competitors do with misspelled / uncertain names</h2>
+  <p class="sub">Direct research; both sites are bot-walled, so mechanisms are from their own help docs + reviews. Spokeo pending (research stopped for time).</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Capability</th><th>BeenVerified</th><th>PeopleFinders</th><th>Opportunity for us</th></tr></thead>
+    <tbody>
+      <tr><td>Fuzzy / phonetic match (Smyth→Smith)</td><td class="no">No</td><td class="no">No</td><td>Add it — the clear gap</td></tr>
+      <tr><td>"Did you mean [X]?" / autocorrect</td><td class="no">No</td><td class="no">No</td><td>Add it inline</td></tr>
+      <tr><td>Nickname expansion (Bob↔Robert) at query time</td><td class="no">No</td><td class="no">No</td><td>Ship a nickname map</td></tr>
+      <tr><td>Auto-broaden on zero results</td><td class="no">No — manual</td><td class="no">No — manual</td><td>Auto-cascade for the user</td></tr>
+      <tr><td>Aliases / variants</td><td>Only inside the <strong>paid report</strong></td><td>Only inside the <strong>paid report</strong></td><td>Useless for the miss — beat it at search time</td></tr>
+      <tr><td>Zero-result UX</td><td>Coach user to fix spelling / strip fields</td><td>"Check spelling / add info / try email·phone"</td><td>Guided recovery, keep them in-funnel</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><strong>Takeaway:</strong> the category leaders punt every one of these to the user. A search that quietly corrects, expands, and broadens is a genuine differentiator — and directly attacks our thin-match rate.</p>
+
+  <h2>4 · What we've already shipped (Round 2, 7/8)</h2>
+  <ul>
+    <li><strong>Redesigned thin-match preview cards</strong> — real searched name + state with plausible, seeded details (replaces the blurred "J•hn S•••" fakes), contact details locked to drive signup.</li>
+    <li><strong>Two signup A/B versions</strong> (V1 streamlined form / V2 no signup rectangle), stable per session, <code>?tmv=1</code>/<code>?tmv=2</code> override, tracked as <code>thin_match_version</code>.</li>
+    <li><strong>"Search again"</strong> refine path. <span class="foot">These improve the <em>experience</em> when thin-match happens; they do not reduce the <em>rate</em>.</span></li>
+  </ul>
+
+  <h2>5 · The fix plan</h2>
+
+  <div class="lever">
+    <h3>Lever A — Reduce the rate <span class="chip p1">biggest prize</span></h3>
+    <ul>
+      <li><strong>A1 · Answer the IDI-narrowing question (unblocks everything).</strong> Test a common name + city/age server-side: does IDI return records? If yes → ensure city/age/middle flow into the teaser input. If no → <strong>BC ask</strong>: does the teaser support city/DOB narrowing to break <code>TooManyMatches</code>? <span class="chip p1">do first</span></li>
+      <li><strong>A2 · Nickname + misspelling expansion at query time</strong> — the gap the incumbents leave open. Client-side: generate candidate queries (nickname map Bob↔Robert; phonetic + edit-distance for typos) and OR-merge results. Show "Showing results for <em>Smith</em>." <span class="foot">Never client-filter BC responses (prior regression); expand queries, don't trim results.</span> <span class="chip p2">high yield</span></li>
+      <li><strong>A3 · Auto-broaden / auto-narrow cascade.</strong> On too-broad (TooManyMatches) auto-prompt or auto-add city/age; on zero, widen (drop middle → widen state). Do automatically what BeenVerified makes users do by hand.</li>
+    </ul>
+  </div>
+
+  <div class="lever">
+    <h3>Lever B — Improve the experience <span class="chip p2">partly shipped</span></h3>
+    <ul>
+      <li><strong>B1 · Finish the A/B read</strong> on V1 vs V2 signup once volume builds (<code>thin_match_version</code>).</li>
+      <li><strong>B2 · Guided zero-state</strong> — closest fuzzy matches + one-tap chips ("search all states," "drop middle name," "try phone/email") instead of a dead-end.</li>
+      <li><strong>B3 · Inline narrowing on the thin-match page</strong> (the earlier "#1") — only worthwhile once A1 confirms narrowing actually recovers records.</li>
+    </ul>
+  </div>
+
+  <h2>6 · Recommended sequence</h2>
+  <ol>
+    <li><span class="chip p1">Now</span> <strong>A1 — settle IDI narrowing</strong> (test + BC ask if needed). Everything downstream depends on the answer.</li>
+    <li><span class="chip p2">Next</span> <strong>A2 — nickname + misspelling expansion</strong> (client-side candidate queries). Beats the incumbents; reduces no-results independent of A1.</li>
+    <li><span class="chip p2">Next</span> <strong>A3 / B2 — auto-broaden cascade + guided zero-state.</strong></li>
+    <li><span class="chip p3">Measure</span> thin-match rate + the V1/V2 A/B as volume accumulates.</li>
+  </ol>
+
+  <p class="foot" style="margin-top:24px;border-top:1px solid var(--line);padding-top:14px">Prepared 2026-07-09. Competitor mechanisms are from published help docs + reviews (both sites bot-walled); Spokeo research incomplete. KPI figures from the 7/08 paid-channel daily. The single highest-leverage next step is confirming whether IDI narrows common-name searches on city/DOB.</p>
+</div>
