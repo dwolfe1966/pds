@@ -24,21 +24,32 @@ export function citySlug(city) {
   return nameSlug(city, '').replace(/-$/, '');
 }
 
+// Real-profile pages live under /profiles/* (separate category from the
+// state-first /people surface).
 export function personPath(p) {
-  return `/people/${nameSlug(p.firstName, p.lastName)}/${p.state.toLowerCase()}/${citySlug(p.city)}/${p.id}`;
+  return `/profiles/${nameSlug(p.firstName, p.lastName)}/${p.state.toLowerCase()}/${citySlug(p.city)}/${p.id}`;
 }
 
 export function namePath(p) {
-  return `/people/${nameSlug(p.firstName, p.lastName)}`;
+  return `/profiles/${nameSlug(p.firstName, p.lastName)}`;
 }
 
-// Hub path builders (name → state → city). Take a name slug + raw state/city.
+// Real-profile hub path builders (name → state → city).
 export function nameStatePath(slug, state) {
-  return `/people/${slug}/${String(state).toLowerCase()}`;
+  return `/profiles/${slug}/${String(state).toLowerCase()}`;
 }
 
 export function nameCityPath(slug, state, city) {
-  return `/people/${slug}/${String(state).toLowerCase()}/${citySlug(city)}`;
+  return `/profiles/${slug}/${String(state).toLowerCase()}/${citySlug(city)}`;
+}
+
+// State-first path builders (the lead /people surface).
+export function statePath(code) {
+  return `/people/${String(code).toLowerCase()}`;
+}
+
+export function stateNamePath(code, slug) {
+  return `/people/${String(code).toLowerCase()}/${slug}`;
 }
 
 // Split a "first-last" name slug back into display-cased first/last words. Best-

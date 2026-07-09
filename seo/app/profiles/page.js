@@ -13,16 +13,16 @@ export async function generateMetadata() {
   return {
     title: 'People Search — Find Anyone in the United States | IDLookup',
     description: 'Search hundreds of millions of people in the US by name. Find current addresses, phone numbers, email addresses, relatives, and public records.',
-    alternates: { canonical: `${SITE}/people` },
+    alternates: { canonical: `${SITE}/profiles` },
   };
 }
 
 export default async function PeopleIndex() {
   const names = await getNameIndex();
   const crumbs = [{ name: 'People Search', path: '/people' }];
-  const items = names.map((n) => ({ name: `${n.firstName} ${n.lastName}`, path: `/people/${n.slug}` }));
+  const items = names.map((n) => ({ name: `${n.firstName} ${n.lastName}`, path: `/profiles/${n.slug}` }));
   const jsonLd = [
-    collectionJsonLd({ name: 'People Search — IDLookup', description: 'Browse people in the United States by name.', url: `${SITE}/people`, items }),
+    collectionJsonLd({ name: 'People Search — IDLookup', description: 'Browse people in the United States by name.', url: `${SITE}/profiles`, items }),
     crumbsJsonLd(crumbs),
   ];
 
@@ -41,7 +41,7 @@ export default async function PeopleIndex() {
         <h2 style={{ marginTop: 0, fontSize: 18 }}>Browse names</h2>
         {names.map((n) => (
           <p key={n.slug} style={{ margin: '6px 0' }}>
-            <a href={`/people/${n.slug}`} style={ui.link}>{n.firstName} {n.lastName}</a>
+            <a href={`/profiles/${n.slug}`} style={ui.link}>{n.firstName} {n.lastName}</a>
             <span style={ui.muted}> ({n.count})</span>
           </p>
         ))}

@@ -1,4 +1,4 @@
-// State hub — /people/{first-last}/{state}. The name's people in one state,
+// State hub — /profiles/{first-last}/{state}. The name's people in one state,
 // links down to city hubs and profiles. On demand + ISR; 404s when empty.
 import { notFound } from 'next/navigation';
 import { getPeopleByNameState } from '../../../../lib/data';
@@ -10,7 +10,7 @@ import { SITE, MAIN } from '../../../../lib/site';
 
 export const revalidate = 5184000; // 60d
 
-const FUNNEL = `${MAIN}/name/landing/v3`;
+const FUNNEL = `${MAIN}/name/landing/v2`;
 
 export async function generateMetadata({ params }) {
   const { name, state } = await params;
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }) {
   return {
     title: `${full} in ${stateName(hub.state)} — ${hub.people.length} Found | IDLookup`,
     description: `${hub.people.length} people named ${full} in ${stateName(hub.state)}. Browse by city — ages, addresses, phones, and relatives.`,
-    alternates: { canonical: `${SITE}/people/${name}/${state.toLowerCase()}` },
+    alternates: { canonical: `${SITE}/profiles/${name}/${state.toLowerCase()}` },
   };
 }
 
@@ -31,11 +31,11 @@ export default async function StateHub({ params }) {
 
   const full = `${hub.firstName} ${hub.lastName}`;
   const st = stateName(hub.state);
-  const url = `${SITE}/people/${name}/${state.toLowerCase()}`;
+  const url = `${SITE}/profiles/${name}/${state.toLowerCase()}`;
   const crumbs = [
     { name: 'People Search', path: '/people' },
-    { name: full, path: `/people/${name}` },
-    { name: st, path: `/people/${name}/${state.toLowerCase()}` },
+    { name: full, path: `/profiles/${name}` },
+    { name: st, path: `/profiles/${name}/${state.toLowerCase()}` },
   ];
   const items = hub.cities.map((c) => ({ name: `${full} in ${c.city}, ${hub.state}`, path: nameCityPath(name, hub.state, c.city) }));
   const jsonLd = [

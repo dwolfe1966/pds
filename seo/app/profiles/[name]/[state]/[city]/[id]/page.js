@@ -1,4 +1,4 @@
-// The leaf profile page — /people/{first}-{last}/{st}/{city}/{id} (plan §2).
+// The leaf profile page — /profiles/{first}-{last}/{st}/{city}/{id} (plan §2).
 // Phase 0's ONE template: everything SEO-critical (visible teaser + all JSON-LD)
 // renders server-side into the initial HTML. No client JS is required to see
 // any content on this page (teardown §1.7).
@@ -122,7 +122,7 @@ export default async function PersonPage({ params }) {
             {person.relatives.map((r, i) => (
               <span key={r.id}>
                 {i > 0 && ' · '}
-                <a href={`/people/${r.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ color: '#0d5d2f' }}>{r.fullName}</a>
+                <a href={`/profiles/${r.fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ color: '#0d5d2f' }}>{r.fullName}</a>
               </span>
             ))}
           </p>

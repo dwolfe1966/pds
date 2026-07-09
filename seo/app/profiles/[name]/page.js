@@ -1,9 +1,9 @@
-// Name hub — /people/{first-last}. Aggregates everyone with the name across the
-// US, links down to state → city hubs and to individual profiles. Renders on
-// demand + ISR; 404s (thin-combo gate) when a name has no people.
+// Real-profile name hub — /profiles/{first-last}. Aggregates the actual people we
+// hold for a name (state → city → person). 404s when we have no profiles for the
+// name (the state-first /people surface handles name statistics separately).
 import { notFound } from 'next/navigation';
 import { getPeopleByName } from '../../../lib/data';
-import { nameStatePath, nameCityPath, personPath, nameFromSlug } from '../../../lib/ids';
+import { nameStatePath, nameCityPath, personPath } from '../../../lib/ids';
 import { stateName } from '../../../lib/states';
 import { collectionJsonLd, crumbsJsonLd } from '../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../lib/ui';
@@ -11,7 +11,7 @@ import { SITE, MAIN } from '../../../lib/site';
 
 export const revalidate = 5184000; // 60d
 
-const FUNNEL = `${MAIN}/name/landing/v3`;
+const FUNNEL = `${MAIN}/name/landing/v2`;
 
 export async function generateMetadata({ params }) {
   const { name } = await params;
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }) {
   return {
     title: `${full} — ${hub.total} ${hub.total === 1 ? 'Person' : 'People'} Found | IDLookup`,
     description: `Find ${hub.total} ${hub.total === 1 ? 'person' : 'people'} named ${full} in the United States. Browse ${full} by state and city — ages, addresses, phone numbers, and relatives.`,
-    alternates: { canonical: `${SITE}/people/${name}` },
+    alternates: { canonical: `${SITE}/profiles/${name}` },
   };
 }
 
@@ -31,10 +31,10 @@ export default async function NameHub({ params }) {
   if (!hub) notFound();
 
   const full = `${hub.firstName} ${hub.lastName}`;
-  const url = `${SITE}/people/${name}`;
+  const url = `${SITE}/profiles/${name}`;
   const crumbs = [
     { name: 'People Search', path: '/people' },
-    { name: full, path: `/people/${name}` },
+    { name: full, path: `/profiles/${name}` },
   ];
   const items = hub.states.map((s) => ({ name: `${full} in ${stateName(s.state)}`, path: nameStatePath(name, s.state) }));
   const jsonLd = [
@@ -46,12 +46,10 @@ export default async function NameHub({ params }) {
     <main style={ui.main}>
       <JsonLd blocks={jsonLd} />
       <Breadcrumbs crumbs={crumbs} />
-
       <h1 style={ui.h1}>{full}</h1>
       <p style={{ ...ui.muted, margin: '0 0 20px' }}>
         We found <strong>{hub.total}</strong> {hub.total === 1 ? 'person' : 'people'} named {full} across {hub.states.length} state{hub.states.length === 1 ? '' : 's'} in the United States.
       </p>
-
       <section style={ui.card}>
         <h2 style={{ marginTop: 0, fontSize: 18 }}>Browse {full} by location</h2>
         {hub.states.map((s) => (
@@ -66,7 +64,6 @@ export default async function NameHub({ params }) {
           </div>
         ))}
       </section>
-
       <section style={ui.card}>
         <h2 style={{ marginTop: 0, fontSize: 18 }}>People named {full}</h2>
         {hub.people.map((p) => (
@@ -76,9 +73,7 @@ export default async function NameHub({ params }) {
           </p>
         ))}
       </section>
-
       <a href={`${FUNNEL}?utm_source=seo&utm_medium=organic&q=${encodeURIComponent(full)}`} style={ui.cta}>Search {full} →</a>
-
       <FcraFooter />
     </main>
   );

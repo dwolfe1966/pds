@@ -9,7 +9,8 @@
 
 import { PEOPLE as FIXTURES } from './fixtures';
 import REAL from '../data/profiles.json';
-import { isPublicId, nameSlug, citySlug } from './ids';
+import { NAME_SLICE, STATE_SLICE, getStateList } from './directory.js';
+import { isPublicId, nameSlug, citySlug, statePath, stateNamePath } from './ids';
 import { hasDb, dbGetPerson, dbPeopleByName, dbNameIndex, dbSitemapRows } from './db.mjs';
 
 // JSON fallback set (used only when no DB is configured).
@@ -78,23 +79,38 @@ export async function getPeopleByNameCity(slug, state, city) {
 }
 
 // Site-relative URLs for the sitemap (persons + name/state/city hubs).
+const SITEMAP_MIN_EST = 5; // gate thin name×state combos out of the sitemap
+
 export async function getSitemapUrls() {
   const urls = new Set(['/people']);
+
+  // State-first surface (lead): state landings + name-in-state (gated so we don't
+  // list "~1 person named X in Wyoming" thin pages).
+  for (const st of getStateList()) {
+    urls.add(statePath(st.code));
+    for (const slug of STATE_SLICE.topNames) {
+      const nm = NAME_SLICE[slug];
+      if (!nm || nm.estPeople * st.share < SITEMAP_MIN_EST) continue;
+      urls.add(stateNamePath(st.code, slug));
+    }
+  }
+
+  // Real-profile pages (other category, /profiles/*).
   if (hasDb) {
     for (const r of await dbSitemapRows()) {
-      urls.add(`/people/${r.name_slug}`);
-      urls.add(`/people/${r.name_slug}/${r.state.toLowerCase()}`);
-      urls.add(`/people/${r.name_slug}/${r.state.toLowerCase()}/${r.city_slug}`);
-      urls.add(`/people/${r.name_slug}/${r.state.toLowerCase()}/${r.city_slug}/${r.id}`);
+      urls.add(`/profiles/${r.name_slug}`);
+      urls.add(`/profiles/${r.name_slug}/${r.state.toLowerCase()}`);
+      urls.add(`/profiles/${r.name_slug}/${r.state.toLowerCase()}/${r.city_slug}`);
+      urls.add(`/profiles/${r.name_slug}/${r.state.toLowerCase()}/${r.city_slug}/${r.id}`);
     }
     return [...urls];
   }
   for (const p of Object.values(PEOPLE)) {
     const slug = nameSlug(p.firstName, p.lastName);
-    urls.add(`/people/${slug}`);
-    urls.add(`/people/${slug}/${p.state.toLowerCase()}`);
-    urls.add(`/people/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}`);
-    urls.add(`/people/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}/${p.id}`);
+    urls.add(`/profiles/${slug}`);
+    urls.add(`/profiles/${slug}/${p.state.toLowerCase()}`);
+    urls.add(`/profiles/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}`);
+    urls.add(`/profiles/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}/${p.id}`);
   }
   return [...urls];
 }
