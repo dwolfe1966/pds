@@ -9,7 +9,7 @@
 
 import { PEOPLE as FIXTURES } from './fixtures';
 import REAL from '../data/profiles.json';
-import { NAME_SLICE, STATE_SLICE, getStateList } from './directory.js';
+import { NAME_SLICE, STATE_SLICE, getStateList, EST_IN_STATE_MIN, EST_IN_STATE_MAX } from './directory.js';
 import { isPublicId, nameSlug, citySlug, statePath, stateNamePath } from './ids';
 import { hasDb, dbGetPerson, dbPeopleByName, dbNameIndex, dbSitemapRows } from './db.mjs';
 
@@ -79,18 +79,19 @@ export async function getPeopleByNameCity(slug, state, city) {
 }
 
 // Site-relative URLs for the sitemap (persons + name/state/city hubs).
-const SITEMAP_MIN_EST = 5; // gate thin name×state combos out of the sitemap
-
 export async function getSitemapUrls() {
   const urls = new Set(['/people']);
 
-  // State-first surface (lead): state landings + name-in-state (gated so we don't
-  // list "~1 person named X in Wyoming" thin pages).
+  // State-first surface (lead): state landings + name-in-state, gated to the band IDI's
+  // teaser can actually resolve — over the ceiling it refuses common names (thin), under
+  // the floor it's "~1 in Wyoming" thin. Keeps "John Smith / WY", drops "John Smith / CA".
   for (const st of getStateList()) {
     urls.add(statePath(st.code));
     for (const slug of STATE_SLICE.topNames) {
       const nm = NAME_SLICE[slug];
-      if (!nm || nm.estPeople * st.share < SITEMAP_MIN_EST) continue;
+      if (!nm) continue;
+      const est = nm.estPeople * st.share;
+      if (est < EST_IN_STATE_MIN || est > EST_IN_STATE_MAX) continue;
       urls.add(stateNamePath(st.code, slug));
     }
   }
