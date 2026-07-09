@@ -165,14 +165,8 @@ const SalesSearchResultsPage = () => {
     fetchResults();
   }, [query, firstNameParam, lastNameParam, state, error]);
 
-  // Partner feedback (bug 5): show exact count when BC knows ≤30 total,
-  // collapse to "more than 30" otherwise so the UI pushes users to refine.
-  const displayCount = totalCount || results.length;
-  const countLabel = !displayCount
-    ? null
-    : displayCount > 30
-    ? 'more than 30 results'
-    : `${displayCount} result${displayCount !== 1 ? 's' : ''}`;
+  // displayCount / countLabel are computed after narrowedResults (below), so the
+  // header reflects the NARROWED set when a city/age/filter is active.
 
   // Sorted view (bug 11). BC returns results in its own relevance order; we
   // respect that by default and only re-sort client-side when the user picks
@@ -214,6 +208,19 @@ const SalesSearchResultsPage = () => {
     });
     return narrowed.length > 0 ? narrowed : boxFiltered;
   }, [results, searchQuery.city, searchQuery.age, filters]);
+
+  // Header count: when a city/age/refine filter is active, show the NARROWED count
+  // (what's actually on screen) instead of the teaser's full total — otherwise a
+  // "1 in Modesto" result still reads "more than 30". No filter → the teaser total,
+  // collapsed to "more than 30" per bug 5.
+  const isNarrowed = !!((searchQuery.city || '').trim() || parseAge(searchQuery.age) != null
+    || filters.criminal || filters.property || filters.relatives || filters.employment || filters.gender);
+  const displayCount = isNarrowed ? narrowedResults.length : (totalCount || results.length);
+  const countLabel = !displayCount
+    ? null
+    : (!isNarrowed && displayCount > 30)
+    ? 'more than 30 results'
+    : `${displayCount} result${displayCount !== 1 ? 's' : ''}`;
 
   const sortedResults = useMemo(() => {
     if (sortBy === 'relevance') return narrowedResults;
