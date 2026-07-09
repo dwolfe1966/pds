@@ -22,16 +22,6 @@ const SalesSearchResultsPage = () => {
   const brand = useBrand();
   const theme = useFunnelTheme(); // funnel palette carried from the landing; null = green
   const campaign = useCampaign(); // bug #51: shN drives thin-match vs no-records
-
-  // Thin-match A/B: version 1 (streamlined signup form) vs 2 (no signup form).
-  // Stable per session so a visitor always sees the same version.
-  const thinMatchVersion = useMemo(() => {
-    try {
-      let v = sessionStorage.getItem('thinMatchVersion');
-      if (v !== '1' && v !== '2') { v = Math.random() < 0.5 ? '1' : '2'; sessionStorage.setItem('thinMatchVersion', v); }
-      return Number(v);
-    } catch { return 1; }
-  }, []);
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -43,6 +33,19 @@ const SalesSearchResultsPage = () => {
   const cityParam = params.get('city') || '';
   const ageParam = params.get('age') || '';
   const error = params.get('error');
+
+  // Thin-match A/B: version 1 (streamlined signup form) vs 2 (no signup form).
+  // `?tmv=1` / `?tmv=2` forces a version (and sticks it); otherwise a stable 50/50
+  // split held in sessionStorage.
+  const thinMatchVersion = useMemo(() => {
+    const override = params.get('tmv');
+    try {
+      if (override === '1' || override === '2') { sessionStorage.setItem('thinMatchVersion', override); return Number(override); }
+      let v = sessionStorage.getItem('thinMatchVersion');
+      if (v !== '1' && v !== '2') { v = Math.random() < 0.5 ? '1' : '2'; sessionStorage.setItem('thinMatchVersion', v); }
+      return Number(v);
+    } catch { return override === '2' ? 2 : 1; }
+  }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
   
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
