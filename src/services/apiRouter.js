@@ -620,6 +620,12 @@ async function callNewAPI(endpoint, params) {
         query.lName = query.lastName;
         delete query.lastName;
       }
+      // IDI matches state on the UPPERCASE 2-letter code. Lowercase (e.g. from an
+      // SEO deep-link path segment or a typed refine box) returns status:"failed",
+      // total:0 — normalize so every caller matches the funnel wizard, which sends "AZ".
+      if (query.state && typeof query.state === 'string') {
+        query.state = query.state.trim().toUpperCase();
+      }
       // BC teaser docs do not list perPage as an input; BC returns its default
       // page size (~5) and additional results must be fetched via response.getMore().
       delete query.perPage;
