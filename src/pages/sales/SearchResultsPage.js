@@ -183,24 +183,17 @@ const SalesSearchResultsPage = () => {
     return match ? parseInt(match[0], 10) : null;
   };
 
-  // Client-side narrowing for optional filters (bug 10). BC doesn't document
-  // city/age as teaser inputs, so we apply them here against the full result
-  // set. If narrowing would eliminate everything we fall back to the raw list
-  // so the user isn't left staring at an empty page.
+  // Client-side narrowing. BC doesn't accept city/age as teaser inputs (they're
+  // stripped from the teaser query — sending them returns 0), so we narrow here.
+  // Two tiers: the explicit refine-box filters are HARD (an active "criminal"
+  // filter can legitimately show nothing); the city/age passed through from the
+  // wizard/URL are SOFT — they narrow when they leave a match, but fall back to the
+  // fuller set instead of dead-ending the user on an empty page (a strict city/age
+  // filter over a ~5-row teaser would too often show nothing).
   const narrowedResults = useMemo(() => {
     const cityQ = (searchQuery.city || '').trim().toLowerCase();
     const ageQ = parseAge(searchQuery.age);
-    const anyFilter = cityQ || ageQ != null || filters.criminal || filters.property
-      || filters.relatives || filters.employment || filters.gender;
-    if (!anyFilter) return results;
-    // Explicit filters can legitimately return nothing — no silent fall-back to the
-    // full list (that would show everyone despite an active "criminal" filter).
-    return results.filter((r) => {
-      if (cityQ && !(r.location || '').toLowerCase().includes(cityQ)) return false;
-      if (ageQ != null) {
-        const rAge = parseAge(r.ageRange);
-        if (rAge == null || Math.abs(rAge - ageQ) > 5) return false;
-      }
+    const boxFiltered = results.filter((r) => {
       const R = r.records || {};
       const Fl = r.flags || {};
       if (filters.criminal && !(Fl.isCriminal || R.criminal > 0)) return false;
@@ -210,6 +203,16 @@ const SalesSearchResultsPage = () => {
       if (filters.gender && String(r.gender || '').toLowerCase() !== filters.gender) return false;
       return true;
     });
+    if (!cityQ && ageQ == null) return boxFiltered;
+    const narrowed = boxFiltered.filter((r) => {
+      if (cityQ && !(r.location || '').toLowerCase().includes(cityQ)) return false;
+      if (ageQ != null) {
+        const rAge = parseAge(r.ageRange);
+        if (rAge == null || Math.abs(rAge - ageQ) > 5) return false;
+      }
+      return true;
+    });
+    return narrowed.length > 0 ? narrowed : boxFiltered;
   }, [results, searchQuery.city, searchQuery.age, filters]);
 
   const sortedResults = useMemo(() => {

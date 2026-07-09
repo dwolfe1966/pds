@@ -631,6 +631,13 @@ async function callNewAPI(endpoint, params) {
       delete query.perPage;
       delete query.per_page;
       delete query.pageSize;
+      // city/age are NOT valid teaser inputs — IDI returns 0 results whenever they're
+      // present, even when the value is correct (verified: "Patricia Garcia / CA"
+      // returns records, but "+ city" or "+ age" → status:failed/0). They are applied
+      // CLIENT-SIDE in the SERP (narrowedResults) as designed; leaking them into the
+      // teaser query silently breaks the search into a thin-match. Strip them here.
+      delete query.city;
+      delete query.age;
       const isPaginationRequest = !!query.commerceContentId && query.page != null;
       if (process.env.NODE_ENV === 'development') {
         dbg('[ByteCrtrs Search] All params sent to searchTeaser:', JSON.stringify(query, null, 2));
