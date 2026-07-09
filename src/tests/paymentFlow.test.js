@@ -138,9 +138,12 @@ describe('PaymentPage — form rendering', () => {
     expect(container.querySelector('input[name="billingZip"]')).not.toBeNull();
   });
 
-  test('shows recurring plan price from brand', () => {
+  test('discloses the recurring plan price', () => {
     render();
-    expect(container.textContent).toContain('$49.98/month');
+    // The redesign moved the recurring price into the pricing disclosure sentence
+    // ("…charge your card just $49.98 at the end of the trial period…") — the
+    // standalone "$49.98/month" line was removed.
+    expect(container.textContent).toContain('$49.98');
   });
 
   test('shows all three trust badges', () => {
@@ -159,9 +162,11 @@ describe('PaymentPage — form rendering', () => {
     expect(container.textContent).toContain('I Agree, Continue');
   });
 
-  test('shows authenticated user email', () => {
+  test('does not surface the account email on checkout (Paying-as removed)', () => {
     render();
-    expect(container.textContent).toContain('jane@example.com');
+    // The "Paying as {email}" line was removed in the payment redesign; the
+    // account email should no longer appear on the checkout screen.
+    expect(container.textContent).not.toContain('jane@example.com');
   });
 });
 
