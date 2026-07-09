@@ -22,6 +22,16 @@ const SalesSearchResultsPage = () => {
   const brand = useBrand();
   const theme = useFunnelTheme(); // funnel palette carried from the landing; null = green
   const campaign = useCampaign(); // bug #51: shN drives thin-match vs no-records
+
+  // Thin-match A/B: version 1 (streamlined signup form) vs 2 (no signup form).
+  // Stable per session so a visitor always sees the same version.
+  const thinMatchVersion = useMemo(() => {
+    try {
+      let v = sessionStorage.getItem('thinMatchVersion');
+      if (v !== '1' && v !== '2') { v = Math.random() < 0.5 ? '1' : '2'; sessionStorage.setItem('thinMatchVersion', v); }
+      return Number(v);
+    } catch { return 1; }
+  }, []);
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -50,7 +60,7 @@ const SalesSearchResultsPage = () => {
   const clearFilters = () => setFilters({ criminal: false, property: false, relatives: false, employment: false, gender: '' });
 
   useEffect(() => {
-    track('results_view', { search_type: 'name', query: query || '', state: state || '' });
+    track('results_view', { search_type: 'name', query: query || '', state: state || '', thin_match_version: thinMatchVersion });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -420,7 +430,7 @@ const SalesSearchResultsPage = () => {
           (() => {
             const flags = readThinMatch();
             return campaign?.search?.zeroState === 'thinMatch'
-              ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} />
+              ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} version={thinMatchVersion} />
               : <ZeroResultsPanel searchType="name" query={searchQuery} theme={theme} />;
           })()
         ) : null}
@@ -456,7 +466,7 @@ const SalesSearchResultsPage = () => {
               </div>
             )}
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: theme ? theme.ink : 'var(--color-text-primary)' }}>
-              Not who you&apos;re looking for? Refine your search
+              Search again
             </h2>
             <form onSubmit={submitRefine} style={{ maxWidth: '640px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>

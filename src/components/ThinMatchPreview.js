@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSignup, validatePassword } from '../hooks/useSignup';
 import { thinMatchVariant } from '../services/thinMatch';
 import { buildPreviewCards } from '../services/previewCards';
+import { PersonAvatar } from './PersonAvatar';
 
 /**
  * ThinMatchPreview — shown when the teaser search returns zero or sparse
@@ -41,7 +42,7 @@ const VARIANT_COPY = {
   },
 };
 
-const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme = null }) => {
+const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme = null, version = 1 }) => {
   const variant = thinMatchVariant(flags) || 'default';
   const copy = VARIANT_COPY[variant] || VARIANT_COPY.default;
   const { cards, fullName, stName } = useMemo(() => buildPreviewCards(searchType, query), [searchType, query]);
@@ -50,9 +51,6 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
   // provider is genuinely down, where the "refreshing" copy is more honest).
   const inState = stName && stName !== 'the United States' ? ` in ${stName}` : '';
   const headlineTitle = variant === 'providerDown' ? copy.title : `We found people named ${fullName}${inState}`;
-  const headlineBody = variant === 'providerDown'
-    ? copy.body
-    : 'Here’s a preview of the matches below. Create a free account to see verified ages, current addresses, phone numbers, and relatives.';
 
   const { token, isPaid } = useAuth();
   const { submit, loading, error, setError } = useSignup();
@@ -90,36 +88,29 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
           borderRadius: '999px',
           marginBottom: '0.75rem',
         }}>PREVIEW</span>
-        <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>
+        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>
           {headlineTitle}
         </h2>
-        <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.55 }}>{headlineBody}</p>
       </div>
 
-      {/* Preview cards — real name + state, representative details (labeled Preview;
-          verified records unlock after signup). */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.875rem', marginBottom: '2rem' }}>
-        {cards.map((card) => (
-          <div key={card.id} style={{
-            position: 'relative',
-            border: '1px solid #e5e7eb',
-            borderRadius: '0.5rem',
-            padding: '1rem 1rem 0.875rem',
-            background: '#fff',
-          }}>
-            <span style={{
-              position: 'absolute', top: '0.5rem', right: '0.5rem',
-              background: '#f1f5f9', color: '#64748b',
-              fontSize: '0.625rem', fontWeight: 700,
-              padding: '0.1rem 0.4rem', borderRadius: 4, letterSpacing: '0.05em', textTransform: 'uppercase',
-            }}>Preview</span>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#111827' }}>{card.fullName}, {card.age}</div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0', fontSize: '0.8125rem', color: '#374151', lineHeight: 1.5 }}>
-              <li>📍 Lives in <strong>{card.city}, {card.stCode}</strong></li>
-              <li>👪 {card.relatives.slice(0, 2).join(', ')}{card.relatives.length > 2 ? ` +${card.relatives.length - 2} more` : ''}</li>
-              <li style={{ marginTop: '0.4rem', color: '#9ca3af', filter: 'blur(3.5px)', userSelect: 'none' }}>📞 (555) 214-8890 · name@email.com</li>
-              <li style={{ color: '#0d5d2f', fontWeight: 600, marginTop: '0.2rem' }}>🔒 {card.phones} phones · {card.emails} emails · {card.prevAddresses} past addresses</li>
-            </ul>
+      {/* Preview cards — SERP result-card format (ribbon + avatar + name/age, body with
+          location/relatives), contact details locked. Ribbons alternate green/gray. */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.875rem', marginBottom: '2rem' }}>
+        {cards.map((card, i) => (
+          <div key={card.id} style={{ border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 14px rgba(17,24,39,0.08), 0 1px 3px rgba(17,24,39,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.7rem 1rem', background: i % 2 === 1 ? '#f1f5f9' : '#e6f4ec', borderBottom: `1px solid ${i % 2 === 1 ? '#e5e7eb' : '#c7e6d3'}` }}>
+              <PersonAvatar person={{ fullName: card.fullName }} size={40} />
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <span style={{ fontWeight: 700, fontSize: '1rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{card.fullName}</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151', whiteSpace: 'nowrap', flexShrink: 0 }}>{card.age}</span>
+              </div>
+            </div>
+            <div style={{ padding: '0.85rem 1.1rem 1rem' }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#374151' }}><span style={{ color: '#6b7280', fontWeight: 600 }}>Location </span>{card.city}, {card.stCode}</p>
+              <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#374151' }}><span style={{ color: '#6b7280', fontWeight: 600 }}>Relatives </span>{card.relatives.slice(0, 2).join(', ')}{card.relatives.length > 2 ? ` +${card.relatives.length - 2}` : ''}</p>
+              <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#9ca3af', filter: 'blur(3.5px)', userSelect: 'none' }}>📞 (555) 214-8890 · name@email.com</p>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#0d5d2f', fontWeight: 600 }}>🔒 {card.phones} phones · {card.emails} emails · {card.prevAddresses} past addresses</p>
+            </div>
           </div>
         ))}
       </div>
@@ -127,43 +118,39 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
       {/* CTA — visitor sees inline signup, free member sees upgrade CTA,
           paid member sees a "refine search" hint instead of a payment prompt. */}
       {!token ? (
-        <div style={{
-          border: '2px solid #0d5d2f',
-          borderRadius: '0.75rem',
-          padding: '1.5rem',
-          background: '#fff',
-        }}>
-          <h3 style={{ margin: '0 0 0.5rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
-            Create an account to unlock full results
-          </h3>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            <input
-              type="email" required autoComplete="email"
-              placeholder="Email address"
-              value={email} onChange={(e) => setEmail(e.target.value)}
-              style={inputStyle}
-            />
-            <input
-              type="password" required autoComplete="new-password"
-              placeholder="Create a password (at least 8 characters)"
-              value={password} onChange={(e) => setPassword(e.target.value)}
-              style={inputStyle}
-            />
-            <label style={{ fontSize: '0.8125rem', color: '#4b5563', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-              <input type="checkbox" checked={optin} onChange={(e) => setOptin(e.target.checked)} />
-              <span>Send me product updates and offers (optional).</span>
-            </label>
-            {error && (
-              <div style={{ color: '#b91c1c', fontSize: '0.8125rem' }}>{error}</div>
-            )}
-            <button type="submit" disabled={loading} style={ctaStyle(loading, theme)}>
-              {loading ? 'Creating your account…' : 'Create account & continue'}
-            </button>
-            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
-              🔒 We never notify the person you searched. Your account is private.
-            </div>
-          </form>
-        </div>
+        // VERSION 2 drops the whole signup rectangle; VERSION 1 keeps a streamlined form.
+        version === 2 ? null : (
+          <div style={{
+            border: '2px solid #0d5d2f',
+            borderRadius: '0.75rem',
+            padding: '1.5rem',
+            background: '#fff',
+          }}>
+            <h3 style={{ margin: '0 0 0.75rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
+              View full results
+            </h3>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              <input
+                type="email" required autoComplete="email"
+                placeholder="Email address"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                style={inputStyle}
+              />
+              <input
+                type="password" required autoComplete="new-password"
+                placeholder="Create a password (at least 8 characters)"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                style={inputStyle}
+              />
+              {error && (
+                <div style={{ color: '#b91c1c', fontSize: '0.8125rem' }}>{error}</div>
+              )}
+              <button type="submit" disabled={loading} style={ctaStyle(loading, theme)}>
+                {loading ? 'Creating your account…' : 'Continue'}
+              </button>
+            </form>
+          </div>
+        )
       ) : !isPaid ? (
         <div style={{
           border: '2px solid #0d5d2f',
