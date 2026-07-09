@@ -1,13 +1,58 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import api from '../../api';
-import { setSearchContext } from '../../services/searchContext';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { track } from '../../services/trackingService';
-import styles from './NameSearchLandingV2Page.module.css';
+import s from './NameLandingV3Incarceration.module.css';
 import { useBrand } from '../../services/brand';
 
+/** Step index for progress bar (1–4). Interstitials and final-search don't show a step. */
+const getStepIndex = (step) => {
+  switch (step) {
+    case 'name': return 1;
+    case 'location': return 2;
+    case 'details': return 3;
+    case 'confirm': return 4;
+    default: return 0;
+  }
+};
+
+const TOTAL_STEPS = 4;
+
+// Inline stroke icons (no emoji — spec). One <svg> chrome, path(s) per name.
+const ICON_PATHS = {
+  users: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />,
+  pin: <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z" /><circle cx="12" cy="10" r="3" /></>,
+  search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
+  building: <><rect x="4" y="2" width="16" height="20" rx="1" /><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01" /></>,
+  calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+  scale: <path d="M12 3v18M6 7h12M7 7l-3 6a3 3 0 0 0 6 0l-3-6ZM17 7l-3 6a3 3 0 0 0 6 0l-3-6Z" />,
+  shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />,
+  phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z" />,
+  mail: <><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 5L2 7" /></>,
+  file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" /></>,
+  seal: <><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m9 12 2 2 4-4" /></>,
+};
+const Icon = ({ name, className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON_PATHS[name]}</svg>
+);
+
+const VALUE_PREVIEW = [
+  ['pin', 'Current address'],
+  ['phone', 'Phone numbers'],
+  ['mail', 'Email addresses'],
+  ['users', 'Relatives & associates'],
+  ['calendar', 'Age & date of birth'],
+  ['building', 'Address history'],
+  ['file', 'Public records'],
+];
+
+/**
+ * Name search landing v2 — GENERAL people-search landing. Mirrors the v3 layout +
+ * structure (self-chromed trust-first hero → 4-step wizard) without the
+ * incarceration framing. Same steps + data + tracking: Name → Location → Details
+ * → Confirm → Results (via /name/loader).
+ */
 const NameSearchLandingV2Page = () => {
   const brand = useBrand();
   useLandingTrack('name', 'v2');
@@ -24,94 +69,52 @@ const NameSearchLandingV2Page = () => {
   const [step, setStep] = useState('name');
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
-  const [agreeError, setAgreeError] = useState('');
   const [locationError, setLocationError] = useState('');
+  const [agreeError, setAgreeError] = useState('');
   const [finalStatus, setFinalStatus] = useState('Searching our database...');
   const [finalProgress, setFinalProgress] = useState(0);
 
   const usStates = [
     { value: '', label: 'Select a state' },
-    { value: 'AL', label: 'Alabama' },
-    { value: 'AK', label: 'Alaska' },
-    { value: 'AZ', label: 'Arizona' },
-    { value: 'AR', label: 'Arkansas' },
-    { value: 'CA', label: 'California' },
-    { value: 'CO', label: 'Colorado' },
-    { value: 'CT', label: 'Connecticut' },
-    { value: 'DE', label: 'Delaware' },
-    { value: 'FL', label: 'Florida' },
-    { value: 'GA', label: 'Georgia' },
-    { value: 'HI', label: 'Hawaii' },
-    { value: 'ID', label: 'Idaho' },
-    { value: 'IL', label: 'Illinois' },
-    { value: 'IN', label: 'Indiana' },
-    { value: 'IA', label: 'Iowa' },
-    { value: 'KS', label: 'Kansas' },
-    { value: 'KY', label: 'Kentucky' },
-    { value: 'LA', label: 'Louisiana' },
-    { value: 'ME', label: 'Maine' },
-    { value: 'MD', label: 'Maryland' },
-    { value: 'MA', label: 'Massachusetts' },
-    { value: 'MI', label: 'Michigan' },
-    { value: 'MN', label: 'Minnesota' },
-    { value: 'MS', label: 'Mississippi' },
-    { value: 'MO', label: 'Missouri' },
-    { value: 'MT', label: 'Montana' },
-    { value: 'NE', label: 'Nebraska' },
-    { value: 'NV', label: 'Nevada' },
-    { value: 'NH', label: 'New Hampshire' },
-    { value: 'NJ', label: 'New Jersey' },
-    { value: 'NM', label: 'New Mexico' },
-    { value: 'NY', label: 'New York' },
-    { value: 'NC', label: 'North Carolina' },
-    { value: 'ND', label: 'North Dakota' },
-    { value: 'OH', label: 'Ohio' },
-    { value: 'OK', label: 'Oklahoma' },
-    { value: 'OR', label: 'Oregon' },
-    { value: 'PA', label: 'Pennsylvania' },
-    { value: 'RI', label: 'Rhode Island' },
-    { value: 'SC', label: 'South Carolina' },
-    { value: 'SD', label: 'South Dakota' },
-    { value: 'TN', label: 'Tennessee' },
-    { value: 'TX', label: 'Texas' },
-    { value: 'UT', label: 'Utah' },
-    { value: 'VT', label: 'Vermont' },
-    { value: 'VA', label: 'Virginia' },
-    { value: 'WA', label: 'Washington' },
-    { value: 'WV', label: 'West Virginia' },
-    { value: 'WI', label: 'Wisconsin' },
-    { value: 'WY', label: 'Wyoming' }
+    { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' }, { value: 'AZ', label: 'Arizona' },
+    { value: 'AR', label: 'Arkansas' }, { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
+    { value: 'CT', label: 'Connecticut' }, { value: 'DE', label: 'Delaware' }, { value: 'FL', label: 'Florida' },
+    { value: 'GA', label: 'Georgia' }, { value: 'HI', label: 'Hawaii' }, { value: 'ID', label: 'Idaho' },
+    { value: 'IL', label: 'Illinois' }, { value: 'IN', label: 'Indiana' }, { value: 'IA', label: 'Iowa' },
+    { value: 'KS', label: 'Kansas' }, { value: 'KY', label: 'Kentucky' }, { value: 'LA', label: 'Louisiana' },
+    { value: 'ME', label: 'Maine' }, { value: 'MD', label: 'Maryland' }, { value: 'MA', label: 'Massachusetts' },
+    { value: 'MI', label: 'Michigan' }, { value: 'MN', label: 'Minnesota' }, { value: 'MS', label: 'Mississippi' },
+    { value: 'MO', label: 'Missouri' }, { value: 'MT', label: 'Montana' }, { value: 'NE', label: 'Nebraska' },
+    { value: 'NV', label: 'Nevada' }, { value: 'NH', label: 'New Hampshire' }, { value: 'NJ', label: 'New Jersey' },
+    { value: 'NM', label: 'New Mexico' }, { value: 'NY', label: 'New York' }, { value: 'NC', label: 'North Carolina' },
+    { value: 'ND', label: 'North Dakota' }, { value: 'OH', label: 'Ohio' }, { value: 'OK', label: 'Oklahoma' },
+    { value: 'OR', label: 'Oregon' }, { value: 'PA', label: 'Pennsylvania' }, { value: 'RI', label: 'Rhode Island' },
+    { value: 'SC', label: 'South Carolina' }, { value: 'SD', label: 'South Dakota' }, { value: 'TN', label: 'Tennessee' },
+    { value: 'TX', label: 'Texas' }, { value: 'UT', label: 'Utah' }, { value: 'VT', label: 'Vermont' },
+    { value: 'VA', label: 'Virginia' }, { value: 'WA', label: 'Washington' }, { value: 'WV', label: 'West Virginia' },
+    { value: 'WI', label: 'Wisconsin' }, { value: 'WY', label: 'Wyoming' },
   ];
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [step]);
+  const stepIndex = getStepIndex(step);
+
+  // Reset scroll to top when step (view) changes so each screen loads at top.
+  useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
   useEffect(() => {
     let timer;
     if (step === 'searching-one') {
-      timer = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v2' }); setStep('location'); }, 1700);
+      timer = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v2' }); setStep('location'); }, 5000);
     }
     if (step === 'searching-two') {
-      timer = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v2' }); setStep('details'); }, 1700);
+      timer = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v2' }); setStep('details'); }, 5000);
     }
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-    };
+    return () => { if (timer) clearTimeout(timer); };
   }, [step]);
 
-  // Search invoked directly from handleConfirm — NOT a useEffect. See
-  // NameSearchLandingV5Page.js for explanation of why effect-based dispatch
-  // silently drops the search.
+  // Search invoked directly from handleConfirm — NOT a useEffect. Effect-based
+  // dispatch silently drops the search (see NameSearchLandingV5Page.js). Delegates
+  // to /name/loader — the reliable path that fires all conversion/measurement signals.
   const runSearch = () => {
-    // Delegate the actual search to /name/loader — the reliable path V1/V3/V4/V6
-    // and /search/all use. The prior inline api.searchPeople bypassed the loader,
-    // so it fired NONE of the loader's conversion/measurement signals
-    // (gtmSearchSubmit, track('search_submit'), appendSearch, persistThinMatch) —
-    // leaving this PAID variant invisible to Ads and the thin-match/pricing stale.
-    // Handing off keeps this wizard's entry UX but uses the path that reports.
     setFinalStatus('Searching our database...');
     setFinalProgress(60);
     gtmSetSearchInput({
@@ -121,7 +124,7 @@ const NameSearchLandingV2Page = () => {
       city: city.trim(),
       state: state.trim(),
     });
-    try { sessionStorage.removeItem('nameSearchResults'); } catch {}
+    try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
 
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
@@ -133,11 +136,11 @@ const NameSearchLandingV2Page = () => {
     navigate(`/name/loader?${params.toString()}`);
   };
 
-  const startSearch = (event) => {
-    event.preventDefault();
+  const startSearch = (e) => {
+    e.preventDefault();
     setNameError('');
     if (!firstName.trim() || !lastName.trim()) {
-      setNameError('Please enter a first and last name.'); track('validation_error', { reason: 'name_required', step: 'name' });
+      setNameError('Please enter a first and last name to search.'); track('validation_error', { reason: 'name_required', step: 'name' });
       return;
     }
     track('search_step', { step: 'searching-one', search_type: 'name', variant: 'v2' });
@@ -145,21 +148,12 @@ const NameSearchLandingV2Page = () => {
   };
 
   const continueFromLocation = () => {
-    // State is required on every name landing — first+last alone returns
-    // unreliable BC matches.
-    if (!state.trim()) {
-      setLocationError('Please select a state before continuing.'); track('validation_error', { reason: 'state_required', step: 'location' });
-      return;
-    }
+    if (!state.trim()) { setLocationError('Please select a state before continuing.'); track('validation_error', { reason: 'state_required', step: 'location' }); return; }
     setLocationError('');
     track('search_step', { step: 'searching-two', search_type: 'name', variant: 'v2' });
     setStep('searching-two');
   };
-
-  const continueFromDetails = () => {
-    track('search_step', { step: 'confirm', search_type: 'name', variant: 'v2' });
-    setStep('confirm');
-  };
+  const continueFromDetails = () => { track('search_step', { step: 'confirm', search_type: 'name', variant: 'v2' }); setStep('confirm'); };
 
   const handleConfirm = () => {
     setAgreeError('');
@@ -173,248 +167,182 @@ const NameSearchLandingV2Page = () => {
     runSearch();
   };
 
-  const stepLabel = (() => {
-    switch (step) {
-      case 'name':
-        return 'Step 1 of 4';
-      case 'location':
-        return 'Step 2 of 4';
-      case 'details':
-        return 'Step 3 of 4';
-      case 'confirm':
-        return 'Step 4 of 4';
-      default:
-        return 'Processing';
-    }
-  })();
-
   return (
-    <main className={styles.main}>
-      <section className={styles.wrapper}>
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.stepBadge}>{stepLabel}</span>
-            <h1 className={styles.title}>Find Anyone Fast</h1>
-            <p className={styles.subtitle}>
-              Search billions of public records with the {brand.name} people finder.
-            </p>
+    <main className={s.page}>
+      {/* self-chrome minimal header (spec: no Login / Sign Up) */}
+      <header className={s.nav}>
+        <a href="/" className={s.logo}>{brand.name}</a>
+      </header>
+
+      <div className={s.wrapper}>
+        {/* HERO — trust-first, on the entry step */}
+        {step === 'name' && (
+          <div className={s.hero}>
+            <h1 className={s.headline}>Find Anyone Fast</h1>
           </div>
+        )}
 
+        <div className={s.card}>
+          {/* segmented progress (steps 2–4) */}
+          {stepIndex >= 2 && stepIndex <= TOTAL_STEPS && (
+            <div className={s.progress}>
+              <p className={s.progressLabel}>Step {stepIndex} of {TOTAL_STEPS}</p>
+              <div className={s.progressTrack} role="progressbar" aria-valuenow={stepIndex} aria-valuemin={1} aria-valuemax={TOTAL_STEPS}>
+                {[1, 2, 3, 4].map((n) => (
+                  <div key={n} className={`${s.progressSeg} ${n <= stepIndex ? s.progressSegOn : ''}`} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Name */}
           {step === 'name' && (
-            <form className={styles.form} onSubmit={startSearch}>
-              <h2 className={styles.sectionTitle}>Enter a Name to Begin</h2>
-              <div className={styles.fieldGrid}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label} htmlFor="firstName">
-                    First Name
-                  </label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    className={styles.input}
-                    value={firstName}
-                    onChange={(event) => setFirstName(event.target.value)}
-                    placeholder="First (ex. John)"
-                    required
-                  />
+            <>
+              <ul className={s.benefits}>
+                <li className={s.benefit}><Icon name="users" className={s.benefitIcon} /><span>Reconnect with friends &amp; family</span></li>
+                <li className={s.benefit}><Icon name="pin" className={s.benefitIcon} /><span>Find current address &amp; contact info</span></li>
+                <li className={s.benefit}><Icon name="search" className={s.benefitIcon} /><span>Comprehensive people search</span></li>
+              </ul>
+
+              <form className={s.form} onSubmit={startSearch}>
+                <div className={s.nameRow}>
+                  <div className={s.field}>
+                    <label className={s.label} htmlFor="v2-firstName">First name</label>
+                    <input id="v2-firstName" type="text" className={s.input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="ex. John" required />
+                  </div>
+                  <div className={s.field}>
+                    <label className={s.label} htmlFor="v2-lastName">Last name</label>
+                    <input id="v2-lastName" type="text" className={s.input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="ex. Smith" required />
+                  </div>
                 </div>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label} htmlFor="lastName">
-                    Last Name
-                  </label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    className={styles.input}
-                    value={lastName}
-                    onChange={(event) => setLastName(event.target.value)}
-                    placeholder="Last (ex. Smith)"
-                    required
-                  />
+
+                {nameError && <p className={s.errorText}>{nameError}</p>}
+
+                <button type="submit" className={s.cta}><Icon name="search" className={s.ctaIcon} /> Search Records</button>
+              </form>
+
+              <p className={s.social}><Icon name="seal" className={s.socialIcon} /> Used by millions to reconnect with people, verify identities, and search public records.</p>
+
+              {/* Value preview — BELOW the social proof (matches v3) */}
+              <div className={s.valuePreview}>
+                <p className={s.vpLabel}>What you may find</p>
+                <div className={s.vpGrid}>
+                  {VALUE_PREVIEW.map(([ic, label]) => (
+                    <span key={label} className={s.vpChip}><Icon name={ic} className={s.vpChipIcon} />{label}</span>
+                  ))}
                 </div>
               </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.label} htmlFor="middleName">
-                  Middle Name (Optional)
-                </label>
-                <input
-                  id="middleName"
-                  type="text"
-                  className={styles.input}
-                  value={middleName}
-                  onChange={(event) => setMiddleName(event.target.value)}
-                  placeholder="Middle name"
-                />
-              </div>
-
-              {nameError && <p className={styles.errorText}>{nameError}</p>}
-
-              <div className={styles.actions}>
-                <button type="submit" className={styles.buttonPrimary}>
-                  Begin Search
-                </button>
-              </div>
-            </form>
+            </>
           )}
 
+          {/* Searching interstitial 1 */}
           {step === 'searching-one' && (
-            <div className={styles.searching}>
-              <div className={styles.spinner} />
-              <h2 className={styles.sectionTitle}>Searching</h2>
-              <p className={styles.helperText}>Looking up billions of records...</p>
-              <div className={styles.searchList}>
-                <span>Possible relatives</span>
-                <span>Job &amp; education</span>
-                <span>Person information</span>
-                <span>Contact information</span>
-                <span>Social media profiles</span>
-              </div>
+            <div className={s.searching}>
+              <div className={s.spinner} />
+              <h2 className={s.sectionTitle}>Searching</h2>
+              <p className={s.helper}>Searching public records…</p>
+              <ul className={s.searchList}>
+                <li>Public records</li><li>Address history</li><li>Phone &amp; email</li><li>Relatives</li>
+              </ul>
             </div>
           )}
 
+          {/* Step 2: Location */}
           {step === 'location' && (
-            <div className={styles.form}>
-              <h2 className={styles.sectionTitle}>Thank you. Where do they live?</h2>
-              <div className={styles.fieldGrid}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label} htmlFor="city">
-                    City (Optional)
-                  </label>
-                  <input
-                    id="city"
-                    type="text"
-                    className={styles.input}
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                    placeholder="City"
-                  />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label} htmlFor="state">
-                    State *
-                  </label>
-                  <select
-                    id="state"
-                    className={styles.select}
-                    value={state}
-                    onChange={(event) => { setState(event.target.value); if (locationError) setLocationError(''); }}
-                    aria-invalid={!!locationError}
-                    style={locationError ? { borderColor: '#b91c1c' } : undefined}
-                  >
-                    {usStates.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  {locationError && (
-                    <p role="alert" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#b91c1c' }}>{locationError}</p>
-                  )}
-                </div>
+            <div className={s.form}>
+              <h2 className={s.sectionTitle}>Which state?</h2>
+              <p className={s.helper}>State narrows the search. Adding a city improves the results.</p>
+              <div className={s.field}>
+                <label className={s.label} htmlFor="v2-state">State</label>
+                <select id="v2-state" className={s.select} value={state} onChange={(e) => { setState(e.target.value); if (locationError) setLocationError(''); }} aria-invalid={!!locationError} style={locationError ? { borderColor: '#b91c1c' } : undefined}>
+                  {usStates.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                </select>
+                {locationError && <p className={s.errorText} role="alert">{locationError}</p>}
               </div>
-              <div className={styles.actions}>
-                <button type="button" className={styles.buttonPrimary} onClick={continueFromLocation}>
-                  Continue
-                </button>
-                {/* "Skip This Step" cannot be offered for a required field — partner feedback bug 12 */}
+              <div className={s.field}>
+                <label className={s.label} htmlFor="v2-city">City (optional)</label>
+                <input id="v2-city" type="text" className={s.input} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+              </div>
+              <div className={s.actions}>
+                <button type="button" className={s.cta} onClick={continueFromLocation}>Continue</button>
               </div>
             </div>
           )}
 
+          {/* Searching interstitial 2 */}
           {step === 'searching-two' && (
-            <div className={styles.searching}>
-              <div className={styles.spinner} />
-              <h2 className={styles.sectionTitle}>Searching</h2>
-              <p className={styles.helperText}>Narrowing results for {firstName} {lastName}...</p>
-              <div className={styles.searchList}>
-                <span>Checking address history</span>
-                <span>Matching phone numbers</span>
-                <span>Scanning social profiles</span>
-                <span>Compiling public records</span>
-              </div>
+            <div className={s.searching}>
+              <div className={s.spinner} />
+              <h2 className={s.sectionTitle}>Searching</h2>
+              <p className={s.helper}>Finding matches for {firstName} {lastName}…</p>
+              <ul className={s.searchList}>
+                <li>Matching records</li><li>Checking addresses</li><li>County &amp; state databases</li>
+              </ul>
             </div>
           )}
 
+          {/* Step 3: Details */}
           {step === 'details' && (
-            <div className={styles.form}>
-              <h2 className={styles.sectionTitle}>Great, we found matches</h2>
-              <p className={styles.helperText}>
-                Add a few more details to get faster, more possible results. Let's go!
-              </p>
-              <div className={styles.fieldGrid}>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.label} htmlFor="age">
-                    Age (Optional)
-                  </label>
-                  <input
-                    id="age"
-                    type="text"
-                    className={styles.input}
-                    value={age}
-                    onChange={(event) => setAge(event.target.value)}
-                    placeholder="Age"
-                    inputMode="numeric"
-                  />
-                </div>
+            <div className={s.form}>
+              <h2 className={s.sectionTitle}>Matches found</h2>
+              <p className={s.helper}>A few more details help us surface the exact person.</p>
+              <div className={s.field}>
+                <label className={s.label} htmlFor="v2-age">Age (optional)</label>
+                <input id="v2-age" type="text" className={s.input} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
               </div>
-              <div className={styles.actions}>
-                <button type="button" className={styles.buttonPrimary} onClick={continueFromDetails}>
-                  Continue
-                </button>
-                <button type="button" className={styles.buttonSecondary} onClick={continueFromDetails}>
-                  Skip This Step
-                </button>
+              <div className={s.field}>
+                <label className={s.label} htmlFor="v2-middleNameConfirm">Middle name (optional)</label>
+                <input id="v2-middleNameConfirm" type="text" className={s.input} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Middle name" />
+              </div>
+              <div className={s.actions}>
+                <button type="button" className={s.cta} onClick={continueFromDetails}>Continue</button>
+                <button type="button" className={s.buttonSecondary} onClick={continueFromDetails}>Skip</button>
               </div>
             </div>
           )}
 
+          {/* Step 4: Confirm */}
           {step === 'confirm' && (
-            <div className={styles.form}>
-              <h2 className={styles.sectionTitle}>Please confirm before we continue</h2>
-              <p className={styles.helperText}>
-                There are limits to how you can use {brand.name} reports.
-              </p>
-              <label className={styles.checkboxRow}>
-                <input
-                  type="checkbox"
-                  checked={agree}
-                  onChange={(event) => setAgree(event.target.checked)}
-                />
-                <span>
-                  I will not use information provided by {brand.name} for employment, insurance, tenant screening,
-                  consumer credit, or any other purpose restricted by the Fair Credit Reporting Act (FCRA).
-                </span>
+            <div className={s.form}>
+              <h2 className={s.sectionTitle}>Confirm to view results</h2>
+              <p className={s.helper}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
+              <label className={s.checkboxRow}>
+                <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+                <span>I will not use information from {brand.name} for employment, insurance, tenant screening, consumer credit, or any other purpose restricted by the Fair Credit Reporting Act (FCRA).</span>
               </label>
-              {agreeError && <p className={styles.errorText}>{agreeError}</p>}
-              <div className={styles.actions}>
-                <button type="button" className={styles.buttonPrimary} onClick={handleConfirm}>
-                  I Agree
-                </button>
-                <button type="button" className={styles.buttonSecondary} onClick={() => setStep('details')}>
-                  Back
-                </button>
+              {agreeError && <p className={s.errorText}>{agreeError}</p>}
+              <div className={s.actions}>
+                <button type="button" className={s.cta} onClick={handleConfirm}>I Agree — View Results</button>
+                <button type="button" className={s.buttonSecondary} onClick={() => setStep('details')}>Back</button>
               </div>
             </div>
           )}
 
+          {/* Final search */}
           {step === 'final-search' && (
-            <div className={styles.searching}>
-              <div className={styles.spinner} />
-              <h2 className={styles.sectionTitle}>Searching</h2>
-              <p className={styles.helperText}>{finalStatus}</p>
-              <div className={styles.searchList}>
-                <span>Possible relatives</span>
-                <span>Job &amp; education</span>
-                <span>Person information</span>
-                <span>Contact information</span>
-                <span>Social media profiles</span>
-              </div>
-              <p className={styles.helperText}>{finalProgress}% complete</p>
+            <div className={s.searching}>
+              <div className={s.spinner} />
+              <h2 className={s.sectionTitle}>Searching</h2>
+              <p className={s.helper}>{finalStatus}</p>
+              <ul className={s.searchList}>
+                <li>Public records</li><li>Address history</li><li>Phone &amp; email</li><li>Relatives</li>
+              </ul>
+              <p className={s.helper}>{finalProgress}% complete</p>
             </div>
           )}
         </div>
-      </section>
+      </div>
+
+      {/* minimal footer (spec) */}
+      <footer className={s.footer}>
+        <div className={s.footerLinks}>
+          <a href="/privacy" className={s.footerLink}>Privacy Policy</a>
+          <a href="/terms" className={s.footerLink}>Terms</a>
+          <a href="/contact" className={s.footerLink}>Contact</a>
+          <a href="/contact" className={s.footerLink}>Support</a>
+        </div>
+        <p className={s.fcra}>{brand.name} is not a consumer reporting agency as defined by the Fair Credit Reporting Act (FCRA). Do not use this site for employment, tenant screening, credit, or any other FCRA-regulated purpose.</p>
+      </footer>
     </main>
   );
 };
