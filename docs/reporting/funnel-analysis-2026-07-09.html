@@ -71,7 +71,7 @@
     <div class="round">
       <div class="tag">Round 1 · shipped Jul 3</div>
       <div class="d">Landing page + SUP</div>
-      <div class="w">+ minor changes. Isolated by the <strong>After window (7/03–7/07)</strong>.</div>
+      <div class="w">+ minor changes, incl. <strong>minor payment tweaks</strong>. Isolated by the <strong>After window (7/03–7/07)</strong>.</div>
     </div>
     <div class="round">
       <div class="tag">Round 2 · shipped Jul 8</div>
@@ -79,14 +79,14 @@
       <div class="w">First live day = <strong>Yesterday (7/08)</strong>. The <strong>payment page changed here, not in Round 1.</strong></div>
     </div>
   </div>
-  <p class="foot">Consequence: the <strong>payment page is unchanged in the After window</strong>, so any Attempt-step move in 7/03–7/07 cannot be a payment-page effect. Round 2's payment impact only begins to show yesterday.</p>
+  <p class="foot">Consequence: the <strong>major payment redesign is Round 2</strong> — only minor payment tweaks were live in the After window — so a large payment-driven Attempt move in 7/03–7/07 is <strong>unlikely, though not impossible</strong>. Round 2's full payment impact only begins to show yesterday.</p>
 
   <div class="tldr">
     <strong>Bottom line up front</strong>
     <ul>
       <li><strong>One change is statistically significant — and it's a win:</strong> Round&nbsp;1 lifted landing engagement (LP&nbsp;Step&nbsp;2) 39.5%&nbsp;→&nbsp;49.4% (<span class="num">p&nbsp;=&nbsp;0.001</span>).</li>
       <li><strong>The scary bottom-of-funnel drops are NOT significant.</strong> Round&nbsp;1's Attempt move (23.3%&nbsp;→&nbsp;11.5%) is <span class="num">p&nbsp;=&nbsp;0.076</span>; total CVR (2.04%&nbsp;→&nbsp;0.88%) is <span class="num">p&nbsp;=&nbsp;0.107</span> — on 11 vs 5 paid trials. Directional, not conclusive.</li>
-      <li><strong>The payment page is exonerated by timing.</strong> It didn't change until Round&nbsp;2 (7/8); the Attempt dip predates it. And on Round&nbsp;2's first day, paid <strong>Attempt ran 33%</strong> — the highest of all three periods.</li>
+      <li><strong>The payment page is largely cleared by timing.</strong> Its <em>major</em> redesign is Round&nbsp;2 (7/8) — only minor payment tweaks were live in the After window — so a large payment cause for the Round-1 Attempt dip is unlikely. And on Round&nbsp;2's first day, paid <strong>Attempt ran 33%</strong> — the highest of all three periods.</li>
       <li><strong>The one large, consistent, actionable signal is thin-match on paid traffic:</strong> yesterday <span class="num">62%</span> of paid searches hit a no-records page that converted at <span class="num">~0%</span>. That's the real ad-CVR lever — and it's already in flight.</li>
     </ul>
   </div>
@@ -161,9 +161,10 @@
 
   <h3>▼ SUP Attempt% &nbsp;23.3% → 11.5% &nbsp;<span class="chip marg">MARGINAL · p .076</span> &nbsp;— "payment problems"</h3>
   <div class="hyp">
-    <div class="verdict">H1 — It is NOT the payment page. <span style="color:var(--pos)">(established by timing)</span></div>
+    <div class="verdict">H1 — Unlikely to be the payment page. <span style="color:var(--warn)">(timing makes a large effect improbable)</span></div>
     <ul class="ev">
-      <li class="for">The payment page did not change until Round 2 (7/8). This window is 7/03–7/07 — the billing/card form was the pre-redesign version throughout. A payment-page cause is chronologically impossible here.</li>
+      <li class="for">The <em>major</em> payment redesign shipped in Round 2 (7/8). In this window (7/03–7/07) only <strong>minor payment tweaks</strong> were live — so a large payment-driven Attempt drop here is improbable.</li>
+      <li class="neutral">But minor changes can't be fully excluded as a small contributor — this isn't chronologically airtight.</li>
     </ul>
     <div class="verdict">H2 — Composition: Round-1 changes altered <em>who</em> reaches billing.</div>
     <ul class="ev">
@@ -250,7 +251,7 @@
   <h2>5 · What the data supports doing</h2>
   <ul>
     <li><strong>Keep the Round-1 landing redesign.</strong> LP Step 2 is the one significant, real gain.</li>
-    <li><strong>Do not revert the payment page.</strong> Its changes are Round 2, not the After window; the Attempt dip predates it, and Round 2's first day showed Attempt at 33%. Confirm with the <code>payment_submit</code> vs Attempt + <code>validation_error</code> pull rather than reacting.</li>
+    <li><strong>Do not revert the payment page.</strong> Its <em>major</em> redesign is Round 2 (7/8), not the After window; only minor payment tweaks were live during the Round-1 Attempt dip, so a large payment cause is unlikely — and Round 2's first day showed Attempt at 33%. Confirm with the <code>payment_submit</code> vs Attempt + <code>validation_error</code> pull rather than reacting.</li>
     <li><strong>Prioritize thin-match — it's the real ad-CVR lever.</strong> Most paid searches die there at ~0%. Reduce the rate (provider-side narrowing for common names) and improve the experience (already shipping in Round 2).</li>
     <li><strong>Let volume accumulate</strong> before drawing significant conclusions — current windows are directional only, and Round 2 has just one day live.</li>
   </ul>
