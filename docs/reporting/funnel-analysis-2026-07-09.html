@@ -1,0 +1,260 @@
+<style>
+  :root{
+    --ink:#0f172a; --body:#334155; --muted:#64748b; --faint:#94a3b8;
+    --line:#e2e8f0; --line2:#eef2f7; --ground:#ffffff; --panel:#f8fafc;
+    --pos:#0d5d2f; --posbg:#e6f4ec; --neg:#b91c1c; --negbg:#fdeaea;
+    --warn:#b45309; --warnbg:#fdf1e3; --accent:#0d5d2f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0}
+  .wrap{max-width:940px;margin:0 auto;padding:40px 28px 72px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--body);line-height:1.55;font-size:15px;background:var(--ground);
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  h1{font-size:27px;line-height:1.2;color:var(--ink);margin:6px 0 4px;letter-spacing:-.02em;font-weight:800;text-wrap:balance}
+  h2{font-size:19px;color:var(--ink);margin:44px 0 12px;letter-spacing:-.01em;font-weight:700;padding-top:16px;border-top:1px solid var(--line)}
+  h3{font-size:15.5px;color:var(--ink);margin:22px 0 6px;font-weight:700}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 4px}
+  p{margin:10px 0}
+  strong{color:var(--ink);font-weight:700}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:#0f172a}
+  .num{font-variant-numeric:tabular-nums}
+  .rounds{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0 4px}
+  .round{flex:1 1 300px;border:1px solid var(--line);border-radius:10px;padding:12px 15px;background:var(--panel)}
+  .round .tag{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+  .round .d{font-size:13px;color:var(--ink);font-weight:700;margin:2px 0 3px}
+  .round .w{font-size:12.5px;color:var(--muted)}
+  .tldr{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:18px 20px;margin:22px 0}
+  .tldr ul{margin:8px 0 0;padding-left:18px}
+  .tldr li{margin:7px 0}
+  .scroll{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:720px}
+  th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line2);white-space:nowrap}
+  th{background:var(--panel);color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+  td:first-child,th:first-child{text-align:left;white-space:normal}
+  tbody tr:last-child td{border-bottom:none}
+  .step{color:var(--ink);font-weight:600}
+  .den{color:var(--faint);font-size:11px}
+  .spine{background:#fbfcfe}
+  .hl td{background:var(--warnbg)}
+  .pct{font-weight:700;color:var(--ink)}
+  .chip{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+  .sig{background:var(--posbg);color:var(--pos)}
+  .marg{background:var(--warnbg);color:var(--warn)}
+  .ns{background:#eef2f7;color:var(--muted)}
+  .up{color:var(--pos);font-weight:700}
+  .down{color:var(--neg);font-weight:700}
+  .flat{color:var(--muted)}
+  .hyp{border:1px solid var(--line);border-radius:10px;padding:2px 16px 8px;margin:12px 0;background:var(--ground)}
+  .hyp .verdict{font-size:12.5px;font-weight:700;margin:12px 0 2px}
+  .ev{margin:4px 0 0;padding-left:0;list-style:none}
+  .ev li{position:relative;padding-left:22px;margin:5px 0;font-size:13.5px}
+  .ev li::before{position:absolute;left:0;font-weight:800}
+  .for::before{content:"▲";color:var(--pos);font-size:10px;top:3px}
+  .against::before{content:"▼";color:var(--neg);font-size:10px;top:3px}
+  .neutral::before{content:"◆";color:var(--faint);font-size:10px;top:3px}
+  .shift{font-size:13px;color:var(--ink);font-weight:700;background:var(--panel);border-radius:6px;padding:6px 10px;margin:6px 0 2px;display:inline-block}
+  .foot{color:var(--muted);font-size:12px;margin-top:6px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin:10px 0 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+</style>
+
+<div class="wrap">
+
+  <div class="eyebrow">IDLookup.AI · Acquisition Funnel</div>
+  <h1>Did the July Redesigns Move Conversion?</h1>
+  <p class="sub">Statistical read of the checkout funnel · prepared 2026-07-09 · source: canonical §M17 (verified) + 7/08 daily KPI</p>
+
+  <p><strong>Two release rounds sit inside these windows — this matters for attribution:</strong></p>
+  <div class="rounds">
+    <div class="round">
+      <div class="tag">Round 1 · shipped Jul 3</div>
+      <div class="d">Landing page + SUP</div>
+      <div class="w">+ minor changes. Isolated by the <strong>After window (7/03–7/07)</strong>.</div>
+    </div>
+    <div class="round">
+      <div class="tag">Round 2 · shipped Jul 8</div>
+      <div class="d">Landing v2 + SERP + SUP + PAYMENT</div>
+      <div class="w">First live day = <strong>Yesterday (7/08)</strong>. The <strong>payment page changed here, not in Round 1.</strong></div>
+    </div>
+  </div>
+  <p class="foot">Consequence: the <strong>payment page is unchanged in the After window</strong>, so any Attempt-step move in 7/03–7/07 cannot be a payment-page effect. Round 2's payment impact only begins to show yesterday.</p>
+
+  <div class="tldr">
+    <strong>Bottom line up front</strong>
+    <ul>
+      <li><strong>One change is statistically significant — and it's a win:</strong> Round&nbsp;1 lifted landing engagement (LP&nbsp;Step&nbsp;2) 39.5%&nbsp;→&nbsp;49.4% (<span class="num">p&nbsp;=&nbsp;0.001</span>).</li>
+      <li><strong>The scary bottom-of-funnel drops are NOT significant.</strong> Round&nbsp;1's Attempt move (23.3%&nbsp;→&nbsp;11.5%) is <span class="num">p&nbsp;=&nbsp;0.076</span>; total CVR (2.04%&nbsp;→&nbsp;0.88%) is <span class="num">p&nbsp;=&nbsp;0.107</span> — on 11 vs 5 paid trials. Directional, not conclusive.</li>
+      <li><strong>The payment page is exonerated by timing.</strong> It didn't change until Round&nbsp;2 (7/8); the Attempt dip predates it. And on Round&nbsp;2's first day, paid <strong>Attempt ran 33%</strong> — the highest of all three periods.</li>
+      <li><strong>The one large, consistent, actionable signal is thin-match on paid traffic:</strong> yesterday <span class="num">62%</span> of paid searches hit a no-records page that converted at <span class="num">~0%</span>. That's the real ad-CVR lever — and it's already in flight.</li>
+    </ul>
+  </div>
+
+  <h2>1 · The funnel across the two rounds</h2>
+  <p class="sub">Significance = two-proportion z-test, <strong>Before vs After (Round 1 effect)</strong>. Yesterday is Round 2's first day (paid Search cohort; small n — see §4).</p>
+
+  <div class="scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Funnel step</th>
+        <th>Before<br><span class="den">6/28–7/02</span></th>
+        <th>After · R1<br><span class="den">7/03–7/07</span></th>
+        <th>Δ pt</th>
+        <th>Sig. (B→R1)</th>
+        <th>Yesterday · R2<br><span class="den">7/08 · paid</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="spine"><td class="step">Visitors</td><td class="pct">539</td><td class="pct">567</td><td class="flat">—</td><td>—</td><td class="pct">67</td></tr>
+      <tr class="hl"><td class="step">LP Step 2% <span class="den">(of visitors)</span></td><td>39.5%<div class="den">213/539</div></td><td>49.4%<div class="den">280/567</div></td><td class="up">+9.9</td><td><span class="chip sig">SIG · p .001</span></td><td>64%<div class="den">43/67</div></td></tr>
+      <tr><td class="step">Search% <span class="den">(of visitors)</span></td><td>49.7%<div class="den">268/539</div></td><td>52.0%<div class="den">295/567</div></td><td class="up">+2.3</td><td><span class="chip ns">NS · p .44</span></td><td>58%<div class="den">39/67</div></td></tr>
+      <tr><td class="step">SRP View% <span class="den">(of search)</span></td><td>87.7%<div class="den">235/268</div></td><td>85.8%<div class="den">253/295</div></td><td class="down">−1.9</td><td><span class="chip ns">NS · p .50</span></td><td>38%<div class="den">15/39</div></td></tr>
+      <tr><td class="step">Report Select% <span class="den">(of SRP)</span></td><td>60.9%<div class="den">143/235</div></td><td>66.0%<div class="den">167/253</div></td><td class="up">+5.2</td><td><span class="chip ns">NS · p .24</span></td><td>80%<div class="den">12/15</div></td></tr>
+      <tr class="hl"><td class="step">Thin-Match View% <span class="den">(of search)</span></td><td>12.3%<div class="den">33/268</div></td><td>14.2%<div class="den">42/295</div></td><td class="up">+1.9</td><td><span class="chip ns">NS · p .50</span></td><td>62%<div class="den">24/39</div></td></tr>
+      <tr><td class="step">SUP PII% <span class="den">(signup ÷ search)</span></td><td>27.6%<div class="den">74/268</div></td><td>20.7%<div class="den">61/295</div></td><td class="down">−6.9</td><td><span class="chip marg">MARGINAL · p .054</span></td><td>23%<div class="den">9/39</div></td></tr>
+      <tr><td class="step">SUP Billing% <span class="den">(of visitors)</span></td><td>13.5%<div class="den">73/539</div></td><td>10.8%<div class="den">61/567</div></td><td class="down">−2.8</td><td><span class="chip ns">NS · p .16</span></td><td>13%<div class="den">9/67</div></td></tr>
+      <tr class="hl"><td class="step">SUP Attempt% <span class="den">(card ÷ billing)</span></td><td>23.3%<div class="den">17/73</div></td><td>11.5%<div class="den">7/61</div></td><td class="down">−11.8</td><td><span class="chip marg">MARGINAL · p .076</span></td><td>33%<div class="den">3/9</div></td></tr>
+      <tr><td class="step">SUP CVR% <span class="den">(paid ÷ attempt)</span></td><td>64.7%<div class="den">11/17</div></td><td>71.4%<div class="den">5/7</div></td><td class="up">+6.7</td><td><span class="chip ns">NS · n&lt;18</span></td><td>67%<div class="den">2/3</div></td></tr>
+      <tr class="spine hl"><td class="step">Total CVR% <span class="den">(paid trials ÷ visitors)</span></td><td class="pct">2.04%<div class="den">11/539</div></td><td class="pct">0.88%<div class="den">5/567</div></td><td class="down">−1.16</td><td><span class="chip ns">NS · p .107</span></td><td class="pct">3.0%<div class="den">2/67 paid</div></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="legend">
+    <span><span class="chip sig">SIG</span> p&lt;0.05</span>
+    <span><span class="chip marg">MARGINAL</span> 0.05≤p&lt;0.10</span>
+    <span><span class="chip ns">NS</span> p≥0.10 / n too small</span>
+    <span>Highlighted rows = the changes under scrutiny</span>
+  </div>
+  <p class="foot">Method: two-proportion z-test (pooled), two-tailed. Attempt, Billing, Total CVR, Visitors are exact from §M17; intermediate step counts are reconstructed from verified percentages (±1). Yesterday is the "By channel (non-internal) — Search" cut = paid only.</p>
+
+  <h2>2 · Round 1 (7/3) effects — Before → After · hypotheses &amp; evidence</h2>
+
+  <h3>▲ LP Step 2% &nbsp;39.5% → 49.4% &nbsp;<span class="chip sig">SIG · p .001</span></h3>
+  <div class="hyp">
+    <div class="verdict">H1 — The Round-1 landing redesign lifted engagement. <span style="color:var(--pos)">(supported)</span></div>
+    <ul class="ev">
+      <li class="for">Only significant change; timing coincides exactly with Round 1 (cleaner IA, trust-first hero, tightened wizard step 1).</li>
+      <li class="for">Directionally corroborated by Report-Select (+5.2pt, though NS).</li>
+    </ul>
+    <div class="verdict">H2 — Traffic/keyword mix improved independently of the page.</div>
+    <ul class="ev">
+      <li class="neutral">Not ruled out without keyword data; but Search% (of visitors) barely moved (+2.3, NS), which argues the lift is engagement, not a wholesale intent shift.</li>
+    </ul>
+    <p class="foot">Take: bank as a real win; attribute cautiously until keyword mix is confirmed stable.</p>
+  </div>
+
+  <h3>▼ SUP PII% (signup ÷ search) &nbsp;27.6% → 20.7% &nbsp;<span class="chip marg">MARGINAL · p .054</span></h3>
+  <div class="hyp">
+    <div class="verdict">H1 — Round-1 SUP redesign reduced record→signup. <span style="color:var(--warn)">(most likely)</span></div>
+    <ul class="ev">
+      <li class="for">The "via records" sub-branch fell 40.6% → 31.1% — exactly the page Round 1 touched (headline/bullets/CTA on the SUP).</li>
+      <li class="against">Marginal (p=0.054); yesterday's blended PII% (23%) sits back between the two windows.</li>
+    </ul>
+    <div class="verdict">H2 — Denominator shift: more traffic to the lower-converting thin-match branch.</div>
+    <ul class="ev">
+      <li class="for">Thin-match share rose; that branch signs up far less, so blended PII% falls even if each page is unchanged.</li>
+    </ul>
+    <p class="foot">Take: real candidate, second priority to thin-match. Re-test the SUP records path directly.</p>
+  </div>
+
+  <h3>▼ SUP Attempt% &nbsp;23.3% → 11.5% &nbsp;<span class="chip marg">MARGINAL · p .076</span> &nbsp;— "payment problems"</h3>
+  <div class="hyp">
+    <div class="verdict">H1 — It is NOT the payment page. <span style="color:var(--pos)">(established by timing)</span></div>
+    <ul class="ev">
+      <li class="for">The payment page did not change until Round 2 (7/8). This window is 7/03–7/07 — the billing/card form was the pre-redesign version throughout. A payment-page cause is chronologically impossible here.</li>
+    </ul>
+    <div class="verdict">H2 — Composition: Round-1 changes altered <em>who</em> reaches billing.</div>
+    <ul class="ev">
+      <li class="neutral">More top-of-funnel volume (LP Step 2 ↑) can pull in lower-intent visitors who reach billing but abandon the card step — lowering Attempt% without any billing-page change.</li>
+    </ul>
+    <div class="verdict">H3 — Statistical noise. <span style="color:var(--muted)">(cannot be excluded)</span></div>
+    <ul class="ev">
+      <li class="for">17/73 vs 7/61 → z=1.78, p=0.076 — below the bar; one extra conversion after closes most of the gap.</li>
+    </ul>
+    <p class="foot">Take: not a payment bug. Confirm composition vs noise with the <code>payment_submit</code> vs Attempt + <code>validation_error</code> pull. No revert warranted.</p>
+  </div>
+
+  <h3>▼ Total CVR &nbsp;2.04% → 0.88% &nbsp;<span class="chip ns">NS · p .107</span> &nbsp;— the headline number</h3>
+  <div class="hyp">
+    <div class="verdict">H1 — Net funnel got worse.</div>
+    <ul class="ev">
+      <li class="against">Not significant (p=0.107); driven by 11 vs 5 paid trials — far too few to call.</li>
+      <li class="against">Reverses on Round 2's first day (yesterday paid CVR 3.0%).</li>
+    </ul>
+    <div class="verdict">H2 — Thin-match diverted convertible traffic.</div>
+    <ul class="ev">
+      <li class="for">More searches ending on a ~0%-converting page mechanically lowers total CVR regardless of page quality.</li>
+    </ul>
+    <p class="foot">Take: do not present "CVR halved" as established — it is a non-significant, low-n directional dip.</p>
+  </div>
+
+  <h2>3 · Round 2 (7/8) effects — After → Yesterday · how the new changes shifted Round 1</h2>
+  <p class="sub">Round 2 added <strong>Landing v2, SERP, SUP tweaks, and the Payment redesign</strong>. One day of paid data — small n, so read as direction, with Wilson 95% CIs.</p>
+
+  <h3>▲ SUP Attempt% &nbsp;<span class="chip ns">11.5% (R1) → 33% (R2)</span> &nbsp;— payment redesign's first read</h3>
+  <div class="hyp">
+    <div class="shift">Round 1 dipped it → Round 2 recovered it above baseline.</div>
+    <div class="verdict">H1 — The Round-2 payment redesign did not hurt (may have helped).</div>
+    <ul class="ev">
+      <li class="for">Payment changed 7/8; the first day shows Attempt at 33% (3/9) — the highest of all three periods, above even the healthy Before (23.3%).</li>
+      <li class="against">3/9 is tiny (95% CI 12–65%) — spans both prior windows, so "helped" is not yet demonstrable.</li>
+    </ul>
+    <div class="verdict">H2 — Regression to the mean from a noisy R1 low.</div>
+    <ul class="ev">
+      <li class="for">If R1's 11.5% was a low-sample fluke (p=0.076), a bounce back toward the low-20s% is expected with or without a redesign.</li>
+    </ul>
+    <p class="foot">Take: the payment redesign is not a conversion problem on first evidence. Keep watching as volume builds.</p>
+  </div>
+
+  <h3>◆ SUP PII% &nbsp;<span class="chip ns">20.7% (R1) → 23% (R2)</span></h3>
+  <div class="hyp">
+    <div class="shift">Slight recovery toward baseline.</div>
+    <div class="verdict">H1 — Round-2 SUP tweaks partially restored signup.</div>
+    <ul class="ev">
+      <li class="neutral">Direction is right, but 9/39 (95% CI 13–38%) overlaps both windows — not distinguishable yet.</li>
+    </ul>
+  </div>
+
+  <h3>◆ Thin-Match View% &nbsp;<span class="chip ns">14.2% (R1) → 62% (R2 · paid)</span> &nbsp;— the real lever</h3>
+  <div class="hyp">
+    <div class="shift">Large jump — but paid-specific and partly a one-day spike.</div>
+    <div class="verdict">H1 — Paid keywords skew to common names → provider returns no records.</div>
+    <ul class="ev">
+      <li class="for">Yesterday all 24 thin-match views were in the paid channel; non-paid search went almost entirely to records. Paid clicks disproportionately hit the no-records page.</li>
+      <li class="for">Mechanism understood: common names → IDI teaser <code>TooManyMatches</code>; adding city/age doesn't currently narrow the provider search.</li>
+      <li class="for">Thin-match converted to <strong>0 paid trials</strong> yesterday; every conversion came from the records branch.</li>
+      <li class="against">62% is inflated — thin-match spiked +169% vs day-of-week; steady-state is ~12–14% blended. The direction (paid ≫ non-paid) is the durable part.</li>
+    </ul>
+    <p class="foot">Take: this is where ad CVR is actually lost. Two levers already in flight — reduce the <em>rate</em> (provider-side narrowing) and improve the <em>experience</em> (redesigned preview cards + signup A/B shipped 7/8, part of Round 2).</p>
+  </div>
+
+  <h3>▲ Total CVR &nbsp;<span class="chip ns">0.88% (R1) → 3.0% paid / 1.2% global (R2)</span></h3>
+  <div class="hyp">
+    <div class="shift">Up on Round 2's first day.</div>
+    <div class="verdict">H1 — Round-2 changes (or normal variance) lifted conversion.</div>
+    <ul class="ev">
+      <li class="neutral">Paid 2/67 (95% CI 0.8–10.2%) and global 2/168 (95% CI 0.3–4.2%) are both too wide to confirm a real lift — but neither is consistent with a worsening funnel.</li>
+    </ul>
+  </div>
+
+  <h2>4 · Caveats to disclose (before anyone over-reads this)</h2>
+  <ul>
+    <li><strong>Sample size / power.</strong> Deep-funnel steps carry &lt;20 events per window (paid trials 11 → 5 → 2). At these counts only a very large effect clears p&lt;0.05 — so "not significant" means "under-powered," not "no effect." We should not conclude a break <em>or</em> a fix.</li>
+    <li><strong>Single-day noise.</strong> Yesterday's thin-match spike (+169% DoW) shows how volatile daily reads are; Round 2 has one live day. Do not steer roadmap on it yet.</li>
+    <li><strong>Overlapping rounds.</strong> Round 2 bundles four changes (landing v2, SERP, SUP, payment) shipped together — their individual effects are not separable from one day of data.</li>
+    <li><strong>Reconstructed intermediate counts.</strong> Step-level n's are derived from verified percentages (±1); Attempt / Billing / CVR / Visitors are exact.</li>
+  </ul>
+
+  <h2>5 · What the data supports doing</h2>
+  <ul>
+    <li><strong>Keep the Round-1 landing redesign.</strong> LP Step 2 is the one significant, real gain.</li>
+    <li><strong>Do not revert the payment page.</strong> Its changes are Round 2, not the After window; the Attempt dip predates it, and Round 2's first day showed Attempt at 33%. Confirm with the <code>payment_submit</code> vs Attempt + <code>validation_error</code> pull rather than reacting.</li>
+    <li><strong>Prioritize thin-match — it's the real ad-CVR lever.</strong> Most paid searches die there at ~0%. Reduce the rate (provider-side narrowing for common names) and improve the experience (already shipping in Round 2).</li>
+    <li><strong>Let volume accumulate</strong> before drawing significant conclusions — current windows are directional only, and Round 2 has just one day live.</li>
+  </ul>
+
+  <p class="foot" style="margin-top:26px;border-top:1px solid var(--line);padding-top:14px">Prepared for internal + investor review, 2026-07-09. Significance via two-proportion z-tests; CIs via Wilson score interval. Figures marked ± are reconstructed from verified percentages. Not a forecast — a read of what the current (sparse) data does and does not establish.</p>
+
+</div>
