@@ -93,6 +93,7 @@
 
   <h2>1 · The funnel across the two rounds</h2>
   <p class="sub">Significance = two-proportion z-test, <strong>Before vs After (Round 1 effect)</strong>. Yesterday is Round 2's first day (paid Search cohort; small n — see §4).</p>
+  <p class="foot" style="margin:8px 0 0"><strong style="color:var(--ink)">Terminology:</strong> <strong>SUP (Signup)</strong> = email/PII capture (optionally password &amp; phone). <strong>Pay</strong> = billing capture — <strong>Pay&nbsp;Billing&nbsp;View</strong> (reached the billing page) → <strong>Pay&nbsp;Attempt</strong> (card submitted) → <strong>Pay&nbsp;CVR</strong> = paid trials ÷ Pay&nbsp;Attempts (payment success rate). <strong>Total&nbsp;CVR</strong> = paid trials ÷ visitors (end-to-end).</p>
 
   <div class="scroll">
   <table>
@@ -114,9 +115,9 @@
       <tr><td class="step">Report Select% <span class="den">(of SRP)</span></td><td>60.9%<div class="den">143/235</div></td><td>66.0%<div class="den">167/253</div></td><td class="up">+5.2</td><td><span class="chip ns">NS · p .24</span></td><td>80%<div class="den">12/15</div></td></tr>
       <tr class="hl"><td class="step">Thin-Match View% <span class="den">(of search)</span></td><td>12.3%<div class="den">33/268</div></td><td>14.2%<div class="den">42/295</div></td><td class="up">+1.9</td><td><span class="chip ns">NS · p .50</span></td><td>62%<div class="den">24/39</div></td></tr>
       <tr><td class="step">SUP PII% <span class="den">(signup ÷ search)</span></td><td>27.6%<div class="den">74/268</div></td><td>20.7%<div class="den">61/295</div></td><td class="down">−6.9</td><td><span class="chip marg">MARGINAL · p .054</span></td><td>23%<div class="den">9/39</div></td></tr>
-      <tr><td class="step">SUP Billing% <span class="den">(of visitors)</span></td><td>13.5%<div class="den">73/539</div></td><td>10.8%<div class="den">61/567</div></td><td class="down">−2.8</td><td><span class="chip ns">NS · p .16</span></td><td>13%<div class="den">9/67</div></td></tr>
-      <tr class="hl"><td class="step">SUP Attempt% <span class="den">(card ÷ billing)</span></td><td>23.3%<div class="den">17/73</div></td><td>11.5%<div class="den">7/61</div></td><td class="down">−11.8</td><td><span class="chip marg">MARGINAL · p .076</span></td><td>33%<div class="den">3/9</div></td></tr>
-      <tr><td class="step">SUP CVR% <span class="den">(paid ÷ attempt)</span></td><td>64.7%<div class="den">11/17</div></td><td>71.4%<div class="den">5/7</div></td><td class="up">+6.7</td><td><span class="chip ns">NS · n&lt;18</span></td><td>67%<div class="den">2/3</div></td></tr>
+      <tr><td class="step">Pay Billing View% <span class="den">(of visitors)</span></td><td>13.5%<div class="den">73/539</div></td><td>10.8%<div class="den">61/567</div></td><td class="down">−2.8</td><td><span class="chip ns">NS · p .16</span></td><td>13%<div class="den">9/67</div></td></tr>
+      <tr class="hl"><td class="step">Pay Attempt% <span class="den">(card ÷ billing)</span></td><td>23.3%<div class="den">17/73</div></td><td>11.5%<div class="den">7/61</div></td><td class="down">−11.8</td><td><span class="chip marg">MARGINAL · p .076</span></td><td>33%<div class="den">3/9</div></td></tr>
+      <tr><td class="step">Pay CVR% <span class="den">(paid ÷ attempt)</span></td><td>64.7%<div class="den">11/17</div></td><td>71.4%<div class="den">5/7</div></td><td class="up">+6.7</td><td><span class="chip ns">NS · n&lt;18</span></td><td>67%<div class="den">2/3</div></td></tr>
       <tr class="spine hl"><td class="step">Total CVR% <span class="den">(paid trials ÷ visitors)</span></td><td class="pct">2.04%<div class="den">11/539</div></td><td class="pct">0.88%<div class="den">5/567</div></td><td class="down">−1.16</td><td><span class="chip ns">NS · p .107</span></td><td class="pct">3.0%<div class="den">2/67 paid</div></td></tr>
     </tbody>
   </table>
@@ -159,7 +160,7 @@
     <p class="foot">Take: real candidate, second priority to thin-match. Re-test the SUP records path directly.</p>
   </div>
 
-  <h3>▼ SUP Attempt% &nbsp;23.3% → 11.5% &nbsp;<span class="chip marg">MARGINAL · p .076</span> &nbsp;— "payment problems"</h3>
+  <h3>▼ Pay Attempt% &nbsp;23.3% → 11.5% &nbsp;<span class="chip marg">MARGINAL · p .076</span> &nbsp;— "payment problems"</h3>
   <div class="hyp">
     <div class="verdict">H1 — Unlikely to be the payment page. <span style="color:var(--warn)">(timing makes a large effect improbable)</span></div>
     <ul class="ev">
@@ -194,7 +195,7 @@
   <h2>3 · Round 2 (7/8) effects — After → Yesterday · how the new changes shifted Round 1</h2>
   <p class="sub">Round 2 added <strong>Landing v2, SERP, SUP tweaks, and the Payment redesign</strong>. One day of paid data — small n, so read as direction, with Wilson 95% CIs.</p>
 
-  <h3>▲ SUP Attempt% &nbsp;<span class="chip ns">11.5% (R1) → 33% (R2)</span> &nbsp;— payment redesign's first read</h3>
+  <h3>▲ Pay Attempt% &nbsp;<span class="chip ns">11.5% (R1) → 33% (R2)</span> &nbsp;— payment redesign's first read</h3>
   <div class="hyp">
     <div class="shift">Round 1 dipped it → Round 2 recovered it above baseline.</div>
     <div class="verdict">H1 — The Round-2 payment redesign did not hurt (may have helped).</div>
