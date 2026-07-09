@@ -35,8 +35,9 @@ export function StateMap({ cities = [], name = '', width = 680, height = 430 }) 
   const labeledCities = new Set(labeled.map((c) => c.city));
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={`Map of major cities in ${name}`}
-      style={{ maxWidth: width, height: 'auto', background: '#eef7f1', border: '1px solid #d5e6db', borderRadius: 12 }}>
+    <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`Map of major cities in ${name}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={{ width: '100%', maxWidth: width, aspectRatio: `${width} / ${height}`, display: 'block', background: '#eef7f1', border: '1px solid #d5e6db', borderRadius: 12 }}>
       {pts.map((c, i) => {
         const [x, y] = project(c.lat, c.lng);
         return <circle key={i} cx={x} cy={y} r={radius(c.pop)} fill="#0d5d2f" fillOpacity={labeledCities.has(c.city) ? 0.85 : 0.38} />;
