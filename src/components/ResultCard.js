@@ -9,7 +9,7 @@ import { setSearchTarget as gtmSetSearchTarget } from '../services/gtmContext';
 import styles from './ResultCard.module.css';
 import { PersonAvatar, properCaseName } from './PersonAvatar';
 
-const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
+const ResultCard = ({ result, onClick, isMember = false, theme = null, index = 0 }) => {
   const navigate = useNavigate();
   const { token, isPaid } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -151,7 +151,7 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null }) => {
       onClick={!onClick ? handleViewDetails : undefined}
     >
       {/* Ribbon header — avatar + name + age, banded to separate stacked cards (owner). */}
-      <div className={styles.ribbon}>
+      <div className={styles.ribbon} style={index % 2 === 1 ? { background: '#f1f5f9', borderBottomColor: '#e5e7eb' } : undefined}>
         <PersonAvatar person={result} size={40} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem' }}>
           <h3 className={styles.cardTitle} style={{ margin: 0 }}>{properCaseName(result.fullName)}</h3>

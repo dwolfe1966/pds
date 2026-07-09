@@ -351,7 +351,7 @@ const SalesSearchResultsPage = () => {
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <ResultCard result={result} theme={theme} />
+                    <ResultCard result={result} theme={theme} index={index} />
                   </div>
                   {index === 2 && sortedResults.length > 3 && (
                     <div style={{
