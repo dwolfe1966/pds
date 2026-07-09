@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSignup, validatePassword } from '../hooks/useSignup';
 import { thinMatchVariant } from '../services/thinMatch';
+import { buildPreviewCards } from '../services/previewCards';
 
 /**
  * ThinMatchPreview — shown when the teaser search returns zero or sparse
@@ -40,49 +41,18 @@ const VARIANT_COPY = {
   },
 };
 
-/**
- * Build a small set of synthetic preview cards based on the query. Fields are
- * obviously generic ("J•hn S•••") so the visitor knows these are samples.
- */
-function buildPreviewCards(searchType, query) {
-  const baseName = searchType === 'name'
-    ? [query?.firstName, query?.lastName].filter(Boolean).join(' ')
-    : '';
-  const state = searchType === 'name' ? (query?.state || '—') : '—';
-
-  return [
-    {
-      id: 'preview-1',
-      title: baseName ? `${maskWord(baseName)}` : 'J•hn S•••',
-      ageRange: '30–40',
-      locations: [state === '—' ? 'United States' : state, 'Previous: 2 cities'],
-    },
-    {
-      id: 'preview-2',
-      title: baseName ? `${maskWord(baseName)}` : 'J•hn S•••',
-      ageRange: '40–50',
-      locations: [state === '—' ? 'United States' : state, 'Previous: 3 cities'],
-    },
-    {
-      id: 'preview-3',
-      title: baseName ? `${maskWord(baseName)}` : 'J•hn S•••',
-      ageRange: '50–60',
-      locations: [state === '—' ? 'United States' : state, 'Previous: 1 city'],
-    },
-  ];
-}
-
-function maskWord(text) {
-  return String(text || '')
-    .split(/\s+/)
-    .map((w) => (w.length <= 2 ? w : w[0] + '•'.repeat(Math.max(2, w.length - 2))))
-    .join(' ');
-}
-
 const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme = null }) => {
   const variant = thinMatchVariant(flags) || 'default';
   const copy = VARIANT_COPY[variant] || VARIANT_COPY.default;
-  const cards = useMemo(() => buildPreviewCards(searchType, query), [searchType, query]);
+  const { cards, fullName, stName } = useMemo(() => buildPreviewCards(searchType, query), [searchType, query]);
+
+  // Headline is count/context-framed off the real name + state (except when the
+  // provider is genuinely down, where the "refreshing" copy is more honest).
+  const inState = stName && stName !== 'the United States' ? ` in ${stName}` : '';
+  const headlineTitle = variant === 'providerDown' ? copy.title : `We found people named ${fullName}${inState}`;
+  const headlineBody = variant === 'providerDown'
+    ? copy.body
+    : 'Here’s a preview of the matches below. Create a free account to see verified ages, current addresses, phone numbers, and relatives.';
 
   const { token, isPaid } = useAuth();
   const { submit, loading, error, setError } = useSignup();
@@ -121,38 +91,34 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
           marginBottom: '0.75rem',
         }}>PREVIEW</span>
         <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.5rem', fontWeight: 700, color: '#111827' }}>
-          {copy.title}
+          {headlineTitle}
         </h2>
-        <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.55 }}>{copy.body}</p>
+        <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.55 }}>{headlineBody}</p>
       </div>
 
-      {/* Preview cards — obviously sample */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '0.875rem', marginBottom: '2rem' }}>
+      {/* Preview cards — real name + state, representative details (labeled Preview;
+          verified records unlock after signup). */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.875rem', marginBottom: '2rem' }}>
         {cards.map((card) => (
           <div key={card.id} style={{
             position: 'relative',
             border: '1px solid #e5e7eb',
             borderRadius: '0.5rem',
-            padding: '1rem',
+            padding: '1rem 1rem 0.875rem',
             background: '#fff',
-            filter: 'blur(0.5px)',
           }}>
-            <div style={{
+            <span style={{
               position: 'absolute', top: '0.5rem', right: '0.5rem',
-              background: '#fef3c7', color: '#92400e',
-              fontSize: '0.6875rem', fontWeight: 700,
-              padding: '0.15rem 0.45rem', borderRadius: 4, letterSpacing: '0.04em',
-            }}>SAMPLE</div>
-            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#111827' }}>{card.title}</div>
-            <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.25rem' }}>
-              Age {card.ageRange}
-            </div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0', fontSize: '0.8125rem', color: '#374151' }}>
-              {card.locations.map((loc, idx) => (
-                <li key={idx} style={{ marginBottom: '0.2rem' }}>📍 {loc}</li>
-              ))}
-              <li style={{ marginTop: '0.35rem', color: '#9ca3af' }}>• Contact info hidden</li>
-              <li style={{ color: '#9ca3af' }}>• Relatives hidden</li>
+              background: '#f1f5f9', color: '#64748b',
+              fontSize: '0.625rem', fontWeight: 700,
+              padding: '0.1rem 0.4rem', borderRadius: 4, letterSpacing: '0.05em', textTransform: 'uppercase',
+            }}>Preview</span>
+            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#111827' }}>{card.fullName}, {card.age}</div>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0', fontSize: '0.8125rem', color: '#374151', lineHeight: 1.5 }}>
+              <li>📍 Lives in <strong>{card.city}, {card.stCode}</strong></li>
+              <li>👪 {card.relatives.slice(0, 2).join(', ')}{card.relatives.length > 2 ? ` +${card.relatives.length - 2} more` : ''}</li>
+              <li style={{ marginTop: '0.4rem', color: '#9ca3af', filter: 'blur(3.5px)', userSelect: 'none' }}>📞 (555) 214-8890 · name@email.com</li>
+              <li style={{ color: '#0d5d2f', fontWeight: 600, marginTop: '0.2rem' }}>🔒 {card.phones} phones · {card.emails} emails · {card.prevAddresses} past addresses</li>
             </ul>
           </div>
         ))}
