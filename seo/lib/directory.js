@@ -22,17 +22,26 @@ const ROUND = (n) => Math.max(1, Math.round(n));
 export const EST_IN_STATE_MIN = 5;
 export const EST_IN_STATE_MAX = 1000;
 
-// Population base (sum of state pops) for per-place share, and the city floor —
-// a name needs ~>=2 people in a city to warrant a name-in-city page.
+// Population base (sum of state pops) for the per-place share.
 const POP_BASE = Object.values(STATE_SLICE.states).reduce((a, s) => a + s.pop, 0);
-export const EST_IN_CITY_MIN = 2;
 const estInCityOf = (est, cityPop) => Math.max(1, Math.round(est * (cityPop / POP_BASE)));
 
-// A name-in-city page is viable only if the name resolves at the state level
-// (teaser works) AND has enough presence in the city.
-const nameStateOk = (est, share) => {
-  const eis = ROUND(est * share);
-  return eis >= EST_IN_STATE_MIN && eis <= EST_IN_STATE_MAX;
+// The (state, city, name) page gate. We build a name-in-city page only when the
+// name's ESTIMATED in-city population lands in this band:
+//   floor  — skip "~1 person in this town" thin/404 pages.
+//   ceiling — the pivot (owner 2026-07-10): a name is treated as resolvable at the
+//   CITY grain when its in-city volume is low, REGARDLESS of how common it is
+//   statewide. Replaces the old state-level ceiling (nameStateOk). So "John Smith"
+//   now earns pages in small cities (low in-city volume) but not in LA/NYC (over
+//   the ceiling) — the long-tail IDI is most likely to resolve.
+// NOTE: until BC forwards city to IDI, a common-name-in-small-city SERP still
+// teasers on name+state and may thin; ThinMatchPreview covers that, and the page
+// self-heals the moment city-forwarding ships.
+export const EST_IN_CITY_MIN = 2;
+export const EST_IN_CITY_MAX = 750;
+const cityNameOk = (est, cityPop) => {
+  const eic = estInCityOf(est, cityPop);
+  return eic >= EST_IN_CITY_MIN && eic < EST_IN_CITY_MAX;
 };
 
 export function getStateList() {
@@ -57,11 +66,11 @@ export function getCitySlice(code, citySlug) {
 export function getNameInCity(code, citySlug, nameSlug) {
   const st = getStateSlice(code);
   const nm = NAME_SLICE[nameSlug];
-  if (!st || !nm || !nameStateOk(nm.estPeople, st.share)) return null;
+  if (!st || !nm) return null;
   const city = st.cities.find((c) => c.slug === citySlug);
   if (!city) return null;
   const estInCity = estInCityOf(nm.estPeople, city.pop);
-  if (estInCity < EST_IN_CITY_MIN) return null;
+  if (estInCity < EST_IN_CITY_MIN || estInCity >= EST_IN_CITY_MAX) return null;
   return {
     ...nm,
     state: st.code, stateName: st.name,
@@ -79,9 +88,9 @@ export function getCityTopNames(code, citySlug, limit = 60) {
   const out = [];
   for (const slug of STATE_SLICE.topNames) {
     const nm = NAME_SLICE[slug];
-    if (!nm || !nameStateOk(nm.estPeople, st.share)) continue;
+    if (!nm) continue;
     const estInCity = estInCityOf(nm.estPeople, city.pop);
-    if (estInCity < EST_IN_CITY_MIN) continue;
+    if (estInCity < EST_IN_CITY_MIN || estInCity >= EST_IN_CITY_MAX) continue;
     out.push({ slug, name: `${nm.first} ${nm.last}`, estInCity });
     if (out.length >= limit) break;
   }
@@ -122,8 +131,9 @@ export function getNameInState(code, slug) {
 }
 
 // Every viable directory URL (state → city → name-in-city), computed once and
-// memoized — the sitemap chunks this. ~616k, so this iterates once per server
-// instance. City landings are emitted only when they have ≥1 viable name.
+// memoized — the sitemap chunks this. ~866k under the estInCity∈[2,750) gate, so
+// this iterates once per server instance. City landings are emitted only when
+// they have ≥1 viable name.
 let _taxonomyUrls;
 export function getTaxonomyUrls() {
   if (_taxonomyUrls) return _taxonomyUrls;
@@ -134,8 +144,7 @@ export function getTaxonomyUrls() {
       let cityAdded = false;
       for (const slug of STATE_SLICE.topNames) {
         const nm = NAME_SLICE[slug];
-        if (!nm || !nameStateOk(nm.estPeople, st.share)) continue;
-        if (estInCityOf(nm.estPeople, c.pop) < EST_IN_CITY_MIN) continue;
+        if (!nm || !cityNameOk(nm.estPeople, c.pop)) continue;
         if (!cityAdded) { urls.push(cityPath(st.code, c.slug)); cityAdded = true; }
         urls.push(cityNamePath(st.code, c.slug, slug));
       }
