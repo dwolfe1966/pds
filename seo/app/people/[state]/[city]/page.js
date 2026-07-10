@@ -2,8 +2,9 @@
 // state → city → name taxonomy: lists the most-common (resolvable) names in the
 // city, each linking to a name-in-city page.
 import { notFound } from 'next/navigation';
-import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
+import { getCitySlice, getCityTopNames, getStateCities, getNearbyCities } from '../../../../lib/directory';
 import { getCityAcs, getCityWiki, cityWikiChips, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
+import { StateMap } from '../../../../lib/statemap';
 import { statePath, cityPath, cityNamePath } from '../../../../lib/ids';
 import { collectionJsonLd, crumbsJsonLd } from '../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -46,6 +47,8 @@ export default async function CityLanding({ params }) {
   const stats = cityStats(acs);
   const eth = cityEthnicity(acs);
   const prose = cityProse(c.city, c.stateName, acs, city, wiki);
+  const stateCities = getStateCities(state);
+  const nearby = getNearbyCities(state, city, 6);
   const crumbs = [
     { name: 'People Search', path: '/people' },
     { name: c.stateName, path: statePath(state) },
@@ -102,6 +105,14 @@ export default async function CityLanding({ params }) {
         </section>
       )}
 
+      {stateCities.length >= 3 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Where {c.city} is</h2>
+          <StateMap cities={stateCities} name={c.stateName} highlight={c.city} width={680} height={380} />
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: '#9ca3af' }}>{c.city} (highlighted) among major cities in {c.stateName}.</p>
+        </section>
+      )}
+
       <section style={ui.card}>
         <h2 style={{ marginTop: 0, fontSize: 18 }}>Most common names in {c.city}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px 16px' }}>
@@ -112,6 +123,19 @@ export default async function CityLanding({ params }) {
           ))}
         </div>
       </section>
+
+      {nearby.length > 0 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Cities near {c.city}</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px' }}>
+            {nearby.map((n) => (
+              <a key={n.slug} href={cityPath(state, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
+                {n.city} <span style={ui.muted}>({num(n.miles)} mi)</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <a href={`${MAIN}/name/landing/v2?utm_source=seo&utm_medium=organic&state=${c.stateCode}`} style={ui.cta}>Search people in {c.city} →</a>
 

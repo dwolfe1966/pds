@@ -4,9 +4,11 @@
 // the largest are labeled. Linear lat/lng projection with cos(lat) aspect
 // correction — plenty accurate at single-state scale.
 
-export function StateMap({ cities = [], name = '', width = 680, height = 430 }) {
+export function StateMap({ cities = [], name = '', highlight = null, width = 680, height = 430 }) {
   const pts = cities.filter((c) => c.lat && c.lng && c.pop);
   if (pts.length < 3) return null;
+  const hi = highlight ? String(highlight).toLowerCase() : null;
+  const isHi = (c) => hi && c.city.toLowerCase() === hi;
 
   const lats = pts.map((c) => c.lat);
   const lngs = pts.map((c) => c.lng);
@@ -32,6 +34,7 @@ export function StateMap({ cities = [], name = '', width = 680, height = 430 }) 
   const maxPop = Math.max(...pts.map((c) => c.pop));
   const radius = (pop) => 2.5 + 11 * Math.sqrt(pop / maxPop);
   const labeled = [...pts].sort((a, b) => b.pop - a.pop).slice(0, 6);
+  if (hi && !labeled.some(isHi)) { const h = pts.find(isHi); if (h) labeled.push(h); }
   const labeledCities = new Set(labeled.map((c) => c.city));
 
   return (
@@ -40,6 +43,15 @@ export function StateMap({ cities = [], name = '', width = 680, height = 430 }) 
       style={{ maxWidth: '100%', height: 'auto', display: 'block', background: '#eef7f1', border: '1px solid #d5e6db', borderRadius: 12 }}>
       {pts.map((c, i) => {
         const [x, y] = project(c.lat, c.lng);
+        if (isHi(c)) {
+          const r = Math.max(6, radius(c.pop));
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r={r + 4} fill="none" stroke="#f59e0b" strokeWidth="2.5" />
+              <circle cx={x} cy={y} r={r} fill="#f59e0b" />
+            </g>
+          );
+        }
         return <circle key={i} cx={x} cy={y} r={radius(c.pop)} fill="#0d5d2f" fillOpacity={labeledCities.has(c.city) ? 0.85 : 0.38} />;
       })}
       {labeled.map((c, i) => {
@@ -47,7 +59,8 @@ export function StateMap({ cities = [], name = '', width = 680, height = 430 }) 
         const rightHalf = x > width / 2;
         return (
           <text key={i} x={rightHalf ? x - radius(c.pop) - 4 : x + radius(c.pop) + 4} y={y + 4}
-            fontSize="12.5" fontWeight="700" fill="#14532d" textAnchor={rightHalf ? 'end' : 'start'}>{c.city}</text>
+            fontSize={isHi(c) ? '13.5' : '12.5'} fontWeight="700" fill={isHi(c) ? '#b45309' : '#14532d'}
+            textAnchor={rightHalf ? 'end' : 'start'}>{c.city}</text>
         );
       })}
     </svg>

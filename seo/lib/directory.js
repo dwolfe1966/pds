@@ -53,6 +53,26 @@ export function getStateCities(code) {
   return st ? st.cities : [];
 }
 
+// Nearest cities (great-circle miles) among the state's slice cities — for the
+// "nearby cities" module. Uses the lat/lng we already carry; no geo data needed.
+const haversineMi = (a, b) => {
+  const R = 3958.8, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)));
+};
+export function getNearbyCities(code, citySlug, limit = 6) {
+  const st = getStateSlice(code);
+  if (!st) return [];
+  const here = st.cities.find((c) => c.slug === citySlug);
+  if (!here || here.lat == null) return [];
+  return st.cities
+    .filter((c) => c.slug !== citySlug && c.lat != null)
+    .map((c) => ({ city: c.city, slug: c.slug, miles: haversineMi(here, c) }))
+    .sort((a, b) => a.miles - b.miles)
+    .slice(0, limit);
+}
+
 export function getCitySlice(code, citySlug) {
   const st = getStateSlice(code);
   if (!st) return null;
