@@ -136,11 +136,88 @@ Government facts make each page *credible and non-thin*; our derived data makes 
 - **Tier 1 (Census + SSA + Wikidata) = zero friction, no attribution required.** Build here.
 - **Never copy Wikipedia/proprietary prose.** Facts only, then our own words.
 
+---
+
+# Part B — Exact codes & file formats (implementation reference)
+
+_Added 2026-07-10 after the ACS prototype (`seo/scripts/fetch-acs.mjs`) landed 99.9%
+match (2,067/2,070 cities → `seo/data/city-acs.json`). This section is what the fetchers
+expand from._
+
+## B1. ACS 5-year variable catalog (the full high-value set)
+
+Dataset path uses the **end year**: `/2023/acs/acs5` = 2019–2023 5-year. Geography:
+`?get=NAME,<vars>&for=place:*&in=state:<FIPS>&key=<KEY>`. **The API allows up to 50
+variables per `get=` call**, so our whole catalog (~40) fits in ONE call per state — no
+extra API cost to go from the current 9 vars to the full set. Full searchable catalog:
+`api.census.gov/data/2023/acs/acs5/variables.html`.
+
+**Population & age**
+- `B01003_001E` total population · `B01002_001E` median age
+- `B01001_002E` male / `B01001_026E` female → sex ratio
+
+**Race / ethnicity** — use **B03002** (Hispanic-aware), not B02001
+- `B03002_001E` total · `_003E` White NH · `_004E` Black NH · `_006E` Asian NH ·
+  `_005E` AIAN NH · `_012E` Hispanic (any race) → compute % each
+
+**Households**
+- `B11001_001E` households · `B25010_001E` avg household size
+
+**Income / poverty**
+- `B19013_001E` median HH income · `B19301_001E` per-capita income
+- `B17001_002E` / `B17001_001E` → poverty rate
+
+**Housing**
+- `B25077_001E` median home value · `B25064_001E` median gross rent
+- `B25003_001E`/`_002E`/`_003E` occupied/owner/renter → tenure % · `B25035_001E` median year built
+
+**Education (pop 25+)** — `B15003`
+- `_001E` total · `_017E` HS · `_021E` associate · `_022E` bachelor · `_023E` master ·
+  `_024E` professional · `_025E` doctorate → % HS+, % BA+ (leaf already computes BA+)
+
+**Employment / occupation / commute**
+- `B23025_003E` civilian labor force / `_005E` unemployed → unemployment rate
+- `C24010` occupation-by-sex → "top occupations"
+- `B08303_001E` total commuters · `B08301_021E` worked from home
+
+**Marital** — `B12001` (married/never/divorced) if we want it.
+
+**State→FIPS** map is already in the fetcher. `PR` and territories skipped (place coverage differs).
+
+## B2. SSA given names — the FIRST-name dimension (public domain)
+- **National:** `https://www.ssa.gov/oact/babynames/names.zip` → `yob1880.txt … yob2024.txt`,
+  each line `name,sex,count`, sorted sex then count-desc. 1880–present.
+- **State:** `https://www.ssa.gov/oact/babynames/state/namesbystate.zip` → `{ST}.TXT`,
+  each line `state,sex,year,name,count`. 1910–present.
+- Privacy: names with <5 occurrences in a geography are suppressed.
+- **Derive per first name:** total count, gender split, all-time rank, decade of peak,
+  trend line, and **per-state popularity rank** (state files) → "David is the #N male name in CA."
+
+## B3. Census names — the SURNAME (and first-name) dimension (public domain)
+- **2020 Census names (NEWER — first AND last names):**
+  `https://www.census.gov/topics/population/genealogy/data/2020_names.html` — names occurring
+  ≥100 times, with race/ethnicity breakdown. **Prefer this over the 2010 file.**
+- **2010 surnames (fallback / well-documented columns):**
+  `Names_2010Census.csv` — columns: `name, rank, count, prop100k, cum_prop100k, pctwhite,
+  pctblack, pctapi, pctaian, pct2prace, pcthispanic` (suppressed cells = `(S)`).
+- **Derive per surname:** national count, rank, race/ethnicity distribution → "Smith is the
+  #1 U.S. surname (~2.4M)…".
+
+## B4. Join plan
+- `city-acs.json` (DONE) — keyed `ST/city-slug`.
+- Next: build `name-facts.json` from SSA + Census names, keyed by first-name and surname;
+  join to `name-slice.json`'s `{first,last}`.
+- Page templates then read `city-acs` + `name-facts` (no runtime API calls — all pre-cached,
+  consistent with the ISR economics in `lib/data.js`).
+
 ## Sources
 - [ACS Data via API](https://www.census.gov/programs-surveys/acs/data/data-via-api.html) ·
   [Census Developers / datasets](https://www.census.gov/data/developers/data-sets.html) ·
   [ACS 5-year](https://www.census.gov/data/developers/data-sets/acs-5year.html)
 - [Wikidata SPARQL examples](https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries/examples)
 - [SSA Popular Baby Names](https://www.ssa.gov/oact/babynames/) ·
-  [Baby names data.gov (state)](https://catalog.data.gov/dataset/baby-names-from-social-security-card-applications-state-and-district-of-columbia-data)
+  [names.zip (national)](https://www.ssa.gov/oact/babynames/names.zip) ·
+  [namesbystate.zip](https://www.ssa.gov/oact/babynames/state/namesbystate.zip)
+- [Census 2020 first & last names](https://www.census.gov/topics/population/genealogy/data/2020_names.html) ·
+  [2010 surnames](https://www.census.gov/topics/population/genealogy/data/2010_surnames.html)
 - [Reusing Wikipedia content (CC BY-SA)](https://en.wikipedia.org/wiki/Wikipedia:Reusing_Wikipedia_content)
