@@ -144,7 +144,13 @@ const SalesSearchResultsPage = () => {
           searchParams.state = state.trim();
         }
         if (cityParam.trim()) searchParams.city = cityParam.trim();
-        
+        // Validation escape hatch (BC case-building): ?debug_extras=1 forwards city/age
+        // into the teaser (normally stripped) so we can measure their effect on IDI.
+        if (params.get('debug_extras') === '1') {
+          searchParams._keepExtras = true;
+          if (ageParam && ageParam.trim()) searchParams.age = ageParam.trim();
+        }
+
         const response = await api.searchPeople(searchParams);
 
         // Response is already adapted: { data: [...], pagination: {...}, searchContext: {...}, rawResponse? }

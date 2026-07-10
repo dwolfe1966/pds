@@ -636,8 +636,14 @@ async function callNewAPI(endpoint, params) {
       // returns records, but "+ city" or "+ age" → status:failed/0). They are applied
       // CLIENT-SIDE in the SERP (narrowedResults) as designed; leaking them into the
       // teaser query silently breaks the search into a thin-match. Strip them here.
-      delete query.city;
-      delete query.age;
+      // Validation escape hatch: `?debug_extras=1` keeps city/age in the teaser so we
+      // can measure their (broken) effect on IDI to build the BC case. Default = strip.
+      const keepExtras = query._keepExtras;
+      delete query._keepExtras;
+      if (!keepExtras) {
+        delete query.city;
+        delete query.age;
+      }
       const isPaginationRequest = !!query.commerceContentId && query.page != null;
       if (process.env.NODE_ENV === 'development') {
         dbg('[ByteCrtrs Search] All params sent to searchTeaser:', JSON.stringify(query, null, 2));
