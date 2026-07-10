@@ -210,7 +210,63 @@ extra API cost to go from the current 9 vars to the full set. Full searchable ca
 - Page templates then read `city-acs` + `name-facts` (no runtime API calls — all pre-cached,
   consistent with the ISR economics in `lib/data.js`).
 
+---
+
+# Part C — Wikipedia & news (researched 2026-07-10)
+
+_After ACS + name-facts shipped (city snapshots + name profiles live). Two more sources
+the owner asked about: (1) Wikipedia city data, (2) city news._
+
+## C1. Wikipedia / Wikidata city data — ✅ BUILD (clean via Wikidata CC0)
+
+**Verdict: yes.** Wikidata (CC0, no attribution required) carries the structured city
+facts ACS doesn't, and one property is a *perfect* on-brand fit for a people-search site.
+
+**City facts to add (Wikidata properties, CC0):**
+- `P571` inception/founded · `P131` county / admin parent · `P2044` elevation ·
+  `P2046` area · `P1449` nickname · `P6` head of government (mayor) · `P190` twinned cities ·
+  `P625` coordinates (we already have lat/lng) · official website.
+- → extends the "city at a glance" snapshot with *founded year, county, elevation, nickname*.
+
+**⭐ The standout: "Notable people from [City]" via `P19` (place of birth).**
+- SPARQL: humans (`P31 = Q5`) with `P19` = the city → name + Wikipedia link + occupation.
+- This is uniquely on-brand for a *people*-search directory, adds authoritative outbound
+  links (good for E-E-A-T), and is content no demographic feed provides. Each entry links
+  to Wikipedia (facts are free; we link rather than copy).
+
+**Wikipedia prose (REST summary/extract):** CC BY-SA — use as a *fact* source or an
+attributed one-liner, but **prefer generating our own prose** (avoids duplicate-content).
+
+**Access:** Wikidata SPARQL (`query.wikidata.org`) — one batch sweep keyed on our ~2,070
+cities (match by name + state, or by our coordinates). Cache to `city-wiki.json`, same
+pattern as `city-acs.json`. Rate-limited but fine for a one-time batch.
+
+## C2. City news — ❌ DON'T (low fit, licensing friction, staleness)
+
+**Verdict: recommend against.** Three independent reasons:
+1. **Licensing.** NewsAPI prohibits republishing content — title/description/URL only,
+   even on the $449/mo plan. GNews free tier bars commercial use; paid bars re-displaying
+   article text outside the API. So we could legally show *at most* a headline + link-out,
+   and even that is commercial-gated.
+2. **SEO fit.** News is topically *off-axis* for a name/city directory page. "John Smith in
+   Fresno" + Fresno news headlines reads as off-topic/spammy to Google and dilutes the
+   page's relevance signal — a net risk, not a gain.
+3. **Staleness.** Our pages are ISR-cached 60 days; news is stale instantly. Keeping news
+   fresh across 866k pages contradicts the caching/ISR economics and is infeasible.
+
+(A "news mentioning people named X" angle is also privacy-fraught and unreliable — avoid.)
+If we ever want local flavor, use **Wikipedia/Wikidata history facts**, not news.
+
+## Recommended next build
+**Wikidata sweep** → `city-wiki.json`: founded/county/elevation/nickname for the snapshot +
+a **"Notable people from [City]"** section (P19). Highest-value, most on-brand addition,
+fully CC0.
+
 ## Sources
+- [News API Terms (no republishing)](https://newsapi.org/terms) ·
+  [GNews Terms](https://gnews.io/legal/terms-of-service)
+- [Wikidata SPARQL examples](https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service/queries/examples) ·
+  [Wikidata Query Service](https://query.wikidata.org/)
 - [ACS Data via API](https://www.census.gov/programs-surveys/acs/data/data-via-api.html) ·
   [Census Developers / datasets](https://www.census.gov/data/developers/data-sets.html) ·
   [ACS 5-year](https://www.census.gov/data/developers/data-sets/acs-5year.html)
