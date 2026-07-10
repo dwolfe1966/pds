@@ -6,6 +6,7 @@
 
 import NAME_SLICE from '../data/name-slice.json';
 import STATE_SLICE from '../data/state-slice.json';
+import { statePath, cityPath, cityNamePath } from './ids';
 
 const ROUND = (n) => Math.max(1, Math.round(n));
 
@@ -21,8 +22,70 @@ const ROUND = (n) => Math.max(1, Math.round(n));
 export const EST_IN_STATE_MIN = 5;
 export const EST_IN_STATE_MAX = 1000;
 
+// Population base (sum of state pops) for per-place share, and the city floor —
+// a name needs ~>=2 people in a city to warrant a name-in-city page.
+const POP_BASE = Object.values(STATE_SLICE.states).reduce((a, s) => a + s.pop, 0);
+export const EST_IN_CITY_MIN = 2;
+const estInCityOf = (est, cityPop) => Math.max(1, Math.round(est * (cityPop / POP_BASE)));
+
+// A name-in-city page is viable only if the name resolves at the state level
+// (teaser works) AND has enough presence in the city.
+const nameStateOk = (est, share) => {
+  const eis = ROUND(est * share);
+  return eis >= EST_IN_STATE_MIN && eis <= EST_IN_STATE_MAX;
+};
+
 export function getStateList() {
   return Object.values(STATE_SLICE.states).sort((a, b) => b.pop - a.pop);
+}
+
+export function getStateCities(code) {
+  const st = getStateSlice(code);
+  return st ? st.cities : [];
+}
+
+export function getCitySlice(code, citySlug) {
+  const st = getStateSlice(code);
+  if (!st) return null;
+  const city = st.cities.find((c) => c.slug === citySlug);
+  if (!city) return null;
+  return { ...city, stateCode: st.code, stateName: st.name, stateShare: st.share };
+}
+
+// One name in one city — name stats + in-city estimate. null (→404) when the name
+// can't resolve at state level or is too sparse in the city.
+export function getNameInCity(code, citySlug, nameSlug) {
+  const st = getStateSlice(code);
+  const nm = NAME_SLICE[nameSlug];
+  if (!st || !nm || !nameStateOk(nm.estPeople, st.share)) return null;
+  const city = st.cities.find((c) => c.slug === citySlug);
+  if (!city) return null;
+  const estInCity = estInCityOf(nm.estPeople, city.pop);
+  if (estInCity < EST_IN_CITY_MIN) return null;
+  return {
+    ...nm,
+    state: st.code, stateName: st.name,
+    city: city.city, citySlug: city.slug,
+    estInState: ROUND(nm.estPeople * st.share), estInCity,
+  };
+}
+
+// Top names in a city (resolvable + present enough), for the city landing.
+export function getCityTopNames(code, citySlug, limit = 60) {
+  const st = getStateSlice(code);
+  if (!st) return [];
+  const city = st.cities.find((c) => c.slug === citySlug);
+  if (!city) return [];
+  const out = [];
+  for (const slug of STATE_SLICE.topNames) {
+    const nm = NAME_SLICE[slug];
+    if (!nm || !nameStateOk(nm.estPeople, st.share)) continue;
+    const estInCity = estInCityOf(nm.estPeople, city.pop);
+    if (estInCity < EST_IN_CITY_MIN) continue;
+    out.push({ slug, name: `${nm.first} ${nm.last}`, estInCity });
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 export function getStateSlice(code) {
@@ -56,6 +119,30 @@ export function getNameInState(code, slug) {
   // for IDI's teaser (over the ceiling) or too rare (under the floor).
   if (estInState < EST_IN_STATE_MIN || estInState > EST_IN_STATE_MAX) return null;
   return { ...nm, state: st.code, stateName: st.name, estInState };
+}
+
+// Every viable directory URL (state → city → name-in-city), computed once and
+// memoized — the sitemap chunks this. ~616k, so this iterates once per server
+// instance. City landings are emitted only when they have ≥1 viable name.
+let _taxonomyUrls;
+export function getTaxonomyUrls() {
+  if (_taxonomyUrls) return _taxonomyUrls;
+  const urls = ['/people'];
+  for (const st of Object.values(STATE_SLICE.states)) {
+    urls.push(statePath(st.code));
+    for (const c of st.cities) {
+      let cityAdded = false;
+      for (const slug of STATE_SLICE.topNames) {
+        const nm = NAME_SLICE[slug];
+        if (!nm || !nameStateOk(nm.estPeople, st.share)) continue;
+        if (estInCityOf(nm.estPeople, c.pop) < EST_IN_CITY_MIN) continue;
+        if (!cityAdded) { urls.push(cityPath(st.code, c.slug)); cityAdded = true; }
+        urls.push(cityNamePath(st.code, c.slug, slug));
+      }
+    }
+  }
+  _taxonomyUrls = urls;
+  return urls;
 }
 
 // Re-exported so the sitemap (in data.js) can iterate the slices without importing

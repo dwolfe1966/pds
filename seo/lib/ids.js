@@ -52,6 +52,15 @@ export function stateNamePath(code, slug) {
   return `/people/${String(code).toLowerCase()}/${slug}`;
 }
 
+// City-first taxonomy: state → city → name.
+export function cityPath(code, citySlug) {
+  return `/people/${String(code).toLowerCase()}/${citySlug}`;
+}
+
+export function cityNamePath(code, citySlug, nameSlug) {
+  return `/people/${String(code).toLowerCase()}/${citySlug}/${nameSlug}`;
+}
+
 // Split a "first-last" name slug back into display-cased first/last words. Best-
 // effort (multi-word names collapse to first token / rest) — used for hub H1s.
 export function nameFromSlug(slug) {

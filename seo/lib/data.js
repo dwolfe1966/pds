@@ -9,8 +9,8 @@
 
 import { PEOPLE as FIXTURES } from './fixtures';
 import REAL from '../data/profiles.json';
-import { NAME_SLICE, STATE_SLICE, getStateList, EST_IN_STATE_MIN, EST_IN_STATE_MAX } from './directory.js';
-import { isPublicId, nameSlug, citySlug, statePath, stateNamePath } from './ids';
+import { getTaxonomyUrls } from './directory.js';
+import { isPublicId, nameSlug, citySlug } from './ids';
 import { hasDb, dbGetPerson, dbPeopleByName, dbNameIndex, dbSitemapRows } from './db.mjs';
 
 // JSON fallback set (used only when no DB is configured).
@@ -78,42 +78,31 @@ export async function getPeopleByNameCity(slug, state, city) {
   return { ...stateHub, cityName: people[0].city, people };
 }
 
-// Site-relative URLs for the sitemap (persons + name/state/city hubs).
+// Site-relative URLs for the sitemap: the state → city → name taxonomy (memoized)
+// plus the real-profile pages. Large (~600k+), so the sitemap route chunks this;
+// memoized so the per-chunk calls don't recompute or re-query the DB each time.
+let _sitemapUrls;
 export async function getSitemapUrls() {
-  const urls = new Set(['/people']);
-
-  // State-first surface (lead): state landings + name-in-state, gated to the band IDI's
-  // teaser can actually resolve — over the ceiling it refuses common names (thin), under
-  // the floor it's "~1 in Wyoming" thin. Keeps "John Smith / WY", drops "John Smith / CA".
-  for (const st of getStateList()) {
-    urls.add(statePath(st.code));
-    for (const slug of STATE_SLICE.topNames) {
-      const nm = NAME_SLICE[slug];
-      if (!nm) continue;
-      const est = nm.estPeople * st.share;
-      if (est < EST_IN_STATE_MIN || est > EST_IN_STATE_MAX) continue;
-      urls.add(stateNamePath(st.code, slug));
-    }
-  }
+  if (_sitemapUrls) return _sitemapUrls;
+  const urls = [...getTaxonomyUrls()]; // /people, state landings, city landings, name-in-city
 
   // Real-profile pages (other category, /profiles/*).
   if (hasDb) {
     for (const r of await dbSitemapRows()) {
-      urls.add(`/profiles/${r.name_slug}`);
-      urls.add(`/profiles/${r.name_slug}/${r.state.toLowerCase()}`);
-      urls.add(`/profiles/${r.name_slug}/${r.state.toLowerCase()}/${r.city_slug}`);
-      urls.add(`/profiles/${r.name_slug}/${r.state.toLowerCase()}/${r.city_slug}/${r.id}`);
+      const b = `/profiles/${r.name_slug}`;
+      const s = `${b}/${r.state.toLowerCase()}`;
+      urls.push(b, s, `${s}/${r.city_slug}`, `${s}/${r.city_slug}/${r.id}`);
     }
-    return [...urls];
+    _sitemapUrls = urls;
+    return urls;
   }
   for (const p of Object.values(PEOPLE)) {
-    const slug = nameSlug(p.firstName, p.lastName);
-    urls.add(`/profiles/${slug}`);
-    urls.add(`/profiles/${slug}/${p.state.toLowerCase()}`);
-    urls.add(`/profiles/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}`);
-    urls.add(`/profiles/${slug}/${p.state.toLowerCase()}/${citySlug(p.city)}/${p.id}`);
+    const b = `/profiles/${nameSlug(p.firstName, p.lastName)}`;
+    const s = `${b}/${p.state.toLowerCase()}`;
+    urls.push(b, s, `${s}/${citySlug(p.city)}`, `${s}/${citySlug(p.city)}/${p.id}`);
   }
-  return [...urls];
+  _sitemapUrls = urls;
+  return urls;
 }
 
 // The /people index — available name hubs.
