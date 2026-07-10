@@ -40,17 +40,33 @@ const FIPS = {
   vt:'50', va:'51', wa:'53', wv:'54', wi:'55', wy:'56',
 };
 
-// Raw ACS variables → our field names. (Phase-b pins the full catalog; these are the
-// high-value singles.) Education % is derived below from the B15003 breakdown.
+// Raw ACS variables → intermediate field names. ~38 vars — well under the 50-per-call
+// limit, so the whole catalog is still ONE call per state. Percentages/rates are
+// derived in shape() from these counts (public-domain Census data).
 const RAW = {
-  B01003_001E: 'population',
-  B01002_001E: 'medianAge',
-  B19013_001E: 'medianHouseholdIncome',
-  B25077_001E: 'medianHomeValue',
-  B25064_001E: 'medianGrossRent',
-  B11001_001E: 'households',
+  // population & age/sex
+  B01003_001E: 'population', B01002_001E: 'medianAge',
+  B01001_002E: '_male', B01001_026E: '_female',
+  // income & poverty
+  B19013_001E: 'medianHouseholdIncome', B19301_001E: 'perCapitaIncome',
+  B17001_001E: '_povTotal', B17001_002E: '_povBelow',
+  // race/ethnicity (B03002 — Hispanic-aware)
+  B03002_001E: '_raceTotal', B03002_003E: '_white', B03002_004E: '_black',
+  B03002_006E: '_asian', B03002_005E: '_aian', B03002_012E: '_hispanic',
+  // households & housing
+  B11001_001E: 'households', B25010_001E: 'avgHouseholdSize',
+  B25077_001E: 'medianHomeValue', B25064_001E: 'medianGrossRent',
+  B25003_001E: '_tenureTotal', B25003_002E: '_owner', B25035_001E: 'medianYearBuilt',
+  // education (pop 25+): HS+ and BA+ derived from the B15003 ladder
   B15003_001E: '_eduTotal',
-  B15003_022E: '_bach', B15003_023E: '_mast', B15003_024E: '_prof', B15003_025E: '_doct',
+  B15003_017E: '_e17', B15003_018E: '_e18', B15003_019E: '_e19', B15003_020E: '_e20',
+  B15003_021E: '_e21', B15003_022E: '_bach', B15003_023E: '_mast',
+  B15003_024E: '_prof', B15003_025E: '_doct',
+  // employment
+  B23025_003E: '_laborForce', B23025_005E: '_unemployed',
+  // commute
+  B08013_001E: '_aggTravel', B08303_001E: '_commuters',
+  B08301_001E: '_transitTotal', B08301_021E: '_wfh',
 };
 const VAR_CODES = Object.keys(RAW);
 
@@ -96,18 +112,39 @@ function pick(records, cityPop) {
     Math.abs((a.population ?? 0) - cityPop) - Math.abs((b.population ?? 0) - cityPop))[0];
 }
 
+const pct = (num, den) => (den ? Math.round((num / den) * 1000) / 10 : null);
+
 function shape(rec) {
-  const eduTop = ['_bach', '_mast', '_prof', '_doct'].reduce((a, k) => a + (rec[k] ?? 0), 0);
-  const pctBachelorsPlus = rec._eduTotal ? Math.round((eduTop / rec._eduTotal) * 1000) / 10 : null;
+  const baPlus = ['_bach', '_mast', '_prof', '_doct'].reduce((a, k) => a + (rec[k] ?? 0), 0);
+  const hsPlus = ['_e17', '_e18', '_e19', '_e20', '_e21'].reduce((a, k) => a + (rec[k] ?? 0), baPlus);
   return {
     acsName: rec.name,
     population: rec.population,
     medianAge: rec.medianAge,
+    pctMale: pct(rec._male, (rec._male ?? 0) + (rec._female ?? 0)),
+    // income & poverty
     medianHouseholdIncome: rec.medianHouseholdIncome,
+    perCapitaIncome: rec.perCapitaIncome,
+    povertyRate: pct(rec._povBelow, rec._povTotal),
+    // race/ethnicity (% of total pop)
+    pctWhite: pct(rec._white, rec._raceTotal),
+    pctBlack: pct(rec._black, rec._raceTotal),
+    pctAsian: pct(rec._asian, rec._raceTotal),
+    pctHispanic: pct(rec._hispanic, rec._raceTotal),
+    // households & housing
+    households: rec.households,
+    avgHouseholdSize: rec.avgHouseholdSize,
     medianHomeValue: rec.medianHomeValue,
     medianGrossRent: rec.medianGrossRent,
-    households: rec.households,
-    pctBachelorsPlus,
+    pctOwnerOccupied: pct(rec._owner, rec._tenureTotal),
+    medianYearBuilt: rec.medianYearBuilt,
+    // education (pop 25+)
+    pctHighSchoolPlus: pct(hsPlus, rec._eduTotal),
+    pctBachelorsPlus: pct(baPlus, rec._eduTotal),
+    // work
+    unemploymentRate: pct(rec._unemployed, rec._laborForce),
+    meanCommuteMinutes: rec._commuters ? Math.round((rec._aggTravel / rec._commuters) * 10) / 10 : null,
+    pctWorkFromHome: pct(rec._wfh, rec._transitTotal),
   };
 }
 
