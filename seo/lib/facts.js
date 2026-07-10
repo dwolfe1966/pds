@@ -4,6 +4,7 @@
 // public-domain source data; no runtime API calls (pre-cached, ISR-friendly).
 
 import CITY_ACS from '../data/city-acs.json';
+import CITY_WIKI from '../data/city-wiki.json';
 import NAME_FACTS from '../data/name-facts.json';
 
 const money = (n) => (n == null ? null : '$' + Number(n).toLocaleString('en-US'));
@@ -14,8 +15,21 @@ const commas = (n) => (n == null ? null : Number(n).toLocaleString('en-US'));
 export function getCityAcs(stateCode, citySlug) {
   return CITY_ACS[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
 }
+export function getCityWiki(stateCode, citySlug) {
+  return CITY_WIKI[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
 export function getFirstNameFacts(first) { return NAME_FACTS.firsts[String(first).toLowerCase()] || null; }
 export function getSurnameFacts(last) { return NAME_FACTS.lasts[String(last).toLowerCase()] || null; }
+
+// Wikidata (CC0) fact chips for the city header: Founded · County · Elevation.
+export function cityWikiChips(w) {
+  if (!w) return [];
+  const chips = [];
+  if (w.founded) chips.push(`Founded ${w.founded}`);
+  if (w.county) chips.push(w.county);
+  if (w.elevationM != null) chips.push(`Elev. ${Number(w.elevationM).toLocaleString('en-US')} m`);
+  return chips;
+}
 
 // ── city snapshot grid ──────────────────────────────────────────────────────
 export function cityStats(a) {
@@ -51,7 +65,7 @@ function topEthnicity(a) {
 }
 
 // ── city prose ───────────────────────────────────────────────────────────────
-export function cityProse(city, stateName, a, slugKey = '') {
+export function cityProse(city, stateName, a, slugKey = '', w = null) {
   if (!a) return null;
   const pop = commas(a.population);
   const v = hash(slugKey + 'c') % 3;
@@ -59,6 +73,15 @@ export function cityProse(city, stateName, a, slugKey = '') {
   if (v === 0 && pop) s.push(`${city} is home to roughly ${pop} residents.`);
   else if (v === 1 && pop) s.push(`With about ${pop} residents, ${city} is one of ${stateName}'s notable places.`);
   else s.push(`${city} is a city in ${stateName}${pop ? ` with about ${pop} residents` : ''}.`);
+
+  // Wikidata (CC0) flavor: founding, county, nickname.
+  if (w) {
+    const bits = [];
+    if (w.founded) bits.push(`was founded in ${w.founded}`);
+    if (w.county) bits.push(`sits in ${w.county}`);
+    if (bits.length) s.push(`${city} ${bits.join(' and ')}${w.nickname ? `, and is nicknamed "${w.nickname}"` : ''}.`);
+    else if (w.nickname) s.push(`${city} is nicknamed "${w.nickname}".`);
+  }
 
   if (a.medianAge != null && a.medianHouseholdIncome != null)
     s.push(`The median age is ${a.medianAge} and the median household income is ${money(a.medianHouseholdIncome)}.`);

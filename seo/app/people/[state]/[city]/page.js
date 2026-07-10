@@ -3,7 +3,7 @@
 // city, each linking to a name-in-city page.
 import { notFound } from 'next/navigation';
 import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
-import { getCityAcs, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
+import { getCityAcs, getCityWiki, cityWikiChips, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
 import { statePath, cityPath, cityNamePath } from '../../../../lib/ids';
 import { collectionJsonLd, crumbsJsonLd } from '../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -41,9 +41,11 @@ export default async function CityLanding({ params }) {
 
   const names = getCityTopNames(state, city, 60);
   const acs = getCityAcs(c.stateCode, city);
+  const wiki = getCityWiki(c.stateCode, city);
+  const chips = cityWikiChips(wiki);
   const stats = cityStats(acs);
   const eth = cityEthnicity(acs);
-  const prose = cityProse(c.city, c.stateName, acs, city);
+  const prose = cityProse(c.city, c.stateName, acs, city, wiki);
   const crumbs = [
     { name: 'People Search', path: '/people' },
     { name: c.stateName, path: statePath(state) },
@@ -61,6 +63,13 @@ export default async function CityLanding({ params }) {
       <Breadcrumbs crumbs={crumbs} />
 
       <h1 style={ui.h1}>People Search in {c.city}, {c.stateCode}</h1>
+      {chips.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '2px 0 12px' }}>
+          {chips.map((ch) => (
+            <span key={ch} style={{ fontSize: 12, color: '#374151', background: '#eef2f0', border: '1px solid #dbe5df', borderRadius: 999, padding: '3px 10px' }}>{ch}</span>
+          ))}
+        </div>
+      )}
       <p style={{ ...ui.muted, margin: '0 0 20px', fontSize: 15 }}>
         Browse the most common names in {c.city} to find a specific person, or search directly.
       </p>
