@@ -5,6 +5,7 @@
 
 import CITY_ACS from '../data/city-acs.json';
 import CITY_WIKI from '../data/city-wiki.json';
+import CITY_PEOPLE from '../data/city-people.json';
 import NAME_FACTS from '../data/name-facts.json';
 
 const money = (n) => (n == null ? null : '$' + Number(n).toLocaleString('en-US'));
@@ -17,6 +18,9 @@ export function getCityAcs(stateCode, citySlug) {
 }
 export function getCityWiki(stateCode, citySlug) {
   return CITY_WIKI[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+export function getCityPeople(stateCode, citySlug) {
+  return CITY_PEOPLE[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
 }
 export function getFirstNameFacts(first) { return NAME_FACTS.firsts[String(first).toLowerCase()] || null; }
 export function getSurnameFacts(last) { return NAME_FACTS.lasts[String(last).toLowerCase()] || null; }
