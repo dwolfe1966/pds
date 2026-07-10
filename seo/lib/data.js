@@ -86,15 +86,22 @@ export async function getSitemapUrls() {
   if (_sitemapUrls) return _sitemapUrls;
   const urls = [...getTaxonomyUrls()]; // /people, state landings, city landings, name-in-city
 
-  // Real-profile pages (other category, /profiles/*).
+  // Real-profile pages (other category, /profiles/*). If the DB is unreachable at
+  // build time (e.g. a Neon blip, or a local build with no network to Neon), degrade
+  // to the taxonomy + committed JSON rather than crashing the whole build/deploy.
   if (hasDb) {
-    for (const r of await dbSitemapRows()) {
-      const b = `/profiles/${r.name_slug}`;
-      const s = `${b}/${r.state.toLowerCase()}`;
-      urls.push(b, s, `${s}/${r.city_slug}`, `${s}/${r.city_slug}/${r.id}`);
+    try {
+      for (const r of await dbSitemapRows()) {
+        const b = `/profiles/${r.name_slug}`;
+        const s = `${b}/${r.state.toLowerCase()}`;
+        urls.push(b, s, `${s}/${r.city_slug}`, `${s}/${r.city_slug}/${r.id}`);
+      }
+      _sitemapUrls = urls;
+      return urls;
+    } catch (e) {
+      console.warn('[seo] sitemap: DB unreachable, falling back to JSON profiles —', e.message);
+      // dbSitemapRows() throws before any push, so `urls` is still taxonomy-only here.
     }
-    _sitemapUrls = urls;
-    return urls;
   }
   for (const p of Object.values(PEOPLE)) {
     const b = `/profiles/${nameSlug(p.firstName, p.lastName)}`;
@@ -107,7 +114,10 @@ export async function getSitemapUrls() {
 
 // The /people index — available name hubs.
 export async function getNameIndex() {
-  if (hasDb) return dbNameIndex();
+  if (hasDb) {
+    try { return await dbNameIndex(); }
+    catch (e) { console.warn('[seo] name index: DB unreachable, JSON fallback —', e.message); }
+  }
   const seen = new Map();
   for (const p of Object.values(PEOPLE)) {
     const slug = nameSlug(p.firstName, p.lastName);

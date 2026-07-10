@@ -3,6 +3,7 @@
 // a SERP hand-off that carries state (teaser resolves) + city (client-side narrows).
 import { notFound } from 'next/navigation';
 import { getNameInCity, getCityTopNames } from '../../../../../lib/directory';
+import { getCityAcs, getFirstNameFacts, getSurnameFacts, cityStats, nameProse } from '../../../../../lib/facts';
 import { cityNamePath, cityPath, statePath } from '../../../../../lib/ids';
 import { crumbsJsonLd } from '../../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../../lib/ui';
@@ -49,6 +50,15 @@ export default async function NameInCity({ params }) {
   const ordinal = (r) => (r ? `#${num(r)}` : '');
   const related = getCityTopNames(state, city, 60).filter((r) => r.slug !== name).slice(0, 8);
 
+  const ff = getFirstNameFacts(d.first);
+  const lf = getSurnameFacts(d.last);
+  const acs = getCityAcs(d.state, city);
+  const cityFacts = cityStats(acs).slice(0, 4);
+  const prose = nameProse({ full, first: d.first, last: d.last, city: d.city, stateName: d.stateName, estInCity: d.estInCity, acs, ff, lf, slugKey: name });
+  const genderLabel = ff?.gender === 'unisex' ? 'Unisex' : ff?.gender === 'female' ? 'Female' : ff?.gender === 'male' ? 'Male' : null;
+  const topEth = lf && [['White', lf.pctWhite], ['Hispanic', lf.pctHispanic], ['Black', lf.pctBlack], ['Asian/PI', lf.pctApi]]
+    .filter(([, v]) => v != null).sort((a, b) => b[1] - a[1])[0];
+
   return (
     <main style={ui.main}>
       <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
@@ -66,14 +76,40 @@ export default async function NameInCity({ params }) {
         <div style={stat.card}>
           <div style={stat.label}>First name</div>
           <div style={stat.big}>{d.first}</div>
-          <div style={stat.sub}>{d.firstRank ? <>{ordinal(d.firstRank)} most common first name in the U.S.</> : 'A U.S. given name'}</div>
+          <div style={stat.sub}>
+            {d.firstRank ? <>{ordinal(d.firstRank)} most common first name in the U.S.</> : 'A U.S. given name'}
+            {genderLabel && <> · {genderLabel}</>}
+            {ff?.peakDecade && <> · peaked {ff.peakDecade}</>}
+          </div>
         </div>
         <div style={stat.card}>
           <div style={stat.label}>Surname</div>
           <div style={stat.big}>{d.last}</div>
-          <div style={stat.sub}>{d.lastRank ? <>{ordinal(d.lastRank)} most common surname in the U.S.</> : 'A U.S. surname'}</div>
+          <div style={stat.sub}>
+            {d.lastRank ? <>{ordinal(d.lastRank)} most common surname in the U.S.</> : 'A U.S. surname'}
+            {topEth && topEth[1] >= 40 && <> · {topEth[1]}% {topEth[0]}</>}
+          </div>
         </div>
       </div>
+
+      {prose && (
+        <p style={{ margin: '4px 0 16px', fontSize: 15, lineHeight: 1.65, color: '#374151' }}>{prose}</p>
+      )}
+
+      {cityFacts.length > 0 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>About {d.city}, {d.state}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+            {cityFacts.map((s) => (
+              <div key={s.label} style={{ background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={stat.label}>{s.label}</div>
+                <div style={{ ...stat.big, fontSize: 20 }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: U.S. Census Bureau, American Community Survey (5-year).</p>
+        </section>
+      )}
 
       {related.length > 0 && (
         <section style={ui.card}>
