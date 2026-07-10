@@ -3,8 +3,9 @@
 // city, each linking to a name-in-city page.
 import { notFound } from 'next/navigation';
 import { getCitySlice, getCityTopNames, getStateCities, getNearbyCities } from '../../../../lib/directory';
-import { getCityAcs, getCityWiki, getCityPeople, cityWikiChips, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
+import { getCityAcs, getCityWiki, getCityPeople, getPopHistory, cityWikiChips, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
 import { StateMap } from '../../../../lib/statemap';
+import { PopChart } from '../../../../lib/popchart';
 import { statePath, cityPath, cityNamePath } from '../../../../lib/ids';
 import { collectionJsonLd, crumbsJsonLd } from '../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -50,6 +51,7 @@ export default async function CityLanding({ params }) {
   const stateCities = getStateCities(state);
   const nearby = getNearbyCities(state, city, 6);
   const people = getCityPeople(c.stateCode, city);
+  const popPoints = getPopHistory(c.stateCode, city, acs?.population);
   const crumbs = [
     { name: 'People Search', path: '/people' },
     { name: c.stateName, path: statePath(state) },
@@ -106,23 +108,21 @@ export default async function CityLanding({ params }) {
         </section>
       )}
 
+      {popPoints.length >= 4 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Population trend</h2>
+          <PopChart points={popPoints} width={680} height={230} />
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>
+            {popPoints[0].year}–{popPoints[popPoints.length - 1].year}. Sources: Wikidata (CC0) historical figures; latest from U.S. Census ACS.
+          </p>
+        </section>
+      )}
+
       {stateCities.length >= 3 && (
         <section style={ui.card}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>Where {c.city} is</h2>
           <StateMap cities={stateCities} name={c.stateName} highlight={c.city} width={680} height={380} />
           <p style={{ margin: '10px 0 0', fontSize: 12, color: '#9ca3af' }}>{c.city} (highlighted) among major cities in {c.stateName}.</p>
-        </section>
-      )}
-
-      {people && people.length > 0 && (
-        <section style={ui.card}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Notable people from {c.city}</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px' }}>
-            {people.slice(0, 10).map((p) => (
-              <a key={p.url} href={p.url} target="_blank" rel="noopener" style={{ ...ui.link, fontSize: 14 }}>{p.name}</a>
-            ))}
-          </div>
-          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Born in {c.city}. Source: Wikidata / Wikipedia (CC0); links open Wikipedia.</p>
         </section>
       )}
 
@@ -136,6 +136,18 @@ export default async function CityLanding({ params }) {
           ))}
         </div>
       </section>
+
+      {people && people.length > 0 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Notable people from {c.city}</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px' }}>
+            {people.slice(0, 10).map((p) => (
+              <a key={p.url} href={p.url} target="_blank" rel="noopener" style={{ ...ui.link, fontSize: 14 }}>{p.name}</a>
+            ))}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Born in {c.city}. Source: Wikidata / Wikipedia (CC0); links open Wikipedia.</p>
+        </section>
+      )}
 
       {nearby.length > 0 && (
         <section style={ui.card}>

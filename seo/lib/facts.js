@@ -6,6 +6,7 @@
 import CITY_ACS from '../data/city-acs.json';
 import CITY_WIKI from '../data/city-wiki.json';
 import CITY_PEOPLE from '../data/city-people.json';
+import CITY_POPHISTORY from '../data/city-pophistory.json';
 import NAME_FACTS from '../data/name-facts.json';
 
 const money = (n) => (n == null ? null : '$' + Number(n).toLocaleString('en-US'));
@@ -21,6 +22,15 @@ export function getCityWiki(stateCode, citySlug) {
 }
 export function getCityPeople(stateCode, citySlug) {
   return CITY_PEOPLE[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+// Historical population points (Wikidata, CC0) + the current ACS population as the
+// latest anchor. Returns a year-sorted [{year, pop}]; the page charts it when ≥4.
+export function getPopHistory(stateCode, citySlug, acsPop) {
+  const hist = CITY_POPHISTORY[`${String(stateCode).toUpperCase()}/${citySlug}`] || [];
+  const pts = hist.slice();
+  const CUR = 2024; // ACS 5-year (2020–2024) vintage
+  if (acsPop && !pts.some((p) => p.year === CUR)) pts.push({ year: CUR, pop: acsPop });
+  return pts.sort((a, b) => a.year - b.year);
 }
 export function getFirstNameFacts(first) { return NAME_FACTS.firsts[String(first).toLowerCase()] || null; }
 export function getSurnameFacts(last) { return NAME_FACTS.lasts[String(last).toLowerCase()] || null; }
