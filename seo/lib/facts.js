@@ -7,6 +7,7 @@ import CITY_ACS from '../data/city-acs.json';
 import CITY_WIKI from '../data/city-wiki.json';
 import CITY_PEOPLE from '../data/city-people.json';
 import CITY_POPHISTORY from '../data/city-pophistory.json';
+import CITY_HISTORIC from '../data/city-historic.json';
 import NAME_FACTS from '../data/name-facts.json';
 
 const money = (n) => (n == null ? null : '$' + Number(n).toLocaleString('en-US'));
@@ -22,6 +23,9 @@ export function getCityWiki(stateCode, citySlug) {
 }
 export function getCityPeople(stateCode, citySlug) {
   return CITY_PEOPLE[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+export function getCityHistoric(stateCode, citySlug) {
+  return CITY_HISTORIC[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
 }
 // Historical population points (Wikidata, CC0) + the current ACS population as the
 // latest anchor. Returns a year-sorted [{year, pop}]; the page charts it when ≥4.
