@@ -6,6 +6,7 @@ import { createReportForIdentity } from '../services/reportService';
 import { track } from '../services/trackingService';
 import { gtmSelectContent } from '../services/gtm';
 import { setSearchTarget as gtmSetSearchTarget } from '../services/gtmContext';
+import { getCapturedEmail } from '../services/emailCapture';
 import styles from './ResultCard.module.css';
 import { PersonAvatar, properCaseName } from './PersonAvatar';
 
@@ -111,8 +112,17 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null, index = 0
         setLoading(false);
       }
     } else {
-      // Non-member flow: navigate to preview page (which will show teaser and link to signup)
-      navigate(`/search/${result.id}`);
+      // Non-member flow. If we already captured an email upstream (e.g. the BV
+      // mid-loader gate), skip the SUP re-ask and go straight to payment via a silent
+      // auto-signup (captured email + generated password). SignupPage falls back to the
+      // form if the account already exists. (result_${id} is already stashed above.)
+      let capturedEmail = '';
+      try { capturedEmail = getCapturedEmail(); } catch { /* ignore */ }
+      if (capturedEmail) {
+        navigate(`/signup?selected=${result.id}&redirect=/payment&auto=1`);
+      } else {
+        navigate(`/search/${result.id}`);
+      }
     }
   };
 

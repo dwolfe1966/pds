@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { track } from '../../services/trackingService';
 import { gtmSearchSubmit } from '../../services/gtm';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
-import { isBvFlowEnabled } from '../../services/featureFlags';
 import { setSearchContext } from '../../services/searchContext';
 import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import { appendSearch } from '../../services/visitorSearchLog';
@@ -20,8 +19,8 @@ import loader from './LoaderPage.module.css';
  *
  * Owner decisions (2026-07-11), see docs/design/funnel-mimic-plan.md +
  * docs/design/beenverified-funnel-teardown-2026-07.md:
- *   • Gating: MANUAL feature flag, OFF by default (isBvFlowEnabled). Enable per-tab
- *     via ?flow=bv, or build via REACT_APP_ENABLE_BV_FLOW=true.
+ *   • v11 landing slot. Renders directly (no flag gate) — exposure is controlled by
+ *     the shN split (funnelSplit.js), which routes a share of paid/SEO traffic here.
  *   • Structure-faithful to BeenVerified: a 3-step input DRIP (name → location →
  *     details+FCRA) → a long ANTICIPATION loader that CARRIES the payoff
  *     (loader-replaces-teaser) → EMAIL CAPTURE mid-loader → hand-off.
@@ -96,16 +95,12 @@ function handoff(navigate, dest, firstResult) {
 
 const NameSearchBvFlowPage = () => {
   const navigate = useNavigate();
-  const enabled = isBvFlowEnabled();
   const dest = useMemo(readDest, []);
-  useLandingTrack('name', `v11-${dest}`, enabled); // landing_view + persists funnel entry
+  useLandingTrack('name', `v11-${dest}`); // landing_view + persists funnel entry
 
   const [phase, setPhase] = useState('drip'); // 'drip' | 'loader'
   const [stepIdx, setStepIdx] = useState(0);
   const [query, setQuery] = useState({ firstName: '', lastName: '', city: '', state: '', middleName: '', age: '' });
-
-  // Guard: flow is optional/off by default. Send disabled traffic to the default funnel.
-  if (!enabled) return <Navigate to="/name/landing" replace />;
 
   const step = DRIP_STEPS[stepIdx];
 
@@ -360,10 +355,6 @@ function BvLoader({ query, dest, navigate }) {
             // General capture: localStorage (durable + signup pre-fill) + push to our
             // lead endpoint. The email VALUE lives here, NOT on the analytics event.
             captureEmail(email, { source: 'bv_loader', variant, dest, search_type: 'name' });
-            // Session-scoped flag so the SERP knows THIS visit came through the BV flow
-            // and can skip the SUP re-ask → straight to payment (auto-signup). Scoped to
-            // the tab session so it doesn't fire for returning users on the normal funnel.
-            try { sessionStorage.setItem('bvAutoCheckout', '1'); } catch { /* ignore */ }
             // PII boundary: never put the email value in the analytics event.
             track('email_capture', { search_type: 'name', variant, step: 'loader' });
             setAskEmail(false);

@@ -250,15 +250,14 @@ const SalesSearchResultsPage = () => {
   const handleResultClick = (result) => {
     // Store result in sessionStorage for the preview/payment page
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify(result));
-    // BV flow: we already captured the email upstream (mid-loader). Don't re-ask for
-    // it on the SUP — send the user straight to payment via a silent auto-signup
-    // (captured email + generated password). Gated on the session flag set by the BV
-    // flow (so it doesn't fire for returning users on the normal funnel) + only for
-    // not-logged-in visitors; everyone else keeps the normal SUP teaser.
-    const bvVisit = (() => { try { return sessionStorage.getItem('bvAutoCheckout') === '1'; } catch { return false; } })();
+    // If we've already captured an email upstream (e.g. the BV mid-loader gate), don't
+    // re-ask for it on the SUP — send the user straight to payment via a silent
+    // auto-signup (captured email + generated password). Only for not-logged-in
+    // visitors; logged-in members keep the normal path. If the account already exists,
+    // SignupPage's auto path falls back to the form.
     const hasEmail = (() => { try { return !!getCapturedEmail(); } catch { return false; } })();
     const loggedIn = (() => { try { return !!localStorage.getItem('accessToken'); } catch { return false; } })();
-    if (bvVisit && hasEmail && !loggedIn) {
+    if (hasEmail && !loggedIn) {
       track('serp_result_autocheckout', { personId: result.id });
       navigate(`/signup?selected=${result.id}&redirect=/payment&auto=1`);
       return;
