@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import { useCampaign } from './context/CampaignContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import { resolvePaidRoute, resolveSeoLanding } from './services/funnelSplit';
 import ScrollToTop from './components/ScrollToTop';
 import BrandStyles from './components/BrandStyles';
 // Sales pages
@@ -110,12 +111,16 @@ const HomePageRedirect = () => {
   if (!pending) return <HomePage />;
 
   const campaignRoute = campaign?.landing?.route;
-  const willRedirect = campaignRoute && campaignRoute !== '/';
-  // Only A/B campaigns (registry `landing.awaitTheme`) wait for the BC shape — so we route to
-  // the theme's assigned arm (v3a/v3b) instead of the static fallback. Every other campaign
-  // redirects immediately (its theme matches the registry, so there's nothing to wait for).
-  // _shapeSettled always flips true (shape success/fail/timeout) so this never hangs.
-  if (willRedirect && campaign?.landing?.awaitTheme && !campaign._shapeSettled) {
+  // PAID v11 split (owner 2026-07-11): the inmate (v3-family) campaigns are OVERRIDDEN to
+  // 75% v3 / 25% v11 — intentionally dropping the BC v3a/v3b theme split. When we override
+  // we don't wait for the theme (the override ignores which arm it would have picked).
+  const paidRoute = resolvePaidRoute(campaignRoute);
+  const effectiveRoute = paidRoute || campaignRoute;
+  const willRedirect = effectiveRoute && effectiveRoute !== '/';
+  // Only NON-overridden A/B campaigns (registry `landing.awaitTheme`) wait for the BC shape —
+  // so we route to the theme's assigned arm instead of the static fallback. _shapeSettled always
+  // flips true (shape success/fail/timeout) so this never hangs.
+  if (!paidRoute && willRedirect && campaign?.landing?.awaitTheme && !campaign._shapeSettled) {
     return <CampaignBootSplash />;
   }
   // Settled (or nothing to redirect to) — consume the one-shot flag now.
@@ -123,10 +128,22 @@ const HomePageRedirect = () => {
   if (willRedirect) {
     // Carry the original query string (gclid, utm_*, shn) to the vertical LP. Without this,
     // the redirect drops gclid before GTM's Conversion Linker can capture it → no _gcl_aw
-    // cookie → Google Ads can't attribute conversions. (campaignRoute is a static path.)
-    return <Navigate to={`${campaignRoute}${location.search}`} replace />;
+    // cookie → Google Ads can't attribute conversions.
+    return <Navigate to={`${effectiveRoute}${location.search}`} replace />;
   }
   return <HomePage />;
+};
+
+// SEO/referral traffic from idlookup.me lands directly on /name/landing/v2 (with
+// ?utm_source=idlookup.me). Split it 50/50 v2|v11 (owner 2026-07-11). Non-SEO v2 traffic
+// (direct/organic) renders v2 unchanged.
+const V2LandingSplit = () => {
+  const location = useLocation();
+  const seoRoute = resolveSeoLanding(location.search);
+  if (seoRoute === '/name/landing/v11') {
+    return <Navigate to={`/name/landing/v11${location.search}`} replace />;
+  }
+  return <NameSearchLandingV2Page />;
 };
 
 const App = () => {
@@ -152,7 +169,7 @@ const App = () => {
           <Route path="/search/all" element={<GeneralSearchPage />} />
           {/* Name search flow */}
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
-          <Route path="/name/landing/v2" element={<NameSearchLandingV2Page />} />
+          <Route path="/name/landing/v2" element={<V2LandingSplit />} />
           <Route path="/name/landing/v3" element={<NameSearchLandingV3Page />} />
           <Route path="/name/landing/v4" element={<NameSearchLandingV4Page />} />
           <Route path="/name/landing/v5" element={<NameSearchLandingV5Page />} />
