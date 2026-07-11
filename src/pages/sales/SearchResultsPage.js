@@ -8,6 +8,7 @@ import ThinMatchPreview from '../../components/ThinMatchPreview';
 import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import { readThinMatch } from '../../services/thinMatch';
+import { getCapturedEmail } from '../../services/emailCapture';
 import { useCampaign } from '../../context/CampaignContext';
 import styles from './SearchResultsPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -247,8 +248,21 @@ const SalesSearchResultsPage = () => {
   }, [narrowedResults, sortBy]);
 
   const handleResultClick = (result) => {
-    // Store result in sessionStorage for preview page
+    // Store result in sessionStorage for the preview/payment page
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify(result));
+    // BV flow: we already captured the email upstream (mid-loader). Don't re-ask for
+    // it on the SUP — send the user straight to payment via a silent auto-signup
+    // (captured email + generated password). Gated on the session flag set by the BV
+    // flow (so it doesn't fire for returning users on the normal funnel) + only for
+    // not-logged-in visitors; everyone else keeps the normal SUP teaser.
+    const bvVisit = (() => { try { return sessionStorage.getItem('bvAutoCheckout') === '1'; } catch { return false; } })();
+    const hasEmail = (() => { try { return !!getCapturedEmail(); } catch { return false; } })();
+    const loggedIn = (() => { try { return !!localStorage.getItem('accessToken'); } catch { return false; } })();
+    if (bvVisit && hasEmail && !loggedIn) {
+      track('serp_result_autocheckout', { personId: result.id });
+      navigate(`/signup?selected=${result.id}&redirect=/payment&auto=1`);
+      return;
+    }
     navigate(`/search/${result.id}`);
   };
 

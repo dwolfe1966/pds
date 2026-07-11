@@ -348,6 +348,10 @@ function BvLoader({ query, dest, navigate }) {
             // General capture: localStorage (durable + signup pre-fill) + push to our
             // lead endpoint. The email VALUE lives here, NOT on the analytics event.
             captureEmail(email, { source: 'bv_loader', variant, dest, search_type: 'name' });
+            // Session-scoped flag so the SERP knows THIS visit came through the BV flow
+            // and can skip the SUP re-ask → straight to payment (auto-signup). Scoped to
+            // the tab session so it doesn't fire for returning users on the normal funnel.
+            try { sessionStorage.setItem('bvAutoCheckout', '1'); } catch { /* ignore */ }
             // PII boundary: never put the email value in the analytics event.
             track('email_capture', { search_type: 'name', variant, step: 'loader' });
             setAskEmail(false);
@@ -385,9 +389,8 @@ const S = {
   eyebrow: { color: '#0d5d2f', fontSize: 13, fontWeight: 600, margin: '0 0 .5rem' },
   h1: { fontSize: 20, margin: '0 0 1rem', color: '#111' },
   input: { width: '100%', padding: '.75rem', margin: '0 0 .75rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' },
-  // ONLY the view/discovery CTA buttons are sky blue (owner 2026-07-11); the rest of
-  // the flow stays on the funnel green. Do NOT re-theme the whole flow sky blue.
-  cta: { padding: '.75rem 1.25rem', background: '#0284c7', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '100%' },
+  // Green CTAs to match the other funnels (owner 2026-07-11: sky blue was too much).
+  cta: { padding: '.75rem 1.25rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '100%' },
   ctaGhost: { padding: '.75rem 1rem', background: 'transparent', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' },
   consent: { display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: '#4b5563', margin: '0 0 1rem', lineHeight: 1.4 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 50 },

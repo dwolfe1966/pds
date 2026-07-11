@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useSignup } from '../../hooks/useSignup';
+import { useSignup, generatePassword } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
 import { isValidEmail } from '../../utils/email';
 import { getCapturedEmail } from '../../services/emailCapture';
@@ -39,6 +39,33 @@ const SignupPage = ({ source = 'direct' }) => {
     const pre = params.get('email') || getCapturedEmail();
     if (pre) setForm(f => (f.email ? f : { ...f, email: pre }));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-checkout (BV flow): we already captured the email upstream, so when the SERP
+  // sends ?auto=1 we create the account with a generated password and go straight to
+  // payment — no re-asking for the email/password. Falls back to the normal form if
+  // there's no captured email or the silent signup errors (e.g. email already exists).
+  const [autoMode, setAutoMode] = useState(() => {
+    try { return new URLSearchParams(location.search).get('auto') === '1'; } catch { return false; }
+  });
+  const autoTried = useRef(false);
+  useEffect(() => {
+    if (!autoMode || autoTried.current) return;
+    const params = new URLSearchParams(location.search);
+    const email = params.get('email') || getCapturedEmail();
+    if (!email) { setAutoMode(false); return; } // nothing captured → show the form
+    autoTried.current = true;
+    track('signup_auto_start', { source: 'bv_serp' });
+    submit({
+      email,
+      password: generatePassword(),
+      optin: true, // consented at the mid-loader email gate
+      selectedPersonId: params.get('selected'),
+      queryString: location.search.replace(/^\?/, '') || undefined,
+      redirectParam: params.get('redirect') || '/payment',
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // If the silent signup errors, drop auto mode so the user sees the normal form.
+  useEffect(() => { if (autoMode && error) setAutoMode(false); }, [autoMode, error]);
 
   // Load selected person from sessionStorage (synchronous — no async state churn)
   useEffect(() => {
@@ -127,6 +154,11 @@ const SignupPage = ({ source = 'direct' }) => {
                   ? 'Redirecting to your dashboard…'
                   : 'Redirecting to complete your purchase…'}
               </p>
+            </div>
+          ) : autoMode ? (
+            <div className={styles.successMsg}>
+              <h2>Setting up your account…</h2>
+              <p>One moment — taking you to secure checkout.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
