@@ -3,7 +3,7 @@
 // city, each linking to a name-in-city page.
 import { notFound } from 'next/navigation';
 import { getCitySlice, getCityTopNames, getStateCities, getNearbyCities } from '../../../../lib/directory';
-import { getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory, cityWikiChips, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
+import { getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory, cityWikiChips, cityStats, cityEthnicity, cityOccupations, cityProse } from '../../../../lib/facts';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
 import { statePath, cityPath, cityNamePath } from '../../../../lib/ids';
@@ -47,6 +47,7 @@ export default async function CityLanding({ params }) {
   const chips = cityWikiChips(wiki);
   const stats = cityStats(acs);
   const eth = cityEthnicity(acs);
+  const occupations = cityOccupations(acs);
   const prose = cityProse(c.city, c.stateName, acs, city, wiki);
   const stateCities = getStateCities(state);
   const nearby = getNearbyCities(state, city, 6);
@@ -107,6 +108,23 @@ export default async function CityLanding({ params }) {
           )}
           {prose && <p style={{ margin: '14px 0 0', fontSize: 14, lineHeight: 1.65, color: '#374151' }}>{prose}</p>}
           <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: U.S. Census Bureau, American Community Survey (5-year).</p>
+        </section>
+      )}
+
+      {occupations.length > 0 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Occupations in {c.city}</h2>
+          {occupations.map((o) => (
+            <div key={o.label} style={{ marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#374151', marginBottom: 2 }}>
+                <span>{o.label}</span><span style={{ color: '#6b7280', fontWeight: 700 }}>{o.value}%</span>
+              </div>
+              <span style={{ display: 'block', height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden' }}>
+                <span style={{ display: 'block', height: '100%', background: '#0d5d2f', width: `${Math.min(100, o.value)}%` }} />
+              </span>
+            </div>
+          ))}
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Share of employed residents (16+). Source: U.S. Census Bureau, ACS (5-year).</p>
         </section>
       )}
 

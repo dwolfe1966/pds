@@ -68,6 +68,18 @@ export function cityStats(a) {
   ].filter(Boolean);
 }
 
+// Occupation mix (largest group first) for the "occupations" bar module.
+export function cityOccupations(a) {
+  if (!a) return [];
+  return [
+    ['Management, business, science & arts', a.occManagement],
+    ['Service', a.occService],
+    ['Sales & office', a.occSales],
+    ['Natural resources, construction & maintenance', a.occNatResources],
+    ['Production, transportation & material moving', a.occProduction],
+  ].filter(([, v]) => v != null && v > 0).sort((x, y) => y[1] - x[1]).map(([label, value]) => ({ label, value }));
+}
+
 // Race/ethnicity rows (only those present), for a compact bar/list.
 export function cityEthnicity(a) {
   if (!a) return [];

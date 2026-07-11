@@ -67,6 +67,13 @@ const RAW = {
   // commute
   B08013_001E: '_aggTravel', B08303_001E: '_commuters',
   B08301_001E: '_transitTotal', B08301_021E: '_wfh',
+  // occupation groups (C24010 = sex by occupation; sum male+female per group)
+  C24010_001E: '_occTotal',
+  C24010_003E: '_occMgmtM', C24010_039E: '_occMgmtF',
+  C24010_019E: '_occSvcM', C24010_055E: '_occSvcF',
+  C24010_027E: '_occSalesM', C24010_063E: '_occSalesF',
+  C24010_030E: '_occNatM', C24010_066E: '_occNatF',
+  C24010_034E: '_occProdM', C24010_070E: '_occProdF',
 };
 const VAR_CODES = Object.keys(RAW);
 
@@ -145,6 +152,12 @@ function shape(rec) {
     unemploymentRate: pct(rec._unemployed, rec._laborForce),
     meanCommuteMinutes: rec._commuters ? Math.round((rec._aggTravel / rec._commuters) * 10) / 10 : null,
     pctWorkFromHome: pct(rec._wfh, rec._transitTotal),
+    // occupation mix (% of employed 16+)
+    occManagement: pct((rec._occMgmtM ?? 0) + (rec._occMgmtF ?? 0), rec._occTotal),
+    occService: pct((rec._occSvcM ?? 0) + (rec._occSvcF ?? 0), rec._occTotal),
+    occSales: pct((rec._occSalesM ?? 0) + (rec._occSalesF ?? 0), rec._occTotal),
+    occNatResources: pct((rec._occNatM ?? 0) + (rec._occNatF ?? 0), rec._occTotal),
+    occProduction: pct((rec._occProdM ?? 0) + (rec._occProdF ?? 0), rec._occTotal),
   };
 }
 
