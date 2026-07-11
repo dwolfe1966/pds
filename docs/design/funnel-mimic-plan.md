@@ -100,10 +100,17 @@ betting the "one conversion shot" on a guess.
 **What the optional flow is (build spec, v0):**
 - A **new funnel route** — e.g. `…/landing/v7` or a `?flow=bv` / feature-flagged arm off the existing
   landing. Existing `…/v2–v6` routes and their traffic are **unchanged**.
-- **Structure = BeenVerified's:** progressive multi-step input drip (name → location → age/middle → …,
-  each with an "I'm not sure" escape) → a **long anticipation loader that carries the payoff**
-  (loader-replaces-teaser: the ~60–90s loader *is* the experience, no blurred SUP) → paywall with the
-  bulk-plan anchor.
+- **Structure = BeenVerified's (3-step drip, built 2026-07-11):** `name → location(+city) →
+  details(age/middle + FCRA consent)`, each with an "I'm not sure" escape → a **long anticipation
+  loader that carries the payoff** (loader-replaces-teaser: category checklist that checks off +
+  carouseled anticipation panels + personalized email gate; ~15s now, TODO tune toward BV's 60–90s) →
+  paywall with the bulk-plan anchor. Fires `search_step ×3` + `fcra_agree` + `loader_start` +
+  `email_capture` + `loader_complete`.
+- **THREE hand-off versions** (owner 2026-07-11), selected by `?dest=`:
+  `serp` → `/name/search-result` · `sup` → `/search/:id` (top match) · `payment` → `/payment` (faithful
+  BV, no results shown). Each is a **distinct funnel arm** — landing variant `bv-serp | bv-sup |
+  bv-payment` — so the three convert-rates are directly comparable. `sup`/`payment` **fall back to
+  `serp`** when the search returns no top match (verified: dev-captcha 0-results → SERP fallback).
 - **Gating — MANUAL FEATURE FLAG (owner decision 2026-07-11).** The flow lives behind a flag, **off by
   default**. We flip it on for **internal / manual testing first**, before exposing any real ad traffic.
   No automatic A/B split at first. Once it's validated internally, decide separately whether to promote
