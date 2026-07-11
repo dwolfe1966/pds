@@ -32,7 +32,7 @@ import loader from './LoaderPage.module.css';
  *   • ?dest=serp    → search-results page (least aggressive)
  *   • ?dest=sup     → the SUP teaser for the top match
  *   • ?dest=payment → straight to the paywall (faithful BV — no results shown)
- * Each is tracked as a distinct funnel arm (variant `bv-serp|bv-sup|bv-payment`).
+ * Each is tracked as a distinct funnel arm (variant `v11-serp|v11-sup|v11-payment`).
  */
 
 const DRIP_STEPS = ['name', 'location', 'details'];
@@ -98,7 +98,7 @@ const NameSearchBvFlowPage = () => {
   const navigate = useNavigate();
   const enabled = isBvFlowEnabled();
   const dest = useMemo(readDest, []);
-  useLandingTrack('name', `bv-${dest}`, enabled); // landing_view + persists funnel entry
+  useLandingTrack('name', `v11-${dest}`, enabled); // landing_view + persists funnel entry
 
   const [phase, setPhase] = useState('drip'); // 'drip' | 'loader'
   const [stepIdx, setStepIdx] = useState(0);
@@ -112,7 +112,7 @@ const NameSearchBvFlowPage = () => {
   const advance = (patch) => {
     const next = { ...query, ...patch };
     setQuery(next);
-    track('search_step', { step, search_type: 'name', variant: `bv-${dest}` });
+    track('search_step', { step, search_type: 'name', variant: `v11-${dest}` });
     if (stepIdx < DRIP_STEPS.length - 1) setStepIdx((i) => i + 1);
     else setPhase('loader');
   };
@@ -199,7 +199,7 @@ function DetailsStep({ query, dest, onNext }) {
   const [fcra, setFcra] = useState(false);
   const submit = () => {
     // FCRA consent as a micro-commitment (also legally required). Tracked distinctly.
-    track('fcra_agree', { search_type: 'name', variant: `bv-${dest}` });
+    track('fcra_agree', { search_type: 'name', variant: `v11-${dest}` });
     onNext({ age: age.trim(), middleName: middle.trim() });
   };
   return (
@@ -230,7 +230,7 @@ function BvLoader({ query, dest, navigate }) {
   const firstResultRef = useRef(null);
   const resultCountRef = useRef(0);
   const searchDoneRef = useRef(false);
-  const variant = `bv-${dest}`;
+  const variant = `v11-${dest}`;
 
   // Fire the search once (independent of the animation timeline).
   useEffect(() => {

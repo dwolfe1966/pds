@@ -93,7 +93,7 @@ Each appears in BC as `CLIENT:<name>` and in GA4 as `client_<name>`. All carry t
 | `loader_start` | Loader page mounts (user entered the anticipation loader) | `search_type` |
 | `search_submit` | Search API returned (fired mid-loader when results arrive) | `search_type`, `result_count` (see gtm.js canonical too) |
 | `loader_complete` | Loader finished, handing off to results | `search_type`, `result_count` |
-| `email_capture` | **BV optional flow only** — visitor submitted an email lead mid-loader | `search_type`, `variant` (`bv-serp`/`bv-sup`/`bv-payment`), `step` (`loader`). ⚠️ the email **value is never sent** (PII boundary §2) |
+| `email_capture` | **BV/v11 optional flow only** — visitor submitted an email lead mid-loader | `search_type`, `variant` (`v11-serp`/`v11-sup`/`v11-payment`), `step` (`loader`). ⚠️ the email **value is never sent** (PII boundary §2) |
 | `search_failed` | Search threw / no results path | — |
 | `results_view` / `teaser_view` | SRP / teaser rendered | — |
 | `result_click` | A result card clicked | — |
