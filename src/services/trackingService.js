@@ -36,6 +36,19 @@ function getSessionId() {
 // BC 2026-06-04 — and is now fed the first-touch refer_* params at checkout via
 // `buildReferQueryString`; this tracking-store path remains the broader signal.)
 // Read straight from sessionStorage to keep this module import-light and never-throw.
+// True when this visit is SEO/referral traffic from our directory idlookup.me — either
+// tagged (?utm_source=idlookup.me / seo) or referred by idlookup.me. Used to override the
+// shN-derived (default) partner/channel so SEO thin-matches aren't booked as paid.
+// (Attribution audit 2026-07-11 — docs/reporting/thin-match-attribution-2026-07.md.)
+function isIdlookupReferral(params) {
+  try {
+    const src = ((params && params.utm_source) || '').toLowerCase();
+    if (src === 'idlookup.me' || src === 'seo') return true;
+    const ref = (typeof document !== 'undefined' && document.referrer) || '';
+    return ref ? /(^|\.)idlookup\.me$/i.test(new URL(ref).hostname) : false;
+  } catch { return false; }
+}
+
 function buildRefer() {
   if (typeof sessionStorage === 'undefined') return undefined;
   try {
@@ -62,6 +75,15 @@ function buildRefer() {
     if (shnName) refer.shnName = shnName;
     if (partner) refer.partner = partner;
     if (channel) refer.channel = channel;
+    // SEO/referral from idlookup.me has NO shN, so partner/channel above are the DEFAULT
+    // shN's (which reads as "paid"). Override to an explicit referral channel so reporting
+    // books it as SEO, not paid. Only mutates the REPORTED refer object — NOT the stored
+    // sessionStorage attribution — so conversion gates / GTM context are unaffected.
+    if (isIdlookupReferral(params)) {
+      refer.source = 'idlookup.me';
+      refer.channel = 'referral';
+      refer.partner = 'idlookup.me';
+    }
     return Object.keys(refer).length ? refer : undefined;
   } catch { return undefined; }
 }
@@ -89,6 +111,16 @@ export function buildReferQueryString() {
     push('refer_gclid', params.gclid);
     push('refer_fbclid', params.fbclid);
     push('refer_msclkid', params.msclkid);
+    // Traffic source onto the ORDER so revenue books to the right channel, not the default
+    // shN. SEO/referral from idlookup.me is the key case (attribution audit 2026-07-11):
+    // its thin-match orders were misbooked as paid. ⚠️ NEEDS BC CONFIRM that refer_source /
+    // refer_channel persist onto commerceorders.refer like refer_partnerId does.
+    if (isIdlookupReferral(params)) {
+      push('refer_source', 'idlookup.me');
+      push('refer_channel', 'referral');
+    } else if (params.utm_source) {
+      push('refer_source', params.utm_source);
+    }
     return out.length ? out.join('&') : undefined;
   } catch { return undefined; }
 }
@@ -225,6 +257,14 @@ export function track(eventName, properties = {}) {
       ['partnerName', 'partnerChannel', 'shn', 'shl', 'shnName'].forEach((k) => {
         if (ctx[k] != null && ctx[k] !== '') attribution[k] = ctx[k];
       });
+      // For SEO/referral from idlookup.me the ctx partnerName is the DEFAULT shN (reads as
+      // paid). buildRefer already flagged this visit (refer.partner==='idlookup.me'); mirror
+      // that into the GA4 stream so the paid-vs-organic split isn't polluted there either.
+      if (refer && refer.partner === 'idlookup.me') {
+        attribution.partnerName = 'idlookup.me';
+        attribution.partnerChannel = 'referral';
+        attribution.source = 'idlookup.me';
+      }
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         event: `client_${eventName}`,
