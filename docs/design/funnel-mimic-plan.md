@@ -117,10 +117,13 @@ betting the "one conversion shot" on a guess.
   ⚠️ **All numbers/testimonials are PLACEHOLDER** (centralized in `PLACEHOLDER_*` consts) — owner must
   approve real/substantiated figures before live traffic; do not run fabricated stats as fact.
 - **THREE hand-off versions** (owner 2026-07-11), selected by `?dest=`:
-  `serp` → `/name/search-result` · `sup` → `/search/:id` (top match) · `payment` → `/payment` (faithful
-  BV, no results shown). Each is a **distinct funnel arm** — landing variant `bv-serp | bv-sup |
-  bv-payment` — so the three convert-rates are directly comparable. `sup`/`payment` **fall back to
-  `serp`** when the search returns no top match (verified: dev-captcha 0-results → SERP fallback).
+  `serp` → `/name/search-result` · `sup` → `/search/:id` (top match) · `payment` →
+  **`/signup?redirect=/payment`** (faithful BV: no results shown, ends on "create your account" → then
+  Payment — a visitor can't pay without an account). NOTE: the redirect value must be `/payment`
+  (whitelisted in `useSignup` `SAFE_REDIRECT_PREFIXES`); a bare `Payment` fails the open-redirect guard.
+  Each is a **distinct funnel arm** — landing variant `bv-serp | bv-sup | bv-payment` — so the three
+  convert-rates are comparable. `sup` falls back to `serp` when there's no top match; `payment` always
+  ends on signup. Verified end-to-end (payment → `/signup?redirect=/payment`).
 - **Gating — MANUAL FEATURE FLAG (owner decision 2026-07-11).** The flow lives behind a flag, **off by
   default**. We flip it on for **internal / manual testing first**, before exposing any real ad traffic.
   No automatic A/B split at first. Once it's validated internally, decide separately whether to promote
@@ -138,6 +141,31 @@ betting the "one conversion shot" on a guess.
   privacy) — a short "by continuing you agree to…" line, not a silent grab. (3) Suppression applies.
 - **Measurement:** requires the Wave 0 instrumentation (`loader_complete`/`teaser_view`/`email_capture`
   distinct, variant-tagged) so the internal test — and any later live split — is readable.
+
+### Production deployment spec (owner 2026-07-11) — do AFTER the flow is finalized
+Three things must change to take the flow live (currently manual-flag / tab-local):
+
+1. **Rename `bv` → a real numbered variant.** The flag/route/`variant` strings become a production
+   landing slot so the shN mapping + tracking recognize it. ⚠️ **BLOCKER: `v10` is already taken**
+   (`NameSearchLandingV10Page`, the "warm safety" exploration) — so either **repurpose the v10 slot**
+   (retire that page) or use the next free slot (`v11`). *Owner to confirm which.* Also update the
+   tracking variant enum note in `docs/EVENTS_CATALOG.md` (currently v1–v6).
+
+2. **Capture emails somewhere real.** The mid-loader lead is tab-local (`sessionStorage.bvLead`) with a
+   TODO to POST to the (not-yet-built) email backend. For launch it needs a durable home. **OPEN —
+   pick one:** (a) BC `managedContact.create` (BC's opt-in address store — closest existing home), (b)
+   BC `tracking.create` as a lead event (server-side, but not a real contact store), or (c) a minimal
+   first-party capture endpoint (ties to area iv). Needs a PII-safe path + suppression/consent.
+
+3. **shN mapping — split the traffic.** Route campaign traffic across the arms via the shN registry:
+   - **Paid traffic:** split between the BV flow (`/name/landing/<vN>`) and **`/name/landing/v3`**.
+   - **SEO traffic:** split between the BV flow (`/name/landing/<vN>`) and **`/name/landing/v2`**.
+   Scope where this split lives (shN registry / resolver / a router) and how the % is set. Since the
+   flow is currently a self-guarding route (flag off), deploying means turning it into a real routed
+   arm — the manual flag can stay as the internal-QA override.
+
+**Not started — awaiting "flow is finalized" + owner answers on the v10/v11 slot and the email-capture
+home.**
 
 ## Sequence
 1. **Deploy the 2026-07-03 redesign** (already built — cheapest win).

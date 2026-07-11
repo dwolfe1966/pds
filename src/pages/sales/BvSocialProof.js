@@ -12,14 +12,27 @@ import React, { useEffect, useRef, useState } from 'react';
  * a one-place swap. See docs/design/funnel-mimic-plan.md.
  */
 
+// ── COMPANY-SPECIFIC metrics — PLACEHOLDER, owner must substantiate ────────────
 export const PLACEHOLDER_RATING = 4.7;
 export const PLACEHOLDER_REVIEWS = '2,500+';
 export const PLACEHOLDER_REPORTS_BASE = 146000000; // "reports generated" live counter seed
 export const PLACEHOLDER_TESTIMONIALS = [
-  { q: 'Reconnected with a cousin I hadn’t spoken to in 20 years.', a: 'Sarah M.' },
-  { q: 'Checked out a buyer before meeting them to sell my car. Peace of mind.', a: 'David R.' },
-  { q: 'Found the right contact info when an old friend moved away.', a: 'Priya K.' },
-  { q: 'Confirmed who kept calling from a number I didn’t recognize.', a: 'James T.' },
+  { q: 'Reconnected with a cousin I hadn’t spoken to in over 20 years.', a: 'Sarah M., verified customer' },
+  { q: 'Ran a quick check on a buyer before meeting to sell my car. Total peace of mind.', a: 'David R.' },
+  { q: 'Finally figured out who’d been calling from a number I didn’t recognize.', a: 'James T.' },
+  { q: 'Looked someone up before a first date — glad I did my homework.', a: 'Megan P.' },
+  { q: 'Tracked down a current address for an old friend who’d moved away.', a: 'Priya K.' },
+  { q: 'Helped my mom confirm a “contractor” was who he said he was.', a: 'Anthony C.' },
+];
+
+// ── INDUSTRY-DEFENSIBLE facts — safe as general claims (still owner-confirm) ────
+// Aggregate US public records genuinely number in the billions across 10,000+
+// sources (LexisNexis: 91B+ records / 10,000+ sources); ~260M U.S. adults. These
+// are category-true framings, NOT company-specific counts, so lower claim risk.
+export const DEFENSIBLE_STATS = [
+  { n: 'Billions', l: 'of public records' },
+  { n: '10,000+', l: 'data sources' },
+  { n: 'All 50', l: 'states covered' },
 ];
 // Use-case donut infographic ("How people use it") — BV's normalization device.
 export const PLACEHOLDER_USE_CASES = [
@@ -38,6 +51,20 @@ export function ReviewStars({ rating = PLACEHOLDER_RATING, count = PLACEHOLDER_R
     <div style={ss.stars}>
       <span style={{ color: '#f59e0b', letterSpacing: 1 }}>{'★'.repeat(full)}{'☆'.repeat(5 - full)}</span>
       <span style={ss.starsText}>{rating.toFixed(1)} · {count} reviews</span>
+    </div>
+  );
+}
+
+/** Industry-defensible stat strip (billions of records / sources / 50 states). */
+export function StatStrip({ items = DEFENSIBLE_STATS }) {
+  return (
+    <div style={ss.statStrip}>
+      {items.map((s) => (
+        <div key={s.l} style={ss.stat}>
+          <span style={ss.statNum}>{s.n}</span>
+          <span style={ss.statLbl}>{s.l}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -123,6 +150,10 @@ const ss = {
   starsText: { fontSize: 13, color: '#6b7280' },
   badges: { display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', margin: '.5rem 0 0' },
   badge: { fontSize: 11, color: '#4b5563', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 999, padding: '3px 8px' },
+  statStrip: { display: 'flex', justifyContent: 'space-around', gap: 8, background: '#fff', border: '1px solid #eef2f0', borderRadius: 12, padding: '.75rem' },
+  stat: { textAlign: 'center', flex: 1 },
+  statNum: { display: 'block', fontSize: 18, fontWeight: 700, color: '#0d5d2f' },
+  statLbl: { fontSize: 11, color: '#6b7280' },
   liveStat: { textAlign: 'center', margin: '.75rem 0' },
   liveNum: { display: 'block', fontSize: 18, fontWeight: 700, color: '#0d5d2f', fontVariantNumeric: 'tabular-nums' },
   liveLabel: { fontSize: 12, color: '#6b7280' },

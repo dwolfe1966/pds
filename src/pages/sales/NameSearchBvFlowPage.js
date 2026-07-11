@@ -9,7 +9,7 @@ import { setSearchContext } from '../../services/searchContext';
 import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import { appendSearch } from '../../services/visitorSearchLog';
 import US_STATES from './usStates';
-import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat } from './BvSocialProof';
+import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat, StatStrip } from './BvSocialProof';
 import loader from './LoaderPage.module.css';
 
 /**
@@ -80,17 +80,23 @@ function stashBvLead(email, query, dest) {
 /** Route to the chosen destination once the loader completes. */
 function handoff(navigate, dest, firstResult) {
   const id = firstResult?.id;
-  if (dest === 'sup' && id) {
+  if (dest === 'payment') {
+    // Faithful BV: no results shown — end on "create your account", then Payment.
+    // A visitor can't pay without an account, so we route to signup and let it
+    // redirect to /payment (redirect target must be whitelisted in useSignup —
+    // '/payment' passes; the bare 'Payment' would fail the open-redirect guard).
+    if (id) {
+      try {
+        sessionStorage.setItem(`result_${id}`, JSON.stringify(firstResult));
+        sessionStorage.setItem('selectedPersonId', id);
+      } catch { /* ignore */ }
+    }
+    navigate('/signup?redirect=/payment');
+  } else if (dest === 'sup' && id) {
     try { sessionStorage.setItem(`result_${id}`, JSON.stringify(firstResult)); } catch { /* ignore */ }
     navigate(`/search/${id}`);
-  } else if (dest === 'payment' && id) {
-    try {
-      sessionStorage.setItem(`result_${id}`, JSON.stringify(firstResult));
-      sessionStorage.setItem('selectedPersonId', id);
-    } catch { /* ignore */ }
-    navigate('/payment');
   } else {
-    // serp — also the fallback when sup/payment has no top match to target.
+    // serp — also the fallback when sup has no top match to target.
     navigate('/name/search-result');
   }
 }
@@ -138,7 +144,9 @@ const NameSearchBvFlowPage = () => {
           <TrustBadges />
         </div>
         {/* Persistent social proof beside/under the card. Donut only on the first
-            step so later steps stay lean. All PLACEHOLDER data — see BvSocialProof.js. */}
+            step so later steps stay lean. Figures/testimonials — see BvSocialProof.js
+            (StatStrip = industry-defensible; testimonials/reviews = placeholder). */}
+        <StatStrip />
         <Testimonials />
         {step === 'name' && <UseCaseDonut />}
       </div>
