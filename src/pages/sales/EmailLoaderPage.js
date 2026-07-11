@@ -32,6 +32,11 @@ const EmailLoaderPage = () => {
     return () => clearInterval(id);
   }, []);
 
+  // Funnel step: user has entered the loader (see NameSearchLoaderPage for rationale).
+  useEffect(() => {
+    track('loader_start', { search_type: 'email' });
+  }, []);
+
   useEffect(() => {
     const performSearch = async () => {
       if (!email) {
@@ -85,12 +90,16 @@ const EmailLoaderPage = () => {
           pagination: response.pagination || {}
         }));
 
+        // Funnel step: loader finished, handing off to results.
+        track('loader_complete', { search_type: 'email', result_count: identityCount });
+
         // Redirect to results page after a brief delay
         setTimeout(() => {
           navigate(`/email/search-result?email=${encodeURIComponent(email)}`);
         }, 500);
       } catch (err) {
         console.error('Search error:', err);
+        track('search_failed', { type: 'email', errorMessage: err?.message });
         setStatus('Error occurred. Redirecting...');
         setTimeout(() => {
           navigate(`/email/search-result?email=${encodeURIComponent(email)}&error=true`);

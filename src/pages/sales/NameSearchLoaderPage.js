@@ -45,6 +45,14 @@ const NameSearchLoaderPage = () => {
     return () => clearInterval(id);
   }, []);
 
+  // Funnel step: user has entered the loader. Distinct from `search_submit`
+  // (fired when the search API returns) — the gap between the two measures
+  // drop-off during the anticipation loader (matters most for the long
+  // BeenVerified-style optional flow where the loader carries the payoff).
+  useEffect(() => {
+    track('loader_start', { search_type: 'name' });
+  }, []);
+
   useEffect(() => {
     const performSearch = async () => {
       if (!firstName || !lastName) {
@@ -146,6 +154,11 @@ const NameSearchLoaderPage = () => {
         if (response.searchContext) {
           setSearchContext(response.searchContext);
         }
+
+        // Funnel step: loader finished, handing off to results. In the standard
+        // funnel this is ~coincident with search_submit; in the long BV-style
+        // flow it fires only after the full anticipation UX completes.
+        track('loader_complete', { search_type: 'name', result_count: identityCount });
 
         // Redirect to results page after a brief delay
         setTimeout(() => {

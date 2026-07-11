@@ -1,7 +1,7 @@
 # IDLookup — Event Tracking Catalog
 
 **Audience:** Jerome (reporting) + anyone configuring GTM/GA4.
-**Last updated:** 2026-06-25 (consumer bundle `public.02c39dd8.js`).
+**Last updated:** 2026-07-11 (added funnel `loader_start`/`loader_complete` + cancel-flow `subscription_cancel_error`/`subscription_reactivate`/`subscription_reactivate_error`; bundle pending rebuild).
 **Owner note:** this is the source-of-truth list of *what events we emit and where they go*. Keep it in sync when events are added/changed.
 
 ---
@@ -39,10 +39,11 @@ brandId
 
 **Canonical `CLIENT:*` taxonomy** (names that must fire per page):
 - **LP:** `landing_view`
+- **Loader:** `loader_start` → `loader_complete` *(brackets the anticipation loader; drop-off between them = loader abandonment, key for the long BV-style optional flow)*
 - **Teaser/SRP:** `results_view`, `result_click`, `teaser_view`
 - **Signup:** `signup_start` → `signup_complete`  *(credentials accepted — NOT the sale)*
 - **Payment:** `payment_start` → `payment_complete` / `payment_error`
-- **Member:** `report_view`, `dashboard_view`, `dashboard_cta_click`, `dashboard_inline_search_submit`, `watchers_view`, `watchers_tab_change`, `login`/`login_error`, `cancel_lightbox_view`, `subscription_cancel`
+- **Member:** `report_view`, `dashboard_view`, `dashboard_cta_click`, `dashboard_inline_search_submit`, `watchers_view`, `watchers_tab_change`, `login`/`login_error`, `cancel_lightbox_view`, `subscription_keep`/`subscription_cancel_reason`/`subscription_save`/`subscription_cancel`/`subscription_cancel_error`/`subscription_reactivate`/`subscription_reactivate_error`
 
 **Reporting cautions:**
 1. **`signup_complete` ≠ conversion** — it's the credentials step. The paid conversion is `payment_complete` / BC `CommerceBillingSale`. Do not key a conversion off `signup_complete`.
@@ -89,7 +90,10 @@ Each appears in BC as `CLIENT:<name>` and in GA4 as `client_<name>`. All carry t
 | `landing_view` | Landing page mount | `search_type` (name/phone/email/home), `variant` (v1–v6) |
 | `search_step` | Each step transition in the multi-step funnel | `step`, `search_type`, `variant` |
 | `fcra_agree` | User checks the FCRA agreement + continues | `search_type`, `variant` |
-| `search_submit` | Search form submitted | (see gtm.js canonical too) |
+| `loader_start` | Loader page mounts (user entered the anticipation loader) | `search_type` |
+| `search_submit` | Search API returned (fired mid-loader when results arrive) | `search_type`, `result_count` (see gtm.js canonical too) |
+| `loader_complete` | Loader finished, handing off to results | `search_type`, `result_count` |
+| `email_capture` | **BV optional flow only** — visitor submitted an email lead mid-loader | `search_type`, `variant` (`bv`), `step` (`loader`). ⚠️ the email **value is never sent** (PII boundary §2) |
 | `search_failed` | Search threw / no results path | — |
 | `results_view` / `teaser_view` | SRP / teaser rendered | — |
 | `result_click` | A result card clicked | — |
@@ -112,8 +116,14 @@ Each appears in BC as `CLIENT:<name>` and in GA4 as `client_<name>`. All carry t
 | `signup_start` / `signup_complete` / `signup_error` | Signup funnel |
 | `payment_start` / `payment_complete` / `payment_error` | Checkout |
 | `login` / `login_error` / `logout` | Auth |
-| `subscription_keep` / `subscription_cancel` | Manage-subscription |
-| `cancel_lightbox_view` | Cancel-flow lightbox shown |
+| `cancel_lightbox_view` | Cancel-flow lightbox opened (Cancel Subscription clicked) |
+| `subscription_keep` | Step 1 "Keep it for next time" — dismissed at reason step |
+| `subscription_cancel_reason` | Step 1 → Step 2 (a cancel reason was chosen) |
+| `subscription_save` | Step 2 save-pitch accepted — stayed |
+| `subscription_cancel` | Cancel **completed** (BC call succeeded) — carries `reason` |
+| `subscription_cancel_error` | Cancel attempt **errored** (BC call failed) |
+| `subscription_reactivate` | Cancelled-in-period member turned auto-renew back on (win-back) |
+| `subscription_reactivate_error` | Reactivation attempt errored |
 
 ### Member dashboard
 

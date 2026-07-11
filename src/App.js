@@ -25,6 +25,7 @@ import NameSearchLandingV10Page from './pages/sales/NameSearchLandingV10Page';
 import NameSearchLandingV3aPage from './pages/sales/NameSearchLandingV3aPage';
 import NameSearchLandingV3bPage from './pages/sales/NameSearchLandingV3bPage';
 import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
+import NameSearchBvFlowPage from './pages/sales/NameSearchBvFlowPage';
 import SalesSearchResultsPage from './pages/sales/SearchResultsPage';
 import GeneralSearchPage from './pages/sales/GeneralSearchPage';
 import SearchDetailPreviewPage from './pages/sales/SearchDetailPreviewPage';
@@ -162,6 +163,10 @@ const App = () => {
           <Route path="/name/landing/v10" element={<NameSearchLandingV10Page />} />
           <Route path="/name/landing/v3a" element={<NameSearchLandingV3aPage />} />
           <Route path="/name/landing/v3b" element={<NameSearchLandingV3bPage />} />
+          {/* BeenVerified-style OPTIONAL flow — gated by a manual feature flag
+              (off by default; enable via ?flow=bv or REACT_APP_ENABLE_BV_FLOW).
+              The page self-guards and redirects to /name/landing when disabled. */}
+          <Route path="/name/landing/bv" element={<NameSearchBvFlowPage />} />
           <Route path="/name/loader" element={<NameSearchLoaderPage />} />
           <Route path="/name/search-result" element={<SalesSearchResultsPage />} />
           <Route path="/name/signup" element={<SignupPage source="name-search" />} />

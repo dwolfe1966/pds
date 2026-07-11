@@ -781,6 +781,9 @@ const AccountPage = () => {
       setCancelSuccess("Your subscription has been cancelled. You'll keep access until the end of your paid period — no further charges.");
     } catch (err) {
       setCancelSuccess('');
+      // Instrument the failed-cancel path so churn analytics can see attempts
+      // that errored (not just the ones that completed).
+      track('subscription_cancel_error', { orderId: activeOrder._id || activeOrder.id, reason: cancelReason || 'unspecified', message: err?.message || err?.data?.error?.message });
       setCancelError(err?.message || err?.data?.error?.message || 'Failed to cancel subscription');
     }
   };
@@ -797,11 +800,14 @@ const AccountPage = () => {
     }
     try {
       await api.cancelSubscription(subscription.orderId, { flag: false });
+      // Win-back signal: a cancelled-in-period member turned auto-renew back on.
+      track('subscription_reactivate', { orderId: subscription.orderId });
       refreshSubscription();
       setCancelError('');
       setCancelSuccess('Your subscription is active again — auto-renew is back on.');
     } catch (err) {
       setCancelSuccess('');
+      track('subscription_reactivate_error', { orderId: subscription.orderId, message: err?.message || err?.data?.error?.message });
       setCancelError(err?.message || err?.data?.error?.message || 'Failed to reactivate subscription');
     }
   };

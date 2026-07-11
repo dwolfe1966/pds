@@ -32,6 +32,11 @@ const PhoneLoaderPage = () => {
     return () => clearInterval(id);
   }, []);
 
+  // Funnel step: user has entered the loader (see NameSearchLoaderPage for rationale).
+  useEffect(() => {
+    track('loader_start', { search_type: 'phone' });
+  }, []);
+
   useEffect(() => {
     const performSearch = async () => {
       if (!phone) {
@@ -84,6 +89,9 @@ const PhoneLoaderPage = () => {
           searchContext: response.searchContext || {},
           pagination: response.pagination || {}
         }));
+
+        // Funnel step: loader finished, handing off to results.
+        track('loader_complete', { search_type: 'phone', result_count: identityCount });
 
         // Redirect to results page after a brief delay
         setTimeout(() => {
