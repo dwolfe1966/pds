@@ -83,7 +83,7 @@ export default async function CityLanding({ params }) {
         Browse the most common names in {c.city} to find a specific person, or search directly.
       </p>
 
-      <a href={`${MAIN}/name/landing/v2?utm_source=seo&utm_medium=organic&state=${c.stateCode}`}
+      <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${c.stateCode}`}
         style={{ ...ui.cta, display: 'block', textAlign: 'center', fontSize: 16, padding: '14px 22px', margin: '0 0 22px' }}>
         Search for anyone in {c.city} →
       </a>
@@ -220,7 +220,7 @@ export default async function CityLanding({ params }) {
         </section>
       )}
 
-      <a href={`${MAIN}/name/landing/v2?utm_source=seo&utm_medium=organic&state=${c.stateCode}`} style={ui.cta}>Search people in {c.city} →</a>
+      <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${c.stateCode}`} style={ui.cta}>Search people in {c.city} →</a>
 
       <FcraFooter />
     </main>

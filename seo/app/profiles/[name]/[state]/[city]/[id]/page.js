@@ -18,7 +18,7 @@ export const revalidate = 5184000; // 60d — REVALIDATE_SECONDS (Next needs a l
 // funnel lives on idlookup.ai regardless of where the SEO surface is hosted).
 // Name params let the SUP re-hydrate on a cold link (SearchDetailPreviewPage).
 function unlockHref(person) {
-  const utm = 'utm_source=seo&utm_medium=organic';
+  const utm = 'utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory';
   const enc = encodeURIComponent;
   // Direct to THIS person's SUP. The obf1 extId is ephemeral (re-encrypted on every
   // search), so we DON'T send it — the SUP re-finds the person in a fresh teaser by

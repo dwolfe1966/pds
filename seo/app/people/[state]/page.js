@@ -64,7 +64,7 @@ export default async function StateLanding({ params }) {
         </div>
       </section>
 
-      <a href={`${MAIN}/name/landing/v2?utm_source=seo&utm_medium=organic&state=${st.code}`} style={ui.cta}>Search people in {st.name} →</a>
+      <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${st.code}`} style={ui.cta}>Search people in {st.name} →</a>
 
       <FcraFooter />
     </main>

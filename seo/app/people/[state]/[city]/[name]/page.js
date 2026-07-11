@@ -13,7 +13,7 @@ export const revalidate = 5184000; // 60d
 
 const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
 const serpHref = (first, last, state, city) =>
-  `${MAIN}/name/search-result?firstName=${encodeURIComponent(first)}&lastName=${encodeURIComponent(last)}&state=${encodeURIComponent(state)}&city=${encodeURIComponent(city)}&utm_source=seo&utm_medium=organic`;
+  `${MAIN}/name/search-result?firstName=${encodeURIComponent(first)}&lastName=${encodeURIComponent(last)}&state=${encodeURIComponent(state)}&city=${encodeURIComponent(city)}&utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory`;
 
 export async function generateMetadata({ params }) {
   const { state, city, name } = await params;

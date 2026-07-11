@@ -73,7 +73,7 @@ export default async function StateHub({ params }) {
         ))}
       </section>
 
-      <a href={`${FUNNEL}?utm_source=seo&utm_medium=organic&q=${encodeURIComponent(full)}`} style={ui.cta}>Search {full} →</a>
+      <a href={`${FUNNEL}?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&q=${encodeURIComponent(full)}`} style={ui.cta}>Search {full} →</a>
 
       <FcraFooter />
     </main>
