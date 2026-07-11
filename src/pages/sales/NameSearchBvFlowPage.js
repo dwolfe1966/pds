@@ -10,7 +10,6 @@ import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch
 import { appendSearch } from '../../services/visitorSearchLog';
 import { captureEmail } from '../../services/emailCapture';
 import US_STATES from './usStates';
-import { useBrand } from '../../services/brand';
 import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat, StatStrip } from './BvSocialProof';
 import loader from './LoaderPage.module.css';
 
@@ -122,10 +121,8 @@ const NameSearchBvFlowPage = () => {
 
   // ── DRIP: one question per screen (progressive commitment) ──────────────────
   return (
-    <>
-      <FunnelHeader />
-      <main style={S.page}>
-        <div style={S.dripCol}>
+    <main style={S.page}>
+      <div style={S.dripCol}>
         <div style={S.card}>
           {/* No "Step X of N" counter — a visible step count signals commitment ahead
               (friction). BeenVerified hides the drip length; the "I'm not sure" escapes
@@ -143,20 +140,10 @@ const NameSearchBvFlowPage = () => {
         <StatStrip />
         <Testimonials />
         {step === 'name' && <UseCaseDonut />}
-        </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 };
-
-function FunnelHeader() {
-  const brand = useBrand();
-  return (
-    <header style={S.hdr}>
-      <span style={S.logo}>{brand.name}</span>
-    </header>
-  );
-}
 
 function NameStep({ query, onNext }) {
   const [first, setFirst] = useState(query.firstName);
@@ -319,9 +306,7 @@ function BvLoader({ query, dest, navigate }) {
   const isPost = tlPhase === 'post';
 
   return (
-    <>
-      <FunnelHeader />
-      <main className={loader.loaderMain}>
+    <main className={loader.loaderMain}>
       <div className={loader.loaderCard}>
         <div className={loader.spinner} />
         <h2 className={loader.heading}>{isPost ? 'Finalizing your report' : 'Building your report'}</h2>
@@ -370,8 +355,7 @@ function BvLoader({ query, dest, navigate }) {
           }}
         />
       )}
-      </main>
-    </>
+    </main>
   );
 }
 
@@ -395,9 +379,7 @@ function EmailGate({ name, onSubmit }) {
 }
 
 const S = {
-  hdr: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 16px', background: '#fff', borderBottom: '1px solid #eef2f0' },
-  logo: { fontWeight: 800, fontSize: 18, color: '#0d5d2f', letterSpacing: '-0.02em' },
-  page: { minHeight: 'calc(100vh - 52px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: '#f7faf8', padding: '1.5rem' },
+  page: { minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: '#f7faf8', padding: '1.5rem' },
   dripCol: { width: '100%', maxWidth: 440, display: 'grid', gap: 14, marginTop: '4vh' },
   card: { width: '100%', background: '#fff', borderRadius: 12, padding: '1.75rem', boxShadow: '0 6px 24px rgba(0,0,0,.08)' },
   eyebrow: { color: '#0d5d2f', fontSize: 13, fontWeight: 600, margin: '0 0 .5rem' },
