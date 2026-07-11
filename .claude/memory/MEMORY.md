@@ -80,3 +80,5 @@
 - [SEO Layer 1 built](project_seo_layer1_built.md) — name+location skeleton from Census; ~27M name hubs, ~214M profiles, 32k places; pipelines in seo/scripts
 - [BC extId is ephemeral](reference_bc_extid_ephemeral.md) — obf1 extId re-encrypted every call; match people on stable attributes (name+city+first-seen), never extId
 - [SEO LIVE on idlookup.me](project_seo_live_idlookup_me.md) — indexable people-search directory (Vercel + Neon); name×state beats TooManyMatches; sweep needs HEADED; prototype for idlookup.ai/people
+- [SEO content augmentation](project_seo_content_augmentation.md) — ACS demographics + name-facts LIVE on city/leaf pages; city-grain gate estInCity<750 (~866k); Wikidata/notable-people next; news skipped; DB build-resilience fix
+- [Master growth plan 2026-07-11](project_growth_plan_2026_07_11.md) — 5 areas as one Acquire→Convert→Retain lifecycle; waves + open questions (report COGS, backend location); docs/design/2026-07-11-master-growth-plan.md
