@@ -9,6 +9,7 @@ import { setSearchContext } from '../../services/searchContext';
 import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import { appendSearch } from '../../services/visitorSearchLog';
 import US_STATES from './usStates';
+import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat } from './BvSocialProof';
 import loader from './LoaderPage.module.css';
 
 /**
@@ -33,8 +34,20 @@ import loader from './LoaderPage.module.css';
 
 const DRIP_STEPS = ['name', 'location', 'details'];
 const DESTS = ['serp', 'sup', 'payment'];
-const LOADER_MS = 15000;      // elongated (was 9000); BeenVerified runs ~60–90s — tune further later
-const EMAIL_PROMPT_AT = 0.5;  // freeze + capture email at ~50% (their "frozen 75%" tactic, softened)
+// Two-phase loader timeline. BeenVerified freezes at ~75% to capture email, then
+// resumes 77→100 SLOWLY with more anticipation. Owner 2026-07-11: extend the tail.
+const PRE_EMAIL_MS = 9000;    // 0 → EMAIL_AT_PCT, before the email gate
+const POST_EMAIL_MS = 16000;  // EMAIL_AT_PCT → 100, AFTER email — the extended tail
+const EMAIL_AT_PCT = 75;      // freeze here for the email gate (BV's "frozen 75%")
+
+// Status lines cycled during the extended post-email tail.
+const POST_MESSAGES = [
+  'Cross-referencing public records…',
+  'Compiling address history…',
+  'Checking for possible relatives…',
+  'Scanning available court records…',
+  'Finalizing your report…',
+];
 
 // Categories that "check off" as the loader climbs — the BV anticipation checklist.
 const SCAN_ITEMS = ['Home address', 'Phone numbers', 'Social media', 'Photos', 'Court records', 'Relatives'];
@@ -112,26 +125,26 @@ const NameSearchBvFlowPage = () => {
   // ── DRIP: one question per screen (progressive commitment) ──────────────────
   return (
     <main style={S.page}>
-      <div style={S.card}>
-        <ProgressDots n={DRIP_STEPS.length} active={stepIdx} />
-        <p style={S.eyebrow}>Step {stepIdx + 1} of {DRIP_STEPS.length}</p>
-        {step === 'name' && <NameStep query={query} onNext={advance} />}
-        {step === 'location' && <LocationStep query={query} onNext={advance} />}
-        {step === 'details' && <DetailsStep query={query} dest={dest} onNext={advance} />}
+      <div style={S.dripCol}>
+        <div style={S.card}>
+          {/* No "Step X of N" counter — a visible step count signals commitment ahead
+              (friction). BeenVerified hides the drip length; the "I'm not sure" escapes
+              carry momentum instead. (Owner 2026-07-11.) */}
+          {step === 'name' && <NameStep query={query} onNext={advance} />}
+          {step === 'location' && <LocationStep query={query} onNext={advance} />}
+          {step === 'details' && <DetailsStep query={query} dest={dest} onNext={advance} />}
+          {/* Trust footer inside the card (BV-style social proof). */}
+          <ReviewStars />
+          <TrustBadges />
+        </div>
+        {/* Persistent social proof beside/under the card. Donut only on the first
+            step so later steps stay lean. All PLACEHOLDER data — see BvSocialProof.js. */}
+        <Testimonials />
+        {step === 'name' && <UseCaseDonut />}
       </div>
     </main>
   );
 };
-
-function ProgressDots({ n, active }) {
-  return (
-    <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-      {Array.from({ length: n }).map((_, i) => (
-        <span key={i} style={{ height: 4, flex: 1, borderRadius: 2, background: i <= active ? '#16a34a' : '#e5e7eb' }} />
-      ))}
-    </div>
-  );
-}
 
 function NameStep({ query, onNext }) {
   const [first, setFirst] = useState(query.firstName);
@@ -204,7 +217,7 @@ function BvLoader({ query, dest, navigate }) {
   const [pct, setPct] = useState(0);
   const [panelIdx, setPanelIdx] = useState(0);
   const [askEmail, setAskEmail] = useState(false);
-  const [emailDone, setEmailDone] = useState(false);
+  const [tlPhase, setTlPhase] = useState('pre'); // 'pre' (0→75%) | 'post' (75→100%, extended)
   const firstResultRef = useRef(null);
   const resultCountRef = useRef(0);
   const searchDoneRef = useRef(false);
@@ -262,17 +275,24 @@ function BvLoader({ query, dest, navigate }) {
     return () => clearInterval(id);
   }, []);
 
-  // Drive the anticipation timeline; pause at the email gate until it's handled.
-  // Uses an elapsed-ms counter (not wall-clock) so the gate can freeze it cleanly.
+  // Two-phase anticipation timeline. PRE climbs 0→EMAIL_AT_PCT then freezes for the
+  // email gate; POST resumes EMAIL_AT_PCT→100 over a longer duration (the extended
+  // tail) and hands off once the search has also resolved. Re-runs on tlPhase change.
   useEffect(() => {
+    const isPre = tlPhase === 'pre';
+    const startPct = isPre ? 0 : EMAIL_AT_PCT;
+    const endPct = isPre ? EMAIL_AT_PCT : 100;
+    const dur = isPre ? PRE_EMAIL_MS : POST_EMAIL_MS;
     let elapsed = 0;
     const tick = 150;
     const id = setInterval(() => {
       elapsed += tick;
-      const p = Math.min(1, elapsed / LOADER_MS);
-      if (p >= EMAIL_PROMPT_AT && !emailDone) { setAskEmail(true); return; } // freeze at the gate
-      setPct(Math.round(p * 100));
-      if (p >= 1 && searchDoneRef.current) {
+      const t = Math.min(1, elapsed / dur);
+      setPct(Math.round(startPct + (endPct - startPct) * t));
+      if (t < 1) return;
+      if (isPre) { clearInterval(id); setAskEmail(true); return; } // freeze at the gate
+      // POST done — hand off once the search has also resolved (else hold at 100%).
+      if (searchDoneRef.current) {
         clearInterval(id);
         track('loader_complete', { search_type: 'name', result_count: resultCountRef.current, variant });
         handoff(navigate, dest, firstResultRef.current);
@@ -280,17 +300,20 @@ function BvLoader({ query, dest, navigate }) {
     }, tick);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emailDone]);
+  }, [tlPhase]);
 
   const revealed = Math.ceil((pct / 100) * SCAN_ITEMS.length);
   const panel = PANELS[panelIdx];
+  const isPost = tlPhase === 'post';
 
   return (
     <main className={loader.loaderMain}>
       <div className={loader.loaderCard}>
         <div className={loader.spinner} />
-        <h2 className={loader.heading}>Building your report</h2>
-        <p className={loader.phaseMessage}>Searching public records for {query.firstName} {query.lastName}…</p>
+        <h2 className={loader.heading}>{isPost ? 'Finalizing your report' : 'Building your report'}</h2>
+        <p className={loader.phaseMessage}>
+          {isPost ? POST_MESSAGES[panelIdx % POST_MESSAGES.length] : `Searching public records for ${query.firstName} ${query.lastName}…`}
+        </p>
         <div style={S.pctRow}><span style={S.pct}>{pct}%</span></div>
         <div className={loader.progressBarWrap}>
           <span className={loader.progressBarFill} style={{ width: `${pct}%` }} />
@@ -314,17 +337,20 @@ function BvLoader({ query, dest, navigate }) {
           </div>
         </div>
         <p style={S.dontLeave}>Please don&apos;t close this window — your report is being compiled.</p>
+        {/* Social proof fills the dwell time (BV runs counters + testimonials here). */}
+        <LiveStat />
+        <Testimonials intervalMs={3500} />
       </div>
 
-      {askEmail && !emailDone && (
+      {askEmail && !isPost && (
         <EmailGate
           name={`${query.firstName} ${query.lastName}`}
           onSubmit={(email) => {
             stashBvLead(email, query, dest);
             // PII boundary: never put the email value in the analytics event.
             track('email_capture', { search_type: 'name', variant, step: 'loader' });
-            setEmailDone(true);
             setAskEmail(false);
+            setTlPhase('post'); // resume the extended post-email tail
           }}
         />
       )}
@@ -352,8 +378,9 @@ function EmailGate({ name, onSubmit }) {
 }
 
 const S = {
-  page: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7faf8', padding: '1.5rem' },
-  card: { width: '100%', maxWidth: 440, background: '#fff', borderRadius: 12, padding: '1.75rem', boxShadow: '0 6px 24px rgba(0,0,0,.08)' },
+  page: { minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: '#f7faf8', padding: '1.5rem' },
+  dripCol: { width: '100%', maxWidth: 440, display: 'grid', gap: 14, marginTop: '4vh' },
+  card: { width: '100%', background: '#fff', borderRadius: 12, padding: '1.75rem', boxShadow: '0 6px 24px rgba(0,0,0,.08)' },
   eyebrow: { color: '#0d5d2f', fontSize: 13, fontWeight: 600, margin: '0 0 .5rem' },
   h1: { fontSize: 20, margin: '0 0 1rem', color: '#111' },
   input: { width: '100%', padding: '.75rem', margin: '0 0 .75rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' },

@@ -106,6 +106,16 @@ betting the "one conversion shot" on a guess.
   carouseled anticipation panels + personalized email gate; ~15s now, TODO tune toward BV's 60–90s) →
   paywall with the bulk-plan anchor. Fires `search_step ×3` + `fcra_agree` + `loader_start` +
   `email_capture` + `loader_complete`.
+- **No step counter** (owner 2026-07-11): the drip shows no "Step X of N" — a visible count signals
+  commitment ahead (friction); BV hides drip length, the "I'm not sure" escapes carry momentum.
+- **Extended post-email tail** (owner 2026-07-11): two-phase loader — freezes at **75%** for the email
+  gate, then a longer **75→100% "Finalizing your report"** tail (~16s) with rotating status lines +
+  all checklist items completing, before hand-off.
+- **Social-proof / infographic assets** (`BvSocialProof.js`, all inline SVG/CSS — no external images,
+  CSP-safe, no trademark risk): ★ review bar, security badges, a rotating testimonial, an animated
+  "reports generated" live counter, and a **use-case donut infographic** ("How people use IDLookup").
+  ⚠️ **All numbers/testimonials are PLACEHOLDER** (centralized in `PLACEHOLDER_*` consts) — owner must
+  approve real/substantiated figures before live traffic; do not run fabricated stats as fact.
 - **THREE hand-off versions** (owner 2026-07-11), selected by `?dest=`:
   `serp` → `/name/search-result` · `sup` → `/search/:id` (top match) · `payment` → `/payment` (faithful
   BV, no results shown). Each is a **distinct funnel arm** — landing variant `bv-serp | bv-sup |
