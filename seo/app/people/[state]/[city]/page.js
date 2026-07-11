@@ -3,7 +3,7 @@
 // city, each linking to a name-in-city page.
 import { notFound } from 'next/navigation';
 import { getCitySlice, getCityTopNames, getStateCities, getNearbyCities } from '../../../../lib/directory';
-import { getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getPopHistory, cityWikiChips, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
+import { getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory, cityWikiChips, cityStats, cityEthnicity, cityProse } from '../../../../lib/facts';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
 import { statePath, cityPath, cityNamePath } from '../../../../lib/ids';
@@ -52,6 +52,7 @@ export default async function CityLanding({ params }) {
   const nearby = getNearbyCities(state, city, 6);
   const people = getCityPeople(c.stateCode, city);
   const historic = getCityHistoric(c.stateCode, city);
+  const newspapers = getCityNewspapers(c.stateCode, city);
   const popPoints = getPopHistory(c.stateCode, city, acs?.population);
   const crumbs = [
     { name: 'People Search', path: '/people' },
@@ -166,6 +167,20 @@ export default async function CityLanding({ params }) {
             })}
           </div>
           <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>★ = National Historic Landmark. Source: NPS National Register of Historic Places.</p>
+        </section>
+      )}
+
+      {newspapers && newspapers.length > 0 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Historic newspapers of {c.city}</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {newspapers.map((p, i) => (
+              <span key={i} style={{ fontSize: 14, color: '#374151' }}>
+                {p.name}{p.years ? <span style={ui.muted}> · {p.years}</span> : null}
+              </span>
+            ))}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: Library of Congress, Chronicling America (public domain).</p>
         </section>
       )}
 
