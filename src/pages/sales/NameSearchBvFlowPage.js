@@ -10,6 +10,7 @@ import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch
 import { appendSearch } from '../../services/visitorSearchLog';
 import { captureEmail } from '../../services/emailCapture';
 import US_STATES from './usStates';
+import { useBrand } from '../../services/brand';
 import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat, StatStrip } from './BvSocialProof';
 import loader from './LoaderPage.module.css';
 
@@ -121,8 +122,10 @@ const NameSearchBvFlowPage = () => {
 
   // ── DRIP: one question per screen (progressive commitment) ──────────────────
   return (
-    <main style={S.page}>
-      <div style={S.dripCol}>
+    <>
+      <FunnelHeader />
+      <main style={S.page}>
+        <div style={S.dripCol}>
         <div style={S.card}>
           {/* No "Step X of N" counter — a visible step count signals commitment ahead
               (friction). BeenVerified hides the drip length; the "I'm not sure" escapes
@@ -140,10 +143,20 @@ const NameSearchBvFlowPage = () => {
         <StatStrip />
         <Testimonials />
         {step === 'name' && <UseCaseDonut />}
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 };
+
+function FunnelHeader() {
+  const brand = useBrand();
+  return (
+    <header style={S.hdr}>
+      <span style={S.logo}>{brand.name}</span>
+    </header>
+  );
+}
 
 function NameStep({ query, onNext }) {
   const [first, setFirst] = useState(query.firstName);
@@ -306,16 +319,18 @@ function BvLoader({ query, dest, navigate }) {
   const isPost = tlPhase === 'post';
 
   return (
-    <main className={loader.loaderMain}>
+    <>
+      <FunnelHeader />
+      <main className={loader.loaderMain}>
       <div className={loader.loaderCard}>
-        <div className={loader.spinner} />
-        <h2 className={loader.heading}>{isPost ? 'Finalizing your report' : 'Building your report'}</h2>
+        <div className={loader.spinner} style={{ borderTopColor: '#0284c7' }} />
+        <h2 className={loader.heading} style={{ color: '#0369a1' }}>{isPost ? 'Finalizing your report' : 'Building your report'}</h2>
         <p className={loader.phaseMessage}>
           {isPost ? POST_MESSAGES[panelIdx % POST_MESSAGES.length] : `Searching public records for ${query.firstName} ${query.lastName}…`}
         </p>
         <div style={S.pctRow}><span style={S.pct}>{pct}%</span></div>
         <div className={loader.progressBarWrap}>
-          <span className={loader.progressBarFill} style={{ width: `${pct}%` }} />
+          <span className={loader.progressBarFill} style={{ width: `${pct}%`, background: '#0284c7' }} />
         </div>
 
         {/* Category checklist — items check off as the search "progresses". */}
@@ -355,7 +370,8 @@ function BvLoader({ query, dest, navigate }) {
           }}
         />
       )}
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -379,20 +395,23 @@ function EmailGate({ name, onSubmit }) {
 }
 
 const S = {
-  page: { minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: '#f7faf8', padding: '1.5rem' },
+  hdr: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 16px', background: '#fff', borderBottom: '1px solid #e8eef2' },
+  logo: { fontWeight: 800, fontSize: 18, color: '#0369a1', letterSpacing: '-0.02em' },
+  page: { minHeight: 'calc(100vh - 52px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', background: '#f5f9fc', padding: '1.5rem' },
   dripCol: { width: '100%', maxWidth: 440, display: 'grid', gap: 14, marginTop: '4vh' },
   card: { width: '100%', background: '#fff', borderRadius: 12, padding: '1.75rem', boxShadow: '0 6px 24px rgba(0,0,0,.08)' },
-  eyebrow: { color: '#0d5d2f', fontSize: 13, fontWeight: 600, margin: '0 0 .5rem' },
+  eyebrow: { color: '#0369a1', fontSize: 13, fontWeight: 600, margin: '0 0 .5rem' },
   h1: { fontSize: 20, margin: '0 0 1rem', color: '#111' },
   input: { width: '100%', padding: '.75rem', margin: '0 0 .75rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 16, boxSizing: 'border-box' },
-  cta: { padding: '.75rem 1.25rem', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '100%' },
+  // Sky-blue CTA (owner 2026-07-11: BV flow uses sky blue, not the funnel green).
+  cta: { padding: '.75rem 1.25rem', background: '#0284c7', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '100%' },
   ctaGhost: { padding: '.75rem 1rem', background: 'transparent', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' },
   consent: { display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, color: '#4b5563', margin: '0 0 1rem', lineHeight: 1.4 },
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', zIndex: 50 },
   gate: { width: '100%', maxWidth: 420, background: '#fff', borderRadius: 12, padding: '1.5rem' },
   fine: { fontSize: 12, color: '#6b7280', margin: '.75rem 0 0' },
   pctRow: { textAlign: 'center', margin: '.25rem 0' },
-  pct: { fontSize: 28, fontWeight: 700, color: '#0d5d2f' },
+  pct: { fontSize: 28, fontWeight: 700, color: '#0369a1' },
   checklist: { listStyle: 'none', padding: 0, margin: '1rem 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.35rem' },
   checkItem: { fontSize: 13, color: '#374151', transition: 'opacity .3s' },
   panel: { display: 'flex', gap: 12, alignItems: 'center', padding: '.75rem', border: '1px solid #eef2f0', borderRadius: 10, background: '#fafcfb' },
