@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useSignup } from '../../hooks/useSignup';
 import { track } from '../../services/trackingService';
 import { isValidEmail } from '../../utils/email';
+import { getCapturedEmail } from '../../services/emailCapture';
 import '../../styles/contentContainer.css';
 import styles from './SignupPage.module.css';
 
@@ -29,6 +30,14 @@ const SignupPage = ({ source = 'direct' }) => {
       source: params.get('selected') ? 'teaser' : source,
       has_selected: !!params.get('selected'),
     });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fill the email captured earlier in the funnel (e.g. the BV mid-loader gate),
+  // so a visitor doesn't re-type it here. ?email= param wins; else the captured email.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pre = params.get('email') || getCapturedEmail();
+    if (pre) setForm(f => (f.email ? f : { ...f, email: pre }));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load selected person from sessionStorage (synchronous — no async state churn)

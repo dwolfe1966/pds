@@ -124,6 +124,16 @@ betting the "one conversion shot" on a guess.
   Each is a **distinct funnel arm** — landing variant `bv-serp | bv-sup | bv-payment` — so the three
   convert-rates are comparable. `sup` falls back to `serp` when there's no top match; `payment` always
   ends on signup. Verified end-to-end (payment → `/signup?redirect=/payment`).
+- **Launch ending = SEARCH** (owner 2026-07-11): `dest` defaults to `serp`, so the shipped flow ends in
+  the SERP. The `payment`/signup-direct ending is **DEFERRED** — "going directly to payment requires
+  more app tuning" — kept behind `?dest=payment` for later experiments, not the launch path.
+- **Email capture = general mechanism** (`src/services/emailCapture.js`, owner 2026-07-11): `captureEmail()`
+  stores every captured email in **localStorage** (durable lead log + latest-for-prefill) AND POSTs to
+  our **lead endpoint** (dev: mock server `/api/v1/leads` → `server/leads.jsonl`; prod: set
+  `REACT_APP_LEAD_CAPTURE_URL`). The email VALUE stays out of analytics (`email_capture` carries none).
+  The captured email **pre-fills the signup form** (`SignupPage` via `getCapturedEmail()`), so the
+  existing email + pre-generated-password → BC path picks it up at signup/payment — no separate BC call
+  at capture time. Verified: localStorage + `leads.jsonl` + signup pre-fill all populate.
 - **Gating — MANUAL FEATURE FLAG (owner decision 2026-07-11).** The flow lives behind a flag, **off by
   default**. We flip it on for **internal / manual testing first**, before exposing any real ad traffic.
   No automatic A/B split at first. Once it's validated internally, decide separately whether to promote

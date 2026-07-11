@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const cookieParser = require('cookie-parser');
@@ -1040,6 +1042,26 @@ const generateTokens = (user) => {
 };
 
 // ==================== AUTHENTICATION ENDPOINTS ====================
+
+// POST /api/v1/leads — first-party email-lead capture (general mechanism).
+// Client: src/services/emailCapture.js. Persists to a local JSONL file + in-memory.
+// (Dev-only mock endpoint; prod points REACT_APP_LEAD_CAPTURE_URL at the real backend.)
+const LEADS_FILE = path.join(__dirname, 'leads.jsonl');
+app.post('/api/v1/leads', (req, res) => {
+  const { email, meta, ts } = req.body || {};
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ error: { message: 'email required' } });
+  }
+  const rec = { email, meta: meta || {}, ts: ts || new Date().toISOString(), receivedAt: new Date().toISOString(), ip: req.ip };
+  try {
+    fs.appendFileSync(LEADS_FILE, JSON.stringify(rec) + '\n');
+  } catch (e) {
+    console.error('lead persist failed:', e.message);
+  }
+  dataStore.leads = dataStore.leads || [];
+  dataStore.leads.push(rec);
+  res.json({ ok: true });
+});
 
 // POST /api/v1/signup
 app.post('/api/v1/signup', (req, res) => {

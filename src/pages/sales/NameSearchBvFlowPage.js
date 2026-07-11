@@ -8,6 +8,7 @@ import { isBvFlowEnabled } from '../../services/featureFlags';
 import { setSearchContext } from '../../services/searchContext';
 import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch';
 import { appendSearch } from '../../services/visitorSearchLog';
+import { captureEmail } from '../../services/emailCapture';
 import US_STATES from './usStates';
 import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat, StatStrip } from './BvSocialProof';
 import loader from './LoaderPage.module.css';
@@ -65,16 +66,6 @@ function readDest() {
     const d = new URLSearchParams(window.location.search).get('dest');
     return DESTS.includes(d) ? d : 'serp';
   } catch { return 'serp'; }
-}
-
-/** Persist the mid-loader email as a REMARKETING LEAD (not an account). */
-function stashBvLead(email, query, dest) {
-  try {
-    sessionStorage.setItem('bvLead', JSON.stringify({ email, query, dest, at: null }));
-  } catch { /* ignore */ }
-  // TODO(area iv): POST this lead to the remarketing/email backend so it feeds the
-  // abandoned/remarketing pipeline. No backend exists yet — see
-  // docs/design/email-platform-plan.md (Phase 1). Until then it's tab-local only.
 }
 
 /** Route to the chosen destination once the loader completes. */
@@ -354,7 +345,9 @@ function BvLoader({ query, dest, navigate }) {
         <EmailGate
           name={`${query.firstName} ${query.lastName}`}
           onSubmit={(email) => {
-            stashBvLead(email, query, dest);
+            // General capture: localStorage (durable + signup pre-fill) + push to our
+            // lead endpoint. The email VALUE lives here, NOT on the analytics event.
+            captureEmail(email, { source: 'bv_loader', variant, dest, search_type: 'name' });
             // PII boundary: never put the email value in the analytics event.
             track('email_capture', { search_type: 'name', variant, step: 'loader' });
             setAskEmail(false);
