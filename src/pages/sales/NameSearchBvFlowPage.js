@@ -10,7 +10,9 @@ import { deriveThinMatchFlags, persistThinMatch } from '../../services/thinMatch
 import { appendSearch } from '../../services/visitorSearchLog';
 import { captureEmail } from '../../services/emailCapture';
 import US_STATES from './usStates';
+import { useBrand } from '../../services/brand';
 import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat, StatStrip } from './BvSocialProof';
+import v3 from './NameLandingV3Incarceration.module.css'; // reuse v3's green header + CTA
 import loader from './LoaderPage.module.css';
 
 /**
@@ -121,8 +123,10 @@ const NameSearchBvFlowPage = () => {
 
   // ── DRIP: one question per screen (progressive commitment) ──────────────────
   return (
-    <main style={S.page}>
-      <div style={S.dripCol}>
+    <>
+      <V3Header />
+      <main style={S.page}>
+        <div style={S.dripCol}>
         <div style={S.card}>
           {/* No "Step X of N" counter — a visible step count signals commitment ahead
               (friction). BeenVerified hides the drip length; the "I'm not sure" escapes
@@ -140,10 +144,20 @@ const NameSearchBvFlowPage = () => {
         <StatStrip />
         <Testimonials />
         {step === 'name' && <UseCaseDonut />}
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 };
+
+function V3Header() {
+  const brand = useBrand();
+  return (
+    <header className={v3.nav}>
+      <a href="/" className={v3.logo}>{brand.name}</a>
+    </header>
+  );
+}
 
 function NameStep({ query, onNext }) {
   const [first, setFirst] = useState(query.firstName);
@@ -153,7 +167,7 @@ function NameStep({ query, onNext }) {
       <h1 style={S.h1}>Who are you looking for?</h1>
       <input style={S.input} placeholder="First name" value={first} onChange={(e) => setFirst(e.target.value)} />
       <input style={S.input} placeholder="Last name" value={last} onChange={(e) => setLast(e.target.value)} />
-      <button style={S.cta} disabled={!first.trim() || !last.trim()} onClick={() => onNext({ firstName: first.trim(), lastName: last.trim() })}>
+      <button className={v3.cta} style={{ opacity: (!first.trim() || !last.trim()) ? 0.5 : 1 }} disabled={!first.trim() || !last.trim()} onClick={() => onNext({ firstName: first.trim(), lastName: last.trim() })}>
         Continue
       </button>
     </>
@@ -172,11 +186,9 @@ function LocationStep({ query, onNext }) {
           <option key={s.value} value={s.value}>{s.label}</option>
         ))}
       </select>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button style={{ ...S.cta, flex: 1 }} disabled={!state} onClick={() => onNext({ state, city: city.trim() })}>Continue</button>
-        {/* "I'm not sure" escape — keeps users moving (owner-approved BV pattern) */}
-        <button style={S.ctaGhost} onClick={() => onNext({ state: '', city: '' })}>I&apos;m not sure</button>
-      </div>
+      <button className={v3.cta} style={{ opacity: !state ? 0.5 : 1 }} disabled={!state} onClick={() => onNext({ state, city: city.trim() })}>Continue</button>
+      {/* "I'm not sure" escape — keeps users moving (owner-approved BV pattern) */}
+      <button className={v3.buttonSecondary} onClick={() => onNext({ state: '', city: '' })}>I&apos;m not sure</button>
     </>
   );
 }
@@ -199,10 +211,8 @@ function DetailsStep({ query, dest, onNext }) {
         <input type="checkbox" checked={fcra} onChange={(e) => setFcra(e.target.checked)} />
         <span>I understand this report may not be used for employment, tenant, credit, or other FCRA-regulated purposes.</span>
       </label>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button style={{ ...S.cta, flex: 1 }} disabled={!fcra} onClick={submit}>See results</button>
-        <button style={S.ctaGhost} onClick={submit} disabled={!fcra}>I&apos;m not sure</button>
-      </div>
+      <button className={v3.cta} style={{ opacity: !fcra ? 0.5 : 1 }} disabled={!fcra} onClick={submit}>See results</button>
+      <button className={v3.buttonSecondary} disabled={!fcra} onClick={submit}>I&apos;m not sure</button>
     </>
   );
 }
@@ -306,7 +316,9 @@ function BvLoader({ query, dest, navigate }) {
   const isPost = tlPhase === 'post';
 
   return (
-    <main className={loader.loaderMain}>
+    <>
+      <V3Header />
+      <main className={loader.loaderMain}>
       <div className={loader.loaderCard}>
         <div className={loader.spinner} />
         <h2 className={loader.heading}>{isPost ? 'Finalizing your report' : 'Building your report'}</h2>
@@ -359,7 +371,8 @@ function BvLoader({ query, dest, navigate }) {
           }}
         />
       )}
-    </main>
+      </main>
+    </>
   );
 }
 
@@ -371,7 +384,7 @@ function EmailGate({ name, onSubmit }) {
       <div style={S.gate}>
         <h3 style={S.h1}>Almost there — where should we send {name.trim() ? `${name}'s` : 'your'} results?</h3>
         <input style={S.input} type="email" placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <button style={S.cta} disabled={!ok} onClick={() => onSubmit(email.trim())}>See my results</button>
+        <button className={v3.cta} style={{ opacity: !ok ? 0.5 : 1 }} disabled={!ok} onClick={() => onSubmit(email.trim())}>See my results</button>
         {/* Consent line — CAN-SPAM/privacy guardrail (kept even though structure copies BV). */}
         <p style={S.fine}>
           By continuing you agree to receive emails about your results and can unsubscribe anytime.

@@ -8,7 +8,7 @@ import styles from './Header.module.css';
 // Color-exploration landings that own their full chrome (their own palette + hero/header).
 // The shared green nav would clash with their color scheme, so the global header is
 // suppressed entirely on these routes. Add new self-chrome landings here.
-export const SELF_CHROME_PREFIXES = ['/name/landing/v7', '/name/landing/v8', '/name/landing/v9', '/name/landing/v10', '/name/landing/v2', '/name/landing/v3', '/name/landing/v3a', '/name/landing/v3b', '/name/search-result', '/search-results'];
+export const SELF_CHROME_PREFIXES = ['/name/landing/v7', '/name/landing/v8', '/name/landing/v9', '/name/landing/v10', '/name/landing/v2', '/name/landing/v3', '/name/landing/v3a', '/name/landing/v3b', '/name/landing/bv', '/name/search-result', '/search-results'];
 
 // Shared funnel pages that carry a funnel theme (loader, results). When a theme is active
 // (blue/dark, set by a themed landing), the green global nav/footer would clash — suppress
