@@ -57,3 +57,25 @@ export function captureEmail(email, meta = {}) {
 export function getCapturedEmail() {
   try { return localStorage.getItem(LS_LATEST) || ''; } catch { return ''; }
 }
+
+function checkoutAbandonedUrl() {
+  if (process.env.REACT_APP_CHECKOUT_ABANDONED_URL) return process.env.REACT_APP_CHECKOUT_ABANDONED_URL;
+  return leadUrl().replace(/\/leads\/?$/, '/checkout-abandoned');
+}
+
+/**
+ * Post an abandoned-checkout event to the growth backend (Vercel), so a recovery email
+ * can be sent downstream. Fire-and-forget with `keepalive` because it's fired on page
+ * unload (pagehide). Same independence as captureEmail: BC is not involved.
+ * @param {object} payload  { email?, personId?, offer?, variant?, meta?, ts? }
+ */
+export function captureAbandonedCheckout(payload) {
+  try {
+    fetch(checkoutAbandonedUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {}),
+      keepalive: true,
+    }).catch(() => { /* best-effort */ });
+  } catch { /* fetch unavailable */ }
+}

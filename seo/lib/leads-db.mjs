@@ -24,3 +24,22 @@ export async function insertLead({ email, meta, ts, ip, userAgent }) {
     )
   `;
 }
+
+/** Insert one abandoned-checkout event. Schema: seo/db/abandoned-checkouts-schema.sql. */
+export async function insertAbandonedCheckout({ email, personId, offer, variant, meta, ts, ip, userAgent }) {
+  if (!sql) throw new Error('no leads DB configured');
+  const m = meta && typeof meta === 'object' ? meta : {};
+  await sql`
+    INSERT INTO abandoned_checkouts (email, person_id, offer, variant, meta, abandoned_at, ip, user_agent)
+    VALUES (
+      ${email || null},
+      ${personId || null},
+      ${offer || null},
+      ${variant || null},
+      ${JSON.stringify(m)}::jsonb,
+      ${ts || null},
+      ${ip || null},
+      ${userAgent || null}
+    )
+  `;
+}

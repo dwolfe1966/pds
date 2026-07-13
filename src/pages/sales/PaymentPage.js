@@ -10,6 +10,7 @@ import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch, EMPTY_FLAGS } from '../../services/thinMatch';
+import { captureAbandonedCheckout, getCapturedEmail } from '../../services/emailCapture';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 
@@ -291,9 +292,22 @@ const PaymentPage = () => {
       if (successRef.current || abandonFiredRef.current) return;
       abandonFiredRef.current = true;
       let hasTarget = false;
-      try { hasTarget = !!sessionStorage.getItem('selectedPersonId'); } catch { /* ignore */ }
+      let personId = null;
+      let variant;
+      try { personId = sessionStorage.getItem('selectedPersonId'); hasTarget = !!personId; } catch { /* ignore */ }
+      try { variant = sessionStorage.getItem('funnel.variant') || undefined; } catch { /* ignore */ }
       track('checkout_abandoned', { offer_key: SIGNUP_OFFER_KEY, has_target: hasTarget });
       gtmEvent('checkout_abandoned', { funnel_step: 'payment' });
+      // Also POST to our growth backend (Vercel) so a recovery email can be sent. The
+      // captured email (from signup) goes server-side only, never to the dataLayer.
+      captureAbandonedCheckout({
+        email: getCapturedEmail() || undefined,
+        personId: personId || undefined,
+        offer: SIGNUP_OFFER_KEY,
+        variant,
+        meta: { has_target: hasTarget },
+        ts: new Date().toISOString(),
+      });
     };
     window.addEventListener('pagehide', fireAbandon);
     return () => { window.removeEventListener('pagehide', fireAbandon); fireAbandon(); };
