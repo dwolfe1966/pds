@@ -1,8 +1,9 @@
 # Lead-capture endpoint — deploy runbook
 
-_Paused 2026-07-13; resume when ready. Endpoint code is committed (`75cd119`); env var + init
-script committed (`1747d2e`). DB decision: **reuse the existing SEO Neon DB** (no `LEADS_DATABASE_URL`
-needed — falls back to the SEO app's `DATABASE_URL`)._
+_2026-07-13. DB decision: **reuse the existing SEO Neon DB**. **STATUS: Tasks 1 & 2 DONE** —
+`leads` table created on the SEO Neon DB (via `scripts/init-leads-table.mjs`), and
+`https://idlookup.me/api/leads` is **LIVE + persisting to Neon** (verified: live POST → row in Neon;
+OPTIONS→204+CORS). **Only Task 3 remains: rebuild + upload the consumer bundle.**_
 
 Files: `seo/app/api/leads/route.js` · `seo/lib/leads-db.mjs` · `seo/db/leads-schema.sql` ·
 `seo/scripts/init-leads-table.mjs` · `.env.production` (`REACT_APP_LEAD_CAPTURE_URL`).

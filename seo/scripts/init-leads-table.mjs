@@ -24,8 +24,11 @@ const statements = ddl
   .map((s) => s.replace(/--.*$/gm, '').trim()) // drop SQL line-comments
   .filter(Boolean);
 
+// The Neon HTTP driver is a tagged-template fn (no .query in this version). Run each
+// raw DDL statement by handing it a minimal TemplateStringsArray (no interpolation).
+const asTemplate = (s) => Object.assign([s], { raw: [s] });
 for (const stmt of statements) {
-  await sql.query(stmt);
+  await sql(asTemplate(stmt));
   console.log('✓', stmt.replace(/\s+/g, ' ').slice(0, 70));
 }
 console.log('\n✅ leads table ready.');
