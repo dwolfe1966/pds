@@ -43,3 +43,56 @@ export async function insertAbandonedCheckout({ email, personId, offer, variant,
     )
   `;
 }
+
+// ── Recovery-email workflow (read by the Vercel cron) ────────────────────────
+// Timing (owner 2026-07-13): 1st email 30 min after abandonment, 1 follow-up 24h
+// after that. Only rows that (a) have an email and (b) haven't converted are eligible.
+// De-dupe by email so a repeat-abandoner isn't emailed twice for the same address.
+
+/**
+ * Rows that need their FIRST recovery email: abandoned ≥ `delayMinutes` ago, has an
+ * email, not yet emailed, not recovered. Newest row per email wins (carries the target).
+ */
+export async function getPendingFirstEmail(delayMinutes = 30, limit = 200) {
+  if (!sql) throw new Error('no leads DB configured');
+  return sql`
+    SELECT DISTINCT ON (lower(email)) id, email, person_id, offer, variant, meta, abandoned_at
+    FROM abandoned_checkouts
+    WHERE email IS NOT NULL
+      AND emailed_at IS NULL
+      AND recovered_at IS NULL
+      AND abandoned_at IS NOT NULL
+      AND abandoned_at <= now() - (${delayMinutes} * INTERVAL '1 minute')
+    ORDER BY lower(email), abandoned_at DESC
+    LIMIT ${limit}
+  `;
+}
+
+/**
+ * Rows that need the single FOLLOW-UP: first email sent ≥ `delayHours` ago, follow-up
+ * not yet sent, not recovered.
+ */
+export async function getPendingFollowup(delayHours = 24, limit = 200) {
+  if (!sql) throw new Error('no leads DB configured');
+  return sql`
+    SELECT DISTINCT ON (lower(email)) id, email, person_id, offer, variant, meta, abandoned_at
+    FROM abandoned_checkouts
+    WHERE email IS NOT NULL
+      AND emailed_at IS NOT NULL
+      AND followup_at IS NULL
+      AND recovered_at IS NULL
+      AND emailed_at <= now() - (${delayHours} * INTERVAL '1 hour')
+    ORDER BY lower(email), emailed_at DESC
+    LIMIT ${limit}
+  `;
+}
+
+/** Stamp a send. stage 'first' → emailed_at, stage 'followup' → followup_at. */
+export async function markRecoveryEmailed(id, stage) {
+  if (!sql) throw new Error('no leads DB configured');
+  if (stage === 'followup') {
+    await sql`UPDATE abandoned_checkouts SET followup_at = now() WHERE id = ${id}`;
+  } else {
+    await sql`UPDATE abandoned_checkouts SET emailed_at = now() WHERE id = ${id}`;
+  }
+}

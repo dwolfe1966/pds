@@ -294,18 +294,32 @@ const PaymentPage = () => {
       let hasTarget = false;
       let personId = null;
       let variant;
+      let target;
+      let recipientName;
       try { personId = sessionStorage.getItem('selectedPersonId'); hasTarget = !!personId; } catch { /* ignore */ }
       try { variant = sessionStorage.getItem('funnel.variant') || undefined; } catch { /* ignore */ }
+      // Target person (name/age/location) for the recovery email, from the stashed result.
+      try {
+        if (personId) {
+          const r = JSON.parse(sessionStorage.getItem(`result_${personId}`) || 'null');
+          if (r) target = { name: r.fullName || undefined, age: r.ageRange || r.age || undefined, location: r.location || undefined };
+        }
+      } catch { /* ignore */ }
+      // Recipient first name for the personalized subject line, from the signed-in user.
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || 'null');
+        if (u) recipientName = u.firstName || u.firstname || (u.name || '').trim().split(/\s+/)[0] || undefined;
+      } catch { /* ignore */ }
       track('checkout_abandoned', { offer_key: SIGNUP_OFFER_KEY, has_target: hasTarget });
       gtmEvent('checkout_abandoned', { funnel_step: 'payment' });
       // Also POST to our growth backend (Vercel) so a recovery email can be sent. The
-      // captured email (from signup) goes server-side only, never to the dataLayer.
+      // captured email + target/recipient go server-side only, never to the dataLayer.
       captureAbandonedCheckout({
         email: getCapturedEmail() || undefined,
         personId: personId || undefined,
         offer: SIGNUP_OFFER_KEY,
         variant,
-        meta: { has_target: hasTarget },
+        meta: { has_target: hasTarget, target, recipientName },
         ts: new Date().toISOString(),
       });
     };

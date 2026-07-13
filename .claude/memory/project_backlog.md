@@ -16,6 +16,12 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 
 **BACKLOG-5 — Member Experience Refinement.** Dashboard2 is the canonical `/dashboard` (commit `3108599`); old `DashboardHome` is orphaned but not deleted. WSFY page (`WhoIsSearchingPage.js`) is wired. AlertsPage redesigned as a search entry surface, not a fake-feed list. Visitor searches now persist across signup (`visitorSearchLog.js` → `POST /searches/import`). Active focus: building out the consumer-app test suite and cleaning up consumer nav.
 
+## Near-term big-ticket items (owner, 2026-07-08)
+
+- **PayPal as a payment type.** NEW. Today checkout is card-only via BC `commerce-billing-sale` (TRX). Adding PayPal needs a PayPal button on `PaymentPage` **plus BC accepting PayPal for the RECURRING trial→monthly** (a PayPal billing-agreement/subscription, not a one-time charge). Mostly a **BC ask** (BC owns billing) + client integration. **How to apply:** scope BC's PayPal support (esp. the recurring/subscription mechanism) BEFORE building any UI.
+
+- **PDS-managed email platform (GUI + delivery).** Expands **BACKLOG-1**. A first-party system to **compose/manage** emails (templates, the abandoned-checkout flow, campaigns) AND **deliver** them. This is the real home for the `checkout_abandoned` trigger already wired in `PaymentPage.js` (this session) + moves email off the BC/architecture-deferred hold. `server/emailService.js` already has SendGrid+SES+SMTP plumbing but there's **no GUI** (`EmailBroadcastPage` was deleted, `2a9f31b`). **Bigger infra decision:** build-vs-adopt (SES/Sendgrid/Postmark/Customer.io), deliverability (SPF/DKIM/DMARC), PII boundary. **How to apply:** decide build-vs-adopt + delivery provider before designing the GUI (the team-facing compose/campaign surface).
+
 ## Known gaps (not tied to a single track)
 
 - **Bug #35 — payment submit-button compliance copy (deferred, 2026-05-29).** Bug submitter asked the submit CTA to read `"I AGREE. VIEW REPORT NOW!"` so it's clearer the click is acceptance of the terms above. Today `PaymentPage.js:875-876` reads `"Unlock Report — $1 Today"` / `"Start Trial — $1 Today"`. **Owner concern (2026-05-29):** worried the compliance copy would tank conversion — we may need to **revert the CTA** if we ship it and metrics drop. **How to apply:** if revisited, A/B test (variant: current price-led CTA vs compliance-led CTA) rather than a global swap. Get a measurable read before committing.
