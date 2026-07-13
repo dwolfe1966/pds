@@ -19,9 +19,14 @@ nothing sends prematurely.
 - **1st email:** 30 min after abandonment (`EMAIL_FIRST_DELAY_MIN`, default 30).
 - **1 follow-up:** 24h after the 1st email (`EMAIL_FOLLOWUP_DELAY_HOURS`, default 24).
 - **Never sends if:** no email on the row, or `recovered_at` is set (converted). De-duped by email.
-- **Content:** personalized subject with recipient name + target name; body shows a **Name / Age /
-  Location** card when we know the target; CTA "Unlock My Report" → `login?redirect=/people/:id`
-  (resumes the unlock flow) with UTMs; secure/cancel-anytime trust line; FCRA + unsubscribe footer.
+- **Content branches on whether we know a target person:**
+  - **With a target** (came from a teaser/SUP): subject *"Jane, unlock your report on John Q. Smith"*,
+    a **Name / Age / Location** card, CTA "Unlock My Report" → `login?redirect=/people/:id` (resumes unlock).
+  - **No target** (general/promo signup abandon — no report exists yet): honest account-activation
+    copy instead of a phantom report — subject *"Jane, finish setting up your account"*, CTA
+    "Finish Setting Up" → `login?redirect=/dashboard`. No person card.
+  - Follow-up (24h) reuses the same branch with softer "still waiting / almost ready" wording.
+  - Both: secure/cancel-anytime trust line, FCRA footer, one-click unsubscribe (SendGrid ASM).
 
 ## Owner step 1 — SendGrid domain authentication (subdomain)
 Use a **dedicated sending subdomain** `e.idlookup.ai` (keeps marketing reputation off both the
@@ -42,7 +47,7 @@ SEO domain and BC's transactional domain).
 | `SENDGRID_API_KEY` | SendGrid API key (Mail Send scope) | ✅ (sends no-op without it) |
 | `EMAIL_FROM` | `IDLookup <alerts@e.idlookup.ai>` | ✅ |
 | `CRON_SECRET` | any random string (Vercel auto-sends it as the cron Bearer) | ✅ (secures the cron) |
-| `EMAIL_ASM_GROUP_ID` | SendGrid unsubscribe-group id | recommended |
+| `EMAIL_ASM_GROUP_ID` | SendGrid unsubscribe-group id (one-click unsubscribe) | ✅ (chosen path) |
 | `EMAIL_BASE_URL` | `https://www.idlookup.ai` | optional (default) |
 | `EMAIL_BRAND_NAME` | `IDLookup` | optional (default) |
 | `EMAIL_UNSUBSCRIBE_URL` | if not using ASM | optional |
@@ -54,7 +59,10 @@ Redeploy the SEO app after setting envs (or it picks them up on the next deploy)
 2. Wait 30 min → cron sends the 1st email (or hit the cron route manually with the Bearer secret).
 3. Check `emailed_at` gets stamped; the email renders name/age/location + personalized subject.
 
-## Open compliance note
-If you skip the SendGrid **ASM group**, the template's `{{unsubscribeUrl}}` points at
-`/unsubscribe?e=…`, which needs a real handler. The ASM group is the low-effort compliant path —
-prefer it.
+## Unsubscribe — using SendGrid ASM (chosen)
+`EMAIL_ASM_GROUP_ID` is the compliant path (owner decision 2026-07-13). When it's set, `send.mjs`
+emits SendGrid's `<%asm_group_unsubscribe_raw_url%>` tag in the footer, which SendGrid replaces at
+send time with a working per-recipient one-click unsubscribe, and enforces suppression server-side —
+so no `/unsubscribe` handler is needed on our side. Just create the Unsubscribe Group in SendGrid
+(Marketing → Suppressions → Unsubscribe Groups) and put its numeric ID in `EMAIL_ASM_GROUP_ID`.
+(Leaving it unset falls back to a `/unsubscribe?e=…` URL that would need a handler — avoid.)

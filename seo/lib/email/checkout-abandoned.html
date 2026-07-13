@@ -1,9 +1,10 @@
 <!--
   Abandoned-checkout RECOVERY email — sent by OUR SendGrid (not BC), so it uses our own
   {{placeholders}} (filled by seo/lib/email/send.mjs), NOT BC ${...} tokens.
-  Placeholders: {{firstName}} {{targetLine}} {{targetCard}} {{unlockUrl}} {{brandName}} {{unsubscribeUrl}}
-  {{targetLine}} = e.g. " on John Smith" when we know the target, else "" (generic).
-  {{targetCard}} = a Name/Age/Location card block when the target is known, else "" (rendered by send.mjs).
+  Placeholders: {{firstName}} {{headline}} {{bodyIntro}} {{ctaLabel}} {{targetCard}}
+                {{unlockUrl}} {{brandName}} {{unsubscribeUrl}}
+  Copy branches on whether we know a target person (send.mjs): "unlock report on X" vs. the
+  generic "finish setting up your account" flavor. {{targetCard}} = Name/Age/Location block or "".
 -->
 <body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;">
   <span style="display:none;max-height:0;overflow:hidden;opacity:0;">You were one step away — your report is ready to unlock.</span>
@@ -14,14 +15,14 @@
           <span style="color:#ffffff;font-size:20px;font-weight:800;letter-spacing:-0.3px;">{{brandName}}</span>
         </td></tr>
         <tr><td style="padding:32px;">
-          <h1 style="margin:0 0 14px;color:#0f172a;font-size:22px;line-height:1.3;">You're one step away{{targetLine}}</h1>
+          <h1 style="margin:0 0 14px;color:#0f172a;font-size:22px;line-height:1.3;">{{headline}}</h1>
           <p style="margin:0 0 18px;color:#374151;font-size:15px;line-height:1.6;">
-            Hi {{firstName}}, you started your report but didn't finish checkout. The results are compiled and ready — pick up right where you left off.
+            Hi {{firstName}}, {{bodyIntro}}
           </p>
           {{targetCard}}
           <table cellpadding="0" cellspacing="0" role="presentation" style="margin:8px 0 22px;">
             <tr><td align="center" style="border-radius:10px;background:#16a34a;">
-              <a href="{{unlockUrl}}" style="display:inline-block;padding:15px 34px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:10px;">Unlock My Report →</a>
+              <a href="{{unlockUrl}}" style="display:inline-block;padding:15px 34px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:10px;">{{ctaLabel}}</a>
             </td></tr>
           </table>
           <table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 6px;">

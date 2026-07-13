@@ -42,11 +42,16 @@ function unlockUrl(personId, stage) {
   return `${BASE}/login?${qs.toString()}`;
 }
 
+// Unsubscribe link. Preferred path is a SendGrid ASM group: when EMAIL_ASM_GROUP_ID is set,
+// emit SendGrid's substitution tag — it's replaced at send time with a working, per-recipient,
+// group-aware one-click unsubscribe URL (and suppression is enforced server-side). The tag
+// must NOT be HTML-escaped, so callers insert it raw. Fallback = our own /unsubscribe URL.
+const ASM_UNSUB_TAG = '<%asm_group_unsubscribe_raw_url%>';
+function usingAsm() { return !!process.env.EMAIL_ASM_GROUP_ID; }
 function unsubscribeUrl(email) {
-  if (process.env.EMAIL_UNSUBSCRIBE_URL) {
-    return `${process.env.EMAIL_UNSUBSCRIBE_URL}${process.env.EMAIL_UNSUBSCRIBE_URL.includes('?') ? '&' : '?'}e=${encodeURIComponent(email || '')}`;
-  }
-  return `${BASE}/unsubscribe?e=${encodeURIComponent(email || '')}`;
+  if (usingAsm()) return ASM_UNSUB_TAG;
+  const base = process.env.EMAIL_UNSUBSCRIBE_URL || `${BASE}/unsubscribe`;
+  return `${base}${base.includes('?') ? '&' : '?'}e=${encodeURIComponent(email || '')}`;
 }
 
 /** Target person card (Name / Age / Location) — only when we know a name. */
@@ -80,39 +85,62 @@ export function renderCheckoutAbandoned(row, stage = 'first') {
   const target = meta.target || null;
   const targetName = target && target.name ? String(target.name).trim() : '';
 
-  // Personalized subject — recipient name (owner directive), + target when known.
+  // Copy branches on whether we know a target person. With a target it's a report-unlock
+  // recovery ("unlock your report on John"); with no target (general/promo signup abandon,
+  // no report exists yet) it's an honest account-activation nudge — no phantom "report".
   const namePrefix = firstName ? `${firstName}, ` : '';
-  let subject;
-  if (stage === 'followup') {
-    subject = targetName
-      ? `${namePrefix}${targetName}'s report is still waiting`
-      : `${namePrefix}your report is still waiting`;
+  let subject, headline, bodyIntro, ctaLabel;
+  if (targetName) {
+    headline = `You're one step away on ${esc(targetName)}`;
+    ctaLabel = 'Unlock My Report →';
+    if (stage === 'followup') {
+      subject = `${namePrefix}${targetName}'s report is still waiting`;
+      bodyIntro = `your report on ${esc(targetName)} is still ready — you didn't finish checkout. Pick up right where you left off.`;
+    } else {
+      subject = `${namePrefix}unlock your report on ${targetName}`;
+      bodyIntro = `you started your report but didn't finish checkout. The results are compiled and ready — pick up right where you left off.`;
+    }
   } else {
-    subject = targetName
-      ? `${namePrefix}unlock your report on ${targetName}`
-      : `${namePrefix}your report is ready to unlock`;
+    headline = "You're almost set up";
+    ctaLabel = 'Finish Setting Up →';
+    if (stage === 'followup') {
+      subject = `${namePrefix}your account is almost ready`;
+      bodyIntro = `your IDLookup account is almost ready — just finish checkout to activate it and start running searches.`;
+    } else {
+      subject = `${namePrefix}finish setting up your account`;
+      bodyIntro = `you're almost set up. Finish checkout to activate your account and start running unlimited people searches.`;
+    }
   }
   subject = subject.charAt(0).toUpperCase() + subject.slice(1);
+
+  // ASM tag must go in raw (it's a SendGrid token, not a literal URL); a real URL is escaped.
+  const unsub = unsubscribeUrl(row.email);
+  const unsubHtml = usingAsm() ? unsub : esc(unsub);
 
   const html = template()
     .replace(/\{\{brandName\}\}/g, esc(BRAND))
     .replace(/\{\{firstName\}\}/g, esc(firstName || 'there'))
-    .replace(/\{\{targetLine\}\}/g, targetName ? ` on ${esc(targetName)}` : '')
+    .replace(/\{\{headline\}\}/g, headline)
+    .replace(/\{\{bodyIntro\}\}/g, bodyIntro)
+    .replace(/\{\{ctaLabel\}\}/g, esc(ctaLabel))
     .replace(/\{\{targetCard\}\}/g, targetCard(target))
     .replace(/\{\{unlockUrl\}\}/g, esc(unlockUrl(row.person_id, stage)))
-    .replace(/\{\{unsubscribeUrl\}\}/g, esc(unsubscribeUrl(row.email)));
+    .replace(/\{\{unsubscribeUrl\}\}/g, unsubHtml);
 
+  // Plaintext part mirrors the HTML copy (bodyIntro is HTML-escaped for the markup; unescape
+  // the couple of entities we introduce so the text part reads clean).
+  const bodyIntroText = bodyIntro.replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
   const text = [
     `Hi ${firstName || 'there'},`,
     '',
-    `You started your report${targetName ? ` on ${targetName}` : ''} but didn't finish checkout. The results are compiled and ready.`,
+    bodyIntroText,
     targetName ? `\nYour report on: ${targetName}${target.age ? ` (Age ${target.age})` : ''}${target.location ? ` — ${target.location}` : ''}` : '',
     '',
-    `Unlock it here: ${unlockUrl(row.person_id, stage)}`,
+    `${targetName ? 'Unlock it here' : 'Finish here'}: ${unlockUrl(row.person_id, stage)}`,
     '',
     `Secure checkout · Cancel anytime · Instant access`,
     '',
-    `Unsubscribe: ${unsubscribeUrl(row.email)}`,
+    `Unsubscribe: ${usingAsm() ? '(one-click link in the email)' : unsubscribeUrl(row.email)}`,
   ].filter((l) => l !== '').join('\n');
 
   return { subject, html, text };
