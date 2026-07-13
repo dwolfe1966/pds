@@ -23,6 +23,8 @@ import NameSearchLandingV7Page from './pages/sales/NameSearchLandingV7Page';
 import NameSearchLandingV8Page from './pages/sales/NameSearchLandingV8Page';
 import NameSearchLandingV9Page from './pages/sales/NameSearchLandingV9Page';
 import NameSearchLandingV10Page from './pages/sales/NameSearchLandingV10Page';
+import NameSearchLandingV12Page from './pages/sales/NameSearchLandingV12Page';
+import NameSearchLandingV13Page from './pages/sales/NameSearchLandingV13Page';
 import NameSearchLandingV3aPage from './pages/sales/NameSearchLandingV3aPage';
 import NameSearchLandingV3bPage from './pages/sales/NameSearchLandingV3bPage';
 import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
@@ -178,6 +180,9 @@ const App = () => {
           <Route path="/name/landing/v8" element={<NameSearchLandingV8Page />} />
           <Route path="/name/landing/v9" element={<NameSearchLandingV9Page />} />
           <Route path="/name/landing/v10" element={<NameSearchLandingV10Page />} />
+          {/* v12 = divorce, v13 = death — inmate-style (v3) intent flows */}
+          <Route path="/name/landing/v12" element={<NameSearchLandingV12Page />} />
+          <Route path="/name/landing/v13" element={<NameSearchLandingV13Page />} />
           <Route path="/name/landing/v3a" element={<NameSearchLandingV3aPage />} />
           <Route path="/name/landing/v3b" element={<NameSearchLandingV3bPage />} />
           {/* BeenVerified-style flow — v11 landing slot (the shN split routes here).
