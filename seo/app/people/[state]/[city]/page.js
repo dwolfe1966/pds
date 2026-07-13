@@ -116,6 +116,19 @@ export default async function CityLanding({ params }) {
         </section>
       )}
 
+      {/* Most common names — the conversion surface. Placed #2, right below "at a glance"
+          (owner 2026-07-13) so it isn't buried under the demographic modules. */}
+      <section style={ui.card}>
+        <h2 style={{ marginTop: 0, fontSize: 18 }}>Most common names in {c.city}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px 16px' }}>
+          {names.map((n) => (
+            <a key={n.slug} href={cityNamePath(state, city, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
+              {n.name} <span style={ui.muted}>(~{num(n.estInCity)})</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
       {occupations.length > 0 && (
         <section style={ui.card}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>Occupations in {c.city}</h2>
@@ -150,17 +163,6 @@ export default async function CityLanding({ params }) {
           <p style={{ margin: '10px 0 0', fontSize: 12, color: '#9ca3af' }}>{c.city} (highlighted) among major cities in {c.stateName}.</p>
         </section>
       )}
-
-      <section style={ui.card}>
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>Most common names in {c.city}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px 16px' }}>
-          {names.map((n) => (
-            <a key={n.slug} href={cityNamePath(state, city, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
-              {n.name} <span style={ui.muted}>(~{num(n.estInCity)})</span>
-            </a>
-          ))}
-        </div>
-      </section>
 
       {people && people.length > 0 && (
         <section style={ui.card}>
