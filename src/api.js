@@ -7,6 +7,7 @@ import { routeApiRequest, setTokenGetter as setRouterTokenGetter, setLogoutHandl
 import { setSearchContext } from './services/searchContext';
 import { adaptIdentity } from './services/apiAdapter';
 import { recordSearch as recordSearchToHistory } from './utils/searchHistory';
+import { captureSearchActivity } from './services/searchActivity';
 
 // Direct mock API base URL (used for endpoints that bypass the hybrid router)
 const MOCK_API_URL = process.env.REACT_APP_API_URL ||
@@ -334,7 +335,19 @@ const api = {
         console.warn('[API] Failed to record search history:', err?.message || err);
       }
     }
-    
+
+    // WSFY capture (Phase 1): post a copy of the search + result set to our growth backend
+    // so we can build "Who's Searching For You" ourselves. Fire-and-forget, independent of BC.
+    // Fires for BOTH anonymous funnel searches and signed-in members. PII stays server-side.
+    try {
+      captureSearchActivity({
+        type,
+        terms: { firstName, lastName, middleName, age, city, state, phone, email },
+        results: response?.data || [],
+        source: source || 'searchPeople',
+      });
+    } catch { /* best-effort */ }
+
     return response;
   },
 

@@ -534,7 +534,8 @@
       "Bash(awk '/^\\\\.logo[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)",
       "Bash(awk '/^\\\\.cta[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)",
       "Bash(awk '/^\\\\.ctaIcon[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)",
-      "Bash(awk '/^\\\\.buttonSecondary[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)"
+      "Bash(awk '/^\\\\.buttonSecondary[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)",
+      "Bash(EMAIL_ASM_GROUP_ID=123 node --input-type=module -e ' *])"
     ]
   }
 }
