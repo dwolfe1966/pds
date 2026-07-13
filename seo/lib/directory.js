@@ -10,38 +10,42 @@ import { statePath, cityPath, cityNamePath } from './ids';
 
 const ROUND = (n) => Math.max(1, Math.round(n));
 
-// IDI's name teaser REFUSES (status:failed, 0 results) once a name has roughly more
-// than ~1,000 people in the searched state. Calibrated on live tests, in this file's
-// estInState units (name-slice est × state-slice share): Patricia Garcia / CA (807)
-// returns records; David Thomas / CA (1,237) and everything above thin-matched
-// (Michael Thomas 1,529, William Jones 1,857, Robert Brown 2,306, John Smith / CA
-// 4,439 — all thin). So a name×state page above this ceiling would dead-end. We prune
-// those (keep the ≥5 floor to skip "~1 in Wyoming" thin pages). Per-state, so
-// "John Smith / WY" (55) survives while "John Smith / CA" (4,439) is dropped.
-// Heuristic — revisit if BC returns a capped sample (then the ceiling can lift).
-export const EST_IN_STATE_MIN = 5;
-export const EST_IN_STATE_MAX = 1000;
+// ⚠️ OLD CALIBRATION INVALIDATED 2026-07-13. The prior ceiling ("IDI refuses once a
+// name has >~1,000 people in the state") was measured while our IDI account was BLOCKED
+// for non-payment — so common names thin-matched for an EXTERNAL reason, and the whole
+// gate optimized against bad data. Live re-test after the block lifted inverts it:
+//   Michael Smith / CA  estInState 4,938 → 30+ results (WORKS)
+//   James Johnson / NY   1,288 → WORKS      Robert Williams / FL   904 → WORKS
+//   Maria Garcia / TX      758 → TooManyMatches  (name-specific; NOT predicted by estInState)
+// So: (1) common names now resolve richly — the low ceiling would DROP the winners
+// (Michael Smith 4,938) and KEEP a loser (Maria Garcia 758); (2) estInState no longer
+// predicts TM. New strategy (owner 2026-07-13): FOCUS the directory on COMMON names
+// (high match presumption) and drop the invalid low ceiling. The numbers below are a
+// STARTING band — RE-CALIBRATE with a fresh headed sweep now that the account is live.
+export const EST_IN_STATE_MIN = 5;         // still skip "~1 in Wyoming" thin/404 pages
+export const EST_IN_STATE_MAX = 10000;     // was 1,000 (block-polluted). Raised to keep the
+                                           // common names that now resolve (Michael Smith/CA 4,938).
+export const EST_IN_STATE_COMMON_MIN = 200; // city-page focus: only genuinely common names
+                                           // (rich name+state teaser results). STARTING value — tune.
 
 // Population base (sum of state pops) for the per-place share.
 const POP_BASE = Object.values(STATE_SLICE.states).reduce((a, s) => a + s.pop, 0);
 const estInCityOf = (est, cityPop) => Math.max(1, Math.round(est * (cityPop / POP_BASE)));
 
-// The (state, city, name) page gate. We build a name-in-city page only when the
-// name's ESTIMATED in-city population lands in this band:
-//   floor  — skip "~1 person in this town" thin/404 pages.
-//   ceiling — the pivot (owner 2026-07-10): a name is treated as resolvable at the
-//   CITY grain when its in-city volume is low, REGARDLESS of how common it is
-//   statewide. Replaces the old state-level ceiling (nameStateOk). So "John Smith"
-//   now earns pages in small cities (low in-city volume) but not in LA/NYC (over
-//   the ceiling) — the long-tail IDI is most likely to resolve.
-// NOTE: until BC forwards city to IDI, a common-name-in-small-city SERP still
-// teasers on name+state and may thin; ThinMatchPreview covers that, and the page
-// self-heals the moment city-forwarding ships.
-export const EST_IN_CITY_MIN = 2;
-export const EST_IN_CITY_MAX = 750;
-const cityNameOk = (est, cityPop) => {
-  const eic = estInCityOf(est, cityPop);
-  return eic >= EST_IN_CITY_MIN && eic < EST_IN_CITY_MAX;
+// The (state, city, name) page gate — REWRITTEN 2026-07-13 (owner: focus on common names).
+// The teaser search STRIPS city → runs on name+STATE, so what actually resolves is the
+// STATE-grain volume. So a name earns a city page when it is COMMON in the state (rich
+// name+state teaser results) AND plausibly present in the city (a light presence floor).
+// The old estInCity band favored RARE-in-city names on the premise that BC would forward
+// city to IDI — verified 2026-07-13 that it does NOT narrow reliably — so it selected thin
+// pages. estInCity is now just a presence floor, not the selector.
+export const EST_IN_CITY_MIN = 2; // presence floor: name genuinely appears in the city (drops
+                                  // tiny-town near-duplicate pages; ~335k pages / 1,509 cities)
+const cityNameOk = (est, cityPop, stateShare) => {
+  const estInState = ROUND(est * stateShare);
+  const estInCity = estInCityOf(est, cityPop);
+  return estInState >= EST_IN_STATE_COMMON_MIN && estInState <= EST_IN_STATE_MAX
+    && estInCity >= EST_IN_CITY_MIN;
 };
 
 export function getStateList() {
@@ -89,8 +93,8 @@ export function getNameInCity(code, citySlug, nameSlug) {
   if (!st || !nm) return null;
   const city = st.cities.find((c) => c.slug === citySlug);
   if (!city) return null;
+  if (!cityNameOk(nm.estPeople, city.pop, st.share)) return null;
   const estInCity = estInCityOf(nm.estPeople, city.pop);
-  if (estInCity < EST_IN_CITY_MIN || estInCity >= EST_IN_CITY_MAX) return null;
   return {
     ...nm,
     state: st.code, stateName: st.name,
@@ -109,8 +113,8 @@ export function getCityTopNames(code, citySlug, limit = 60) {
   for (const slug of STATE_SLICE.topNames) {
     const nm = NAME_SLICE[slug];
     if (!nm) continue;
+    if (!cityNameOk(nm.estPeople, city.pop, st.share)) continue;
     const estInCity = estInCityOf(nm.estPeople, city.pop);
-    if (estInCity < EST_IN_CITY_MIN || estInCity >= EST_IN_CITY_MAX) continue;
     out.push({ slug, name: `${nm.first} ${nm.last}`, estInCity });
     if (out.length >= limit) break;
   }
@@ -164,7 +168,7 @@ export function getTaxonomyUrls() {
       let cityAdded = false;
       for (const slug of STATE_SLICE.topNames) {
         const nm = NAME_SLICE[slug];
-        if (!nm || !cityNameOk(nm.estPeople, c.pop)) continue;
+        if (!nm || !cityNameOk(nm.estPeople, c.pop, st.share)) continue;
         if (!cityAdded) { urls.push(cityPath(st.code, c.slug)); cityAdded = true; }
         urls.push(cityNamePath(st.code, c.slug, slug));
       }
