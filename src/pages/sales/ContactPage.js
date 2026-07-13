@@ -4,6 +4,7 @@ import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import styles from './ContactPage.module.css';
 import { useBrand } from '../../services/brand';
+import { captureEmail } from '../../services/emailCapture';
 
 // BC enforces anti-abuse rules on /contactMessage/create (which email domains may
 // create messages + a per-domain daily cap). A tripped rule comes back as a 412 —
@@ -237,6 +238,9 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
     setSubmitError('');
     if (!validate()) return;
     setLoading(true);
+    // Capture the contact email as a lead → /api/leads (independent of BC). optin records
+    // marketing consent so sends can respect it; storing != marketing.
+    captureEmail(form.email, { source: 'contact', optin: form.optIn === 'yes' });
     try {
       const body = {
         subject: form.reason,
@@ -527,6 +531,9 @@ const BillingQuestionModal = ({ isOpen, onClose, user, token }) => {
     setSubmitError('');
     if (!validate()) return;
     setLoading(true);
+    // Capture the contact email as a lead → /api/leads (independent of BC). optin records
+    // marketing consent so sends can respect it; storing != marketing.
+    captureEmail(form.email, { source: 'contact', optin: form.optIn === 'yes' });
     try {
       const body = {
         subject: 'Billing Question',

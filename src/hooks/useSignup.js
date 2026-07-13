@@ -6,6 +6,7 @@ import { track } from '../services/trackingService';
 import { gtmEvent, gtmSignUp } from '../services/gtm';
 import { setUser as gtmSetUser } from '../services/gtmContext';
 import { recordLogin } from '../services/loginHistory';
+import { captureEmail } from '../services/emailCapture';
 import { readLog as readVisitorSearchLog, clearLog as clearVisitorSearchLog } from '../services/visitorSearchLog';
 
 /**
@@ -108,6 +109,10 @@ export function useSignup() {
       return false;
     }
     setLoading(true);
+    // Every signup is a captured email lead → post to our /api/leads endpoint (independent
+    // of BC; fire-and-forget + localStorage fallback). Fires here so a lead is recorded even
+    // if BC later rejects (e.g. email already exists).
+    captureEmail(email, { source: 'signup', selected: !!selectedPersonId });
     try {
       const response = await api.signup({
         email,
