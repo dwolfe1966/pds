@@ -20,10 +20,23 @@ rows with no email or `recovered_at` set; de-duped by email. Template `lib/email
 
 **Safe no-op** until `SENDGRID_API_KEY` set (send.mjs `hasSendgrid`) — deploying early does nothing.
 
-**Owner action items (see docs/design/sendgrid-abandoned-recovery-runbook.md):**
-1. SendGrid domain-auth on **e.idlookup.ai** (3 CNAME + SPF + DMARC on idlookup.ai DNS) + unsubscribe group.
-2. Vercel SEO-project envs: `SENDGRID_API_KEY`, `EMAIL_FROM`, `CRON_SECRET` (+ `EMAIL_ASM_GROUP_ID` recommended).
+**Copy branches on target presence:** with a target → "unlock your report on <name>" + Name/Age/Location
+card + CTA→/people/:id; **no target** (general/promo signup abandon, no report exists) → honest
+account-activation copy "finish setting up your account" + CTA→/dashboard, no card. Unsubscribe = SendGrid
+**ASM** (owner choice): `EMAIL_ASM_GROUP_ID` set → send.mjs emits `<%asm_group_unsubscribe_raw_url%>`.
+
+**Sending domain (2026-07-13):** idlookup.ai DNS is on Cloudflare **managed by BC** → can't auth
+`e.idlookup.ai` yet. **Launch on `e.idlookup.me`** (owner controls that DNS); cut over to `e.idlookup.ai`
+later = one-env swap (`EMAIL_FROM`) + re-auth, no code. Downside of `.me` = brand mismatch (.me vs .ai
+reads phishing-ish → opens/complaints); mitigate with friendly From name "IDLookup". Verify idlookup.me
+DNS is actually owner-controlled, not also BC-Cloudflare.
+
+**Owner action items (see docs/design/sendgrid-abandoned-recovery-runbook.md + docs/design/growth-email.md):**
+1. SendGrid domain-auth on **e.idlookup.me** (3 CNAME + SPF + DMARC) + unsubscribe group → `EMAIL_ASM_GROUP_ID`.
+2. Vercel SEO-project envs: `SENDGRID_API_KEY`, `EMAIL_FROM="IDLookup <alerts@e.idlookup.me>"`, `CRON_SECRET`, `EMAIL_ASM_GROUP_ID`.
 3. Upload consumer bundle `public.581b02fe.js` to BC (activates the richer target/recipient payload).
+
+**PAUSED 2026-07-13** pending owner steps. Next focus = WSFY self-implementation ([[project_bc_consumer_feature_asks]]).
 
 Reuses the [[project_seo_live_idlookup_me]] app + the `/api/leads` lead-capture pattern. Bundle-independent
 of BC per [[feedback_bc_is_source_of_truth]]. Apply schema: `node --env-file=.env.local scripts/apply-sql.mjs <file>`.
