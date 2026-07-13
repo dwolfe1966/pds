@@ -1,10 +1,10 @@
-// POST /api/checkout-abandoned — the consumer's checkout_abandoned signal lands here.
+// POST /api/email/checkout-abandoned — the consumer's checkout_abandoned signal lands here.
 //
-// Same shape as /api/leads: a Vercel API route + a Neon table (abandoned_checkouts).
-// The FIRST email-marketing endpoint on the growth backend — a future Vercel Cron job
-// reads the "pending" rows (email present, emailed_at null) and sends the recovery email.
-// Setup: run seo/db/abandoned-checkouts-schema.sql once on the Neon DB.
-import { insertAbandonedCheckout, hasLeadsDb } from '../../../lib/leads-db.mjs';
+// Under the /api/email/* namespace with the rest of the email-marketing surface. Same
+// shape as /api/leads: a Vercel API route + a Neon table (abandoned_checkouts). A Vercel
+// Cron job reads the "pending" rows (email present, emailed_at null) and sends the recovery
+// email. Setup: run seo/db/abandoned-checkouts-schema.sql once on the Neon DB.
+import { insertAbandonedCheckout, hasLeadsDb } from '../../../../lib/leads-db.mjs';
 
 export const runtime = 'nodejs';
 

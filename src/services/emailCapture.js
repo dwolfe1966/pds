@@ -60,7 +60,7 @@ export function getCapturedEmail() {
 
 function checkoutAbandonedUrl() {
   if (process.env.REACT_APP_CHECKOUT_ABANDONED_URL) return process.env.REACT_APP_CHECKOUT_ABANDONED_URL;
-  return leadUrl().replace(/\/leads\/?$/, '/checkout-abandoned');
+  return leadUrl().replace(/\/leads\/?$/, '/email/checkout-abandoned');
 }
 
 /**
