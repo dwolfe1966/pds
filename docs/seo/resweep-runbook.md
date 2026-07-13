@@ -14,24 +14,28 @@ the new common-name gate (`seo/lib/directory.js`, commit `16f5799`)._
 Run one search on prod (you, past Turnstile): a common name should return records, e.g.
 `https://www.idlookup.ai/name/search-result?firstName=Michael&lastName=Smith&state=CA` → 30+.
 
-## Step 1 — (safe insurance) clear any outage-window sweep_log rows
-So combos that (edge case) returned `TooManyMatches` *during* the block re-verify. No-op if nothing
-was swept in that window. In the Neon SQL Editor (SEO project DB):
-```sql
-DELETE FROM sweep_log WHERE swept_at >= '2026-07-08' AND swept_at < '2026-07-13';
-```
+## Step 1 — outage-window sweep_log — ALREADY CLEARED 2026-07-13 (was empty). Skip.
+(For reference, the safe reset is `DELETE FROM sweep_log WHERE swept_at >= '2026-07-08' AND swept_at < '2026-07-13';`)
 
-## Step 2 — run the sweep, HEADED (you solve Turnstile if it appears)
-`name-pairs.ndjson` is ranked common-first, so `--names N` = the top N most common names × 50 states.
-Resumable (skips combos already done) and slow-paced (~4.5s/call) to keep Turnstile passing.
+## Step 2 — run the sweep, HEADED, from pds/seo (run it on YOUR machine — residential IP
+passes Turnstile; a datacenter/CI box gets challenged on the teaser API). One-time setup:
 ```bash
-cd seo
-DATABASE_URL="postgres://…neon.tech/…" HEADED=1 node scripts/sweep-profiles.mjs --names 200
+cd /path/to/pds/seo
+npm install                      # if deps not installed
+npx playwright install chromium  # the browser binary
+grep DATABASE_URL .env.local     # confirm the Neon string is present
 ```
-- ~200 names × 50 states ≈ 10,000 combos ≈ several hours — it's **resumable**, so run in sittings;
-  re-running continues where it left off.
-- Scale up later (`--names 500`, etc.) once this batch looks good.
-- Narrow while testing: `--states CA,TX,NY --names 50` for a quick pass.
+Test batch first (a browser window opens — click any Cloudflare "Verify you are human" box):
+```bash
+HEADED=1 node --env-file=.env.local scripts/sweep-profiles.mjs --names 3 --states CA,TX
+```
+Then the full run (name-pairs.ndjson is ranked common-first, so --names N = top-N most common × 50 states):
+```bash
+HEADED=1 node --env-file=.env.local scripts/sweep-profiles.mjs --names 200
+```
+- **Resumable** (skips done combos) and slow-paced (~4.5s/call). ~200×50 ≈ several hours; run in sittings.
+- Scale later (`--names 500`); narrow while testing (`--states CA,TX,NY`).
+- Quick count check: `node --env-file=.env.local -e 'import("./lib/db.mjs").then(m=>m.dbCount().then(n=>console.log("profiles:",n)))'`
 
 ## Step 3 — redeploy the SEO app (regenerates `/people` on the new common-name gate)
 Git-connected Vercel project → the gate commit already builds; verify at
