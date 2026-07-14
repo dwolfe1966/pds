@@ -34,6 +34,23 @@ when the slug is a name, not a city. Both URL forms render one view and share ON
   301 them to the `/people/...` canonical once we're sure recovery is complete. For now serving
   200 self-canonical is the fastest bleed-stop.
 
+## (i-b) Thin city pages — empty "Most common names" module
+**Symptom:** many small cities yield 0–1 city-native common names under the strict city gate
+(ct/groton, ct/bantam had 0; ct/stamford, ct/new-haven had 1), leaving the #2 conversion module empty.
+
+**Fix (commit 7cb9eaa):** when a city has <12 city-native names, render a **"Popular names in
+<State>"** fallback from `getStateTopNames` (deduped vs city names), linking to the name-in-state
+pages `/people/{state}/{name}`. Fills the surface AND cross-links the recovery pages so they get
+crawled. No gate change (calibration untouched). Verified live: ct/groton 0→25, ct/bantam 0→24,
+ct/stamford 1→24 names.
+
+**Collision note (answering owner):** the `[city]` name-fallback does NOT collide with cities —
+`getCitySlice` is checked first (real cities always win), and the name pattern requires a hyphen
+(`firstname-lastname`). So a hyphenated real city (`los-angeles`) renders the city page; only a
+hyphenated non-city renders as a name. The hyphen + city-precedence cleanly separates the two under
+`/people/{state}/…`. Only edge: a hyphenated place NOT in our city slice renders as a name page
+(still 200, harmless).
+
 ## (ii) v11 pre-payment interstitial reworded
 **Symptom:** in the `/name/landing/v11` BV flow, clicking a SERP result before payment shows an
 interstitial (the `SignupPage` success panel) reading **"Account Created!"** — transactional and
