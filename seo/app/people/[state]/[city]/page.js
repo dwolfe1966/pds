@@ -10,6 +10,7 @@ import { statePath, cityPath, cityNamePath } from '../../../../lib/ids';
 import { collectionJsonLd, crumbsJsonLd } from '../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
+import { resolveNameInState, nameInStateMetadata, nameInStatePath, NameInStateView } from '../../../../lib/name-in-state';
 
 export const revalidate = 5184000; // 60d
 
@@ -28,7 +29,8 @@ const snap = {
 export async function generateMetadata({ params }) {
   const { state, city } = await params;
   const c = getCitySlice(state, city);
-  if (!c) return { title: 'Not found' };
+  // Not a real city? It may be an indexed name-in-state URL (/people/{state}/{first-last}).
+  if (!c) return nameInStateMetadata(state, city, nameInStatePath(state, city));
   return {
     title: `People Search in ${c.city}, ${c.stateCode} — Find Anyone by Name | IDLookup`,
     description: `Search for people in ${c.city}, ${c.stateName}. Browse the most common names in ${c.city} and find addresses, phone numbers, ages, and relatives.`,
@@ -39,7 +41,11 @@ export async function generateMetadata({ params }) {
 export default async function CityLanding({ params }) {
   const { state, city } = await params;
   const c = getCitySlice(state, city);
-  if (!c) notFound();
+  if (!c) {
+    // Fall back to the shared name-in-state view for indexed /people/{state}/{first-last} URLs.
+    if (resolveNameInState(state, city)) return <NameInStateView state={state} name={city} />;
+    notFound();
+  }
 
   const names = getCityTopNames(state, city, 60);
   const acs = getCityAcs(c.stateCode, city);
