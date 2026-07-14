@@ -30,6 +30,33 @@ function plural(n, one, many) { return n === 1 ? one : (many || `${one}s`); }
 // nothing is suppressed. Kept as a seam so the reveal respects opt-out when it lands.
 function isSuppressed(/* row */) { return false; }
 
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = a[i - 1] === b[j - 1] ? prev[j - 1] : 1 + Math.min(prev[j - 1], prev[j], cur[j - 1]);
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+// Owner (2026-07-14): a search with the EXACT last name + a FUZZY first name counts as a search
+// for you. Exact-last is enforced in SQL; this fuzzes the FIRST name — exact, a nickname-style
+// prefix (Dave/David, Chris/Christopher), or a small typo distance (Jon/John, Sara/Sarah).
+function fuzzyFirst(a, b) {
+  a = norm(a); b = norm(b);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.length >= 3 && b.startsWith(a)) return true;
+  if (b.length >= 3 && a.startsWith(b)) return true;
+  return levenshtein(a, b) <= (Math.max(a.length, b.length) <= 4 ? 1 : 2);
+}
+
 /**
  * @param {object} identity  { name, city, state, selfUserId }
  * @param {object} opts       { tier: 'free'|'paid', limit }
@@ -38,48 +65,68 @@ function isSuppressed(/* row */) { return false; }
 export async function buildWsfySummary(identity, opts = {}) {
   if (!sql) throw new Error('no WSFY DB configured');
   const subjNorm = norm(`${identity.name || ''}`);
-  if (!subjNorm) return { count: 0, tier: opts.tier === 'paid' ? 'paid' : 'free', teaseSummary: { headline: 'No search activity yet', lines: [] }, events: [] };
+  const paid = opts.tier === 'paid';
+  if (!subjNorm) return { count: 0, tier: paid ? 'paid' : 'free', teaseSummary: { headline: 'No search activity yet', lines: [] }, events: [] };
+
+  // Split subject → exact last + fuzzy first. `lastKey` null (no last name) disables the
+  // term-last branch so we fall back to result-matches only.
+  const parts = subjNorm.split(' ');
+  const subjFirst = parts[0] || '';
+  const subjLast = parts.length > 1 ? parts[parts.length - 1] : '';
+  const lastKey = subjLast || null;
 
   const state = identity.state ? String(identity.state).trim().toUpperCase() : null;
   const selfUserId = identity.selfUserId || null;
-  const paid = opts.tier === 'paid';
-  const limit = Math.min(opts.limit || 200, 500);
 
-  // One row per distinct searcher who searched for this subject (term-match OR result-match),
-  // excluding the subject searching themselves.
+  // Candidate rows: same LAST name typed (fuzzy first is filtered in JS below) OR the subject
+  // appeared in a result set (exact). Self-searches excluded. Aggregated in JS after the fuzzy
+  // filter (can't GROUP BY before fuzzing). LIMIT is a safety cap on same-surname volume.
   const rows = await sql`
-    WITH matches AS (
-      SELECT sa.*,
-             COALESCE(sa.searcher_user_id, sa.session_id, sa.searcher_name_norm, sa.id::text) AS searcher_key
-      FROM search_activity sa
-      WHERE (
-              (sa.term_name_norm = ${subjNorm}
-                 AND (${state}::text IS NULL OR sa.term_state = ${state} OR sa.term_state IS NULL))
-              OR EXISTS (
-                SELECT 1 FROM search_results sr
-                WHERE sr.activity_id = sa.id AND sr.name_norm = ${subjNorm}
-                  AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL)
-              )
-            )
-        AND (${selfUserId}::text IS NULL OR sa.searcher_user_id IS DISTINCT FROM ${selfUserId})
-        AND (sa.searcher_name_norm IS DISTINCT FROM ${subjNorm})
-    )
-    SELECT searcher_key,
-           max(searcher_name)  AS searcher_name,
-           max(searcher_first) AS searcher_first,
-           max(searcher_city)  AS searcher_city,
-           max(searcher_state) AS searcher_state,
-           bool_or(searcher_type = 'member') AS is_member,
-           count(*)::int       AS times,
-           max(received_at)    AS last_at,
-           (array_agg(search_type ORDER BY received_at DESC))[1] AS last_type
-    FROM matches
-    GROUP BY searcher_key
-    ORDER BY last_at DESC
-    LIMIT ${limit}
+    SELECT sa.id, sa.searcher_type, sa.searcher_user_id, sa.session_id, sa.searcher_name_norm,
+           sa.searcher_name, sa.searcher_first, sa.searcher_city, sa.searcher_state,
+           sa.term_first, sa.term_last, sa.search_type, sa.received_at,
+           COALESCE(sa.searcher_user_id, sa.session_id, sa.searcher_name_norm, sa.id::text) AS searcher_key,
+           EXISTS (SELECT 1 FROM search_results sr WHERE sr.activity_id = sa.id AND sr.name_norm = ${subjNorm}
+                   AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL)) AS result_match
+    FROM search_activity sa
+    WHERE (
+            (${lastKey}::text IS NOT NULL AND sa.term_last = ${lastKey}
+               AND (${state}::text IS NULL OR sa.term_state = ${state} OR sa.term_state IS NULL))
+            OR EXISTS (SELECT 1 FROM search_results sr WHERE sr.activity_id = sa.id AND sr.name_norm = ${subjNorm}
+                       AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL))
+          )
+      AND (${selfUserId}::text IS NULL OR sa.searcher_user_id IS DISTINCT FROM ${selfUserId})
+      AND (sa.searcher_name_norm IS DISTINCT FROM ${subjNorm})
+    ORDER BY sa.received_at DESC
+    LIMIT 4000
   `;
 
-  const visible = rows.filter((r) => !isSuppressed(r));
+  // Fuzzy-first filter: keep result-matches (exact) + same-last rows whose first name fuzzy-matches.
+  const matched = rows.filter((r) => r.result_match || fuzzyFirst(r.term_first, subjFirst));
+
+  // Aggregate per distinct searcher.
+  const byKey = new Map();
+  for (const r of matched) {
+    if (isSuppressed(r)) continue;
+    let g = byKey.get(r.searcher_key);
+    if (!g) {
+      g = {
+        searcher_key: r.searcher_key, searcher_name: r.searcher_name, searcher_first: r.searcher_first,
+        searcher_city: r.searcher_city, searcher_state: r.searcher_state,
+        is_member: r.searcher_type === 'member', times: 0, last_at: r.received_at, last_type: r.search_type,
+      };
+      byKey.set(r.searcher_key, g);
+    }
+    g.times += 1;
+    if (r.received_at > g.last_at) { g.last_at = r.received_at; g.last_type = r.search_type; }
+    if (!g.searcher_name && r.searcher_name) { g.searcher_name = r.searcher_name; g.searcher_first = r.searcher_first; }
+    if (!g.searcher_city && r.searcher_city) g.searcher_city = r.searcher_city;
+    if (r.searcher_type === 'member') g.is_member = true;
+  }
+  const limit = Math.min(opts.limit || 200, 500);
+  const visible = Array.from(byKey.values())
+    .sort((a, b) => (a.last_at < b.last_at ? 1 : a.last_at > b.last_at ? -1 : 0))
+    .slice(0, limit);
   const count = visible.length;
 
   // ── Events list (for the page's table + charts) — tiered ─────────────────

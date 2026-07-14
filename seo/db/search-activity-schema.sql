@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS search_results (
 -- WSFY reverse-join (Phase 2): "find searches whose TERMS or RESULTS match me."
 -- Match on stable attributes (name + state/city), never extId — it's ephemeral.
 CREATE INDEX IF NOT EXISTS idx_sa_term_name ON search_activity (term_name_norm, term_state);
+-- WSFY fuzzy match: exact last name (+ state), fuzzy first filtered in JS.
+CREATE INDEX IF NOT EXISTS idx_sa_term_last ON search_activity (term_last, term_state);
 CREATE INDEX IF NOT EXISTS idx_sa_received  ON search_activity (received_at);
 CREATE INDEX IF NOT EXISTS idx_sa_user      ON search_activity (searcher_user_id);
 CREATE INDEX IF NOT EXISTS idx_sr_name      ON search_results (name_norm, state);

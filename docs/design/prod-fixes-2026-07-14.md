@@ -19,6 +19,13 @@ take routing precedence, and `getStateSlice()` + a `NAME_SLUG_RE` (`^[a-z]+(?:-[
 make any non-state / non-name slug `notFound()`. Verified `next build` compiles it as
 `ƒ /[state]/[name]`.
 
+**Second form (commit ca5188b):** Google also indexed the `/people/<state>/<name>` form
+(e.g. `/people/de/david-davis`), which hit `[state]/[city]` with a name in the city slot → 404.
+The `[city]` page now falls back to a **shared** name-in-state view (`seo/lib/name-in-state.js`)
+when the slug is a name, not a city. Both URL forms render one view and share ONE canonical (the
+`/people` form) to avoid duplicate content. Verified live: both forms 200, both canonical to
+`/people/de/david-davis`.
+
 **Follow-ups (not blocking):**
 - After the Vercel deploy, spot-check a few real indexed URLs return 200 (owner can pull the
   list from Search Console).

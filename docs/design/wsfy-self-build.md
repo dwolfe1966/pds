@@ -33,9 +33,14 @@ full detail.** Masking is SERVER-SIDE — real searcher names never reach a free
 - **Capture enhancement:** `searchActivity.js` now also captures the SEARCHER's own name/location
   when they're a signed-in member (→ `search_activity.searcher_name/_norm/_first/_city/_state`,
   applied to Neon). That's what lets WSFY name a searcher. Anon searchers = session id only.
-- **Engine:** `seo/lib/wsfy.mjs` `buildWsfySummary(identity,{tier})` — reverse-join (term-match on
-  `term_name_norm` OR result-match on `search_results.name_norm`, `+state` when known, self excluded),
-  aggregates per distinct searcher, returns `{count, teaseSummary:{headline,lines}, events[]}`.
+- **Engine:** `seo/lib/wsfy.mjs` `buildWsfySummary(identity,{tier})` — reverse-join, aggregates per
+  distinct searcher, returns `{count, teaseSummary:{headline,lines}, events[]}`.
+- **Fuzzy matching (owner 2026-07-14):** we only reliably know a user's first + last name, so a search
+  counts when it has the **EXACT last name + a FUZZY first name**. Exact-last is enforced in SQL
+  (`term_last`, indexed via `idx_sa_term_last`); `fuzzyFirst()` filters the first name in JS — exact,
+  nickname-prefix (Dave/David, Chris/Christopher), or small typo distance (Jon/John, Sara/Sarah, ≤1–2
+  Levenshtein). Result-set matches (subject appeared in someone's results, exact full name) still count.
+  Verified: Dave/Davld/Davey Davis match; John Davis (wrong first) + David Davies (wrong last) don't.
   FREE = masked names (`T••••• A•••••`), coarse location, tease line; PAID = full.
 - **Endpoint:** `seo/app/api/wsfy/route.js` (POST). URL derives from `REACT_APP_LEAD_CAPTURE_URL`.
 - **Page:** `WhoIsSearchingPage` fetches real data, renders the tease banner ("N people are
