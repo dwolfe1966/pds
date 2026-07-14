@@ -48,9 +48,17 @@ export default async function CityLanding({ params }) {
   }
 
   const names = getCityTopNames(state, city, 60);
-  // Many small cities yield 0–1 common names (the city gate is strict). Fall back to state-level
-  // common names so the conversion surface is never empty — and cross-link the name-in-state pages.
-  const stateNames = names.length < 12 ? getStateTopNames(state, 24).filter((n) => !names.some((cn) => cn.slug === n.slug)) : [];
+  // City-native names are limited by the strict common-name gate — often a handful (small states
+  // scale the ~200 in-state floor down to only the very top names). Top every city page up to a
+  // healthy names surface with the next most common STATE names (linked to name-in-state pages,
+  // which resolve at the wider state gate — no 404s). Tunable: NAMES_TARGET.
+  const NAMES_TARGET = 60;
+  const fill = Math.max(0, NAMES_TARGET - names.length);
+  const stateNames = fill > 0
+    ? getStateTopNames(state, NAMES_TARGET + names.length)
+        .filter((n) => !names.some((cn) => cn.slug === n.slug))
+        .slice(0, fill)
+    : [];
   const acs = getCityAcs(c.stateCode, city);
   const wiki = getCityWiki(c.stateCode, city);
   const chips = cityWikiChips(wiki);
