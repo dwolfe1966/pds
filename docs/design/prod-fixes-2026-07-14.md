@@ -51,6 +51,19 @@ hyphenated non-city renders as a name. The hyphen + city-precedence cleanly sepa
 `/people/{state}/…`. Only edge: a hyphenated place NOT in our city slice renders as a name page
 (still 200, harmless).
 
+## (i-c) Search Console 404 sweep (~1,000 URLs) — all recovered
+GSC drilldown export (Table.csv, 1,000 rows) flagged legacy URLs. Breakdown + fix:
+- **614** `/people/<state>/<name>` — already 200 after (i)/(i-b) (GSC crawled 7-11, pre-fix). Re-crawl only.
+- **355** legacy **name-first** `/people/<name>[/<state>[/<city>[/<pid>]]]` — the real-profile pages moved
+  to `/profiles/<name>/...`. **Middleware 301** (`seo/middleware.js`) prefix-swaps them (discriminator:
+  seg1 hyphenated = name → redirect; 2-letter = state → route normally). Commit 281e686.
+- **31** bare `/profiles/<name>` with no profile rows → 404. Plus the redirected bare names (182) landed
+  on the same 404. **Fix:** `/profiles/[name]` now renders a **lenient hub** (name/surname facts + search
+  CTA) at 200 when no profiles exist, instead of 404. Commit b6c24b0.
+- **Verified live:** a 50-URL sample across every pattern → **50/50 = 200** (following redirects).
+
+Follow-up: submit the sitemap / request validation in Search Console so Google re-crawls the 614 sooner.
+
 ## (ii) v11 pre-payment interstitial reworded
 **Symptom:** in the `/name/landing/v11` BV flow, clicking a SERP result before payment shows an
 interstitial (the `SignupPage` success panel) reading **"Account Created!"** — transactional and
