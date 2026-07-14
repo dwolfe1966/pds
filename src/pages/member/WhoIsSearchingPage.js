@@ -306,7 +306,7 @@ const UpgradeBanner = () => (
         when someone searches for or views your profile.
       </p>
     </div>
-    <Link to="/upgrade" className={styles.upgradeButton} style={{ textDecoration: 'none' }}>
+    <Link to="/payment?upgrade=1&reason=wsfy" className={styles.upgradeButton} style={{ textDecoration: 'none' }}>
       {'Upgrade to Pro \u203A'}
     </Link>
   </div>

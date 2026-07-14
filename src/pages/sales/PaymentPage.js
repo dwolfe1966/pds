@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
+import WsfyPaymentTeaser from '../../components/WsfyPaymentTeaser';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
@@ -168,6 +169,8 @@ const PaymentPage = () => {
   const [paying, setPaying] = useState(false);
 
   const simulateParam = searchParams.get('simulate');
+  // WSFY upsell context: a free member upgrading to see who's searching for them.
+  const upgradeReason = searchParams.get('reason');
   const cardType = detectCardType(form.cardNumber);
 
   // Track page entry (after auth resolves so we know if it's an upgrade)
@@ -704,6 +707,10 @@ const PaymentPage = () => {
           <span style={{ fontWeight: 700, color: '#ffffff' }}>🔒 {brand.name}</span>
         </div>
       )}
+      {/* WSFY upsell hero — free member came from "Who's Searching For You". Reframes checkout
+          around that payoff (the real count + obfuscated tease) above the standard content. */}
+      {upgradeReason === 'wsfy' && !success && <WsfyPaymentTeaser />}
+
       {/* Person preview — ALWAYS on top, above the two-column layout, mobile or
           desktop (owner 2026-07-03). The person is the anchor, not the pricing. */}
       {/* Mobile-only: combine the $1 trial rectangle with the vCard into one card
