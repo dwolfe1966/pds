@@ -27,6 +27,23 @@ const MemberNav = () => {
     { path: '/account', label: 'Account' },
   ];
 
+  // Account sub-sections — shown as indented sub-nav under Account in the mobile hamburger
+  // (on mobile the AccountPage's horizontal tab bar is hidden; these deep-link to ?tab=).
+  const accountSubTabs = [
+    { tab: 'overview', label: 'Overview' },
+    { tab: 'identity', label: 'My Identity' },
+    { tab: 'security', label: 'Security' },
+    { tab: 'billing', label: 'Subscription & Billing' },
+    { tab: 'messages', label: 'Messages' },
+    { tab: 'communications', label: 'Communications' },
+    { tab: 'profile', label: 'Profile' },
+  ];
+  const currentAccountTab = (() => {
+    if (location.pathname !== '/account') return null;
+    const t = new URLSearchParams(location.search).get('tab');
+    return accountSubTabs.some((s) => s.tab === t) ? t : 'overview';
+  })();
+
   const isActive = (path) => {
     if (path === '/dashboard') {
       return location.pathname === '/dashboard';
@@ -155,14 +172,25 @@ const MemberNav = () => {
           
           <div className={styles.mobileNavLinks}>
             {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`${styles.mobileNavLink} ${isActive(link.path) ? styles.mobileNavLinkActive : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
+              <React.Fragment key={link.path}>
+                <Link
+                  to={link.path}
+                  className={`${styles.mobileNavLink} ${isActive(link.path) ? styles.mobileNavLinkActive : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+                {link.path === '/account' && accountSubTabs.map((st) => (
+                  <Link
+                    key={st.tab}
+                    to={`/account?tab=${st.tab}`}
+                    className={`${styles.mobileNavSubLink} ${currentAccountTab === st.tab ? styles.mobileNavSubLinkActive : ''}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {st.label}
+                  </Link>
+                ))}
+              </React.Fragment>
             ))}
           </div>
 

@@ -121,6 +121,13 @@ const AccountPage = () => {
     return () => { alive = false; };
   }, [activeTab]);
 
+  // Follow ?tab= changes (e.g., the mobile hamburger sub-nav links to /account?tab=X while we're
+  // already on /account, which doesn't remount the page).
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && validTabs.includes(t)) setActiveTab(t);
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Profile tab state ───────────────────────────────────────────────────────
   // BC `user.update` accepts firstName, lastName, and phone — no zip.
   const [profile, setProfile] = useState(null);
@@ -890,14 +897,13 @@ const AccountPage = () => {
   };
 
   // ─── Tab styles ───────────────────────────────────────────────────────────────
+  // display comes from styles.tabBar (flex on desktop, hidden on mobile — mobile uses the
+  // hamburger sub-nav in MemberNav). Keep the rest inline.
   const tabBarStyle = {
-    display: 'flex',
     gap: 0,
     marginBottom: '2rem',
     border: '1px solid #e5e7eb',
     borderRadius: '0.5rem',
-    // Fill on desktop, scroll horizontally on mobile so all tabs stay reachable (was clipped
-    // to the first ~3 when we added Overview + My Identity).
     overflowX: 'auto',
     WebkitOverflowScrolling: 'touch',
   };
@@ -1029,7 +1035,7 @@ const AccountPage = () => {
       )}
 
       {/* Tab Bar */}
-      <div style={tabBarStyle}>
+      <div className={styles.tabBar} style={tabBarStyle}>
         {TABS.map((tab) => (
           <button
             key={tab.key}

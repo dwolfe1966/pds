@@ -352,3 +352,24 @@
     display: none !important;
   }
 }
+
+/* Account sub-nav items inside the mobile hamburger (owner 2026-07-14: account sub-sections
+   live in the hamburger on mobile, not a horizontal bar on the Account page). */
+.mobileNavSubLink {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  padding-left: 2.5rem;
+  border-left: 3px solid transparent;
+  transition: all var(--transition-base);
+}
+.mobileNavSubLink:hover {
+  background-color: var(--color-gray-50);
+  color: var(--color-primary);
+}
+.mobileNavSubLinkActive {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  border-left-color: var(--color-primary);
+}

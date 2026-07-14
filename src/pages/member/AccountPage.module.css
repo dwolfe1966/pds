@@ -258,3 +258,10 @@
     gap: var(--spacing-sm);
   }
 }
+
+/* Account sub-nav (tab bar). Desktop = horizontal bar; mobile = hidden — sub-sections are
+   reached via the hamburger sub-nav in MemberNav (owner 2026-07-14). */
+.tabBar { display: flex; }
+@media (max-width: 767px) {
+  .tabBar { display: none; }
+}
