@@ -148,7 +148,7 @@ const SignupPage = ({ source = 'direct' }) => {
 
           {success ? (
             <div className={styles.successMsg}>
-              <h2>Account Created!</h2>
+              <h2>Welcome to IDLookup</h2>
               <p>
                 {redirectTo === '/dashboard'
                   ? 'Redirecting to your dashboard…'

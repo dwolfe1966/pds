@@ -183,11 +183,11 @@ describe('SignupPage — successful signup', () => {
     );
   });
 
-  test('renders success panel ("Account Created!") after submit resolves', async () => {
+  test('renders success panel ("Welcome to IDLookup") after submit resolves', async () => {
     render();
     fillValidForm();
     await act(async () => { submitForm(); });
-    expect(container.textContent).toContain('Account Created!');
+    expect(container.textContent).toContain('Welcome to IDLookup');
     expect(container.querySelector('form')).toBeNull();
   });
 
