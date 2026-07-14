@@ -75,12 +75,26 @@ affinity tags and builds richer lines, e.g.:
   to corpus affinities. Paid events carry `affinities[]` + `occupation`. Ingest: `POST /api/member-enrichment`
   (`upsertMemberEnrichment`). Verified end-to-end vs Neon (before/after seeding Carol King → healthcare).
 
-**OPEN — the enrichment pipeline (owner decision needed):** occupation/verified-relatives need
-report-grade data per member. BC is IIFE-only (browser) + Turnstile + COGS, so the Vercel backend
-can't pull it server-side. Design: a **browser-side self-lookup** on the member (once, amortized) →
-POST to `/api/member-enrichment`. Decisions: (1) WHEN — on signup, first WSFY view, or a batch job;
-(2) COGS — a teaser self-lookup is cheap-ish; a full report is real money; (3) auth-harden the ingest
-+ `/api/wsfy` tier (both client-asserted today). Occupation stays absent from the tease until this runs.
+### Enrichment pipeline (BUILT 2026-07-14) — two sources → one table
+Owner decision: enrich via a **member-initiated self-report** ("See what's public about you"), and
+ALSO capture **user-provided profile fields** during onboarding/dashboard (the affinity overlaps
+records can't give — education). Both feed `member_enrichment` (merged upserts).
+- **Overlap affinities** (need BOTH searcher + subject enrichment): `high_school` → "went to your
+  high school", `college` → "went to your college", `colleague` (same employer). Plus the searcher's
+  own `occupation` → "works in {industry}". Verified vs Neon.
+- **Source 1 — self-report:** `SearchResultDetailPage` fires `enrichFromReport()` when a report is
+  confidently about the member (name AND state match — strict, avoids same-name strangers). Extracts
+  occupation (industry-mapped title), employer, relatives, city via `extractAll`. COGS = the report
+  they pulled anyway.
+- **Source 2 — user-provided:** `EnrichProfileCard` (dashboard/onboarding form: occupation, employer,
+  **high school, college**, city) → `saveMemberProfile()`. Zero COGS; unlocks the education overlaps.
+- Both POST `/api/member-enrichment` (`upsertMemberEnrichment`, partial-merge). `member_enrichment`
+  has occupation/employer/relatives/city/state/**high_school**/**college**/attributes.
+- **Reason:** BC person data is IIFE-only (browser) + Turnstile + COGS, so no server-side pull; both
+  sources run in the browser where the member is present, deliberately (no surprise captcha).
+
+**STILL OPEN:** auth-harden the ingest + `/api/wsfy` tier (both client-asserted). Consider onboarding
+placement of `EnrichProfileCard` (currently dashboard only). Industry mapper is a small keyword list.
 
 **Still NOT built (no data at all):** "went to your high school" / "just got married" — the licensed
 BC/IDI data has employment/relatives/property/criminal but **no education or marital-status field**

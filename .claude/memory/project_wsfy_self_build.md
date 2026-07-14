@@ -45,11 +45,19 @@ COGS): relative (searcher's OWN surname == subject's), local (same city→"in yo
 ("N near X"), frequent (>=2). Enrichment SEAM: `member_enrichment` table (occupation/employer/verified
 relatives) + `POST /api/member-enrichment` (upsertMemberEnrichment); wsfy.mjs LEFT-joins optionally
 (empty→degrades). Paid events carry affinities[]+occupation. Verified vs Neon.
-**OPEN owner decision:** the enrichment PIPELINE — a browser-side BC self-lookup on each member (IIFE-only+
-COGS) → POST to /api/member-enrichment. Decide WHEN (signup/first-view/batch) + COGS + auth-harden.
-Occupation absent from tease until it runs.
+**Enrichment PIPELINE — BUILT 2026-07-14 (two sources → member_enrichment).** Owner chose member-initiated
+self-report + user-provided profile fields. Overlap affinities now work (need BOTH searcher+subject
+enrichment): high_school→"went to your high school", college, colleague(same employer), + searcher
+occupation→"works in {industry}". Sources: (1) `SearchResultDetailPage` fires `enrichFromReport()` when a
+report is confidently the member (name AND state match), extracts occupation/relatives/city via extractAll;
+(2) `EnrichProfileCard` dashboard/onboarding form (occupation/employer/**high school/college**/city) →
+`saveMemberProfile()`. Both POST /api/member-enrichment (upsert partial-merge). member_enrichment +
+high_school/college/attributes cols. Consumer bundle public.1b6ae080.js (not yet on BC). **The
+user-provided high_school UNLOCKS the "went to your high school" affinity the report data can't give.**
 
-**NOT built (no data at all):** "went to high school"/"just got married" — licensed BC/IDI data has employment/
-relatives/property but NO education/marital field (per bc_report_field_map). Never fabricate.
+**STILL OPEN:** auth-harden ingest + /api/wsfy tier (client-asserted); onboarding placement of EnrichProfileCard.
+
+**NOT built (no data source at all):** "just got married" — no marital/life-event field (per bc_report_field_map).
+"Went to high school" now DOES work via user-provided profile. Never fabricate.
 
 **Phase 3:** "someone searched for you" alert emails, reusing the SendGrid platform ([[project_email_recovery_pipeline]]).
