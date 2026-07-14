@@ -30,11 +30,16 @@ export async function insertSearchActivity(a) {
   const nameNorm = norm(`${first} ${last}`);
   const state = terms.state ? String(terms.state).trim().toUpperCase() : null;
 
+  const s = a.searcher && typeof a.searcher === 'object' ? a.searcher : {};
+  const searcherName = s.name || null;
+  const searcherState = s.state ? String(s.state).trim().toUpperCase() : null;
+
   const rows = await sql`
     INSERT INTO search_activity
       (searcher_type, searcher_user_id, session_id, search_type, source, terms,
        term_name_norm, term_first, term_last, term_city, term_state, result_count,
-       searched_at, ip, user_agent, meta)
+       searched_at, ip, user_agent, meta,
+       searcher_name, searcher_name_norm, searcher_first, searcher_city, searcher_state)
     VALUES (
       ${a.searcherType || null}, ${a.searcherUserId || null}, ${a.sessionId || null},
       ${a.searchType || null}, ${a.source || null}, ${JSON.stringify(terms)}::jsonb,
@@ -42,7 +47,9 @@ export async function insertSearchActivity(a) {
       ${terms.city ? norm(terms.city) : null}, ${state},
       ${Number.isFinite(a.resultCount) ? a.resultCount : (Array.isArray(a.results) ? a.results.length : null)},
       ${a.ts || null}, ${a.ip || null}, ${a.userAgent || null},
-      ${JSON.stringify(a.meta && typeof a.meta === 'object' ? a.meta : {})}::jsonb
+      ${JSON.stringify(a.meta && typeof a.meta === 'object' ? a.meta : {})}::jsonb,
+      ${searcherName}, ${searcherName ? norm(searcherName) : null}, ${s.firstName || null},
+      ${s.city || null}, ${searcherState}
     )
     RETURNING id
   `;

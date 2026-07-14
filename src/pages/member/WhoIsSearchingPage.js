@@ -16,12 +16,9 @@ import {
 } from 'recharts';
 import { useAuth } from '../../context/AuthContext';
 import { track } from '../../services/trackingService';
+import { fetchWhoIsSearching } from '../../services/wsfyClient';
 import styles from './WhoIsSearchingPage.module.css';
 import {
-  hashString,
-  generateEvents,
-  maskName,
-  maskLocation,
   relativeDate,
   formatExactDate,
   computeStats,
@@ -35,12 +32,12 @@ import {
  *   1. Searchers — people who searched for the member
  *   2. Viewers   — people who opened the member's full profile / report
  *
- * Free members see real totals/charts but obfuscated names/locations on the
- * detail list (the "tease"). Paid members see full data with sort/filter/CSV.
+ * Free members see real totals/charts + a tease summary but obfuscated names on the
+ * detail list; paid members see full data with sort/filter/CSV. Masking is SERVER-SIDE
+ * (buildWsfySummary) — real names never reach a free client.
  *
- * All data is generated client-side from a seeded PRNG keyed off the current
- * user's id/email, so the same account sees the same data across refreshes.
- * Replace `generateEvents` with a real BC endpoint when available.
+ * Searchers = live, from our own search-activity capture (/api/wsfy, WSFY Phase 2).
+ * Viewers   = profile-open tracking, not captured yet (honest empty state / coming soon).
  * -------------------------------------------------------------------------*/
 
 // ---------- Design tokens ----------
@@ -250,10 +247,10 @@ const TierBarChart = ({ data }) => (
 );
 
 const EventRow = ({ event, kind, isPaid }) => {
-  const displayName = isPaid ? event.name : maskName(event.name);
-  const displayLocation = isPaid
-    ? `${event.city}, ${event.state}`
-    : maskLocation(event.city, event.state);
+  // Names/locations arrive already tiered from the server (free = masked there, so real PII
+  // never reaches a free client). Render as-is; the !isPaid CSS just adds the blur treatment.
+  const displayName = event.name;
+  const displayLocation = [event.city, event.state].filter(Boolean).join(', ') || '—';
   const displayDate = isPaid ? formatExactDate(event.timestamp) : relativeDate(event.timestamp);
 
   const tierClass =
@@ -357,21 +354,21 @@ const TabContent = ({ events, kind, isPaid }) => {
 
   return (
     <>
-      {/* Inline disclosure: every chart and table on this view is generated
-          from a seeded simulation until BC ships a reverse-index endpoint.
-          The page-level banner above already says so; we repeat it here so
-          the numbers right next to it are unambiguous. */}
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-        padding: '0.25rem 0.6rem',
-        background: '#fef3c7', border: '1px solid #fde68a',
-        borderRadius: '999px', color: '#92400e',
-        fontSize: '0.7rem', fontWeight: 700,
-        letterSpacing: '0.04em', textTransform: 'uppercase',
-        marginBottom: '0.5rem',
-      }}>
-        Estimated activity · simulated until tracking ships
-      </div>
+      {/* Searchers is now real (our own search-activity capture). Viewers (profile-open
+          tracking) isn't captured yet, so only that tab carries a "coming soon" note. */}
+      {kind === 'viewers' && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+          padding: '0.25rem 0.6rem',
+          background: '#fef3c7', border: '1px solid #fde68a',
+          borderRadius: '999px', color: '#92400e',
+          fontSize: '0.7rem', fontWeight: 700,
+          letterSpacing: '0.04em', textTransform: 'uppercase',
+          marginBottom: '0.5rem',
+        }}>
+          Profile-view tracking · coming soon
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className={styles.statsGrid}>
@@ -386,7 +383,7 @@ const TabContent = ({ events, kind, isPaid }) => {
           <h2 className={styles.sectionTitle}>
             {kind === 'searchers' ? 'Searches over time' : 'Profile views over time'}
           </h2>
-          <p className={styles.sectionCaption}>Last 30 days · simulated</p>
+          <p className={styles.sectionCaption}>Last 30 days</p>
         </div>
         <TrendChart data={trendData} />
       </div>
@@ -516,23 +513,34 @@ const WhoIsSearchingPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchers, setSearchers] = useState([]);
   const [viewers, setViewers] = useState([]);
+  const [teaseSummary, setTeaseSummary] = useState(null);
 
-  // Build a stable seed from the current user
-  const seed = useMemo(() => {
-    const id = user?.id || user?._id || user?.email || 'anonymous';
-    return hashString(String(id));
+  // The member's own identity — what we match incoming searches against.
+  const identity = useMemo(() => {
+    const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.name || '';
+    return {
+      name,
+      city: user?.city || user?.addressCity || '',
+      state: user?.state || user?.addressState || '',
+      selfUserId: user?.id || user?._id || user?.userId || undefined,
+    };
   }, [user]);
 
   useEffect(() => {
+    let alive = true;
     setLoading(true);
-    // Simulate async fetch — replace with real endpoint when available
-    const timeout = setTimeout(() => {
-      setSearchers(generateEvents(seed, 'searchers', 42));
-      setViewers(generateEvents(seed, 'viewers', 28));
-      setLoading(false);
-    }, 350);
-    return () => clearTimeout(timeout);
-  }, [seed]);
+    if (!identity.name) { setSearchers([]); setViewers([]); setLoading(false); return () => {}; }
+    fetchWhoIsSearching({ ...identity, tier: isPaid ? 'paid' : 'free' })
+      .then((res) => {
+        if (!alive) return;
+        setSearchers(Array.isArray(res.events) ? res.events : []);
+        setTeaseSummary(res.teaseSummary || null);
+        setViewers([]); // profile-view capture isn't live yet — honest empty state
+      })
+      .catch(() => { if (alive) { setSearchers([]); setViewers([]); setTeaseSummary(null); } })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [identity, isPaid]);
 
   useEffect(() => {
     track('watchers_view', { isPaid: !!isPaid });
@@ -540,32 +548,36 @@ const WhoIsSearchingPage = () => {
 
   return (
     <main className={styles.main}>
-      {/* Coming-soon banner — the live "who's watching you" feature is not
-          shipped yet. Page contents below are a sample preview only. */}
-      <div
-        role="status"
-        style={{
-          marginBottom: '1.25rem',
-          background: '#fffbeb',
-          border: '1px solid #f59e0b',
-          borderRadius: '0.5rem',
-          padding: '0.875rem 1.125rem',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '0.75rem',
-        }}
-      >
-        <span aria-hidden="true" style={{ fontSize: '1.25rem', lineHeight: 1 }}>🔔</span>
-        <div>
-          <p style={{ margin: 0, fontWeight: 700, color: '#92400e', fontSize: '0.95rem' }}>
-            Coming soon
-          </p>
-          <p style={{ margin: '0.25rem 0 0', color: '#78350f', fontSize: '0.875rem', lineHeight: 1.4 }}>
-            This feature isn't live yet. The activity below is a sample preview so you can see what
-            "Who's Watching You" will look like — real alerts will appear here once we turn it on.
-          </p>
+      {/* Tease summary — the real "N people are searching for you…" hook. For free members
+          it's the conversion driver (masked list below, this line proves it's real). */}
+      {!loading && teaseSummary && teaseSummary.headline && (
+        <div
+          role="status"
+          style={{
+            marginBottom: '1.25rem',
+            background: '#f0fdf4',
+            border: '1px solid #16a34a',
+            borderRadius: '0.5rem',
+            padding: '1rem 1.25rem',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+          }}
+        >
+          <span aria-hidden="true" style={{ fontSize: '1.35rem', lineHeight: 1 }}>👀</span>
+          <div>
+            <p style={{ margin: 0, fontWeight: 800, color: '#14532d', fontSize: '1.05rem' }}>
+              {teaseSummary.headline}
+            </p>
+            {teaseSummary.lines && teaseSummary.lines.length > 0 && (
+              <p style={{ margin: '0.35rem 0 0', color: '#166534', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                {teaseSummary.lines.join(' · ')}
+                {!isPaid && '  —  upgrade to see every name and exact details'}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <header className={styles.header}>
         <h1 className={styles.title}>Who's Watching You</h1>

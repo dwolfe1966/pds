@@ -35,12 +35,28 @@ function getOrCreateAnonId() {
   } catch { return null; }
 }
 
-/** Identify the searcher: signed-in member (userId) or anonymous (stable session id). */
+/**
+ * Identify the searcher: signed-in member (userId + their own name/location) or anonymous
+ * (stable session id only). The member's own identity is what lets WSFY later say
+ * "Taylor Alldercie searched for you" — captured here, server-side only.
+ */
 function resolveSearcher() {
   try {
     const u = JSON.parse(localStorage.getItem('user') || 'null');
     const userId = u && (u.id || u.userId || u._id);
-    if (userId) return { type: 'member', userId: String(userId) };
+    if (userId) {
+      const firstName = u.firstName || u.firstname || (u.name || '').trim().split(/\s+/)[0] || '';
+      const lastName = u.lastName || u.lastname || (u.name || '').trim().split(/\s+/).slice(1).join(' ') || '';
+      const name = (u.name || `${firstName} ${lastName}`).trim();
+      return {
+        type: 'member',
+        userId: String(userId),
+        name: name || undefined,
+        firstName: firstName || undefined,
+        city: u.city || u.addressCity || undefined,
+        state: u.state || u.addressState || undefined,
+      };
+    }
   } catch { /* ignore */ }
   return { type: 'anon', sessionId: getOrCreateAnonId() };
 }

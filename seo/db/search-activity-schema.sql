@@ -23,8 +23,22 @@ CREATE TABLE IF NOT EXISTS search_activity (
   received_at      TIMESTAMPTZ DEFAULT now(),
   ip               TEXT,
   user_agent       TEXT,
-  meta             JSONB DEFAULT '{}'::jsonb
+  meta             JSONB DEFAULT '{}'::jsonb,
+  -- The SEARCHER's own identity (captured client-side when they're a signed-in member) —
+  -- this is what lets WSFY say "Taylor Alldercie searched for you". Null for anon searchers.
+  searcher_name      TEXT,
+  searcher_name_norm TEXT,
+  searcher_first     TEXT,
+  searcher_city      TEXT,
+  searcher_state     TEXT
 );
+
+-- If the table pre-existed (Phase 1), add the searcher-identity columns.
+ALTER TABLE search_activity ADD COLUMN IF NOT EXISTS searcher_name      TEXT;
+ALTER TABLE search_activity ADD COLUMN IF NOT EXISTS searcher_name_norm TEXT;
+ALTER TABLE search_activity ADD COLUMN IF NOT EXISTS searcher_first     TEXT;
+ALTER TABLE search_activity ADD COLUMN IF NOT EXISTS searcher_city      TEXT;
+ALTER TABLE search_activity ADD COLUMN IF NOT EXISTS searcher_state     TEXT;
 
 -- One row per person returned in a search's result set (as much detail as we can carry).
 CREATE TABLE IF NOT EXISTS search_results (

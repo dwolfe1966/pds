@@ -59,6 +59,7 @@ export async function POST(req) {
       searcherType: searcher.type === 'member' ? 'member' : 'anon',
       searcherUserId: searcher.userId || null,
       sessionId: searcher.sessionId || null,
+      searcher, // full identity (name/firstName/city/state) for member searchers
       searchType: body.type || null,
       source: body.source || null,
       terms: body.terms || {},
