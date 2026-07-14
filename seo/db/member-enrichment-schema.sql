@@ -12,6 +12,23 @@ CREATE TABLE IF NOT EXISTS member_enrichment (
   relatives   JSONB DEFAULT '[]'::jsonb, -- array of relative full-names (for verified-relative match)
   city        TEXT,
   state       TEXT,
-  source      TEXT,                    -- how enriched (e.g. 'self-teaser', 'report')
+  -- User-provided profile fields (onboarding / dashboard) — the affinity overlaps the report can't
+  -- give us. high_school/college power "went to your high school / college" (BC data has no education).
+  high_school TEXT,
+  high_school_norm TEXT,
+  college     TEXT,
+  college_norm TEXT,
+  attributes  JSONB DEFAULT '{}'::jsonb, -- misc user-provided fields (future)
+  source      TEXT,                    -- 'self-report' | 'profile' | ...
   enriched_at TIMESTAMPTZ DEFAULT now()
 );
+
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS high_school      TEXT;
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS high_school_norm TEXT;
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS college          TEXT;
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS college_norm     TEXT;
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS attributes       JSONB DEFAULT '{}'::jsonb;
+
+-- Overlap-match indexes (find searchers who share the subject's school).
+CREATE INDEX IF NOT EXISTS idx_me_hs ON member_enrichment (high_school_norm);
+CREATE INDEX IF NOT EXISTS idx_me_college ON member_enrichment (college_norm);

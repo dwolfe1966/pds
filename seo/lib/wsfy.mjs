@@ -71,11 +71,24 @@ async function fetchEnrichment(userIds) {
   if (!ids.length) return new Map();
   try {
     const rows = await sql`
-      SELECT user_id, occupation, employer, relatives
+      SELECT user_id, occupation, employer, relatives, high_school_norm, college_norm
       FROM member_enrichment WHERE user_id = ANY(${ids})`;
     return new Map(rows.map((r) => [r.user_id, r]));
   } catch {
     return new Map(); // table not created yet — degrade gracefully
+  }
+}
+
+// The SUBJECT's own enrichment — needed for OVERLAP affinities (same high school/college/employer).
+async function fetchSubjectEnrichment(userId) {
+  if (!userId) return null;
+  try {
+    const rows = await sql`
+      SELECT occupation, employer, high_school_norm, college_norm
+      FROM member_enrichment WHERE user_id = ${userId}`;
+    return rows[0] || null;
+  } catch {
+    return null;
   }
 }
 
@@ -156,7 +169,10 @@ export async function buildWsfySummary(identity, opts = {}) {
   // Per searcher, derive why they might matter to the subject. Corpus-derived signals need no
   // enrichment; occupation/verified-relative come from the enrichment seam when present.
   const subjCityN = norm(identity.city || '');
-  const enrich = await fetchEnrichment(visible.filter((g) => g.is_member).map((g) => g.searcher_user_id));
+  const [enrich, subjE] = await Promise.all([
+    fetchEnrichment(visible.filter((g) => g.is_member).map((g) => g.searcher_user_id)),
+    fetchSubjectEnrichment(selfUserId),
+  ]);
   const aff = new Map();
   for (const g of visible) {
     const tags = [];
@@ -169,6 +185,12 @@ export async function buildWsfySummary(identity, opts = {}) {
     if (g.searcher_city && subjCityN && norm(g.searcher_city) === subjCityN) tags.push('local');
     if (g.times >= 2) tags.push('frequent');
     if (e?.occupation) tags.push('occupation');
+    // Overlap affinities — need BOTH the searcher's and the subject's enrichment.
+    if (e && subjE) {
+      if (e.high_school_norm && subjE.high_school_norm && e.high_school_norm === subjE.high_school_norm) tags.push('high_school');
+      if (e.college_norm && subjE.college_norm && e.college_norm === subjE.college_norm) tags.push('college');
+      if (e.employer && subjE.employer && norm(e.employer) === norm(subjE.employer)) tags.push('colleague');
+    }
     aff.set(g.searcher_key, { tags, occupation: e?.occupation || null, employer: e?.employer || null });
   }
 
@@ -204,6 +226,15 @@ export async function buildWsfySummary(identity, opts = {}) {
   // 1. Possible relatives — highest intrigue, lead with it.
   const rel = visible.filter((g) => aff.get(g.searcher_key).tags.includes('relative'));
   if (rel.length) { lines.push(`${rel.length} who may be ${rel.length === 1 ? 'a relative' : 'relatives'}`); take(rel); }
+
+  // 1b. Shared history (user-provided overlaps): high school, college, employer.
+  const byTag = (tag) => visible.filter((g) => !used.has(g.searcher_key) && aff.get(g.searcher_key).tags.includes(tag));
+  const hs = byTag('high_school');
+  if (hs.length) { lines.push(`${hs.length} who went to your high school`); take(hs); }
+  const col = byTag('college');
+  if (col.length) { lines.push(`${col.length} who went to your college`); take(col); }
+  const colleague = byTag('colleague');
+  if (colleague.length) { lines.push(`${colleague.length} who may be ${colleague.length === 1 ? 'a colleague' : 'colleagues'}`); take(colleague); }
 
   // 2. In your area (subject's own city).
   const loc = visible.filter((g) => !used.has(g.searcher_key) && aff.get(g.searcher_key).tags.includes('local'));

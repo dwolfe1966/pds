@@ -1,0 +1,97 @@
+/**
+ * WSFY Phase 2b — member enrichment (client side). Populates the growth backend's member_enrichment
+ * so a member appears richer when they search others ("Carol King works in healthcare", "went to your
+ * high school", "may be a relative"). Two sources feed one endpoint:
+ *   1. self-report extraction — from a report the member pulls on THEMSELVES (occupation, relatives).
+ *   2. user-provided profile — onboarding/dashboard fields (education, occupation) the report can't give.
+ *
+ * Independent of BC. PII (occupation/relatives/school) stays server-side, never the analytics dataLayer.
+ */
+import { extractAll } from '../utils/reportExtract';
+
+function enrichUrl() {
+  if (process.env.REACT_APP_MEMBER_ENRICH_URL) return process.env.REACT_APP_MEMBER_ENRICH_URL;
+  if (process.env.REACT_APP_LEAD_CAPTURE_URL) {
+    return process.env.REACT_APP_LEAD_CAPTURE_URL.replace(/\/leads\/?$/, '/member-enrichment');
+  }
+  const base = process.env.REACT_APP_API_URL || 'http://localhost:3001/api/v1';
+  return `${base.replace(/\/$/, '')}/member-enrichment`;
+}
+
+function currentUserId() {
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || 'null');
+    return u && String(u.id || u.userId || u._id || '');
+  } catch { return ''; }
+}
+
+// Coarse industry from a job title/employer, for the "works in {industry}" tease. Falls back to
+// the title itself when unmapped.
+const INDUSTRY = [
+  [/nurse|health|medical|hospital|clinic|physician|doctor|dental|pharma|therapist/i, 'healthcare'],
+  [/engineer|developer|software|programmer|it |technology|data|devops/i, 'technology'],
+  [/teacher|professor|school|educat|tutor|faculty/i, 'education'],
+  [/sales|account exec|business dev/i, 'sales'],
+  [/finance|account|bank|invest|audit|tax/i, 'finance'],
+  [/law|attorney|legal|paralegal/i, 'law'],
+  [/construc|contractor|electric|plumb|carpent|weld/i, 'the trades'],
+  [/police|fire|military|officer|security/i, 'public safety'],
+  [/driver|logistic|transport|truck|delivery/i, 'transportation'],
+  [/retail|store|cashier|restaurant|server|hospitality|chef/i, 'retail & hospitality'],
+];
+function deriveIndustry(title, employer) {
+  const hay = `${title || ''} ${employer || ''}`;
+  for (const [re, label] of INDUSTRY) if (re.test(hay)) return label;
+  return title || null;
+}
+
+function post(payload) {
+  try {
+    fetch(enrichUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => { /* best-effort */ });
+  } catch { /* fetch unavailable */ }
+}
+
+/**
+ * Extract enrichment from a report the member pulled on themselves and send it.
+ * @param {object} reportResult  the BC report result (same shape extractAll consumes)
+ */
+export function enrichFromReport(reportResult) {
+  const userId = currentUserId();
+  if (!userId || !reportResult) return;
+  let x;
+  try { x = extractAll(reportResult); } catch { return; }
+  const job = (x.jobs || [])[0] || {};
+  post({
+    userId,
+    occupation: deriveIndustry(job.title, job.employer) || undefined,
+    employer: job.employer || undefined,
+    relatives: (x.relatives || []).map((r) => r.name).filter(Boolean).slice(0, 40),
+    city: (x.addresses && x.addresses[0] && x.addresses[0].city) || undefined,
+    state: (x.addresses && x.addresses[0] && x.addresses[0].state) || undefined,
+    source: 'self-report',
+  });
+}
+
+/**
+ * Save user-provided profile fields (onboarding / dashboard form).
+ * @param {object} fields  { occupation, employer, highSchool, college, city, state }
+ */
+export function saveMemberProfile(fields) {
+  const userId = currentUserId();
+  if (!userId || !fields) return;
+  post({
+    userId,
+    occupation: fields.occupation || undefined,
+    employer: fields.employer || undefined,
+    highSchool: fields.highSchool || undefined,
+    college: fields.college || undefined,
+    city: fields.city || undefined,
+    state: fields.state || undefined,
+    source: 'profile',
+  });
+}

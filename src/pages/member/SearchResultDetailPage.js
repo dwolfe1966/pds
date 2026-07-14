@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getReportDetail, createReportForIdentity, getExistingReportId } from '../../services/reportService';
 import { getIdentityContext, getSearchContext } from '../../services/searchContext';
 import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../utils/reportExtract';
+import { enrichFromReport } from '../../services/memberEnrichment';
 import { track } from '../../services/trackingService';
 
 /**
@@ -16,7 +17,7 @@ import { track } from '../../services/trackingService';
 const SearchResultDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,6 +27,24 @@ const SearchResultDetailPage = () => {
   const [pdfError, setPdfError] = useState('');
   const [pdfErrorDetails, setPdfErrorDetails] = useState(null);
   const lastTrackedRef = useRef(null);
+  const enrichedRef = useRef(false);
+
+  // WSFY self-report enrichment: if this report is confidently about the member themselves
+  // (name AND state match — strict, to avoid enriching from a same-name stranger's report),
+  // extract occupation/relatives and store them. One-shot, best-effort.
+  useEffect(() => {
+    if (enrichedRef.current || !report || !user) return;
+    let data;
+    try { data = extractAll(report); } catch { return; }
+    const nrm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    const memberName = nrm(`${user.firstName || ''} ${user.lastName || ''}`);
+    const memberState = String(user.state || '').trim().toUpperCase();
+    if (!memberName || nrm(data.fullName) !== memberName) return;
+    const stateMatch = memberState && (data.addresses || []).some((a) => String(a.state || '').toUpperCase() === memberState);
+    if (!stateMatch) return; // require a location signal to be confident it's really them
+    enrichedRef.current = true;
+    enrichFromReport(report);
+  }, [report, user]);
 
   useEffect(() => {
     if (id && id !== 'undefined' && id !== 'null') {

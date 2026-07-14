@@ -11,6 +11,7 @@ import api from '../../api';
 import { getReportList, createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import DevBCSession from '../../components/DevBCSession';
+import EnrichProfileCard from '../../components/EnrichProfileCard';
 import styles from './DashboardHome.module.css';
 import {
   hashString,
@@ -1010,6 +1011,11 @@ const DashboardHome = () => {
             Try the new dashboard ↗
           </Link>
         </div>
+      </div>
+
+      {/* Profile completion (WSFY Phase 2b enrichment) — self-manages visibility once done. */}
+      <div style={{ margin: '0 0 1rem' }}>
+        <EnrichProfileCard />
       </div>
 
       {/* Pending-report resume banner — shown when PaymentPage stashed a selected

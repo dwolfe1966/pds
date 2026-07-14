@@ -47,6 +47,9 @@ export async function POST(req) {
       relatives: body.relatives,
       city: body.city,
       state: body.state,
+      highSchool: body.highSchool,
+      college: body.college,
+      attributes: body.attributes,
       source: body.source || 'client',
     });
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
