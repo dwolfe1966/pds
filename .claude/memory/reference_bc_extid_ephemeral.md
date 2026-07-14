@@ -28,3 +28,10 @@ that result's current extId for the report. Concept-decision #1 anticipated this
 
 **Rule of thumb:** any code that stores a teaser extId and later compares/looks it up
 is a bug. Match people on stable attributes (name + city/state + first-seen), not extId.
+
+**BUT the created-report `commerceContentId` IS stable + re-fetchable** (2026-07-14). Only the
+*teaser* extId is ephemeral. Once you `createReportForIdentity(extId)` you get a `commerceContentId`
+that `getReportDetail(commerceContentId)` re-loads anytime (that's how the report page reloads by id),
+and `getReportList()` finds a member's existing reports (avoid re-charging). So to durably link a
+member to their own record, store the **commerceContentId**, not the extId. Used by WSFY self-identify
+([[project_wsfy_self_build]]) → `member_enrichment.report_id`. extId is only valid at click-time.

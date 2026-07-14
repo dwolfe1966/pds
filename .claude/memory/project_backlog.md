@@ -56,3 +56,6 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 - **Side note (resolved 2026-05-07):** `MemberGeneralSearchPage.js` `COMMON_US_CITIES` Orlando, FL duplicate is gone — only one entry now (line 22).
 - **Recommended next investment:** signupFlow + signupTransitions as a paired rewrite. Reuse the `useSignup` mock surface across both files.
 - **`REACT_APP_USE_NEW_API_AUTH=true`** in `.env.production`. Consumer auth is now on BC; the mock-only auth note from older memories is stale.
+
+## UX backlog
+- **Payment page mobile view: put the vCard FIRST** (above the $1 trial price), not the price first (owner 2026-07-14). Lead with the person/value, then the price. `src/pages/sales/PaymentPage.js` — reorder for the mobile breakpoint. Ties to [[payment_ux_research]] and the [[project_wsfy_self_build]] payment-teaser work (free user → "see who's searching for you" paywall).

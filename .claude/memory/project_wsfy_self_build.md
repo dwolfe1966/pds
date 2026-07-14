@@ -55,7 +55,21 @@ report is confidently the member (name AND state match), extracts occupation/rel
 high_school/college/attributes cols. Consumer bundle public.1b6ae080.js (not yet on BC). **The
 user-provided high_school UNLOCKS the "went to your high school" affinity the report data can't give.**
 
-**STILL OPEN:** auth-harden ingest + /api/wsfy tier (client-asserted); onboarding placement of EnrichProfileCard.
+**Self-identify flow (SelfIdentifyCard, dashboard, SHIPPED 2026-07-14):** enter name/location/age →
+`api.searchPeople` → disambiguate ("which one is you?") → select → (paid) `createReportForIdentity(extId)`
+→ `getReportDetail` → `enrichFromReport(report, selfPerson)`. **Canonical id = the created report's
+`commerceContentId`** (STABLE, re-fetchable — NOT the ephemeral extId; see [[reference_bc_extid_ephemeral]])
+→ stored in `member_enrichment.report_id` + `self_person`. Association stored in OUR OWN Neon/endpoint
+(owner: "create our own data structure + endpoint with idlookup.me infra"), independent of BC. Report-pull
+gated on isPaid (free can't create reports → stores confirmed identity only). Then a schools step. Bundle
+public.41a4e73c.js. EnrichProfileCard (manual occupation/school) still exists, no longer on dashboard.
+
+**Owner's next sequence (2026-07-14):** (1) [done] enrich-from-report self-identify flow → (2) **auth-harden**
+(ingest + /api/wsfy tier, client-asserted) → (3) **payment flows** — free user wants to see who's searching
+for them; design the WSFY paywall/teaser on the payment page. Backlog: mobile payment page = vCard first
+(not the $1 trial price) — see [[project_backlog]].
+
+**STILL OPEN:** auth-harden; payment WSFY teaser; onboarding placement of the self-identify card.
 
 **NOT built (no data source at all):** "just got married" — no marital/life-event field (per bc_report_field_map).
 "Went to high school" now DOES work via user-provided profile. Never fabricate.
