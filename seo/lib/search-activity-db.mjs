@@ -42,6 +42,17 @@ export async function upsertMemberEnrichment(e) {
   `;
 }
 
+/** Read one member's enrichment (for the cross-device "My Identity" view). */
+export async function getMemberEnrichment(userId) {
+  if (!sql) throw new Error('no DB configured');
+  if (!userId) return null;
+  const rows = await sql`
+    SELECT user_id, occupation, employer, relatives, city, state, high_school, college,
+           report_id, self_person, enriched_at
+    FROM member_enrichment WHERE user_id = ${userId}`;
+  return rows[0] || null;
+}
+
 /** Normalize a name/place for matching: lowercase, strip punctuation, collapse spaces. */
 export function norm(s) {
   return String(s == null ? '' : s)

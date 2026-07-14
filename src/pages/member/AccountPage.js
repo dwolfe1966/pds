@@ -6,7 +6,7 @@ import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
-import { getMappedIdentity } from '../../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity } from '../../services/memberEnrichment';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -109,6 +109,12 @@ const AccountPage = () => {
   // ─── Identity tab (WSFY mapped-identity view) ────────────────────────────────
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [editingIdentity, setEditingIdentity] = useState(false);
+  // Cross-device: pull the server copy (keyed on the member's own userId) and refresh the mirror.
+  useEffect(() => {
+    let alive = true;
+    fetchMappedIdentity().then((srv) => { if (alive && srv) setIdentity(srv); });
+    return () => { alive = false; };
+  }, []);
 
   // ─── Profile tab state ───────────────────────────────────────────────────────
   // BC `user.update` accepts firstName, lastName, and phone — no zip.

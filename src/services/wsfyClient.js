@@ -18,9 +18,10 @@ function wsfyUrl() {
  * @returns {Promise<{count,tier,teaseSummary:{headline,lines[]},events[]}>}
  */
 export async function fetchWhoIsSearching(p) {
+  const appKey = process.env.REACT_APP_WSFY_APP_KEY;
   const res = await fetch(wsfyUrl(), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(appKey ? { 'X-App-Key': appKey } : {}) },
     body: JSON.stringify(p || {}),
   });
   if (!res.ok) throw new Error(`wsfy ${res.status}`);

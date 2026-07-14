@@ -61,15 +61,39 @@ function deriveIndustry(title, employer) {
   return title || null;
 }
 
+// App-level auth (WSFY-AUTH interim): a shared key that proves the call came from our app. Not
+// per-user; raises the bar against casual scraping. Set REACT_APP_WSFY_APP_KEY (+ WSFY_APP_KEY on
+// the backend). Absent → header omitted (backend leaves the gate open until it's configured).
+function appKeyHeaders() {
+  const k = process.env.REACT_APP_WSFY_APP_KEY;
+  return k ? { 'X-App-Key': k } : {};
+}
+
 function post(payload) {
   try {
     fetch(enrichUrl(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
       body: JSON.stringify(payload),
       keepalive: true,
     }).catch(() => { /* best-effort */ });
   } catch { /* fetch unavailable */ }
+}
+
+/**
+ * Cross-device read of the member's mapped identity from the server, refreshing the local mirror.
+ * Returns the identity summary (or null). Keyed on the member's own (opaque) BC userId.
+ */
+export async function fetchMappedIdentity() {
+  const userId = currentUserId();
+  if (!userId) return null;
+  try {
+    const res = await fetch(`${enrichUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.identity) { updateMappedIdentity(data.identity); return data.identity; }
+    return null;
+  } catch { return null; }
 }
 
 /**

@@ -4,7 +4,8 @@
 //
 // ⚠️ AUTH (interim, same posture as /api/wsfy): body.userId is client-asserted. Before wide use,
 // validate the BC token server-side and derive userId from it so a member can only enrich themselves.
-import { upsertMemberEnrichment, hasSearchDb } from '../../../lib/search-activity-db.mjs';
+import { upsertMemberEnrichment, getMemberEnrichment, hasSearchDb } from '../../../lib/search-activity-db.mjs';
+import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
 
@@ -18,8 +19,8 @@ function corsHeaders(origin) {
   const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.idlookup.ai';
   return {
     'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-App-Key',
     'Vary': 'Origin',
   };
 }
@@ -28,8 +29,39 @@ export async function OPTIONS(req) {
   return new Response(null, { status: 204, headers: corsHeaders(req.headers.get('origin')) });
 }
 
+// GET /api/member-enrichment?userId=... — cross-device read of the member's mapped identity.
+export async function GET(req) {
+  const headers = { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' };
+  if (!checkAppKey(req)) return unauthorized(headers);
+  const userId = new URL(req.url).searchParams.get('userId');
+  if (!userId) return new Response(JSON.stringify({ error: 'userId required' }), { status: 400, headers });
+  if (!hasSearchDb) return new Response(JSON.stringify({ ok: true, identity: null }), { status: 200, headers });
+  try {
+    const r = await getMemberEnrichment(userId);
+    const sp = (r && r.self_person && typeof r.self_person === 'object') ? r.self_person : {};
+    const identity = r ? {
+      confirmed: true,
+      name: sp.name || null,
+      age: sp.age || null,
+      city: r.city || null,
+      state: r.state || null,
+      occupation: r.occupation || null,
+      employer: r.employer || null,
+      highSchool: r.high_school || null,
+      college: r.college || null,
+      relativesCount: Array.isArray(r.relatives) ? r.relatives.length : null,
+      hasReport: !!r.report_id,
+      mappedAt: r.enriched_at || null,
+    } : null;
+    return new Response(JSON.stringify({ ok: true, identity }), { status: 200, headers });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'read failed' }), { status: 500, headers });
+  }
+}
+
 export async function POST(req) {
   const headers = { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' };
+  if (!checkAppKey(req)) return unauthorized(headers);
 
   let body;
   try { body = await req.json(); } catch { body = null; }

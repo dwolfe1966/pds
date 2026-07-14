@@ -9,6 +9,7 @@
 // server-side (identity + paid status) and derive `tier` from that, not from the body. Tracked
 // in docs/design/wsfy-self-build.md.
 import { buildWsfySummary, hasWsfyDb } from '../../../lib/wsfy.mjs';
+import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
 
@@ -23,7 +24,7 @@ function corsHeaders(origin) {
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-App-Key',
     'Vary': 'Origin',
   };
 }
@@ -34,6 +35,7 @@ export async function OPTIONS(req) {
 
 export async function POST(req) {
   const headers = { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' };
+  if (!checkAppKey(req)) return unauthorized(headers);
 
   let body;
   try { body = await req.json(); } catch { body = null; }
