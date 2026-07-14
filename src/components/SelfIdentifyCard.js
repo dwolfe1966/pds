@@ -20,7 +20,7 @@ const LS_DONE = 'wsfySelfIdentified';
 
 const field = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, marginTop: 4, boxSizing: 'border-box' };
 const label = { fontSize: 12, fontWeight: 700, color: '#374151' };
-const card = { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '20px 22px' };
+const card = { background: '#fff', border: '1px solid #d7ddd9', borderRadius: 12, padding: '20px 22px', boxShadow: '0 4px 18px rgba(13,93,47,0.12)' };
 
 export default function SelfIdentifyCard() {
   const { user, isPaid } = useAuth();
@@ -32,10 +32,15 @@ export default function SelfIdentifyCard() {
   const [matches, setMatches] = useState([]);
   const [schools, setSchools] = useState({ highSchool: '', college: '' });
   const [err, setErr] = useState('');
+  const [recordConfirmed, setRecordConfirmed] = useState(false);
   const [dismissed, setDismissed] = useState(() => { try { return localStorage.getItem(LS_DONE) === '1'; } catch { return false; } });
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const finish = () => { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } setDismissed(true); };
+  // Session-only hide (reappears next dashboard visit) — Skip / Maybe later / None-of-these.
+  const hideForNow = () => setDismissed(true);
+  // PERMANENT dismiss — only when the member actually confirms a record (owner: don't let the
+  // module go away until they select a record).
+  const confirmDone = () => { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } setStep('done'); };
 
   if (dismissed) return null;
 
@@ -60,6 +65,7 @@ export default function SelfIdentifyCard() {
   };
 
   const selectMatch = async (m) => {
+    setRecordConfirmed(true); // a real record was selected → this run can permanently dismiss
     setStep('working');
     const selfPerson = { name: m?.fullName, city: m?.city, state: m?.state, age: m?.age || m?.ageRange };
     let enriched = false;
@@ -83,8 +89,10 @@ export default function SelfIdentifyCard() {
   const saveSchools = (e) => {
     e.preventDefault();
     if (schools.highSchool.trim() || schools.college.trim()) saveMemberProfile(schools);
-    setStep('done');
-    finish();
+    // Permanently dismiss ONLY if they confirmed a real record; the "none of these" path keeps the
+    // module coming back until they do.
+    if (recordConfirmed) confirmDone();
+    else hideForNow();
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -112,7 +120,7 @@ export default function SelfIdentifyCard() {
     return (
       <div style={card}>
         <h3 style={{ margin: '0 0 4px', fontSize: 17, color: GREEN, fontWeight: 800 }}>Which one is you?</h3>
-        <p style={{ margin: '0 0 14px', color: '#4b5563', fontSize: 13 }}>Select your record so we can personalize who's searching for you.</p>
+        <p style={{ margin: '0 0 14px', color: '#4b5563', fontSize: 13 }}>Select your record to confirm your identity.</p>
         {matches.length === 0 && <p style={{ color: '#6b7280', fontSize: 14 }}>No matches found. You can add your details manually.</p>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {matches.map((m, i) => (
@@ -127,7 +135,7 @@ export default function SelfIdentifyCard() {
         </div>
         <div style={{ marginTop: 14, display: 'flex', gap: 16 }}>
           <button type="button" onClick={() => setStep('schools')} style={{ background: 'none', border: 'none', color: '#374151', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>None of these are me</button>
-          <button type="button" onClick={finish} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>Skip</button>
+          <button type="button" onClick={hideForNow} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>Skip</button>
         </div>
       </div>
     );
@@ -146,7 +154,7 @@ export default function SelfIdentifyCard() {
         </div>
         <div style={{ marginTop: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
           <button type="submit" style={{ background: GREEN_CTA, color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Done</button>
-          <button type="button" onClick={finish} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Skip</button>
+          <button type="button" onClick={() => (recordConfirmed ? confirmDone() : hideForNow())} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Skip</button>
         </div>
       </form>
     );
@@ -155,9 +163,9 @@ export default function SelfIdentifyCard() {
   // step === 'form'
   return (
     <form onSubmit={runSearch} style={card}>
-      <h3 style={{ margin: 0, fontSize: 17, color: GREEN, fontWeight: 800 }}>See who's searching for you</h3>
+      <h3 style={{ margin: 0, fontSize: 17, color: GREEN, fontWeight: 800 }}>Confirm my Identity</h3>
       <p style={{ margin: '4px 0 16px', color: '#4b5563', fontSize: 13, lineHeight: 1.5 }}>
-        Confirm your public record so we can show you who's looking for you — and how they might know you.
+        Confirm your identity so you can control and hide what's exposed, see who is looking for you, and ensure you are protected.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div><span style={label}>First name</span><input style={field} value={form.firstName} onChange={set('firstName')} /></div>
@@ -168,8 +176,8 @@ export default function SelfIdentifyCard() {
       </div>
       {err && <p style={{ color: '#b91c1c', fontSize: 13, margin: '10px 0 0' }}>{err}</p>}
       <div style={{ marginTop: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
-        <button type="submit" style={{ background: GREEN_CTA, color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Find my record</button>
-        <button type="button" onClick={finish} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Maybe later</button>
+        <button type="submit" style={{ background: GREEN_CTA, color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>Continue</button>
+        <button type="button" onClick={hideForNow} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>Maybe later</button>
       </div>
     </form>
   );
