@@ -38,8 +38,18 @@ King…", server-tiered rows, viewers tab = honest empty. Verified vs live Neon.
 searcher names); fix = validate BC token server-side, derive tier from it (flagged in the route). (2)
 `isSuppressed()` stub → wire IDI/index opt-out + result-PII retention window (30–90d).
 
-**NOT built (no data):** "went to high school"/"just got married" — licensed BC/IDI data has employment/
-relatives/property but NO education/marital field (per bc_report_field_map). Ship sourceable subset only,
-never fabricate. Employer/relative-overlap affinity = natural Phase 2b enrichment.
+**Phase 2b — richer affinity tease: SHIPPED 2026-07-14 (engine live; occupation needs the pipeline).**
+`buildWsfySummary` computes per-searcher affinity tags → richer lines ("1 who may be a relative · 1 in
+your area · 1 near San Diego · Carol King (works in healthcare) · and 1 more"). Corpus-derived (live, no
+COGS): relative (searcher's OWN surname == subject's), local (same city→"in your area"), other-city
+("N near X"), frequent (>=2). Enrichment SEAM: `member_enrichment` table (occupation/employer/verified
+relatives) + `POST /api/member-enrichment` (upsertMemberEnrichment); wsfy.mjs LEFT-joins optionally
+(empty→degrades). Paid events carry affinities[]+occupation. Verified vs Neon.
+**OPEN owner decision:** the enrichment PIPELINE — a browser-side BC self-lookup on each member (IIFE-only+
+COGS) → POST to /api/member-enrichment. Decide WHEN (signup/first-view/batch) + COGS + auth-harden.
+Occupation absent from tease until it runs.
+
+**NOT built (no data at all):** "went to high school"/"just got married" — licensed BC/IDI data has employment/
+relatives/property but NO education/marital field (per bc_report_field_map). Never fabricate.
 
 **Phase 3:** "someone searched for you" alert emails, reusing the SendGrid platform ([[project_email_recovery_pipeline]]).
