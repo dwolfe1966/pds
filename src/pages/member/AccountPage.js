@@ -6,6 +6,8 @@ import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
+import { getMappedIdentity } from '../../services/memberEnrichment';
+import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -99,10 +101,14 @@ const AccountPage = () => {
   const { token, user, setUser, subscription, isPaid, refreshSubscription } = useAuth();
 
   // ─── Tab state (supports ?tab=messages deep-linking) ────────────────────────
-  // Default lands on Security & Privacy (first tab); Profile is the last tab.
-  const validTabs = ['security', 'billing', 'messages', 'communications', 'profile'];
-  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'security';
+  // Default lands on the Overview landing; other tabs are deep-linkable.
+  const validTabs = ['overview', 'identity', 'security', 'billing', 'messages', 'communications', 'profile'];
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  // ─── Identity tab (WSFY mapped-identity view) ────────────────────────────────
+  const [identity, setIdentity] = useState(() => getMappedIdentity());
+  const [editingIdentity, setEditingIdentity] = useState(false);
 
   // ─── Profile tab state ───────────────────────────────────────────────────────
   // BC `user.update` accepts firstName, lastName, and phone — no zip.
@@ -896,6 +902,8 @@ const AccountPage = () => {
   const tabBtnInactive = { ...tabBtnBase, background: '#fff', color: '#374151', border: '1px solid transparent' };
 
   const TABS = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'identity', label: 'My Identity' },
     { key: 'security', label: 'Security' },
     { key: 'billing', label: 'Subscription & Billing' },
     { key: 'messages', label: 'Messages' },
@@ -1017,6 +1025,75 @@ const AccountPage = () => {
           </button>
         ))}
       </div>
+
+      {/* ── OVERVIEW TAB (account landing) ───────────────────────────────────── */}
+      {activeTab === 'overview' && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>This is your account</h2>
+          <p style={{ color: '#4b5563', marginTop: 0 }}>
+            Welcome{user && user.firstName ? `, ${user.firstName}` : ''}. Manage your identity, security, subscription, and messages — all in one place.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 16 }}>
+            {[
+              { key: 'identity', icon: '🪪', title: 'My Identity', desc: "See and control what's mapped to you." },
+              { key: 'security', icon: '🔒', title: 'Security', desc: 'Password and privacy controls.' },
+              { key: 'billing', icon: '💳', title: 'Subscription & Billing', desc: isPaid ? 'Manage your plan.' : 'Upgrade your plan.' },
+              { key: 'messages', icon: '✉️', title: 'Messages', desc: 'Your support conversations.' },
+              { key: 'communications', icon: '🔔', title: 'Communications', desc: 'Email preferences.' },
+              { key: 'profile', icon: '👤', title: 'Profile', desc: 'Your name, email, and phone.' },
+            ].map((c) => (
+              <button key={c.key} type="button" onClick={() => setActiveTab(c.key)}
+                style={{ textAlign: 'left', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(17,24,39,0.05)' }}>
+                <div style={{ fontSize: 22 }} aria-hidden="true">{c.icon}</div>
+                <div style={{ fontWeight: 800, color: '#0d5d2f', marginTop: 6 }}>{c.title}</div>
+                <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{c.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── MY IDENTITY TAB (WSFY mapped identity) ───────────────────────────── */}
+      {activeTab === 'identity' && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>My Identity</h2>
+          {identity && identity.confirmed && !editingIdentity ? (
+            <>
+              <p style={{ color: '#4b5563', marginTop: 0 }}>
+                This is what we've mapped to your identity. We use it to show you who's searching for you — and how they might know you.
+              </p>
+              <div style={{ background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 12, padding: '8px 18px' }}>
+                {[
+                  ['Name', identity.name],
+                  ['Age', identity.age],
+                  ['Location', [identity.city, identity.state].filter(Boolean).join(', ')],
+                  ['Occupation', identity.jobTitle || identity.occupation],
+                  ['Employer', identity.employer],
+                  ['High school', identity.highSchool],
+                  ['College', identity.college],
+                  ['Relatives on record', identity.relativesCount != null ? String(identity.relativesCount) : ''],
+                ].filter((r) => r[1]).map((r) => (
+                  <div key={r[0]} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '10px 0', borderBottom: '1px solid #eef2f0' }}>
+                    <span style={{ color: '#6b7280', fontSize: 13 }}>{r[0]}</span>
+                    <span style={{ color: '#111827', fontSize: 14, fontWeight: 600, textAlign: 'right' }}>{r[1]}</span>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={() => setEditingIdentity(true)}
+                style={{ marginTop: 16, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                Update my identity
+              </button>
+            </>
+          ) : (
+            <>
+              <p style={{ color: '#4b5563', marginTop: 0 }}>
+                Confirm your identity so you can control and hide what's exposed, see who is looking for you, and ensure you are protected.
+              </p>
+              <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── PROFILE TAB ──────────────────────────────────────────────────────── */}
       {activeTab === 'profile' && (

@@ -45,7 +45,7 @@ function narrowMatches(list, { city, age }) {
   return out;
 }
 
-export default function SelfIdentifyCard() {
+export default function SelfIdentifyCard({ forceShow = false, onComplete } = {}) {
   const { user, isPaid } = useAuth();
   const [step, setStep] = useState('form'); // form | searching | choose | working | schools | done
   const [form, setForm] = useState({
@@ -66,12 +66,12 @@ export default function SelfIdentifyCard() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   // Session-only hide (reappears next dashboard visit) — Skip / Maybe later / None-of-these.
-  const hideForNow = () => setDismissed(true);
+  const hideForNow = () => { setDismissed(true); if (onComplete) onComplete(); };
   // PERMANENT dismiss — only when the member actually confirms a record (owner: don't let the
   // module go away until they select a record).
-  const confirmDone = () => { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } setStep('done'); };
+  const confirmDone = () => { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } setStep('done'); if (onComplete) onComplete(); };
 
-  if (dismissed) return null;
+  if (dismissed && !forceShow) return null;
 
   const runSearch = async (e) => {
     e.preventDefault();
@@ -156,6 +156,7 @@ export default function SelfIdentifyCard() {
     // "none of these" path shows the confirmation but the module returns next visit (LS_DONE unset).
     if (recordConfirmed) { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } }
     setStep('done');
+    if (onComplete) onComplete();
   };
 
   // ── Render ────────────────────────────────────────────────────────────────

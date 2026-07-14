@@ -25,6 +25,22 @@ function currentUserId() {
   } catch { return ''; }
 }
 
+// A local mirror of what we've mapped to this member's identity, so the Account → Identity view can
+// display it without a server read. The authoritative copy lives in member_enrichment (server).
+const LS_IDENTITY = 'wsfyMappedIdentity';
+export function getMappedIdentity() {
+  try { return JSON.parse(localStorage.getItem(LS_IDENTITY) || 'null'); } catch { return null; }
+}
+function updateMappedIdentity(partial) {
+  try {
+    const cur = getMappedIdentity() || {};
+    const next = { ...cur };
+    for (const [k, v] of Object.entries(partial)) if (v != null && v !== '') next[k] = v;
+    next.mappedAt = new Date().toISOString();
+    localStorage.setItem(LS_IDENTITY, JSON.stringify(next));
+  } catch { /* ignore */ }
+}
+
 // Coarse industry from a job title/employer, for the "works in {industry}" tease. Falls back to
 // the title itself when unmapped.
 const INDUSTRY = [
@@ -66,6 +82,8 @@ export function enrichFromReport(reportResult, selfPerson) {
   let x;
   try { x = extractAll(reportResult); } catch { return; }
   const job = (x.jobs || [])[0] || {};
+  const city = (x.addresses && x.addresses[0] && x.addresses[0].city) || (selfPerson && selfPerson.city) || undefined;
+  const state = (x.addresses && x.addresses[0] && x.addresses[0].state) || (selfPerson && selfPerson.state) || undefined;
   post({
     userId,
     // The CANONICAL, re-fetchable link to the member's own record (unlike the ephemeral extId).
@@ -74,9 +92,15 @@ export function enrichFromReport(reportResult, selfPerson) {
     occupation: deriveIndustry(job.title, job.employer) || undefined,
     employer: job.employer || undefined,
     relatives: (x.relatives || []).map((r) => r.name).filter(Boolean).slice(0, 40),
-    city: (x.addresses && x.addresses[0] && x.addresses[0].city) || undefined,
-    state: (x.addresses && x.addresses[0] && x.addresses[0].state) || undefined,
+    city,
+    state,
     source: 'self-report',
+  });
+  updateMappedIdentity({
+    confirmed: true, hasReport: true,
+    name: selfPerson && selfPerson.name, age: selfPerson && selfPerson.age, city, state,
+    occupation: deriveIndustry(job.title, job.employer), jobTitle: job.title, employer: job.employer,
+    relativesCount: (x.relatives || []).length,
   });
 }
 
@@ -85,6 +109,9 @@ export function linkSelfReport(commerceContentId, selfPerson) {
   const userId = currentUserId();
   if (!userId || !commerceContentId) return;
   post({ userId, reportId: commerceContentId, selfPerson: selfPerson || undefined, source: 'self-identify' });
+  updateMappedIdentity({ confirmed: true, hasReport: true, reportId: commerceContentId,
+    name: selfPerson && selfPerson.name, age: selfPerson && selfPerson.age,
+    city: selfPerson && selfPerson.city, state: selfPerson && selfPerson.state });
 }
 
 /**
@@ -105,5 +132,11 @@ export function saveMemberProfile(fields) {
     reportId: fields.reportId || undefined,
     selfPerson: fields.selfPerson || undefined,
     source: fields.source || 'profile',
+  });
+  updateMappedIdentity({
+    occupation: fields.occupation, employer: fields.employer,
+    highSchool: fields.highSchool, college: fields.college, city: fields.city, state: fields.state,
+    name: fields.selfPerson && fields.selfPerson.name, age: fields.selfPerson && fields.selfPerson.age,
+    confirmed: fields.selfPerson ? true : undefined,
   });
 }
