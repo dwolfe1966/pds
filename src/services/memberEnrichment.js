@@ -60,7 +60,7 @@ function post(payload) {
  * Extract enrichment from a report the member pulled on themselves and send it.
  * @param {object} reportResult  the BC report result (same shape extractAll consumes)
  */
-export function enrichFromReport(reportResult) {
+export function enrichFromReport(reportResult, selfPerson) {
   const userId = currentUserId();
   if (!userId || !reportResult) return;
   let x;
@@ -68,6 +68,9 @@ export function enrichFromReport(reportResult) {
   const job = (x.jobs || [])[0] || {};
   post({
     userId,
+    // The CANONICAL, re-fetchable link to the member's own record (unlike the ephemeral extId).
+    reportId: reportResult.commerceContentId || undefined,
+    selfPerson: selfPerson || undefined,
     occupation: deriveIndustry(job.title, job.employer) || undefined,
     employer: job.employer || undefined,
     relatives: (x.relatives || []).map((r) => r.name).filter(Boolean).slice(0, 40),
@@ -75,6 +78,13 @@ export function enrichFromReport(reportResult) {
     state: (x.addresses && x.addresses[0] && x.addresses[0].state) || undefined,
     source: 'self-report',
   });
+}
+
+/** Store the canonical report link + confirmed identity, even before/without a full extract. */
+export function linkSelfReport(commerceContentId, selfPerson) {
+  const userId = currentUserId();
+  if (!userId || !commerceContentId) return;
+  post({ userId, reportId: commerceContentId, selfPerson: selfPerson || undefined, source: 'self-identify' });
 }
 
 /**
@@ -92,6 +102,8 @@ export function saveMemberProfile(fields) {
     college: fields.college || undefined,
     city: fields.city || undefined,
     state: fields.state || undefined,
-    source: 'profile',
+    reportId: fields.reportId || undefined,
+    selfPerson: fields.selfPerson || undefined,
+    source: fields.source || 'profile',
   });
 }

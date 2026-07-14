@@ -19,10 +19,17 @@ CREATE TABLE IF NOT EXISTS member_enrichment (
   college     TEXT,
   college_norm TEXT,
   attributes  JSONB DEFAULT '{}'::jsonb, -- misc user-provided fields (future)
+  -- Canonical link to the member's own record: the created report's commerceContentId. STABLE and
+  -- re-fetchable via getReportDetail() — unlike the ephemeral teaser extId — so we can re-enrich
+  -- anytime without re-searching or re-charging. self_person = the confirmed match's stable attrs.
+  report_id   TEXT,
+  self_person JSONB DEFAULT '{}'::jsonb,
   source      TEXT,                    -- 'self-report' | 'profile' | ...
   enriched_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS report_id        TEXT;
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS self_person      JSONB DEFAULT '{}'::jsonb;
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS high_school      TEXT;
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS high_school_norm TEXT;
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS college          TEXT;

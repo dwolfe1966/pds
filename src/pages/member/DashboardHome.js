@@ -11,7 +11,7 @@ import api from '../../api';
 import { getReportList, createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import DevBCSession from '../../components/DevBCSession';
-import EnrichProfileCard from '../../components/EnrichProfileCard';
+import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import styles from './DashboardHome.module.css';
 import {
   hashString,
@@ -1013,9 +1013,10 @@ const DashboardHome = () => {
         </div>
       </div>
 
-      {/* Profile completion (WSFY Phase 2b enrichment) — self-manages visibility once done. */}
+      {/* Self-identification (WSFY Phase 2b) — find your record → enrich → schools. Pops until
+          done; self-manages visibility. Stores the canonical report link in our own backend. */}
       <div style={{ margin: '0 0 1rem' }}>
-        <EnrichProfileCard />
+        <SelfIdentifyCard />
       </div>
 
       {/* Pending-report resume banner — shown when PaymentPage stashed a selected

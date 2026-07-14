@@ -13,16 +13,18 @@ export async function upsertMemberEnrichment(e) {
   if (!e || !e.userId) throw new Error('userId required');
   const relatives = Array.isArray(e.relatives) ? e.relatives : [];
   const attributes = e.attributes && typeof e.attributes === 'object' ? e.attributes : {};
+  const selfPerson = e.selfPerson && typeof e.selfPerson === 'object' ? e.selfPerson : {};
   const hs = e.highSchool ? String(e.highSchool).trim() : null;
   const col = e.college ? String(e.college).trim() : null;
   await sql`
     INSERT INTO member_enrichment
       (user_id, occupation, employer, relatives, city, state, high_school, high_school_norm,
-       college, college_norm, attributes, source, enriched_at)
+       college, college_norm, attributes, report_id, self_person, source, enriched_at)
     VALUES (
       ${e.userId}, ${e.occupation || null}, ${e.employer || null}, ${JSON.stringify(relatives)}::jsonb,
       ${e.city || null}, ${e.state || null}, ${hs}, ${hs ? norm(hs) : null},
-      ${col}, ${col ? norm(col) : null}, ${JSON.stringify(attributes)}::jsonb, ${e.source || null}, now())
+      ${col}, ${col ? norm(col) : null}, ${JSON.stringify(attributes)}::jsonb,
+      ${e.reportId || null}, ${JSON.stringify(selfPerson)}::jsonb, ${e.source || null}, now())
     ON CONFLICT (user_id) DO UPDATE SET
       occupation = COALESCE(EXCLUDED.occupation, member_enrichment.occupation),
       employer   = COALESCE(EXCLUDED.employer, member_enrichment.employer),
@@ -34,6 +36,8 @@ export async function upsertMemberEnrichment(e) {
       college = COALESCE(EXCLUDED.college, member_enrichment.college),
       college_norm = COALESCE(EXCLUDED.college_norm, member_enrichment.college_norm),
       attributes = member_enrichment.attributes || EXCLUDED.attributes,
+      report_id = COALESCE(EXCLUDED.report_id, member_enrichment.report_id),
+      self_person = CASE WHEN EXCLUDED.self_person <> '{}'::jsonb THEN EXCLUDED.self_person ELSE member_enrichment.self_person END,
       source = EXCLUDED.source, enriched_at = now()
   `;
 }

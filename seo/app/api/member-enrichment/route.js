@@ -50,6 +50,8 @@ export async function POST(req) {
       highSchool: body.highSchool,
       college: body.college,
       attributes: body.attributes,
+      reportId: body.reportId,
+      selfPerson: body.selfPerson,
       source: body.source || 'client',
     });
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
