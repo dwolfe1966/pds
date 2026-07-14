@@ -7,6 +7,7 @@ import { track } from '../../services/trackingService';
 import { readLoginHistory } from '../../services/loginHistory';
 import { getBrand } from '../../services/brand';
 import { US_STATES } from '../../data/usStates';
+import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 
 /**
  * Dashboard — research-workbench layout.
@@ -840,6 +841,13 @@ const Dashboard2 = () => {
             ))}
           </div>
         </section>
+
+        {/* WSFY self-identification — "see who's searching for you": find your record → enrich →
+            schools. Pops until done; self-manages visibility. Stores the canonical report link in
+            our own backend (idlookup.me), independent of BC. */}
+        <div style={{ marginBottom: '1rem' }}>
+          <SelfIdentifyCard />
+        </div>
 
         {/* Trial transparency banner — the upcoming first charge, front and center.
             TEMPORARILY DISABLED 2026-06-23 (owner request: hide the yellow "free trial —

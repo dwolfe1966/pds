@@ -11,7 +11,6 @@ import api from '../../api';
 import { getReportList, createReportForIdentity } from '../../services/reportService';
 import { track } from '../../services/trackingService';
 import DevBCSession from '../../components/DevBCSession';
-import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import styles from './DashboardHome.module.css';
 import {
   hashString,
@@ -1011,12 +1010,6 @@ const DashboardHome = () => {
             Try the new dashboard ↗
           </Link>
         </div>
-      </div>
-
-      {/* Self-identification (WSFY Phase 2b) — find your record → enrich → schools. Pops until
-          done; self-manages visibility. Stores the canonical report link in our own backend. */}
-      <div style={{ margin: '0 0 1rem' }}>
-        <SelfIdentifyCard />
       </div>
 
       {/* Pending-report resume banner — shown when PaymentPage stashed a selected
