@@ -2,7 +2,7 @@
 // state → city → name taxonomy: lists the most-common (resolvable) names in the
 // city, each linking to a name-in-city page.
 import { notFound } from 'next/navigation';
-import { getCitySlice, getCityTopNames, getStateCities, getNearbyCities } from '../../../../lib/directory';
+import { getCitySlice, getCityTopNames, getStateCities, getNearbyCities, getStateTopNames } from '../../../../lib/directory';
 import { getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory, cityWikiChips, cityStats, cityEthnicity, cityOccupations, cityProse } from '../../../../lib/facts';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
@@ -48,6 +48,9 @@ export default async function CityLanding({ params }) {
   }
 
   const names = getCityTopNames(state, city, 60);
+  // Many small cities yield 0–1 common names (the city gate is strict). Fall back to state-level
+  // common names so the conversion surface is never empty — and cross-link the name-in-state pages.
+  const stateNames = names.length < 12 ? getStateTopNames(state, 24).filter((n) => !names.some((cn) => cn.slug === n.slug)) : [];
   const acs = getCityAcs(c.stateCode, city);
   const wiki = getCityWiki(c.stateCode, city);
   const chips = cityWikiChips(wiki);
@@ -124,16 +127,36 @@ export default async function CityLanding({ params }) {
 
       {/* Most common names — the conversion surface. Placed #2, right below "at a glance"
           (owner 2026-07-13) so it isn't buried under the demographic modules. */}
-      <section style={ui.card}>
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>Most common names in {c.city}</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px 16px' }}>
-          {names.map((n) => (
-            <a key={n.slug} href={cityNamePath(state, city, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
-              {n.name} <span style={ui.muted}>(~{num(n.estInCity)})</span>
-            </a>
-          ))}
-        </div>
-      </section>
+      {names.length > 0 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Most common names in {c.city}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px 16px' }}>
+            {names.map((n) => (
+              <a key={n.slug} href={cityNamePath(state, city, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
+                {n.name} <span style={ui.muted}>(~{num(n.estInCity)})</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* State-level fallback so thin/small cities still have a rich names surface. Links go to
+          the name-in-state pages (/people/{state}/{name}). */}
+      {stateNames.length > 0 && (
+        <section style={ui.card}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Popular names in {c.stateName}</h2>
+          <p style={{ ...ui.muted, margin: '0 0 10px', fontSize: 13 }}>
+            Common names across {c.stateName} — search any of them by city, age, and relatives.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px 16px' }}>
+            {stateNames.map((n) => (
+              <a key={n.slug} href={nameInStatePath(state, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
+                {n.name} <span style={ui.muted}>(~{num(n.estInState)})</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       {occupations.length > 0 && (
         <section style={ui.card}>
