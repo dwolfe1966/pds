@@ -22,6 +22,29 @@ const field = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1
 const label = { fontSize: 12, fontWeight: 700, color: '#374151' };
 const card = { background: '#fff', border: '1px solid #d7ddd9', borderRadius: 12, padding: '20px 22px', boxShadow: '0 4px 18px rgba(13,93,47,0.12)' };
 
+// The BC teaser runs on name+state (apiRouter strips city/age — the un-strip is a separate,
+// tested change). So narrow the returned matches by city/age CLIENT-SIDE for disambiguation.
+// Soft filter: if a criterion empties the list, keep the pre-filter set (never hide the real match).
+function narrowMatches(list, { city, age }) {
+  let out = Array.isArray(list) ? list : [];
+  if (city && city.trim()) {
+    const c = city.trim().toLowerCase();
+    const byCity = out.filter((m) => `${m.location || ''} ${m.city || ''}`.toLowerCase().includes(c));
+    if (byCity.length) out = byCity;
+  }
+  if (age && String(age).trim()) {
+    const a = parseInt(String(age), 10);
+    if (!Number.isNaN(a)) {
+      const byAge = out.filter((m) => {
+        const ma = parseInt((String(m.age || m.ageRange || '').match(/\d+/) || [])[0] || '', 10);
+        return !Number.isNaN(ma) && Math.abs(ma - a) <= 3;
+      });
+      if (byAge.length) out = byAge;
+    }
+  }
+  return out;
+}
+
 export default function SelfIdentifyCard() {
   const { user, isPaid } = useAuth();
   const [step, setStep] = useState('form'); // form | searching | choose | working | schools | done
@@ -55,7 +78,7 @@ export default function SelfIdentifyCard() {
         state: form.state.trim() || undefined, city: form.city.trim() || undefined,
         age: form.age.trim() || undefined, type: 'name', source: 'self-identify',
       });
-      const list = (res?.data || []).slice(0, 8);
+      const list = narrowMatches(res?.data || [], form).slice(0, 8);
       setMatches(list);
       setStep('choose');
     } catch {
@@ -89,18 +112,25 @@ export default function SelfIdentifyCard() {
   const saveSchools = (e) => {
     e.preventDefault();
     if (schools.highSchool.trim() || schools.college.trim()) saveMemberProfile(schools);
-    // Permanently dismiss ONLY if they confirmed a real record; the "none of these" path keeps the
-    // module coming back until they do.
-    if (recordConfirmed) confirmDone();
-    else hideForNow();
+    // Always show the confirmation. Permanent dismiss ONLY if they confirmed a real record; the
+    // "none of these" path shows the confirmation but the module returns next visit (LS_DONE unset).
+    if (recordConfirmed) { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } }
+    setStep('done');
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
   if (step === 'done') {
+    const added = [schools.highSchool.trim() && 'high school', schools.college.trim() && 'college'].filter(Boolean);
     return (
       <div style={{ ...card, background: '#f0fdf4', borderColor: GREEN_CTA }}>
-        <p style={{ margin: 0, fontWeight: 800, color: '#14532d', fontSize: 15 }}>✓ You're all set</p>
-        <p style={{ margin: '6px 0 0', color: '#166534', fontSize: 13 }}>We'll use this to show you who's searching for you — and how they might know you.</p>
+        <p style={{ margin: 0, fontWeight: 800, color: '#14532d', fontSize: 15 }}>
+          ✓ {recordConfirmed ? "We've successfully mapped your identity" : 'Details saved'}
+        </p>
+        <p style={{ margin: '6px 0 0', color: '#166534', fontSize: 13, lineHeight: 1.5 }}>
+          {recordConfirmed
+            ? `We've linked your public record${added.length ? ` and saved your ${added.join(' and ')}` : ''}. We'll use this to show you who's searching for you — and how they might know you.`
+            : `We've saved your ${added.length ? added.join(' and ') : 'details'}. Confirm your record to fully map your identity and unlock who's searching for you.`}
+        </p>
       </div>
     );
   }
