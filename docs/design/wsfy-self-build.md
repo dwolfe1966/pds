@@ -26,24 +26,36 @@ when the reveal ships.
 - URL derives from `REACT_APP_LEAD_CAPTURE_URL` (`/leads`→`/search-activity`); no new env.
 - **Pending owner:** upload `public.b62e03de.js` to BC to start real capture in prod.
 
-## Phase 2 — reverse-join + reveal (PARKED on privacy posture)
-Query: for a subscriber (their name + city/state, and their claimed profile), find matching
-`search_activity` (term-match) and `search_results` (result-match) rows → tease on the existing
-`WhoIsSearchingPage`. Behind the IDI/index opt-out suppression list.
+## Phase 2 — reverse-join + tiered reveal (SHIPPED 2026-07-14, bundle public.03ee67a5.js)
+Reveal posture (owner 2026-07-13): **free members = obfuscated tease (conversion bait), paid =
+full detail.** Masking is SERVER-SIDE — real searcher names never reach a free client.
 
-**Two decisions to settle before building Phase 2:**
-1. **Capture anonymous funnel searches?** — decided YES in Phase 1 (bulk of volume; searcher shown
-   as region only). Revisit only if privacy posture changes.
-2. **Reveal posture** — the real open question. Options:
-   - **Aggregate/teased only** (recommended, MyLife-safe): "3 people searched for you this month,
-     one near Dallas." Store more than we show; never expose exact searcher identity.
-   - Show searcher detail to paid members (higher risk — stalking/safety, FTC exposure).
+- **Capture enhancement:** `searchActivity.js` now also captures the SEARCHER's own name/location
+  when they're a signed-in member (→ `search_activity.searcher_name/_norm/_first/_city/_state`,
+  applied to Neon). That's what lets WSFY name a searcher. Anon searchers = session id only.
+- **Engine:** `seo/lib/wsfy.mjs` `buildWsfySummary(identity,{tier})` — reverse-join (term-match on
+  `term_name_norm` OR result-match on `search_results.name_norm`, `+state` when known, self excluded),
+  aggregates per distinct searcher, returns `{count, teaseSummary:{headline,lines}, events[]}`.
+  FREE = masked names (`T••••• A•••••`), coarse location, tease line; PAID = full.
+- **Endpoint:** `seo/app/api/wsfy/route.js` (POST). URL derives from `REACT_APP_LEAD_CAPTURE_URL`.
+- **Page:** `WhoIsSearchingPage` fetches real data, renders the tease banner ("N people are
+  searching for you: 2 in Los Angeles, Carol King…"), server-tiered rows, charts from real data.
+  Viewers tab = honest empty (profile-open tracking not captured yet).
+- Verified end-to-end vs live Neon: self-exclusion, result-match, masking, proof name, both tiers.
 
-**Guardrails (non-negotiable for Phase 2):**
-- Don't reveal searcher identity; tease/aggregate (region, count, timeframe).
-- Honor the IDI/index opt-out suppression list.
-- Retention window on stored result-set PII (third-party PII liability) — e.g. 30–90 day rolling.
-- Keep non-FCRA framing; don't let WSFY become a stalking-confirmation tool.
+**Two open items (not blocking the tease, but before wide launch):**
+1. **AUTH hardening (the important one):** `tier` is currently client-asserted — a crafted request
+   could assert `paid` and get the detail (searcher names), i.e. bypass the paywall. FIX: validate
+   the caller's BC token server-side (identity + paid status) and derive `tier` from that, not the
+   body. Flagged in `seo/app/api/wsfy/route.js`.
+2. **Opt-out suppression:** `isSuppressed()` in wsfy.mjs is a stub — wire it to the IDI/index
+   opt-out list. Also add a retention window on stored result-set PII (30–90 day rolling).
+
+**Richer affinity descriptors** (your "went to your high school", "just got married") are NOT built:
+the licensed BC/IDI person data has employment/relatives/property/criminal but **no education or
+marital-status field** (checked BC_REPORT_FIELD_MAP). We ship the sourceable subset (count, location,
+one proof name) and never fabricate. Employer/relative-overlap affinities ARE sourceable and are a
+natural Phase 2b enrichment (resolve+enrich each searcher, compute overlap vs the subscriber).
 
 ## Phase 3 — "someone searched for you" alert emails
 Reuses the SendGrid platform (see docs/design/growth-email.md). Strong retention hook.

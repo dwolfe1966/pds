@@ -26,9 +26,20 @@ own store; WSFY = the reverse join "find searches whose terms OR results match t
   Match on normalized name+city+state, NEVER extId ([[reference_bc_extid_ephemeral]]). URL derives from
   `REACT_APP_LEAD_CAPTURE_URL`; no new env.
 
-**Phase 2 — reverse-join + reveal: PARKED on one decision = reveal posture.** Recommended aggregate/
-teased only (MyLife/FTC-safe): "3 searched for you, one near Dallas" — never expose searcher identity.
-Guardrails: honor IDI/index opt-out suppression, retention window on result PII (30–90d), non-FCRA, no
-stalking-confirmation. Anon capture already decided YES.
+**Phase 2 — reverse-join + tiered reveal: SHIPPED 2026-07-14 (bundle `public.03ee67a5.js`, not yet on BC).**
+Posture (owner): free = obfuscated tease (bait), paid = full detail; masking is SERVER-SIDE (real names
+never reach a free client). Capture now also stores the SEARCHER's own name/location (member) →
+`searcher_name/_norm/_first/_city/_state`. `seo/lib/wsfy.mjs` `buildWsfySummary()` reverse-joins (term OR
+result match, self excluded), returns `{count, teaseSummary:{headline,lines}, events}`. `seo/app/api/wsfy`
+POST. `WhoIsSearchingPage` wired: tease banner "N people are searching for you: 2 in Los Angeles, Carol
+King…", server-tiered rows, viewers tab = honest empty. Verified vs live Neon.
+
+**Two open items before wide launch:** (1) AUTH — `tier` is client-asserted (spoof → paywall bypass to
+searcher names); fix = validate BC token server-side, derive tier from it (flagged in the route). (2)
+`isSuppressed()` stub → wire IDI/index opt-out + result-PII retention window (30–90d).
+
+**NOT built (no data):** "went to high school"/"just got married" — licensed BC/IDI data has employment/
+relatives/property but NO education/marital field (per bc_report_field_map). Ship sourceable subset only,
+never fabricate. Employer/relative-overlap affinity = natural Phase 2b enrichment.
 
 **Phase 3:** "someone searched for you" alert emails, reusing the SendGrid platform ([[project_email_recovery_pipeline]]).
