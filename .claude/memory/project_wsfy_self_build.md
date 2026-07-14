@@ -69,7 +69,19 @@ public.41a4e73c.js. EnrichProfileCard (manual occupation/school) still exists, n
 for them; design the WSFY paywall/teaser on the payment page. Backlog: mobile payment page = vCard first
 (not the $1 trial price) — see [[project_backlog]].
 
-**STILL OPEN:** auth-harden; payment WSFY teaser; onboarding placement of the self-identify card.
+**App-key gate + cross-device (SHIPPED 2026-07-14, interim before real WSFY-AUTH):** owner wanted WSFY/
+identity cross-device now, accepting non-per-user auth. `seo/lib/app-auth.mjs` `checkAppKey` — X-App-Key
+header must match `WSFY_APP_KEY` env; gates /api/wsfy + /api/member-enrichment (GET+POST); OPEN when env
+unset. NOT unbreakable (key ships in bundle, extractable) — raises the bar vs casual scraping only; real
+per-user auth still = WSFY-AUTH BC ask. **Cross-device read:** GET /api/member-enrichment?userId= →
+mapped-identity summary (keyed on opaque BC userId); consumer `memberEnrichment.fetchMappedIdentity()`
+refreshes the localStorage mirror; Account 'My Identity' tab fetches on mount → works any device. Live
+verified. **Owner TODO:** set `WSFY_APP_KEY` (Vercel) + `REACT_APP_WSFY_APP_KEY` (consumer .env) same value.
+
+**Account (SHIPPED):** defaults to a clean 'This is your account' Overview landing (was Security/password);
+new 'My Identity' tab views/updates the mapped identity (embeds SelfIdentifyCard forceShow when not mapped).
+
+**STILL OPEN:** real per-user WSFY-AUTH (BC ask); payment WSFY teaser (#3 next); onboarding placement of self-identify.
 
 **NOT built (no data source at all):** "just got married" — no marital/life-event field (per bc_report_field_map).
 "Went to high school" now DOES work via user-provided profile. Never fabricate.
