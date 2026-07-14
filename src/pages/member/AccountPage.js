@@ -109,12 +109,17 @@ const AccountPage = () => {
   // ─── Identity tab (WSFY mapped-identity view) ────────────────────────────────
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [editingIdentity, setEditingIdentity] = useState(false);
-  // Cross-device: pull the server copy (keyed on the member's own userId) and refresh the mirror.
+  // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
+  // the dashboard (or another device) is reflected here. Local mirror first, then the server copy.
   useEffect(() => {
     let alive = true;
-    fetchMappedIdentity().then((srv) => { if (alive && srv) setIdentity(srv); });
+    const local = getMappedIdentity();
+    if (local) setIdentity(local);
+    if (activeTab === 'identity') {
+      fetchMappedIdentity().then((srv) => { if (alive && srv) setIdentity(srv); });
+    }
     return () => { alive = false; };
-  }, []);
+  }, [activeTab]);
 
   // ─── Profile tab state ───────────────────────────────────────────────────────
   // BC `user.update` accepts firstName, lastName, and phone — no zip.
@@ -891,15 +896,19 @@ const AccountPage = () => {
     marginBottom: '2rem',
     border: '1px solid #e5e7eb',
     borderRadius: '0.5rem',
-    overflow: 'hidden',
+    // Fill on desktop, scroll horizontally on mobile so all tabs stay reachable (was clipped
+    // to the first ~3 when we added Overview + My Identity).
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
   };
 
   const tabBtnBase = {
-    padding: '0.75rem 1.5rem',
+    padding: '0.75rem 1.25rem',
     cursor: 'pointer',
     fontWeight: 600,
     fontSize: '0.9rem',
-    flex: 1,
+    flex: '1 0 auto',        // grow to fill on desktop; don't shrink → scroll on mobile
+    whiteSpace: 'nowrap',
     transition: 'all 0.15s',
     textAlign: 'center',
   };
@@ -1063,7 +1072,7 @@ const AccountPage = () => {
       {activeTab === 'identity' && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>My Identity</h2>
-          {identity && identity.confirmed && !editingIdentity ? (
+          {identity && (identity.confirmed || identity.name || identity.hasReport) && !editingIdentity ? (
             <>
               <p style={{ color: '#4b5563', marginTop: 0 }}>
                 This is what we've mapped to your identity. We use it to show you who's searching for you — and how they might know you.
