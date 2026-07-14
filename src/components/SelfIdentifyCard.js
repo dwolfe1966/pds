@@ -49,10 +49,16 @@ export default function SelfIdentifyCard() {
   const { user, isPaid } = useAuth();
   const [step, setStep] = useState('form'); // form | searching | choose | working | schools | done
   const [form, setForm] = useState({
-    firstName: user?.firstName || '', lastName: user?.lastName || '',
+    firstName: user?.firstName || '', middleName: '', lastName: user?.lastName || '',
     city: user?.city || '', state: user?.state || '', age: '',
   });
   const [matches, setMatches] = useState([]);
+  const [allFetched, setAllFetched] = useState([]);
+  const [rawResp, setRawResp] = useState(null);
+  const [canLoadMore, setCanLoadMore] = useState(false);
+  const [showingAll, setShowingAll] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [schools, setSchools] = useState({ highSchool: '', college: '' });
   const [err, setErr] = useState('');
   const [recordConfirmed, setRecordConfirmed] = useState(false);
@@ -75,16 +81,50 @@ export default function SelfIdentifyCard() {
     try {
       const res = await api.searchPeople({
         firstName: form.firstName.trim(), lastName: form.lastName.trim(),
+        middleName: form.middleName.trim() || undefined,
         state: form.state.trim() || undefined, city: form.city.trim() || undefined,
         age: form.age.trim() || undefined, type: 'name', source: 'self-identify',
       });
-      const list = narrowMatches(res?.data || [], form).slice(0, 8);
-      setMatches(list);
+      const all = res?.data || [];
+      setAllFetched(all);
+      setMatches(narrowMatches(all, form));
+      setRawResp(res?.rawResponse || null);
+      setCanLoadMore(!!(res?.pagination && res.pagination.hasMore));
+      setShowingAll(false);
+      setExhausted(false);
       setStep('choose');
     } catch {
       setErr("We couldn't run the search right now. You can add your details manually below.");
       setStep('schools');
     }
+  };
+
+  // "None of these are me" → surface MORE of the result set before giving up: first reveal any
+  // matches the client-side age filter hid, then paginate BC for the next page. Exhausted → refine.
+  const showMore = async () => {
+    if (!showingAll && allFetched.length > matches.length) {
+      setMatches(allFetched);
+      setShowingAll(true);
+      return;
+    }
+    if (canLoadMore && rawResp) {
+      setLoadingMore(true);
+      try {
+        const more = await api.loadMoreSearchResults(rawResp);
+        const newData = more?.data || [];
+        if (newData.length) {
+          const merged = [...allFetched, ...newData];
+          setAllFetched(merged);
+          setMatches(merged);
+          setShowingAll(true);
+          setRawResp(more.rawResponse || rawResp);
+          setCanLoadMore(!!(more.pagination && more.pagination.hasMore));
+        } else { setCanLoadMore(false); setExhausted(true); }
+      } catch { setCanLoadMore(false); setExhausted(true); }
+      setLoadingMore(false);
+      return;
+    }
+    setExhausted(true); // nothing more to load — offer refine / schools
   };
 
   const selectMatch = async (m) => {
@@ -163,10 +203,30 @@ export default function SelfIdentifyCard() {
             </button>
           ))}
         </div>
-        <div style={{ marginTop: 14, display: 'flex', gap: 16 }}>
-          <button type="button" onClick={() => setStep('schools')} style={{ background: 'none', border: 'none', color: '#374151', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>None of these are me</button>
+        <div style={{ marginTop: 14, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          {!exhausted && (matches.length > 0 || canLoadMore) && (
+            <button type="button" onClick={showMore} disabled={loadingMore}
+              style={{ background: 'none', border: 'none', color: GREEN_CTA, fontSize: 13, fontWeight: 700, cursor: loadingMore ? 'default' : 'pointer', textDecoration: 'underline' }}>
+              {loadingMore ? 'Loading…' : 'None of these are me — show more results'}
+            </button>
+          )}
+          <button type="button" onClick={() => setStep('form')}
+            style={{ background: 'none', border: 'none', color: '#374151', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
+            Refine my search
+          </button>
+          {exhausted && (
+            <button type="button" onClick={() => setStep('schools')}
+              style={{ background: 'none', border: 'none', color: '#374151', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
+              Add my schools instead
+            </button>
+          )}
           <button type="button" onClick={hideForNow} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>Skip</button>
         </div>
+        {exhausted && (
+          <p style={{ margin: '10px 0 0', fontSize: 12.5, color: '#6b7280' }}>
+            That's all we found. Try <strong>Refine my search</strong> with your middle name, a different city, or your age to narrow it down.
+          </p>
+        )}
       </div>
     );
   }
@@ -200,6 +260,7 @@ export default function SelfIdentifyCard() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div><span style={label}>First name</span><input style={field} value={form.firstName} onChange={set('firstName')} /></div>
         <div><span style={label}>Last name</span><input style={field} value={form.lastName} onChange={set('lastName')} /></div>
+        <div><span style={label}>Middle name <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span></span><input style={field} value={form.middleName} onChange={set('middleName')} placeholder="helps narrow it down" /></div>
         <div><span style={label}>City</span><input style={field} value={form.city} onChange={set('city')} placeholder="e.g. Los Angeles" /></div>
         <div><span style={label}>State</span><input style={field} value={form.state} onChange={set('state')} placeholder="CA" maxLength={2} /></div>
         <div><span style={label}>Age</span><input style={field} value={form.age} onChange={set('age')} placeholder="e.g. 42" inputMode="numeric" /></div>

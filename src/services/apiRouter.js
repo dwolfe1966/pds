@@ -631,26 +631,33 @@ async function callNewAPI(endpoint, params) {
       delete query.perPage;
       delete query.per_page;
       delete query.pageSize;
-      // city/age are NOT valid teaser inputs — IDI returns 0 results whenever they're
-      // present, even when the value is correct (verified: "Patricia Garcia / CA"
-      // returns records, but "+ city" or "+ age" → status:failed/0). They are applied
-      // CLIENT-SIDE in the SERP (narrowedResults) as designed; leaking them into the
-      // teaser query silently breaks the search into a thin-match. Strip them here.
-      // Validation escape hatch: `?debug_extras=1` keeps city/age in the teaser so we
-      // can measure their (broken) effect on IDI to build the BC case. Default = strip.
+      // BC added CITY as a valid teaser input (2026-07-14) — pass it through so results narrow to
+      // the city SERVER-SIDE. AGE is still NOT a valid input (IDI → status:failed/0 when present),
+      // so it stays stripped and is applied client-side. `?debug_extras=1` (_keepExtras) keeps age
+      // too for validation. (Prior comment: city ALSO broke IDI — that was before BC added support.)
       const keepExtras = query._keepExtras;
       delete query._keepExtras;
       if (!keepExtras) {
-        delete query.city;
         delete query.age;
       }
+      if (query.city && typeof query.city === 'string') query.city = query.city.trim();
       const isPaginationRequest = !!query.commerceContentId && query.page != null;
       if (process.env.NODE_ENV === 'development') {
         dbg('[ByteCrtrs Search] All params sent to searchTeaser:', JSON.stringify(query, null, 2));
         dbg('[ByteCrtrs Search] Pagination request (getMore):', isPaginationRequest);
       }
-      const response = await apiWrapper.searchTeaser(query);
-      const adapted = adaptTeaserResponse(response);
+      let response = await apiWrapper.searchTeaser(query);
+      let adapted = adaptTeaserResponse(response);
+      // Safety net: if a city filter over-narrows to zero results, retry WITHOUT city so a search
+      // never regresses below the old name+state behavior (protects the funnel while adopting BC's
+      // new city support). Only for a fresh search, not a getMore pagination request.
+      if (query.city && !isPaginationRequest && (!adapted?.data || adapted.data.length === 0)) {
+        const retry = { ...query };
+        delete retry.city;
+        if (process.env.NODE_ENV === 'development') dbg('[ByteCrtrs Search] city→0 results, retrying without city');
+        response = await apiWrapper.searchTeaser(retry);
+        adapted = adaptTeaserResponse(response);
+      }
       // Attach raw response for pagination (hasMore, getMore)
       if (response && typeof response.hasMore === 'function' && typeof response.getMore === 'function') {
         adapted.rawResponse = response;
