@@ -15,10 +15,14 @@ whole SEO directory city-grain gate was calibrated around "teaser strips city �
 
 **Why:** city narrowing now works, so results can be city-specific instead of state-wide.
 
-**How to apply (the after-WSFY work):**
-1. **`src/services/apiRouter.js`** — stop stripping `city` from teaser (the `?debug_extras=1` path kept
-   it). Verify BC now returns results (not status:failed/0) with city passed. Move ONE change at a time —
-   contextKey/teaserInput are fragile ([[feedback_search_contextkey]]); test before/after.
+**DONE 2026-07-14 (commit a7778a1):** `src/services/apiRouter.js` teaser-search now PASSES city through
+(un-stripped) for server-side narrowing; AGE stays stripped (still breaks IDI). Safety net: if city
+over-narrows to 0 results, it retries WITHOUT city so no search regresses below name+state — protects the
+funnel. ⚠️ Affects ALL teaser searches — **verify on the live funnel** (name landing → SRP) that city
+narrowing doesn't reduce conversions; the retry should prevent 0-result regressions. Bundle public.6180abb2.js.
+
+**How to apply (remaining):**
+1. ~~un-strip city~~ DONE (above). Age still client-side only.
 2. **SEO directory ([[project_seo_content_augmentation]], [[project_seo_live_idlookup_me]])** — the
    city-grain gate in `seo/lib/directory.js` and the name-in-city leaf were generalized to state because
    city didn't narrow. Re-evaluate: city pages/SERP hand-offs can now carry city and resolve city-specific.
