@@ -57,6 +57,28 @@ function fuzzyFirst(a, b) {
   return levenshtein(a, b) <= (Math.max(a.length, b.length) <= 4 ? 1 : 2);
 }
 
+const lastToken = (name) => {
+  const p = norm(name || '').split(' ').filter(Boolean);
+  return p.length > 1 ? p[p.length - 1] : '';
+};
+
+// Phase 2b enrichment SEAM. Occupation / employer / verified relatives per member searcher live
+// in `member_enrichment` (populated by a separate pipeline — a browser-side BC self-lookup on the
+// member, since BC is IIFE-only + COGS; see docs). This join is OPTIONAL: if the table is empty or
+// absent the tease degrades to corpus-derived affinities (relative-by-surname, same-city, repeat).
+async function fetchEnrichment(userIds) {
+  const ids = Array.from(new Set(userIds.filter(Boolean)));
+  if (!ids.length) return new Map();
+  try {
+    const rows = await sql`
+      SELECT user_id, occupation, employer, relatives
+      FROM member_enrichment WHERE user_id = ANY(${ids})`;
+    return new Map(rows.map((r) => [r.user_id, r]));
+  } catch {
+    return new Map(); // table not created yet — degrade gracefully
+  }
+}
+
 /**
  * @param {object} identity  { name, city, state, selfUserId }
  * @param {object} opts       { tier: 'free'|'paid', limit }
@@ -111,7 +133,8 @@ export async function buildWsfySummary(identity, opts = {}) {
     let g = byKey.get(r.searcher_key);
     if (!g) {
       g = {
-        searcher_key: r.searcher_key, searcher_name: r.searcher_name, searcher_first: r.searcher_first,
+        searcher_key: r.searcher_key, searcher_user_id: r.searcher_user_id,
+        searcher_name: r.searcher_name, searcher_first: r.searcher_first,
         searcher_city: r.searcher_city, searcher_state: r.searcher_state,
         is_member: r.searcher_type === 'member', times: 0, last_at: r.received_at, last_type: r.search_type,
       };
@@ -129,12 +152,33 @@ export async function buildWsfySummary(identity, opts = {}) {
     .slice(0, limit);
   const count = visible.length;
 
+  // ── Affinity computation (Phase 2b) ──────────────────────────────────────
+  // Per searcher, derive why they might matter to the subject. Corpus-derived signals need no
+  // enrichment; occupation/verified-relative come from the enrichment seam when present.
+  const subjCityN = norm(identity.city || '');
+  const enrich = await fetchEnrichment(visible.filter((g) => g.is_member).map((g) => g.searcher_user_id));
+  const aff = new Map();
+  for (const g of visible) {
+    const tags = [];
+    const e = g.searcher_user_id ? enrich.get(g.searcher_user_id) : null;
+    const sLast = lastToken(g.searcher_name);
+    const relByName = !!(sLast && subjLast && sLast === subjLast); // shares your surname → likely family
+    const relVerified = !!(e?.relatives && Array.isArray(e.relatives) && e.relatives.some((n) => norm(n) === subjNorm));
+    if (relByName || relVerified) tags.push('relative');
+    if (relVerified) tags.push('verified_relative');
+    if (g.searcher_city && subjCityN && norm(g.searcher_city) === subjCityN) tags.push('local');
+    if (g.times >= 2) tags.push('frequent');
+    if (e?.occupation) tags.push('occupation');
+    aff.set(g.searcher_key, { tags, occupation: e?.occupation || null, employer: e?.employer || null });
+  }
+
   // ── Events list (for the page's table + charts) — tiered ─────────────────
   const events = visible.map((r, i) => {
     const isMember = !!r.is_member;
     const tier = isMember ? 'Basic' : 'Visitor';
     const searchType = TYPE_LABEL[r.last_type] || cap(r.last_type) || 'Name';
-    const base = { id: String(r.searcher_key || i), timestamp: r.last_at, searchType, tier, times: r.times };
+    const a = aff.get(r.searcher_key) || { tags: [] };
+    const base = { id: String(r.searcher_key || i), timestamp: r.last_at, searchType, tier, times: r.times, affinities: a.tags };
     if (paid) {
       return {
         ...base,
@@ -142,35 +186,48 @@ export async function buildWsfySummary(identity, opts = {}) {
         firstName: r.searcher_first || (r.searcher_name ? r.searcher_name[0] : ''),
         city: r.searcher_city || '',
         state: r.searcher_state || '',
+        occupation: a.occupation || '',
       };
     }
-    // FREE: no real name/city leaves the server; coarse state only.
+    // FREE: no real name/city leaves the server; coarse state + non-PII affinity tags only.
     return { ...base, name: maskLabel(r.searcher_name), firstName: '', city: '', state: r.searcher_state || '' };
   });
 
-  // ── Tease summary (the conversion hook — your "4 people…" line) ──────────
+  // ── Tease summary (the conversion hook — "4 people are searching for you: …") ──
   const headline = count === 0
     ? 'No one has searched for you yet'
     : `${count} ${plural(count, 'person', 'people')} ${plural(count, 'is', 'are')} searching for you`;
   const lines = [];
+  const used = new Set();
+  const take = (gs) => gs.forEach((g) => used.add(g.searcher_key));
 
-  // Location descriptors from searchers with a known city (top 2 cities).
+  // 1. Possible relatives — highest intrigue, lead with it.
+  const rel = visible.filter((g) => aff.get(g.searcher_key).tags.includes('relative'));
+  if (rel.length) { lines.push(`${rel.length} who may be ${rel.length === 1 ? 'a relative' : 'relatives'}`); take(rel); }
+
+  // 2. In your area (subject's own city).
+  const loc = visible.filter((g) => !used.has(g.searcher_key) && aff.get(g.searcher_key).tags.includes('local'));
+  if (loc.length) { lines.push(`${loc.length} in your area`); take(loc); }
+
+  // 3. Other top cities among the not-yet-highlighted.
   const cityCounts = {};
-  for (const r of visible) {
-    if (r.searcher_city) cityCounts[r.searcher_city] = (cityCounts[r.searcher_city] || 0) + 1;
-  }
-  const topCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 2);
-  for (const [city, c] of topCities) {
-    lines.push(`${c} who ${plural(c, 'lives', 'live')} in ${city}`);
+  for (const g of visible) { if (!used.has(g.searcher_key) && g.searcher_city) cityCounts[g.searcher_city] = (cityCounts[g.searcher_city] || 0) + 1; }
+  for (const [city, c] of Object.entries(cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 2)) {
+    lines.push(`${c} near ${city}`);
+    take(visible.filter((g) => !used.has(g.searcher_key) && g.searcher_city === city).slice(0, c));
   }
 
-  // One "proof" name — a real member searcher, revealed to prove the activity is real.
-  const proof = visible.find((r) => r.is_member && r.searcher_name);
-  if (proof) lines.push(proof.searcher_name);
+  // 4. One "proof" name — reveal a real searcher (with occupation if enriched) to prove it's real.
+  const proof = visible.find((g) => aff.get(g.searcher_key).occupation && g.searcher_name)
+    || visible.find((g) => g.is_member && g.searcher_name);
+  if (proof) {
+    const pe = aff.get(proof.searcher_key);
+    lines.push(pe.occupation ? `${proof.searcher_name} (works in ${pe.occupation})` : proof.searcher_name);
+    used.add(proof.searcher_key);
+  }
 
-  // Remainder.
-  const accounted = topCities.reduce((s, [, c]) => s + c, 0) + (proof ? 1 : 0);
-  const remainder = count - accounted;
+  // 5. Remainder (accurate — de-duped via the used set).
+  const remainder = count - used.size;
   if (remainder > 0) lines.push(`and ${remainder} more`);
 
   return { count, tier: paid ? 'paid' : 'free', teaseSummary: { headline, lines }, events };

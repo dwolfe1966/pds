@@ -56,11 +56,35 @@ full detail.** Masking is SERVER-SIDE — real searcher names never reach a free
 2. **Opt-out suppression:** `isSuppressed()` in wsfy.mjs is a stub — wire it to the IDI/index
    opt-out list. Also add a retention window on stored result-set PII (30–90 day rolling).
 
-**Richer affinity descriptors** (your "went to your high school", "just got married") are NOT built:
-the licensed BC/IDI person data has employment/relatives/property/criminal but **no education or
-marital-status field** (checked BC_REPORT_FIELD_MAP). We ship the sourceable subset (count, location,
-one proof name) and never fabricate. Employer/relative-overlap affinities ARE sourceable and are a
-natural Phase 2b enrichment (resolve+enrich each searcher, compute overlap vs the subscriber).
+## Phase 2b — richer affinity tease (SHIPPED 2026-07-14, engine live; occupation needs the pipeline)
+The tease now describes *why* each searcher matters. `buildWsfySummary` computes per-searcher
+affinity tags and builds richer lines, e.g.:
+> **4 people are searching for you:** 1 who may be a relative · 1 in your area · 1 near San Diego ·
+> Carol King (works in healthcare) · and 1 more
+
+- **Corpus-derived (live now, no enrichment, no COGS):**
+  - `relative` — a searcher whose *own surname* matches yours → "may be a relative / family". (Note:
+    everyone matched shares the search *term* surname; the searcher's *own* name is independent, so
+    this is a real family signal.)
+  - `local` — searcher's city == your city → "in your area".
+  - other top cities → "N near {city}". `frequent` — ≥2 searches.
+  - Accurate remainder via a de-dupe set. One "proof" name still revealed (owner's bait model).
+- **Enrichment seam (built; lights up when data present):** `occupation`/`employer` and
+  `verified_relative` (subject's name in the searcher's relatives list) come from `member_enrichment`
+  (`seo/db/member-enrichment-schema.sql`). `wsfy.mjs` LEFT-joins it optionally — empty table → degrades
+  to corpus affinities. Paid events carry `affinities[]` + `occupation`. Ingest: `POST /api/member-enrichment`
+  (`upsertMemberEnrichment`). Verified end-to-end vs Neon (before/after seeding Carol King → healthcare).
+
+**OPEN — the enrichment pipeline (owner decision needed):** occupation/verified-relatives need
+report-grade data per member. BC is IIFE-only (browser) + Turnstile + COGS, so the Vercel backend
+can't pull it server-side. Design: a **browser-side self-lookup** on the member (once, amortized) →
+POST to `/api/member-enrichment`. Decisions: (1) WHEN — on signup, first WSFY view, or a batch job;
+(2) COGS — a teaser self-lookup is cheap-ish; a full report is real money; (3) auth-harden the ingest
++ `/api/wsfy` tier (both client-asserted today). Occupation stays absent from the tease until this runs.
+
+**Still NOT built (no data at all):** "went to your high school" / "just got married" — the licensed
+BC/IDI data has employment/relatives/property/criminal but **no education or marital-status field**
+(BC_REPORT_FIELD_MAP). We never fabricate these.
 
 ## Phase 3 — "someone searched for you" alert emails
 Reuses the SendGrid platform (see docs/design/growth-email.md). Strong retention hook.

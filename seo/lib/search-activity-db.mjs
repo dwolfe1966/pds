@@ -6,6 +6,25 @@ const URL = process.env.LEADS_DATABASE_URL || process.env.DATABASE_URL || proces
 export const hasSearchDb = !!URL;
 const sql = hasSearchDb ? neon(URL) : null;
 
+/** Upsert one member's enrichment (WSFY Phase 2b). Schema: seo/db/member-enrichment-schema.sql. */
+export async function upsertMemberEnrichment(e) {
+  if (!sql) throw new Error('no DB configured');
+  if (!e || !e.userId) throw new Error('userId required');
+  const relatives = Array.isArray(e.relatives) ? e.relatives : [];
+  await sql`
+    INSERT INTO member_enrichment (user_id, occupation, employer, relatives, city, state, source, enriched_at)
+    VALUES (${e.userId}, ${e.occupation || null}, ${e.employer || null}, ${JSON.stringify(relatives)}::jsonb,
+            ${e.city || null}, ${e.state || null}, ${e.source || null}, now())
+    ON CONFLICT (user_id) DO UPDATE SET
+      occupation = COALESCE(EXCLUDED.occupation, member_enrichment.occupation),
+      employer   = COALESCE(EXCLUDED.employer, member_enrichment.employer),
+      relatives  = CASE WHEN jsonb_array_length(EXCLUDED.relatives) > 0 THEN EXCLUDED.relatives ELSE member_enrichment.relatives END,
+      city = COALESCE(EXCLUDED.city, member_enrichment.city),
+      state = COALESCE(EXCLUDED.state, member_enrichment.state),
+      source = EXCLUDED.source, enriched_at = now()
+  `;
+}
+
 /** Normalize a name/place for matching: lowercase, strip punctuation, collapse spaces. */
 export function norm(s) {
   return String(s == null ? '' : s)
