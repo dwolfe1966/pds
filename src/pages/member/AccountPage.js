@@ -1097,13 +1097,16 @@ const AccountPage = () => {
               const name = identity.name || [user && user.firstName, user && user.lastName].filter(Boolean).join(' ') || 'Your record';
               const initial = (name.trim()[0] || '?').toUpperCase();
               const location = [identity.city, identity.state].filter(Boolean).join(', ');
+              // Free tier sees a LOCKED preview: the categories + risk stats stay crisp, but the
+              // specific values (employer, schools, exact location) blur behind the upsell.
+              const locked = !isPaid;
               const chips = [
-                (identity.jobTitle || identity.occupation) ? `💼 ${identity.jobTitle || identity.occupation}` : null,
-                identity.employer ? `🏢 ${identity.employer}` : null,
-                identity.highSchool ? `🎓 ${identity.highSchool}` : null,
-                identity.college ? `🎓 ${identity.college}` : null,
-                identity.relativesCount != null ? `👥 ${identity.relativesCount} relatives on record` : null,
-                location ? `📍 ${location}` : null,
+                (identity.jobTitle || identity.occupation) ? { icon: '💼', text: identity.jobTitle || identity.occupation, sensitive: true } : null,
+                identity.employer ? { icon: '🏢', text: identity.employer, sensitive: true } : null,
+                identity.highSchool ? { icon: '🎓', text: identity.highSchool, sensitive: true } : null,
+                identity.college ? { icon: '🎓', text: identity.college, sensitive: true } : null,
+                identity.relativesCount != null ? { icon: '👥', text: `${identity.relativesCount} relatives on record`, sensitive: false } : null,
+                location ? { icon: '📍', text: location, sensitive: true } : null,
               ].filter(Boolean);
               const exposure = computeExposure(identity);
               const expColor = !exposure ? '#0d5d2f' : exposure.score >= 65 ? '#dc2626' : exposure.score >= 35 ? '#f59e0b' : '#0d5d2f';
@@ -1118,12 +1121,22 @@ const AccountPage = () => {
                     </div>
                   </div>
                   <div style={{ padding: '16px 20px', background: '#fff' }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 8 }}>What's public about you</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6b7280' }}>What's public about you</span>
+                      {locked && <span style={{ fontSize: 11, fontWeight: 700, color: '#0d5d2f' }}>🔒 Locked preview</span>}
+                    </div>
                     {chips.length > 0 ? (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {chips.map((chip) => (
-                          <span key={chip} style={{ fontSize: 13, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: 999, padding: '5px 12px' }}>{chip}</span>
-                        ))}
+                        {chips.map((chip, i) => {
+                          const blur = locked && chip.sensitive;
+                          return (
+                            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: 999, padding: '5px 12px' }}>
+                              <span aria-hidden="true">{chip.icon}</span>
+                              <span style={blur ? { filter: 'blur(5px)', userSelect: 'none' } : undefined}>{chip.text}</span>
+                              {blur && <span aria-hidden="true">🔒</span>}
+                            </span>
+                          );
+                        })}
                       </div>
                     ) : (
                       <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Your record is linked. We'll surface what's exposed here.</p>
@@ -1146,7 +1159,7 @@ const AccountPage = () => {
                               <span style={{ marginTop: 2, width: 8, height: 8, borderRadius: '50%', background: expColor, flexShrink: 0 }} aria-hidden="true" />
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{b.label} <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>+{b.points}</span></div>
-                                <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.4 }}>{b.detail}</div>
+                                <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.4, ...(locked ? { filter: 'blur(4px)', userSelect: 'none' } : {}) }}>{b.detail}</div>
                               </div>
                               <Link to={isPaid ? `/opt-out?hide=${b.key}` : `/payment?upgrade=1&reason=identity&hide=${b.key}`}
                                 style={{ flexShrink: 0, alignSelf: 'center', fontSize: 12, fontWeight: 700, color: '#0d5d2f', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', borderRadius: 999, padding: '4px 10px' }}>
