@@ -21,6 +21,46 @@ function endpointUrl() {
   return `${base.replace(/\/$/, '')}/search-activity`;
 }
 
+// App-level gate (WSFY-AUTH interim, same key as memberEnrichment): proves the call came from our app.
+function appKeyHeaders() {
+  const k = process.env.REACT_APP_WSFY_APP_KEY;
+  return k ? { 'X-App-Key': k } : {};
+}
+
+function currentUserId() {
+  try {
+    const u = JSON.parse(localStorage.getItem('user') || 'null');
+    return u && String(u.id || u.userId || u._id || u.uniqueId || '');
+  } catch { return ''; }
+}
+
+/**
+ * A member's OWN search history, read back cross-device from the corpus we already capture (the same
+ * searches WSFY is built on). Shape matches the localStorage ring buffer (utils/searchHistory). Returns
+ * [] on any failure so the caller can fall back to the local cache.
+ */
+export async function fetchSearchHistory() {
+  const userId = currentUserId();
+  if (!userId) return [];
+  try {
+    const res = await fetch(`${endpointUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
+    if (!res.ok) return [];
+    const d = await res.json();
+    return Array.isArray(d && d.history) ? d.history : [];
+  } catch { return []; }
+}
+
+/** Delete one server-side captured search (best-effort). id is the server row id. */
+export async function deleteServerSearch(id) {
+  const userId = currentUserId();
+  if (!userId || !id) return false;
+  try {
+    const res = await fetch(`${endpointUrl()}?userId=${encodeURIComponent(userId)}&id=${encodeURIComponent(id)}`,
+      { method: 'DELETE', headers: { ...appKeyHeaders() } });
+    return res.ok;
+  } catch { return false; }
+}
+
 /** Stable per-device id for anonymous (logged-out) searchers. */
 function getOrCreateAnonId() {
   try {

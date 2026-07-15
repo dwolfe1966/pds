@@ -5,30 +5,42 @@ import {
   getSearchHistory,
   deleteSearchHistoryItem,
 } from '../../utils/searchHistory';
+import { fetchSearchHistory, deleteServerSearch } from '../../services/searchActivity';
+
+// Merge the cross-device server history (source of truth) with any local-only entries newer than the
+// newest server row — so a search you JUST ran still shows before its capture round-trips. Deduped by a
+// coarse query signature.
+function mergeHistory(server, local) {
+  if (!server.length) return local;
+  const sig = (e) => `${e.type}|${(e.query && e.query.firstName) || ''}|${(e.query && e.query.lastName) || ''}|${(e.query && e.query.email) || ''}|${(e.query && e.query.phone) || ''}`.toLowerCase();
+  const newestServer = Math.max(0, ...server.map((e) => e.timestamp || 0));
+  const serverSigs = new Set(server.map(sig));
+  const extras = local.filter((e) => (e.timestamp || 0) > newestServer && !serverSigs.has(sig(e)));
+  return [...extras, ...server].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+}
 
 const SearchHistoryPage = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  // error state retained for future server-backed reads; unused with the
-  // localStorage source since reads can't fail.
   const [error] = useState('');
 
   useEffect(() => {
-    // localStorage-backed history (see utils/searchHistory.js). BC doesn't
-    // have a user-facing history endpoint yet; when it ships, swap this to
-    // an API call and treat localStorage as a fallback / offline cache.
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    setHistory(getSearchHistory());
-    setLoading(false);
+    if (!token) { setLoading(false); return; }
+    let alive = true;
+    // Paint the local cache instantly, then reconcile with the server (cross-device, source of truth).
+    const local = getSearchHistory();
+    setHistory(local);
+    fetchSearchHistory()
+      .then((server) => { if (alive) setHistory(mergeHistory(server || [], local)); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
   }, [token]);
 
   const handleDelete = (id) => {
-    deleteSearchHistoryItem(id);
+    deleteSearchHistoryItem(id); // local cache
+    deleteServerSearch(id);      // server (best-effort; scoped to this user)
     setHistory(prev => prev.filter(item => item.id !== id));
   };
 

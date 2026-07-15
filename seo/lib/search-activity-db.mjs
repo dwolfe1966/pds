@@ -125,6 +125,40 @@ export async function isMemberSuppressed(userId) {
 }
 
 /** Read one member's enrichment (for the cross-device "My Identity" view). */
+// A member's OWN search history (cross-device), read back from the corpus we already capture. Shape
+// mirrors the client localStorage ring buffer so SearchHistoryPage can consume either interchangeably.
+export async function getUserSearchHistory(userId, limit = 50) {
+  if (!sql || !userId) return [];
+  const lim = Math.min(Math.max(Number(limit) || 50, 1), 200);
+  try {
+    const rows = await sql`
+      SELECT id, search_type, source, terms, result_count, searched_at, received_at
+      FROM search_activity
+      WHERE searcher_user_id = ${userId} AND searcher_type = 'member'
+      ORDER BY received_at DESC
+      LIMIT ${lim}`;
+    return rows.map((r) => ({
+      id: String(r.id),
+      timestamp: new Date(r.searched_at || r.received_at || Date.now()).getTime(),
+      type: r.search_type || 'name',
+      query: (r.terms && typeof r.terms === 'object') ? r.terms : {},
+      resultCount: r.result_count != null ? r.result_count : 0,
+      source: r.source || null,
+    }));
+  } catch { return []; }
+}
+
+// Delete one of a member's own captured searches (search_results cascades via FK). Scoped to the
+// owner so a user can only remove their own rows.
+export async function deleteUserSearchActivity(userId, id) {
+  if (!sql || !userId || !id) return;
+  try { await sql`DELETE FROM search_activity WHERE id = ${id} AND searcher_user_id = ${userId}`; } catch { /* noop */ }
+}
+export async function clearUserSearchActivity(userId) {
+  if (!sql || !userId) return;
+  try { await sql`DELETE FROM search_activity WHERE searcher_user_id = ${userId}`; } catch { /* noop */ }
+}
+
 export async function getMemberEnrichment(userId) {
   if (!sql) throw new Error('no DB configured');
   if (!userId) return null;
