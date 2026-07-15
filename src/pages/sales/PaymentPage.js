@@ -724,15 +724,11 @@ const PaymentPage = () => {
 
       {/* Person preview — ALWAYS on top, above the two-column layout, mobile or
           desktop (owner 2026-07-03). The person is the anchor, not the pricing. */}
-      {/* Mobile-only: combine the $1 trial rectangle with the vCard into one card
-          (owner) — 7-Day Trial $1 on top, vCard in the middle, instant-access at the
-          bottom. The separate personPreview + pricing card are hidden on mobile. */}
+      {/* Mobile-only: combine the vCard with the $1 trial rectangle into one card (owner) —
+          vCard on TOP, then the trial price band, then instant-access footer. Lead with the
+          person/value, then the price. The separate personPreview + pricing card are hidden on mobile. */}
       {selectedPerson && !success && !isSelfContext && (
         <div className={styles.mobilePriceVcard}>
-          <div className={styles.summaryHeader} style={theme ? { background: theme.band } : undefined}>
-            <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
-            <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
-          </div>
           <div className={styles.mobileVcardBody}>
             <PersonAvatar person={selectedPerson} size={48} />
             <div className={styles.personPreviewInfo}>
@@ -745,6 +741,10 @@ const PaymentPage = () => {
               })()}
               <p className={styles.personPreviewLatest}>Latest report: {latestReportDate}</p>
             </div>
+          </div>
+          <div className={styles.summaryHeader} style={theme ? { background: theme.band } : undefined}>
+            <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
+            <p className={styles.summaryPrice}>{trialPriceStr}<span className={styles.summaryPer}> today</span></p>
           </div>
           <p className={styles.summaryInstant} style={theme ? { background: theme.onDark ? 'rgba(245,158,11,0.12)' : '#e6f3fa', color: theme.accentDark } : undefined}>⚡ Instant access after payment</p>
         </div>
