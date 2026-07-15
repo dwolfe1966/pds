@@ -770,8 +770,9 @@ const PaymentPage = () => {
         <div className={styles.formCol}>
 
           {/* General promotional teaser — shown when there's no target report (e.g. a
-              thin-match signup). After payment the success screen routes to the dashboard. */}
-          {!selectedPersonId && !success && (
+              thin-match signup). Suppressed in the WSFY flow, where the WSFY teaser is the anchor
+              (vCards/report promos only make sense when searching someone else — owner 2026-07-14). */}
+          {!selectedPersonId && !success && upgradeReason !== 'wsfy' && (
             <div style={{
               background: theme ? (theme.onDark ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' : 'linear-gradient(135deg, #055a86 0%, #007cc2 100%)') : 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
               color: '#fff', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',

@@ -102,8 +102,10 @@ const AccountPage = () => {
 
   // ─── Tab state (supports ?tab=messages deep-linking) ────────────────────────
   // Default lands on the Overview landing; other tabs are deep-linkable.
-  const validTabs = ['overview', 'identity', 'security', 'billing', 'messages', 'communications', 'profile'];
-  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'overview';
+  const validTabs = ['overview', 'identity', 'security', 'billing', 'messages', 'communications'];
+  // 'profile' merged into 'identity' — remap legacy ?tab=profile links.
+  const requestedTab = searchParams.get('tab') === 'profile' ? 'identity' : searchParams.get('tab');
+  const initialTab = validTabs.includes(requestedTab) ? requestedTab : 'overview';
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // ─── Identity tab (WSFY mapped-identity view) ────────────────────────────────
@@ -124,7 +126,8 @@ const AccountPage = () => {
   // Follow ?tab= changes (e.g., the mobile hamburger sub-nav links to /account?tab=X while we're
   // already on /account, which doesn't remount the page).
   useEffect(() => {
-    const t = searchParams.get('tab');
+    let t = searchParams.get('tab');
+    if (t === 'profile') t = 'identity';
     if (t && validTabs.includes(t)) setActiveTab(t);
   }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -929,7 +932,6 @@ const AccountPage = () => {
     { key: 'billing', label: 'Subscription & Billing' },
     { key: 'messages', label: 'Messages' },
     { key: 'communications', label: 'Communications' },
-    { key: 'profile', label: 'Profile' },
   ];
 
   return (
@@ -1056,12 +1058,11 @@ const AccountPage = () => {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 16 }}>
             {[
-              { key: 'identity', icon: '🪪', title: 'My Identity', desc: "See and control what's mapped to you." },
+              { key: 'identity', icon: '🪪', title: 'My Identity', desc: 'Your contact info + what’s mapped to you.' },
               { key: 'security', icon: '🔒', title: 'Security', desc: 'Password and privacy controls.' },
               { key: 'billing', icon: '💳', title: 'Subscription & Billing', desc: isPaid ? 'Manage your plan.' : 'Upgrade your plan.' },
               { key: 'messages', icon: '✉️', title: 'Messages', desc: 'Your support conversations.' },
               { key: 'communications', icon: '🔔', title: 'Communications', desc: 'Email preferences.' },
-              { key: 'profile', icon: '👤', title: 'Profile', desc: 'Your name, email, and phone.' },
             ].map((c) => (
               <button key={c.key} type="button" onClick={() => setActiveTab(c.key)}
                 style={{ textAlign: 'left', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(17,24,39,0.05)' }}>
@@ -1085,7 +1086,9 @@ const AccountPage = () => {
               </p>
               <div style={{ background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 12, padding: '8px 18px' }}>
                 {[
-                  ['Name', identity.name],
+                  ['Name', identity.name || [user && user.firstName, user && user.lastName].filter(Boolean).join(' ')],
+                  ['Email', user && user.email],
+                  ['Phone', (user && user.phone) || profileForm.phone],
                   ['Age', identity.age],
                   ['Location', [identity.city, identity.state].filter(Boolean).join(', ')],
                   ['Occupation', identity.jobTitle || identity.occupation],
@@ -1112,9 +1115,11 @@ const AccountPage = () => {
       )}
 
       {/* ── PROFILE TAB ──────────────────────────────────────────────────────── */}
-      {activeTab === 'profile' && (
+      {/* Contact information — merged into My Identity (Profile tab removed; profile IS your
+          identity). Renders under the identity tab, below the public-record summary. */}
+      {activeTab === 'identity' && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Profile</h2>
+          <h2 className={styles.sectionTitle}>Contact information</h2>
 
           {profileLoading ? (
             <div>

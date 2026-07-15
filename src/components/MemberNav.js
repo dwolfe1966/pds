@@ -36,7 +36,6 @@ const MemberNav = () => {
     { tab: 'billing', label: 'Subscription & Billing' },
     { tab: 'messages', label: 'Messages' },
     { tab: 'communications', label: 'Communications' },
-    { tab: 'profile', label: 'Profile' },
   ];
   const currentAccountTab = (() => {
     if (location.pathname !== '/account') return null;
