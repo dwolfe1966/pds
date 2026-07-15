@@ -703,7 +703,13 @@ const PaymentPage = () => {
         <div style={{ margin: '-2.5rem -1rem 1.5rem' }}><ThemedFunnelHeader theme={theme} /></div>
       ) : (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-2.5rem -1rem 1.5rem', padding: '0.75rem 1rem', fontSize: '0.85rem', background: '#0d5d2f', borderBottom: 'none' }}>
-          <Link to="/name/search-result" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back to Results</Link>
+          {/* "Back to Results" only makes sense in a search→report flow; in the WSFY/identity flow
+              there are no results to go back to (owner) — link back to where they came from. */}
+          {upgradeReason === 'wsfy' ? (
+            <Link to="/who-is-searching" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back</Link>
+          ) : (
+            <Link to="/name/search-result" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back to Results</Link>
+          )}
           <span style={{ fontWeight: 700, color: '#ffffff' }}>🔒 {brand.name}</span>
         </div>
       )}

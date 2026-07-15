@@ -40,7 +40,7 @@ export default function WsfyPaymentTeaser() {
 
   const count = (data && data.count) || 0;
   const lines = (data && data.teaseSummary && data.teaseSummary.lines) || [];
-  const rows = (data && data.events) ? data.events.slice(0, 4) : [];
+  const rows = (data && data.events) ? data.events.slice(0, 2) : [];
 
   return (
     <div style={hero}>
