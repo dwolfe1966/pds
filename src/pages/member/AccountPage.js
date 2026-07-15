@@ -1090,8 +1090,10 @@ const AccountPage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>My Identity</h2>
           {identity && (identity.confirmed || identity.name || identity.hasReport) && !editingIdentity ? (
-            // ── MAPPED state — a vCard of your linked public record + a teaser of what's exposed.
-            (() => {
+            // ── MAPPED — vCard of your linked public record + exposure, then tier-specific actions:
+            //    state (b) free = obfuscated profile + unlock upsell; state (c) paid = Protect / Promote.
+            <>
+            {(() => {
               const name = identity.name || [user && user.firstName, user && user.lastName].filter(Boolean).join(' ') || 'Your record';
               const initial = (name.trim()[0] || '?').toUpperCase();
               const location = [identity.city, identity.state].filter(Boolean).join(', ');
@@ -1146,7 +1148,7 @@ const AccountPage = () => {
                                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{b.label} <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>+{b.points}</span></div>
                                 <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.4 }}>{b.detail}</div>
                               </div>
-                              <Link to={`/payment?upgrade=1&reason=identity&hide=${b.key}`}
+                              <Link to={isPaid ? `/opt-out?hide=${b.key}` : `/payment?upgrade=1&reason=identity&hide=${b.key}`}
                                 style={{ flexShrink: 0, alignSelf: 'center', fontSize: 12, fontWeight: 700, color: '#0d5d2f', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', borderRadius: 999, padding: '4px 10px' }}>
                                 Hide →
                               </Link>
@@ -1159,22 +1161,62 @@ const AccountPage = () => {
                       </div>
                     )}
 
-                    <div style={{ marginTop: 16, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <button type="button" onClick={() => navigate('/payment?upgrade=1&reason=identity')}
-                        style={{ background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                        {exposure && exposure.score >= 35 ? 'Reduce my exposure →' : "Control what's exposed →"}
-                      </button>
+                    <div style={{ marginTop: 14 }}>
                       <button type="button" onClick={() => setEditingIdentity(true)}
-                        style={{ background: 'none', border: 'none', color: '#374151', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
-                        Update
+                        style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
+                        Update my record
                       </button>
                     </div>
                   </div>
                 </div>
               );
-            })()
+            })()}
+
+            {/* Tier-specific actions below the vCard. (c) paid → Protect / Promote tracks;
+                (b) free → single "unlock full report & protection" upsell. */}
+            {isPaid ? (
+              <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', background: '#fff' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0d5d2f' }}>🔒 Protect</div>
+                  <p style={{ margin: '6px 0 10px', fontSize: 13, color: '#4b5563', lineHeight: 1.5 }}>
+                    Hide your record on {brand.name} and remove yourself from data-broker sites so fewer people can find you.
+                  </p>
+                  <a href="/opt-out" style={{ fontSize: 13, fontWeight: 700, color: '#0d5d2f', textDecoration: 'none' }}>Manage protection →</a>
+                </div>
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', background: '#fff' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0d5d2f' }}>📣 Promote</div>
+                  <p style={{ margin: '6px 0 10px', fontSize: 13, color: '#4b5563', lineHeight: 1.5 }}>
+                    Curate what people find — control the profile you present and share it on your terms.
+                  </p>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>Coming soon</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginTop: 16, background: '#0d5d2f', color: '#fff', borderRadius: 12, padding: '18px 20px' }}>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>🔒 Unlock your full identity report & protection</div>
+                <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#eafff0', lineHeight: 1.5 }}>
+                  See every address, phone, relative, and record tied to you — plus the tools to hide what you don't want public and monitor who's searching for you.
+                </p>
+                <button type="button" onClick={() => navigate('/payment?upgrade=1&reason=identity')}
+                  style={{ background: '#fff', color: '#0d5d2f', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                  Unlock full report →
+                </button>
+              </div>
+            )}
+            </>
           ) : (
-            <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
+            <>
+              {/* STATE (a) not mapped — promotional framing above the confirm-identity form. */}
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '16px 18px', marginBottom: 14 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0d5d2f' }}>Confirm your identity to unlock your protection dashboard</div>
+                <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 13.5, color: '#166534', lineHeight: 1.7 }}>
+                  <li>See who's searching for you</li>
+                  <li>See exactly what's public about you</li>
+                  <li>Take control — hide what you don't want exposed</li>
+                </ul>
+              </div>
+              <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
+            </>
           )}
 
           {/* Privacy control — "Hide me" on our own surfaces (WSFY). External data-broker removal

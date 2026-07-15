@@ -535,7 +535,21 @@
       "Bash(awk '/^\\\\.cta[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)",
       "Bash(awk '/^\\\\.ctaIcon[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)",
       "Bash(awk '/^\\\\.buttonSecondary[ ,{]/,/^}/' src/pages/sales/NameLandingV3Incarceration.module.css)",
-      "Bash(EMAIL_ASM_GROUP_ID=123 node --input-type=module -e ' *])"
+      "Bash(EMAIL_ASM_GROUP_ID=123 node --input-type=module -e ' *])",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(awk -F/ ' *)",
+      "Bash(read -r u)",
+      "Bash(echo \"seo EXIT=$?\")",
+      "Bash(awk 'NR>=1119 && NR<=1300 && /firstName|lastName|First|Last|<label|<input|formGroup|name=/' src/pages/member/AccountPage.js)",
+      "Bash(awk -F: '$1>1119 && $1<1300')",
+      "Bash(perl -0pi -e \"s/\\\\Q&& upgradeReason !== 'wsfy' && \\(\\\\E/&& !isSelfContext \\\\&\\\\& \\(/g\" src/pages/sales/PaymentPage.js)",
+      "Bash(perl -0pi -e \"s/const GREEN_CTA = '#16a34a';/const GREEN_CTA = '#0d5d2f'; \\\\/\\\\/ primary CTA = dark green \\(no light green for CTAs, owner\\)/\" src/components/EnrichProfileCard.js src/components/SelfIdentifyCard.js)",
+      "Bash(perl -0pi -e \"s/\\\\Qbackground: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>\\\\E/background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>/\" src/pages/member/AccountPage.js)",
+      "Bash(perl -0pi -e \"s/\\\\Qconst expColor = !exposure ? '#16a34a' : exposure.score >= 65 ? '#dc2626' : exposure.score >= 35 ? '#f59e0b' : '#16a34a';\\\\E/const expColor = !exposure ? '#0d5d2f' : exposure.score >= 65 ? '#dc2626' : exposure.score >= 35 ? '#f59e0b' : '#0d5d2f';/\" src/pages/member/AccountPage.js)",
+      "Bash(cat)",
+      "Bash(perl -0pi -e \"s/\\\\Qbackground: 'linear-gradient\\(135deg,#0d5d2f,#16a34a\\)'\\\\E/background: '#0d5d2f'/g\" src/pages/member/AccountPage.js src/components/IdentityPaymentTeaser.js)",
+      "Bash(perl -0pi -e \"s{/account\\\\?tab=identity}{/my-identity}g\" src/components/ExposureTile.js src/components/IdentityPaymentTeaser.js src/pages/sales/PaymentPage.js)"
     ]
   }
 }
