@@ -104,7 +104,13 @@ export async function fetchMappedIdentity() {
     const res = await fetch(`${enrichUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
     if (!res.ok) return null;
     const data = await res.json();
-    if (data && data.identity) { updateMappedIdentity(data.identity); return data.identity; }
+    if (data && data.identity) {
+      // Merge into the mirror and return the MERGED result — never the raw server object. The server
+      // row can lag the client mirror on fields stored client-side (e.g. `verified`); returning the raw
+      // response would clobber them to null (this is what zeroed the Protection Score for verified users).
+      updateMappedIdentity(data.identity);
+      return getMappedIdentity();
+    }
     return null;
   } catch { return null; }
 }
@@ -195,12 +201,28 @@ export function computeProtectionScore(id, opts = {}) {
   const control = opts.suppressed ? 100 : 0;
   const score = Math.max(0, Math.min(100, Math.round(0.30 * verif + 0.40 * expHidden + 0.30 * control)));
   const level = score >= 80 ? 'Strong' : score >= 50 ? 'Fair' : score >= 25 ? 'Building' : 'At risk';
-  // Highest-leverage next steps, most-impactful first.
-  const actions = [];
-  if (present > 0) actions.push({ key: 'hide', label: `Hide ${present} exposed detail${present === 1 ? '' : 's'}`, points: 40 });
-  if (id.verified !== 'id') actions.push({ key: 'verify', label: id.verified === 'kba' ? 'Verify with your ID' : 'Verify your identity', points: id.verified === 'kba' ? 12 : 30 });
-  if (!opts.suppressed) actions.push({ key: 'suppress', label: 'Hide your activity on IDLookup', points: 30 });
-  return { score, level, actions };
+  // The three protective steps, in the intended sequence (verify → hide exposed → control activity).
+  // done = that step is complete; the stepper renders these connected end-to-end.
+  const steps = [
+    {
+      key: 'verify', num: 1, done: !!id.verified,
+      label: id.verified === 'id' ? 'Identity verified'
+        : id.verified === 'kba' ? 'Verify with your ID' : 'Verify your identity',
+      points: id.verified === 'kba' ? 12 : 30,
+    },
+    {
+      key: 'expose', num: 2, done: present === 0,
+      label: present > 0 ? `Hide ${present} exposed detail${present === 1 ? '' : 's'}` : "What's exposed is hidden",
+      points: 40,
+    },
+    {
+      key: 'control', num: 3, done: !!opts.suppressed,
+      label: opts.suppressed ? 'Activity hidden' : 'Hide your activity on IDLookup',
+      points: 30,
+    },
+  ];
+  const nextStep = steps.find((s) => !s.done) || null;
+  return { score, level, steps, nextStep, actions: steps.filter((s) => !s.done) };
 }
 
 /** Store the canonical report link + confirmed identity, even before/without a full extract. */

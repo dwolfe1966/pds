@@ -55,8 +55,11 @@ function Row({ name, statusNode, action }) {
   );
 }
 
-export default function DigitalFootprint({ compact = false }) {
+export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const navigate = useNavigate();
+  // Where "Manage" on the idlookup row goes. On the My Identity footprint tab, onManage switches to the
+  // My Profile tab (where the real controls live) — a plain /my-identity navigate would be a no-op there.
+  const manage = onManage || (() => navigate('/my-identity'));
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [suppressed, setSuppressed] = useState(false);
 
@@ -118,7 +121,7 @@ export default function DigitalFootprint({ compact = false }) {
               : <Badge label="Visible in search" color="#92400e" bg="#fffbeb" />)
           : <span style={{ fontSize: 12.5, color: '#6b7280' }}>Claim your record to see &amp; control this</span>}
         action={(
-          <button type="button" onClick={() => navigate('/my-identity')}
+          <button type="button" onClick={manage}
             style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '5px 14px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {mapped ? 'Manage' : 'Claim'}
           </button>

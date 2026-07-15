@@ -766,11 +766,6 @@ const Dashboard2 = () => {
           </div>
         )}
 
-        {/* Protection Score — the "Me" center of gravity, above the fold with search. */}
-        <div style={{ marginBottom: '1rem' }}>
-          <ProtectionScoreRing />
-        </div>
-
         {/* Desktop 2-column dashboard grid (mobile stacks — media query below).
             Row 1: search (left) · we-watch-the-world (right). Account/support quick-buttons
             removed (owner) — Account lives in the top nav. */}
@@ -817,6 +812,11 @@ const Dashboard2 = () => {
             ))}
           </div>
         </section>
+        </div>
+
+        {/* Protection Score — the "Me" center of gravity, below search + the records strip. */}
+        <div style={{ marginBottom: '1rem' }}>
+          <ProtectionScoreRing />
         </div>
 
         {/* Row 2 — identity exposure (left) · digital footprint (right). Exposure renders once

@@ -66,19 +66,34 @@ export default function ProtectionScoreRing() {
         <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6b7280' }}>Protection Score</div>
         {claimed ? (
           <>
-            <p style={{ margin: '4px 0 10px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
-              How protected your identity is right now. Raise it by taking the steps below.
+            <p style={{ margin: '4px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
+              {result.actions.length === 0
+                ? "✓ You've completed every step — your identity is fully protected."
+                : 'How protected your identity is right now — complete the steps to raise it.'}
             </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {result.actions.slice(0, 3).map((a) => (
-                <button key={a.key} type="button" onClick={() => navigate('/my-identity')}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 700, color: GREEN, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}>
-                  {a.label} <span style={{ color: '#16a34a', fontWeight: 800 }}>+{a.points}</span>
-                </button>
-              ))}
-              {result.actions.length === 0 && (
-                <span style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>✓ You're fully protected — nice work.</span>
-              )}
+            {/* Connected 3-step protection plan: verify → hide exposed → control activity. */}
+            <div style={{ position: 'relative' }}>
+              {result.steps.map((s, i) => {
+                const last = i === result.steps.length - 1;
+                return (
+                  <div key={s.key} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingBottom: last ? 0 : 12, position: 'relative' }}>
+                    {!last && <div aria-hidden="true" style={{ position: 'absolute', left: 13, top: 28, bottom: 0, width: 2, background: s.done ? '#bbf7d0' : '#e5e7eb' }} />}
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, zIndex: 1, background: s.done ? GREEN : '#fff', color: s.done ? '#fff' : '#6b7280', border: `2px solid ${s.done ? GREEN : '#d1d5db'}` }}>
+                      {s.done ? '✓' : s.num}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, paddingTop: 3 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: s.done ? '#9ca3af' : '#111827' }}>{s.label}</div>
+                      {!s.done && (
+                        <button type="button" onClick={() => navigate('/my-identity')}
+                          style={{ marginTop: 2, background: 'none', border: 'none', padding: 0, fontSize: 12.5, fontWeight: 700, color: GREEN, textDecoration: 'underline', cursor: 'pointer' }}>
+                          Do it →
+                        </button>
+                      )}
+                    </div>
+                    {!s.done && <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: GREEN, paddingTop: 5 }}>+{s.points}</span>}
+                  </div>
+                );
+              })}
             </div>
           </>
         ) : (

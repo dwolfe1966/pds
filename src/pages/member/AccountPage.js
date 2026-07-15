@@ -10,6 +10,7 @@ import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppressi
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
+import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -1118,7 +1119,14 @@ const AccountPage = () => {
             ))}
           </div>
 
-          {identitySubTab === 'footprint' && <DigitalFootprint />}
+          {identitySubTab === 'footprint' && (
+            <>
+              <DigitalFootprint onManage={() => setIdentitySubTab('profile')} />
+              <div style={{ marginTop: 16 }}>
+                <ProtectionScoreRing />
+              </div>
+            </>
+          )}
 
           {identitySubTab === 'profile' && (
           <>
