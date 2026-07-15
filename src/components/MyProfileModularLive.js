@@ -10,6 +10,29 @@ import sampleProfileData from '../utils/sampleProfileData';
 
 const DEV = process.env.NODE_ENV === 'development';
 
+// Build a thin extractAll-shaped object from the mapped identity's enrichment, so a member who has
+// mapped (but not pulled a full report) still sees a real profile — name, current location, work,
+// education — instead of being asked to "find my record" again. The full report fills the rest.
+function identityToProfileData(id) {
+  if (!id || !(id.confirmed || id.name)) return null;
+  const addresses = [];
+  if (id.city || id.state) addresses.push({ id: 'cur', city: id.city, state: id.state });
+  const jobs = [];
+  if (id.employer || id.jobTitle || id.occupation) jobs.push({ id: 'j', employer: id.employer, title: id.jobTitle || id.occupation });
+  const education = [];
+  if (id.highSchool) education.push({ id: 'hs', school: id.highSchool });
+  if (id.college) education.push({ id: 'col', school: id.college });
+  return {
+    fullName: id.name, aliases: [], dob: '', age: id.age, gender: '',
+    currentLocation: [id.city, id.state].filter(Boolean).join(', '),
+    addresses, phones: [], emails: [], relatives: [], jobs, education, social: [],
+    properties: [], professionalLicenses: [], criminalRecords: [], liens: [], judgments: [],
+    foreclosures: [], bankruptcies: [], driverLicenses: [], veteranRecords: [], businesses: [],
+    sanctions: [], fraudFlags: [], arrests: [], arrestWatch: [], deaths: [], offenders: [],
+    secondaryIdentities: [], counts: {},
+  };
+}
+
 /**
  * Live modular My Profile — the real member's report mapped into MyProfileModular.
  * Data mapping: getReportDetail(reportId) -> extractAll(report) -> `data`; MyProfileModular reads the
@@ -52,7 +75,11 @@ export default function MyProfileModularLive() {
     return () => { alive = false; };
   }, [reportId]);
 
-  const effectiveData = data || (DEV && (reportErr || !reportId) ? sampleProfileData : null);
+  // Prefer the real report; else build a thin profile from enrichment (mapped-but-no-report); else in
+  // dev fall back to sample so the layout is always visible.
+  const identityData = identityToProfileData(identity);
+  const effectiveData = data || identityData || (DEV ? sampleProfileData : null);
+  const usingPartial = !data && !!identityData; // real profile from enrichment, awaiting full report
   const ps = computeProtectionScore(identity, { suppressed, hiddenFields });
   const hero = {
     name: (identity && identity.name) || 'Your profile',
@@ -70,11 +97,12 @@ export default function MyProfileModularLive() {
     return <div style={{ padding: '24px 4px', color: '#6b7280', fontSize: 14 }}>Loading your profile…</div>;
   }
   if (!effectiveData) {
+    // Truly not mapped yet.
     return (
       <div style={{ border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>Build your profile</div>
         <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
-          Pull your full report to populate your profile modules.
+          Confirm your identity to populate your profile modules.
         </p>
         <Link to="/people-search" style={{ display: 'inline-block', background: '#0d5d2f', color: '#fff', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>
           Find my record →
@@ -84,11 +112,19 @@ export default function MyProfileModularLive() {
   }
 
   return (
-    <MyProfileModular
-      data={effectiveData}
-      hero={hero}
-      dispositions={dispositions}
-      onDispositionChange={onDispositionChange}
-    />
+    <>
+      {usingPartial && (
+        <div style={{ marginBottom: 14, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, color: '#166534', lineHeight: 1.5 }}>This is your profile from what we know so far. Pull your full report to fill in contact info, records, and more.</span>
+          <Link to="/people-search" style={{ flexShrink: 0, fontSize: 13, fontWeight: 800, color: '#fff', background: '#0d5d2f', borderRadius: 8, padding: '8px 16px', textDecoration: 'none' }}>Complete my profile →</Link>
+        </div>
+      )}
+      <MyProfileModular
+        data={effectiveData}
+        hero={hero}
+        dispositions={dispositions}
+        onDispositionChange={onDispositionChange}
+      />
+    </>
   );
 }
