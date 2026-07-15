@@ -9,6 +9,7 @@ import { getBrand } from '../../services/brand';
 import { US_STATES } from '../../data/usStates';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import ExposureTile from '../../components/ExposureTile';
+import IdentityOnboardingModal from '../../components/IdentityOnboardingModal';
 
 /**
  * Dashboard — research-workbench layout.
@@ -721,6 +722,8 @@ const Dashboard2 = () => {
 
   return (
     <main style={{ background: PAGE.bg, minHeight: 'calc(100vh - 4rem)', paddingBottom: '3rem' }}>
+      {/* First-visit push into identity confirmation (self-manages: once, only if not yet mapped). */}
+      <IdentityOnboardingModal />
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '1.5rem 1rem 0' }}>
 
         {/* Greeting */}
