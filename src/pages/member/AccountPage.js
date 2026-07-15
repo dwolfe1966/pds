@@ -1164,54 +1164,10 @@ const AccountPage = () => {
 
               {/* Editable form */}
               <form onSubmit={handleProfileSave}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label
-                      htmlFor="firstName"
-                      style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
-                    >
-                      First Name
-                    </label>
-                    <input
-                      id="firstName"
-                      type="text"
-                      name="firstName"
-                      value={profileForm.firstName}
-                      onChange={handleProfileChange}
-                      style={{
-                        width: '100%',
-                        padding: '0.6rem 0.75rem',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '0.375rem',
-                        fontSize: '0.95rem',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="lastName"
-                      style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', color: '#374151', fontSize: '0.9rem' }}
-                    >
-                      Last Name
-                    </label>
-                    <input
-                      id="lastName"
-                      type="text"
-                      name="lastName"
-                      value={profileForm.lastName}
-                      onChange={handleProfileChange}
-                      style={{
-                        width: '100%',
-                        padding: '0.6rem 0.75rem',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '0.375rem',
-                        fontSize: '0.95rem',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  </div>
-                </div>
+                {/* First/Last name intentionally NOT editable here — the name is your IDENTITY
+                    (shown in the summary above; source of truth = your confirmed record / account).
+                    Editing it in two places caused misalignment. Contact info = email + phone.
+                    handleProfileSave still sends the existing name unchanged. */}
 
                 <div style={{ marginBottom: '1rem' }}>
                   <label
