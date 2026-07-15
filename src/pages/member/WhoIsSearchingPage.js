@@ -246,53 +246,68 @@ const TierBarChart = ({ data }) => (
   </div>
 );
 
+// Human-readable teaser chips for a searcher's affinities — the "how they might know you" hook.
+// Non-PII (they describe the CONNECTION, not the identity), so shown on free tier too; the name
+// stays blurred behind the paywall. Assumes searchers increasingly map themselves → richer teases.
+const AFFINITY_CHIP = {
+  verified_relative: '👥 A relative',
+  relative: '👥 May be a relative',
+  high_school: '🎓 Went to your high school',
+  college: '🎓 Went to your college',
+  colleague: '🏢 May be a colleague',
+  local: '📍 In your area',
+};
+const vcard = {
+  listStyle: 'none', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
+  boxShadow: '0 2px 10px rgba(17,24,39,0.06)', padding: '14px 16px', marginBottom: 10,
+};
+const chipStyle = {
+  fontSize: 12.5, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534',
+  borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap',
+};
+
 const EventRow = ({ event, kind, isPaid }) => {
-  // Names/locations arrive already tiered from the server (free = masked there, so real PII
-  // never reaches a free client). Render as-is; the !isPaid CSS just adds the blur treatment.
+  // Names/locations arrive already tiered from the server (free = masked there). The affinity chips
+  // are non-PII teasers, safe (and intended) to show on free tier.
   const displayName = event.name;
-  const displayLocation = [event.city, event.state].filter(Boolean).join(', ') || '—';
+  const displayLocation = [event.city, event.state].filter(Boolean).join(', ') || event.state || 'Location hidden';
   const displayDate = isPaid ? formatExactDate(event.timestamp) : relativeDate(event.timestamp);
-
-  const tierClass =
-    event.tier === 'Pro' ? styles.tierPro : event.tier === 'Basic' ? styles.tierBasic : styles.tierVisitor;
-
+  const tierClass = event.tier === 'Pro' ? styles.tierPro : event.tier === 'Basic' ? styles.tierBasic : styles.tierVisitor;
   const initial = isPaid && event.firstName ? event.firstName[0] : '?';
 
+  const affinities = event.affinities || [];
+  const chips = affinities.filter((a) => AFFINITY_CHIP[a]).map((a) => AFFINITY_CHIP[a]);
+  if (affinities.includes('occupation')) chips.push(isPaid && event.occupation ? `💼 Works in ${event.occupation}` : '💼 Works in ••••••');
+  if (event.times > 1) chips.push(`🔁 Searched you ${event.times}×`);
+  // De-dupe (relative can appear twice) + cap.
+  const uniqueChips = [...new Set(chips)].slice(0, 4);
+
   return (
-    <li className={styles.eventRow}>
-      <div className={`${styles.avatar} ${!isPaid ? styles.avatarBlurred : ''}`}>{initial}</div>
-      <div className={styles.eventBody}>
-        <p className={`${styles.eventName} ${!isPaid ? styles.masked : ''}`}>{displayName}</p>
-        <div className={styles.eventMeta}>
-          <span className={styles.eventLocation}>
-            <svg
-              aria-hidden="true"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.25"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span className={!isPaid ? styles.masked : ''}>{displayLocation}</span>
-          </span>
-          {kind === 'searchers' && event.searchType && (
-            <span className={styles.typePill}>{event.searchType}</span>
-          )}
-          {kind === 'viewers' && event.sectionsViewed && (
-            <span className={styles.typePill}>
-              {event.sectionsViewed.length} section{event.sectionsViewed.length === 1 ? '' : 's'}
+    <li style={vcard}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className={`${styles.avatar} ${!isPaid ? styles.avatarBlurred : ''}`}>{initial}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p className={`${styles.eventName} ${!isPaid ? styles.masked : ''}`} style={{ margin: 0 }}>{displayName}</p>
+          <div className={styles.eventMeta} style={{ marginTop: 2 }}>
+            <span className={styles.eventLocation}>
+              <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span className={!isPaid ? styles.masked : ''}>{displayLocation}</span>
             </span>
-          )}
-          <span className={`${styles.tierBadge} ${tierClass}`}>{event.tier}</span>
+            {kind === 'searchers' && event.searchType && <span className={styles.typePill}>{event.searchType}</span>}
+            <span className={styles.eventDate} style={{ marginLeft: 'auto' }}>{displayDate}</span>
+          </div>
         </div>
+        {!isPaid && <span style={{ fontSize: 14 }} title="Unlock to see who">🔒</span>}
+        <span className={`${styles.tierBadge} ${tierClass}`}>{event.tier}</span>
       </div>
-      <span className={styles.eventDate}>{displayDate}</span>
+      {uniqueChips.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingLeft: 52 }}>
+          {uniqueChips.map((c) => <span key={c} style={chipStyle}>{c}</span>)}
+        </div>
+      )}
     </li>
   );
 };
