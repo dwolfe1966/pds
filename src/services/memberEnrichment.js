@@ -162,6 +162,33 @@ export function linkSelfReport(commerceContentId, selfPerson) {
     city: selfPerson && selfPerson.city, state: selfPerson && selfPerson.state });
 }
 
+// ── Suppression ("Hide me" — Identity Management) ────────────────────────────
+function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'suppression'); }
+
+export async function fetchSuppression() {
+  const userId = currentUserId();
+  if (!userId) return false;
+  try {
+    const res = await fetch(`${suppressionUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
+    if (!res.ok) return false;
+    const d = await res.json();
+    return !!(d && d.suppressed);
+  } catch { return false; }
+}
+
+export async function setSuppression(on, meta = {}) {
+  const userId = currentUserId();
+  if (!userId) return false;
+  try {
+    const res = await fetch(suppressionUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, on: !!on, name: meta.name, state: meta.state }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
 /**
  * Save user-provided profile fields (onboarding / dashboard form).
  * @param {object} fields  { occupation, employer, highSchool, college, city, state }

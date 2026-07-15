@@ -6,7 +6,7 @@ import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
-import { getMappedIdentity, fetchMappedIdentity, computeExposure } from '../../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression } from '../../services/memberEnrichment';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -111,6 +111,7 @@ const AccountPage = () => {
   // ─── Identity tab (WSFY mapped-identity view) ────────────────────────────────
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [editingIdentity, setEditingIdentity] = useState(false);
+  const [suppressed, setSuppressed] = useState(false);
   // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
   // the dashboard (or another device) is reflected here. Local mirror first, then the server copy.
   useEffect(() => {
@@ -119,6 +120,7 @@ const AccountPage = () => {
     if (local) setIdentity(local);
     if (activeTab === 'identity') {
       fetchMappedIdentity().then((srv) => { if (alive && srv) setIdentity(srv); });
+      fetchSuppression().then((s) => { if (alive) setSuppressed(s); });
     }
     return () => { alive = false; };
   }, [activeTab]);
@@ -1094,10 +1096,10 @@ const AccountPage = () => {
                 location ? `📍 ${location}` : null,
               ].filter(Boolean);
               const exposure = computeExposure(identity);
-              const expColor = !exposure ? '#16a34a' : exposure.score >= 65 ? '#dc2626' : exposure.score >= 35 ? '#f59e0b' : '#16a34a';
+              const expColor = !exposure ? '#0d5d2f' : exposure.score >= 65 ? '#dc2626' : exposure.score >= 35 ? '#f59e0b' : '#0d5d2f';
               return (
                 <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, overflow: 'hidden', boxShadow: '0 4px 18px rgba(13,93,47,0.10)' }}>
-                  <div style={{ background: 'linear-gradient(135deg,#0d5d2f,#16a34a)', color: '#fff', padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'center' }}>
+                  <div style={{ background: '#0d5d2f', color: '#fff', padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'center' }}>
                     <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800 }}>{initial}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 20, fontWeight: 800 }}>{name}{identity.age ? `, ${identity.age}` : ''}</div>
@@ -1133,7 +1135,7 @@ const AccountPage = () => {
 
                     <div style={{ marginTop: 16, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
                       <button type="button" onClick={() => navigate('/payment?upgrade=1&reason=identity')}
-                        style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                        style={{ background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                         {exposure && exposure.score >= 35 ? 'Reduce my exposure →' : "Control what's exposed →"}
                       </button>
                       <button type="button" onClick={() => setEditingIdentity(true)}
@@ -1147,6 +1149,27 @@ const AccountPage = () => {
             })()
           ) : (
             <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
+          )}
+
+          {/* Privacy control — "Hide me" on our own surfaces (WSFY). External data-broker removal
+              is a separate BC-owned opt-out linked below. Only meaningful once identity is mapped. */}
+          {identity && (identity.confirmed || identity.name) && (
+            <div style={{ marginTop: 18, padding: '14px 16px', border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>Hide my activity on {brand.name}</div>
+                  <p style={{ margin: '3px 0 0', color: '#6b7280', fontSize: 13 }}>When on, others won't see that you've searched for them.</p>
+                </div>
+                <button type="button" role="switch" aria-checked={suppressed}
+                  onClick={async () => { const next = !suppressed; setSuppressed(next); await setSuppression(next, { name: identity.name, state: identity.state }); }}
+                  style={{ width: 50, height: 28, borderRadius: 999, border: 'none', cursor: 'pointer', background: suppressed ? '#0d5d2f' : '#d1d5db', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+                  <span style={{ position: 'absolute', top: 3, left: suppressed ? 25 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                </button>
+              </div>
+              <p style={{ margin: '10px 0 0', fontSize: 12, color: '#6b7280' }}>
+                To remove your public record from data-broker sites, use our <a href="/opt-out" style={{ color: '#0d5d2f', fontWeight: 600 }}>opt-out</a>.
+              </p>
+            </div>
           )}
         </div>
       )}

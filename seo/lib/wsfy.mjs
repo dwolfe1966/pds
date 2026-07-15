@@ -7,7 +7,7 @@
 // data we don't license yet (e.g. "went to your high school", "just got married") are NOT
 // fabricated — we ship the sourceable subset (count, location, one proof name) honestly.
 import { neon } from '@neondatabase/serverless';
-import { norm } from './search-activity-db.mjs';
+import { norm, getSuppressedUserIds } from './search-activity-db.mjs';
 
 const URL = process.env.LEADS_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 export const hasWsfyDb = !!URL;
@@ -139,9 +139,13 @@ export async function buildWsfySummary(identity, opts = {}) {
   // Fuzzy-first filter: keep result-matches (exact) + same-last rows whose first name fuzzy-matches.
   const matched = rows.filter((r) => r.result_match || fuzzyFirst(r.term_first, subjFirst));
 
+  // Member suppression ("Hide me"): searchers who opted out don't appear in anyone's WSFY.
+  const suppressed = await getSuppressedUserIds(matched.map((r) => r.searcher_user_id));
+
   // Aggregate per distinct searcher.
   const byKey = new Map();
   for (const r of matched) {
+    if (r.searcher_user_id && suppressed.has(r.searcher_user_id)) continue;
     if (isSuppressed(r)) continue;
     let g = byKey.get(r.searcher_key);
     if (!g) {

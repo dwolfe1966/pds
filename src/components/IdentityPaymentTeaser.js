@@ -37,7 +37,7 @@ export default function IdentityPaymentTeaser() {
 
   return (
     <div style={card}>
-      <div style={{ background: 'linear-gradient(135deg,#0d5d2f,#16a34a)', color: '#fff', padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'center' }}>
+      <div style={{ background: '#0d5d2f', color: '#fff', padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'center' }}>
         <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800 }} aria-hidden="true">{initial}</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#bbf7d0' }}>This is what's public about you</div>

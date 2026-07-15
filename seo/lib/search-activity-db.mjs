@@ -44,6 +44,33 @@ export async function upsertMemberEnrichment(e) {
   `;
 }
 
+// ── Member suppression (Identity Management "Hide me") ───────────────────────
+export async function setSuppression({ userId, name, state, on }) {
+  if (!sql) throw new Error('no DB configured');
+  if (!userId) throw new Error('userId required');
+  if (on) {
+    await sql`
+      INSERT INTO member_suppression (user_id, name_norm, state)
+      VALUES (${userId}, ${name ? norm(name) : null}, ${state ? String(state).toUpperCase() : null})
+      ON CONFLICT (user_id) DO UPDATE SET name_norm = EXCLUDED.name_norm, state = EXCLUDED.state, created_at = now()`;
+  } else {
+    await sql`DELETE FROM member_suppression WHERE user_id = ${userId}`;
+  }
+}
+export async function getSuppressedUserIds(userIds) {
+  const ids = Array.from(new Set((userIds || []).filter(Boolean)));
+  if (!sql || !ids.length) return new Set();
+  try {
+    const rows = await sql`SELECT user_id FROM member_suppression WHERE user_id = ANY(${ids})`;
+    return new Set(rows.map((r) => r.user_id));
+  } catch { return new Set(); }
+}
+export async function isMemberSuppressed(userId) {
+  if (!sql || !userId) return false;
+  try { return (await sql`SELECT 1 FROM member_suppression WHERE user_id = ${userId}`).length > 0; }
+  catch { return false; }
+}
+
 /** Read one member's enrichment (for the cross-device "My Identity" view). */
 export async function getMemberEnrichment(userId) {
   if (!sql) throw new Error('no DB configured');

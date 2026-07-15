@@ -15,7 +15,7 @@ import { enrichFromReport, saveMemberProfile, linkSelfReport } from '../services
  * high school · may be a relative". Independent of BC's ephemeral extId (we enrich at selection time).
  */
 const GREEN = '#0d5d2f';
-const GREEN_CTA = '#16a34a';
+const GREEN_CTA = '#0d5d2f'; // primary CTA = dark green (no light green for CTAs, owner)
 const LS_DONE = 'wsfySelfIdentified';
 
 const field = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db', fontSize: 14, marginTop: 4, boxSizing: 'border-box' };

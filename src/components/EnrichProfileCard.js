@@ -10,7 +10,7 @@ import { saveMemberProfile } from '../services/memberEnrichment';
  * On save → saveMemberProfile() → POST /api/member-enrichment (source 'profile'). Dismissable.
  */
 const GREEN = '#0d5d2f';
-const GREEN_CTA = '#16a34a';
+const GREEN_CTA = '#0d5d2f'; // primary CTA = dark green (no light green for CTAs, owner)
 
 const field = {
   width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #d1d5db',
