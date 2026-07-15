@@ -215,6 +215,16 @@ export async function setSuppression(on, meta = {}) {
   } catch { return false; }
 }
 
+// Record how the member's identity mapping was verified ('kba' | 'id'). Updates the local mirror and
+// best-effort POSTs it (a verified-only upsert COALESCE-preserves all other enrichment fields).
+export function setVerifiedLevel(level) {
+  if (!level) return;
+  updateMappedIdentity({ verified: level });
+  const userId = currentUserId();
+  if (!userId) return;
+  post({ userId, verified: level, source: 'verify' });
+}
+
 // Per-item "hide this" — suppress a single exposure driver (location/past/relatives/employment/
 // education/report). Returns the updated hiddenFields array, or null on failure.
 export async function setFieldSuppression(key, on, meta = {}) {

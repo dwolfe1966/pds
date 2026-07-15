@@ -551,7 +551,8 @@
       "Bash(perl -0pi -e \"s/\\\\Qbackground: 'linear-gradient\\(135deg,#0d5d2f,#16a34a\\)'\\\\E/background: '#0d5d2f'/g\" src/pages/member/AccountPage.js src/components/IdentityPaymentTeaser.js)",
       "Bash(perl -0pi -e \"s{/account\\\\?tab=identity}{/my-identity}g\" src/components/ExposureTile.js src/components/IdentityPaymentTeaser.js src/pages/sales/PaymentPage.js)",
       "Bash(sed -n '/export async function upsertMemberEnrichment/,/^}/p' lib/search-activity-db.mjs)",
-      "Bash(sed -n '/export async function getMemberEnrichment/,/^}/p' lib/search-activity-db.mjs)"
+      "Bash(sed -n '/export async function getMemberEnrichment/,/^}/p' lib/search-activity-db.mjs)",
+      "Bash(npm info *)"
     ]
   }
 }

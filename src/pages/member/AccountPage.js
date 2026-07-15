@@ -6,8 +6,9 @@ import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
-import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression } from '../../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel } from '../../services/memberEnrichment';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
+import DlScanVerify from '../../components/DlScanVerify';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -1273,6 +1274,21 @@ const AccountPage = () => {
                     style={{ background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
                     Pull my full report →
                   </button>
+                )}
+              </div>
+              {/* Optional, non-blocking ID verification — upgrade KBA/self-asserted mapping to ID-verified. */}
+              <div style={{ marginTop: 12 }}>
+                {identity.verified === 'id' ? (
+                  <div style={{ border: '1px solid #d7ddd9', borderRadius: 12, padding: '16px 18px', background: '#f8faf9', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>🛡️</span>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#0d5d2f' }}>ID verified</div>
+                      <div style={{ fontSize: 12.5, color: '#6b7280' }}>You've confirmed this record with a government ID.</div>
+                    </div>
+                  </div>
+                ) : (
+                  <DlScanVerify recordName={identity.name}
+                    onVerified={() => { setVerifiedLevel('id'); setIdentity(getMappedIdentity()); }} />
                 )}
               </div>
               <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
