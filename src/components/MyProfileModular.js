@@ -52,26 +52,44 @@ function DispositionToggle({ value, onChange, protectOnly }) {
   );
 }
 
-function Module({ id, icon, title, source = 'observed', disposition, setDisposition, protectOnly, isOwner = true, children }) {
+function Module({ id, icon, title, source = 'observed', tier = 'free', count, disposition, setDisposition, protectOnly, isOwner = true, locked, children }) {
   const promoted = disposition === 'promote';
   const protectedOn = disposition === 'protect';
   const s = SOURCE[source] || SOURCE.observed;
+  const paid = tier === 'paid';
   return (
     <section style={{
       background: '#fff', border: `1px solid ${promoted ? '#bbf7d0' : '#e5e7eb'}`, borderLeft: `4px solid ${s.color}`,
       borderRadius: 12, boxShadow: '0 2px 10px rgba(17,24,39,0.06)', overflow: 'hidden',
     }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '12px 16px', borderBottom: '1px solid #f0f2f1' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span aria-hidden="true">{icon}</span>
-          <span style={{ fontSize: 14.5, fontWeight: 800, color: '#111827' }}>{title}</span>
-          <span style={{ fontSize: 10.5, fontWeight: 700, color: s.color, background: s.bg, borderRadius: 999, padding: '1px 8px', whiteSpace: 'nowrap' }}>{s.label}</span>
-          {isOwner && protectedOn && <span style={{ fontSize: 11, fontWeight: 700, color: '#b91c1c', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 999, padding: '1px 8px' }}>Hidden</span>}
-          {promoted && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 999, padding: '1px 8px' }}>Featured</span>}
+      {/* Coded header — source-tinted, icon in a source chip, count infographic, source + tier badges. */}
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '10px 14px', background: s.bg, borderBottom: `1px solid ${s.color}22` }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span aria-hidden="true" style={{ width: 34, height: 34, borderRadius: 9, background: '#fff', border: `1px solid ${s.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{icon}</span>
+          <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 14.5, fontWeight: 800, color: '#111827' }}>{title}</span>
+              {count != null && count > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: s.color, background: '#fff', border: `1px solid ${s.color}55`, borderRadius: 999, minWidth: 20, textAlign: 'center', padding: '0 6px' }}>{count}</span>}
+              {isOwner && protectedOn && <span style={{ fontSize: 11, fontWeight: 700, color: '#b91c1c', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 999, padding: '1px 8px' }}>Hidden</span>}
+              {promoted && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 999, padding: '1px 8px' }}>Featured</span>}
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: s.color }}>{s.label}</span>
+              {paid && <span style={{ fontSize: 10, fontWeight: 800, color: '#7c2d12', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 999, padding: '0 6px' }} title="Only paid searchers see this in others' profiles">🔒 PAID</span>}
+            </span>
+          </span>
         </div>
         {isOwner && <DispositionToggle value={disposition} onChange={(v) => setDisposition(id, v)} protectOnly={protectOnly} />}
       </header>
-      <div style={{ padding: '14px 16px' }}>{children}</div>
+      <div style={{ padding: '14px 16px' }}>
+        {locked ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 13.5, color: '#7c2d12', fontWeight: 700 }}>🔒 {count != null && count > 0 ? `${count} record${count === 1 ? '' : 's'}` : 'Details'} available to paid members</div>
+            <div style={{ filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }} aria-hidden="true">{children}</div>
+            <button type="button" style={{ alignSelf: 'flex-start', background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Unlock full report →</button>
+          </div>
+        ) : children}
+      </div>
     </section>
   );
 }
@@ -110,6 +128,23 @@ export default function MyProfileModular({ data, hero = {} }) {
   const pastAddrs = Math.max((d.addresses?.length || 0) - 1, 0);
   const finCount = (d.liens?.length || 0) + (d.judgments?.length || 0) + (d.foreclosures?.length || 0) + (d.bankruptcies?.length || 0);
   const recordsTotal = (d.criminalRecords?.length || 0) + (d.properties?.length || 0) + finCount;
+
+  // Privileged/paid tier — the premium data paid searchers pay for. In the OTHERS view these gate behind
+  // the paywall (locked tease for anonymous/free). Free-tier modules stay the tease layer.
+  const PAID = new Set(['contact', 'court', 'property', 'financial']);
+  const COUNT = {
+    about: (d.aliases || []).length,
+    contact: (d.phones || []).length + (d.emails || []).length,
+    locations: (d.addresses || []).length,
+    family: (d.relatives || []).length,
+    work: (d.jobs || []).length,
+    education: (d.education || []).length,
+    online: (d.social || []).length,
+    activity: 3,
+    court: (d.criminalRecords || []).length,
+    property: (d.properties || []).length,
+    financial: finCount,
+  };
 
   const MODULES = [
     { id: 'about', icon: '👤', title: 'About', source: 'observed', body: () => (
@@ -283,12 +318,18 @@ export default function MyProfileModular({ data, hero = {} }) {
       {/* 2-column: LEFT = modules, RIGHT = assessment + actions (owner only). */}
       <div style={{ display: 'grid', gridTemplateColumns: isOwner ? 'minmax(0, 1fr) minmax(280px, 340px)' : '1fr', gap: 18, alignItems: 'start' }}>
         <div style={{ display: 'grid', gap: 14, minWidth: 0 }}>
-          {shown.map((m) => (
-            <Module key={m.id} id={m.id} icon={m.icon} title={m.title} source={m.source} disposition={disp[m.id]}
-              setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner}>
-              {m.body()}
-            </Module>
-          ))}
+          {shown.map((m) => {
+            const paid = PAID.has(m.id);
+            // Paid-tier data is locked (teased) for non-paid viewers — unless the owner PROMOTED it public.
+            const locked = !isOwner && paid && disp[m.id] !== 'promote' && viewAs !== 'paid';
+            return (
+              <Module key={m.id} id={m.id} icon={m.icon} title={m.title} source={m.source}
+                tier={paid ? 'paid' : 'free'} count={COUNT[m.id]} disposition={disp[m.id]}
+                setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner} locked={locked}>
+                {m.body()}
+              </Module>
+            );
+          })}
           {!isOwner && shown.length === 0 && (
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '24px', textAlign: 'center', color: '#6b7280', fontSize: 14 }}>
               You have protected everything — this viewer sees nothing but your name.
