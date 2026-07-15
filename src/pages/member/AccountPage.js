@@ -1080,34 +1080,54 @@ const AccountPage = () => {
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>My Identity</h2>
           {identity && (identity.confirmed || identity.name || identity.hasReport) && !editingIdentity ? (
-            <>
-              <p style={{ color: '#4b5563', marginTop: 0 }}>
-                This is what we've mapped to your identity. We use it to show you who's searching for you — and how they might know you.
-              </p>
-              <div style={{ background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 12, padding: '8px 18px' }}>
-                {[
-                  ['Name', identity.name || [user && user.firstName, user && user.lastName].filter(Boolean).join(' ')],
-                  ['Email', user && user.email],
-                  ['Phone', (user && user.phone) || profileForm.phone],
-                  ['Age', identity.age],
-                  ['Location', [identity.city, identity.state].filter(Boolean).join(', ')],
-                  ['Occupation', identity.jobTitle || identity.occupation],
-                  ['Employer', identity.employer],
-                  ['High school', identity.highSchool],
-                  ['College', identity.college],
-                  ['Relatives on record', identity.relativesCount != null ? String(identity.relativesCount) : ''],
-                ].filter((r) => r[1]).map((r) => (
-                  <div key={r[0]} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '10px 0', borderBottom: '1px solid #eef2f0' }}>
-                    <span style={{ color: '#6b7280', fontSize: 13 }}>{r[0]}</span>
-                    <span style={{ color: '#111827', fontSize: 14, fontWeight: 600, textAlign: 'right' }}>{r[1]}</span>
+            // ── MAPPED state — a vCard of your linked public record + a teaser of what's exposed.
+            (() => {
+              const name = identity.name || [user && user.firstName, user && user.lastName].filter(Boolean).join(' ') || 'Your record';
+              const initial = (name.trim()[0] || '?').toUpperCase();
+              const location = [identity.city, identity.state].filter(Boolean).join(', ');
+              const chips = [
+                (identity.jobTitle || identity.occupation) ? `💼 ${identity.jobTitle || identity.occupation}` : null,
+                identity.employer ? `🏢 ${identity.employer}` : null,
+                identity.highSchool ? `🎓 ${identity.highSchool}` : null,
+                identity.college ? `🎓 ${identity.college}` : null,
+                identity.relativesCount != null ? `👥 ${identity.relativesCount} relatives on record` : null,
+                location ? `📍 ${location}` : null,
+              ].filter(Boolean);
+              return (
+                <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, overflow: 'hidden', boxShadow: '0 4px 18px rgba(13,93,47,0.10)' }}>
+                  <div style={{ background: 'linear-gradient(135deg,#0d5d2f,#16a34a)', color: '#fff', padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'center' }}>
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800 }}>{initial}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 20, fontWeight: 800 }}>{name}{identity.age ? `, ${identity.age}` : ''}</div>
+                      {location && <div style={{ color: '#eafff0', fontSize: 14 }}>{location}</div>}
+                      <div style={{ marginTop: 5, display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '2px 9px' }}>✓ Identity confirmed</div>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <button type="button" onClick={() => setEditingIdentity(true)}
-                style={{ marginTop: 16, background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                Update my identity
-              </button>
-            </>
+                  <div style={{ padding: '16px 20px', background: '#fff' }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6b7280', marginBottom: 8 }}>What's public about you</div>
+                    {chips.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {chips.map((chip) => (
+                          <span key={chip} style={{ fontSize: 13, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: 999, padding: '5px 12px' }}>{chip}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Your record is linked. We'll surface what's exposed here.</p>
+                    )}
+                    <div style={{ marginTop: 16, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <button type="button" onClick={() => navigate('/payment?upgrade=1&reason=identity')}
+                        style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                        Control what's exposed →
+                      </button>
+                      <button type="button" onClick={() => setEditingIdentity(true)}
+                        style={{ background: 'none', border: 'none', color: '#374151', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
+                        Update
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
           ) : (
             <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
           )}
