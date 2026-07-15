@@ -128,8 +128,28 @@ export function enrichFromReport(reportResult, selfPerson) {
     confirmed: true, hasReport: true,
     name: selfPerson && selfPerson.name, age: selfPerson && selfPerson.age, city, state,
     occupation: deriveIndustry(job.title, job.employer), jobTitle: job.title, employer: job.employer,
-    relativesCount: (x.relatives || []).length,
+    relativesCount: (x.relatives || []).length, pastLocationsCount: pastLocations.length,
   });
+}
+
+/**
+ * Exposure score for the Identity Management product — how public the member's record is, computed
+ * from the mapped identity. Higher score = more exposed. { score(0-100), level, count, items[] }.
+ */
+export function computeExposure(id) {
+  if (!id) return null;
+  const items = [];
+  let score = 0;
+  if (id.city || id.state) { items.push('Current location'); score += 15; }
+  if (id.pastLocationsCount > 0) { items.push(`${id.pastLocationsCount} prior address${id.pastLocationsCount === 1 ? '' : 'es'}`); score += Math.min(20, id.pastLocationsCount * 5); }
+  if (id.relativesCount > 0) { items.push(`${id.relativesCount} relatives`); score += Math.min(20, id.relativesCount * 3); }
+  if (id.jobTitle || id.occupation) { items.push('Occupation'); score += 10; }
+  if (id.employer) { items.push('Employer'); score += 10; }
+  if (id.highSchool || id.college) { items.push('Education'); score += 10; }
+  if (id.hasReport) { items.push('Full public report'); score += 25; }
+  score = Math.min(100, score);
+  const level = score >= 65 ? 'High' : score >= 35 ? 'Medium' : score > 0 ? 'Low' : 'Minimal';
+  return { count: items.length, score, level, items };
 }
 
 /** Store the canonical report link + confirmed identity, even before/without a full extract. */

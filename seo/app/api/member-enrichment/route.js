@@ -50,6 +50,7 @@ export async function GET(req) {
       highSchool: r.high_school || null,
       college: r.college || null,
       relativesCount: Array.isArray(r.relatives) ? r.relatives.length : null,
+      pastLocationsCount: Array.isArray(r.past_locations) ? r.past_locations.length : null,
       hasReport: !!r.report_id,
       mappedAt: r.enriched_at || null,
     } : null;

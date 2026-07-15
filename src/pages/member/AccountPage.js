@@ -6,7 +6,7 @@ import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
-import { getMappedIdentity, fetchMappedIdentity } from '../../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, computeExposure } from '../../services/memberEnrichment';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -1093,6 +1093,8 @@ const AccountPage = () => {
                 identity.relativesCount != null ? `👥 ${identity.relativesCount} relatives on record` : null,
                 location ? `📍 ${location}` : null,
               ].filter(Boolean);
+              const exposure = computeExposure(identity);
+              const expColor = !exposure ? '#16a34a' : exposure.score >= 65 ? '#dc2626' : exposure.score >= 35 ? '#f59e0b' : '#16a34a';
               return (
                 <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, overflow: 'hidden', boxShadow: '0 4px 18px rgba(13,93,47,0.10)' }}>
                   <div style={{ background: 'linear-gradient(135deg,#0d5d2f,#16a34a)', color: '#fff', padding: '18px 20px', display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -1114,10 +1116,25 @@ const AccountPage = () => {
                     ) : (
                       <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Your record is linked. We'll surface what's exposed here.</p>
                     )}
+
+                    {/* Exposure score — the Identity Management hook. Higher = more public. */}
+                    {exposure && exposure.count > 0 && (
+                      <div style={{ marginTop: 16, padding: '12px 14px', background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 10 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#111827' }}>Exposure: <span style={{ color: expColor }}>{exposure.level}</span></span>
+                          <span style={{ fontSize: 12, color: '#6b7280' }}>{exposure.count} data points public</span>
+                        </div>
+                        <div style={{ height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${exposure.score}%`, background: expColor, transition: 'width .3s' }} />
+                        </div>
+                        <p style={{ margin: '8px 0 0', fontSize: 12, color: '#6b7280' }}>Public: {exposure.items.join(' · ')}</p>
+                      </div>
+                    )}
+
                     <div style={{ marginTop: 16, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
                       <button type="button" onClick={() => navigate('/payment?upgrade=1&reason=identity')}
                         style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                        Control what's exposed →
+                        {exposure && exposure.score >= 35 ? 'Reduce my exposure →' : "Control what's exposed →"}
                       </button>
                       <button type="button" onClick={() => setEditingIdentity(true)}
                         style={{ background: 'none', border: 'none', color: '#374151', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
