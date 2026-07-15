@@ -1,7 +1,7 @@
 // POST /api/suppression — Identity Management "Hide me". A member opts out of OUR surfaces: their
 // search activity is hidden from others' WSFY. Body: { userId, name?, state?, on }. App-key gated.
 // (External data-broker removal is a separate BC-owned opt-out; we hand that off in the consumer.)
-import { setSuppression, setFieldSuppression, getSuppressionState, hasSearchDb } from '../../../lib/search-activity-db.mjs';
+import { setSuppression, setFieldSuppression, setModuleDisposition, getSuppressionState, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
@@ -29,7 +29,7 @@ export async function GET(req) {
   if (!hasSearchDb) return new Response(JSON.stringify({ ok: true, suppressed: false, hiddenFields: [] }), { status: 200, headers });
   try {
     const s = await getSuppressionState(userId);
-    return new Response(JSON.stringify({ ok: true, suppressed: s.activityHidden, hiddenFields: s.hiddenFields }), { status: 200, headers });
+    return new Response(JSON.stringify({ ok: true, suppressed: s.activityHidden, hiddenFields: s.hiddenFields, dispositions: s.dispositions }), { status: 200, headers });
   } catch { return new Response(JSON.stringify({ error: 'read failed' }), { status: 500, headers }); }
 }
 
@@ -41,14 +41,16 @@ export async function POST(req) {
   if (!body || !body.userId) return new Response(JSON.stringify({ error: 'userId required' }), { status: 400, headers });
   if (!hasSearchDb) return new Response(JSON.stringify({ ok: true, persisted: false }), { status: 200, headers });
   try {
-    // A `key` in the body means a per-item ("hide this") toggle for one exposure driver; otherwise
-    // it's the global "Hide my activity" flag.
-    if (body.key) {
+    // `module` = a My Profile module Protect/Promote disposition; `key` = a per-item exposure-driver
+    // hide; otherwise the global "Hide my activity" flag.
+    if (body.module) {
+      await setModuleDisposition({ userId: String(body.userId), name: body.name, state: body.state, module: String(body.module), disposition: body.disposition });
+    } else if (body.key) {
       await setFieldSuppression({ userId: String(body.userId), name: body.name, state: body.state, key: String(body.key), on: !!body.on });
     } else {
       await setSuppression({ userId: String(body.userId), name: body.name, state: body.state, on: !!body.on });
     }
     const s = await getSuppressionState(String(body.userId));
-    return new Response(JSON.stringify({ ok: true, suppressed: s.activityHidden, hiddenFields: s.hiddenFields }), { status: 200, headers });
+    return new Response(JSON.stringify({ ok: true, suppressed: s.activityHidden, hiddenFields: s.hiddenFields, dispositions: s.dispositions }), { status: 200, headers });
   } catch { return new Response(JSON.stringify({ error: 'persist failed' }), { status: 500, headers }); }
 }

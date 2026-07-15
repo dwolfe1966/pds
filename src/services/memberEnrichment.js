@@ -241,14 +241,31 @@ function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 
 
 export async function fetchSuppression() {
   const userId = currentUserId();
-  const empty = { activityHidden: false, hiddenFields: [] };
+  const empty = { activityHidden: false, hiddenFields: [], dispositions: {} };
   if (!userId) return empty;
   try {
     const res = await fetch(`${suppressionUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
     if (!res.ok) return empty;
     const d = await res.json();
-    return { activityHidden: !!(d && d.suppressed), hiddenFields: (d && d.hiddenFields) || [] };
+    return { activityHidden: !!(d && d.suppressed), hiddenFields: (d && d.hiddenFields) || [], dispositions: (d && d.dispositions) || {} };
   } catch { return empty; }
+}
+
+// Persist a My Profile module's Protect/Promote disposition ('protect' | 'promote' | 'neutral').
+// Returns the updated dispositions map, or null on failure.
+export async function setModuleDisposition(module, disposition, meta = {}) {
+  const userId = currentUserId();
+  if (!userId || !module) return null;
+  try {
+    const res = await fetch(suppressionUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, module, disposition, name: meta.name, state: meta.state }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return (d && d.dispositions) || {};
+  } catch { return null; }
 }
 
 export async function setSuppression(on, meta = {}) {

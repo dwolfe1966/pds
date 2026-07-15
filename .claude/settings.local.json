@@ -558,7 +558,9 @@
       "Bash(ps -o pid,command -p 6097)",
       "Bash(kill 5066)",
       "Bash(npm start *)",
-      "Bash(echo \"launched npm start \\(pid $!\\)\")"
+      "Bash(echo \"launched npm start \\(pid $!\\)\")",
+      "Bash(dispositions)",
+      "Bash(onDispositionChange)"
     ]
   }
 }

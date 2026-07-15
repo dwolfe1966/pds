@@ -90,12 +90,35 @@ export async function setFieldSuppression({ userId, name, state, key, on }) {
 
 // Full suppression state for a member — { activityHidden, hiddenFields } — drives the Identity view.
 export async function getSuppressionState(userId) {
-  if (!sql || !userId) return { activityHidden: false, hiddenFields: [] };
+  const empty = { activityHidden: false, hiddenFields: [], dispositions: {} };
+  if (!sql || !userId) return empty;
   try {
-    const rows = await sql`SELECT activity_hidden, hidden_fields FROM member_suppression WHERE user_id = ${userId}`;
-    if (!rows.length) return { activityHidden: false, hiddenFields: [] };
-    return { activityHidden: !!rows[0].activity_hidden, hiddenFields: rows[0].hidden_fields || [] };
-  } catch { return { activityHidden: false, hiddenFields: [] }; }
+    const rows = await sql`SELECT activity_hidden, hidden_fields, dispositions FROM member_suppression WHERE user_id = ${userId}`;
+    if (!rows.length) return empty;
+    return { activityHidden: !!rows[0].activity_hidden, hiddenFields: rows[0].hidden_fields || [], dispositions: rows[0].dispositions || {} };
+  } catch { return empty; }
+}
+
+// Per-module Protect/Promote disposition for the modular My Profile. 'protect'|'promote' sets the key;
+// anything else (neutral) clears it. Stored in member_suppression.dispositions (JSONB map).
+export async function setModuleDisposition({ userId, name, state, module, disposition }) {
+  if (!sql) throw new Error('no DB configured');
+  if (!userId || !module) throw new Error('userId and module required');
+  await sql`
+    INSERT INTO member_suppression (user_id, name_norm, state, activity_hidden, dispositions)
+    VALUES (${userId}, ${name ? norm(name) : null}, ${state ? String(state).toUpperCase() : null}, false, '{}'::jsonb)
+    ON CONFLICT (user_id) DO UPDATE SET
+      name_norm = COALESCE(EXCLUDED.name_norm, member_suppression.name_norm),
+      state = COALESCE(EXCLUDED.state, member_suppression.state)`;
+  if (disposition === 'protect' || disposition === 'promote') {
+    await sql`UPDATE member_suppression
+      SET dispositions = COALESCE(dispositions, '{}'::jsonb) || jsonb_build_object(${module}::text, ${disposition}::text)
+      WHERE user_id = ${userId}`;
+  } else {
+    await sql`UPDATE member_suppression
+      SET dispositions = COALESCE(dispositions, '{}'::jsonb) - ${module}::text
+      WHERE user_id = ${userId}`;
+  }
 }
 
 // WSFY: searchers whose GLOBAL activity is hidden don't appear in anyone's WSFY at all.

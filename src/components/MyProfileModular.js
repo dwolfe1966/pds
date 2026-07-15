@@ -106,14 +106,18 @@ const Row = ({ label, value }) => value ? (
 const wrap = { display: 'flex', flexWrap: 'wrap', gap: 8 };
 const none = (t) => <span style={{ color: '#9ca3af', fontSize: 13 }}>{t}</span>;
 
-export default function MyProfileModular({ data, hero = {} }) {
-  const [disp, setDisp] = useState({
-    contact: 'protect', locations: 'protect', family: 'protect',
-    court: 'protect', property: 'protect', financial: 'protect',
-    about: 'neutral', work: 'neutral', education: 'neutral', online: 'promote', activity: 'neutral',
-  });
+const DEFAULT_DISP = {
+  contact: 'protect', locations: 'protect', family: 'protect',
+  court: 'protect', property: 'protect', financial: 'protect',
+  about: 'neutral', work: 'neutral', education: 'neutral', online: 'promote', activity: 'neutral',
+};
+
+export default function MyProfileModular({ data, hero = {}, dispositions, onDispositionChange }) {
+  // Initial state = defaults overlaid with any persisted dispositions (real My Profile passes these).
+  const [disp, setDisp] = useState(() => ({ ...DEFAULT_DISP, ...(dispositions || {}) }));
   const [viewAs, setViewAs] = useState('you');
-  const set = (id, v) => setDisp((s) => ({ ...s, [id]: v }));
+  // Update local state AND persist (when a handler is wired — dev preview leaves it local).
+  const set = (id, v) => { setDisp((s) => ({ ...s, [id]: v })); if (onDispositionChange) onDispositionChange(id, v); };
   const d = data || {};
   const isOwner = viewAs === 'you';
 
