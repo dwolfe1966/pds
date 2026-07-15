@@ -18,13 +18,14 @@ const ForgotPasswordPage = () => {
     setLoading(true);
     try {
       const wrapper = await apiWrapper.getWrapper();
-      // Try known BC method names for password reset
+      // BC (CTO 2026-07-15): apiWrapper.api.user.resetPassword(email) — takes the EMAIL STRING, not an
+      // object. It sends an email with a LOGIN LINK; the user changes their password after logging in.
       const resetFn = wrapper.api?.user?.resetPassword
         ?? wrapper.api?.user?.forgotPassword
         ?? wrapper.api?.auth?.resetPassword
         ?? wrapper.api?.auth?.forgotPassword;
       if (typeof resetFn === 'function') {
-        await resetFn.call(wrapper.api.user ?? wrapper.api.auth, { email });
+        await resetFn.call(wrapper.api.user ?? wrapper.api.auth, email);
       } else {
         throw new Error('Password reset is not available. Please contact support.');
       }
@@ -42,9 +43,9 @@ const ForgotPasswordPage = () => {
         <h1 className={styles.title}>Reset Password</h1>
         {sent ? (
           <div>
-            <p style={{ color: '#16a34a', marginBottom: '1rem' }}>
-              If an account exists for <strong>{email}</strong>, a password reset link has been sent.
-              Check your inbox and follow the link to set a new password.
+            <p style={{ color: '#0d5d2f', marginBottom: '1rem' }}>
+              If an account exists for <strong>{email}</strong>, we've emailed a login link.
+              Check your inbox, follow the link to sign in, then change your password from your account settings.
             </p>
             <p className={styles.signupLink}>
               <Link to="/login">Back to Login</Link>
@@ -53,7 +54,7 @@ const ForgotPasswordPage = () => {
         ) : (
           <form onSubmit={handleSubmit} className={styles.form}>
             <p style={{ color: '#6b7280', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              Enter the email address for your account and we'll send a reset link.
+              Enter your account email and we'll send a login link so you can get back in and reset your password.
             </p>
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Email</label>
