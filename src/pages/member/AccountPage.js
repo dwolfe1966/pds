@@ -119,6 +119,7 @@ const AccountPage = () => {
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [suppressed, setSuppressed] = useState(false);
   const [hiddenFields, setHiddenFields] = useState([]); // per-item exposure hides (Identity Mgmt)
+  const [pullingReport, setPullingReport] = useState(false); // "Pull my full report" in-progress (state c)
   // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
   // the dashboard (or another device) is reflected here. Local mirror first, then the server copy.
   useEffect(() => {
@@ -1249,8 +1250,19 @@ const AccountPage = () => {
                     style={{ display: 'inline-block', background: '#0d5d2f', color: '#fff', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>
                     View your full report →
                   </Link>
+                ) : pullingReport ? (
+                  // Already mapped — pull the report FROM the confirmed identity (prefill + auto-search),
+                  // not the empty mapping form. Single confident match auto-creates; ambiguous → confirm.
+                  <SelfIdentifyCard forceShow autoStart
+                    prefill={{ name: identity.name, city: identity.city, state: identity.state, age: identity.age }}
+                    onComplete={(id) => {
+                      setPullingReport(false);
+                      const next = id || getMappedIdentity();
+                      setIdentity(next);
+                      if (next && next.reportId) navigate(`/people/${next.reportId}`);
+                    }} />
                 ) : (
-                  <button type="button" onClick={() => setEditingIdentity(true)}
+                  <button type="button" onClick={() => setPullingReport(true)}
                     style={{ background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
                     Pull my full report →
                   </button>

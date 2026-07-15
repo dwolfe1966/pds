@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { createReportForIdentity, getReportDetail } from '../services/reportService';
@@ -45,12 +45,27 @@ function narrowMatches(list, { city, age }) {
   return out;
 }
 
-export default function SelfIdentifyCard({ forceShow = false, onComplete } = {}) {
+export default function SelfIdentifyCard({ forceShow = false, onComplete, prefill = null, autoStart = false } = {}) {
   const { user, isPaid } = useAuth();
   const [step, setStep] = useState('form'); // form | searching | choose | working | schools | done
-  const [form, setForm] = useState({
-    firstName: user?.firstName || '', middleName: '', lastName: user?.lastName || '',
-    city: user?.city || '', state: user?.state || '', age: '',
+  const [form, setForm] = useState(() => {
+    // Pre-fill from an already-confirmed identity (e.g. "Pull my full report" for a mapped member) so
+    // they don't re-enter everything; otherwise seed from the BC user object.
+    if (prefill) {
+      const parts = String(prefill.name || '').trim().split(/\s+/).filter(Boolean);
+      return {
+        firstName: prefill.firstName || parts[0] || user?.firstName || '',
+        middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '',
+        lastName: prefill.lastName || (parts.length > 1 ? parts[parts.length - 1] : '') || user?.lastName || '',
+        city: prefill.city || user?.city || '',
+        state: prefill.state || user?.state || '',
+        age: prefill.age ? (String(prefill.age).match(/\d+/) || [''])[0] : '',
+      };
+    }
+    return {
+      firstName: user?.firstName || '', middleName: '', lastName: user?.lastName || '',
+      city: user?.city || '', state: user?.state || '', age: '',
+    };
   });
   const [matches, setMatches] = useState([]);
   const [allFetched, setAllFetched] = useState([]);
@@ -71,10 +86,7 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete } = {})
   // module go away until they select a record).
   const confirmDone = () => { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } setStep('done'); if (onComplete) onComplete(); };
 
-  if (dismissed && !forceShow) return null;
-
-  const runSearch = async (e) => {
-    e.preventDefault();
+  const doSearch = async () => {
     setErr('');
     if (!form.firstName.trim() || !form.lastName.trim()) { setErr('Please enter your first and last name.'); return; }
     setStep('searching');
@@ -86,18 +98,35 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete } = {})
         age: form.age.trim() || undefined, type: 'name', source: 'self-identify',
       });
       const all = res?.data || [];
+      const narrowed = narrowMatches(all, form);
       setAllFetched(all);
-      setMatches(narrowMatches(all, form));
+      setMatches(narrowed);
       setRawResp(res?.rawResponse || null);
       setCanLoadMore(!!(res?.pagination && res.pagination.hasMore));
       setShowingAll(false);
       setExhausted(false);
+      // Auto-run (pull-my-report) with a single confident match → create the report without another
+      // click. Ambiguous → still show "which one is you?" so we never pull a report on the wrong person.
+      if (autoStart && narrowed.length === 1) { selectMatch(narrowed[0]); return; }
       setStep('choose');
     } catch {
       setErr("We couldn't run the search right now. You can add your details manually below.");
       setStep('schools');
     }
   };
+  const runSearch = (e) => { e.preventDefault(); doSearch(); };
+
+  // Auto-start (pull-my-report): the identity is already confirmed, so skip the empty form and search
+  // immediately from the prefill. Runs once.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStart && !autoStartedRef.current && step === 'form' && form.firstName.trim() && form.lastName.trim()) {
+      autoStartedRef.current = true;
+      doSearch();
+    }
+  }, [autoStart]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (dismissed && !forceShow) return null;
 
   // "None of these are me" → surface MORE of the result set before giving up: first reveal any
   // matches the client-side age filter hid, then paginate BC for the next page. Exhausted → refine.
