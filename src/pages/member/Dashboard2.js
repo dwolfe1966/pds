@@ -791,20 +791,6 @@ const Dashboard2 = () => {
             }}>
               We watch the world's records
             </div>
-            <h2 style={{
-              margin: '0.2rem 0 0', fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.01em',
-              // Explicit white (the intended color — global heading styles were clobbering
-              // the inherited #fff). White on the green gradient clears WCAG AA for large
-              // text; the prior yellow (#fde047) failed contrast. Size bumped to 1.2rem so it
-              // qualifies as large text. Shadow keeps the edge against the lighter gradient end.
-              color: '#fff',
-              textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-            }}>
-              12B+ public records, refreshed continuously by our data partners.
-            </h2>
-            <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#dcfce7', maxWidth: 580 }}>
-              When you search, you get the latest snapshot of names, phones, addresses, relatives, and arrest records — pulled fresh on demand. Run a search anytime; we keep the data current so you don't have to.
-            </p>
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
