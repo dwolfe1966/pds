@@ -1106,12 +1106,7 @@ const AccountPage = () => {
               </button>
             </>
           ) : (
-            <>
-              <p style={{ color: '#4b5563', marginTop: 0 }}>
-                Confirm your identity so you can control and hide what's exposed, see who is looking for you, and ensure you are protected.
-              </p>
-              <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
-            </>
+            <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
           )}
         </div>
       )}

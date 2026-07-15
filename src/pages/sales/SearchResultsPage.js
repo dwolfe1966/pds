@@ -170,7 +170,10 @@ const SalesSearchResultsPage = () => {
       }
     };
     fetchResults();
-  }, [query, firstNameParam, lastNameParam, state, error]);
+    // city/age MUST be deps: refining by city or age (same name) is the common case, and without
+    // them the effect never re-ran → the Refine CTA "did nothing". city now narrows server-side
+    // (un-stripped); age re-narrows via searchQuery → narrowedResults.
+  }, [query, firstNameParam, lastNameParam, state, cityParam, ageParam, error]);
 
   // displayCount / countLabel are computed after narrowedResults (below), so the
   // header reflects the NARROWED set when a city/age/filter is active.
