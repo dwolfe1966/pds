@@ -251,7 +251,10 @@ const TierBarChart = ({ data }) => (
 // stays blurred behind the paywall. Assumes searchers increasingly map themselves → richer teases.
 const AFFINITY_CHIP = {
   verified_relative: '👥 A relative',
+  shared_relative: '👪 Shares a relative with you',
   relative: '👥 May be a relative',
+  has_phone: '📱 Has your phone number',
+  has_email: '✉️ Has your email',
   high_school: '🎓 Went to your high school',
   college: '🎓 Went to your college',
   colleague: '🏢 May be a colleague',
@@ -281,7 +284,7 @@ const EventRow = ({ event, kind, isPaid }) => {
   if (affinities.includes('occupation')) chips.push(isPaid && event.occupation ? `💼 Works in ${event.occupation}` : '💼 Works in ••••••');
   if (event.times > 1) chips.push(`🔁 Searched you ${event.times}×`);
   // De-dupe (relative can appear twice) + cap.
-  const uniqueChips = [...new Set(chips)].slice(0, 4);
+  const uniqueChips = [...new Set(chips)].slice(0, 5);
 
   return (
     <li style={vcard}>

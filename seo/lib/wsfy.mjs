@@ -84,7 +84,7 @@ async function fetchSubjectEnrichment(userId) {
   if (!userId) return null;
   try {
     const rows = await sql`
-      SELECT occupation, employer, high_school_norm, college_norm
+      SELECT occupation, employer, high_school_norm, college_norm, relatives
       FROM member_enrichment WHERE user_id = ${userId}`;
     return rows[0] || null;
   } catch {
@@ -188,11 +188,19 @@ export async function buildWsfySummary(identity, opts = {}) {
         && e.past_locations.some((loc) => norm(loc).includes(subjCityN))) tags.push('past_local');
     if (g.times >= 2) tags.push('frequent');
     if (e?.occupation) tags.push('occupation');
+    // Contact-info signals — they searched you BY phone/email, so they already have it.
+    if (g.last_type === 'phone') tags.push('has_phone');
+    if (g.last_type === 'email') tags.push('has_email');
     // Overlap affinities — need BOTH the searcher's and the subject's enrichment.
     if (e && subjE) {
       if (e.high_school_norm && subjE.high_school_norm && e.high_school_norm === subjE.high_school_norm) tags.push('high_school');
       if (e.college_norm && subjE.college_norm && e.college_norm === subjE.college_norm) tags.push('college');
       if (e.employer && subjE.employer && norm(e.employer) === norm(subjE.employer)) tags.push('colleague');
+      // Shares a relative with you — the searcher's and your relatives lists overlap.
+      if (Array.isArray(e.relatives) && Array.isArray(subjE.relatives) && subjE.relatives.length) {
+        const subjRel = new Set(subjE.relatives.map((n) => norm(n)));
+        if (e.relatives.some((n) => subjRel.has(norm(n)))) tags.push('shared_relative');
+      }
     }
     aff.set(g.searcher_key, { tags, occupation: e?.occupation || null, employer: e?.employer || null });
   }
