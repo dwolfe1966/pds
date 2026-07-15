@@ -1188,7 +1188,29 @@ const AccountPage = () => {
             {/* Tier-specific actions below the vCard. (c) paid → Protect / Promote tracks;
                 (b) free → single "unlock full report & protection" upsell. */}
             {isPaid ? (
-              <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+              <>
+              {/* State (c) headline — access the member's full background report. identity.reportId is
+                  the canonical, re-fetchable commerceContentId; /people/:id renders the paid
+                  expose-all report we already ship. No reportId (mapped while free, then upgraded) →
+                  re-run the identify flow, which auto-creates the report on the paid path. */}
+              <div style={{ marginTop: 16, border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Your full background report</div>
+                <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
+                  Every address, phone, relative, and public record tied to your identity — the same report anyone else can pull on you.
+                </p>
+                {identity.reportId ? (
+                  <Link to={`/people/${identity.reportId}`}
+                    style={{ display: 'inline-block', background: '#0d5d2f', color: '#fff', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>
+                    View your full report →
+                  </Link>
+                ) : (
+                  <button type="button" onClick={() => setEditingIdentity(true)}
+                    style={{ background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+                    Pull my full report →
+                  </button>
+                )}
+              </div>
+              <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
                 <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', background: '#fff' }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#0d5d2f' }}>🔒 Protect</div>
                   <p style={{ margin: '6px 0 10px', fontSize: 13, color: '#4b5563', lineHeight: 1.5 }}>
@@ -1204,6 +1226,7 @@ const AccountPage = () => {
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af' }}>Coming soon</span>
                 </div>
               </div>
+              </>
             ) : (
               <div style={{ marginTop: 16, background: '#0d5d2f', color: '#fff', borderRadius: 12, padding: '18px 20px' }}>
                 <div style={{ fontSize: 16, fontWeight: 800 }}>🔒 Unlock your full identity report & protection</div>
