@@ -38,19 +38,34 @@ Nav collapses to three: **Dashboard · My Profile · Search.**
 - **My Profile** — the owner projection + controls.
 - **Search** — the entry into Others-view Profiles.
 
-## 3. The differentiator: **Present vs Expose** (two dials on one Profile)
+## 3. The mission: **Transparency + Control** across the whole ecosystem
 
-Every competitor sits on ONE axis. We're the only one on both:
+The product isn't "a profile page" — it's the **aggregation + control layer over a person's entire
+digital representation ecosystem** (our idlookup profile is just *one node* we happen to fully control;
+the graph also includes data brokers — Spokeo, PeopleFinders, BeenVerified… — social networks — FB,
+LinkedIn — Google results, public records). Two pillars:
 
-- **Expose axis (public reality)** — the footprint already out there (public records, data brokers).
-  We can't retract it from the world, but we can **suppress it on our surfaces, help remove it
-  elsewhere (opt-out), and monitor + alert on re-appearance.** This is the DeleteMe / Aura / Incogni /
-  Google-"Results about you" model. Owner dial = **shrink what's exposed.**
-- **Present axis (curated identity)** — what the owner *chooses* to show: a claimed, authored profile.
-  This is the LinkedIn / About.me / Facebook model. Owner dial = **grow what you present.**
+- **TRANSPARENCY** — *"I can see all of my representations, everywhere."* Aggregate every place the
+  person appears, and show how they "look" there — with scores, sentiment, freshness, exposure.
+- **CONTROL** — *"I can manage them — change, hide, or remove."* Per-representation actions: suppress on
+  our surface, hand off / drive data-broker opt-outs, (aspirational) manage social + broker
+  representations directly, and monitor + alert on re-appearance.
 
-**Data brokers only expose (and grudgingly opt-out). Social networks only present. We do both:**
-shrink the involuntary footprint, grow the intentional one — *"own your digital representation."*
+**The narrative arc we must own (core education):** most people arrive wanting to **DELETE everything.**
+Real deletion from the public-record / broker / social ecosystem is **impossible** — data re-lists,
+re-appears, re-propagates. Our job is to help them *understand* that and reframe to **MANAGE**, which is
+more valuable and ongoing: transparency + continuous control beats a one-time (illusory) delete. This
+"manage, don't delete" reframe is the emotional through-line of the whole Me-view.
+
+### The two control dials (one Profile, two axes)
+- **Expose axis (public reality) — v1 focus.** *Shrink* the involuntary footprint: suppress on our
+  surfaces, drive/hand-off broker opt-outs, monitor + alert. DeleteMe / Aura / Incogni / Google-"Results
+  about you" model. **This is where we start.**
+- **Present axis (curated identity) — aspirational / phase 2.** *Grow* the intentional footprint: a
+  claimed, authored profile (LinkedIn / About.me). Not v1.
+
+**Data brokers only expose (and grudgingly opt-out). Social networks only present. We aggregate + control
+BOTH across the ecosystem** — that's *"own your digital representation."*
 
 ## 4. Canonical section taxonomy (ordered)
 
@@ -122,20 +137,37 @@ render every section as a real row with a truthful count/label, locked, not hidd
 - **WSFY** → an Others-view *relationship* signal ("who viewed me") on the Dashboard.
 - **`SearchResultDetailPage` (the report)** → the Paid-viewer projection today; the thing to refactor into `ProfileView`.
 
-## 8. Biggest build efforts (owner's framing)
+## 8. Decisions locked (2026-07-15)
 
-1. **Visualize the report as a Profile** — the shared `ProfileView` projection engine (report page becomes one caller).
-2. **My Profile experience** — owner projection: present-layer authoring + expose dashboard + "view as" + verify badge.
-3. **General "Others" Profile** — the viewer-state-aware profile reachable via search, WSFY, recommended-people.
+- **v1 = Claim + Expose/Control. Present is aspirational (phase 2).** No authored bio/headline/links in v1.
+- **"View as" — whichever is easier ships in v1.** Live-rule render is desirable but not required; a simple
+  3-tab preview is acceptable.
+- **"Manage, don't delete" is the core narrative** — lead the Me-view with transparency + control, and
+  explicitly educate that ecosystem-wide deletion is impossible.
+- **Ecosystem scope is the north star** — aggregate representations from *everywhere* (brokers, social,
+  Google, public records), and (aspirational) control them at the source, not just on idlookup.
 
-## 9. Open questions to resolve before building
+## 9. Build efforts, sequenced
 
-- **Present layer scope at launch** — do owners author a real "present" profile (bio/links/headline) now, or is v1
-  just the "expose" dashboard + claim, with "present" as phase 2?
-- **Permission granularity** — per-section (simpler) vs per-field (Facebook-grade) owner controls for v1?
-- **"View as" fidelity** — a true live-rule render vs a simpler 3-tab mock for v1?
-- **Unclaimed default** — confirm the Anonymous/Free/Paid column defaults above (esp. what's free vs paid) against
-  current monetization (we must not give away what the paywall depends on).
-- **Naming/route** — does `/my-identity` become `/my-profile`, and does the report page (`/people/:id`) become
-  `/profile/:id`? (Keep aliases.)
-- **Verification requirement** — is claim-to-control gated on KBA pass (lightweight) or optional-with-badge (LinkedIn model)?
+**v1 (buildable now — Claim + Transparency + Control on our surface + broker hand-off):**
+1. **Report-as-Profile** — refactor `SearchResultDetailPage` into a shared, viewer-projected `ProfileView`
+   (report page + My-profile + cards all become callers). The "visualize report as profile" work.
+2. **My Profile = Me-view command center** — claim/verify (done: KBA/DL) + exposure dashboard (score +
+   itemized "what's public" + per-item hide, mostly done) + a **"Your representations across the web"** panel
+   (curated broker list with found/hidden/removal status + opt-out hand-off — the transparency+control MVP,
+   DeleteMe site-by-site pattern) + the "manage don't delete" onboarding + a simple **"view as"** tab.
+3. **Others-view Profile** — the viewer-state-aware profile reachable via search / WSFY / recommended-people
+   (same `ProfileView`, non-owner projection).
+4. **Monitoring + alerts** — "a new listing appeared / your info reappeared" (retention loop).
+
+**Aspirational (phase 2+):** Present-layer authoring; automated cross-broker + social removal/management at
+the source; sentiment/reputation scores aggregated across sources; the full "everywhere" representation graph.
+
+## 10. Still-open (smaller) questions
+
+- **Permission granularity** — per-section (simpler) vs per-field owner controls for v1? (Lean per-section.)
+- **Unclaimed tier defaults** — confirm the Anonymous/Free/Paid columns in §5 against current monetization
+  (must not give away what the paywall depends on).
+- **Naming/route** — `/my-identity` → `/my-profile`, and report `/people/:id` → `/profile/:id`? (Keep aliases.)
+- **Broker list sourcing** for the transparency panel — curated static list of major brokers (+ likelihood
+  listed) vs live presence-detection? (Lean curated static for v1.)
