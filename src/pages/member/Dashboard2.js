@@ -9,6 +9,7 @@ import { getBrand } from '../../services/brand';
 import { US_STATES } from '../../data/usStates';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import ExposureTile from '../../components/ExposureTile';
+import DigitalFootprint from '../../components/DigitalFootprint';
 import IdentityOnboardingModal from '../../components/IdentityOnboardingModal';
 
 /**
@@ -855,6 +856,11 @@ const Dashboard2 = () => {
 
         {/* Identity exposure summary → deep-links into My Identity (renders only once mapped). */}
         <ExposureTile />
+
+        {/* Your Digital Footprint — Transparency + Control hook; deep-links into My Identity. */}
+        <div style={{ marginBottom: '1rem' }}>
+          <DigitalFootprint compact />
+        </div>
 
         {/* Trial transparency banner — the upcoming first charge, front and center.
             TEMPORARILY DISABLED 2026-06-23 (owner request: hide the yellow "free trial —

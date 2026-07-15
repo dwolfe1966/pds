@@ -9,6 +9,7 @@ import { track } from '../../services/trackingService';
 import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel } from '../../services/memberEnrichment';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
+import DigitalFootprint from '../../components/DigitalFootprint';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -1105,6 +1106,10 @@ const AccountPage = () => {
       {activeTab === 'identity' && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>My Identity</h2>
+          {/* Transparency + Control lead — "manage, don't delete" (docs/design/profile-concept-model.md). */}
+          <div style={{ marginBottom: 20 }}>
+            <DigitalFootprint />
+          </div>
           {identity && (identity.confirmed || identity.name || identity.hasReport) && !editingIdentity ? (
             // ── MAPPED — vCard of your linked public record + exposure, then tier-specific actions:
             //    state (b) free = obfuscated profile + unlock upsell; state (c) paid = Protect / Promote.
