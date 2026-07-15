@@ -122,6 +122,7 @@ const AccountPage = () => {
   const [suppressed, setSuppressed] = useState(false);
   const [hiddenFields, setHiddenFields] = useState([]); // per-item exposure hides (Identity Mgmt)
   const [pullingReport, setPullingReport] = useState(false); // "Pull my full report" in-progress (state c)
+  const [identitySubTab, setIdentitySubTab] = useState('profile'); // My Identity command-center subnav
   // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
   // the dashboard (or another device) is reflected here. Local mirror first, then the server copy.
   useEffect(() => {
@@ -1106,10 +1107,21 @@ const AccountPage = () => {
       {activeTab === 'identity' && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>My Identity</h2>
-          {/* Transparency + Control lead — "manage, don't delete" (docs/design/profile-concept-model.md). */}
-          <div style={{ marginBottom: 20 }}>
-            <DigitalFootprint />
+          {/* Subnav — My Identity is a command center: your profile + your footprint across the web
+              (docs/design/profile-concept-model.md). */}
+          <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 20, flexWrap: 'wrap' }}>
+            {[{ k: 'profile', label: 'My Profile' }, { k: 'footprint', label: 'Digital Footprint' }].map((t) => (
+              <button key={t.k} type="button" onClick={() => setIdentitySubTab(t.k)}
+                style={{ background: 'none', border: 'none', borderBottom: `2px solid ${identitySubTab === t.k ? '#0d5d2f' : 'transparent'}`, color: identitySubTab === t.k ? '#0d5d2f' : '#6b7280', fontSize: 14.5, fontWeight: 700, padding: '9px 14px', cursor: 'pointer', marginBottom: -1 }}>
+                {t.label}
+              </button>
+            ))}
           </div>
+
+          {identitySubTab === 'footprint' && <DigitalFootprint />}
+
+          {identitySubTab === 'profile' && (
+          <>
           {identity && (identity.confirmed || identity.name || identity.hasReport) && !editingIdentity ? (
             // ── MAPPED — vCard of your linked public record + exposure, then tier-specific actions:
             //    state (b) free = obfuscated profile + unlock upsell; state (c) paid = Protect / Promote.
@@ -1300,9 +1312,12 @@ const AccountPage = () => {
                 <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', background: '#fff' }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#0d5d2f' }}>🔒 Protect</div>
                   <p style={{ margin: '6px 0 10px', fontSize: 13, color: '#4b5563', lineHeight: 1.5 }}>
-                    Hide your record on {brand.name} and remove yourself from data-broker sites so fewer people can find you.
+                    Control what's visible about you — hide individual details and manage your footprint across the web.
                   </p>
-                  <a href="/opt-out" style={{ fontSize: 13, fontWeight: 700, color: '#0d5d2f', textDecoration: 'none' }}>Manage protection →</a>
+                  <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    style={{ background: 'none', border: 'none', padding: 0, fontSize: 13, fontWeight: 700, color: '#0d5d2f', textDecoration: 'underline', cursor: 'pointer' }}>
+                    Manage my footprint →
+                  </button>
                 </div>
                 <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px', background: '#fff' }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#0d5d2f' }}>📣 Promote</div>
@@ -1356,10 +1371,9 @@ const AccountPage = () => {
                   <span style={{ position: 'absolute', top: 3, left: suppressed ? 25 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
                 </button>
               </div>
-              <p style={{ margin: '10px 0 0', fontSize: 12, color: '#6b7280' }}>
-                To remove your public record from data-broker sites, use our <a href="/opt-out" style={{ color: '#0d5d2f', fontWeight: 600 }}>opt-out</a>.
-              </p>
             </div>
+          )}
+          </>
           )}
         </div>
       )}
