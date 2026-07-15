@@ -82,6 +82,7 @@
 - [SEO LIVE on idlookup.me](project_seo_live_idlookup_me.md) — indexable people-search directory (Vercel + Neon); name×state beats TooManyMatches; sweep needs HEADED; prototype for idlookup.ai/people
 - [SEO content augmentation](project_seo_content_augmentation.md) — ACS demographics + name-facts LIVE on city/leaf pages; city-grain gate estInCity<750 (~866k); Wikidata/notable-people next; news skipped; DB build-resilience fix
 - [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on the SEO Vercel app; code done (30min + 1 follow-up, Name/Age/Location personalized, ASM unsubscribe); PAUSED pending owner SendGrid domain-auth (now e.idlookup.me, .ai DNS is BC-Cloudflare) + Vercel envs
+- [Identity Management product](project_identity_management.md) — 3-state /my-identity (not-mapped/free/paid), exposure score, per-item suppression enforced in WSFY
 - [WSFY self-build](project_wsfy_self_build.md) — build Who's-Searching-For-You ourselves (BC has none); Phase 1 ingest + Phase 2 tiered reveal + Phase 2b affinity tease SHIPPED (bundle not yet on BC); open: enrichment pipeline (occupation), auth-harden, opt-out
 - [BC added city to teaser (2026-07-14)](project_bc_teaser_city_added.md) — reverses name+state-only assumption; AFTER WSFY: un-strip city in apiRouter + revisit SEO city-grain
 - [Master growth plan 2026-07-11](project_growth_plan_2026_07_11.md) — 5 areas as one Acquire→Convert→Retain lifecycle; waves + open questions (report COGS, backend location); docs/design/2026-07-11-master-growth-plan.md
