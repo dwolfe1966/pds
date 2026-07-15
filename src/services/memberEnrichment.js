@@ -176,6 +176,33 @@ export function computeExposure(id, hiddenKeys) {
   return { count: breakdown.length, score, level, items: breakdown.map((r) => r.label), breakdown, hidden: hiddenItems };
 }
 
+/**
+ * Protection Score (0-100) — a single glanceable measure of how protected the member's identity is,
+ * composited from PROTECTIVE ACTIONS (not just low data), so it climbs as they act:
+ *   - Verification (30%): ID-verified > KBA > unverified
+ *   - Exposure hidden (40%): the share of exposed details they've hidden
+ *   - Activity control (30%): hidden on our surfaces (WSFY suppression)
+ * Returns null when the identity isn't claimed yet. { score, level, actions[] }.
+ */
+export function computeProtectionScore(id, opts = {}) {
+  if (!id || !(id.confirmed || id.name || id.hasReport)) return null;
+  const exp = computeExposure(id, opts.hiddenFields) || { breakdown: [], hidden: [] };
+  const verif = id.verified === 'id' ? 100 : id.verified === 'kba' ? 60 : 0;
+  const present = (exp.breakdown ? exp.breakdown.length : 0);
+  const hidden = (exp.hidden ? exp.hidden.length : 0);
+  const totalDrivers = present + hidden;
+  const expHidden = totalDrivers === 0 ? 100 : Math.round((hidden / totalDrivers) * 100);
+  const control = opts.suppressed ? 100 : 0;
+  const score = Math.max(0, Math.min(100, Math.round(0.30 * verif + 0.40 * expHidden + 0.30 * control)));
+  const level = score >= 80 ? 'Strong' : score >= 50 ? 'Fair' : score >= 25 ? 'Building' : 'At risk';
+  // Highest-leverage next steps, most-impactful first.
+  const actions = [];
+  if (present > 0) actions.push({ key: 'hide', label: `Hide ${present} exposed detail${present === 1 ? '' : 's'}`, points: 40 });
+  if (id.verified !== 'id') actions.push({ key: 'verify', label: id.verified === 'kba' ? 'Verify with your ID' : 'Verify your identity', points: id.verified === 'kba' ? 12 : 30 });
+  if (!opts.suppressed) actions.push({ key: 'suppress', label: 'Hide your activity on IDLookup', points: 30 });
+  return { score, level, actions };
+}
+
 /** Store the canonical report link + confirmed identity, even before/without a full extract. */
 export function linkSelfReport(commerceContentId, selfPerson) {
   if (!commerceContentId) return;

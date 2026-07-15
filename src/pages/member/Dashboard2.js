@@ -10,6 +10,7 @@ import { US_STATES } from '../../data/usStates';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import ExposureTile from '../../components/ExposureTile';
 import DigitalFootprint from '../../components/DigitalFootprint';
+import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import IdentityOnboardingModal from '../../components/IdentityOnboardingModal';
 
 /**
@@ -764,6 +765,11 @@ const Dashboard2 = () => {
             </button>
           </div>
         )}
+
+        {/* Protection Score — the "Me" center of gravity, above the fold with search. */}
+        <div style={{ marginBottom: '1rem' }}>
+          <ProtectionScoreRing />
+        </div>
 
         {/* Desktop 2-column dashboard grid (mobile stacks — media query below).
             Row 1: search (left) · we-watch-the-world (right). Account/support quick-buttons
