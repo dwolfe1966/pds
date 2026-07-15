@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
 import WsfyPaymentTeaser from '../../components/WsfyPaymentTeaser';
+import IdentityPaymentTeaser from '../../components/IdentityPaymentTeaser';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
@@ -169,8 +170,11 @@ const PaymentPage = () => {
   const [paying, setPaying] = useState(false);
 
   const simulateParam = searchParams.get('simulate');
-  // WSFY upsell context: a free member upgrading to see who's searching for them.
+  // Self-context upsells (member upgrading around their own identity): WSFY ("who's searching") or
+  // identity ("control what's exposed"). In these flows there's no searched person, so no person
+  // vCard / report promo — the WSFY/identity teaser is the anchor.
   const upgradeReason = searchParams.get('reason');
+  const isSelfContext = upgradeReason === 'wsfy' || upgradeReason === 'identity';
   const cardType = detectCardType(form.cardNumber);
 
   // Track page entry (after auth resolves so we know if it's an upgrade)
@@ -705,8 +709,8 @@ const PaymentPage = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '-2.5rem -1rem 1.5rem', padding: '0.75rem 1rem', fontSize: '0.85rem', background: '#0d5d2f', borderBottom: 'none' }}>
           {/* "Back to Results" only makes sense in a search→report flow; in the WSFY/identity flow
               there are no results to go back to (owner) — link back to where they came from. */}
-          {upgradeReason === 'wsfy' ? (
-            <Link to="/who-is-searching" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back</Link>
+          {isSelfContext ? (
+            <Link to={upgradeReason === 'wsfy' ? '/who-is-searching' : '/account?tab=identity'} style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back</Link>
           ) : (
             <Link to="/name/search-result" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back to Results</Link>
           )}
@@ -716,13 +720,14 @@ const PaymentPage = () => {
       {/* WSFY upsell hero — free member came from "Who's Searching For You". Reframes checkout
           around that payoff (the real count + obfuscated tease) above the standard content. */}
       {upgradeReason === 'wsfy' && !success && <WsfyPaymentTeaser />}
+      {upgradeReason === 'identity' && !success && <IdentityPaymentTeaser />}
 
       {/* Person preview — ALWAYS on top, above the two-column layout, mobile or
           desktop (owner 2026-07-03). The person is the anchor, not the pricing. */}
       {/* Mobile-only: combine the $1 trial rectangle with the vCard into one card
           (owner) — 7-Day Trial $1 on top, vCard in the middle, instant-access at the
           bottom. The separate personPreview + pricing card are hidden on mobile. */}
-      {selectedPerson && !success && upgradeReason !== 'wsfy' && (
+      {selectedPerson && !success && !isSelfContext && (
         <div className={styles.mobilePriceVcard}>
           <div className={styles.summaryHeader} style={theme ? { background: theme.band } : undefined}>
             <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
@@ -744,7 +749,7 @@ const PaymentPage = () => {
           <p className={styles.summaryInstant} style={theme ? { background: theme.onDark ? 'rgba(245,158,11,0.12)' : '#e6f3fa', color: theme.accentDark } : undefined}>⚡ Instant access after payment</p>
         </div>
       )}
-      {selectedPerson && !success && upgradeReason !== 'wsfy' && (
+      {selectedPerson && !success && !isSelfContext && (
         <div className={styles.personPreview}>
           <div className={styles.personPreviewLeft}>
             <PersonAvatar person={selectedPerson} size={48} />
@@ -778,7 +783,7 @@ const PaymentPage = () => {
           {/* General promotional teaser — shown when there's no target report (e.g. a
               thin-match signup). Suppressed in the WSFY flow, where the WSFY teaser is the anchor
               (vCards/report promos only make sense when searching someone else — owner 2026-07-14). */}
-          {!selectedPersonId && !success && upgradeReason !== 'wsfy' && (
+          {!selectedPersonId && !success && !isSelfContext && (
             <div style={{
               background: theme ? (theme.onDark ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' : 'linear-gradient(135deg, #055a86 0%, #007cc2 100%)') : 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
               color: '#fff', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
