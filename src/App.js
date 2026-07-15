@@ -72,7 +72,7 @@ import WhoIsSearchingPage from './pages/member/WhoIsSearchingPage';
 import AlertsPage from './pages/member/AlertsPage';
 import AccountPage from './pages/member/AccountPage';
 import LogoutPage from './pages/member/LogoutPage';
-import SearchHistoryPage from './pages/member/SearchHistoryPage';
+import ActivityPage from './pages/member/ActivityPage';
 
 // Admin / CSR pages live in the separate admin bundle (src/AdminApp.js).
 // Consumer never mounts /admin/* routes — admins use the dedicated CSR app
@@ -317,10 +317,19 @@ const App = () => {
             }
           />
           <Route
+            path="/activity"
+            element={
+              <ProtectedRoute>
+                <ActivityPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Legacy path — History became Activity; keep the URL working. */}
+          <Route
             path="/search-history"
             element={
               <ProtectedRoute>
-                <SearchHistoryPage />
+                <ActivityPage />
               </ProtectedRoute>
             }
           />

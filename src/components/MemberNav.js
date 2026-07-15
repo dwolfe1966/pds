@@ -21,10 +21,11 @@ const MemberNav = () => {
   const navLinks = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/people-search', label: 'Search' },
-    { path: '/search-history', label: 'History' },
-    { path: '/alerts', label: 'Alerts' },
     { path: '/who-is-searching', label: "Who's Searching" },
     { path: '/my-identity', label: 'My Identity' },
+    // Activity = searches + logins + notifications + everything we track. Sits just left of Account.
+    // (Alerts hidden for now; WSFY stays top-level for now — later linked from Dashboard/Activity/My Identity.)
+    { path: '/activity', label: 'Activity' },
     { path: '/account', label: 'Account' },
   ];
 
