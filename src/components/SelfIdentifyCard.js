@@ -131,21 +131,22 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete } = {})
     setRecordConfirmed(true); // a real record was selected → this run can permanently dismiss
     setStep('working');
     const selfPerson = { name: m?.fullName, city: m?.city, state: m?.state, age: m?.age || m?.ageRange };
-    let enriched = false;
-    // Report-based enrichment only for paid members (free can't create reports). Best-effort. The
-    // created report's commerceContentId is the CANONICAL, re-fetchable link we store with the member.
+    // ALWAYS persist the confirmed identity FIRST (base: name + location + confirmed). This guarantees
+    // the mapped state shows even if the report pull/extract fails (bug: report path could set
+    // enriched=true then throw in extractAll → nothing was written).
+    saveMemberProfile({ city: selfPerson.city || form.city, state: selfPerson.state || form.state, selfPerson, source: 'self-identify' });
+    // Paid → also pull the report to enrich (occupation/relatives/past locations). Best-effort; the
+    // created report's commerceContentId is the CANONICAL, re-fetchable link stored with the member.
     if (isPaid && m?.extId) {
       try {
         const created = await createReportForIdentity(m.extId, m);
         if (created?.success && created.commerceContentId) {
           const report = await getReportDetail(created.commerceContentId);
-          if (report?.success !== false) { enrichFromReport(report, selfPerson); enriched = true; }
-          else { linkSelfReport(created.commerceContentId, selfPerson); enriched = true; }
+          if (report?.success !== false) enrichFromReport(report, selfPerson);
+          else linkSelfReport(created.commerceContentId, selfPerson);
         }
-      } catch { /* best-effort — fall through to storing the confirmed identity */ }
+      } catch { /* base identity already saved above */ }
     }
-    // Always store the confirmed identity (stable attrs + location), even without a report.
-    if (!enriched) saveMemberProfile({ city: selfPerson.city || form.city, state: selfPerson.state || form.state, selfPerson, source: 'self-identify' });
     setStep('schools');
   };
 
