@@ -1142,10 +1142,14 @@ const AccountPage = () => {
                           {exposure.breakdown.map((b) => (
                             <div key={b.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                               <span style={{ marginTop: 2, width: 8, height: 8, borderRadius: '50%', background: expColor, flexShrink: 0 }} aria-hidden="true" />
-                              <div style={{ flex: 1 }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{b.label} <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>+{b.points}</span></div>
                                 <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.4 }}>{b.detail}</div>
                               </div>
+                              <Link to={`/payment?upgrade=1&reason=identity&hide=${b.key}`}
+                                style={{ flexShrink: 0, alignSelf: 'center', fontSize: 12, fontWeight: 700, color: '#0d5d2f', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', borderRadius: 999, padding: '4px 10px' }}>
+                                Hide →
+                              </Link>
                             </div>
                           ))}
                         </div>

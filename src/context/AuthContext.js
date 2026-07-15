@@ -225,16 +225,19 @@ export const AuthProvider = ({ children }) => {
     setSubscription(null);
     setSubscriptionLoading(false);
     setSubscriptionError(false);
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    // Kill the BC server session FIRST (while the cookie/token still exist) so a later session-check
+    // can't silently re-authenticate the just-logged-out user.
     try {
       await api.logout();
     } catch (err) {
       console.warn('[Auth] Logout request failed:', err?.message || err);
-    } finally {
-      navigate('/');
     }
+    // Then wipe ALL client stores — not just the 3 auth keys. Residual session/user/report/search
+    // caches were auto-restoring the prior user on the next page (e.g. going to Search). Clearing
+    // everything guarantees a clean logged-out state.
+    try { localStorage.clear(); } catch { /* storage unavailable */ }
+    try { sessionStorage.clear(); } catch { /* storage unavailable */ }
+    navigate('/');
   };
 
   const isPaid = !!(subscription?.status === 'active' && subscription?.plan);
