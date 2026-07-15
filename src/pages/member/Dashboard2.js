@@ -814,18 +814,9 @@ const Dashboard2 = () => {
         </section>
         </div>
 
-        {/* Protection Score — the "Me" center of gravity, below search + the records strip. */}
-        <div style={{ marginBottom: '1rem' }}>
-          <ProtectionScoreRing />
-        </div>
-
-        {/* Row 2 — identity exposure (left) · digital footprint (right). Exposure renders once
-            mapped; the self-identify prompt shows until then. */}
+        {/* Row 2 — Identity Protection Score (left) · Digital Footprint (right). */}
         <div data-dashboard-grid style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'stretch', marginBottom: '1rem' }}>
-          <div>
-            <ExposureTile />
-            <SelfIdentifyCard />
-          </div>
+          <ProtectionScoreRing />
           <DigitalFootprint compact />
         </div>
 

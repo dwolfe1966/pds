@@ -63,7 +63,7 @@ export default function ProtectionScoreRing() {
       </div>
 
       <div style={{ flex: 1, minWidth: 240 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6b7280' }}>Protection Score</div>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6b7280' }}>Identity Protection Score</div>
         {claimed ? (
           <>
             <p style={{ margin: '4px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
@@ -103,7 +103,7 @@ export default function ProtectionScoreRing() {
             </p>
             <button type="button" onClick={() => navigate('/my-identity')}
               style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-              Get my Protection Score →
+              Get my Identity Protection Score →
             </button>
           </>
         )}
