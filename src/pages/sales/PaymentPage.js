@@ -716,7 +716,7 @@ const PaymentPage = () => {
       {/* Mobile-only: combine the $1 trial rectangle with the vCard into one card
           (owner) — 7-Day Trial $1 on top, vCard in the middle, instant-access at the
           bottom. The separate personPreview + pricing card are hidden on mobile. */}
-      {selectedPerson && !success && (
+      {selectedPerson && !success && upgradeReason !== 'wsfy' && (
         <div className={styles.mobilePriceVcard}>
           <div className={styles.summaryHeader} style={theme ? { background: theme.band } : undefined}>
             <p className={styles.summaryPlanName}>{brand.trialDays}-Day Trial</p>
@@ -738,7 +738,7 @@ const PaymentPage = () => {
           <p className={styles.summaryInstant} style={theme ? { background: theme.onDark ? 'rgba(245,158,11,0.12)' : '#e6f3fa', color: theme.accentDark } : undefined}>⚡ Instant access after payment</p>
         </div>
       )}
-      {selectedPerson && !success && (
+      {selectedPerson && !success && upgradeReason !== 'wsfy' && (
         <div className={styles.personPreview}>
           <div className={styles.personPreviewLeft}>
             <PersonAvatar person={selectedPerson} size={48} />

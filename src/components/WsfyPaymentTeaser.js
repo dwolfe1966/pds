@@ -8,12 +8,12 @@ import { fetchWhoIsSearching } from '../services/wsfyClient';
  * searching for you" count + the obfuscated tease, with blurred rows they'll unlock by subscribing.
  * The checkout form below does the conversion; this just makes the payoff concrete.
  */
+// vCard style — white rectangle + shadow (owner 2026-07-14), matching the identity/self-identify cards.
 const hero = {
-  background: 'linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)',
-  color: '#fff', borderRadius: 14, padding: '20px 22px', marginBottom: 18,
-  boxShadow: '0 8px 24px rgba(13,93,47,0.25)',
+  background: '#fff', color: '#111827', border: '1px solid #d7ddd9', borderRadius: 14,
+  padding: '20px 22px', marginBottom: 18, boxShadow: '0 4px 18px rgba(13,93,47,0.10)',
 };
-const eyebrow = { fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#bbf7d0' };
+const eyebrow = { fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0d5d2f' };
 
 export default function WsfyPaymentTeaser() {
   const { user } = useAuth();
@@ -42,31 +42,31 @@ export default function WsfyPaymentTeaser() {
   return (
     <div style={hero}>
       <div style={eyebrow}>👀 Who's searching for you</div>
-      <h2 style={{ margin: '6px 0 0', fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>
+      <h2 style={{ margin: '6px 0 0', fontSize: 22, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>
         {count > 0
           ? `${count} ${count === 1 ? 'person is' : 'people are'} searching for you`
           : 'See who’s searching for you'}
       </h2>
       {lines.length > 0 && (
-        <p style={{ margin: '6px 0 0', color: '#eafff0', fontSize: 14, lineHeight: 1.5 }}>{lines.join('  ·  ')}</p>
+        <p style={{ margin: '6px 0 0', color: '#475569', fontSize: 14, lineHeight: 1.5 }}>{lines.join('  ·  ')}</p>
       )}
 
       {rows.length > 0 && (
-        <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.10)', borderRadius: 10, padding: '10px 12px' }}>
+        <div style={{ marginTop: 14, background: '#f8faf9', border: '1px solid #eef2f0', borderRadius: 10, padding: '10px 12px' }}>
           {rows.map((e, i) => (
-            <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: i < rows.length - 1 ? '1px solid rgba(255,255,255,0.12)' : 'none' }}>
-              <span style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, filter: 'blur(1px)' }} aria-hidden="true">?</span>
+            <div key={e.id || i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: i < rows.length - 1 ? '1px solid #eef2f0' : 'none' }}>
+              <span style={{ width: 26, height: 26, borderRadius: '50%', background: '#e5e7eb', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, filter: 'blur(1px)' }} aria-hidden="true">?</span>
               <span style={{ flex: 1 }}>
-                <span style={{ display: 'inline-block', color: '#fff', fontWeight: 700, filter: 'blur(5px)', userSelect: 'none' }} aria-hidden="true">Full Name Hidden</span>
-                <span style={{ display: 'block', color: '#cdefd6', fontSize: 12 }}>Searched by {e.searchType || 'name'}{e.state ? ` · ${e.state}` : ''}</span>
+                <span style={{ display: 'inline-block', color: '#111827', fontWeight: 700, filter: 'blur(5px)', userSelect: 'none' }} aria-hidden="true">Full Name Hidden</span>
+                <span style={{ display: 'block', color: '#6b7280', fontSize: 12 }}>Searched by {e.searchType || 'name'}{e.state ? ` · ${e.state}` : ''}</span>
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#bbf7d0', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 999, padding: '2px 8px' }}>🔒</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#0d5d2f', border: '1px solid #bbf7d0', borderRadius: 999, padding: '2px 8px' }}>🔒</span>
             </div>
           ))}
         </div>
       )}
 
-      <p style={{ margin: '14px 0 0', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+      <p style={{ margin: '14px 0 0', color: '#0d5d2f', fontWeight: 700, fontSize: 15 }}>
         Subscribe to unlock exactly who’s searching for you {'—'} names, locations, and how they know you.
       </p>
     </div>
