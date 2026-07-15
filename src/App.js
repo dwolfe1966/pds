@@ -73,6 +73,7 @@ import AlertsPage from './pages/member/AlertsPage';
 import AccountPage from './pages/member/AccountPage';
 import LogoutPage from './pages/member/LogoutPage';
 import ActivityPage from './pages/member/ActivityPage';
+import ProfilePreviewPage from './pages/dev/ProfilePreviewPage';
 
 // Admin / CSR pages live in the separate admin bundle (src/AdminApp.js).
 // Consumer never mounts /admin/* routes — admins use the dedicated CSR app
@@ -324,6 +325,10 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          {/* DEV-only: preview the report-as-profile without login/BC. */}
+          {process.env.NODE_ENV === 'development' && (
+            <Route path="/dev/profile" element={<ProfilePreviewPage />} />
+          )}
           {/* Legacy path — History became Activity; keep the URL working. */}
           <Route
             path="/search-history"
