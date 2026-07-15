@@ -47,7 +47,7 @@ const searchers = [
   { id: 'wsfy-demo-2', name: 'Carol King',    city: CITY,        occupation: 'healthcare' },           // local + occupation proof
   { id: 'wsfy-demo-3', name: 'Sara Chen',     city: 'Portland',  college: 'Reed College' },            // college overlap
   { id: 'wsfy-demo-4', name: 'Mike Alvarez',  city: 'San Jose',  employer: 'Google' },                 // colleague overlap
-  { id: 'wsfy-demo-5', name: 'Ana Ruiz',      city: 'San Diego', occupation: 'education' },             // near San Diego
+  { id: 'wsfy-demo-5', name: 'Ana Ruiz',      city: 'San Diego', occupation: 'education', pastLocations: [`${CITY}, ${STATE}`] }, // once lived in your area
   { id: 'wsfy-demo-6', name: 'Anon',          anon: true },                                             // anonymous visitor
 ];
 
@@ -59,6 +59,7 @@ for (const s of searchers) {
     await upsertMemberEnrichment({
       userId: s.id, city: s.city, state: STATE,
       highSchool: s.highSchool, college: s.college, employer: s.employer, occupation: s.occupation,
+      pastLocations: s.pastLocations,
       source: 'wsfy-demo',
     });
   }

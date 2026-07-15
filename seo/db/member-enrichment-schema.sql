@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS member_enrichment (
 
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS report_id        TEXT;
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS self_person      JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS past_locations   JSONB DEFAULT '[]'::jsonb; -- prior "City, ST" from address history (for "once lived in your area")
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS high_school      TEXT;
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS high_school_norm TEXT;
 ALTER TABLE member_enrichment ADD COLUMN IF NOT EXISTS college          TEXT;

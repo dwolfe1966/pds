@@ -71,7 +71,7 @@ async function fetchEnrichment(userIds) {
   if (!ids.length) return new Map();
   try {
     const rows = await sql`
-      SELECT user_id, occupation, employer, relatives, high_school_norm, college_norm
+      SELECT user_id, occupation, employer, relatives, high_school_norm, college_norm, past_locations
       FROM member_enrichment WHERE user_id = ANY(${ids})`;
     return new Map(rows.map((r) => [r.user_id, r]));
   } catch {
@@ -183,6 +183,9 @@ export async function buildWsfySummary(identity, opts = {}) {
     if (relByName || relVerified) tags.push('relative');
     if (relVerified) tags.push('verified_relative');
     if (g.searcher_city && subjCityN && norm(g.searcher_city) === subjCityN) tags.push('local');
+    // Once lived in your area — a PAST address of the searcher matches the subject's current city.
+    if (subjCityN && e?.past_locations && Array.isArray(e.past_locations)
+        && e.past_locations.some((loc) => norm(loc).includes(subjCityN))) tags.push('past_local');
     if (g.times >= 2) tags.push('frequent');
     if (e?.occupation) tags.push('occupation');
     // Overlap affinities — need BOTH the searcher's and the subject's enrichment.

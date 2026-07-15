@@ -84,6 +84,7 @@ export async function POST(req) {
       attributes: body.attributes,
       reportId: body.reportId,
       selfPerson: body.selfPerson,
+      pastLocations: body.pastLocations,
       source: body.source || 'client',
     });
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });

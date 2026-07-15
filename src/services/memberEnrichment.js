@@ -106,8 +106,11 @@ export function enrichFromReport(reportResult, selfPerson) {
   let x;
   try { x = extractAll(reportResult); } catch { return; }
   const job = (x.jobs || [])[0] || {};
-  const city = (x.addresses && x.addresses[0] && x.addresses[0].city) || (selfPerson && selfPerson.city) || undefined;
-  const state = (x.addresses && x.addresses[0] && x.addresses[0].state) || (selfPerson && selfPerson.state) || undefined;
+  const addrs = x.addresses || [];
+  const city = (addrs[0] && addrs[0].city) || (selfPerson && selfPerson.city) || undefined;
+  const state = (addrs[0] && addrs[0].state) || (selfPerson && selfPerson.state) || undefined;
+  // Prior addresses (address history minus the current) → "once lived in ..." teases.
+  const pastLocations = [...new Set(addrs.slice(1).map((a) => [a.city, a.state].filter(Boolean).join(', ')).filter(Boolean))].slice(0, 12);
   post({
     userId,
     // The CANONICAL, re-fetchable link to the member's own record (unlike the ephemeral extId).
@@ -118,6 +121,7 @@ export function enrichFromReport(reportResult, selfPerson) {
     relatives: (x.relatives || []).map((r) => r.name).filter(Boolean).slice(0, 40),
     city,
     state,
+    pastLocations,
     source: 'self-report',
   });
   updateMappedIdentity({

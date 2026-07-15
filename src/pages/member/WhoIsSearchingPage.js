@@ -256,6 +256,7 @@ const AFFINITY_CHIP = {
   college: '🎓 Went to your college',
   colleague: '🏢 May be a colleague',
   local: '📍 In your area',
+  past_local: '📍 Once lived in your area',
 };
 const vcard = {
   listStyle: 'none', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12,
