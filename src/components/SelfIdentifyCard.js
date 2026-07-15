@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { createReportForIdentity, getReportDetail } from '../services/reportService';
-import { enrichFromReport, saveMemberProfile, linkSelfReport } from '../services/memberEnrichment';
+import { enrichFromReport, saveMemberProfile, linkSelfReport, getMappedIdentity } from '../services/memberEnrichment';
 
 /**
  * Self-identification flow (WSFY Phase 2b, report-based enrichment). Pops on the dashboard until the
@@ -157,7 +157,7 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete } = {})
     // "none of these" path shows the confirmation but the module returns next visit (LS_DONE unset).
     if (recordConfirmed) { try { localStorage.setItem(LS_DONE, '1'); } catch { /* ignore */ } }
     setStep('done');
-    if (onComplete) onComplete();
+    if (onComplete) onComplete(getMappedIdentity());
   };
 
   // ── Render ────────────────────────────────────────────────────────────────

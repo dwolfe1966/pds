@@ -19,10 +19,23 @@ function enrichUrl() {
 }
 
 function currentUserId() {
+  // BC's stored user object keys the id inconsistently (id / userId / _id / uniqueId — the login
+  // adapter itself detects via `_id || uniqueId`). Check all of them before giving up.
   try {
     const u = JSON.parse(localStorage.getItem('user') || 'null');
-    return u && String(u.id || u.userId || u._id || '');
-  } catch { return ''; }
+    const direct = u && String(u.id || u.userId || u._id || u.uniqueId || '');
+    if (direct) return direct;
+  } catch { /* fall through to token */ }
+  // Fallback: derive from the session JWT payload (sub/userId) when the user object lacks any id.
+  try {
+    const tok = localStorage.getItem('accessToken') || '';
+    const parts = tok.split('.');
+    if (parts.length === 3) {
+      const p = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return String(p.sub || p.userId || p.id || p._id || p.uniqueId || '');
+    }
+  } catch { /* ignore */ }
+  return '';
 }
 
 // A local mirror of what we've mapped to this member's identity, so the Account → Identity view can
@@ -101,8 +114,7 @@ export async function fetchMappedIdentity() {
  * @param {object} reportResult  the BC report result (same shape extractAll consumes)
  */
 export function enrichFromReport(reportResult, selfPerson) {
-  const userId = currentUserId();
-  if (!userId || !reportResult) return;
+  if (!reportResult) return;
   let x;
   try { x = extractAll(reportResult); } catch { return; }
   const job = (x.jobs || [])[0] || {};
@@ -111,6 +123,15 @@ export function enrichFromReport(reportResult, selfPerson) {
   const state = (addrs[0] && addrs[0].state) || (selfPerson && selfPerson.state) || undefined;
   // Prior addresses (address history minus the current) → "once lived in ..." teases.
   const pastLocations = [...new Set(addrs.slice(1).map((a) => [a.city, a.state].filter(Boolean).join(', ')).filter(Boolean))].slice(0, 12);
+  // Local mirror FIRST, unconditionally (see saveMemberProfile note) — then best-effort server POST.
+  updateMappedIdentity({
+    confirmed: true, hasReport: true,
+    name: selfPerson && selfPerson.name, age: selfPerson && selfPerson.age, city, state,
+    occupation: deriveIndustry(job.title, job.employer), jobTitle: job.title, employer: job.employer,
+    relativesCount: (x.relatives || []).length, pastLocationsCount: pastLocations.length,
+  });
+  const userId = currentUserId();
+  if (!userId) return;
   post({
     userId,
     // The CANONICAL, re-fetchable link to the member's own record (unlike the ephemeral extId).
@@ -123,12 +144,6 @@ export function enrichFromReport(reportResult, selfPerson) {
     state,
     pastLocations,
     source: 'self-report',
-  });
-  updateMappedIdentity({
-    confirmed: true, hasReport: true,
-    name: selfPerson && selfPerson.name, age: selfPerson && selfPerson.age, city, state,
-    occupation: deriveIndustry(job.title, job.employer), jobTitle: job.title, employer: job.employer,
-    relativesCount: (x.relatives || []).length, pastLocationsCount: pastLocations.length,
   });
 }
 
@@ -160,12 +175,13 @@ export function computeExposure(id) {
 
 /** Store the canonical report link + confirmed identity, even before/without a full extract. */
 export function linkSelfReport(commerceContentId, selfPerson) {
-  const userId = currentUserId();
-  if (!userId || !commerceContentId) return;
-  post({ userId, reportId: commerceContentId, selfPerson: selfPerson || undefined, source: 'self-identify' });
+  if (!commerceContentId) return;
   updateMappedIdentity({ confirmed: true, hasReport: true, reportId: commerceContentId,
     name: selfPerson && selfPerson.name, age: selfPerson && selfPerson.age,
     city: selfPerson && selfPerson.city, state: selfPerson && selfPerson.state });
+  const userId = currentUserId();
+  if (!userId) return;
+  post({ userId, reportId: commerceContentId, selfPerson: selfPerson || undefined, source: 'self-identify' });
 }
 
 // ── Suppression ("Hide me" — Identity Management) ────────────────────────────
@@ -200,8 +216,18 @@ export async function setSuppression(on, meta = {}) {
  * @param {object} fields  { occupation, employer, highSchool, college, city, state }
  */
 export function saveMemberProfile(fields) {
+  if (!fields) return;
   const userId = currentUserId();
-  if (!userId || !fields) return;
+  // Local display mirror FIRST, unconditionally — the Identity view must reflect the confirmation
+  // even when we can't resolve a server userId (BC's user-object id key varies: _id / uniqueId).
+  // Otherwise onComplete → getMappedIdentity() returns null and the confirm form re-renders.
+  updateMappedIdentity({
+    occupation: fields.occupation, employer: fields.employer,
+    highSchool: fields.highSchool, college: fields.college, city: fields.city, state: fields.state,
+    name: fields.selfPerson && fields.selfPerson.name, age: fields.selfPerson && fields.selfPerson.age,
+    confirmed: fields.selfPerson ? true : undefined,
+  });
+  if (!userId) return; // no server key → local mirror only (cross-device sync degraded, UI intact)
   post({
     userId,
     occupation: fields.occupation || undefined,
@@ -213,11 +239,5 @@ export function saveMemberProfile(fields) {
     reportId: fields.reportId || undefined,
     selfPerson: fields.selfPerson || undefined,
     source: fields.source || 'profile',
-  });
-  updateMappedIdentity({
-    occupation: fields.occupation, employer: fields.employer,
-    highSchool: fields.highSchool, college: fields.college, city: fields.city, state: fields.state,
-    name: fields.selfPerson && fields.selfPerson.name, age: fields.selfPerson && fields.selfPerson.age,
-    confirmed: fields.selfPerson ? true : undefined,
   });
 }

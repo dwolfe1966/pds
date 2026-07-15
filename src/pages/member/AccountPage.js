@@ -1228,7 +1228,7 @@ const AccountPage = () => {
                   <li>Take control — hide what you don't want exposed</li>
                 </ul>
               </div>
-              <SelfIdentifyCard forceShow onComplete={() => { setIdentity(getMappedIdentity()); setEditingIdentity(false); }} />
+              <SelfIdentifyCard forceShow onComplete={(id) => { setIdentity(id || getMappedIdentity()); setEditingIdentity(false); }} />
             </>
           )}
 
