@@ -8,10 +8,13 @@ import { fetchWhoIsSearching } from '../services/wsfyClient';
  * searching for you" count + the obfuscated tease, with blurred rows they'll unlock by subscribing.
  * The checkout form below does the conversion; this just makes the payoff concrete.
  */
-// vCard style — white rectangle + shadow (owner 2026-07-14), matching the identity/self-identify cards.
+// vCard style — white rectangle + shadow (owner). Matches the search vCard's footprint: constrained
+// + centered to the 960px layout width, so on desktop it left-aligns with the form/secure-checkout
+// and right-aligns with the $1-trial card. Mobile inherits full width (max-width caps out).
 const hero = {
-  background: '#fff', color: '#111827', border: '1px solid #d7ddd9', borderRadius: 14,
-  padding: '20px 22px', marginBottom: 18, boxShadow: '0 4px 18px rgba(13,93,47,0.10)',
+  background: '#fff', color: '#111827', border: '1px solid rgba(17,24,39,0.08)', borderRadius: '0.875rem',
+  padding: '1.25rem 1.5rem', boxShadow: '0 4px 18px rgba(13,93,47,0.10)',
+  maxWidth: 960, margin: '0 auto 1.25rem',
 };
 const eyebrow = { fontSize: 11, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0d5d2f' };
 
