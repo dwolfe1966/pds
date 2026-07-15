@@ -3,6 +3,20 @@ import { Link } from 'react-router-dom';
 import ProfileView from './ProfileView';
 import { getReportDetail } from '../services/reportService';
 import { extractAll } from '../utils/reportExtract';
+import sampleProfileData from '../utils/sampleProfileData';
+
+// DEV-only: the live report is forced to the BC API (unreachable on local/mock), so in development we
+// preview the report-as-profile layout with sample data. process.env.NODE_ENV is 'production' in the
+// build, so this is dead in prod.
+const DEV = process.env.NODE_ENV === 'development';
+
+function DevSampleBanner() {
+  return (
+    <div style={{ marginBottom: 12, background: '#fef3c7', border: '1px solid #fde68a', color: '#92400e', borderRadius: 8, padding: '8px 12px', fontSize: 12.5, fontWeight: 700 }}>
+      🔧 Dev preview — sample data (your real report loads only on a BC-connected environment).
+    </div>
+  );
+}
 
 /**
  * Renders the member's OWN report inline as their profile ("your report is your profile" — see
@@ -12,7 +26,7 @@ import { extractAll } from '../utils/reportExtract';
  */
 export default function MyProfileReport({ reportId }) {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!reportId); // no reportId → nothing to load
   const [err, setErr] = useState(false);
 
   useEffect(() => {
@@ -31,6 +45,18 @@ export default function MyProfileReport({ reportId }) {
     return <div style={{ padding: '22px 4px', color: '#6b7280', fontSize: 14 }}>Loading your profile…</div>;
   }
   if (err || !data) {
+    // DEV: show the sample so the layout is tunable locally (real report needs BC).
+    if (DEV) {
+      return (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Your profile — everything public about you</div>
+          </div>
+          <DevSampleBanner />
+          <ProfileView data={sampleProfileData} viewer="owner" />
+        </div>
+      );
+    }
     return (
       <div style={{ border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Your full background report</div>

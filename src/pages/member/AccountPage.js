@@ -1279,8 +1279,9 @@ const AccountPage = () => {
                   the canonical, re-fetchable commerceContentId; /people/:id renders the paid
                   expose-all report we already ship. No reportId (mapped while free, then upgraded) →
                   re-run the identify flow, which auto-creates the report on the paid path. */}
-              {/* Report-as-profile: render the member's OWN report INLINE as their profile. */}
-              {identity.reportId ? (
+              {/* Report-as-profile: render the member's OWN report INLINE as their profile.
+                  In dev, mount it even without a reportId so the sample layout is previewable locally. */}
+              {(identity.reportId || process.env.NODE_ENV === 'development') ? (
                 <div style={{ marginTop: 16 }}>
                   <MyProfileReport reportId={identity.reportId} />
                 </div>
