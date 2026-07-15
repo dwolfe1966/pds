@@ -20,12 +20,12 @@ export async function upsertMemberEnrichment(e) {
   await sql`
     INSERT INTO member_enrichment
       (user_id, occupation, employer, relatives, city, state, high_school, high_school_norm,
-       college, college_norm, attributes, report_id, self_person, past_locations, source, enriched_at)
+       college, college_norm, attributes, report_id, self_person, past_locations, verified_level, source, enriched_at)
     VALUES (
       ${e.userId}, ${e.occupation || null}, ${e.employer || null}, ${JSON.stringify(relatives)}::jsonb,
       ${e.city || null}, ${e.state || null}, ${hs}, ${hs ? norm(hs) : null},
       ${col}, ${col ? norm(col) : null}, ${JSON.stringify(attributes)}::jsonb,
-      ${e.reportId || null}, ${JSON.stringify(selfPerson)}::jsonb, ${JSON.stringify(pastLocations)}::jsonb, ${e.source || null}, now())
+      ${e.reportId || null}, ${JSON.stringify(selfPerson)}::jsonb, ${JSON.stringify(pastLocations)}::jsonb, ${e.verified || null}, ${e.source || null}, now())
     ON CONFLICT (user_id) DO UPDATE SET
       occupation = COALESCE(EXCLUDED.occupation, member_enrichment.occupation),
       employer   = COALESCE(EXCLUDED.employer, member_enrichment.employer),
@@ -40,6 +40,7 @@ export async function upsertMemberEnrichment(e) {
       report_id = COALESCE(EXCLUDED.report_id, member_enrichment.report_id),
       self_person = CASE WHEN EXCLUDED.self_person <> '{}'::jsonb THEN EXCLUDED.self_person ELSE member_enrichment.self_person END,
       past_locations = CASE WHEN jsonb_array_length(EXCLUDED.past_locations) > 0 THEN EXCLUDED.past_locations ELSE member_enrichment.past_locations END,
+      verified_level = COALESCE(EXCLUDED.verified_level, member_enrichment.verified_level),
       source = EXCLUDED.source, enriched_at = now()
   `;
 }
@@ -129,7 +130,7 @@ export async function getMemberEnrichment(userId) {
   if (!userId) return null;
   const rows = await sql`
     SELECT user_id, occupation, employer, relatives, city, state, high_school, college,
-           report_id, self_person, enriched_at
+           report_id, self_person, verified_level, enriched_at
     FROM member_enrichment WHERE user_id = ${userId}`;
   return rows[0] || null;
 }

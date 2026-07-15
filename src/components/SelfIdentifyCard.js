@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { createReportForIdentity, getReportDetail } from '../services/reportService';
 import { enrichFromReport, saveMemberProfile, linkSelfReport, getMappedIdentity } from '../services/memberEnrichment';
+import { generateKba, gradeKba } from '../utils/kba';
 
 /**
  * Self-identification flow (WSFY Phase 2b, report-based enrichment). Pops on the dashboard until the
@@ -47,7 +48,14 @@ function narrowMatches(list, { city, age }) {
 
 export default function SelfIdentifyCard({ forceShow = false, onComplete, prefill = null, autoStart = false } = {}) {
   const { user, isPaid } = useAuth();
-  const [step, setStep] = useState('form'); // form | searching | choose | working | schools | done
+  const [step, setStep] = useState('form'); // form | searching | choose | working | verify | schools | done
+  // KBA verification (lightweight, non-gating). pendingMap holds the selected record + report until the
+  // member passes; nothing is persisted as "confirmed" before that.
+  const [pendingMap, setPendingMap] = useState(null);
+  const [kbaQuestions, setKbaQuestions] = useState([]);
+  const [kbaAnswers, setKbaAnswers] = useState({});
+  const [kbaError, setKbaError] = useState('');
+  const [kbaAttempts, setKbaAttempts] = useState(0);
   const [form, setForm] = useState(() => {
     // Pre-fill from an already-confirmed identity (e.g. "Pull my full report" for a mapped member) so
     // they don't re-enter everything; otherwise seed from the BC user object.
@@ -160,23 +168,52 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
     setRecordConfirmed(true); // a real record was selected → this run can permanently dismiss
     setStep('working');
     const selfPerson = { name: m?.fullName, city: m?.city, state: m?.state, age: m?.age || m?.ageRange };
-    // ALWAYS persist the confirmed identity FIRST (base: name + location + confirmed). This guarantees
-    // the mapped state shows even if the report pull/extract fails (bug: report path could set
-    // enriched=true then throw in extractAll → nothing was written).
-    saveMemberProfile({ city: selfPerson.city || form.city, state: selfPerson.state || form.state, selfPerson, source: 'self-identify' });
-    // Paid → also pull the report to enrich (occupation/relatives/past locations). Best-effort; the
+    // Paid → pull the report (best-effort). We need it both to enrich AND to build KBA questions; the
     // created report's commerceContentId is the CANONICAL, re-fetchable link stored with the member.
+    let report = null, reportId = null;
     if (isPaid && m?.extId) {
       try {
         const created = await createReportForIdentity(m.extId, m);
         if (created?.success && created.commerceContentId) {
-          const report = await getReportDetail(created.commerceContentId);
-          if (report?.success !== false) enrichFromReport(report, selfPerson);
-          else linkSelfReport(created.commerceContentId, selfPerson);
+          reportId = created.commerceContentId;
+          const r = await getReportDetail(reportId);
+          report = (r && r.success !== false) ? r : null;
         }
-      } catch { /* base identity already saved above */ }
+      } catch { /* fall through — KBA will use the thin fallback question */ }
     }
+    // Lightweight KBA (non-gating). Ask before we mark the record "confirmed"; if we can't build any
+    // question (no record facts at all), skip verification and confirm directly.
+    const questions = generateKba(report, selfPerson);
+    if (questions.length) {
+      setPendingMap({ selfPerson, report, reportId });
+      setKbaQuestions(questions);
+      setKbaAnswers({});
+      setKbaError('');
+      setKbaAttempts(0);
+      setStep('verify');
+    } else {
+      finalizeMapping(selfPerson, report, reportId, null);
+    }
+  };
+
+  // Persist the mapping (base identity + report enrichment) and record how it was verified. Called only
+  // after KBA passes, or directly when no question could be built.
+  const finalizeMapping = (selfPerson, report, reportId, verified) => {
+    saveMemberProfile({ city: selfPerson.city || form.city, state: selfPerson.state || form.state,
+      selfPerson, source: 'self-identify', verified: verified || undefined });
+    if (report) enrichFromReport(report, selfPerson);
+    else if (reportId) linkSelfReport(reportId, selfPerson);
     setStep('schools');
+  };
+
+  const submitKba = () => {
+    if (kbaQuestions.some((qq) => !kbaAnswers[qq.id])) { setKbaError('Please answer every question.'); return; }
+    if (!gradeKba(kbaQuestions, kbaAnswers)) {
+      setKbaAttempts((n) => n + 1);
+      setKbaError("That doesn't match your record. Please try again.");
+      return;
+    }
+    finalizeMapping(pendingMap.selfPerson, pendingMap.report, pendingMap.reportId, 'kba');
   };
 
   const saveSchools = (e) => {
@@ -213,6 +250,51 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
           {step === 'searching' ? 'Finding your public record…' : 'Getting your details…'}
         </p>
         <p style={{ margin: '6px 0 0', color: '#6b7280', fontSize: 13 }}>One moment.</p>
+      </div>
+    );
+  }
+
+  if (step === 'verify') {
+    return (
+      <div style={card}>
+        <h3 style={{ margin: '0 0 4px', fontSize: 17, color: GREEN, fontWeight: 800 }}>Confirm it's really you</h3>
+        <p style={{ margin: '0 0 14px', color: '#4b5563', fontSize: 13, lineHeight: 1.5 }}>
+          A couple of quick questions from your record — this keeps someone else from claiming your identity.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {kbaQuestions.map((qq) => (
+            <div key={qq.id}>
+              <div style={{ fontWeight: 700, color: '#111827', fontSize: 14, marginBottom: 8 }}>{qq.prompt}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {qq.options.map((o) => {
+                  const selected = kbaAnswers[qq.id] === o.label;
+                  return (
+                    <button key={o.label} type="button"
+                      onClick={() => { setKbaAnswers((a) => ({ ...a, [qq.id]: o.label })); setKbaError(''); }}
+                      style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 14,
+                        border: `1.5px solid ${selected ? GREEN : '#e5e7eb'}`, background: selected ? '#f0fdf4' : '#fff',
+                        color: selected ? '#14532d' : '#374151', fontWeight: selected ? 700 : 500 }}>
+                      {o.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        {kbaError && <p style={{ margin: '12px 0 0', color: '#b91c1c', fontSize: 13, fontWeight: 600 }}>{kbaError}</p>}
+        <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button type="button" onClick={submitKba}
+            style={{ background: GREEN_CTA, color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+            Verify &amp; continue →
+          </button>
+          {kbaAttempts >= 2 && (
+            <button type="button" onClick={() => setStep('choose')}
+              style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
+              This isn't my record
+            </button>
+          )}
+        </div>
       </div>
     );
   }

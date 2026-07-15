@@ -247,6 +247,7 @@ export function saveMemberProfile(fields) {
     highSchool: fields.highSchool, college: fields.college, city: fields.city, state: fields.state,
     name: fields.selfPerson && fields.selfPerson.name, age: fields.selfPerson && fields.selfPerson.age,
     confirmed: fields.selfPerson ? true : undefined,
+    verified: fields.verified, // how the mapping was verified ('kba' | 'id' | undefined)
   });
   if (!userId) return; // no server key → local mirror only (cross-device sync degraded, UI intact)
   post({
@@ -259,6 +260,7 @@ export function saveMemberProfile(fields) {
     state: fields.state || undefined,
     reportId: fields.reportId || undefined,
     selfPerson: fields.selfPerson || undefined,
+    verified: fields.verified || undefined,
     source: fields.source || 'profile',
   });
 }

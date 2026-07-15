@@ -52,6 +52,7 @@ export async function GET(req) {
       relativesCount: Array.isArray(r.relatives) ? r.relatives.length : null,
       pastLocationsCount: Array.isArray(r.past_locations) ? r.past_locations.length : null,
       hasReport: !!r.report_id,
+      verified: r.verified_level || null,
       mappedAt: r.enriched_at || null,
     } : null;
     return new Response(JSON.stringify({ ok: true, identity }), { status: 200, headers });
@@ -86,6 +87,7 @@ export async function POST(req) {
       reportId: body.reportId,
       selfPerson: body.selfPerson,
       pastLocations: body.pastLocations,
+      verified: body.verified,
       source: body.source || 'client',
     });
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });

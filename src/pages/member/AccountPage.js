@@ -1138,7 +1138,14 @@ const AccountPage = () => {
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 20, fontWeight: 800 }}>{name}{identity.age ? `, ${identity.age}` : ''}</div>
                       {location && <div style={{ color: '#eafff0', fontSize: 14 }}>{location}</div>}
-                      <div style={{ marginTop: 5, display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '2px 9px' }}>✓ Identity confirmed</div>
+                      <div style={{ marginTop: 5, display: 'inline-flex', flexWrap: 'wrap', gap: 6 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '2px 9px' }}>✓ Identity confirmed</span>
+                        {identity.verified === 'id' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, background: '#fff', color: '#0d5d2f', borderRadius: 999, padding: '2px 9px' }}>🛡️ ID verified</span>
+                        ) : identity.verified === 'kba' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.28)', borderRadius: 999, padding: '2px 9px' }}>✓ Verified</span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                   <div style={{ padding: '16px 20px', background: '#fff' }}>
