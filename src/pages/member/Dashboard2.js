@@ -234,7 +234,8 @@ function InlineNameSearch({ navigate }) {
         border: `1px solid ${PAGE.borderStrong}`,
         borderRadius: '0.75rem',
         padding: '1rem 1.25rem',
-        marginBottom: '1rem',
+        boxShadow: '0 2px 10px rgba(17,24,39,0.06)',
+        height: '100%',
       }}
     >
       <div style={{
@@ -325,6 +326,7 @@ function ReportsLibrary({ reports, loading, onPdfDownload, navigate }) {
       border: `1px solid ${PAGE.border}`,
       borderRadius: '0.75rem',
       overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(17,24,39,0.06)',
     }}>
       <header style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -464,6 +466,7 @@ function ActivityTimeline({ items, loading }) {
       border: `1px solid ${PAGE.border}`,
       borderRadius: '0.75rem',
       overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(17,24,39,0.06)',
     }}>
       <header style={{
         padding: '0.875rem 1.25rem',
@@ -762,49 +765,25 @@ const Dashboard2 = () => {
           </div>
         )}
 
-        {/* Search is the hero — the primary action for a returning member sits directly
-            under the greeting, above marketing/status (bug #48: surfacing first/last/state
-            as the primary action makes search the dashboard's center of gravity). */}
-        <InlineNameSearch navigate={navigate} />
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => { track('dashboard_cta_click', { target: 'account' }); navigate('/account'); }}
-            style={{
-              background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
-              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
-              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Account & billing
-          </button>
-          <button
-            type="button"
-            onClick={() => { track('dashboard_cta_click', { target: 'support' }); navigate('/contact'); }}
-            style={{
-              background: PAGE.card, color: PAGE.text, border: `1px solid ${PAGE.borderStrong}`,
-              padding: '0.5rem 0.9rem', borderRadius: '0.375rem',
-              fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Contact support
-          </button>
-        </div>
+        {/* Desktop 2-column dashboard grid (mobile stacks — media query below).
+            Row 1: search (left) · we-watch-the-world (right). Account/support quick-buttons
+            removed (owner) — Account lives in the top nav. */}
+        <div data-dashboard-grid style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'stretch', marginBottom: '1rem' }}>
+          <InlineNameSearch navigate={navigate} />
 
-        {/* Marketing strip — "we watch the world" framing pinned to what BC
-            actually delivers: continuous data partner refresh + broad coverage. */}
-        <section style={{
-          background: `linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)`,
-          color: '#fff',
-          borderRadius: '0.75rem',
-          padding: '1.1rem 1.25rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          gap: '1.25rem',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
+          {/* Marketing strip — "we watch the world" framing (right cell of row 1). */}
+          <section style={{
+            background: `linear-gradient(135deg, #0d5d2f 0%, #16a34a 100%)`,
+            color: '#fff',
+            borderRadius: '0.75rem',
+            padding: '1.1rem 1.25rem',
+            boxShadow: '0 2px 10px rgba(17,24,39,0.06)',
+            display: 'flex',
+            gap: '1rem',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
           <div style={{ flex: 1, minWidth: 240 }}>
             <div style={{
               fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -846,19 +825,15 @@ const Dashboard2 = () => {
             ))}
           </div>
         </section>
-
-        {/* WSFY self-identification — "see who's searching for you": find your record → enrich →
-            schools. Pops until done; self-manages visibility. Stores the canonical report link in
-            our own backend (idlookup.me), independent of BC. */}
-        <div style={{ marginBottom: '1rem' }}>
-          <SelfIdentifyCard />
         </div>
 
-        {/* Identity exposure summary → deep-links into My Identity (renders only once mapped). */}
-        <ExposureTile />
-
-        {/* Your Digital Footprint — Transparency + Control hook; deep-links into My Identity. */}
-        <div style={{ marginBottom: '1rem' }}>
+        {/* Row 2 — identity exposure (left) · digital footprint (right). Exposure renders once
+            mapped; the self-identify prompt shows until then. */}
+        <div data-dashboard-grid style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'stretch', marginBottom: '1rem' }}>
+          <div>
+            <ExposureTile />
+            <SelfIdentifyCard />
+          </div>
           <DigitalFootprint compact />
         </div>
 
@@ -913,6 +888,7 @@ const Dashboard2 = () => {
             borderRadius: '0.75rem',
             padding: '1.1rem 1.25rem',
             marginBottom: '1rem',
+            boxShadow: '0 2px 10px rgba(17,24,39,0.06)',
             display: 'flex',
             gap: '1.25rem',
             flexWrap: 'wrap',
