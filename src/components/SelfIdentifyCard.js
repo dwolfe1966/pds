@@ -4,6 +4,7 @@ import api from '../api';
 import { createReportForIdentity, getReportDetail } from '../services/reportService';
 import { enrichFromReport, saveMemberProfile, linkSelfReport, getMappedIdentity } from '../services/memberEnrichment';
 import { generateKba, gradeKba } from '../utils/kba';
+import DlScanVerify from './DlScanVerify';
 
 /**
  * Self-identification flow (WSFY Phase 2b, report-based enrichment). Pops on the dashboard until the
@@ -56,6 +57,7 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
   const [kbaAnswers, setKbaAnswers] = useState({});
   const [kbaError, setKbaError] = useState('');
   const [kbaAttempts, setKbaAttempts] = useState(0);
+  const [showDlScan, setShowDlScan] = useState(false); // "verify with your license instead"
   const [form, setForm] = useState(() => {
     // Pre-fill from an already-confirmed identity (e.g. "Pull my full report" for a mapped member) so
     // they don't re-enter everything; otherwise seed from the BC user object.
@@ -255,6 +257,24 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
   }
 
   if (step === 'verify') {
+    // Stronger, optional path: scan the driver's license instead of answering the questions. A match
+    // finalizes at the 'id' verification level.
+    if (showDlScan) {
+      return (
+        <div style={card}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 17, color: GREEN, fontWeight: 800 }}>Verify with your ID</h3>
+          <DlScanVerify
+            recordName={pendingMap && pendingMap.selfPerson && pendingMap.selfPerson.name}
+            onVerified={() => finalizeMapping(pendingMap.selfPerson, pendingMap.report, pendingMap.reportId, 'id')}
+            onCancel={() => setShowDlScan(false)}
+          />
+          <button type="button" onClick={() => setShowDlScan(false)}
+            style={{ marginTop: 12, background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
+            ← Answer the questions instead
+          </button>
+        </div>
+      );
+    }
     return (
       <div style={card}>
         <h3 style={{ margin: '0 0 4px', fontSize: 17, color: GREEN, fontWeight: 800 }}>Confirm it's really you</h3>
@@ -287,6 +307,10 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
           <button type="button" onClick={submitKba}
             style={{ background: GREEN_CTA, color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
             Verify &amp; continue →
+          </button>
+          <button type="button" onClick={() => setShowDlScan(true)}
+            style={{ background: 'none', border: 'none', color: GREEN, fontSize: 13, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+            🛡️ Verify with your license instead
           </button>
           {kbaAttempts >= 2 && (
             <button type="button" onClick={() => setStep('choose')}
