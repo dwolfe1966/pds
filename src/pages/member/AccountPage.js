@@ -131,6 +131,19 @@ const AccountPage = () => {
     return () => { alive = false; };
   }, [activeTab]);
 
+  // /my-identity and /account render the SAME AccountPage component, so navigating between them does
+  // NOT remount it — activeTab would stay stale and you'd see Account content on /my-identity (and
+  // vice versa: the identity block over Account). Re-sync activeTab to the path on every pathname change.
+  useEffect(() => {
+    if (isIdentityPage) {
+      setActiveTab('identity');
+    } else {
+      setActiveTab((cur) => (cur === 'identity'
+        ? (validTabs.includes(requestedTab) ? requestedTab : 'overview')
+        : cur));
+    }
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Follow ?tab= changes (e.g., the mobile hamburger sub-nav links to /account?tab=X while we're
   // already on /account, which doesn't remount the page).
   useEffect(() => {
