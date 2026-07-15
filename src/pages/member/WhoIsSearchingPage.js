@@ -18,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import { track } from '../../services/trackingService';
 import { fetchWhoIsSearching } from '../../services/wsfyClient';
 import styles from './WhoIsSearchingPage.module.css';
+import PageHeader, { PageShell } from '../../components/PageHeader';
 import {
   relativeDate,
   formatExactDate,
@@ -566,7 +567,8 @@ const WhoIsSearchingPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <main className={styles.main}>
+    <PageShell>
+      <PageHeader title="Who's Searching For You" subtitle="See who's been searching for and viewing your profile." />
       {/* Tease summary — the real "N people are searching for you…" hook. For free members
           it's the conversion driver (masked list below, this line proves it's real). */}
       {!loading && teaseSummary && teaseSummary.headline && (
@@ -598,12 +600,6 @@ const WhoIsSearchingPage = () => {
         </div>
       )}
 
-      <header className={styles.header}>
-        <h1 className={styles.title}>Who's Watching You</h1>
-        <p className={styles.subtitle}>
-          See who's been searching for and viewing your profile
-        </p>
-      </header>
 
       {/* Tab bar */}
       <div className={styles.tabBar} role="tablist">
@@ -642,7 +638,7 @@ const WhoIsSearchingPage = () => {
       ) : (
         <TabContent events={viewers} kind="viewers" isPaid={isPaid} />
       )}
-    </main>
+    </PageShell>
   );
 };
 

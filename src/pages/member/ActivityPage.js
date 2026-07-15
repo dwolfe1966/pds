@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import PageHeader, { PageShell } from '../../components/PageHeader';
 import { getSearchHistory, deleteSearchHistoryItem } from '../../utils/searchHistory';
 import { fetchSearchHistory, deleteServerSearch } from '../../services/searchActivity';
 import { readLoginHistory } from '../../services/loginHistory';
@@ -109,14 +110,8 @@ const ActivityPage = () => {
   const shown = filter === 'all' ? events : events.filter((e) => e.kind === filter);
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-        <div>
-          <h1 style={{ color: '#0d5d2f', margin: 0 }}>Activity</h1>
-          <p style={{ color: '#6b7280', marginTop: '0.5rem' }}>Your searches, logins, and everything we track — newest first.</p>
-        </div>
-        <Link to="/dashboard" style={{ color: '#0d5d2f', fontWeight: 600, textDecoration: 'none' }}>Back to Dashboard</Link>
-      </div>
+    <PageShell>
+      <PageHeader title="Activity" subtitle="Your searches, logins, and everything we track — newest first." />
 
       {kinds.length > 2 && (
         <div style={{ display: 'flex', gap: 8, marginBottom: '1.25rem', flexWrap: 'wrap' }}>
@@ -168,7 +163,7 @@ const ActivityPage = () => {
           ))}
         </div>
       )}
-    </main>
+    </PageShell>
   );
 };
 

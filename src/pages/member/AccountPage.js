@@ -11,6 +11,7 @@ import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
+import PageHeader, { PageShell } from '../../components/PageHeader';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
 
@@ -964,8 +965,13 @@ const AccountPage = () => {
   ];
 
   return (
-    <main className={styles.pageWrapper}>
-      {!isIdentityPage && <h1 className={styles.pageTitle}>My Account</h1>}
+    <PageShell>
+      <PageHeader
+        title={isIdentityPage ? 'My Identity' : 'Account'}
+        subtitle={isIdentityPage
+          ? 'See what’s public about you, control your footprint, and protect your identity.'
+          : 'Manage your account, subscription, and communication preferences.'}
+      />
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
@@ -1107,7 +1113,6 @@ const AccountPage = () => {
       {/* ── MY IDENTITY TAB (WSFY mapped identity) ───────────────────────────── */}
       {activeTab === 'identity' && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>My Identity</h2>
           {/* Subnav — My Identity is a command center: your profile + your footprint across the web
               (docs/design/profile-concept-model.md). */}
           <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 20, flexWrap: 'wrap' }}>
@@ -2262,7 +2267,7 @@ const AccountPage = () => {
           )}
         </div>
       )}
-    </main>
+    </PageShell>
   );
 };
 

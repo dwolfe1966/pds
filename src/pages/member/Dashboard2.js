@@ -11,6 +11,7 @@ import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import ExposureTile from '../../components/ExposureTile';
 import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
+import PageHeader from '../../components/PageHeader';
 import IdentityOnboardingModal from '../../components/IdentityOnboardingModal';
 
 /**
@@ -731,15 +732,11 @@ const Dashboard2 = () => {
       <IdentityOnboardingModal />
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '1.5rem 1rem 0' }}>
 
-        {/* Greeting */}
-        <header style={{ marginBottom: '1rem' }}>
-          <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: PAGE.text, letterSpacing: '-0.01em' }}>
-            Welcome back, {greetingName}.
-          </h1>
-          <p style={{ margin: '0.35rem 0 0', fontSize: '0.95rem', color: PAGE.textMuted, maxWidth: 640 }}>
-            {(reports?.length || 0) === 0 ? intentCopy : `You have ${reports.length} report${reports.length === 1 ? '' : 's'} in your library. Open any one to revisit, or pull a new one below.`}
-          </p>
-        </header>
+        {/* Standard page header (shared template). */}
+        <PageHeader
+          title="Dashboard"
+          subtitle={`Welcome back, ${greetingName}. ${(reports?.length || 0) === 0 ? intentCopy : `You have ${reports.length} report${reports.length === 1 ? '' : 's'} in your library — open any one to revisit, or pull a new one below.`}`}
+        />
 
         {/* BC-unreachable banner — show when the subscription fetch failed on a server/network
             error (NOT a 403 "no orders"), so an outage reads as "can't reach servers" instead of

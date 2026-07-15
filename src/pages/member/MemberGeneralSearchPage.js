@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { createReportForPhone } from '../../services/reportService';
 import DevBCSession from '../../components/DevBCSession';
+import PageHeader, { PageShell } from '../../components/PageHeader';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './MemberGeneralSearchPage.module.css';
 
@@ -246,13 +247,10 @@ const MemberGeneralSearchPage = () => {
   }[activeTab];
 
   return (
-    <main className={styles.main}>
+    <PageShell>
       <DevBCSession user={user} />
 
-      <div className={styles.header}>
-        <h1 className={styles.title}>{tabTitle}</h1>
-        <p className={styles.subtitle}>{tabSubtitle}</p>
-      </div>
+      <PageHeader title={tabTitle} subtitle={tabSubtitle} />
 
       <div className={styles.formCard}>
         {/* Tabs */}
@@ -516,7 +514,7 @@ const MemberGeneralSearchPage = () => {
           </div>
         )}
       </div>
-    </main>
+    </PageShell>
   );
 };
 
