@@ -104,7 +104,7 @@ const AccountPage = () => {
   // Default lands on the Overview landing; other tabs are deep-linkable.
   // 'identity' is served by the top-level /my-identity page (not an Account tab), but the render
   // block still keys on activeTab==='identity' there.
-  const validTabs = ['overview', 'security', 'billing', 'messages', 'communications'];
+  const validTabs = ['overview', 'contact', 'security', 'billing', 'messages', 'communications'];
   // My Identity is also a top-level page (/my-identity) — force the identity view + drop the account
   // tab chrome so it reads as its own surface.
   const location = useLocation();
@@ -937,6 +937,7 @@ const AccountPage = () => {
 
   const TABS = [
     { key: 'overview', label: 'Overview' },
+    { key: 'contact', label: 'Contact' },
     { key: 'security', label: 'Security' },
     { key: 'billing', label: 'Subscription & Billing' },
     { key: 'messages', label: 'Messages' },
@@ -945,7 +946,7 @@ const AccountPage = () => {
 
   return (
     <main className={styles.pageWrapper}>
-      <h1 className={styles.pageTitle}>My Account</h1>
+      {!isIdentityPage && <h1 className={styles.pageTitle}>My Account</h1>}
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
@@ -1067,6 +1068,7 @@ const AccountPage = () => {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 16 }}>
             {[
+              { key: 'contact', icon: '✉️', title: 'Contact', desc: 'Your email and phone.' },
               { key: 'security', icon: '🔒', title: 'Security', desc: 'Password and privacy controls.' },
               { key: 'billing', icon: '💳', title: 'Subscription & Billing', desc: isPaid ? 'Manage your plan.' : 'Upgrade your plan.' },
               { key: 'messages', icon: '✉️', title: 'Messages', desc: 'Your support conversations.' },
@@ -1125,17 +1127,31 @@ const AccountPage = () => {
                       <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Your record is linked. We'll surface what's exposed here.</p>
                     )}
 
-                    {/* Exposure score — the Identity Management hook. Higher = more public. */}
+                    {/* Exposure score — the Identity Management hook, with a substantiated breakdown. */}
                     {exposure && exposure.count > 0 && (
-                      <div style={{ marginTop: 16, padding: '12px 14px', background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 10 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#111827' }}>Exposure: <span style={{ color: expColor }}>{exposure.level}</span></span>
-                          <span style={{ fontSize: 12, color: '#6b7280' }}>{exposure.count} data points public</span>
+                      <div style={{ marginTop: 16, padding: '14px 16px', background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 10 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>Exposure score: <span style={{ color: expColor }}>{exposure.level}</span></span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: expColor }}>{exposure.score}/100</span>
                         </div>
-                        <div style={{ height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden' }}>
+                        <div style={{ height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden', marginBottom: 12 }}>
                           <div style={{ height: '100%', width: `${exposure.score}%`, background: expColor, transition: 'width .3s' }} />
                         </div>
-                        <p style={{ margin: '8px 0 0', fontSize: 12, color: '#6b7280' }}>Public: {exposure.items.join(' · ')}</p>
+                        {/* Backed-up breakdown: what's driving the score, from your actual record. */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {exposure.breakdown.map((b) => (
+                            <div key={b.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                              <span style={{ marginTop: 2, width: 8, height: 8, borderRadius: '50%', background: expColor, flexShrink: 0 }} aria-hidden="true" />
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{b.label} <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>+{b.points}</span></div>
+                                <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.4 }}>{b.detail}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p style={{ margin: '12px 0 0', fontSize: 11.5, color: '#9ca3af', lineHeight: 1.5 }}>
+                          Calculated from your confirmed public record. Reducing any of these — hiding your record here and opting out of data brokers — lowers your score.
+                        </p>
                       </div>
                     )}
 
@@ -1180,10 +1196,8 @@ const AccountPage = () => {
         </div>
       )}
 
-      {/* ── PROFILE TAB ──────────────────────────────────────────────────────── */}
-      {/* Contact information — merged into My Identity (Profile tab removed; profile IS your
-          identity). Renders under the identity tab, below the public-record summary. */}
-      {activeTab === 'identity' && (
+      {/* ── CONTACT TAB (email + phone; name lives in My Identity) ─────────────── */}
+      {activeTab === 'contact' && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Contact information</h2>
 

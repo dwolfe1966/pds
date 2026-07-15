@@ -32,6 +32,7 @@ const MemberNav = () => {
   // (on mobile the AccountPage's horizontal tab bar is hidden; these deep-link to ?tab=).
   const accountSubTabs = [
     { tab: 'overview', label: 'Overview' },
+    { tab: 'contact', label: 'Contact' },
     { tab: 'security', label: 'Security' },
     { tab: 'billing', label: 'Subscription & Billing' },
     { tab: 'messages', label: 'Messages' },

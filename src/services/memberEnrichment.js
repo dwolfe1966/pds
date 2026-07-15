@@ -138,18 +138,24 @@ export function enrichFromReport(reportResult, selfPerson) {
  */
 export function computeExposure(id) {
   if (!id) return null;
-  const items = [];
-  let score = 0;
-  if (id.city || id.state) { items.push('Current location'); score += 15; }
-  if (id.pastLocationsCount > 0) { items.push(`${id.pastLocationsCount} prior address${id.pastLocationsCount === 1 ? '' : 'es'}`); score += Math.min(20, id.pastLocationsCount * 5); }
-  if (id.relativesCount > 0) { items.push(`${id.relativesCount} relatives`); score += Math.min(20, id.relativesCount * 3); }
-  if (id.jobTitle || id.occupation) { items.push('Occupation'); score += 10; }
-  if (id.employer) { items.push('Employer'); score += 10; }
-  if (id.highSchool || id.college) { items.push('Education'); score += 10; }
-  if (id.hasReport) { items.push('Full public report'); score += 25; }
-  score = Math.min(100, score);
+  const rows = [
+    { key: 'location', present: !!(id.city || id.state), points: 15, label: 'Current location',
+      detail: `Your current area${id.city ? ` (${id.city}${id.state ? ', ' + id.state : ''})` : id.state ? ` (${id.state})` : ''} is publicly searchable.` },
+    { key: 'past', present: id.pastLocationsCount > 0, points: Math.min(20, (id.pastLocationsCount || 0) * 5), label: 'Address history',
+      detail: `${id.pastLocationsCount || 0} prior address${id.pastLocationsCount === 1 ? '' : 'es'} tie you to past locations.` },
+    { key: 'relatives', present: id.relativesCount > 0, points: Math.min(20, (id.relativesCount || 0) * 3), label: 'Relatives',
+      detail: `${id.relativesCount || 0} relative${id.relativesCount === 1 ? '' : 's'} are linked to your record — a common way people find you.` },
+    { key: 'employment', present: !!(id.jobTitle || id.occupation || id.employer), points: 10, label: 'Employment',
+      detail: `Your ${[id.jobTitle || id.occupation ? 'occupation' : null, id.employer ? `employer (${id.employer})` : null].filter(Boolean).join(' and ') || 'work history'} is public.` },
+    { key: 'education', present: !!(id.highSchool || id.college), points: 10, label: 'Education',
+      detail: `Your ${[id.highSchool && 'high school', id.college && 'college'].filter(Boolean).join(' and ')} is tied to your record.` },
+    { key: 'report', present: !!id.hasReport, points: 25, label: 'Full public report',
+      detail: 'A complete background report — addresses, phones, relatives, records — is available on you.' },
+  ];
+  const breakdown = rows.filter((r) => r.present);
+  const score = Math.min(100, breakdown.reduce((s, r) => s + r.points, 0));
   const level = score >= 65 ? 'High' : score >= 35 ? 'Medium' : score > 0 ? 'Low' : 'Minimal';
-  return { count: items.length, score, level, items };
+  return { count: breakdown.length, score, level, items: breakdown.map((r) => r.label), breakdown };
 }
 
 /** Store the canonical report link + confirmed identity, even before/without a full extract. */
