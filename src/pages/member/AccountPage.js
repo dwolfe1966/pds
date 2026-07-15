@@ -12,6 +12,7 @@ import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
+import MyProfileModularLive from '../../components/MyProfileModularLive';
 import PageHeader, { PageShell } from '../../components/PageHeader';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -1117,13 +1118,15 @@ const AccountPage = () => {
           {/* Subnav — My Identity is a command center: your profile + your footprint across the web
               (docs/design/profile-concept-model.md). */}
           <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 20, flexWrap: 'wrap' }}>
-            {[{ k: 'profile', label: 'My Profile' }, { k: 'footprint', label: 'Digital Footprint' }].map((t) => (
+            {[{ k: 'profile', label: 'Overview' }, { k: 'modular', label: 'My Profile' }, { k: 'footprint', label: 'Digital Footprint' }].map((t) => (
               <button key={t.k} type="button" onClick={() => setIdentitySubTab(t.k)}
                 style={{ background: 'none', border: 'none', borderBottom: `2px solid ${identitySubTab === t.k ? '#0d5d2f' : 'transparent'}`, color: identitySubTab === t.k ? '#0d5d2f' : '#6b7280', fontSize: 14.5, fontWeight: 700, padding: '9px 14px', cursor: 'pointer', marginBottom: -1 }}>
                 {t.label}
               </button>
             ))}
           </div>
+
+          {identitySubTab === 'modular' && <MyProfileModularLive />}
 
           {identitySubTab === 'footprint' && (
             <>
