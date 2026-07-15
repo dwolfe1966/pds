@@ -167,7 +167,7 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
   const selectMatch = async (m) => {
     setRecordConfirmed(true); // a real record was selected → this run can permanently dismiss
     setStep('working');
-    const selfPerson = { name: m?.fullName, city: m?.city, state: m?.state, age: m?.age || m?.ageRange };
+    const selfPerson = { name: m?.fullName, city: m?.city || form.city || undefined, state: m?.state || form.state || undefined, age: m?.age || m?.ageRange };
     // Paid → pull the report (best-effort). We need it both to enrich AND to build KBA questions; the
     // created report's commerceContentId is the CANONICAL, re-fetchable link stored with the member.
     let report = null, reportId = null;

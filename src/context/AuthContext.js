@@ -237,7 +237,11 @@ export const AuthProvider = ({ children }) => {
     // everything guarantees a clean logged-out state.
     try { localStorage.clear(); } catch { /* storage unavailable */ }
     try { sessionStorage.clear(); } catch { /* storage unavailable */ }
-    navigate('/');
+    // HARD reload (not SPA navigate) — a client-side navigate keeps the page alive, and with it the
+    // BC IIFE's IN-MEMORY session (window.ApiWrapper) and any cached React state. That stale in-memory
+    // session is what let a subsequent signup/login re-authenticate as the just-logged-out user. A full
+    // document load re-inits the BC wrapper from scratch against cleared storage + a killed cookie.
+    window.location.replace('/');
   };
 
   const isPaid = !!(subscription?.status === 'active' && subscription?.plan);
