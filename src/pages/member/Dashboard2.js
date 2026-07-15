@@ -8,6 +8,7 @@ import { readLoginHistory } from '../../services/loginHistory';
 import { getBrand } from '../../services/brand';
 import { US_STATES } from '../../data/usStates';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
+import ExposureTile from '../../components/ExposureTile';
 
 /**
  * Dashboard — research-workbench layout.
@@ -848,6 +849,9 @@ const Dashboard2 = () => {
         <div style={{ marginBottom: '1rem' }}>
           <SelfIdentifyCard />
         </div>
+
+        {/* Identity exposure summary → deep-links into My Identity (renders only once mapped). */}
+        <ExposureTile />
 
         {/* Trial transparency banner — the upcoming first charge, front and center.
             TEMPORARILY DISABLED 2026-06-23 (owner request: hide the yellow "free trial —

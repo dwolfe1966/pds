@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getMappedIdentity, fetchMappedIdentity } from '../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, computeExposure } from '../services/memberEnrichment';
 
 /**
  * Identity-flow payment teaser (reason=identity). Shown when a member clicks "Control what's exposed"
@@ -53,6 +53,22 @@ export default function IdentityPaymentTeaser() {
             ))}
           </div>
         )}
+        {(() => {
+          const exp = computeExposure(id);
+          if (!exp || !exp.count) return null;
+          const c = exp.score >= 65 ? '#dc2626' : exp.score >= 35 ? '#f59e0b' : '#0d5d2f';
+          return (
+            <div style={{ marginBottom: 14, padding: '12px 14px', background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#111827' }}>Your exposure: <span style={{ color: c }}>{exp.level}</span></span>
+                <span style={{ fontSize: 12, color: '#6b7280' }}>{exp.count} data points public</span>
+              </div>
+              <div style={{ height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${exp.score}%`, background: c }} />
+              </div>
+            </div>
+          );
+        })()}
         <p style={{ margin: 0, color: '#0f172a', fontWeight: 700, fontSize: 15 }}>Take control of your identity.</p>
         <p style={{ margin: '4px 0 0', color: '#475569', fontSize: 14, lineHeight: 1.5 }}>
           Hide your address and phone, remove yourself from data-broker sites, and see who's searching for you — all in one place.

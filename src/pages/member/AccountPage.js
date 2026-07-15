@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { getReportList } from '../../services/reportService';
@@ -102,10 +102,16 @@ const AccountPage = () => {
 
   // ─── Tab state (supports ?tab=messages deep-linking) ────────────────────────
   // Default lands on the Overview landing; other tabs are deep-linkable.
-  const validTabs = ['overview', 'identity', 'security', 'billing', 'messages', 'communications'];
+  // 'identity' is served by the top-level /my-identity page (not an Account tab), but the render
+  // block still keys on activeTab==='identity' there.
+  const validTabs = ['overview', 'security', 'billing', 'messages', 'communications'];
+  // My Identity is also a top-level page (/my-identity) — force the identity view + drop the account
+  // tab chrome so it reads as its own surface.
+  const location = useLocation();
+  const isIdentityPage = location.pathname === '/my-identity';
   // 'profile' merged into 'identity' — remap legacy ?tab=profile links.
   const requestedTab = searchParams.get('tab') === 'profile' ? 'identity' : searchParams.get('tab');
-  const initialTab = validTabs.includes(requestedTab) ? requestedTab : 'overview';
+  const initialTab = isIdentityPage ? 'identity' : (validTabs.includes(requestedTab) ? requestedTab : 'overview');
   const [activeTab, setActiveTab] = useState(initialTab);
 
   // ─── Identity tab (WSFY mapped-identity view) ────────────────────────────────
@@ -130,6 +136,8 @@ const AccountPage = () => {
   useEffect(() => {
     let t = searchParams.get('tab');
     if (t === 'profile') t = 'identity';
+    // My Identity moved to its own top-level page — redirect legacy ?tab=identity there.
+    if (t === 'identity' && !isIdentityPage) { navigate('/my-identity', { replace: true }); return; }
     if (t && validTabs.includes(t)) setActiveTab(t);
   }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -929,7 +937,6 @@ const AccountPage = () => {
 
   const TABS = [
     { key: 'overview', label: 'Overview' },
-    { key: 'identity', label: 'My Identity' },
     { key: 'security', label: 'Security' },
     { key: 'billing', label: 'Subscription & Billing' },
     { key: 'messages', label: 'Messages' },
@@ -1039,7 +1046,7 @@ const AccountPage = () => {
       )}
 
       {/* Tab Bar */}
-      <div className={styles.tabBar} style={tabBarStyle}>
+      <div className={styles.tabBar} style={{ ...tabBarStyle, ...(isIdentityPage ? { display: 'none' } : {}) }}>
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -1060,7 +1067,6 @@ const AccountPage = () => {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 16 }}>
             {[
-              { key: 'identity', icon: '🪪', title: 'My Identity', desc: 'Your contact info + what’s mapped to you.' },
               { key: 'security', icon: '🔒', title: 'Security', desc: 'Password and privacy controls.' },
               { key: 'billing', icon: '💳', title: 'Subscription & Billing', desc: isPaid ? 'Manage your plan.' : 'Upgrade your plan.' },
               { key: 'messages', icon: '✉️', title: 'Messages', desc: 'Your support conversations.' },

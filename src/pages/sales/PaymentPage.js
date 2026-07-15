@@ -710,7 +710,7 @@ const PaymentPage = () => {
           {/* "Back to Results" only makes sense in a search→report flow; in the WSFY/identity flow
               there are no results to go back to (owner) — link back to where they came from. */}
           {isSelfContext ? (
-            <Link to={upgradeReason === 'wsfy' ? '/who-is-searching' : '/account?tab=identity'} style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back</Link>
+            <Link to={upgradeReason === 'wsfy' ? '/who-is-searching' : '/my-identity'} style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back</Link>
           ) : (
             <Link to="/name/search-result" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back to Results</Link>
           )}

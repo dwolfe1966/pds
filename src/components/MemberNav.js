@@ -24,6 +24,7 @@ const MemberNav = () => {
     { path: '/search-history', label: 'History' },
     { path: '/alerts', label: 'Alerts' },
     { path: '/who-is-searching', label: "Who's Searching" },
+    { path: '/my-identity', label: 'My Identity' },
     { path: '/account', label: 'Account' },
   ];
 
@@ -31,7 +32,6 @@ const MemberNav = () => {
   // (on mobile the AccountPage's horizontal tab bar is hidden; these deep-link to ?tab=).
   const accountSubTabs = [
     { tab: 'overview', label: 'Overview' },
-    { tab: 'identity', label: 'My Identity' },
     { tab: 'security', label: 'Security' },
     { tab: 'billing', label: 'Subscription & Billing' },
     { tab: 'messages', label: 'Messages' },

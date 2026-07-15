@@ -298,6 +298,16 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          {/* My Identity is a top-level surface (flagship Identity Management). Reuses AccountPage,
+              which detects this path and shows the identity view without the account tab chrome. */}
+          <Route
+            path="/my-identity"
+            element={
+              <ProtectedRoute>
+                <AccountPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/alerts"
             element={
