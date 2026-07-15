@@ -11,6 +11,7 @@ import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
+import MyProfileReport from '../../components/MyProfileReport';
 import PageHeader, { PageShell } from '../../components/PageHeader';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -1278,34 +1279,33 @@ const AccountPage = () => {
                   the canonical, re-fetchable commerceContentId; /people/:id renders the paid
                   expose-all report we already ship. No reportId (mapped while free, then upgraded) →
                   re-run the identify flow, which auto-creates the report on the paid path. */}
-              <div style={{ marginTop: 16, border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Your full background report</div>
-                <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
-                  Every address, phone, relative, and public record tied to your identity — the same report anyone else can pull on you.
-                </p>
-                {identity.reportId ? (
-                  <Link to={`/people/${identity.reportId}`}
-                    style={{ display: 'inline-block', background: '#0d5d2f', color: '#fff', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>
-                    View your full report →
-                  </Link>
-                ) : pullingReport ? (
-                  // Already mapped — pull the report FROM the confirmed identity (prefill + auto-search),
-                  // not the empty mapping form. Single confident match auto-creates; ambiguous → confirm.
+              {/* Report-as-profile: render the member's OWN report INLINE as their profile. */}
+              {identity.reportId ? (
+                <div style={{ marginTop: 16 }}>
+                  <MyProfileReport reportId={identity.reportId} />
+                </div>
+              ) : pullingReport ? (
+                <div style={{ marginTop: 16, border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Pull your full profile</div>
+                  <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
+                    Confirm your record to load everything public about you — it'll appear right here.
+                  </p>
                   <SelfIdentifyCard forceShow autoStart
                     prefill={{ name: identity.name, city: identity.city, state: identity.state, age: identity.age }}
-                    onComplete={(id) => {
-                      setPullingReport(false);
-                      const next = id || getMappedIdentity();
-                      setIdentity(next);
-                      if (next && next.reportId) navigate(`/people/${next.reportId}`);
-                    }} />
-                ) : (
+                    onComplete={(id) => { setPullingReport(false); setIdentity(id || getMappedIdentity()); }} />
+                </div>
+              ) : (
+                <div style={{ marginTop: 16, border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Your full background report</div>
+                  <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
+                    Every address, phone, relative, and public record tied to your identity — the same report anyone else can pull on you.
+                  </p>
                   <button type="button" onClick={() => setPullingReport(true)}
                     style={{ background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
                     Pull my full report →
                   </button>
-                )}
-              </div>
+                </div>
+              )}
               {/* Optional, non-blocking ID verification — upgrade KBA/self-asserted mapping to ID-verified. */}
               <div style={{ marginTop: 12 }}>
                 {identity.verified === 'id' ? (
