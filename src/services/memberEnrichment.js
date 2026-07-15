@@ -151,8 +151,9 @@ export function enrichFromReport(reportResult, selfPerson) {
  * Exposure score for the Identity Management product — how public the member's record is, computed
  * from the mapped identity. Higher score = more exposed. { score(0-100), level, count, items[] }.
  */
-export function computeExposure(id) {
+export function computeExposure(id, hiddenKeys) {
   if (!id) return null;
+  const hidden = new Set(hiddenKeys || []);
   const rows = [
     { key: 'location', present: !!(id.city || id.state), points: 15, label: 'Current location',
       detail: `Your current area${id.city ? ` (${id.city}${id.state ? ', ' + id.state : ''})` : id.state ? ` (${id.state})` : ''} is publicly searchable.` },
@@ -167,10 +168,12 @@ export function computeExposure(id) {
     { key: 'report', present: !!id.hasReport, points: 25, label: 'Full public report',
       detail: 'A complete background report — addresses, phones, relatives, records — is available on you.' },
   ];
-  const breakdown = rows.filter((r) => r.present);
+  const present = rows.filter((r) => r.present);
+  const breakdown = present.filter((r) => !hidden.has(r.key)); // hidden drivers drop out of the score
+  const hiddenItems = present.filter((r) => hidden.has(r.key));
   const score = Math.min(100, breakdown.reduce((s, r) => s + r.points, 0));
   const level = score >= 65 ? 'High' : score >= 35 ? 'Medium' : score > 0 ? 'Low' : 'Minimal';
-  return { count: breakdown.length, score, level, items: breakdown.map((r) => r.label), breakdown };
+  return { count: breakdown.length, score, level, items: breakdown.map((r) => r.label), breakdown, hidden: hiddenItems };
 }
 
 /** Store the canonical report link + confirmed identity, even before/without a full extract. */
@@ -189,13 +192,14 @@ function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 
 
 export async function fetchSuppression() {
   const userId = currentUserId();
-  if (!userId) return false;
+  const empty = { activityHidden: false, hiddenFields: [] };
+  if (!userId) return empty;
   try {
     const res = await fetch(`${suppressionUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
-    if (!res.ok) return false;
+    if (!res.ok) return empty;
     const d = await res.json();
-    return !!(d && d.suppressed);
-  } catch { return false; }
+    return { activityHidden: !!(d && d.suppressed), hiddenFields: (d && d.hiddenFields) || [] };
+  } catch { return empty; }
 }
 
 export async function setSuppression(on, meta = {}) {
@@ -209,6 +213,23 @@ export async function setSuppression(on, meta = {}) {
     });
     return res.ok;
   } catch { return false; }
+}
+
+// Per-item "hide this" — suppress a single exposure driver (location/past/relatives/employment/
+// education/report). Returns the updated hiddenFields array, or null on failure.
+export async function setFieldSuppression(key, on, meta = {}) {
+  const userId = currentUserId();
+  if (!userId || !key) return null;
+  try {
+    const res = await fetch(suppressionUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, key, on: !!on, name: meta.name, state: meta.state }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return (d && d.hiddenFields) || [];
+  } catch { return null; }
 }
 
 /**

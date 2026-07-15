@@ -7,7 +7,17 @@
 // data we don't license yet (e.g. "went to your high school", "just got married") are NOT
 // fabricated — we ship the sourceable subset (count, location, one proof name) honestly.
 import { neon } from '@neondatabase/serverless';
-import { norm, getSuppressedUserIds } from './search-activity-db.mjs';
+import { norm, getSuppressedUserIds, getHiddenFieldsMap } from './search-activity-db.mjs';
+
+// Per-item suppression: when a member hides an exposure driver, its WSFY affinity is never surfaced
+// about them. Maps an exposure-driver key → the affinity tags it governs.
+const TAG_SUPPRESS = {
+  employment: ['occupation', 'colleague'],
+  education: ['high_school', 'college'],
+  past: ['past_local'],
+  relatives: ['relative', 'verified_relative', 'shared_relative'],
+  location: ['local'],
+};
 
 const URL = process.env.LEADS_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 export const hasWsfyDb = !!URL;
@@ -173,9 +183,11 @@ export async function buildWsfySummary(identity, opts = {}) {
   // Per searcher, derive why they might matter to the subject. Corpus-derived signals need no
   // enrichment; occupation/verified-relative come from the enrichment seam when present.
   const subjCityN = norm(identity.city || '');
-  const [enrich, subjE] = await Promise.all([
-    fetchEnrichment(visible.filter((g) => g.is_member).map((g) => g.searcher_user_id)),
+  const memberIds = visible.filter((g) => g.is_member).map((g) => g.searcher_user_id);
+  const [enrich, subjE, hiddenMap] = await Promise.all([
+    fetchEnrichment(memberIds),
     fetchSubjectEnrichment(selfUserId),
+    getHiddenFieldsMap(memberIds),
   ]);
   const aff = new Map();
   for (const g of visible) {
@@ -206,7 +218,18 @@ export async function buildWsfySummary(identity, opts = {}) {
         if (e.relatives.some((n) => subjRel.has(norm(n)))) tags.push('shared_relative');
       }
     }
-    aff.set(g.searcher_key, { tags, occupation: e?.occupation || null, employer: e?.employer || null });
+    // Per-item suppression: drop any affinity tag whose exposure driver this searcher has hidden,
+    // and blank the occupation/employer detail when employment is hidden.
+    const hidden = g.searcher_user_id ? hiddenMap.get(g.searcher_user_id) : null;
+    let finalTags = tags;
+    let occ = e?.occupation || null;
+    let emp = e?.employer || null;
+    if (hidden && hidden.length) {
+      const blocked = new Set(hidden.flatMap((k) => TAG_SUPPRESS[k] || []));
+      finalTags = tags.filter((t) => !blocked.has(t));
+      if (hidden.includes('employment')) { occ = null; emp = null; }
+    }
+    aff.set(g.searcher_key, { tags: finalTags, occupation: occ, employer: emp });
   }
 
   // ── Events list (for the page's table + charts) — tiered ─────────────────

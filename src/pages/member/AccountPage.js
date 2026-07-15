@@ -6,7 +6,7 @@ import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
-import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression } from '../../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression } from '../../services/memberEnrichment';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -118,6 +118,7 @@ const AccountPage = () => {
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [suppressed, setSuppressed] = useState(false);
+  const [hiddenFields, setHiddenFields] = useState([]); // per-item exposure hides (Identity Mgmt)
   // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
   // the dashboard (or another device) is reflected here. Local mirror first, then the server copy.
   useEffect(() => {
@@ -126,7 +127,7 @@ const AccountPage = () => {
     if (local) setIdentity(local);
     if (activeTab === 'identity') {
       fetchMappedIdentity().then((srv) => { if (alive && srv) setIdentity(srv); });
-      fetchSuppression().then((s) => { if (alive) setSuppressed(s); });
+      fetchSuppression().then((s) => { if (alive) { setSuppressed(s.activityHidden); setHiddenFields(s.hiddenFields || []); } });
     }
     return () => { alive = false; };
   }, [activeTab]);
@@ -1121,7 +1122,13 @@ const AccountPage = () => {
                 identity.relativesCount != null ? { icon: '👥', text: `${identity.relativesCount} relatives on record`, sensitive: false } : null,
                 location ? { icon: '📍', text: location, sensitive: true } : null,
               ].filter(Boolean);
-              const exposure = computeExposure(identity);
+              const exposure = computeExposure(identity, hiddenFields);
+              // Per-item hide handler (paid only) — optimistic, server-persisted, updates the score.
+              const toggleHide = async (key, on) => {
+                setHiddenFields((prev) => on ? [...new Set([...prev, key])] : prev.filter((k) => k !== key));
+                const res = await setFieldSuppression(key, on, { name: identity.name, state: identity.state });
+                if (Array.isArray(res)) setHiddenFields(res);
+              };
               const expColor = !exposure ? '#0d5d2f' : exposure.score >= 65 ? '#dc2626' : exposure.score >= 35 ? '#f59e0b' : '#0d5d2f';
               return (
                 <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, overflow: 'hidden', boxShadow: '0 4px 18px rgba(13,93,47,0.10)' }}>
@@ -1156,7 +1163,7 @@ const AccountPage = () => {
                     )}
 
                     {/* Exposure score — the Identity Management hook, with a substantiated breakdown. */}
-                    {exposure && exposure.count > 0 && (
+                    {exposure && (exposure.count > 0 || (exposure.hidden && exposure.hidden.length > 0)) && (
                       <div style={{ marginTop: 16, padding: '14px 16px', background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 10 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                           <span style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>Exposure score: <span style={{ color: expColor }}>{exposure.level}</span></span>
@@ -1174,15 +1181,41 @@ const AccountPage = () => {
                                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{b.label} <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>+{b.points}</span></div>
                                 <div style={{ fontSize: 12.5, color: '#6b7280', lineHeight: 1.4, ...(locked ? { filter: 'blur(4px)', userSelect: 'none' } : {}) }}>{b.detail}</div>
                               </div>
-                              <Link to={isPaid ? `/opt-out?hide=${b.key}` : `/payment?upgrade=1&reason=identity&hide=${b.key}`}
-                                style={{ flexShrink: 0, alignSelf: 'center', fontSize: 12, fontWeight: 700, color: '#0d5d2f', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', borderRadius: 999, padding: '4px 10px' }}>
-                                Hide →
-                              </Link>
+                              {isPaid ? (
+                                <button type="button" onClick={() => toggleHide(b.key, true)}
+                                  style={{ flexShrink: 0, alignSelf: 'center', fontSize: 12, fontWeight: 700, color: '#0d5d2f', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', borderRadius: 999, padding: '4px 10px' }}>
+                                  Hide →
+                                </button>
+                              ) : (
+                                <Link to={`/payment?upgrade=1&reason=identity&hide=${b.key}`}
+                                  style={{ flexShrink: 0, alignSelf: 'center', fontSize: 12, fontWeight: 700, color: '#0d5d2f', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', borderRadius: 999, padding: '4px 10px' }}>
+                                  Hide →
+                                </Link>
+                              )}
                             </div>
                           ))}
                         </div>
+                        {/* Per-item hides — struck through, with an Unhide affordance. Paid only. */}
+                        {exposure.hidden && exposure.hidden.length > 0 && (
+                          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e5e7eb' }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#0d5d2f', marginBottom: 8 }}>✓ Hidden ({exposure.hidden.length})</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {exposure.hidden.map((h) => (
+                                <div key={h.key} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                  <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#9ca3af', textDecoration: 'line-through' }}>{h.label}</span>
+                                  <button type="button" onClick={() => toggleHide(h.key, false)}
+                                    style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#6b7280', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap', border: '1px solid #e5e7eb', borderRadius: 999, padding: '4px 10px' }}>
+                                    Unhide
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <p style={{ margin: '12px 0 0', fontSize: 11.5, color: '#9ca3af', lineHeight: 1.5 }}>
-                          Calculated from your confirmed public record. Reducing any of these — hiding your record here and opting out of data brokers — lowers your score.
+                          {isPaid
+                            ? "Calculated from your confirmed public record. Hiding a driver above removes it from your exposure — and stops it being surfaced about you across IDLookup."
+                            : 'Calculated from your confirmed public record. Reducing any of these — hiding your record here and opting out of data brokers — lowers your score.'}
                         </p>
                       </div>
                     )}

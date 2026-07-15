@@ -45,29 +45,81 @@ export async function upsertMemberEnrichment(e) {
 }
 
 // ── Member suppression (Identity Management "Hide me") ───────────────────────
+// Global "Hide my activity" flag. Keeps the row when turning off if the member still has per-field
+// hides; only removes it when nothing is suppressed anymore.
 export async function setSuppression({ userId, name, state, on }) {
   if (!sql) throw new Error('no DB configured');
   if (!userId) throw new Error('userId required');
-  if (on) {
-    await sql`
-      INSERT INTO member_suppression (user_id, name_norm, state)
-      VALUES (${userId}, ${name ? norm(name) : null}, ${state ? String(state).toUpperCase() : null})
-      ON CONFLICT (user_id) DO UPDATE SET name_norm = EXCLUDED.name_norm, state = EXCLUDED.state, created_at = now()`;
-  } else {
-    await sql`DELETE FROM member_suppression WHERE user_id = ${userId}`;
+  await sql`
+    INSERT INTO member_suppression (user_id, name_norm, state, activity_hidden)
+    VALUES (${userId}, ${name ? norm(name) : null}, ${state ? String(state).toUpperCase() : null}, ${!!on})
+    ON CONFLICT (user_id) DO UPDATE SET
+      activity_hidden = ${!!on},
+      name_norm = COALESCE(EXCLUDED.name_norm, member_suppression.name_norm),
+      state = COALESCE(EXCLUDED.state, member_suppression.state)`;
+  if (!on) {
+    await sql`DELETE FROM member_suppression WHERE user_id = ${userId}
+      AND activity_hidden = false AND (hidden_fields IS NULL OR cardinality(hidden_fields) = 0)`;
   }
 }
+
+// Per-item ("hide this") suppression of a single exposure driver (location/past/relatives/
+// employment/education/report). A field-only hide creates the row with activity_hidden = false.
+export async function setFieldSuppression({ userId, name, state, key, on }) {
+  if (!sql) throw new Error('no DB configured');
+  if (!userId || !key) throw new Error('userId and key required');
+  await sql`
+    INSERT INTO member_suppression (user_id, name_norm, state, activity_hidden, hidden_fields)
+    VALUES (${userId}, ${name ? norm(name) : null}, ${state ? String(state).toUpperCase() : null}, false, '{}')
+    ON CONFLICT (user_id) DO UPDATE SET
+      name_norm = COALESCE(EXCLUDED.name_norm, member_suppression.name_norm),
+      state = COALESCE(EXCLUDED.state, member_suppression.state)`;
+  if (on) {
+    await sql`UPDATE member_suppression
+      SET hidden_fields = (SELECT ARRAY(SELECT DISTINCT unnest(array_append(COALESCE(hidden_fields, '{}'), ${key}))))
+      WHERE user_id = ${userId}`;
+  } else {
+    await sql`UPDATE member_suppression
+      SET hidden_fields = array_remove(COALESCE(hidden_fields, '{}'), ${key})
+      WHERE user_id = ${userId}`;
+    await sql`DELETE FROM member_suppression WHERE user_id = ${userId}
+      AND activity_hidden = false AND (hidden_fields IS NULL OR cardinality(hidden_fields) = 0)`;
+  }
+}
+
+// Full suppression state for a member — { activityHidden, hiddenFields } — drives the Identity view.
+export async function getSuppressionState(userId) {
+  if (!sql || !userId) return { activityHidden: false, hiddenFields: [] };
+  try {
+    const rows = await sql`SELECT activity_hidden, hidden_fields FROM member_suppression WHERE user_id = ${userId}`;
+    if (!rows.length) return { activityHidden: false, hiddenFields: [] };
+    return { activityHidden: !!rows[0].activity_hidden, hiddenFields: rows[0].hidden_fields || [] };
+  } catch { return { activityHidden: false, hiddenFields: [] }; }
+}
+
+// WSFY: searchers whose GLOBAL activity is hidden don't appear in anyone's WSFY at all.
 export async function getSuppressedUserIds(userIds) {
   const ids = Array.from(new Set((userIds || []).filter(Boolean)));
   if (!sql || !ids.length) return new Set();
   try {
-    const rows = await sql`SELECT user_id FROM member_suppression WHERE user_id = ANY(${ids})`;
+    const rows = await sql`SELECT user_id FROM member_suppression WHERE user_id = ANY(${ids}) AND activity_hidden = true`;
     return new Set(rows.map((r) => r.user_id));
   } catch { return new Set(); }
 }
+
+// WSFY: per-searcher hidden exposure keys, so a hidden driver's affinity is never surfaced about them.
+export async function getHiddenFieldsMap(userIds) {
+  const ids = Array.from(new Set((userIds || []).filter(Boolean)));
+  if (!sql || !ids.length) return new Map();
+  try {
+    const rows = await sql`SELECT user_id, hidden_fields FROM member_suppression WHERE user_id = ANY(${ids})`;
+    return new Map(rows.filter((r) => Array.isArray(r.hidden_fields) && r.hidden_fields.length).map((r) => [r.user_id, r.hidden_fields]));
+  } catch { return new Map(); }
+}
+
 export async function isMemberSuppressed(userId) {
   if (!sql || !userId) return false;
-  try { return (await sql`SELECT 1 FROM member_suppression WHERE user_id = ${userId}`).length > 0; }
+  try { return (await sql`SELECT 1 FROM member_suppression WHERE user_id = ${userId} AND activity_hidden = true`).length > 0; }
   catch { return false; }
 }
 
