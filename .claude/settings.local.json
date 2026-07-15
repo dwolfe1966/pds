@@ -552,7 +552,8 @@
       "Bash(perl -0pi -e \"s{/account\\\\?tab=identity}{/my-identity}g\" src/components/ExposureTile.js src/components/IdentityPaymentTeaser.js src/pages/sales/PaymentPage.js)",
       "Bash(sed -n '/export async function upsertMemberEnrichment/,/^}/p' lib/search-activity-db.mjs)",
       "Bash(sed -n '/export async function getMemberEnrichment/,/^}/p' lib/search-activity-db.mjs)",
-      "Bash(npm info *)"
+      "Bash(npm info *)",
+      "Bash(awk 'NR==343||NR==344||NR==694||NR==695||NR==698||NR==699||NR==1048||NR==1049||NR==1050||NR==1156||NR==1157||NR==1158{printf \"%d: %s\\\\n\", NR, $0}' SearchResultDetailPage.js)"
     ]
   }
 }
