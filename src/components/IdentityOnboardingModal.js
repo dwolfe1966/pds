@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import SelfIdentifyCard from './SelfIdentifyCard';
 import { getMappedIdentity } from '../services/memberEnrichment';
+import { useAuth } from '../context/AuthContext';
+import { fetchWhoIsSearching } from '../services/wsfyClient';
 
 /**
  * First-dashboard-visit modal that pushes the member into confirming their identity — the thing that
@@ -15,7 +17,16 @@ const modal = { background: '#fff', borderRadius: 16, maxWidth: 560, width: '100
 const closeBtn = { position: 'absolute', top: 10, right: 12, background: 'none', border: 'none', fontSize: 26, lineHeight: 1, color: '#9ca3af', cursor: 'pointer' };
 
 export default function IdentityOnboardingModal() {
+  const { user, isPaid } = useAuth();
   const [open, setOpen] = useState(false);
+  const [count, setCount] = useState(0);
+
+  const identity = useMemo(() => ({
+    name: [user && user.firstName, user && user.lastName].filter(Boolean).join(' ') || (user && user.name) || '',
+    city: (user && (user.city || user.addressCity)) || '',
+    state: (user && (user.state || user.addressState)) || '',
+    selfUserId: (user && (user.id || user._id || user.userId)) || undefined,
+  }), [user]);
 
   useEffect(() => {
     try {
@@ -30,17 +41,35 @@ export default function IdentityOnboardingModal() {
     } catch { /* storage unavailable */ }
   }, []);
 
+  // Personalize with the REAL count when we have a name to match on — turns the generic pitch into
+  // "N people are already searching for you". Best-effort; falls back to the generic headline.
+  useEffect(() => {
+    let alive = true;
+    if (!open || (!identity.selfUserId && !identity.name)) return undefined;
+    fetchWhoIsSearching({ ...identity, tier: isPaid ? 'paid' : 'free' })
+      .then((r) => { if (alive && r && typeof r.count === 'number') setCount(r.count); })
+      .catch(() => { /* generic headline */ });
+    return () => { alive = false; };
+  }, [open, identity, isPaid]);
+
   if (!open) return null;
   const close = () => setOpen(false);
+  const hasCount = count > 0;
 
   return (
     <div style={overlay} onClick={close}>
       <div style={modal} onClick={(e) => e.stopPropagation()}>
         <button type="button" style={closeBtn} onClick={close} aria-label="Close">×</button>
         <div style={{ padding: '26px 26px 4px' }}>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0d5d2f' }}>Take control of your identity</h2>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0d5d2f' }}>
+            {hasCount
+              ? `${count} ${count === 1 ? 'person is' : 'people are'} already searching for you`
+              : 'Take control of your identity'}
+          </h2>
           <p style={{ margin: '8px 0 14px', color: '#4b5563', fontSize: 14, lineHeight: 1.5 }}>
-            Confirm your public record so you can:
+            {hasCount
+              ? 'Claim your record to see who’s searching — and control what’s public about you:'
+              : 'Confirm your public record so you can:'}
           </p>
           <ul style={{ margin: '0 0 8px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
