@@ -45,6 +45,19 @@ const MemberNav = () => {
     return accountSubTabs.some((s) => s.tab === t) ? t : 'overview';
   })();
 
+  // My Identity sub-tabs — shown in the mobile hamburger (the page's inline subnav is hidden on mobile);
+  // deep-link via ?sub=. Overview = protection at a glance, My Profile = the modular profile, Footprint.
+  const identitySubTabs = [
+    { sub: 'profile', label: 'Overview' },
+    { sub: 'modular', label: 'My Profile' },
+    { sub: 'footprint', label: 'Digital Footprint' },
+  ];
+  const currentIdentitySub = (() => {
+    if (location.pathname !== '/my-identity') return null;
+    const s = new URLSearchParams(location.search).get('sub');
+    return identitySubTabs.some((x) => x.sub === s) ? s : 'profile';
+  })();
+
   const isActive = (path) => {
     if (path === '/dashboard') {
       return location.pathname === '/dashboard';
@@ -186,6 +199,16 @@ const MemberNav = () => {
                     key={st.tab}
                     to={`/account?tab=${st.tab}`}
                     className={`${styles.mobileNavSubLink} ${currentAccountTab === st.tab ? styles.mobileNavSubLinkActive : ''}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {st.label}
+                  </Link>
+                ))}
+                {link.path === '/my-identity' && identitySubTabs.map((st) => (
+                  <Link
+                    key={st.sub}
+                    to={`/my-identity?sub=${st.sub}`}
+                    className={`${styles.mobileNavSubLink} ${currentIdentitySub === st.sub ? styles.mobileNavSubLinkActive : ''}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {st.label}

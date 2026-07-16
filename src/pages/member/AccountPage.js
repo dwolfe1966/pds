@@ -154,6 +154,13 @@ const AccountPage = () => {
     }
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Identity sub-tab is URL-addressable via ?sub= so the mobile hamburger can deep-link into it
+  // (Overview / My Profile / Digital Footprint).
+  useEffect(() => {
+    const sub = searchParams.get('sub');
+    if (sub && ['profile', 'modular', 'footprint'].includes(sub)) setIdentitySubTab(sub);
+  }, [searchParams]);
+
   // Follow ?tab= changes (e.g., the mobile hamburger sub-nav links to /account?tab=X while we're
   // already on /account, which doesn't remount the page).
   useEffect(() => {
@@ -1118,7 +1125,9 @@ const AccountPage = () => {
         <div className={styles.section}>
           {/* Subnav — My Identity is a command center: your profile + your footprint across the web
               (docs/design/profile-concept-model.md). */}
-          <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 20, flexWrap: 'wrap' }}>
+          {/* Desktop subnav — on mobile these tabs live in the hamburger menu instead. */}
+          <style>{`@media (max-width: 768px){ [data-identity-subnav]{ display: none !important; } }`}</style>
+          <div data-identity-subnav style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 20, flexWrap: 'wrap' }}>
             {[{ k: 'profile', label: 'Overview' }, { k: 'modular', label: 'My Profile' }, { k: 'footprint', label: 'Digital Footprint' }].map((t) => (
               <button key={t.k} type="button" onClick={() => setIdentitySubTab(t.k)}
                 style={{ background: 'none', border: 'none', borderBottom: `2px solid ${identitySubTab === t.k ? '#0d5d2f' : 'transparent'}`, color: identitySubTab === t.k ? '#0d5d2f' : '#6b7280', fontSize: 14.5, fontWeight: 700, padding: '9px 14px', cursor: 'pointer', marginBottom: -1 }}>
