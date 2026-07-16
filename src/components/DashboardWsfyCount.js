@@ -10,13 +10,15 @@ import { fetchWhoIsSearching } from '../services/wsfyClient';
  * new member can immediately see potential matches. Server resolves identity (mapped > card >
  * self-provided), so this just needs to hand it the member's selfUserId + any known name.
  */
-const card = {
+// Long thin horizontal bar: text left, CTA right (owner 2026-07-16).
+const bar = {
   background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.875rem',
-  padding: '1.1rem 1.25rem', boxShadow: '0 4px 18px rgba(13,93,47,0.08)',
+  padding: '0.85rem 1.25rem', boxShadow: '0 4px 18px rgba(13,93,47,0.08)',
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
 };
 const cta = {
   display: 'inline-block', background: '#0d5d2f', color: '#fff', padding: '0.5rem 1rem',
-  borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 14,
+  borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 14, whiteSpace: 'nowrap',
 };
 
 export default function DashboardWsfyCount() {
@@ -50,11 +52,11 @@ export default function DashboardWsfyCount() {
   const noIdentity = !data || (data.matchedVia === 'self_provided' && !identity.name && searches === 0 && views === 0);
   if (noIdentity) {
     return (
-      <div style={card}>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>👀 See who’s searching for you</p>
-        <p style={{ margin: '0.35rem 0 0.9rem', color: '#475569', fontSize: 14, lineHeight: 1.5 }}>
-          Add your name and we’ll show you who’s already searched for and viewed your profile.
-        </p>
+      <div style={bar}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>👀 See who’s searching for you</p>
+          <p style={{ margin: '0.2rem 0 0', color: '#475569', fontSize: 13, lineHeight: 1.45 }}>Add your name to reveal who’s searched for and viewed you.</p>
+        </div>
         <Link to="/my-identity" style={cta}>Add your name →</Link>
       </div>
     );
@@ -62,33 +64,29 @@ export default function DashboardWsfyCount() {
 
   if (searches === 0 && views === 0) {
     return (
-      <div style={card}>
-        <p style={{ margin: 0, fontWeight: 800, fontSize: '1.05rem', color: '#0f172a' }}>👀 Who’s searching for you</p>
-        <p style={{ margin: '0.35rem 0 0', color: '#6b7280', fontSize: 14 }}>
-          No searches yet — we’re watching. You’ll see them here the moment someone looks you up.
-        </p>
+      <div style={bar}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>👀 Who’s searching for you</p>
+          <p style={{ margin: '0.2rem 0 0', color: '#6b7280', fontSize: 13 }}>No searches yet — we’re watching.</p>
+        </div>
+        <Link to="/who-is-searching" style={{ ...cta, background: '#f1f5f9', color: '#0d5d2f' }}>View →</Link>
       </div>
     );
   }
 
   return (
-    <div style={card}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 800, fontSize: '1.5rem', color: '#0d5d2f' }}>{searches}</span>
-        <span style={{ fontWeight: 700, color: '#0f172a' }}>{searches === 1 ? 'person searched' : 'people searched'} for you</span>
+    <div style={bar}>
+      <div style={{ minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontWeight: 800, fontSize: '1.35rem', color: '#0d5d2f' }}>{searches}</span>
+        <span style={{ fontWeight: 700, color: '#0f172a', fontSize: 14 }}>searched for you</span>
         {views > 0 && (
-          <span style={{ color: '#475569', fontSize: 14 }}>· <strong style={{ color: '#0f172a' }}>{views}</strong> viewed your profile</span>
+          <span style={{ color: '#475569', fontSize: 13 }}>· <strong style={{ color: '#0f172a' }}>{views}</strong> viewed your profile</span>
+        )}
+        {topSignal && (
+          <span style={{ color: '#334155', fontSize: 13, whiteSpace: 'nowrap' }}>· ⭐ {topSignal.reason}{isPaid && topSignal.name ? ` — ${topSignal.name}` : ''}</span>
         )}
       </div>
-      {topSignal && (
-        <p style={{ margin: '0.5rem 0 0', color: '#334155', fontSize: 14 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 7px', borderRadius: 999, background: '#dcfce7', color: '#166534', marginRight: 8 }}>⭐ key</span>
-          {topSignal.reason}{isPaid && topSignal.name ? ` — ${topSignal.name}` : ''}
-        </p>
-      )}
-      <div style={{ marginTop: '0.9rem' }}>
-        <Link to="/who-is-searching" style={cta}>See who →</Link>
-      </div>
+      <Link to="/who-is-searching" style={cta}>See who →</Link>
     </div>
   );
 }

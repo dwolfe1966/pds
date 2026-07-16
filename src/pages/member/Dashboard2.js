@@ -812,15 +812,11 @@ const Dashboard2 = () => {
         </section>
         </div>
 
-        {/* Who's-searching-for-you count — inbound-attention hook, full width below search. */}
-        <div style={{ marginBottom: '1rem' }}>
+        {/* Row 2 — Who's-searching-for-you (left, thin bar) · Identity Protection Score (right).
+            align:start keeps the WSFY bar thin next to the taller score ring. */}
+        <div data-dashboard-grid style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'start', marginBottom: '1rem' }}>
           <DashboardWsfyCount />
-        </div>
-
-        {/* Row 2 — Identity Protection Score (left) · Digital Footprint (right). */}
-        <div data-dashboard-grid style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'stretch', marginBottom: '1rem' }}>
           <ProtectionScoreRing />
-          <DigitalFootprint compact />
         </div>
 
         {/* Trial transparency banner — the upcoming first charge, front and center.
@@ -964,6 +960,10 @@ const Dashboard2 = () => {
           <ActivityTimeline items={activity} loading={reportsLoading || statsLoading} />
         </div>
 
+        {/* Digital Footprint — moved to the bottom, full width under reports & recent activity. */}
+        <div style={{ marginBottom: '1rem' }}>
+          <DigitalFootprint />
+        </div>
 
         {/* Honest disclosure footer */}
         <p style={{
