@@ -47,11 +47,35 @@ Owner: "Bulk IDI ask will be hard." So we do NOT gate on it. Two separate proble
   and BC call volume. Start narrow (top names × top cities), widen as it proves out.
 - **Decision:** ship (a) [done] + build (b). Do NOT wait on bulk IDI.
 
-## NEXT (start here)
-1. Scope the **BC server-side-teaser ask** (Vercel→BC teaser search; small, not bulk) — hand to
-   [[project bc-asks-register]] / draft BC note.
-2. Wire the **"crawl = populate" lazy-pull** (SEO app calls BC teaser at render, caches to person_profiles).
-3. **Sitemap** the individual profiles (paginated) so they get indexed — currently name-level only.
+## Update 2026-07-16
+- **Geo pipeline bug FIXED** (`0bd3d7c`): captured teasers have NO top-level city/state — geo is a
+  location HISTORY in `locations`/`location` ("CITY, ST"). `upsertPersonProfiles` was reading
+  r.city/r.state (always empty) → every captured person stored NULL geo → name-in-city listing
+  (filters state+city) could never match. Added `primaryCityState()` (canonical = most-recent =
+  locations[0]); backfilled the 31-row corpus. All 31 now have geo.
+- **BC ask registered = `SEO-TEASER`** (drafted, NOT sent; doc BC_CONSUMER_FEATURE_ASKS.md). KEY
+  finding: the blocker is **Cloudflare Turnstile at the front door**, NOT password captcha (which is
+  off) — a headless server fetch 412s at Turnstile (evidence: sweep-profiles.mjs must run HEADED=1).
+  So the ask = "let our SEO backend through the bot gate" (API key/bearer, since Vercel has no stable
+  egress IP for allowlisting). CAVEAT flagged: IDI's standard T&C may prohibit automated ingestion
+  (separate clause from public-display) — verify the bespoke grant covers server-side ingestion
+  BEFORE scaling lazy-pull. See [[project_seo_idi_display_license]].
+- **Owner decision: profile spread = "canonical page, listed on every city."** ONE profile page per
+  person (at canonical/current city), but LISTED on every city hub in their location history (each
+  hub links to the single canonical profile). No duplicate profile pages. Requires storing the full
+  location history queryably → started `loc_tokens text[]` (GIN-indexed) on person_profiles + a
+  `primaryCityState` sibling to build all tokens. **loc_tokens WORK IS INCOMPLETE** (column+index
+  added to Neon; upsert not yet writing tokens; getCapturedPeople not yet filtering by
+  `loc_tokens @> [city|state]`; name-page link not yet using canonical path). Resume here if
+  continuing lazy-pull.
+
+## NEXT (start here) — but note SEO indexing took priority (see [[project_seo_indexing_incident]])
+1. Wire the **"crawl = populate" lazy-pull** — BLOCKED on `SEO-TEASER` (BC must open the Turnstile
+   gate) AND on confirming IDI ingestion rights. Don't build until both clear.
+2. Finish the **loc_tokens** work above (canonical-page-listed-on-every-city).
+3. Profiles into the sitemap: **DEFERRED** — after the 7/13 indexing incident we retreated to a
+   ~1000-URL conservative sitemap. Do NOT add profile URLs until they carry real content AND the
+   domain is being crawled again.
 4. Thin-content gate (don't generate near-empty profiles).
 
 Relates to [[project_seo_live_idlookup_me]], [[project_seo_content_augmentation]],
