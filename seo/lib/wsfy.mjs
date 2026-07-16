@@ -98,26 +98,29 @@ async function resolveSubjectIdentity(identity) {
   const selfUserId = identity.selfUserId || null;
   if (selfUserId) {
     try {
-      const rows = await sql`SELECT self_person FROM member_enrichment WHERE user_id = ${selfUserId}`;
-      const sp = rows[0] && rows[0].self_person;
+      const rows = await sql`SELECT self_person, attributes, city, state FROM member_enrichment WHERE user_id = ${selfUserId}`;
+      const row = rows[0];
+      // (1) MAPPED IDENTITY — the confirmed self-identify record. Highest precision (real record,
+      // incl. middle names) → exact result-matches + overlap affinities.
+      const sp = row && row.self_person;
       if (sp && typeof sp === 'object' && sp.name) {
-        return {
-          name: sp.name,
-          city: sp.city || identity.city || '',
-          state: sp.state || identity.state || '',
-          selfUserId,
-          source: 'self_identify',
-        };
+        return { name: sp.name, city: sp.city || identity.city || '', state: sp.state || identity.state || '', selfUserId, source: 'mapped_identity' };
       }
-    } catch { /* table absent or row missing — fall through to the account name */ }
+      // (2) CARD INFO — the cardholder name captured at checkout (stored in attributes). Their real
+      // name for the vast majority of members, available even when they never map.
+      const attr = (row && row.attributes && typeof row.attributes === 'object') ? row.attributes : {};
+      if (attr.cardName) {
+        return { name: attr.cardName, city: attr.cardCity || row.city || identity.city || '', state: attr.cardState || row.state || identity.state || '', selfUserId, source: 'card_info' };
+      }
+      // (3) SELF-PROVIDED — a name the member gave about themselves in any form (stored).
+      if (attr.providedName) {
+        return { name: attr.providedName, city: attr.providedCity || row.city || identity.city || '', state: attr.providedState || row.state || identity.state || '', selfUserId, source: 'self_provided' };
+      }
+    } catch { /* table absent or row missing — fall through to the live self-provided value */ }
   }
-  return {
-    name: identity.name || '',
-    city: identity.city || '',
-    state: identity.state || '',
-    selfUserId,
-    source: 'account_name',
-  };
+  // (3, live) SELF-PROVIDED, client-passed. Never the account fullName (that's the search TARGET) —
+  // callers must pass the member's OWN name here.
+  return { name: identity.name || '', city: identity.city || '', state: identity.state || '', selfUserId, source: 'self_provided' };
 }
 
 // The SUBJECT's own enrichment — needed for OVERLAP affinities (same high school/college/employer).

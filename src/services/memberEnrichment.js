@@ -94,6 +94,28 @@ function post(payload) {
 }
 
 /**
+ * Store the member's OWN form-provided identity info (owner 2026-07-16) so WSFY has a name to match
+ * on even when they never map an identity. Persisted under `attributes` (merged server-side), keyed
+ * by the member's userId. WSFY hierarchy: mapped self-identify > cardName > providedName. Never send
+ * the search-target name here — only the member's own (cardholder / self-entered) name.
+ * @param {object} info  { cardName, cardCity, cardState, providedName, providedCity, providedState }
+ */
+export function saveIdentityFormInfo(info = {}) {
+  const userId = currentUserId();
+  if (!userId) return;
+  const attributes = {};
+  const clean = (v) => (v == null ? '' : String(v).trim());
+  if (clean(info.cardName)) attributes.cardName = clean(info.cardName);
+  if (clean(info.cardCity)) attributes.cardCity = clean(info.cardCity);
+  if (clean(info.cardState)) attributes.cardState = clean(info.cardState).toUpperCase();
+  if (clean(info.providedName)) attributes.providedName = clean(info.providedName);
+  if (clean(info.providedCity)) attributes.providedCity = clean(info.providedCity);
+  if (clean(info.providedState)) attributes.providedState = clean(info.providedState).toUpperCase();
+  if (!Object.keys(attributes).length) return;
+  post({ userId, attributes, source: 'form-capture' });
+}
+
+/**
  * Cross-device read of the member's mapped identity from the server, refreshing the local mirror.
  * Returns the identity summary (or null). Keyed on the member's own (opaque) BC userId.
  */

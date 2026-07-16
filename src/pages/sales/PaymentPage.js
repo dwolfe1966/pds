@@ -7,6 +7,7 @@ import IdentityPaymentTeaser from '../../components/IdentityPaymentTeaser';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
+import { saveIdentityFormInfo } from '../../services/memberEnrichment';
 import { track, buildReferQueryString } from '../../services/trackingService';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
@@ -601,6 +602,10 @@ const PaymentPage = () => {
       setConfirmedOrderId(verifiedOrder?._id || verifiedOrder?.id || resolvedReportId || null);
       setSuccess(true);
       setSubscription?.(verifiedSubscription);
+      // Store the cardholder's OWN name so WSFY can match this member against searches even if they
+      // never map an identity (owner 2026-07-16 hierarchy: mapped > card > self-provided). This is
+      // the member's real name — distinct from the search TARGET (selectedPerson).
+      try { saveIdentityFormInfo({ cardName: `${form.billingFirstName.trim()} ${form.billingLastName.trim()}`.trim() }); } catch { /* best-effort */ }
       // Bug #38 (2026-05-29): the success screen is much shorter than the
       // payment form, so without this the user lands on the page footer.
       // Scroll to top so the confirmation is what they see.
