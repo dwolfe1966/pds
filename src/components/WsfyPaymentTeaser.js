@@ -39,6 +39,7 @@ export default function WsfyPaymentTeaser() {
   }, [identity]);
 
   const count = (data && data.count) || 0;
+  const highlights = (data && Array.isArray(data.highlights)) ? data.highlights : [];
   const lines = (data && data.teaseSummary && data.teaseSummary.lines) || [];
   const rows = (data && data.events) ? data.events.slice(0, 2) : [];
 
@@ -50,9 +51,24 @@ export default function WsfyPaymentTeaser() {
           ? `${count} ${count === 1 ? 'person is' : 'people are'} searching for you`
           : 'See who’s searching for you'}
       </h2>
-      {lines.length > 0 && (
+      {highlights.length > 0 ? (
+        // Specific, named callouts — the enriched payoff (same-state count, school/employer overlaps).
+        <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
+          {highlights.map((h) => {
+            const sp = h.text.indexOf(' ');
+            const lead = sp > 0 ? h.text.slice(0, sp) : h.text;
+            const rest = sp > 0 ? h.text.slice(sp) : '';
+            return (
+              <div key={h.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#334155' }}>
+                <span aria-hidden="true" style={{ fontSize: 15 }}>{h.icon}</span>
+                <span><strong style={{ color: '#0f172a', fontWeight: 800 }}>{lead}</strong>{rest}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : lines.length > 0 ? (
         <p style={{ margin: '6px 0 0', color: '#475569', fontSize: 14, lineHeight: 1.5 }}>{lines.join('  ·  ')}</p>
-      )}
+      ) : null}
 
       {rows.length > 0 && (
         <div style={{ marginTop: 14, background: '#f8faf9', border: '1px solid #eef2f0', borderRadius: 10, padding: '10px 12px' }}>

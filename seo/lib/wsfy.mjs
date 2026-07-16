@@ -35,6 +35,7 @@ function maskLabel(name) {
 
 function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function plural(n, one, many) { return n === 1 ? one : (many || `${one}s`); }
+function titleCase(s) { return s ? String(s).trim().split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : ''; }
 
 // Suppression hook (opt-out). Wire to the IDI/index opt-out list in a follow-up; for now
 // nothing is suppressed. Kept as a seam so the reveal respects opt-out when it lands.
@@ -128,7 +129,7 @@ async function fetchSubjectEnrichment(userId) {
   if (!userId) return null;
   try {
     const rows = await sql`
-      SELECT occupation, employer, high_school_norm, college_norm, relatives
+      SELECT occupation, employer, high_school, high_school_norm, college, college_norm, relatives
       FROM member_enrichment WHERE user_id = ${userId}`;
     return rows[0] || null;
   } catch {
@@ -301,14 +302,18 @@ export async function buildWsfySummary(identity, opts = {}) {
   const rel = visible.filter((g) => aff.get(g.searcher_key).tags.includes('relative'));
   if (rel.length) { lines.push(`${rel.length} who may be ${rel.length === 1 ? 'a relative' : 'relatives'}`); take(rel); }
 
-  // 1b. Shared history (user-provided overlaps): high school, college, employer.
+  // 1b. Shared history (user-provided overlaps): high school, college, employer — NAMED when the
+  // subject's own institution is known (it's their own data), else generic.
+  const collegeName = (subjE && (subjE.college || titleCase(subjE.college_norm))) || '';
+  const hsName = (subjE && (subjE.high_school || titleCase(subjE.high_school_norm))) || '';
+  const employerName = (subjE && subjE.employer) || '';
   const byTag = (tag) => visible.filter((g) => !used.has(g.searcher_key) && aff.get(g.searcher_key).tags.includes(tag));
   const hs = byTag('high_school');
-  if (hs.length) { lines.push(`${hs.length} who went to your high school`); take(hs); }
+  if (hs.length) { lines.push(`${hs.length} who went to ${hsName || 'your high school'}`); take(hs); }
   const col = byTag('college');
-  if (col.length) { lines.push(`${col.length} who went to your college`); take(col); }
+  if (col.length) { lines.push(`${col.length} who went to ${collegeName || 'your college'}`); take(col); }
   const colleague = byTag('colleague');
-  if (colleague.length) { lines.push(`${colleague.length} who may be ${colleague.length === 1 ? 'a colleague' : 'colleagues'}`); take(colleague); }
+  if (colleague.length) { lines.push(employerName ? `${colleague.length} who worked at ${employerName}` : `${colleague.length} who may be ${colleague.length === 1 ? 'a colleague' : 'colleagues'}`); take(colleague); }
 
   // 2. In your area (subject's own city).
   const loc = visible.filter((g) => !used.has(g.searcher_key) && aff.get(g.searcher_key).tags.includes('local'));
@@ -335,5 +340,22 @@ export async function buildWsfySummary(identity, opts = {}) {
   const remainder = count - used.size;
   if (remainder > 0) lines.push(`and ${remainder} more`);
 
-  return { count, tier: paid ? 'paid' : 'free', matchedVia: subj.source, teaseSummary: { headline, lines }, events };
+  // ── Highlights: the specific, named callouts for the payment teaser (owner 2026-07-16). Computed
+  // over ALL matched searchers (not de-duped via `used`), each a standalone "why they matter" chip.
+  const tagCount = (tag) => visible.filter((g) => aff.get(g.searcher_key).tags.includes(tag)).length;
+  const sameStateCount = state ? visible.filter((g) => (g.searcher_state || '').toUpperCase() === state).length : 0;
+  const highlights = [];
+  const relTotal = tagCount('relative');
+  if (relTotal) highlights.push({ key: 'relative', icon: '👪', text: `${relTotal} may be ${relTotal === 1 ? 'a relative' : 'relatives'}` });
+  const colTotal = tagCount('college');
+  if (colTotal && collegeName) highlights.push({ key: 'college', icon: '🎓', text: `${colTotal} went to ${collegeName}` });
+  const hsTotal = tagCount('high_school');
+  if (hsTotal && hsName) highlights.push({ key: 'high_school', icon: '🏫', text: `${hsTotal} went to ${hsName}` });
+  const empTotal = tagCount('colleague');
+  if (empTotal && employerName) highlights.push({ key: 'colleague', icon: '💼', text: `${empTotal} worked at ${employerName}` });
+  if (sameStateCount) highlights.push({ key: 'same_state', icon: '📍', text: `${sameStateCount} searching from your state` });
+  const localTotal = tagCount('local');
+  if (localTotal) highlights.push({ key: 'local', icon: '🏠', text: `${localTotal} in your area` });
+
+  return { count, tier: paid ? 'paid' : 'free', matchedVia: subj.source, sameStateCount, highlights, teaseSummary: { headline, lines }, events };
 }
