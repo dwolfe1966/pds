@@ -13,6 +13,7 @@ import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
 import MyProfileModularLive from '../../components/MyProfileModularLive';
+import MyProfileSummary from '../../components/MyProfileSummary';
 import PageHeader, { PageShell } from '../../components/PageHeader';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -1126,6 +1127,15 @@ const AccountPage = () => {
             ))}
           </div>
 
+          {/* Per-tab value explainer — clarifies Overview (assessment) vs My Profile (workspace) vs Footprint. */}
+          <p style={{ margin: '-10px 0 20px', fontSize: 13, color: '#6b7280', lineHeight: 1.5, maxWidth: 660 }}>
+            {identitySubTab === 'profile'
+              ? 'Your identity protection at a glance — your score, what’s exposed, and quick actions.'
+              : identitySubTab === 'modular'
+                ? 'Curate what you show and hide what you don’t — protect or promote each part of your profile, and preview exactly how others see you.'
+                : 'Everywhere you appear online, and how to take control.'}
+          </p>
+
           {identitySubTab === 'modular' && <MyProfileModularLive />}
 
           {identitySubTab === 'footprint' && (
@@ -1282,34 +1292,11 @@ const AccountPage = () => {
                   the canonical, re-fetchable commerceContentId; /people/:id renders the paid
                   expose-all report we already ship. No reportId (mapped while free, then upgraded) →
                   re-run the identify flow, which auto-creates the report on the paid path. */}
-              {/* Report-as-profile: render the member's OWN report INLINE as their profile.
-                  In dev, mount it even without a reportId so the sample layout is previewable locally. */}
-              {(identity.reportId || process.env.NODE_ENV === 'development') ? (
-                <div style={{ marginTop: 16 }}>
-                  <MyProfileReport reportId={identity.reportId} />
-                </div>
-              ) : pullingReport ? (
-                <div style={{ marginTop: 16, border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Pull your full profile</div>
-                  <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
-                    Confirm your record to load everything public about you — it'll appear right here.
-                  </p>
-                  <SelfIdentifyCard forceShow autoStart
-                    prefill={{ name: identity.name, city: identity.city, state: identity.state, age: identity.age }}
-                    onComplete={(id) => { setPullingReport(false); setIdentity(id || getMappedIdentity()); }} />
-                </div>
-              ) : (
-                <div style={{ marginTop: 16, border: '1px solid #d7ddd9', borderRadius: 12, padding: '18px 20px', background: '#f8faf9' }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>📄 Your full background report</div>
-                  <p style={{ margin: '6px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
-                    Every address, phone, relative, and public record tied to your identity — the same report anyone else can pull on you.
-                  </p>
-                  <button type="button" onClick={() => setPullingReport(true)}
-                    style={{ background: '#0d5d2f', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-                    Pull my full report →
-                  </button>
-                </div>
-              )}
+              {/* My Profile connector — Overview links into the full modular profile workspace, which now
+                  owns the report-as-profile (no redundant full report here). Summary → workspace pattern. */}
+              <div style={{ marginTop: 16 }}>
+                <MyProfileSummary onManage={() => setIdentitySubTab('modular')} />
+              </div>
               {/* Optional, non-blocking ID verification — upgrade KBA/self-asserted mapping to ID-verified. */}
               <div style={{ marginTop: 12 }}>
                 {identity.verified === 'id' ? (
