@@ -283,7 +283,7 @@ const EventRow = ({ event, kind, isPaid }) => {
   const affinities = event.affinities || [];
   const chips = affinities.filter((a) => AFFINITY_CHIP[a]).map((a) => AFFINITY_CHIP[a]);
   if (affinities.includes('occupation')) chips.push(isPaid && event.occupation ? `💼 Works in ${event.occupation}` : '💼 Works in ••••••');
-  if (event.times > 1) chips.push(`🔁 Searched you ${event.times}×`);
+  if (event.times > 1) chips.push(`🔁 ${kind === 'viewers' ? 'Viewed' : 'Searched'} you ${event.times}×`);
   // De-dupe (relative can appear twice) + cap.
   const uniqueChips = [...new Set(chips)].slice(0, 5);
 
@@ -534,6 +534,7 @@ const WhoIsSearchingPage = () => {
   const [searchers, setSearchers] = useState([]);
   const [viewers, setViewers] = useState([]);
   const [teaseSummary, setTeaseSummary] = useState(null);
+  const [keySignals, setKeySignals] = useState([]);
 
   // The member's own identity — what we match incoming searches against.
   const identity = useMemo(() => {
@@ -549,15 +550,28 @@ const WhoIsSearchingPage = () => {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    if (!identity.name) { setSearchers([]); setViewers([]); setLoading(false); return () => {}; }
+    if (!identity.name) { setSearchers([]); setViewers([]); setKeySignals([]); setLoading(false); return () => {}; }
     fetchWhoIsSearching({ ...identity, tier: isPaid ? 'paid' : 'free' })
       .then((res) => {
         if (!alive) return;
         setSearchers(Array.isArray(res.events) ? res.events : []);
         setTeaseSummary(res.teaseSummary || null);
-        setViewers([]); // profile-view capture isn't live yet — honest empty state
+        setKeySignals(Array.isArray(res.keySignals) ? res.keySignals : []);
+        // Profile-view stream — map viewers into the shared EventRow shape.
+        const vw = (res.profileViews && Array.isArray(res.profileViews.viewers)) ? res.profileViews.viewers : [];
+        setViewers(vw.map((v, i) => ({
+          id: v.key || `v${i}`,
+          name: v.name,
+          firstName: isPaid && v.name ? String(v.name).trim().split(/\s+/)[0] : undefined,
+          city: '',
+          state: v.state || '',
+          timestamp: v.timestamp,
+          tier: v.isMember ? 'Basic' : 'Visitor',
+          times: v.times,
+          affinities: [],
+        })));
       })
-      .catch(() => { if (alive) { setSearchers([]); setViewers([]); setTeaseSummary(null); } })
+      .catch(() => { if (alive) { setSearchers([]); setViewers([]); setKeySignals([]); setTeaseSummary(null); } })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [identity, isPaid]);
@@ -600,6 +614,26 @@ const WhoIsSearchingPage = () => {
         </div>
       )}
 
+
+      {/* Key signals — the high-precision / high-value matches, elevated from the broad count.
+          Reasons are non-PII (safe on free tier); the confidence badge shows how sure we are. */}
+      {!loading && keySignals.length > 0 && (
+        <section style={{ marginBottom: '1.25rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.75rem', padding: '1rem 1.25rem', boxShadow: '0 4px 18px rgba(13,93,47,0.08)' }}>
+          <p style={{ margin: '0 0 0.6rem', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#0d5d2f' }}>⭐ Key signals</p>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {keySignals.slice(0, 6).map((k) => {
+              const cc = k.confidence === 'high' ? { bg: '#dcfce7', fg: '#166534' } : k.confidence === 'medium' ? { bg: '#fef9c3', fg: '#854d0e' } : { bg: '#f1f5f9', fg: '#475569' };
+              return (
+                <div key={k.key} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#334155' }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', padding: '2px 7px', borderRadius: 999, background: cc.bg, color: cc.fg }}>{k.confidence}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}><strong style={{ color: '#0f172a' }}>{k.reason}</strong>{isPaid && k.name ? ` — ${k.name}` : ''}</span>
+                  {k.searchType && <span style={{ color: '#6b7280', fontSize: 12, whiteSpace: 'nowrap' }}>{k.searchType}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Tab bar */}
       <div className={styles.tabBar} role="tablist">

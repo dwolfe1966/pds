@@ -11,6 +11,7 @@ import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import ExposureTile from '../../components/ExposureTile';
 import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
+import DashboardWsfyCount from '../../components/DashboardWsfyCount';
 import PageHeader from '../../components/PageHeader';
 import IdentityOnboardingModal from '../../components/IdentityOnboardingModal';
 
@@ -809,6 +810,11 @@ const Dashboard2 = () => {
             ))}
           </div>
         </section>
+        </div>
+
+        {/* Who's-searching-for-you count — inbound-attention hook, full width below search. */}
+        <div style={{ marginBottom: '1rem' }}>
+          <DashboardWsfyCount />
         </div>
 
         {/* Row 2 — Identity Protection Score (left) · Digital Footprint (right). */}
