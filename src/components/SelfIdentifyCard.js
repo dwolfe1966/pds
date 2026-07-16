@@ -209,8 +209,8 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
   };
 
   // Cap retries: decoys are drawn from public data, so unlimited attempts make the KBA gate nearly
-  // free to brute-force. 3 tries, then lock this session (they can use the ID scan or come back later).
-  const KBA_MAX_ATTEMPTS = 3;
+  // free to brute-force. 5 tries, then lock this session → point them to the ID scan or CSR.
+  const KBA_MAX_ATTEMPTS = 5;
   const kbaLocked = kbaAttempts >= KBA_MAX_ATTEMPTS;
 
   const submitKba = () => {
@@ -220,7 +220,7 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
       const next = kbaAttempts + 1;
       setKbaAttempts(next);
       setKbaError(next >= KBA_MAX_ATTEMPTS
-        ? "Too many incorrect attempts. Verify with your ID scan, or try again later."
+        ? "Too many incorrect attempts. Verify with your ID scan below, or contact support and we'll confirm your identity."
         : `That doesn't match your record. Please try again. (${KBA_MAX_ATTEMPTS - next} left)`);
       return;
     }
@@ -321,6 +321,11 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
             style={{ background: 'none', border: 'none', color: GREEN, fontSize: 13, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
             🛡️ Verify with your license instead
           </button>
+          {kbaLocked && (
+            <a href="/contact" style={{ color: GREEN, fontSize: 13, fontWeight: 700, textDecoration: 'underline' }}>
+              Contact support
+            </a>
+          )}
           {kbaAttempts >= 2 && (
             <button type="button" onClick={() => setStep('choose')}
               style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>

@@ -282,6 +282,7 @@ const EventRow = ({ event, kind, isPaid }) => {
 
   const affinities = event.affinities || [];
   const chips = affinities.filter((a) => AFFINITY_CHIP[a]).map((a) => AFFINITY_CHIP[a]);
+  if (event.mapped) chips.unshift('🛡️ Verified member'); // claimed their identity → name exposed
   if (affinities.includes('occupation')) chips.push(isPaid && event.occupation ? `💼 Works in ${event.occupation}` : '💼 Works in ••••••');
   if (event.times > 1) chips.push(`🔁 ${kind === 'viewers' ? 'Viewed' : 'Searched'} you ${event.times}×`);
   // De-dupe (relative can appear twice) + cap.

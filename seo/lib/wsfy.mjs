@@ -82,7 +82,8 @@ async function fetchEnrichment(userIds) {
   if (!ids.length) return new Map();
   try {
     const rows = await sql`
-      SELECT user_id, occupation, employer, relatives, high_school_norm, college_norm, past_locations
+      SELECT user_id, occupation, employer, relatives, high_school_norm, college_norm, past_locations,
+             (self_person <> '{}'::jsonb) AS mapped
       FROM member_enrichment WHERE user_id = ANY(${ids})`;
     return new Map(rows.map((r) => [r.user_id, r]));
   } catch {
@@ -178,16 +179,28 @@ async function queryProfileViewers({ subjNorm, subjFirst, subjLast, state, selfU
     if (!g.name && r.viewer_name) g.name = r.viewer_name;
     if (r.viewer_type === 'member') g.is_member = true;
   }
-  const suppressed = await getSuppressedUserIds([...byKey.values()].map((g) => g.viewer_user_id));
+  const allIds = [...byKey.values()].map((g) => g.viewer_user_id).filter(Boolean);
+  const suppressed = await getSuppressedUserIds(allIds);
+  // Mapped viewers (claimed their identity) are exposed by name even when reveal-gated.
+  let mappedSet = new Set();
+  if (allIds.length) {
+    try {
+      const mrows = await sql`SELECT user_id FROM member_enrichment WHERE user_id = ANY(${allIds}) AND self_person <> '{}'::jsonb`;
+      mappedSet = new Set(mrows.map((r) => r.user_id));
+    } catch { /* degrade — treat none as mapped */ }
+  }
   const viewers = [...byKey.values()]
     .filter((g) => !(g.viewer_user_id && suppressed.has(g.viewer_user_id)))
     .sort((a, b) => (a.last_at < b.last_at ? 1 : a.last_at > b.last_at ? -1 : 0))
     .slice(0, limit)
-    .map((g) => ({
-      key: String(g.viewer_key), times: g.times, timestamp: g.last_at, state: g.state || '',
-      isMember: g.is_member,
-      name: paid ? (g.name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.name),
-    }));
+    .map((g) => {
+      const mapped = !!(g.viewer_user_id && mappedSet.has(g.viewer_user_id));
+      return {
+        key: String(g.viewer_key), times: g.times, timestamp: g.last_at, state: g.state || '',
+        isMember: g.is_member, mapped,
+        name: (paid || mapped) ? (g.name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.name),
+      };
+    });
   return { count: viewers.length, viewers };
 }
 
@@ -322,6 +335,9 @@ export async function buildWsfySummary(identity, opts = {}) {
   for (const g of visible) {
     const tags = [];
     const e = g.searcher_user_id ? enrich.get(g.searcher_user_id) : null;
+    // A searcher who has CLAIMED their own identity is an identifiable community member — expose their
+    // name even to a reveal-gated subject (owner 2026-07-16). Suppression still drops "hidden" members.
+    g.mapped = !!(e && e.mapped);
     const sLast = lastToken(g.searcher_name);
     const relByName = !!(sLast && subjLast && sLast === subjLast); // shares your surname → likely family
     const relVerified = !!(e?.relatives && Array.isArray(e.relatives) && e.relatives.some((n) => norm(n) === subjNorm));
@@ -389,8 +405,8 @@ export async function buildWsfySummary(identity, opts = {}) {
     keySignals.push({
       key: String(g.searcher_key), confidence: g.confidence, reason: REASON_FOR(g, tags),
       affinities: tags, times: g.times, searchType: TYPE_LABEL[g.last_type] || cap(g.last_type) || 'Name',
-      timestamp: g.last_at, state: g.searcher_state || '',
-      name: reveal ? (g.searcher_name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.searcher_name),
+      timestamp: g.last_at, state: g.searcher_state || '', mapped: !!g.mapped,
+      name: (reveal || g.mapped) ? (g.searcher_name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.searcher_name),
     });
   }
   keySignals.sort((a, b) => (CONF_RANK[b.confidence] - CONF_RANK[a.confidence]) || (a.timestamp < b.timestamp ? 1 : -1));
@@ -401,8 +417,8 @@ export async function buildWsfySummary(identity, opts = {}) {
     const tier = isMember ? 'Basic' : 'Visitor';
     const searchType = TYPE_LABEL[r.last_type] || cap(r.last_type) || 'Name';
     const a = aff.get(r.searcher_key) || { tags: [] };
-    const base = { id: String(r.searcher_key || i), timestamp: r.last_at, searchType, tier, times: r.times, affinities: a.tags, confidence: r.confidence };
-    if (reveal) {
+    const base = { id: String(r.searcher_key || i), timestamp: r.last_at, searchType, tier, times: r.times, affinities: a.tags, confidence: r.confidence, mapped: !!r.mapped };
+    if (reveal || r.mapped) {
       return {
         ...base,
         name: r.searcher_name || (isMember ? 'Member' : 'Anonymous visitor'),
