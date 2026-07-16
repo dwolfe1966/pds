@@ -67,4 +67,18 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 - **WSFY Phase 2b — combine WSFY + identity value props into ONE teaser** (owner 2026-07-14). Today the payment page branches reason=wsfy ("who's searching for you") vs reason=identity ("control what's exposed") into two teasers (WsfyPaymentTeaser / IdentityPaymentTeaser). Later, merge into a single unified teaser/value-prop (your record + who's looking + control), since they're the same identity-protection story. Note only — do not build yet.
 - **WSFY page 'recent searches' → vCard visual metaphor** (owner 2026-07-14). WhoIsSearchingPage EventRow should adopt the vCard look (more obfuscated). Assume MANY searchers map themselves to records, so we can tease far more per searcher: a relative, a past location, occupation/school/employer overlap, etc. Depends on searcher enrichment (member_enrichment) being populated.
 
+- **Identity verification gate — LARGELY ADDRESSED 2026-07-16 (commit `d33fa72`, consumer bundle
+  public.91aa05df.js→368fb6a5.js NOT yet on BC).** Advisor-scoped: gate the surfaces that expose THIRD
+  PARTIES, NOT report-viewing (that's the product). (1) WSFY real-name REVEAL gated server-side in
+  buildWsfySummary — names unmask only when `matchedVia==='mapped_identity'` (mapping required KBA);
+  paid-but-unmapped gets the masked tease + `revealGated` flag → closes "type any name → see who's
+  searching". (2) Exposure CONTROLS: /api/suppression POST requires `hasMappedIdentity` → 403 else.
+  (3) KBA retries CAPPED at 3 (were unlimited vs public-data decoys). (4) Client: WhoIsSearchingPage
+  "Claim your record to reveal names" prompt when revealGated; IdentityOnboardingModal now leads with
+  the real WSFY count. **DECISION I MADE (owner was away — CONFIRM):** reveal requires MAPPED-only
+  (not card-tier); `REVEAL_REQUIRES` const in wsfy.mjs is one line to also accept card_info. **CEILING
+  (still open):** tier + selfUserId are client-asserted (app-key only) → full closure needs WSFY
+  auth-hardening (derive both from a trusted BC token); this NARROWS the hole, doesn't fully close it.
+  **BEHAVIOR CHANGE:** paid members who reached WSFY via card/self-provided drop from reveal → tease.
+  See [[project_wsfy_self_build]]. Original note (for context):
 - **Identity mapping has NO identity verification (owner 2026-07-14, MUST-fix before wide launch).** Today the self-identify flow ([[project_identity_management]] / `SelfIdentifyCard`) lets a member map to ANY public record just by selecting it — we never prove they ARE that person. This is a real privacy/security hole: someone could claim a stranger's record and then see that person's WSFY activity ("who's searching for you"), exposure profile, per-item hide controls, and pull the full background report on them. Need a verification step during mapping before granting the identity dashboard. **Options to scope:** knowledge-based verification (KBA — quiz on facts from the record: prior address, relative name, etc.), phone/SMS or email OTP to a contact on the record, doc/ID verification (heavier), or a BC-side identity-proofing capability if one exists/lands. Likely a **BC ask** for a proofing endpoint + our client flow. **How to apply:** gate the paid identity surfaces (report pull, WSFY reveal, exposure controls) behind verification; a mere name/city/age self-match is NOT proof. Until built, treat mapping as unverified/self-asserted. See [[project_identity_management]], and the per-user auth gap in [[project_wsfy_self_build]] (WSFY-AUTH) — related but distinct (that's app-vs-user auth; this is are-you-really-this-record).
