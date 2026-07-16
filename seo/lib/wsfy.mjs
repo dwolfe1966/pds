@@ -138,9 +138,63 @@ async function fetchSubjectEnrichment(userId) {
 }
 
 /**
+ * "Who VIEWED my profile" reverse-join — a distinct, higher-intent stream from searches (they opened
+ * the full profile). Matched on the viewed subject (exact norm, or same last + fuzzy first as the
+ * recall net), self-views excluded, suppressed viewers dropped. Free = masked, paid = named.
+ */
+async function queryProfileViewers({ subjNorm, subjFirst, subjLast, state, selfUserId, paid, limit = 200 }) {
+  if (!subjNorm) return { count: 0, viewers: [] };
+  const lastKey = subjLast || null;
+  let rows;
+  try {
+    rows = await sql`
+      SELECT pv.id, pv.viewer_type, pv.viewer_user_id, pv.session_id, pv.viewer_name, pv.viewer_first,
+             pv.viewer_city, pv.viewer_state, pv.subject_first, pv.source,
+             COALESCE(pv.viewed_at, pv.received_at) AS at,
+             COALESCE(pv.viewer_user_id, pv.session_id, pv.viewer_name_norm, pv.id::text) AS viewer_key,
+             (pv.subject_name_norm = ${subjNorm}) AS exact
+      FROM profile_views pv
+      WHERE (pv.subject_name_norm = ${subjNorm}
+              OR (${lastKey}::text IS NOT NULL AND pv.subject_last = ${lastKey}))
+        AND (${state}::text IS NULL OR pv.subject_state = ${state} OR pv.subject_state IS NULL)
+        AND (${selfUserId}::text IS NULL OR pv.viewer_user_id IS DISTINCT FROM ${selfUserId})
+      ORDER BY at DESC
+      LIMIT 2000`;
+  } catch {
+    return { count: 0, viewers: [] }; // table absent — degrade
+  }
+  const matched = rows.filter((r) => r.exact || fuzzyFirst(r.subject_first, subjFirst));
+  const byKey = new Map();
+  for (const r of matched) {
+    let g = byKey.get(r.viewer_key);
+    if (!g) {
+      g = { viewer_key: r.viewer_key, viewer_user_id: r.viewer_user_id, name: r.viewer_name,
+        first: r.viewer_first, city: r.viewer_city, state: r.viewer_state,
+        is_member: r.viewer_type === 'member', times: 0, last_at: r.at };
+      byKey.set(r.viewer_key, g);
+    }
+    g.times += 1;
+    if (r.at > g.last_at) g.last_at = r.at;
+    if (!g.name && r.viewer_name) g.name = r.viewer_name;
+    if (r.viewer_type === 'member') g.is_member = true;
+  }
+  const suppressed = await getSuppressedUserIds([...byKey.values()].map((g) => g.viewer_user_id));
+  const viewers = [...byKey.values()]
+    .filter((g) => !(g.viewer_user_id && suppressed.has(g.viewer_user_id)))
+    .sort((a, b) => (a.last_at < b.last_at ? 1 : a.last_at > b.last_at ? -1 : 0))
+    .slice(0, limit)
+    .map((g) => ({
+      key: String(g.viewer_key), times: g.times, timestamp: g.last_at, state: g.state || '',
+      isMember: g.is_member,
+      name: paid ? (g.name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.name),
+    }));
+  return { count: viewers.length, viewers };
+}
+
+/**
  * @param {object} identity  { name, city, state, selfUserId }
  * @param {object} opts       { tier: 'free'|'paid', limit }
- * @returns {Promise<object>} { count, tier, teaseSummary:{headline,lines[]}, events[] }
+ * @returns {Promise<object>} { count, keySignals[], profileViews:{count,viewers[]}, teaseSummary, events[] }
  */
 export async function buildWsfySummary(identity, opts = {}) {
   if (!sql) throw new Error('no WSFY DB configured');
@@ -417,9 +471,12 @@ export async function buildWsfySummary(identity, opts = {}) {
   const localTotal = tagCount('local');
   if (localTotal) highlights.push({ key: 'local', icon: '🏠', text: `${localTotal} in your area` });
 
+  // "Who viewed my profile" — a distinct higher-intent stream, matched on the same resolved subject.
+  const profileViews = await queryProfileViewers({ subjNorm, subjFirst, subjLast, state, selfUserId, paid });
+
   return {
     count, tier: paid ? 'paid' : 'free', matchedVia: subj.source, sameStateCount,
-    keySignalCount: keySignals.length, keySignals, highlights,
+    keySignalCount: keySignals.length, keySignals, highlights, profileViews,
     teaseSummary: { headline, lines }, events,
   };
 }

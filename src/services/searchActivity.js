@@ -137,3 +137,46 @@ export function captureSearchActivity(p) {
     }).catch(() => { /* best-effort */ });
   } catch { /* fetch unavailable */ }
 }
+
+function viewEndpointUrl() {
+  if (process.env.REACT_APP_PROFILE_VIEW_URL) return process.env.REACT_APP_PROFILE_VIEW_URL;
+  if (process.env.REACT_APP_LEAD_CAPTURE_URL) {
+    return process.env.REACT_APP_LEAD_CAPTURE_URL.replace(/\/leads\/?$/, '/profile-view');
+  }
+  const base = process.env.REACT_APP_API_URL || 'http://localhost:3001/api/v1';
+  return `${base.replace(/\/$/, '')}/profile-view`;
+}
+
+/**
+ * Capture one PROFILE VIEW — a member opened someone's full profile/report (higher intent than a
+ * search). Fire-and-forget. Feeds "who viewed my profile": viewer = the current member
+ * (resolveSearcher), subject = the person viewed. Server drops self-views by userId.
+ * @param {object} p  { subject:{name|fullName, first|firstName, last|lastName, state, profileId}, source?, meta? }
+ */
+export function captureProfileView(p) {
+  if (!p || typeof p !== 'object' || !p.subject) return;
+  const s = p.subject;
+  const name = s.name || s.fullName || '';
+  if (!name) return;
+  const payload = {
+    viewer: resolveSearcher(),
+    subject: {
+      name,
+      first: s.first || s.firstName || null,
+      last: s.last || s.lastName || null,
+      state: s.state || null,
+      profileId: s.profileId || null,
+    },
+    source: p.source || 'app',
+    meta: p.meta || {},
+    ts: new Date().toISOString(),
+  };
+  try {
+    fetch(viewEndpointUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => { /* best-effort */ });
+  } catch { /* fetch unavailable */ }
+}

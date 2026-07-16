@@ -359,3 +359,40 @@ export async function insertSearchActivity(a) {
   }
   return activityId;
 }
+
+/**
+ * Record one PROFILE VIEW — someone opened a person's full profile/report (higher intent than a
+ * search). Feeds the "who viewed my profile" reverse-join. subject_* = the person viewed (the key
+ * to match "views of ME"); viewer_* = who did the viewing (member or anon).
+ * @param {object} v { viewerType, viewerUserId, sessionId, viewer:{name,firstName,city,state},
+ *   subject:{profileId,name,first,last,state}, source, ts, ip, userAgent, meta }
+ */
+export async function insertProfileView(v) {
+  if (!sql) throw new Error('no view DB configured');
+  const subj = v.subject && typeof v.subject === 'object' ? v.subject : {};
+  const subjName = subj.name || [subj.first, subj.last].filter(Boolean).join(' ') || '';
+  const subjNameNorm = norm(subjName);
+  if (!subjNameNorm) return null; // nothing to reverse-join on
+  const parts = subjNameNorm.split(' ');
+  const subjFirst = norm(subj.first) || parts[0] || '';
+  const subjLast = norm(subj.last) || (parts.length > 1 ? parts[parts.length - 1] : '');
+  const subjState = subj.state ? String(subj.state).trim().toUpperCase() : null;
+  const vr = v.viewer && typeof v.viewer === 'object' ? v.viewer : {};
+  const viewerName = vr.name || null;
+  const viewerState = vr.state ? String(vr.state).trim().toUpperCase() : null;
+  const rows = await sql`
+    INSERT INTO profile_views
+      (viewer_type, viewer_user_id, session_id, viewer_name, viewer_name_norm, viewer_first,
+       viewer_city, viewer_state, subject_profile_id, subject_name, subject_name_norm,
+       subject_first, subject_last, subject_state, source, viewed_at, ip, user_agent, meta)
+    VALUES (
+      ${v.viewerType || null}, ${v.viewerUserId || null}, ${v.sessionId || null},
+      ${viewerName}, ${viewerName ? norm(viewerName) : null}, ${vr.firstName || null},
+      ${vr.city || null}, ${viewerState},
+      ${subj.profileId || null}, ${subjName || null}, ${subjNameNorm},
+      ${subjFirst || null}, ${subjLast || null}, ${subjState},
+      ${v.source || null}, ${v.ts || null}, ${v.ip || null}, ${v.userAgent || null},
+      ${JSON.stringify(v.meta && typeof v.meta === 'object' ? v.meta : {})}::jsonb )
+    RETURNING id`;
+  return rows[0].id;
+}

@@ -8,6 +8,7 @@ import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../
 import ProfileView, { styles } from '../../components/ProfileView';
 import MyProfileModular from '../../components/MyProfileModular';
 import { enrichFromReport } from '../../services/memberEnrichment';
+import { captureProfileView } from '../../services/searchActivity';
 import { track } from '../../services/trackingService';
 
 /**
@@ -53,6 +54,32 @@ const SearchResultDetailPage = () => {
       track('report_view', { commerceContentId: id });
     }
   }, [id]);
+
+  // Capture a PROFILE VIEW (feeds "who viewed my profile"). One-shot per report. Skip self-views
+  // (viewing your OWN profile isn't a signal about you). Fire-and-forget, server-side only.
+  const viewedRef = useRef(false);
+  useEffect(() => {
+    if (viewedRef.current || !report) return;
+    let data;
+    try { data = extractAll(report); } catch { return; }
+    if (!data.fullName) return;
+    const nrm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    const memberName = user ? nrm(`${user.firstName || ''} ${user.lastName || ''}`) : '';
+    if (memberName && nrm(data.fullName) === memberName) return; // own profile — not signal
+    viewedRef.current = true;
+    const parts = String(data.fullName).trim().split(/\s+/);
+    const subjState = (Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state) || '';
+    captureProfileView({
+      subject: {
+        name: data.fullName,
+        first: parts[0] || null,
+        last: parts.length > 1 ? parts[parts.length - 1] : null,
+        state: subjState || null,
+        profileId: id || null,
+      },
+      source: 'app',
+    });
+  }, [report, user, id]);
 
   // ── Data fetching ────────────────────────────────────────────────────────
   useEffect(() => {
