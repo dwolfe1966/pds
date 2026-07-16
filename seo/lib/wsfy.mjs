@@ -89,6 +89,37 @@ async function fetchEnrichment(userIds) {
   }
 }
 
+// Resolve the effective subject identity for the reverse-join. Owner (2026-07-16): match WSFY to
+// the member's CONFIRMED self-identify record when they have one, else fall back to the loose
+// account name. self_person = { name, age, city, state } — the exact record they matched (incl.
+// middle names), so `sr.name_norm = subjNorm` result-matches hit the real person, not a generic
+// "First Last" that no result row equals. Unmapped members still match on their account name.
+async function resolveSubjectIdentity(identity) {
+  const selfUserId = identity.selfUserId || null;
+  if (selfUserId) {
+    try {
+      const rows = await sql`SELECT self_person FROM member_enrichment WHERE user_id = ${selfUserId}`;
+      const sp = rows[0] && rows[0].self_person;
+      if (sp && typeof sp === 'object' && sp.name) {
+        return {
+          name: sp.name,
+          city: sp.city || identity.city || '',
+          state: sp.state || identity.state || '',
+          selfUserId,
+          source: 'self_identify',
+        };
+      }
+    } catch { /* table absent or row missing — fall through to the account name */ }
+  }
+  return {
+    name: identity.name || '',
+    city: identity.city || '',
+    state: identity.state || '',
+    selfUserId,
+    source: 'account_name',
+  };
+}
+
 // The SUBJECT's own enrichment — needed for OVERLAP affinities (same high school/college/employer).
 async function fetchSubjectEnrichment(userId) {
   if (!userId) return null;
@@ -109,9 +140,11 @@ async function fetchSubjectEnrichment(userId) {
  */
 export async function buildWsfySummary(identity, opts = {}) {
   if (!sql) throw new Error('no WSFY DB configured');
-  const subjNorm = norm(`${identity.name || ''}`);
   const paid = opts.tier === 'paid';
-  if (!subjNorm) return { count: 0, tier: paid ? 'paid' : 'free', teaseSummary: { headline: 'No search activity yet', lines: [] }, events: [] };
+  // Subject identity: confirmed self-identify record when mapped, else the account name.
+  const subj = await resolveSubjectIdentity(identity);
+  const subjNorm = norm(`${subj.name || ''}`);
+  if (!subjNorm) return { count: 0, tier: paid ? 'paid' : 'free', matchedVia: subj.source, teaseSummary: { headline: 'No search activity yet', lines: [] }, events: [] };
 
   // Split subject → exact last + fuzzy first. `lastKey` null (no last name) disables the
   // term-last branch so we fall back to result-matches only.
@@ -120,8 +153,8 @@ export async function buildWsfySummary(identity, opts = {}) {
   const subjLast = parts.length > 1 ? parts[parts.length - 1] : '';
   const lastKey = subjLast || null;
 
-  const state = identity.state ? String(identity.state).trim().toUpperCase() : null;
-  const selfUserId = identity.selfUserId || null;
+  const state = subj.state ? String(subj.state).trim().toUpperCase() : null;
+  const selfUserId = subj.selfUserId || null;
 
   // Candidate rows: same LAST name typed (fuzzy first is filtered in JS below) OR the subject
   // appeared in a result set (exact). Self-searches excluded. Aggregated in JS after the fuzzy
@@ -182,7 +215,7 @@ export async function buildWsfySummary(identity, opts = {}) {
   // ── Affinity computation (Phase 2b) ──────────────────────────────────────
   // Per searcher, derive why they might matter to the subject. Corpus-derived signals need no
   // enrichment; occupation/verified-relative come from the enrichment seam when present.
-  const subjCityN = norm(identity.city || '');
+  const subjCityN = norm(subj.city || '');
   const memberIds = visible.filter((g) => g.is_member).map((g) => g.searcher_user_id);
   const [enrich, subjE, hiddenMap] = await Promise.all([
     fetchEnrichment(memberIds),
@@ -299,5 +332,5 @@ export async function buildWsfySummary(identity, opts = {}) {
   const remainder = count - used.size;
   if (remainder > 0) lines.push(`and ${remainder} more`);
 
-  return { count, tier: paid ? 'paid' : 'free', teaseSummary: { headline, lines }, events };
+  return { count, tier: paid ? 'paid' : 'free', matchedVia: subj.source, teaseSummary: { headline, lines }, events };
 }
