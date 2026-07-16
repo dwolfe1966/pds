@@ -113,14 +113,79 @@ forwardable session id could let idlookup.me do a server-side validation call as
 
 ---
 
+## SEO-TEASER — server-to-server call path for the teaser/preview search (SEO directory)
+
+**Registered 2026-07-16. Status: drafted, NOT yet sent.** Evidence = code/operational fact (below),
+not a live demo — like WSFY-AUTH and the WISFY/Alerts asks, this is a capability request, so the
+demo-gate does not apply. Sibling to WSFY-AUTH: both are **idlookup.me-backend** (Vercel + Neon) asks.
+
+**Use case — "lazy populate" for the public directory.** The programmatic-SEO people directory is live
+and indexable on idlookup.me (soon idlookup.ai/people), keyed off our Census name×city taxonomy. When
+Google crawls a directory page we've chosen to expose, our **server** wants to call BC's existing teaser
+search for that `name + state [+ city]`, cache the returned individuals into our Neon `person_profiles`
+table, and render crawlable profile pages. This lets us scale a public directory **without a bulk IDI
+data feed** — no new endpoint, no new fields, no bulk license: just a **server-callable path to the
+teaser we already use** in the consumer funnel.
+
+**The blocker (verified in code — this retires the "captcha is off, so this is unblocked" assumption).**
+Two *different* gates are easy to conflate:
+- BC's **`password.v0` captcha** is OFF on prod (2026-06-24) — that's the one in `apiWrapper._csrPost`'s
+  412 handler / `executePasswordCaptcha`. Not the blocker here.
+- **Cloudflare Turnstile / bot-protection at the front door** is STILL live and IS the blocker. Our
+  populate script header states it verbatim: *"Drives the REAL prod IIFE in a Playwright browser (which
+  clears Cloudflare Turnstile **where a raw server fetch 412s**)"* (`seo/scripts/sweep-profiles.mjs:5-6`).
+  The script must run **`HEADED=1` so a human can solve the Turnstile challenge**, and cools down +
+  relaunches a fresh browser session on a re-challenge burst (`:11-15`, `:80`, `:135-137`). So today the
+  teaser is reachable **only through a real browser**; a headless/server fetch is bounced by Turnstile.
+
+Net: the teaser endpoint already exists at the same prod URL and returns the shape we already consume
+— **we're not asking BC to build a server endpoint. We're asking BC to let our SEO server through the
+existing bot gate.** That is the whole ask.
+
+**The ask (one capability — a headless, server-callable path to the existing teaser).** Concretely, our
+Vercel/Neon SEO backend needs two things; please tell us the mechanism BC prefers for each:
+- **(a) A path through Turnstile for our server** — e.g. a bot-protection **exception/allowlist** for our
+  backend, or a header/token we present that Turnstile honors.
+- **(b) Whatever app-level credential the teaser needs absent a browser session** — API key / bearer
+  token / the semi-public app-key / other. (WSFY-AUTH is member-scoped; this is a *service* credential.)
+- ⚠️ **IP-allowlist caveat:** Vercel serverless functions **do not have stable egress IPs** by default, so
+  an IP allowlist is fragile for us unless BC allowlists a wide range or we front the calls with a
+  static-IP proxy. A **key/bearer** is more robust on our side — noting this so we pick a durable
+  mechanism up front.
+
+**Volume is bounded and controlled by us — the strongest "this is small" point.** Rendering uses ISR
+with a **60-day revalidate**, so it's **~one teaser call per name×city per 60 days**, and only for pages
+we deliberately expose via our own sitemap. We throttle the sweep to ~1 call / 4.5s. So this is not a
+firehose; the ceiling is set by our taxonomy + sitemap, not by crawler traffic.
+
+**Please also confirm:** (1) are **server-side teaser calls metered / billed differently** from consumer
+teaser calls, and (2) is there a **rate limit** we should design the populate cadence around?
+
+**Data shape — no new fields.** We consume the existing teaser identity shape: name, `age`/ageRange,
+location history (`CITY, ST`), relatives, and the per-person `*Count` / `has*` record signals (already
+adapted via `adaptTeaserResponse` → `adaptIdentity`). Displaying this is in-bounds under the existing
+IDI public-display + indexing license — this ask is purely about the **call path**, not the data.
+
+| | |
+|---|---|
+| **Blocked capability** | Server-side "lazy populate" of the public SEO directory from BC teaser (no bulk IDI feed) |
+| **BC dependency** | (a) a Turnstile/bot-gate path for our SEO server + (b) a service credential (key/bearer preferred over IP-allowlist) to call the **existing** teaser headlessly |
+| **Evidence** | `seo/scripts/sweep-profiles.mjs:5-6` — *"a raw server fetch 412s"* at Cloudflare Turnstile; must run `HEADED=1` for a human to solve it (`:11-15`). Distinct from BC `password.v0` captcha (off on prod). |
+| **Open questions** | (1) preferred auth mechanism (API key / bearer / app-key / IP-allowlist)? (2) are server-side teaser calls metered/billed differently? (3) rate limit to design around? |
+
+---
+
 ## Summary
 
 | Cluster | BC capabilities needed | BC has | Net new |
 |---|---|---|---|
 | ~~**WISFY** (data)~~ | ~~inbound-activity finder~~ — **superseded 2026-07-14, self-hosted on idlookup.me** | — | ~~1~~ → **0** |
 | **WSFY-AUTH** | verifiable member-auth token (signed JWT: HMAC or RS256+JWKS) w/ `userId`+`name`+`paid` | cookie session only, no client JWT | **1** |
+| **SEO-TEASER** | server-to-server call path to the **existing** teaser (Turnstile exception + a service key/bearer) | teaser is browser-only, Cloudflare-Turnstile-gated | **1** |
 | **Alerts** | watch CRUD · monitoring · notification feed · delivery | `managedContact.*` (addresses) | **4** |
 
 The Alerts cluster is **launch-deferrable** (ships today as an honest "coming soon" preview). **WSFY-AUTH**
 is the live blocker for the WSFY reveal-identity tier once the idlookup.me backend is serving real searcher
-names. Owned/tracked by the `bc-asks-register` agent alongside the CSR asks.
+names. **SEO-TEASER** unblocks scaling the public directory without a bulk IDI feed — bounded to ~1 teaser
+call / name×city / 60 days by ISR + our sitemap; today the populate sweep must run in a HEADED browser to
+clear Cloudflare Turnstile. Owned/tracked by the `bc-asks-register` agent alongside the CSR asks.
