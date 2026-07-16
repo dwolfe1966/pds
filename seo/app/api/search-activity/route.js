@@ -1,7 +1,7 @@
 // POST /api/search-activity — the consumer posts a copy of every search (terms + result set)
 // here after BC returns. Powers WSFY ("Who's Searching For You"), built by us, independent of
 // BC. Phase 1 = ingest only. Setup: run seo/db/search-activity-schema.sql once on Neon.
-import { insertSearchActivity, getUserSearchHistory, deleteUserSearchActivity, clearUserSearchActivity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
+import { insertSearchActivity, upsertPersonProfiles, getUserSearchHistory, deleteUserSearchActivity, clearUserSearchActivity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
@@ -99,6 +99,8 @@ export async function POST(req) {
       userAgent: req.headers.get('user-agent') || null,
       meta: body.meta || {},
     });
+    // Capture the teaser data into the per-person corpus (best-effort; keyed by stable profile_id).
+    await upsertPersonProfiles(results);
     return new Response(JSON.stringify({ ok: true, id }), { status: 200, headers });
   } catch (e) {
     return new Response(JSON.stringify({ error: 'persist failed' }), { status: 500, headers });

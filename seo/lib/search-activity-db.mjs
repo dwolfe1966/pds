@@ -202,6 +202,48 @@ export function norm(s) {
 }
 
 /**
+ * Capture teaser data one row PER PERSON, keyed by a stable profile_id (norm(name)|STATE|norm(city)) —
+ * extId is ephemeral. Upserted from every search's result set so we accumulate a person corpus we own
+ * (the source for public, crawlable Others-Profile pages). Deduped per batch; single round trip.
+ */
+export async function upsertPersonProfiles(results) {
+  if (!sql || !Array.isArray(results) || !results.length) return;
+  const byId = new Map();
+  for (const r of results.slice(0, 40)) {
+    const name = (r && (r.name || r.fullName)) || '';
+    const nn = norm(name);
+    if (!nn) continue;
+    const city = (r.city || '') && String(r.city);
+    const state = r.state ? String(r.state).trim().toUpperCase() : '';
+    const parts = String(name).trim().split(/\s+/);
+    const profileId = [nn, state, norm(city)].join('|');
+    const teaser = (r.detail && typeof r.detail === 'object') ? r.detail : (typeof r === 'object' ? r : {});
+    byId.set(profileId, {
+      profile_id: profileId, name, name_norm: nn,
+      first_norm: norm(parts[0] || ''), last_norm: norm(parts.length > 1 ? parts[parts.length - 1] : ''),
+      city: city || null, state: state || null, age: r.age != null ? String(r.age) : null, teaser,
+    });
+  }
+  const payload = [...byId.values()];
+  if (!payload.length) return;
+  try {
+    await sql`
+      INSERT INTO person_profiles (profile_id, name, name_norm, first_norm, last_norm, city, state, age, teaser, search_count, first_seen, last_seen)
+      SELECT x.profile_id, x.name, x.name_norm, x.first_norm, x.last_norm, x.city, x.state, x.age, x.teaser, 1, now(), now()
+      FROM jsonb_to_recordset(${JSON.stringify(payload)}::jsonb)
+        AS x(profile_id text, name text, name_norm text, first_norm text, last_norm text, city text, state text, age text, teaser jsonb)
+      ON CONFLICT (profile_id) DO UPDATE SET
+        teaser = EXCLUDED.teaser,
+        name = COALESCE(EXCLUDED.name, person_profiles.name),
+        age = COALESCE(EXCLUDED.age, person_profiles.age),
+        city = COALESCE(EXCLUDED.city, person_profiles.city),
+        state = COALESCE(EXCLUDED.state, person_profiles.state),
+        search_count = person_profiles.search_count + 1,
+        last_seen = now()`;
+  } catch { /* best-effort corpus capture */ }
+}
+
+/**
  * Insert one search + its result rows. Two round trips (activity, then a single multi-row
  * insert for results via jsonb_to_recordset). Returns the new activity id.
  * @param {object} a
