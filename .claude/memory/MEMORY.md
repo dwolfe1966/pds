@@ -89,3 +89,4 @@
 - [WSFY self-build](project_wsfy_self_build.md) — build Who's-Searching-For-You ourselves (BC has none); Phase 1 ingest + Phase 2 tiered reveal + Phase 2b affinity tease SHIPPED (bundle not yet on BC); open: enrichment pipeline (occupation), auth-harden, opt-out
 - [BC added city to teaser (2026-07-14)](project_bc_teaser_city_added.md) — reverses name+state-only assumption; AFTER WSFY: un-strip city in apiRouter + revisit SEO city-grain
 - [Master growth plan 2026-07-11](project_growth_plan_2026_07_11.md) — 5 areas as one Acquire→Convert→Retain lifecycle; waves + open questions (report COGS, backend location); docs/design/2026-07-11-master-growth-plan.md
+- [SEO individual profiles + data model](project_seo_individual_profiles.md) — per-individual profile leaves under name-in-city (7b8ef77, not on Vercel); bulk IDI is OUT; Census skeleton + BC teaser fill + ISR/sitemap governor; NEXT = BC server-side-teaser ask + lazy-pull + sitemap
