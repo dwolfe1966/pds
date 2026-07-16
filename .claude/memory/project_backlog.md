@@ -73,7 +73,11 @@ Five named tracks the team plans against. Numbers are referenced in commits/PRs.
   buildWsfySummary — names unmask only when `matchedVia==='mapped_identity'` (mapping required KBA);
   paid-but-unmapped gets the masked tease + `revealGated` flag → closes "type any name → see who's
   searching". (2) Exposure CONTROLS: /api/suppression POST requires `hasMappedIdentity` → 403 else.
-  (3) KBA retries CAPPED at 3 (were unlimited vs public-data decoys). (4) Client: WhoIsSearchingPage
+  (3) KBA retries CAPPED at 5 then locked → lockout points to ID scan OR a Contact-support link (/contact)
+  (were unlimited vs public-data decoys). (5) EXPOSE MAPPED IDENTITIES (owner 2026-07-16, commit `b4ecd12`):
+  a searcher/viewer who CLAIMED their own identity is shown by real name even to a reveal-gated subject
+  (anon/unmapped stay masked; suppression still drops hidden members); events/keySignals/viewers carry a
+  `mapped` flag; WhoIsSearchingPage shows a 'Verified member' chip. (4) Client: WhoIsSearchingPage
   "Claim your record to reveal names" prompt when revealGated; IdentityOnboardingModal now leads with
   the real WSFY count. **DECISION I MADE (owner was away — CONFIRM):** reveal requires MAPPED-only
   (not card-tier); `REVEAL_REQUIRES` const in wsfy.mjs is one line to also accept card_info. **CEILING
