@@ -52,7 +52,7 @@ function DispositionToggle({ value, onChange, protectOnly }) {
   );
 }
 
-function Module({ id, icon, title, source = 'observed', tier = 'free', count, disposition, setDisposition, protectOnly, isOwner = true, locked, children }) {
+function Module({ id, icon, title, source = 'observed', tier = 'free', count, disposition, setDisposition, protectOnly, isOwner = true, locked, blurLocked, children }) {
   const promoted = disposition === 'promote';
   const protectedOn = disposition === 'protect';
   const s = SOURCE[source] || SOURCE.observed;
@@ -85,7 +85,9 @@ function Module({ id, icon, title, source = 'observed', tier = 'free', count, di
         {locked ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 13.5, color: '#7c2d12', fontWeight: 700 }}>🔒 {count != null && count > 0 ? `${count} record${count === 1 ? '' : 's'}` : 'Details'} available to paid members</div>
-            <div style={{ filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }} aria-hidden="true">{children}</div>
+            {/* Real data is ONLY put in the DOM for the owner previewing their OWN profile (blurLocked).
+                For a real non-owner viewer it is NOT rendered — CSS blur would leak paid data. */}
+            {blurLocked && <div style={{ filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }} aria-hidden="true">{children}</div>}
             <button type="button" style={{ alignSelf: 'flex-start', background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>Unlock full report →</button>
           </div>
         ) : children}
@@ -122,25 +124,30 @@ const DEFAULT_DISP = {
   about: 'neutral', work: 'neutral', education: 'neutral', online: 'promote', activity: 'neutral',
 };
 
-export default function MyProfileModular({ data, hero = {}, dispositions, onDispositionChange }) {
-  // Initial state = defaults overlaid with any persisted dispositions (real My Profile passes these).
-  const [disp, setDisp] = useState(() => ({ ...DEFAULT_DISP, ...(dispositions || {}) }));
-  const [viewAs, setViewAs] = useState('you');
+export default function MyProfileModular({ data, hero = {}, dispositions, onDispositionChange, mode = 'owner', viewerTier = 'paid' }) {
+  // mode: 'owner' = My Profile (controls + View-As preview) | 'others' = viewing someone else's profile
+  // (no controls; the viewer's tier is fixed by viewerTier — 'paid' on the report, 'free'/'anonymous' on a tease).
+  const ownerMode = mode === 'owner';
+  // Owner mode starts from the owner's privacy defaults; others mode starts NEUTRAL (an unclaimed
+  // subject hasn't protected anything) overlaid with the subject's stored dispositions if claimed.
+  const [disp, setDisp] = useState(() => (ownerMode ? { ...DEFAULT_DISP, ...(dispositions || {}) } : { ...(dispositions || {}) }));
+  const [viewAs, setViewAs] = useState('you'); // owner-mode preview switcher only
   // Update local state AND persist (when a handler is wired — dev preview leaves it local).
   const set = (id, v) => { setDisp((s) => ({ ...s, [id]: v })); if (onDispositionChange) onDispositionChange(id, v); };
   const d = data || {};
-  const isOwner = viewAs === 'you';
+  const view = ownerMode ? viewAs : viewerTier; // effective viewer: 'you' | 'anonymous' | 'free' | 'paid'
+  const isOwner = ownerMode && viewAs === 'you'; // owner controls active only here
 
   const visible = (id) => {
     const x = disp[id];
     if (isOwner) return true;
     if (x === 'protect') return false;
     if (x === 'promote') return true;
-    return viewAs !== 'anonymous';
+    return view !== 'anonymous';
   };
   // Two fidelities: full detail for the owner + paid viewers (every report field, no data loss);
   // summary chips for free/anonymous teasing. This is what lets the profile design replace the report.
-  const detailed = isOwner || viewAs === 'paid';
+  const detailed = isOwner || view === 'paid';
 
   const pastAddrs = Math.max((d.addresses?.length || 0) - 1, 0);
   const finCount = (d.liens?.length || 0) + (d.judgments?.length || 0) + (d.foreclosures?.length || 0) + (d.bankruptcies?.length || 0);
@@ -356,21 +363,23 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
 
   return (
     <div>
-      {/* Preview as (View As). */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preview as</span>
-        {VIEWS.map((v) => {
-          const active = viewAs === v.key;
-          return (
-            <button key={v.key} type="button" onClick={() => setViewAs(v.key)}
-              style={{ fontSize: 12.5, fontWeight: 700, border: `1px solid ${active ? GREEN : '#e5e7eb'}`, background: active ? '#f0fdf4' : '#fff', color: active ? GREEN : '#6b7280', borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}>
-              {v.label}
-            </button>
-          );
-        })}
-      </div>
+      {/* Preview as (View As) — owner-mode only (their preview tool). */}
+      {ownerMode && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Preview as</span>
+          {VIEWS.map((v) => {
+            const active = viewAs === v.key;
+            return (
+              <button key={v.key} type="button" onClick={() => setViewAs(v.key)}
+                style={{ fontSize: 12.5, fontWeight: 700, border: `1px solid ${active ? GREEN : '#e5e7eb'}`, background: active ? '#f0fdf4' : '#fff', color: active ? GREEN : '#6b7280', borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}>
+                {v.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
-      {!isOwner && (
+      {ownerMode && !isOwner && (
         <div style={{ marginBottom: 14, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#1e40af' }}>
           👁 Previewing your profile as a <strong>{VIEWS.find((v) => v.key === viewAs)?.short}</strong>. Protected sections are hidden — this is exactly what they see.
         </div>
@@ -407,11 +416,11 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
           {shown.map((m) => {
             const paid = PAID.has(m.id);
             // Paid-tier data is locked (teased) for non-paid viewers — unless the owner PROMOTED it public.
-            const locked = !isOwner && paid && disp[m.id] !== 'promote' && viewAs !== 'paid';
+            const locked = !isOwner && paid && disp[m.id] !== 'promote' && view !== 'paid';
             return (
               <Module key={m.id} id={m.id} icon={m.icon} title={m.title} source={m.source}
                 tier={paid ? 'paid' : 'free'} count={COUNT[m.id]} disposition={disp[m.id]}
-                setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner} locked={locked}>
+                setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner} locked={locked} blurLocked={ownerMode}>
                 {detailed && m.full ? m.full() : m.body()}
               </Module>
             );

@@ -6,6 +6,7 @@ import { getReportDetail, createReportForIdentity, getExistingReportId } from '.
 import { getIdentityContext, getSearchContext } from '../../services/searchContext';
 import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../utils/reportExtract';
 import ProfileView, { styles } from '../../components/ProfileView';
+import MyProfileModular from '../../components/MyProfileModular';
 import { enrichFromReport } from '../../services/memberEnrichment';
 import { track } from '../../services/trackingService';
 
@@ -190,6 +191,9 @@ const SearchResultDetailPage = () => {
 
   // ── Data extraction ───────────────────────────────────────────────────────
   const data = report ? extractAll(report) : null;
+  // Report renders as the modular Profile (others mode, paid tier → full detail, no data loss). The
+  // exhaustive grid stays available via a "Full details" toggle.
+  const [reportView, setReportView] = useState('profile'); // 'profile' | 'details'
 
   // ── Loading / error states ───────────────────────────────────────────────
   if (loading) {
@@ -281,6 +285,15 @@ const SearchResultDetailPage = () => {
           </div>
         </div>
         <div style={styles.headerActions}>
+          {/* Profile (modular) vs Full details (exhaustive grid) — profile is the default presentation. */}
+          <div style={{ display: 'inline-flex', border: '1px solid #d1d5db', borderRadius: 8, overflow: 'hidden' }}>
+            {[{ k: 'profile', label: 'Profile' }, { k: 'details', label: 'Full details' }].map((t) => (
+              <button key={t.k} type="button" onClick={() => setReportView(t.k)}
+                style={{ border: 'none', background: reportView === t.k ? '#0d5d2f' : '#fff', color: reportView === t.k ? '#fff' : '#374151', fontSize: 13, fontWeight: 700, padding: '8px 14px', cursor: 'pointer' }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
           {commerceContentId && (
             <button
               onClick={handleDownloadPdf}
@@ -342,7 +355,16 @@ const SearchResultDetailPage = () => {
         </div>
       )}
 
-      <ProfileView data={data} viewer="paid" />
+      {reportView === 'profile' ? (
+        <MyProfileModular
+          data={data}
+          hero={{ name: data.fullName, age: data.age, location: data.currentLocation }}
+          mode="others"
+          viewerTier="paid"
+        />
+      ) : (
+        <ProfileView data={data} viewer="paid" />
+      )}
     </main>
   );
 };
