@@ -320,7 +320,9 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
       </div>
 
       {/* 2-column: LEFT = modules, RIGHT = assessment + actions (owner only). */}
-      <div style={{ display: 'grid', gridTemplateColumns: isOwner ? 'minmax(0, 1fr) minmax(280px, 340px)' : '1fr', gap: 18, alignItems: 'start' }}>
+      {/* Stack to a single column on mobile — the fixed-min rail was crushing the modules column. */}
+      <style>{`@media (max-width: 860px){ [data-profile-grid]{ grid-template-columns: 1fr !important; } [data-profile-rail]{ position: static !important; } }`}</style>
+      <div data-profile-grid style={{ display: 'grid', gridTemplateColumns: isOwner ? 'minmax(0, 1fr) minmax(280px, 340px)' : '1fr', gap: 18, alignItems: 'start' }}>
         <div style={{ display: 'grid', gap: 14, minWidth: 0 }}>
           {shown.map((m) => {
             const paid = PAID.has(m.id);
@@ -342,7 +344,7 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         </div>
 
         {isOwner && (
-          <aside style={{ display: 'grid', gap: 14, position: 'sticky', top: 16 }}>
+          <aside data-profile-rail style={{ display: 'grid', gap: 14, position: 'sticky', top: 16 }}>
             <div style={railCard}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', marginBottom: 10 }}>Profile assessment</div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
