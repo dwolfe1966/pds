@@ -81,7 +81,28 @@ verified. **Owner TODO:** set `WSFY_APP_KEY` (Vercel) + `REACT_APP_WSFY_APP_KEY`
 **Account (SHIPPED):** defaults to a clean 'This is your account' Overview landing (was Security/password);
 new 'My Identity' tab views/updates the mapped identity (embeds SelfIdentifyCard forceShow when not mapped).
 
-**STILL OPEN:** real per-user WSFY-AUTH (BC ask); payment WSFY teaser (#3 next); onboarding placement of self-identify.
+**Retroactive matching VERIFIED + 3-tier subject identity (2026-07-16, commits c0b4ad7 + f6fd73e; seo auto-deploys, consumer bundle `public.ab25eee4.js` NOT yet on BC).**
+- **Fundamental question (owner): "do new accounts match HISTORICAL searches?" → YES, verified.** `buildWsfySummary`
+  is a QUERY-TIME reverse-join keyed on normalized name (selfUserId only EXCLUDES your own searches), so a
+  brand-new account matches history purely on name. Empirically: a fresh never-seen selfUserId for "David Wolfe"
+  matched 9 historical searchers. Both sides are open: searchers include ANON (86) + members (17), and the subject
+  does NOT need to have mapped — name alone works.
+- **Corpus starts 2026-07-14** (when ingest shipped). Pre-7/14 searches were never captured = gone. Owner said
+  don't pursue a BC backfill of older logs.
+- **`resolveSubjectIdentity` hierarchy (owner-specified):** (1) MAPPED self-identify record (`self_person.name`,
+  real record incl. middle names → exact result-matches + overlap affinities) > (2) CARD INFO (cardholder name
+  captured at checkout, `attributes.cardName`) > (3) SELF-PROVIDED (`attributes.providedName`, then live client
+  value). **NEVER the account `fullName`** — that's the SEARCH TARGET (selectedPerson), not the member. Returns
+  `matchedVia` so we can see the tier. Verified card_info→9, mapped→10, self_provided→9.
+- **Store form info regardless of mapping:** `saveIdentityFormInfo()` (memberEnrichment.js) persists the member's
+  OWN name → `member_enrichment.attributes` (merged upsert), keyed by userId. Wired at PaymentPage successful
+  sale → captures cardholder first+last as `cardName`, so every PAYING member gets WSFY coverage even without
+  mapping. (Self-identify mapping is still prompted for the precision upgrade.)
+- **Verification probe:** `seo/scripts/wsfy-match-check.mjs "<Name>" [ST]` (new-account sim) or `--user <id>`
+  (resolves via self_person). Answers "does this account match history?" on demand — killed the "we don't know".
+
+**STILL OPEN:** real per-user WSFY-AUTH (BC ask, tier still client-asserted); payment WSFY teaser REPLACE-the-vCard
+build (backlog, deferred when this fundamental issue took over); onboarding placement of self-identify.
 
 **NOT built (no data source at all):** "just got married" — no marital/life-event field (per bc_report_field_map).
 "Went to high school" now DOES work via user-provided profile. Never fabricate.
