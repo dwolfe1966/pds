@@ -812,10 +812,47 @@ const Dashboard2 = () => {
         </section>
         </div>
 
-        {/* Row 2 — Who's-searching-for-you (left, thin bar) · Identity Protection Score (right).
-            align:start keeps the WSFY bar thin next to the taller score ring. */}
-        <div data-dashboard-grid style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'start', marginBottom: '1rem' }}>
-          <DashboardWsfyCount />
+        {/* Row 2 — LEFT column stacks WSFY (top) + the subscribe/membership rectangle (bottom);
+            RIGHT column is the Identity Protection Score. Stretch + flex-fill so the stacked left
+            column bottom-aligns with the ring (no gaps). */}
+        <div data-dashboard-grid style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', alignItems: 'stretch', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
+            <DashboardWsfyCount />
+            {isPaid ? (
+              <div style={{ flex: 1, display: 'flex' }}>
+                <SubscriptionTile subscription={subscription} orders={orders} planDisplayName={planDisplayName} navigate={navigate} />
+              </div>
+            ) : token && !subscriptionLoading && !subscriptionError ? (
+              <section style={{
+                flex: 1, background: '#f0fdf4', border: `1px solid ${PAGE.brand}`, borderRadius: '0.75rem',
+                padding: '1.1rem 1.25rem', boxShadow: '0 2px 10px rgba(17,24,39,0.06)',
+                display: 'flex', flexDirection: 'column', gap: '0.75rem', justifyContent: 'center',
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: PAGE.brand }}>
+                    You're on a free account
+                  </div>
+                  <h2 style={{ margin: '0.2rem 0 0', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '-0.01em', color: PAGE.text }}>
+                    Subscribe to unlock unlimited searches &amp; full reports
+                  </h2>
+                  <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: PAGE.textMuted }}>
+                    Search as many people as you want and view up to 5 full reports a day. Cancel anytime.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { track('dashboard_cta_click', { target: 'subscribe' }); navigate('/payment?upgrade=1'); }}
+                  style={{
+                    alignSelf: 'flex-start', background: PAGE.orange, color: PAGE.orangeText, border: 'none',
+                    padding: '0.7rem 1.4rem', borderRadius: '0.5rem', fontSize: '0.95rem', fontWeight: 700,
+                    cursor: 'pointer', whiteSpace: 'nowrap',
+                  }}
+                >
+                  Subscribe Now
+                </button>
+              </section>
+            ) : null}
+          </div>
           <ProtectionScoreRing />
         </div>
 
@@ -851,56 +888,8 @@ const Dashboard2 = () => {
           </section>
         )}
 
-        {/* Membership status — directly below the green marketing strip for PAID members.
-            Free members get the subscribe promo below instead, so there's exactly one
-            membership/subscribe rectangle under the strip (no duplication). */}
-        {isPaid && (
-          <div style={{ marginBottom: '1rem' }}>
-            <SubscriptionTile subscription={subscription} orders={orders} planDisplayName={planDisplayName} navigate={navigate} />
-          </div>
-        )}
-
-        {/* Subscribe promo — signed up but not paying (trial non-converter). Sits
-            directly under the marketing strip. Gated on a settled unpaid state so it
-            never flashes for subscribers while billing status loads. */}
-        {token && !isPaid && !subscriptionLoading && !subscriptionError && (
-          <section style={{
-            background: '#f0fdf4',
-            border: `1px solid ${PAGE.brand}`,
-            borderRadius: '0.75rem',
-            padding: '1.1rem 1.25rem',
-            marginBottom: '1rem',
-            boxShadow: '0 2px 10px rgba(17,24,39,0.06)',
-            display: 'flex',
-            gap: '1.25rem',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <div style={{ flex: 1, minWidth: 240 }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: PAGE.brand }}>
-                You're on a free account
-              </div>
-              <h2 style={{ margin: '0.2rem 0 0', fontSize: '1.1rem', fontWeight: 800, letterSpacing: '-0.01em', color: PAGE.text }}>
-                Subscribe to unlock unlimited searches &amp; full reports
-              </h2>
-              <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: PAGE.textMuted, maxWidth: 580 }}>
-                Search as many people as you want and view up to 5 full reports a day. Cancel anytime.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => { track('dashboard_cta_click', { target: 'subscribe' }); navigate('/payment?upgrade=1'); }}
-              style={{
-                background: PAGE.orange, color: PAGE.orangeText, border: 'none',
-                padding: '0.7rem 1.4rem', borderRadius: '0.5rem',
-                fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              Subscribe Now
-            </button>
-          </section>
-        )}
+        {/* Membership status (paid) + subscribe promo (free) moved UP into Row 2's left column,
+            stacked under the WSFY bar (owner 2026-07-16). */}
 
         {/* Complete-profile prompt removed — profile merged into Account → My Identity, and the
             SelfIdentifyCard on the dashboard already drives identity/profile completion. */}
