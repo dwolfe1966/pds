@@ -125,12 +125,19 @@ NOT yet on BC).** A distinct, higher-intent stream alongside searches (they open
   count 1, masked viewer). This is a first concrete step of [[project_freemium_identity_community]].
 
 **Summary shape now:** `{ count (recall), keySignalCount, keySignals[], sameStateCount, highlights[],
-profileViews:{count,viewers[]}, matchedVia, teaseSummary, events[] }`. Client consumption of keySignals /
-profileViews (dashboard WSFY count, richer WhoIsSearchingPage) is the next UI step — NOT yet built.
+profileViews:{count,viewers[]}, matchedVia, teaseSummary, events[] }`.
 
-**STILL OPEN:** real per-user WSFY-AUTH (BC ask, tier still client-asserted); dashboard WSFY count + surface
-keySignals/profileViews in the UI; SEO profile-page view capture (currently app-only; SEO views are anon/bot-
-heavy — deferred); onboarding placement of self-identify.
+**Client surfacing (2026-07-16, commit `989c4a2`, consumer bundle `public.d9614a76.js` NOT yet on BC).**
+- **DashboardWsfyCount** (new component) — compact "N searched for you · M viewed your profile" + top key
+  signal, full-width below the search row on Dashboard2. Doubles as the **"add your name" on-ramp** (→
+  /my-identity) when there's no identity to match yet, so a new member immediately sees potential matches.
+- **WhoIsSearchingPage** — the **Viewers tab is now populated** from `profileViews.viewers` (was an
+  honest-empty stub — the tab structure was pre-built); new **"Key signals"** section (confidence badge +
+  reason) above the tabs; times chip kind-aware (Viewed vs Searched).
+
+**STILL OPEN:** real per-user WSFY-AUTH (BC ask, tier still client-asserted); SEO profile-page view capture
+(currently app-only; SEO views are anon/bot-heavy — deferred); onboarding placement of self-identify;
+WsfyPaymentTeaser could also consume keySignals/profileViews (currently uses highlights only).
 
 **NOT built (no data source at all):** "just got married" — no marital/life-event field (per bc_report_field_map).
 "Went to high school" now DOES work via user-provided profile. Never fabricate.
