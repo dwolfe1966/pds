@@ -202,6 +202,27 @@ export function norm(s) {
 }
 
 /**
+ * Canonical (most-recent) city/state for a captured person. BC teasers carry NO top-level
+ * city/state — geo is a location HISTORY in `locations` (["CITY, ST", …]) or `location`
+ * (semicolon-joined "CITY, ST" string). The first entry is the current/most-recent, which we
+ * treat as the person's canonical location for the directory. Falls back to explicit city/state.
+ */
+export function primaryCityState(r) {
+  if (r && r.state && r.city) return { city: String(r.city), state: String(r.state).trim().toUpperCase() };
+  let first = null;
+  if (r && Array.isArray(r.locations) && r.locations.length) first = r.locations[0];
+  else if (r && typeof r.location === 'string' && r.location.trim()) first = r.location.split(';')[0];
+  else if (r && Array.isArray(r.location) && r.location.length) first = r.location[0];
+  else if (r && r.state) return { city: r.city ? String(r.city) : null, state: String(r.state).trim().toUpperCase() };
+  if (!first) return { city: r && r.city ? String(r.city) : null, state: null };
+  if (typeof first === 'object') return { city: first.city || null, state: (first.state ? String(first.state).trim().toUpperCase() : null) };
+  const s = String(first).trim();
+  const m = s.match(/^(.*),\s*([A-Za-z]{2})\b/);
+  if (m) return { city: m[1].trim(), state: m[2].toUpperCase() };
+  return { city: s || null, state: null };
+}
+
+/**
  * Capture teaser data one row PER PERSON, keyed by a stable profile_id (norm(name)|STATE|norm(city)) —
  * extId is ephemeral. Upserted from every search's result set so we accumulate a person corpus we own
  * (the source for public, crawlable Others-Profile pages). Deduped per batch; single round trip.
@@ -213,8 +234,10 @@ export async function upsertPersonProfiles(results) {
     const name = (r && (r.name || r.fullName)) || '';
     const nn = norm(name);
     if (!nn) continue;
-    const city = (r.city || '') && String(r.city);
-    const state = r.state ? String(r.state).trim().toUpperCase() : '';
+    // BC teasers have no top-level city/state — derive canonical geo from the location history.
+    const geo = primaryCityState(r);
+    const city = geo.city || '';
+    const state = geo.state || '';
     const parts = String(name).trim().split(/\s+/);
     const firstN = norm(parts[0] || '');
     const lastN = norm(parts.length > 1 ? parts[parts.length - 1] : '');
