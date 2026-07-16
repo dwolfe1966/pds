@@ -101,8 +101,36 @@ new 'My Identity' tab views/updates the mapped identity (embeds SelfIdentifyCard
 - **Verification probe:** `seo/scripts/wsfy-match-check.mjs "<Name>" [ST]` (new-account sim) or `--user <id>`
   (resolves via self_person). Answers "does this account match history?" on demand — killed the "we don't know".
 
-**STILL OPEN:** real per-user WSFY-AUTH (BC ask, tier still client-asserted); payment WSFY teaser REPLACE-the-vCard
-build (backlog, deferred when this fundamental issue took over); onboarding placement of self-identify.
+**Recall + precision architecture (2026-07-16, commit `c3417b9`; seo auto-deploys).** Owner: maximize
+matches (wide net for the count) but SEPARATE high-precision/high-value matches as key signals.
+- **Recall widened:** result-matching now also catches middle-name variants (`First % … % Last`) so a
+  searcher who saw "David L Wolfe" matches subject "David Wolfe" without the confirmed record.
+- **Per-match precision:** `result_exact` or exact first+last typed = **high**; middle-name variant =
+  **medium**; same-last + fuzzy-first (nickname/typo) = **low** (the recall net). Best confidence per
+  searcher; carried on each event (`event.confidence`).
+- **`keySignals[]` + `keySignalCount`:** the high-confidence OR high-value subset (has affinity /
+  repeat / member / contact-info search), each with a human `reason` ("Worked at Google", "May be
+  family", "Searched you by phone", "Searched your exact name"). `count` stays the broad net; keySignals
+  is the signal within it. Verified recall=2 / keySignals=1 on a mixed case.
+
+**Profile views — "who viewed my profile" (2026-07-16, commit `9cecf98`; consumer bundle `public.0ff2aa73.js`
+NOT yet on BC).** A distinct, higher-intent stream alongside searches (they opened the FULL profile).
+- New **`profile_views`** table (`seo/db/profile-views-schema.sql`) + `insertProfileView`; **POST
+  `/api/profile-view`** (ingest, open posture like search-activity POST).
+- `queryProfileViewers` reverse-joins on the viewed subject (exact norm, or same-last + fuzzy-first
+  recall net; self-views excluded; suppressed viewers dropped; free=masked, paid=named), folded into
+  `buildWsfySummary` as **`profileViews:{count,viewers[]}`** — separate from the searches `count`.
+- Consumer: `captureProfileView()` (searchActivity.js) fired once per report in SearchResultDetailPage,
+  skipping self-views (viewing your OWN profile isn't signal). Verified end-to-end (POST→200, reverse-join
+  count 1, masked viewer). This is a first concrete step of [[project_freemium_identity_community]].
+
+**Summary shape now:** `{ count (recall), keySignalCount, keySignals[], sameStateCount, highlights[],
+profileViews:{count,viewers[]}, matchedVia, teaseSummary, events[] }`. Client consumption of keySignals /
+profileViews (dashboard WSFY count, richer WhoIsSearchingPage) is the next UI step — NOT yet built.
+
+**STILL OPEN:** real per-user WSFY-AUTH (BC ask, tier still client-asserted); dashboard WSFY count + surface
+keySignals/profileViews in the UI; SEO profile-page view capture (currently app-only; SEO views are anon/bot-
+heavy — deferred); onboarding placement of self-identify.
 
 **NOT built (no data source at all):** "just got married" — no marital/life-event field (per bc_report_field_map).
 "Went to high school" now DOES work via user-provided profile. Never fabricate.
