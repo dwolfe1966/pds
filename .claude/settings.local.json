@@ -560,7 +560,8 @@
       "Bash(npm start *)",
       "Bash(echo \"launched npm start \\(pid $!\\)\")",
       "Bash(dispositions)",
-      "Bash(onDispositionChange)"
+      "Bash(onDispositionChange)",
+      "Bash(full)"
     ]
   }
 }

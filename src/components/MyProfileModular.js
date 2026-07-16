@@ -105,6 +105,16 @@ const Row = ({ label, value }) => value ? (
 ) : null;
 const wrap = { display: 'flex', flexWrap: 'wrap', gap: 8 };
 const none = (t) => <span style={{ color: '#9ca3af', fontSize: 13 }}>{t}</span>;
+// Full-detail helpers — one record per Item, labeled fields (F). Used by the `full` renderers so paid/
+// owner viewers get every field the report has (no data loss when the profile design replaces the report).
+const Item = ({ children }) => <div style={{ padding: '9px 0', borderTop: '1px solid #f3f4f6' }}>{children}</div>;
+const Title = ({ children }) => <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{children}</div>;
+const F = ({ label, value }) => value ? (
+  <span style={{ marginRight: 14, fontSize: 12.5 }}>
+    <span style={{ color: '#9ca3af' }}>{label}: </span><span style={{ color: '#111827', fontWeight: 600 }}>{value}</span>
+  </span>
+) : null;
+const Meta = ({ children }) => <div style={{ marginTop: 3, lineHeight: 1.7 }}>{children}</div>;
 
 const DEFAULT_DISP = {
   contact: 'protect', locations: 'protect', family: 'protect',
@@ -128,6 +138,9 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
     if (x === 'promote') return true;
     return viewAs !== 'anonymous';
   };
+  // Two fidelities: full detail for the owner + paid viewers (every report field, no data loss);
+  // summary chips for free/anonymous teasing. This is what lets the profile design replace the report.
+  const detailed = isOwner || viewAs === 'paid';
 
   const pastAddrs = Math.max((d.addresses?.length || 0) - 1, 0);
   const finCount = (d.liens?.length || 0) + (d.judgments?.length || 0) + (d.foreclosures?.length || 0) + (d.bankruptcies?.length || 0);
@@ -156,11 +169,30 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         <Row label="Also known as" value={(d.aliases || []).join(' · ')} />
         <Row label="Born" value={d.dob} /><Row label="Age" value={d.age} /><Row label="Gender" value={d.gender} />
       </>
+    ), full: () => (
+      <>
+        <Row label="Full name" value={d.fullName} />
+        <Row label="Also known as" value={(d.aliases || []).join(' · ')} />
+        <Row label="Date of birth" value={d.dob} />
+        <Row label="Age" value={d.age} />
+        <Row label="Gender" value={d.gender} />
+        <Row label="Citizenship" value={d.citizenship} />
+      </>
     ) },
     { id: 'contact', icon: '📇', title: 'Contact', source: 'observed', body: () => (
       <div style={wrap}>
         {(d.phones || []).map((p, i) => <Chip key={`ph${i}`}>📞 {p.number}{p.type ? ` · ${p.type}` : ''}</Chip>)}
         {(d.emails || []).map((e, i) => <Chip key={`em${i}`}>✉️ {e.address}</Chip>)}
+        {!(d.phones || []).length && !(d.emails || []).length && none('No contact info on record.')}
+      </div>
+    ), full: () => (
+      <div>
+        {(d.phones || []).map((p, i) => (
+          <Item key={`ph${i}`}><Title>📞 {p.number}</Title><Meta><F label="Type" value={p.type} /><F label="Carrier" value={p.carrier} /><F label="Seen" value={[p.firstSeen, p.lastSeen].filter(Boolean).join('–')} /></Meta></Item>
+        ))}
+        {(d.emails || []).map((e, i) => (
+          <Item key={`em${i}`}><Title>✉️ {e.address}</Title><Meta><F label="Type" value={e.type} /></Meta></Item>
+        ))}
         {!(d.phones || []).length && !(d.emails || []).length && none('No contact info on record.')}
       </div>
     ) },
@@ -169,10 +201,24 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         {(d.addresses || []).map((a, i) => <Chip key={`ad${i}`}>{i === 0 ? '🏠 ' : ''}{[a.city, a.state].filter(Boolean).join(', ')}{a.firstSeen ? ` · ${a.firstSeen}${a.lastSeen ? `–${a.lastSeen}` : ''}` : ''}</Chip>)}
         {!(d.addresses || []).length && none('No addresses on record.')}
       </div>
+    ), full: () => (
+      <div>
+        {(d.addresses || []).map((a, i) => (
+          <Item key={`ad${i}`}><Title>{i === 0 ? '🏠 ' : '📍 '}{[a.street, a.city, a.state, a.zip].filter(Boolean).join(', ')}</Title><Meta><F label="County" value={a.county} /><F label="Dates" value={[a.firstSeen, a.lastSeen].filter(Boolean).join('–')} /></Meta></Item>
+        ))}
+        {!(d.addresses || []).length && none('No addresses on record.')}
+      </div>
     ) },
     { id: 'family', icon: '👪', title: 'Family & Relatives', source: 'observed', body: () => (
       <div style={wrap}>
         {(d.relatives || []).map((r, i) => <Chip key={`rl${i}`}>{r.name}{r.relationship ? ` · ${r.relationship}` : ''}</Chip>)}
+        {!(d.relatives || []).length && none('No relatives on record.')}
+      </div>
+    ), full: () => (
+      <div>
+        {(d.relatives || []).map((r, i) => (
+          <Item key={`rl${i}`}><Title>{r.name}</Title><Meta><F label="Relation" value={r.relationship} /><F label="Age" value={r.age} /><F label="Location" value={r.location} /></Meta></Item>
+        ))}
         {!(d.relatives || []).length && none('No relatives on record.')}
       </div>
     ) },
@@ -203,6 +249,13 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         {(d.social || []).map((s, i) => <Chip key={`so${i}`}>{s.platform}{s.username ? ` · @${s.username}` : ''}</Chip>)}
         {!(d.social || []).length && none('No linked profiles yet — promote to add them.')}
       </div>
+    ), full: () => (
+      <div>
+        {(d.social || []).map((s, i) => (
+          <Item key={`so${i}`}><Title>{s.platform}{s.username ? ` · @${s.username}` : ''}</Title>{s.url && <div style={{ marginTop: 2 }}><a href={s.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: '#1d4ed8' }}>{s.url}</a></div>}</Item>
+        ))}
+        {!(d.social || []).length && none('No linked profiles yet — promote to add them.')}
+      </div>
     ) },
     { id: 'activity', icon: '📰', title: 'Activity', source: 'user', body: () => (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -224,6 +277,13 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         {(d.criminalRecords || []).map((c, i) => <Chip key={`cr${i}`}>⚖️ {c.charge || 'Court record'}{c.disposition ? ` · ${c.disposition}` : ''}</Chip>)}
         {!(d.criminalRecords || []).length && none('No court or criminal records found.')}
       </div>
+    ), full: () => (
+      <div>
+        {(d.criminalRecords || []).map((c, i) => (
+          <Item key={`cr${i}`}><Title>⚖️ {c.charge || 'Court record'}</Title><Meta><F label="Case" value={c.caseNumber} /><F label="Court" value={c.court} /><F label="Disposition" value={c.disposition} /><F label="Filed" value={c.chargesFiledDate} /></Meta></Item>
+        ))}
+        {!(d.criminalRecords || []).length && none('No court or criminal records found.')}
+      </div>
     ) },
     { id: 'property', icon: '🏘️', title: 'Property', source: 'record', protectOnly: true, body: () => (
       <>
@@ -235,12 +295,32 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         ))}
         {!(d.properties || []).length && none('No property records found.')}
       </>
+    ), full: () => (
+      <div>
+        {(d.properties || []).map((p, i) => (
+          <Item key={`pr${i}`}><Title>🏘️ {p.address || [p.city, p.state].filter(Boolean).join(', ') || 'Property'}</Title><Meta><F label="APN" value={p.apn} /><F label="Assessed" value={p.assessedValue} /><F label="Owner" value={p.owner} /><F label="Last sale" value={p.lastSale} /></Meta></Item>
+        ))}
+        {!(d.properties || []).length && none('No property records found.')}
+      </div>
     ) },
     { id: 'financial', icon: '💵', title: 'Financial records', source: 'record', protectOnly: true, body: () => (
       <div style={wrap}>
         {(d.judgments || []).map((j, i) => <Chip key={`ju${i}`}>💵 {j.type || 'Judgment'}{j.amount ? ` · ${j.amount}` : ''}{j.status ? ` · ${j.status}` : ''}</Chip>)}
         {(d.liens || []).map((l, i) => <Chip key={`li${i}`}>📌 Lien{l.amount ? ` · ${l.amount}` : ''}</Chip>)}
         {(d.bankruptcies || []).map((b, i) => <Chip key={`bk${i}`}>🏦 Bankruptcy</Chip>)}
+        {finCount === 0 && none('No financial records found.')}
+      </div>
+    ), full: () => (
+      <div>
+        {(d.judgments || []).map((j, i) => (
+          <Item key={`ju${i}`}><Title>💵 {j.type || 'Judgment'}</Title><Meta><F label="Amount" value={j.amount} /><F label="Court" value={j.court} /><F label="Status" value={j.status} /><F label="Filed" value={j.filedDate} /></Meta></Item>
+        ))}
+        {(d.liens || []).map((l, i) => (
+          <Item key={`li${i}`}><Title>📌 Lien</Title><Meta><F label="Amount" value={l.amount} /><F label="Status" value={l.status} /></Meta></Item>
+        ))}
+        {(d.bankruptcies || []).map((b, i) => (
+          <Item key={`bk${i}`}><Title>🏦 Bankruptcy</Title><Meta><F label="Chapter" value={b.chapter} /><F label="Filed" value={b.filedDate} /></Meta></Item>
+        ))}
         {finCount === 0 && none('No financial records found.')}
       </div>
     ) },
@@ -332,7 +412,7 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
               <Module key={m.id} id={m.id} icon={m.icon} title={m.title} source={m.source}
                 tier={paid ? 'paid' : 'free'} count={COUNT[m.id]} disposition={disp[m.id]}
                 setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner} locked={locked}>
-                {m.body()}
+                {detailed && m.full ? m.full() : m.body()}
               </Module>
             );
           })}
