@@ -24,6 +24,13 @@ export function citySlug(city) {
   return nameSlug(city, '').replace(/-$/, '');
 }
 
+// URL token for an individual (disambiguates same-name people in a city) — the age segment of the
+// person_profiles key. Must match upsertPersonProfiles' ageTok. 'x' when age is unknown.
+export function ageToken(age) {
+  const t = age == null ? '' : String(age).replace(/[^0-9-]/g, '');
+  return t || 'x';
+}
+
 // Real-profile pages live under /profiles/* (separate category from the
 // state-first /people surface).
 export function personPath(p) {

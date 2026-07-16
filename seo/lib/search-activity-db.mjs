@@ -216,22 +216,26 @@ export async function upsertPersonProfiles(results) {
     const city = (r.city || '') && String(r.city);
     const state = r.state ? String(r.state).trim().toUpperCase() : '';
     const parts = String(name).trim().split(/\s+/);
-    const profileId = [nn, state, norm(city)].join('|');
+    const firstN = norm(parts[0] || '');
+    const lastN = norm(parts.length > 1 ? parts[parts.length - 1] : '');
+    // Per-INDIVIDUAL key: first+last|state|city|age (ignore middle — teasers vary it). extId is ephemeral,
+    // so age disambiguates same-name people in the same city (data-broker standard). Ageless → aggregate.
+    const ageTok = r.age != null ? String(r.age).replace(/[^0-9-]/g, '') : '';
+    const profileId = [`${firstN} ${lastN}`.trim(), state, norm(city), ageTok].join('|');
     const teaser = (r.detail && typeof r.detail === 'object') ? r.detail : (typeof r === 'object' ? r : {});
     byId.set(profileId, {
-      profile_id: profileId, name, name_norm: nn,
-      first_norm: norm(parts[0] || ''), last_norm: norm(parts.length > 1 ? parts[parts.length - 1] : ''),
-      city: city || null, state: state || null, age: r.age != null ? String(r.age) : null, teaser,
+      profile_id: profileId, name, name_norm: nn, first_norm: firstN, last_norm: lastN,
+      city: city || null, city_norm: norm(city) || null, state: state || null, age: r.age != null ? String(r.age) : null, teaser,
     });
   }
   const payload = [...byId.values()];
   if (!payload.length) return;
   try {
     await sql`
-      INSERT INTO person_profiles (profile_id, name, name_norm, first_norm, last_norm, city, state, age, teaser, search_count, first_seen, last_seen)
-      SELECT x.profile_id, x.name, x.name_norm, x.first_norm, x.last_norm, x.city, x.state, x.age, x.teaser, 1, now(), now()
+      INSERT INTO person_profiles (profile_id, name, name_norm, first_norm, last_norm, city, city_norm, state, age, teaser, search_count, first_seen, last_seen)
+      SELECT x.profile_id, x.name, x.name_norm, x.first_norm, x.last_norm, x.city, x.city_norm, x.state, x.age, x.teaser, 1, now(), now()
       FROM jsonb_to_recordset(${JSON.stringify(payload)}::jsonb)
-        AS x(profile_id text, name text, name_norm text, first_norm text, last_norm text, city text, state text, age text, teaser jsonb)
+        AS x(profile_id text, name text, name_norm text, first_norm text, last_norm text, city text, city_norm text, state text, age text, teaser jsonb)
       ON CONFLICT (profile_id) DO UPDATE SET
         teaser = EXCLUDED.teaser,
         name = COALESCE(EXCLUDED.name, person_profiles.name),
@@ -241,6 +245,33 @@ export async function upsertPersonProfiles(results) {
         search_count = person_profiles.search_count + 1,
         last_seen = now()`;
   } catch { /* best-effort corpus capture */ }
+}
+
+/** People we've captured with a given first+last in a city — for the name-in-city directory listing. */
+export async function getCapturedPeople({ firstNorm, lastNorm, state, cityNorm, limit = 60 }) {
+  if (!sql || !lastNorm || !state) return [];
+  const st = String(state).toUpperCase();
+  const lim = Math.min(Math.max(Number(limit) || 60, 1), 200);
+  try {
+    const rows = await sql`
+      SELECT profile_id, name, first_norm, last_norm, city, city_norm, state, age, teaser, search_count, last_seen
+      FROM person_profiles
+      WHERE last_norm = ${lastNorm} AND state = ${st}
+        AND (${firstNorm}::text IS NULL OR first_norm = ${firstNorm})
+        AND (${cityNorm}::text IS NULL OR city_norm = ${cityNorm})
+      ORDER BY search_count DESC, last_seen DESC
+      LIMIT ${lim}`;
+    return rows;
+  } catch { return []; }
+}
+
+/** A single captured person by profile_id (name|STATE|city|age). */
+export async function getCapturedPerson(profileId) {
+  if (!sql || !profileId) return null;
+  try {
+    const rows = await sql`SELECT * FROM person_profiles WHERE profile_id = ${profileId}`;
+    return rows[0] || null;
+  } catch { return null; }
 }
 
 /**

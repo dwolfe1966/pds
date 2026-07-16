@@ -8,6 +8,8 @@ import { cityNamePath, cityPath, statePath } from '../../../../../lib/ids';
 import { crumbsJsonLd } from '../../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../../lib/ui';
 import { SITE, MAIN } from '../../../../../lib/site';
+import { getCapturedPeople, norm } from '../../../../../lib/search-activity-db.mjs';
+import { ageToken } from '../../../../../lib/ids';
 
 export const revalidate = 5184000; // 60d
 
@@ -50,6 +52,10 @@ export default async function NameInCity({ params }) {
   const ordinal = (r) => (r ? `#${num(r)}` : '');
   const related = getCityTopNames(state, city, 60).filter((r) => r.slug !== name).slice(0, 8);
 
+  // Real individuals we've actually captured with this name in this city (person_profiles corpus) —
+  // each links to its own crawlable Others-Profile leaf.
+  const people = await getCapturedPeople({ firstNorm: norm(d.first), lastNorm: norm(d.last), state: d.state, cityNorm: norm(d.city) });
+
   const ff = getFirstNameFacts(d.first);
   const lf = getSurnameFacts(d.last);
   const acs = getCityAcs(d.state, city);
@@ -71,6 +77,24 @@ export default async function NameInCity({ params }) {
       </p>
 
       <a href={serpHref(d.first, d.last, d.state, d.city)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {d.city} →</a>
+
+      {people.length > 0 && (
+        <section style={{ ...ui.card, marginTop: 20 }}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>{people.length} {people.length === 1 ? 'profile' : 'profiles'} for {full} in {d.city}</h2>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {people.map((p) => (
+              <a key={p.profile_id} href={`${cityNamePath(state, city, name)}/${ageToken(p.age)}`}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', textDecoration: 'none', color: '#111827' }}>
+                <span style={{ minWidth: 0 }}>
+                  <strong>{p.name}</strong>{p.age ? `, ${p.age}` : ''}
+                  <span style={{ color: '#6b7280' }}> · {[p.city, p.state].filter(Boolean).join(', ')}</span>
+                </span>
+                <span style={{ color: '#0d5d2f', fontWeight: 700, whiteSpace: 'nowrap' }}>View profile →</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div style={{ ...stat.wrap, marginTop: 20 }}>
         <div style={stat.card}>
