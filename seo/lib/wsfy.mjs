@@ -148,7 +148,7 @@ export async function buildWsfySummary(identity, opts = {}) {
   // Subject identity: confirmed self-identify record when mapped, else the account name.
   const subj = await resolveSubjectIdentity(identity);
   const subjNorm = norm(`${subj.name || ''}`);
-  if (!subjNorm) return { count: 0, tier: paid ? 'paid' : 'free', matchedVia: subj.source, teaseSummary: { headline: 'No search activity yet', lines: [] }, events: [] };
+  if (!subjNorm) return { count: 0, tier: paid ? 'paid' : 'free', matchedVia: subj.source, keySignalCount: 0, keySignals: [], sameStateCount: 0, highlights: [], teaseSummary: { headline: 'No search activity yet', lines: [] }, events: [] };
 
   // Split subject → exact last + fuzzy first. `lastKey` null (no last name) disables the
   // term-last branch so we fall back to result-matches only.
@@ -160,22 +160,35 @@ export async function buildWsfySummary(identity, opts = {}) {
   const state = subj.state ? String(subj.state).trim().toUpperCase() : null;
   const selfUserId = subj.selfUserId || null;
 
-  // Candidate rows: same LAST name typed (fuzzy first is filtered in JS below) OR the subject
-  // appeared in a result set (exact). Self-searches excluded. Aggregated in JS after the fuzzy
-  // filter (can't GROUP BY before fuzzing). LIMIT is a safety cap on same-surname volume.
+  // MAXIMIZE RECALL (owner 2026-07-16): catch every plausible searcher via three signals, and tag
+  // each row's PRECISION so high-confidence matches can be elevated separately from the broad count.
+  //   result_exact  = subject's exact name appeared in a result set (+ state)         → high
+  //   result_fuzzy  = a "First … Last" middle-name variant appeared (e.g. David L Wolfe) → medium
+  //   term-last + fuzzy first typed                                                    → low (recall net)
+  // `startsPat`/`endsPat` widen result-matching to middle-name variants (norm has no LIKE metachars).
+  const startsPat = subjFirst ? `${subjFirst} %` : null;
+  const endsPat = subjLast ? `% ${subjLast}` : null;
   const rows = await sql`
     SELECT sa.id, sa.searcher_type, sa.searcher_user_id, sa.session_id, sa.searcher_name_norm,
            sa.searcher_name, sa.searcher_first, sa.searcher_city, sa.searcher_state,
-           sa.term_first, sa.term_last, sa.search_type, sa.received_at,
+           sa.term_first, sa.term_last, sa.term_state, sa.search_type, sa.received_at,
            COALESCE(sa.searcher_user_id, sa.session_id, sa.searcher_name_norm, sa.id::text) AS searcher_key,
            EXISTS (SELECT 1 FROM search_results sr WHERE sr.activity_id = sa.id AND sr.name_norm = ${subjNorm}
-                   AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL)) AS result_match
+                   AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL)) AS result_exact,
+           (${startsPat}::text IS NOT NULL AND ${endsPat}::text IS NOT NULL AND EXISTS (
+                   SELECT 1 FROM search_results sr WHERE sr.activity_id = sa.id
+                   AND sr.name_norm LIKE ${startsPat} AND sr.name_norm LIKE ${endsPat}
+                   AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL))) AS result_fuzzy
     FROM search_activity sa
     WHERE (
             (${lastKey}::text IS NOT NULL AND sa.term_last = ${lastKey}
                AND (${state}::text IS NULL OR sa.term_state = ${state} OR sa.term_state IS NULL))
             OR EXISTS (SELECT 1 FROM search_results sr WHERE sr.activity_id = sa.id AND sr.name_norm = ${subjNorm}
                        AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL))
+            OR (${startsPat}::text IS NOT NULL AND ${endsPat}::text IS NOT NULL AND EXISTS (
+                   SELECT 1 FROM search_results sr WHERE sr.activity_id = sa.id
+                   AND sr.name_norm LIKE ${startsPat} AND sr.name_norm LIKE ${endsPat}
+                   AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL)))
           )
       AND (${selfUserId}::text IS NULL OR sa.searcher_user_id IS DISTINCT FROM ${selfUserId})
       AND (sa.searcher_name_norm IS DISTINCT FROM ${subjNorm})
@@ -183,8 +196,17 @@ export async function buildWsfySummary(identity, opts = {}) {
     LIMIT 4000
   `;
 
-  // Fuzzy-first filter: keep result-matches (exact) + same-last rows whose first name fuzzy-matches.
-  const matched = rows.filter((r) => r.result_match || fuzzyFirst(r.term_first, subjFirst));
+  // Keep result-matches (exact or middle-name variant) + same-last rows whose first name fuzzy-matches.
+  const matched = rows.filter((r) => r.result_exact || r.result_fuzzy || fuzzyFirst(r.term_first, subjFirst));
+  // Per-row precision: exact record OR exact first+last typed = high; middle-name variant = medium;
+  // same-last + fuzzy-first (nickname/typo) = low (the recall net).
+  const CONF_RANK = { low: 0, medium: 1, high: 2 };
+  const rowConfidence = (r) => {
+    if (r.result_exact) return 'high';
+    if (lastKey && r.term_last === lastKey && subjFirst && norm(r.term_first) === subjFirst) return 'high';
+    if (r.result_fuzzy) return 'medium';
+    return 'low';
+  };
 
   // Member suppression ("Hide me"): searchers who opted out don't appear in anyone's WSFY.
   const suppressed = await getSuppressedUserIds(matched.map((r) => r.searcher_user_id));
@@ -201,9 +223,12 @@ export async function buildWsfySummary(identity, opts = {}) {
         searcher_name: r.searcher_name, searcher_first: r.searcher_first,
         searcher_city: r.searcher_city, searcher_state: r.searcher_state,
         is_member: r.searcher_type === 'member', times: 0, last_at: r.received_at, last_type: r.search_type,
+        confidence: 'low',
       };
       byKey.set(r.searcher_key, g);
     }
+    const rc = rowConfidence(r);
+    if (CONF_RANK[rc] > CONF_RANK[g.confidence]) g.confidence = rc;
     g.times += 1;
     if (r.received_at > g.last_at) { g.last_at = r.received_at; g.last_type = r.search_type; }
     if (!g.searcher_name && r.searcher_name) { g.searcher_name = r.searcher_name; g.searcher_first = r.searcher_first; }
@@ -226,6 +251,10 @@ export async function buildWsfySummary(identity, opts = {}) {
     fetchSubjectEnrichment(selfUserId),
     getHiddenFieldsMap(memberIds),
   ]);
+  // Subject's own institution display names (their data → safe to name in reasons/highlights).
+  const collegeName = (subjE && (subjE.college || titleCase(subjE.college_norm))) || '';
+  const hsName = (subjE && (subjE.high_school || titleCase(subjE.high_school_norm))) || '';
+  const employerName = (subjE && subjE.employer) || '';
   const aff = new Map();
   for (const g of visible) {
     const tags = [];
@@ -269,13 +298,47 @@ export async function buildWsfySummary(identity, opts = {}) {
     aff.set(g.searcher_key, { tags: finalTags, occupation: occ, employer: emp });
   }
 
+  // ── KEY SIGNALS (owner 2026-07-16): the high-precision OR high-value subset, elevated apart from
+  // the broad recall count. A searcher qualifies if we're confident it's really them (confidence
+  // 'high') OR they're meaningful (an affinity, a repeat, a member, or a contact-info search). Each
+  // carries a human reason. `count` stays the wide net; `keySignals` is the signal within the noise.
+  const REASON_FOR = (g, tags) => {
+    if (tags.includes('verified_relative') || tags.includes('relative')) return 'May be family';
+    if (tags.includes('colleague')) return employerName ? `Worked at ${employerName}` : 'May be a colleague';
+    if (tags.includes('college')) return collegeName ? `Went to ${collegeName}` : 'Went to your college';
+    if (tags.includes('high_school')) return hsName ? `Went to ${hsName}` : 'Went to your high school';
+    if (tags.includes('shared_relative')) return 'Shares a relative with you';
+    if (tags.includes('local')) return 'In your area';
+    if (tags.includes('past_local')) return 'Once lived in your area';
+    if (g.last_type === 'phone') return 'Searched you by phone';
+    if (g.last_type === 'email') return 'Searched you by email';
+    if (g.times >= 2) return `Searched you ${g.times}×`;
+    if (g.confidence === 'high') return 'Searched your exact name';
+    if (g.is_member) return 'A member searched you';
+    return 'Searched for you';
+  };
+  const keySignals = [];
+  for (const g of visible) {
+    const tags = (aff.get(g.searcher_key) || { tags: [] }).tags;
+    const contactSearch = g.last_type === 'phone' || g.last_type === 'email';
+    const valueHigh = tags.length > 0 || g.times >= 2 || g.is_member || contactSearch;
+    if (g.confidence !== 'high' && !valueHigh) continue; // not a key signal — stays in the broad count only
+    keySignals.push({
+      key: String(g.searcher_key), confidence: g.confidence, reason: REASON_FOR(g, tags),
+      affinities: tags, times: g.times, searchType: TYPE_LABEL[g.last_type] || cap(g.last_type) || 'Name',
+      timestamp: g.last_at, state: g.searcher_state || '',
+      name: paid ? (g.searcher_name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.searcher_name),
+    });
+  }
+  keySignals.sort((a, b) => (CONF_RANK[b.confidence] - CONF_RANK[a.confidence]) || (a.timestamp < b.timestamp ? 1 : -1));
+
   // ── Events list (for the page's table + charts) — tiered ─────────────────
   const events = visible.map((r, i) => {
     const isMember = !!r.is_member;
     const tier = isMember ? 'Basic' : 'Visitor';
     const searchType = TYPE_LABEL[r.last_type] || cap(r.last_type) || 'Name';
     const a = aff.get(r.searcher_key) || { tags: [] };
-    const base = { id: String(r.searcher_key || i), timestamp: r.last_at, searchType, tier, times: r.times, affinities: a.tags };
+    const base = { id: String(r.searcher_key || i), timestamp: r.last_at, searchType, tier, times: r.times, affinities: a.tags, confidence: r.confidence };
     if (paid) {
       return {
         ...base,
@@ -302,11 +365,8 @@ export async function buildWsfySummary(identity, opts = {}) {
   const rel = visible.filter((g) => aff.get(g.searcher_key).tags.includes('relative'));
   if (rel.length) { lines.push(`${rel.length} who may be ${rel.length === 1 ? 'a relative' : 'relatives'}`); take(rel); }
 
-  // 1b. Shared history (user-provided overlaps): high school, college, employer — NAMED when the
-  // subject's own institution is known (it's their own data), else generic.
-  const collegeName = (subjE && (subjE.college || titleCase(subjE.college_norm))) || '';
-  const hsName = (subjE && (subjE.high_school || titleCase(subjE.high_school_norm))) || '';
-  const employerName = (subjE && subjE.employer) || '';
+  // 1b. Shared history (user-provided overlaps): high school, college, employer — NAMED via the
+  // subject's own institution (collegeName/hsName/employerName computed above), else generic.
   const byTag = (tag) => visible.filter((g) => !used.has(g.searcher_key) && aff.get(g.searcher_key).tags.includes(tag));
   const hs = byTag('high_school');
   if (hs.length) { lines.push(`${hs.length} who went to ${hsName || 'your high school'}`); take(hs); }
@@ -357,5 +417,9 @@ export async function buildWsfySummary(identity, opts = {}) {
   const localTotal = tagCount('local');
   if (localTotal) highlights.push({ key: 'local', icon: '🏠', text: `${localTotal} in your area` });
 
-  return { count, tier: paid ? 'paid' : 'free', matchedVia: subj.source, sameStateCount, highlights, teaseSummary: { headline, lines }, events };
+  return {
+    count, tier: paid ? 'paid' : 'free', matchedVia: subj.source, sameStateCount,
+    keySignalCount: keySignals.length, keySignals, highlights,
+    teaseSummary: { headline, lines }, events,
+  };
 }
