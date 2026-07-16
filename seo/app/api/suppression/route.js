@@ -1,7 +1,7 @@
 // POST /api/suppression — Identity Management "Hide me". A member opts out of OUR surfaces: their
 // search activity is hidden from others' WSFY. Body: { userId, name?, state?, on }. App-key gated.
 // (External data-broker removal is a separate BC-owned opt-out; we hand that off in the consumer.)
-import { setSuppression, setFieldSuppression, setModuleDisposition, getSuppressionState, hasSearchDb } from '../../../lib/search-activity-db.mjs';
+import { setSuppression, setFieldSuppression, setModuleDisposition, getSuppressionState, hasMappedIdentity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
@@ -40,6 +40,12 @@ export async function POST(req) {
   try { body = await req.json(); } catch { body = null; }
   if (!body || !body.userId) return new Response(JSON.stringify({ error: 'userId required' }), { status: 400, headers });
   if (!hasSearchDb) return new Response(JSON.stringify({ ok: true, persisted: false }), { status: 200, headers });
+  // GATE (owner 2026-07-16): mutating exposure controls requires a CLAIMED identity — you can't hide
+  // a record you haven't proven is yours. CEILING: userId is client-asserted (app-key only); full
+  // closure needs WSFY auth-hardening (derive the user from a trusted BC token).
+  if (!(await hasMappedIdentity(String(body.userId)))) {
+    return new Response(JSON.stringify({ error: 'identity_unverified', message: 'Claim and verify your identity to control your exposure.' }), { status: 403, headers });
+  }
   try {
     // `module` = a My Profile module Protect/Promote disposition; `key` = a per-item exposure-driver
     // hide; otherwise the global "Hide my activity" flag.

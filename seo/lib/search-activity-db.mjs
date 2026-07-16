@@ -45,6 +45,17 @@ export async function upsertMemberEnrichment(e) {
   `;
 }
 
+/** Has this member CLAIMED an identity (mapped a self_person)? The exposure controls gate on this
+ *  so an unmapped/unverified member can't mutate a record's exposure (owner 2026-07-16). Mapping
+ *  runs KBA, so a mapped identity implies the verification step ran. */
+export async function hasMappedIdentity(userId) {
+  if (!sql || !userId) return false;
+  try {
+    const rows = await sql`SELECT 1 FROM member_enrichment WHERE user_id = ${userId} AND self_person <> '{}'::jsonb LIMIT 1`;
+    return rows.length > 0;
+  } catch { return false; }
+}
+
 // ── Member suppression (Identity Management "Hide me") ───────────────────────
 // Global "Hide my activity" flag. Keeps the row when turning off if the member still has per-field
 // hides; only removes it when nothing is suppressed anymore.

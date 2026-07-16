@@ -208,11 +208,20 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
     setStep('schools');
   };
 
+  // Cap retries: decoys are drawn from public data, so unlimited attempts make the KBA gate nearly
+  // free to brute-force. 3 tries, then lock this session (they can use the ID scan or come back later).
+  const KBA_MAX_ATTEMPTS = 3;
+  const kbaLocked = kbaAttempts >= KBA_MAX_ATTEMPTS;
+
   const submitKba = () => {
+    if (kbaLocked) return;
     if (kbaQuestions.some((qq) => !kbaAnswers[qq.id])) { setKbaError('Please answer every question.'); return; }
     if (!gradeKba(kbaQuestions, kbaAnswers)) {
-      setKbaAttempts((n) => n + 1);
-      setKbaError("That doesn't match your record. Please try again.");
+      const next = kbaAttempts + 1;
+      setKbaAttempts(next);
+      setKbaError(next >= KBA_MAX_ATTEMPTS
+        ? "Too many incorrect attempts. Verify with your ID scan, or try again later."
+        : `That doesn't match your record. Please try again. (${KBA_MAX_ATTEMPTS - next} left)`);
       return;
     }
     finalizeMapping(pendingMap.selfPerson, pendingMap.report, pendingMap.reportId, 'kba');
@@ -304,8 +313,8 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
         </div>
         {kbaError && <p style={{ margin: '12px 0 0', color: '#b91c1c', fontSize: 13, fontWeight: 600 }}>{kbaError}</p>}
         <div style={{ marginTop: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="button" onClick={submitKba}
-            style={{ background: GREEN_CTA, color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+          <button type="button" onClick={submitKba} disabled={kbaLocked}
+            style={{ background: kbaLocked ? '#9ca3af' : GREEN_CTA, color: '#fff', border: 'none', borderRadius: 8, padding: '11px 22px', fontSize: 14, fontWeight: 800, cursor: kbaLocked ? 'not-allowed' : 'pointer' }}>
             Verify &amp; continue →
           </button>
           <button type="button" onClick={() => setShowDlScan(true)}

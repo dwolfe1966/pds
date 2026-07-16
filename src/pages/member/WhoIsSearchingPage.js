@@ -535,6 +535,7 @@ const WhoIsSearchingPage = () => {
   const [viewers, setViewers] = useState([]);
   const [teaseSummary, setTeaseSummary] = useState(null);
   const [keySignals, setKeySignals] = useState([]);
+  const [revealGated, setRevealGated] = useState(false); // paid but not mapped → names withheld
 
   // The member's own identity — what we match incoming searches against.
   const identity = useMemo(() => {
@@ -557,6 +558,7 @@ const WhoIsSearchingPage = () => {
         setSearchers(Array.isArray(res.events) ? res.events : []);
         setTeaseSummary(res.teaseSummary || null);
         setKeySignals(Array.isArray(res.keySignals) ? res.keySignals : []);
+        setRevealGated(!!res.revealGated);
         // Profile-view stream — map viewers into the shared EventRow shape.
         const vw = (res.profileViews && Array.isArray(res.profileViews.viewers)) ? res.profileViews.viewers : [];
         setViewers(vw.map((v, i) => ({
@@ -608,9 +610,26 @@ const WhoIsSearchingPage = () => {
               <p style={{ margin: '0.35rem 0 0', color: '#166534', fontSize: '0.9rem', lineHeight: 1.5 }}>
                 {teaseSummary.lines.join(' · ')}
                 {!isPaid && '  —  upgrade to see every name and exact details'}
+                {isPaid && revealGated && '  —  claim your record to see every name'}
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Reveal gate — a PAID member who hasn't claimed their record sees the tease but not real
+          names. This is the claim-your-record onboarding hook, not an upsell. */}
+      {!loading && isPaid && revealGated && (
+        <div style={{ marginBottom: '1.25rem', background: '#fff', border: '1px solid #bbf7d0', borderRadius: '0.75rem', padding: '1rem 1.25rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontWeight: 800, color: '#14532d', fontSize: '1rem' }}>🛡️ Claim your record to reveal names</p>
+            <p style={{ margin: '0.25rem 0 0', color: '#166534', fontSize: '0.88rem', lineHeight: 1.5 }}>
+              To protect people’s privacy, we only reveal who’s searching once you’ve verified this profile is you.
+            </p>
+          </div>
+          <Link to="/my-identity" style={{ background: '#0d5d2f', color: '#fff', padding: '0.55rem 1.1rem', borderRadius: 8, fontWeight: 700, textDecoration: 'none', fontSize: 14, whiteSpace: 'nowrap' }}>
+            Claim your record →
+          </Link>
         </div>
       )}
 

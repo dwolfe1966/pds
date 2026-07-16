@@ -214,6 +214,15 @@ export async function buildWsfySummary(identity, opts = {}) {
   const state = subj.state ? String(subj.state).trim().toUpperCase() : null;
   const selfUserId = subj.selfUserId || null;
 
+  // REVEAL GATE (owner 2026-07-16): real searcher/viewer names + exact PII are unmasked only when the
+  // member has CLAIMED this identity (mapped_identity → required KBA at mapping). Paid-but-unmapped
+  // (card/self-provided) still gets the full masked tease — just not the reveal. This closes the
+  // "type any name → see who's searching" hole. CEILING: tier + selfUserId are still client-asserted
+  // (app-key only) — full closure needs WSFY auth-hardening (derive both from a trusted BC token).
+  // To also accept card-tier as sufficient, add `|| subj.source === 'card_info'` here.
+  const REVEAL_REQUIRES = 'mapped_identity';
+  const reveal = paid && subj.source === REVEAL_REQUIRES;
+
   // MAXIMIZE RECALL (owner 2026-07-16): catch every plausible searcher via three signals, and tag
   // each row's PRECISION so high-confidence matches can be elevated separately from the broad count.
   //   result_exact  = subject's exact name appeared in a result set (+ state)         → high
@@ -381,7 +390,7 @@ export async function buildWsfySummary(identity, opts = {}) {
       key: String(g.searcher_key), confidence: g.confidence, reason: REASON_FOR(g, tags),
       affinities: tags, times: g.times, searchType: TYPE_LABEL[g.last_type] || cap(g.last_type) || 'Name',
       timestamp: g.last_at, state: g.searcher_state || '',
-      name: paid ? (g.searcher_name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.searcher_name),
+      name: reveal ? (g.searcher_name || (g.is_member ? 'Member' : 'Anonymous visitor')) : maskLabel(g.searcher_name),
     });
   }
   keySignals.sort((a, b) => (CONF_RANK[b.confidence] - CONF_RANK[a.confidence]) || (a.timestamp < b.timestamp ? 1 : -1));
@@ -393,7 +402,7 @@ export async function buildWsfySummary(identity, opts = {}) {
     const searchType = TYPE_LABEL[r.last_type] || cap(r.last_type) || 'Name';
     const a = aff.get(r.searcher_key) || { tags: [] };
     const base = { id: String(r.searcher_key || i), timestamp: r.last_at, searchType, tier, times: r.times, affinities: a.tags, confidence: r.confidence };
-    if (paid) {
+    if (reveal) {
       return {
         ...base,
         name: r.searcher_name || (isMember ? 'Member' : 'Anonymous visitor'),
@@ -472,10 +481,12 @@ export async function buildWsfySummary(identity, opts = {}) {
   if (localTotal) highlights.push({ key: 'local', icon: '🏠', text: `${localTotal} in your area` });
 
   // "Who viewed my profile" — a distinct higher-intent stream, matched on the same resolved subject.
-  const profileViews = await queryProfileViewers({ subjNorm, subjFirst, subjLast, state, selfUserId, paid });
+  const profileViews = await queryProfileViewers({ subjNorm, subjFirst, subjLast, state, selfUserId, paid: reveal });
 
   return {
     count, tier: paid ? 'paid' : 'free', matchedVia: subj.source, sameStateCount,
+    // reveal = real names shown; revealGated = paid but not mapped → drive "claim your record to unlock".
+    reveal, revealGated: paid && !reveal,
     keySignalCount: keySignals.length, keySignals, highlights, profileViews,
     teaseSummary: { headline, lines }, events,
   };
