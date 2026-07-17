@@ -31,7 +31,9 @@ export default function WsfyPaymentTeaser() {
 
   useEffect(() => {
     let alive = true;
-    if (!identity.name) return undefined;
+    // Fetch when we have EITHER a name OR a selfUserId — a newly-mapped member resolves server-side by
+    // selfUserId (mapped self_person) even before the client `user` object carries the name.
+    if (!identity.name && !identity.selfUserId) return undefined;
     fetchWhoIsSearching({ ...identity, tier: 'free' })
       .then((r) => { if (alive) setData(r); })
       .catch(() => { /* best-effort — hero still renders a generic version */ });
@@ -39,6 +41,7 @@ export default function WsfyPaymentTeaser() {
   }, [identity]);
 
   const count = (data && data.count) || 0;
+  const views = (data && data.profileViews && data.profileViews.count) || 0;
   const highlights = (data && Array.isArray(data.highlights)) ? data.highlights : [];
   const lines = (data && data.teaseSummary && data.teaseSummary.lines) || [];
   const rows = (data && data.events) ? data.events.slice(0, 2) : [];
@@ -51,6 +54,9 @@ export default function WsfyPaymentTeaser() {
           ? `${count} ${count === 1 ? 'person is' : 'people are'} searching for you`
           : 'See who’s searching for you'}
       </h2>
+      {views > 0 && (
+        <p style={{ margin: '4px 0 0', color: '#475569', fontSize: 13 }}><strong style={{ color: '#0f172a' }}>{views}</strong> viewed your profile</p>
+      )}
       {highlights.length > 0 ? (
         // Specific, named callouts — the enriched payoff (same-state count, school/employer overlaps).
         <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>

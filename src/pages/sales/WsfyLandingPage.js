@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { track } from '../../services/trackingService';
 import { useSignup } from '../../hooks/useSignup';
 import api from '../../api';
@@ -7,6 +7,7 @@ import { generateKba, gradeKba } from '../../utils/kba';
 import { saveMemberProfile } from '../../services/memberEnrichment';
 import US_STATES from './usStates';
 import ColorLandingFooter from './ColorLandingFooter';
+import { ReviewStars, TrustBadges, Testimonials, StatStrip } from './BvSocialProof';
 
 /**
  * Visitor WSFY funnel — IDENTITY-FIRST, fully inline (owner 2026-07-16). All identity-CONFIRMATION
@@ -151,11 +152,22 @@ const WsfyLandingPage = () => {
 
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 42%)' }}>
+      {/* Header — brand + "already a member?" jump straight to the member WSFY page. */}
+      <header style={{ borderBottom: `1px solid ${P.line}`, background: 'rgba(255,255,255,0.85)' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0.7rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <span style={{ fontWeight: 800, color: P.green, fontSize: '1.05rem' }}>IDLookup</span>
+          <Link to="/who-is-searching" style={{ color: P.green, fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Already a member? See who’s searching →
+          </Link>
+        </div>
+      </header>
+
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '1.75rem 1rem 2.5rem' }}>
         {step === 'about' && (
           <div style={{ textAlign: 'center', marginBottom: '1.4rem' }}>
             <h1 style={{ margin: 0, fontSize: '2.1rem', lineHeight: 1.12, fontWeight: 800, letterSpacing: '-0.02em', color: P.ink }}>See Who&apos;s Searching For You</h1>
             <p style={{ margin: '0.6rem 0 0', fontSize: '1rem', color: P.mut, lineHeight: 1.5 }}>Confirm your identity to see who&apos;s looking you up — and control what they can find.</p>
+            <div style={{ marginTop: '0.6rem' }}><ReviewStars /></div>
           </div>
         )}
 
@@ -259,6 +271,21 @@ const WsfyLandingPage = () => {
             </div>
           )}
         </div>
+
+        {/* Trust — privacy promise + badges + testimonials + stats. Shown on the entry step. */}
+        {step === 'about' && (
+          <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+            <div style={{ background: '#fff', border: `1px solid ${P.line}`, borderRadius: 14, padding: '1.1rem 1.25rem' }}>
+              <p style={{ margin: '0 0 0.5rem', fontWeight: 800, color: P.green, fontSize: '0.95rem' }}>🔒 We will never sell your data. Ever.</p>
+              <p style={{ margin: 0, fontSize: '0.86rem', color: P.mut, lineHeight: 1.55 }}>
+                Your information is used only to match your record and show who&apos;s searching for you — never sold, never shared with advertisers or third parties. You control what&apos;s visible, and you can remove yourself anytime.
+              </p>
+              <div style={{ marginTop: '0.9rem' }}><TrustBadges /></div>
+            </div>
+            <Testimonials />
+            <StatStrip />
+          </div>
+        )}
       </div>
       <ColorLandingFooter bg={P.greenDark} fg="rgba(255,255,255,0.78)" accent="#bbf7d0" />
     </main>
