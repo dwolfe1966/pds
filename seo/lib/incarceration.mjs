@@ -24,14 +24,21 @@ const clean = (s) => (s == null ? '' : String(s).trim());
 //    source_id/source_name, state/county, charges, mugshot, details[[label,value]]). Search is BY SOURCE
 //    (jail) — nationwide-by-state needs the sources list first; for the POC we pass an optional sourceId. ──
 async function jailbase(query, opts) {
-  const base = opts.jailbaseUrl || 'https://www.jailbase.com/api/1';
+  // Prefer the RapidAPI host — direct jailbase.com 503s datacenter IPs (Vercel), RapidAPI is the reliable
+  // path. RapidAPI wrapper uses /search/ (NOT /search_records/, which 404s there). Endpoint/params are
+  // env-overridable so we can adjust once JailBase's upstream is up to confirm the live shape.
+  const rapid = !!opts.jailbaseRapidKey;
+  const base = (opts.jailbaseUrl || (rapid ? `https://${opts.jailbaseRapidHost}` : 'https://www.jailbase.com/api/1')).replace(/\/$/, '');
+  const searchPath = opts.jailbaseSearchPath || (rapid ? '/search/' : '/search_records/');
   const p = new URLSearchParams();
   if (query.firstName) p.set('first_name', query.firstName);
   if (query.lastName) p.set('last_name', query.lastName);
   if (query.sourceId) p.set('source_id', String(query.sourceId));
   p.set('json', '1');
-  const url = `${base}/search_records/?${p.toString()}`;
-  const res = await fetch(url, { headers: { 'User-Agent': 'idlookup/1.0', Accept: 'application/json' } });
+  const url = `${base}${searchPath}?${p.toString()}`;
+  const headers = { 'User-Agent': 'idlookup/1.0', Accept: 'application/json' };
+  if (rapid) { headers['x-rapidapi-host'] = opts.jailbaseRapidHost; headers['x-rapidapi-key'] = opts.jailbaseRapidKey; }
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`jailbase ${res.status}`);
   const data = await res.json().catch(() => null);
   const records = (data && (data.records || (data.data && data.data.records))) || [];
@@ -90,12 +97,15 @@ const PROVIDERS = { jailbase, ucc };
 export async function findBookings(query, env = {}) {
   const opts = {
     jailbaseUrl: env.JAILBASE_API_URL,
-    jailbaseEnabled: env.JAILBASE_ENABLED !== 'false',
+    jailbaseRapidKey: env.JAILBASE_RAPIDAPI_KEY,
+    jailbaseRapidHost: env.JAILBASE_RAPIDAPI_HOST || 'jailbase-jailbase.p.rapidapi.com',
+    jailbaseSearchPath: env.JAILBASE_SEARCH_PATH,
     uccKey: env.UCC_API_KEY, uccUrl: env.UCC_API_URL,
     limit: Math.min(Number(env.INCARCERATION_LIMIT) || 12, 40),
   };
   const enabled = [];
-  if (opts.jailbaseEnabled) enabled.push('jailbase');
+  // Only enable JailBase when the RapidAPI key is set (direct calls 503 from datacenter IPs).
+  if (opts.jailbaseRapidKey || env.JAILBASE_API_URL) enabled.push('jailbase');
   if (opts.uccKey) enabled.push('ucc');
   const settled = await Promise.allSettled(enabled.map((k) => PROVIDERS[k](query, opts)));
   const records = [];

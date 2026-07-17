@@ -43,24 +43,25 @@ UCC_API_URL   = https://api.unlimitedcriminalchecks.com   # confirm the real bas
 **Why:** free, no key, real bookings + charges + **mugshots** (image URLs), county-level. Patchy /
 non-authoritative — good as *coverage fill*, not the backbone.
 
-**The catch:** JailBase **503s datacenter IPs** (confirmed — it blocked our test server). Vercel
-serverless egress is a datacenter IP, so direct server calls will likely be blocked. Options:
-- **RapidAPI tier** — JailBase is published on RapidAPI (`rapidapi.com/jailbase/api/jailbase`). Subscribe
-  there, get the RapidAPI key, and point our adapter at the RapidAPI host (small change to the
-  `jailbase()` fetch: RapidAPI base URL + `X-RapidAPI-Key` / `X-RapidAPI-Host` headers). **This is the
-  reliable path.**
-- Or a **residential/proxy egress** for the JailBase calls (heavier).
+**The catch (confirmed):** direct jailbase.com **503s datacenter IPs**, so Vercel can't call it directly.
+**Use the RapidAPI tier** — the adapter is now WIRED for it (2026-07-17), env-keyed. Verified from here:
+RapidAPI auth works; the wrapper's endpoints are `/search/`, `/recent/`, `/sources/` (NOT
+`/search_records/` — that 404s on RapidAPI). One live-caveat: **JailBase's own upstream is intermittently
+503** (their service), so valid endpoints returned 503 during our test — retry, or it'll work from Vercel
+when their origin is up. The adapter degrades gracefully (returns 0, logs the provider error, never crashes).
+
+**Env to set on Vercel (SEO project) — the ONLY thing you need for JailBase:**
+```
+JAILBASE_RAPIDAPI_KEY  = <your RapidAPI key>          # from rapidapi.com (KEEP SECRET — env only)
+JAILBASE_RAPIDAPI_HOST = jailbase-jailbase.p.rapidapi.com   # (this is the default; override only if it changes)
+# optional: JAILBASE_SEARCH_PATH = /search/   JAILBASE_API_URL = <full base override>
+```
+_(The key is already in `seo/.env.local` for local testing — gitignored, never committed.)_
 
 **Structure note:** JailBase search is **by source (jail), not by state** — `source_id` per facility. For
-state coverage you first pull their **sources list** (`/api/1/sources`) filtered by state, then query the
-high-volume jails. For a POC, start with a few big-county sources.
-
-**Env:**
-```
-JAILBASE_ENABLED  = true            # (default on)
-JAILBASE_API_URL  = <RapidAPI base>  # if going through RapidAPI
-# + the RapidAPI key wiring (small adapter edit)
-```
+state coverage, first pull `/sources/` filtered by state, then query high-volume jails. POC: start with a
+few big-county sources, or confirm whether `/search/` alone returns cross-source name results (verify when
+their upstream is up).
 
 ---
 
