@@ -7,6 +7,7 @@ import { getIdentityContext, getSearchContext } from '../../services/searchConte
 import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../utils/reportExtract';
 import ProfileView, { styles } from '../../components/ProfileView';
 import MyProfileModular from '../../components/MyProfileModular';
+import InmateBookingSection from '../../components/InmateBookingSection';
 import { enrichFromReport } from '../../services/memberEnrichment';
 import { captureProfileView } from '../../services/searchActivity';
 import { track } from '../../services/trackingService';
@@ -381,6 +382,15 @@ const SearchResultDetailPage = () => {
           )}
         </div>
       )}
+
+      {/* Booking/incarceration records — the delivered inmate product. Self-gates: nothing unless the
+          person has booking records, so it only shows for the inmate vertical. */}
+      {(() => {
+        const parts = String(data.fullName || '').trim().split(/\s+/).filter(Boolean);
+        const st = (Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
+          || (String(data.currentLocation || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+        return parts.length >= 2 ? <InmateBookingSection firstName={parts[0]} lastName={parts[parts.length - 1]} state={st} /> : null;
+      })()}
 
       {reportView === 'profile' ? (
         <MyProfileModular

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
 import WsfyPaymentTeaser from '../../components/WsfyPaymentTeaser';
 import IdentityPaymentTeaser from '../../components/IdentityPaymentTeaser';
+import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
@@ -779,6 +780,21 @@ const PaymentPage = () => {
           </div>
         </div>
       )}
+
+      {/* Inmate booking records for the target (first-party /api/incarceration). SELF-GATING: renders
+          nothing unless the target actually has booking records, so it only shows on the inmate vertical
+          and never touches the general funnel. */}
+      {selectedPerson && !success && !isSelfContext && (() => {
+        const parts = String(selectedPerson.fullName || '').trim().split(/\s+/).filter(Boolean);
+        const loc = Array.isArray(selectedPerson.locations) ? selectedPerson.locations[0] : selectedPerson.location;
+        const st = (String(loc || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+        if (parts.length < 2) return null;
+        return (
+          <div style={{ maxWidth: 960, margin: '0 auto 1.25rem' }}>
+            <InmateBookingTeaser firstName={parts[0]} lastName={parts[parts.length - 1]} state={st} accent="#0d5d2f" dark="#0a4a25" />
+          </div>
+        );
+      })()}
 
       <div className={styles.layout}>
 
