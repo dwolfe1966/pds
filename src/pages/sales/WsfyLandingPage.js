@@ -112,14 +112,17 @@ const WsfyLandingPage = () => {
     const run = async (params) => { try { const r = await api.searchPeople(params); return r?.data || []; } catch { return null; } };
     try {
       let results = null, exact = false;
-      const phoneDigits = phone.replace(/\D/g, '');
-      if (phoneDigits.length >= 10) {
-        const d = await run({ phone: phoneDigits, type: 'phone', source: 'wsfy-landing' });
-        if (d && d.length) { results = d; exact = true; track('wsfy_match_via', { via: 'phone' }); }
-      }
-      if (!results) {
+      // EXACT-FIRST order (owner 2026-07-16): email → phone → name/location/age.
+      {
         const d = await run({ email: email.trim(), type: 'email', source: 'wsfy-landing' });
         if (d && d.length) { results = d; exact = true; track('wsfy_match_via', { via: 'email' }); }
+      }
+      if (!results) {
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (phoneDigits.length >= 10) {
+          const d = await run({ phone: phoneDigits, type: 'phone', source: 'wsfy-landing' });
+          if (d && d.length) { results = d; exact = true; track('wsfy_match_via', { via: 'phone' }); }
+        }
       }
       if (!results) {
         const d = await run({ firstName: firstName.trim(), lastName: lastName.trim(), middleName: middleName.trim() || undefined,
