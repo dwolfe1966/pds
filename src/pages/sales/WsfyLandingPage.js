@@ -5,6 +5,7 @@ import { useSignup } from '../../hooks/useSignup';
 import api from '../../api';
 import { generateKba, gradeKba } from '../../utils/kba';
 import { saveMemberProfile } from '../../services/memberEnrichment';
+import DlScanVerify from '../../components/DlScanVerify';
 import US_STATES from './usStates';
 import ColorLandingFooter from './ColorLandingFooter';
 import { ReviewStars, TrustBadges, Testimonials, StatStrip } from './BvSocialProof';
@@ -80,6 +81,7 @@ const WsfyLandingPage = () => {
   const [kbaQuestions, setKbaQuestions] = useState([]);
   const [kbaAnswers, setKbaAnswers] = useState({});
   const [kbaAttempts, setKbaAttempts] = useState(0);
+  const [showDlScan, setShowDlScan] = useState(false);
   const KBA_MAX = 5;
   const kbaLocked = kbaAttempts >= KBA_MAX;
   const stepIndex = getStepIndex(step);
@@ -142,36 +144,39 @@ const WsfyLandingPage = () => {
     }
   };
 
-  // Pick "this is me" → build a lightweight KBA (state-recall for a thin visitor record) then verify.
+  // Pick "this is me" → go to the verify step (a KBA question when we can build one, always the DL option).
   const chooseMatch = (m) => {
     const sp = { name: m?.fullName, city: m?.city || city || undefined, state: m?.state || state || undefined, age: m?.age || m?.ageRange || age || undefined };
     setSelfPerson(sp);
-    const questions = generateKba(null, sp, 1);
-    if (questions.length) { setKbaQuestions(questions); setKbaAnswers({}); setKbaAttempts(0); setErr(''); setStep('kba'); }
-    else confirmIdentity(sp);
+    setKbaQuestions(generateKba(null, sp, 1));
+    setKbaAnswers({}); setKbaAttempts(0); setErr(''); setShowDlScan(false);
+    track('wsfy_record_selected', {});
+    setStep('verify');
   };
 
   const submitKba = () => {
     if (kbaLocked) return;
-    if (kbaQuestions.some((qq) => !kbaAnswers[qq.id])) { setErr('Please answer to continue.'); return; }
-    if (!gradeKba(kbaQuestions, kbaAnswers)) {
-      const next = kbaAttempts + 1; setKbaAttempts(next);
-      setErr(next >= KBA_MAX ? 'Too many incorrect attempts. Please contact support to verify your identity.' : "That doesn't match your record. Please try again.");
-      return;
+    if (kbaQuestions.length) {
+      if (kbaQuestions.some((qq) => !kbaAnswers[qq.id])) { setErr('Please answer to continue.'); return; }
+      if (!gradeKba(kbaQuestions, kbaAnswers)) {
+        const next = kbaAttempts + 1; setKbaAttempts(next);
+        setErr(next >= KBA_MAX ? 'Too many incorrect attempts. Verify with your license below, or contact support.' : "That doesn't match your record. Please try again.");
+        return;
+      }
     }
-    confirmIdentity(selfPerson);
+    confirmIdentity(selfPerson, 'kba');
   };
 
-  // Confirmed → silently create the account, complete the profile from the matched record, → payment.
-  const confirmIdentity = async (sp) => {
+  // Confirmed (via KBA or DL scan) → silently create the account, complete the profile, → payment.
+  const confirmIdentity = async (sp, verified) => {
     setErr(''); setStep('creating');
     const ok = await signupSubmit({
       email: email.trim(), password: genPassword(),
       extraPayload: { firstName: firstName.trim(), lastName: lastName.trim(), fullName: [firstName, middleName, lastName].filter(Boolean).join(' ').trim(), phone: phone.trim() || undefined, intent: 'wsfy' },
     });
     if (!ok) { setErr('That email may already be in use — try logging in instead.'); setStep('contact'); return; }
-    try { saveMemberProfile({ selfPerson: sp, city: sp.city, state: sp.state, verified: 'kba', source: 'wsfy-landing' }); } catch { /* mirror is best-effort */ }
-    track('wsfy_identity_confirmed', {});
+    try { saveMemberProfile({ selfPerson: sp, city: sp.city, state: sp.state, verified: verified || 'kba', source: 'wsfy-landing' }); } catch { /* mirror is best-effort */ }
+    track('wsfy_identity_confirmed', { verified: verified || 'kba' });
     navigate('/payment?reason=wsfy');
   };
 
@@ -203,11 +208,11 @@ const WsfyLandingPage = () => {
 
         <div style={card}>
           {/* Dangling "carrot" — the payoff kept visible through every mapping step. */}
-          {['about', 'pinpoint', 'contact', 'choose', 'kba'].includes(step) && (
+          {['about', 'pinpoint', 'contact', 'choose', 'verify'].includes(step) && (
             <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '0.6rem 0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span aria-hidden="true" style={{ fontSize: 18 }}>{(step === 'choose' || step === 'kba') ? '🎯' : VALUE_PROPS[vpIdx].icon}</span>
+              <span aria-hidden="true" style={{ fontSize: 18 }}>{(step === 'choose' || step === 'verify') ? '🎯' : VALUE_PROPS[vpIdx].icon}</span>
               <span style={{ fontSize: '0.86rem', color: '#14532d', fontWeight: 700, lineHeight: 1.4 }}>
-                {(step === 'choose' || step === 'kba') ? 'Almost there — confirm to reveal who’s been searching for you.' : VALUE_PROPS[vpIdx].text}
+                {(step === 'choose' || step === 'verify') ? 'Almost there — confirm to reveal who’s been searching for you.' : VALUE_PROPS[vpIdx].text}
               </span>
             </div>
           )}
@@ -270,14 +275,18 @@ const WsfyLandingPage = () => {
 
           {step === 'choose' && (
             <div>
-              <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>Which one is you?</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>Select your record to confirm your identity.</p>
+              <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>We found your record 🎉</h2>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>Select the one that&apos;s you — this is your identity, and you&apos;ll control what&apos;s public about it.</p>
               <div style={{ display: 'grid', gap: 10 }}>
                 {matches.map((m, i) => (
                   <button key={m.extId || i} type="button" onClick={() => chooseMatch(m)}
-                    style={{ textAlign: 'left', background: '#fff', border: `1.5px solid ${P.line}`, borderRadius: 12, padding: '0.9rem 1rem', cursor: 'pointer' }}>
-                    <div style={{ fontWeight: 800, color: P.ink }}>{m.fullName}{(m.age || m.ageRange) ? `, ${m.age || m.ageRange}` : ''}</div>
-                    <div style={{ fontSize: 13, color: P.mut, marginTop: 2 }}>{m.location || [m.city, m.state].filter(Boolean).join(', ')}</div>
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', background: '#fff', border: `1.5px solid ${P.line}`, borderRadius: 12, padding: '0.9rem 1rem', cursor: 'pointer' }}>
+                    <span style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0fdf4', color: P.green, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, flexShrink: 0 }}>{(m.fullName || '?')[0]}</span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', fontWeight: 800, color: P.ink }}>{m.fullName}{(m.age || m.ageRange) ? `, ${m.age || m.ageRange}` : ''}</span>
+                      <span style={{ display: 'block', fontSize: 13, color: P.mut, marginTop: 2 }}>📍 {m.location || [m.city, m.state].filter(Boolean).join(', ')}</span>
+                    </span>
+                    <span style={{ color: P.green, fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap' }}>This is me →</span>
                   </button>
                 ))}
               </div>
@@ -285,10 +294,21 @@ const WsfyLandingPage = () => {
             </div>
           )}
 
-          {step === 'kba' && (
+          {step === 'verify' && (showDlScan ? (
+            <div>
+              <h2 style={{ margin: '0 0 0.3rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>🛡️ Verify with your license</h2>
+              <DlScanVerify recordName={selfPerson && selfPerson.name} onVerified={() => confirmIdentity(selfPerson, 'id')} onCancel={() => setShowDlScan(false)} />
+              <button type="button" onClick={() => setShowDlScan(false)} style={{ marginTop: 12, background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>← Answer a question instead</button>
+            </div>
+          ) : (
             <div>
               <h2 style={{ margin: '0 0 0.3rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>Confirm it&apos;s really you</h2>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>One quick question from your record — this keeps someone else from claiming your identity.</p>
+              {selfPerson && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 999, padding: '4px 12px', marginBottom: 12, fontSize: 13, fontWeight: 700, color: '#14532d' }}>✓ Claiming: {selfPerson.name}</div>
+              )}
+              <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: P.mut }}>
+                {kbaQuestions.length ? 'One quick question from your record — this keeps someone else from claiming your identity.' : 'Confirm this record is yours to unlock who’s been searching for you.'}
+              </p>
               {kbaQuestions.map((qq) => (
                 <div key={qq.id} style={{ marginBottom: 12 }}>
                   <div style={{ fontWeight: 700, color: P.ink, fontSize: 14, marginBottom: 8 }}>{qq.prompt}</div>
@@ -307,9 +327,14 @@ const WsfyLandingPage = () => {
               ))}
               {err && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.6rem', fontWeight: 600 }}>{err}</p>}
               <button type="button" style={cta} onClick={submitKba} disabled={kbaLocked}>Confirm &amp; see who&apos;s searching →</button>
+              {/* DL challenge — the stronger, instant option (verified level 'id'). */}
+              <button type="button" onClick={() => { track('wsfy_dl_start', {}); setShowDlScan(true); }}
+                style={{ width: '100%', marginTop: 12, background: '#fff', border: `1.5px solid ${P.green}`, color: P.green, borderRadius: 12, padding: '11px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                🛡️ Verify instantly with your license
+              </button>
               {kbaLocked && <a href="/contact" style={{ display: 'inline-block', marginTop: 12, color: P.green, fontSize: 13, fontWeight: 700, textDecoration: 'underline' }}>Contact support</a>}
             </div>
-          )}
+          ))}
         </div>
 
         {/* Trust — privacy promise + badges + testimonials + stats. Shown on the entry step. */}
