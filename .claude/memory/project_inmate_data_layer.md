@@ -47,6 +47,18 @@ independent of BC. Inmate data + email both ride that pattern.
   OBIS → `node --env-file=.env.local scripts/ingest-florida-obis.mjs <dir>`. Confirm the exact column
   header names on first run (parser is fuzzy-header-mapped; add aliases in COLS if a field is blank).
 
+## Florida OBIS FULLY LOADED 2026-07-17 (commit `cb32d62`) — the live inmate source
+**670,606 FL inmates in Neon `fl_inmates`; 667,829 (99.6%) with charges, 190,145 with facility, 666,425
+with readable custody status.** Verified through the adapter (Mary Jones/FL → age, ACTIVE, FT. PIERCE, 6
+charges w/ county). OBIS files live on disk at `seo/obis/` (3 dirs: INMATE_ACTIVE / INMATE_RELEASE /
+OFFENDER + .mdb + .XLSX). Real OBIS column names (confirmed from the files): DCNumber, LastName/FirstName,
+Race/Sex/BirthDate, `custody_description`/`supvstatus_description` (status), `FACILITY_description`/
+`facility_description`, `PrisonReleaseDate`/`SupervisionTerminationDate`; offense files use
+`adjudicationcharge_descr` + `County_of_Conviction`. The ingest maps all of these now.
+**NO mugshots in OBIS** (booking display shows 👤 placeholder + charges/facility/status). FL DOC offender
+photos exist at a URL pattern (dc.state.fl.us/OffenderSearch) — a future enhancement; JailBase/UCC would
+add mugshots too. Re-load monthly: re-run the ingest per dir (idempotent upsert by dc_number).
+
 ## Email platform (investment #2) — foundation built 2026-07-17 (commit `afed7c3`)
 `sendCampaign` (suppression-aware + logged), `email_sends`/`email_suppression` Neon tables, generic
 `POST /api/email/send`, welcome flow. Env-gated on `SENDGRID_API_KEY` — blocked only on owner SendGrid
