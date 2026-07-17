@@ -8,8 +8,38 @@
 // aggregate — patchy coverage, non-authoritative; it may also rate-limit/block datacenter IPs, so a
 // residential proxy or their paid/RapidAPI tier may be needed for reliable server-side calls.
 
+import { neon } from '@neondatabase/serverless';
+
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/\D/g, ''), 10); return Number.isNaN(n) ? null : n; };
 const clean = (s) => (s == null ? '' : String(s).trim());
+const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+// Florida OBIS lives in our own Neon (ingested via scripts/ingest-florida-obis.mjs) — free, reliable,
+// no external key. Queried directly.
+const FL_URL = process.env.LEADS_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
+const flSql = FL_URL ? neon(FL_URL) : null;
+
+async function floridaObis(query) {
+  if (!flSql || !query.lastName) return [];
+  const ln = norm(query.lastName); const fn = norm(query.firstName);
+  const rows = fn
+    ? await flSql`SELECT dc_number, first_name, middle_name, last_name, race, sex, birth_date, custody_status, facility, release_date, offenses FROM fl_inmates WHERE last_norm = ${ln} AND first_norm = ${fn} LIMIT 20`
+    : await flSql`SELECT dc_number, first_name, middle_name, last_name, race, sex, birth_date, custody_status, facility, release_date, offenses FROM fl_inmates WHERE last_norm = ${ln} LIMIT 20`;
+  return rows.map((r) => {
+    let age = null;
+    const y = String(r.birth_date || '').match(/(19|20)\d\d/);
+    if (y) age = new Date().getUTCFullYear() - Number(y[0]);
+    return {
+      source: 'florida-obis', sourceName: 'FL DOC',
+      firstName: clean(r.first_name), lastName: clean(r.last_name),
+      name: [r.first_name, r.last_name].map(clean).filter(Boolean).join(' '),
+      age, gender: clean(r.sex) || null, race: clean(r.race) || null,
+      charges: Array.isArray(r.offenses) ? r.offenses.map(clean).filter(Boolean) : [],
+      mugshotUrl: null, bookingDate: null, releaseStatus: clean(r.custody_status) || null,
+      facility: clean(r.facility) || null, county: null, state: 'FL',
+    };
+  });
+}
 
 /**
  * Normalized booking record — the single shape every provider maps into (callers depend on THIS,
@@ -86,7 +116,7 @@ async function ucc(query, opts) {
   }));
 }
 
-const PROVIDERS = { jailbase, ucc };
+const PROVIDERS = { jailbase, ucc, floridaObis };
 
 /**
  * Query all enabled incarceration providers for a person; return normalized, best-effort merged records.
@@ -104,6 +134,9 @@ export async function findBookings(query, env = {}) {
     limit: Math.min(Number(env.INCARCERATION_LIMIT) || 12, 40),
   };
   const enabled = [];
+  // Florida OBIS (our Neon) — free/reliable; only for FL or stateless searches (efficiency).
+  const st = (query.state || '').toUpperCase();
+  if (flSql && env.FL_OBIS_ENABLED !== 'false' && (!st || st === 'FL')) enabled.push('floridaObis');
   // Only enable JailBase when the RapidAPI key is set (direct calls 503 from datacenter IPs).
   if (opts.jailbaseRapidKey || env.JAILBASE_API_URL) enabled.push('jailbase');
   if (opts.uccKey) enabled.push('ucc');
