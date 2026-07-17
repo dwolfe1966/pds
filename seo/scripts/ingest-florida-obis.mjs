@@ -56,12 +56,12 @@ async function parseTab(file, want, onRow) {
         console.log(`\n[${file}] ${cells.length} columns:`);
         console.log('  headers:', cells.map((c) => c.trim()).filter(Boolean).join(' | '));
         console.log('  MAPPED :', Object.entries(idx).map(([k, i]) => `${k}→${i >= 0 ? `"${cells[i].trim()}"` : 'MISSING'}`).join('  '));
-        rl.close(); return 0; // header-only in inspect mode
       }
       continue;
     }
     if (!line.trim()) continue;
     const rec = {}; for (const [k, i] of Object.entries(idx)) rec[k] = i >= 0 ? (cells[i] || '').trim() : '';
+    if (INSPECT) { console.log('  SAMPLE :', JSON.stringify(rec)); rl.close(); return 0; } // header + one data row
     if (!rec.dc) continue;
     onRow(rec); n++;
   }
