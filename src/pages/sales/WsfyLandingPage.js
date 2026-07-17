@@ -21,6 +21,14 @@ const P = { green: '#0d5d2f', greenDark: '#0a4a25', ink: '#0f2533', mut: '#5b748
 const TOTAL_STEPS = 3;
 const getStepIndex = (s) => ({ about: 1, pinpoint: 2, contact: 3 }[s] || 0);
 
+// The "carrot" — kept dangling through the whole mapping flow. WSFY leads; other identity value props
+// rotate in (control exposure, removal). Extend this list to add more props over time (owner 2026-07-16).
+const VALUE_PROPS = [
+  { icon: '👀', text: 'See who’s searching for you' },
+  { icon: '🛡️', text: 'Control what strangers can find about you' },
+  { icon: '🔒', text: 'Remove yourself from public searches' },
+];
+
 const genPassword = () => {
   const rand = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID().replace(/-/g, '')
@@ -59,11 +67,13 @@ const WsfyLandingPage = () => {
   const [lastName, setLastName] = useState(q.get('ln') || q.get('lastName') || '');
   const [city, setCity] = useState(q.get('city') || '');
   const [state, setState] = useState(q.get('state') || '');
+  const [zip, setZip] = useState(q.get('zip') || '');
   const [age, setAge] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [step, setStep] = useState('about');
   const [err, setErr] = useState('');
+  const [vpIdx, setVpIdx] = useState(0); // rotating value-prop "carrot"
 
   const [matches, setMatches] = useState([]);
   const [selfPerson, setSelfPerson] = useState(null);
@@ -76,17 +86,20 @@ const WsfyLandingPage = () => {
 
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
   useEffect(() => { track('wsfy_landing_view', {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const t = setInterval(() => setVpIdx((i) => (i + 1) % VALUE_PROPS.length), 3200); return () => clearInterval(t); }, []);
 
   const continueAbout = (e) => {
     e.preventDefault(); setErr('');
     if (!firstName.trim() || !lastName.trim()) { setErr('Please enter your first and last name.'); return; }
     if (!state.trim()) { setErr('Please select your state.'); return; }
     if (!city.trim()) { setErr('Please enter your city — it pins down the right record.'); return; }
+    if (zip.trim().length !== 5) { setErr('Please enter your current 5-digit ZIP code.'); return; }
     track('wsfy_step', { step: 'pinpoint' }); setStep('pinpoint');
   };
   const continuePinpoint = () => {
     setErr('');
     if (!age.trim()) { setErr('Please enter your age so we match the right person.'); return; }
+    if (!middleName.trim()) { setErr('Please enter your middle name — it helps confirm the right record.'); return; }
     track('wsfy_step', { step: 'contact' }); setStep('contact');
   };
 
@@ -98,8 +111,8 @@ const WsfyLandingPage = () => {
     try {
       const res = await api.searchPeople({
         firstName: firstName.trim(), lastName: lastName.trim(), middleName: middleName.trim() || undefined,
-        state: state.trim() || undefined, city: city.trim() || undefined, age: age.trim() || undefined,
-        type: 'name', source: 'wsfy-landing',
+        state: state.trim() || undefined, city: city.trim() || undefined, zip: zip.trim() || undefined,
+        age: age.trim() || undefined, type: 'name', source: 'wsfy-landing',
       });
       const narrowed = narrowMatches(res?.data || [], city, age);
       if (!narrowed.length) { setErr("We couldn't find a record matching those details. Check your spelling or try again."); setStep('contact'); return; }
@@ -172,6 +185,15 @@ const WsfyLandingPage = () => {
         )}
 
         <div style={card}>
+          {/* Dangling "carrot" — the payoff kept visible through every mapping step. */}
+          {['about', 'pinpoint', 'contact', 'choose', 'kba'].includes(step) && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '0.6rem 0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span aria-hidden="true" style={{ fontSize: 18 }}>{(step === 'choose' || step === 'kba') ? '🎯' : VALUE_PROPS[vpIdx].icon}</span>
+              <span style={{ fontSize: '0.86rem', color: '#14532d', fontWeight: 700, lineHeight: 1.4 }}>
+                {(step === 'choose' || step === 'kba') ? 'Almost there — confirm to reveal who’s been searching for you.' : VALUE_PROPS[vpIdx].text}
+              </span>
+            </div>
+          )}
           {stepIndex >= 1 && stepIndex <= TOTAL_STEPS && (
             <div style={{ marginBottom: '1.3rem' }}>
               <p style={{ margin: '0 0 0.5rem', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: P.mut }}>Step {stepIndex} of {TOTAL_STEPS}</p>
@@ -193,6 +215,7 @@ const WsfyLandingPage = () => {
                 <div style={{ flex: 1 }}><label style={label} htmlFor="wsfy-state">State</label>
                   <select id="wsfy-state" style={input} value={state} onChange={(e) => setState(e.target.value)}>{US_STATES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
                 </div>
+                <div style={{ width: 120 }}><label style={label} htmlFor="wsfy-zip">Current ZIP</label><input id="wsfy-zip" style={input} value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))} placeholder="ZIP" inputMode="numeric" required /></div>
               </div>
               {err && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: 0 }}>{err}</p>}
               <button type="submit" style={cta}>Continue</button>
@@ -205,8 +228,8 @@ const WsfyLandingPage = () => {
               <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>Age and middle name make sure we match the right {firstName || 'person'}.</p>
               <label style={label} htmlFor="wsfy-age">Your age</label>
               <input id="wsfy-age" style={{ ...input, marginBottom: '0.75rem' }} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
-              <label style={label} htmlFor="wsfy-mid">Middle name (optional)</label>
-              <input id="wsfy-mid" style={{ ...input, marginBottom: '1rem' }} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Middle name" />
+              <label style={label} htmlFor="wsfy-mid">Middle name</label>
+              <input id="wsfy-mid" style={{ ...input, marginBottom: '1rem' }} value={middleName} onChange={(e) => setMiddleName(e.target.value)} placeholder="Middle name" required />
               {err && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{err}</p>}
               <button type="button" style={cta} onClick={continuePinpoint}>Continue</button>
             </div>
