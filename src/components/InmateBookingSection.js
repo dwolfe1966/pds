@@ -28,10 +28,9 @@ export default function InmateBookingSection({ firstName, lastName, state }) {
       <div style={{ display: 'grid', gap: 0 }}>
         {records.map((r, i) => (
           <div key={i} style={{ display: 'flex', gap: 14, padding: '14px 18px', borderBottom: i < records.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-            <div style={{ flexShrink: 0, width: 84, height: 100, borderRadius: 8, overflow: 'hidden', background: '#e5e7eb' }}>
-              {r.mugshotUrl
-                ? <img src={r.mugshotUrl} alt={`${r.name} booking photo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#94a3b8' }}>👤</div>}
+            <div style={{ flexShrink: 0, width: 84, height: 100, borderRadius: 8, overflow: 'hidden', background: '#e5e7eb', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#94a3b8' }}>
+              👤
+              {r.mugshotUrl && <img src={r.mugshotUrl} alt={`${r.name} booking photo`} onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>

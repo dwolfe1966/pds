@@ -19,6 +19,10 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').r
 const FL_URL = process.env.LEADS_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 const flSql = FL_URL ? neon(FL_URL) : null;
 
+// FL DOC public offender photo — sharded by the FIRST char of the DC number (verified). Not every
+// inmate has one (released/offenders often don't); the client <img> falls back to a placeholder on error.
+const flPhoto = (dc) => { const s = String(dc || '').trim(); return s ? `https://pubapps.fdc.myflorida.com/inmatephotos/${s[0]}/${s}.jpg` : null; };
+
 async function floridaObis(query) {
   if (!flSql || !query.lastName) return [];
   const ln = norm(query.lastName); const fn = norm(query.firstName);
@@ -35,7 +39,7 @@ async function floridaObis(query) {
       name: [r.first_name, r.last_name].map(clean).filter(Boolean).join(' '),
       age, gender: clean(r.sex) || null, race: clean(r.race) || null,
       charges: Array.isArray(r.offenses) ? r.offenses.map(clean).filter(Boolean) : [],
-      mugshotUrl: null, bookingDate: null, releaseStatus: clean(r.custody_status) || null,
+      mugshotUrl: flPhoto(r.dc_number), bookingDate: null, releaseStatus: clean(r.custody_status) || null,
       facility: clean(r.facility) || null, county: null, state: 'FL',
     };
   });
