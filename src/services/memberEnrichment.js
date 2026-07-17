@@ -44,6 +44,23 @@ const LS_IDENTITY = 'wsfyMappedIdentity';
 export function getMappedIdentity() {
   try { return JSON.parse(localStorage.getItem(LS_IDENTITY) || 'null'); } catch { return null; }
 }
+
+/**
+ * The identity to match WSFY/attention against — CONSISTENT across every surface (payment teaser,
+ * dashboard count, WhoIsSearching). Prefers the member's CONFIRMED mapped record name over the account
+ * name (which can be a search TARGET from signup), and uses currentUserId() so selfUserId matches the
+ * key the mapping was saved under (id/userId/_id/uniqueId + JWT fallback). Pass the auth `user`.
+ */
+export function getWsfyIdentity(user) {
+  const mapped = getMappedIdentity() || {};
+  const accountName = [user && user.firstName, user && user.lastName].filter(Boolean).join(' ') || (user && user.name) || '';
+  return {
+    name: mapped.name || accountName,
+    city: mapped.city || (user && (user.city || user.addressCity)) || '',
+    state: mapped.state || (user && (user.state || user.addressState)) || '',
+    selfUserId: currentUserId() || undefined,
+  };
+}
 function updateMappedIdentity(partial) {
   try {
     const cur = getMappedIdentity() || {};

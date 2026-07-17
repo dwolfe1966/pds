@@ -103,21 +103,35 @@ const WsfyLandingPage = () => {
     track('wsfy_step', { step: 'contact' }); setStep('contact');
   };
 
-  // Contact → run the match on the captured identity (visitor teaser search).
+  // Contact → run the match on the captured identity. EXACT-FIRST: a matching phone or email resolves
+  // the exact person; fall back to name + location + age (owner 2026-07-16).
   const findMyRecord = async () => {
     setErr('');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setErr('Please enter a valid email.'); return; }
     track('wsfy_step', { step: 'searching' }); setStep('searching');
+    const run = async (params) => { try { const r = await api.searchPeople(params); return r?.data || []; } catch { return null; } };
     try {
-      const res = await api.searchPeople({
-        firstName: firstName.trim(), lastName: lastName.trim(), middleName: middleName.trim() || undefined,
-        state: state.trim() || undefined, city: city.trim() || undefined, zip: zip.trim() || undefined,
-        age: age.trim() || undefined, type: 'name', source: 'wsfy-landing',
-      });
-      const narrowed = narrowMatches(res?.data || [], city, age);
+      let results = null, exact = false;
+      const phoneDigits = phone.replace(/\D/g, '');
+      if (phoneDigits.length >= 10) {
+        const d = await run({ phone: phoneDigits, type: 'phone', source: 'wsfy-landing' });
+        if (d && d.length) { results = d; exact = true; track('wsfy_match_via', { via: 'phone' }); }
+      }
+      if (!results) {
+        const d = await run({ email: email.trim(), type: 'email', source: 'wsfy-landing' });
+        if (d && d.length) { results = d; exact = true; track('wsfy_match_via', { via: 'email' }); }
+      }
+      if (!results) {
+        const d = await run({ firstName: firstName.trim(), lastName: lastName.trim(), middleName: middleName.trim() || undefined,
+          state: state.trim() || undefined, city: city.trim() || undefined, zip: zip.trim() || undefined, age: age.trim() || undefined, type: 'name', source: 'wsfy-landing' });
+        if (d === null) { setErr("We couldn't run the search right now. Please try again in a moment."); setStep('contact'); return; }
+        results = d; track('wsfy_match_via', { via: 'name' });
+      }
+      // Exact (phone/email) hits are already the right person — don't narrow them away; name hits do.
+      const narrowed = exact ? results : narrowMatches(results, city, age);
       if (!narrowed.length) { setErr("We couldn't find a record matching those details. Check your spelling or try again."); setStep('contact'); return; }
       setMatches(narrowed.slice(0, 6));
-      track('wsfy_matches', { count: narrowed.length });
+      track('wsfy_matches', { count: narrowed.length, exact });
       setStep('choose');
     } catch {
       setErr("We couldn't run the search right now. Please try again in a moment.");

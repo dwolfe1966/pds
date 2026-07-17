@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { fetchWhoIsSearching } from '../services/wsfyClient';
+import { getWsfyIdentity } from '../services/memberEnrichment';
 
 /**
  * WSFY upsell hero for the payment page (reason=wsfy). A free member who tried to see who's searching
@@ -26,12 +27,7 @@ export default function WsfyPaymentTeaser() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
 
-  const identity = useMemo(() => ({
-    name: [user && user.firstName, user && user.lastName].filter(Boolean).join(' ') || (user && user.name) || '',
-    city: (user && (user.city || user.addressCity)) || '',
-    state: (user && (user.state || user.addressState)) || '',
-    selfUserId: (user && (user.id || user._id || user.userId)) || undefined,
-  }), [user]);
+  const identity = useMemo(() => getWsfyIdentity(user), [user]);
 
   useEffect(() => {
     let alive = true;

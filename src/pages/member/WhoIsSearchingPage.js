@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { track } from '../../services/trackingService';
 import { fetchWhoIsSearching } from '../../services/wsfyClient';
+import { getWsfyIdentity } from '../../services/memberEnrichment';
 import styles from './WhoIsSearchingPage.module.css';
 import PageHeader, { PageShell } from '../../components/PageHeader';
 import {
@@ -538,16 +539,8 @@ const WhoIsSearchingPage = () => {
   const [keySignals, setKeySignals] = useState([]);
   const [revealGated, setRevealGated] = useState(false); // paid but not mapped → names withheld
 
-  // The member's own identity — what we match incoming searches against.
-  const identity = useMemo(() => {
-    const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.name || '';
-    return {
-      name,
-      city: user?.city || user?.addressCity || '',
-      state: user?.state || user?.addressState || '',
-      selfUserId: user?.id || user?._id || user?.userId || undefined,
-    };
-  }, [user]);
+  // The member's own identity — CONFIRMED mapped record + consistent userId (shared helper).
+  const identity = useMemo(() => getWsfyIdentity(user), [user]);
 
   useEffect(() => {
     let alive = true;
