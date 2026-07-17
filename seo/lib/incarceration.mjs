@@ -120,7 +120,50 @@ async function ucc(query, opts) {
   }));
 }
 
-const PROVIDERS = { jailbase, ucc, floridaObis };
+// ── Enformion / Endato Criminal Search — the nationwide self-serve source (600M+ records, mugshots).
+//    Auth = galaxy-ap-name / galaxy-ap-password headers (AccessProfile creds). Env-configured; enabled
+//    only when creds are present AND consumer-display permission is confirmed. Response field names are
+//    best-effort (PascalCase + camelCase variants) — finalize in the trial from a live sample. ──
+async function enformion(query, opts) {
+  if (!opts.enformionName || !opts.enformionPass) return [];
+  const base = (opts.enformionUrl || 'https://devapi.endato.com').replace(/\/$/, '');
+  const res = await fetch(`${base}/CriminalSearch/V1`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json', Accept: 'application/json',
+      'galaxy-ap-name': opts.enformionName,
+      'galaxy-ap-password': opts.enformionPass,
+      'galaxy-client-type': opts.enformionClient || 'DevAPI',
+      'galaxy-search-type': opts.enformionSearchType || 'Criminal',
+    },
+    body: JSON.stringify({ FirstName: query.firstName, LastName: query.lastName, State: query.state, Page: 1, ResultsPerPage: 20 }),
+  });
+  if (!res.ok) throw new Error(`enformion ${res.status}`);
+  const data = await res.json().catch(() => null);
+  const records = (data && (data.records || data.Records || data.results || data.persons)) || [];
+  const g = (r, ...keys) => { for (const k of keys) { if (r[k] != null && r[k] !== '') return r[k]; } return ''; };
+  return records.map((r) => {
+    const raw = g(r, 'charges', 'Charges', 'offenses', 'Offenses');
+    const charges = Array.isArray(raw)
+      ? raw.map((c) => clean(typeof c === 'object' ? g(c, 'description', 'Description', 'charge', 'Charge', 'offense') : c)).filter(Boolean)
+      : (clean(g(r, 'offense', 'Offense', 'charge', 'Charge')) ? [clean(g(r, 'offense', 'Offense', 'charge', 'Charge'))] : []);
+    return {
+      source: 'enformion', sourceName: clean(g(r, 'source', 'Source', 'agency', 'Agency')) || 'Enformion',
+      firstName: clean(g(r, 'firstName', 'FirstName')), lastName: clean(g(r, 'lastName', 'LastName')),
+      name: clean(g(r, 'fullName', 'FullName', 'name', 'Name')) || [g(r, 'firstName', 'FirstName'), g(r, 'lastName', 'LastName')].map(clean).filter(Boolean).join(' '),
+      age: num(g(r, 'age', 'Age', 'dobAge')), gender: clean(g(r, 'gender', 'Gender', 'sex', 'Sex')) || null, race: clean(g(r, 'race', 'Race')) || null,
+      charges,
+      mugshotUrl: clean(g(r, 'mugshot', 'Mugshot', 'mugshotUrl', 'MugshotUrl', 'image', 'Image')) || null,
+      bookingDate: clean(g(r, 'bookingDate', 'BookingDate', 'arrestDate', 'ArrestDate', 'offenseDate', 'OffenseDate')) || null,
+      releaseStatus: clean(g(r, 'status', 'Status', 'releaseStatus', 'ReleaseStatus')) || null,
+      facility: clean(g(r, 'facility', 'Facility', 'agency', 'Agency')) || null,
+      county: clean(g(r, 'county', 'County')) || null,
+      state: (clean(g(r, 'state', 'State', 'offenseState', 'OffenseState')) || query.state || '').toUpperCase() || null,
+    };
+  });
+}
+
+const PROVIDERS = { jailbase, ucc, floridaObis, enformion };
 
 /**
  * Query all enabled incarceration providers for a person; return normalized, best-effort merged records.
@@ -135,6 +178,8 @@ export async function findBookings(query, env = {}) {
     jailbaseRapidHost: env.JAILBASE_RAPIDAPI_HOST || 'jailbase-jailbase.p.rapidapi.com',
     jailbaseSearchPath: env.JAILBASE_SEARCH_PATH,
     uccKey: env.UCC_API_KEY, uccUrl: env.UCC_API_URL,
+    enformionName: env.ENFORMION_AP_NAME, enformionPass: env.ENFORMION_AP_PASSWORD,
+    enformionUrl: env.ENFORMION_API_URL, enformionClient: env.ENFORMION_CLIENT_TYPE, enformionSearchType: env.ENFORMION_SEARCH_TYPE,
     limit: Math.min(Number(env.INCARCERATION_LIMIT) || 12, 40),
   };
   const enabled = [];
@@ -144,6 +189,8 @@ export async function findBookings(query, env = {}) {
   // Only enable JailBase when the RapidAPI key is set (direct calls 503 from datacenter IPs).
   if (opts.jailbaseRapidKey || env.JAILBASE_API_URL) enabled.push('jailbase');
   if (opts.uccKey) enabled.push('ucc');
+  // Enformion — nationwide + mugshots; enabled when AccessProfile creds are set.
+  if (opts.enformionName && opts.enformionPass) enabled.push('enformion');
   const settled = await Promise.allSettled(enabled.map((k) => PROVIDERS[k](query, opts)));
   const records = [];
   const sources = {};

@@ -38,6 +38,30 @@ UCC_API_URL   = https://api.unlimitedcriminalchecks.com   # confirm the real bas
 
 ---
 
+## 1b. Enformion / Endato — the NATIONWIDE self-serve source (600M+ records, mugshots)
+
+**Why:** one integration covers **all 50 states + mugshots** (vs building a state ingest each). Self-serve,
+instant key, **100 free searches/mo**, no contract. The Criminal Search API returns name, mugshot, case
+number, county, offense city/state, DOB. Adapter is **built + wired** (env-keyed) — just add creds.
+
+**What to get:**
+1. Sign up at **[go.enformion.com](https://go.enformion.com/developer-apis/)** → get your **AccessProfile
+   credentials** (`galaxy-ap-name` + `galaxy-ap-password`) from the **Keys** tab at api.enformion.com.
+2. **⚠️ Confirm consumer-display permission in writing** (same as UCC — non-CRA, ask if displaying the
+   returned records incl. mugshots to consumers is permitted).
+3. In the trial, run a sample Criminal Search and confirm the **response field names** — my mapper is
+   best-effort (PascalCase + camelCase variants); finalize any mismatch in `seo/lib/incarceration.mjs` →
+   `enformion()`. Also confirm the exact endpoint (I used `POST {base}/CriminalSearch/V1`).
+
+**Env to set on Vercel (SEO project):**
+```
+ENFORMION_AP_NAME     = <galaxy-ap-name>       (KEEP SECRET — env only)
+ENFORMION_AP_PASSWORD = <galaxy-ap-password>
+# optional overrides: ENFORMION_API_URL (default https://devapi.endato.com),
+#   ENFORMION_CLIENT_TYPE (default DevAPI), ENFORMION_SEARCH_TYPE (default Criminal)
+```
+Once set, Enformion runs for ALL states (not just FL) alongside Florida OBIS — deduped automatically.
+
 ## 2. JailBase — free county booking + mugshots (enrichment)
 
 **Why:** free, no key, real bookings + charges + **mugshots** (image URLs), county-level. Patchy /
