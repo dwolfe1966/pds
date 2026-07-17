@@ -31,12 +31,16 @@ const COLS = {
   race: ['race'],
   sex: ['sex', 'gender'],
   dob: ['birthdate', 'dob', 'dateofbirth', 'birthdte'],
-  facility: ['currentfacility', 'facility', 'currentlocation', 'location', 'facilityname', 'currentprison', 'currentfac', 'facilityid', 'currentcustodyfacility'],
-  status: ['custodystatus', 'status', 'currentcustody'],
-  release: ['releasedate', 'currentreleasedate', 'tentativereleasedate', 'reldate'],
+  // OBIS: FACILITY_description (active) / facility_description (offender)
+  facility: ['facilitydescription', 'currentfacility', 'facility', 'currentlocation', 'location', 'facilityname', 'currentprison'],
+  // OBIS: custody_description (active) / supvstatus_description (offender)
+  status: ['custodydescription', 'supvstatusdescription', 'custodystatus', 'status', 'currentcustody'],
+  // OBIS: PrisonReleaseDate (active) / SupervisionTerminationDate (offender)
+  release: ['prisonreleasedate', 'supervisionterminationdate', 'releasedate', 'currentreleasedate', 'tentativereleasedate'],
 };
-const OFFENSE_DESC = ['offensedescription', 'offense', 'chargedescription', 'statutedescription', 'adjudicationcharge', 'offensedesc', 'primaryoffense', 'description'];
-const OFFENSE_STATUTE = ['statute', 'offensestatute', 'flstatute', 'statutenumber'];
+// OBIS offense files: adjudicationcharge_descr is the charge; County_of_Conviction adds context.
+const OFFENSE_DESC = ['adjudicationchargedescr', 'offensedescription', 'offense', 'chargedescription', 'adjudicationcharge', 'offensedesc', 'description'];
+const OFFENSE_COUNTY = ['countyofconviction', 'county'];
 
 function findFiles(re) { return fs.readdirSync(dir).filter((f) => re.test(f.toLowerCase()) && /\.(txt|csv|dat|tab)$/i.test(f)); }
 function findFile(re) { return findFiles(re)[0]; }
@@ -73,8 +77,9 @@ async function main() {
   //    files (active/release × CPS/prpr) — parse them all and merge. ──
   const offenses = new Map(); const aliases = new Map();
   for (const offFile of findFiles(/offense/)) {
-    await parseTab(offFile, { dc: COLS.dc, desc: OFFENSE_DESC, statute: OFFENSE_STATUTE }, (r) => {
-      const arr = offenses.get(r.dc) || []; const d = [r.desc, r.statute].filter(Boolean).join(' — '); if (d) arr.push(d); offenses.set(r.dc, arr);
+    await parseTab(offFile, { dc: COLS.dc, desc: OFFENSE_DESC, county: OFFENSE_COUNTY }, (r) => {
+      if (!r.desc) return;
+      const arr = offenses.get(r.dc) || []; arr.push(r.county ? `${r.desc} (${r.county})` : r.desc); offenses.set(r.dc, arr);
     });
   }
   console.log(`offenses: ${offenses.size} inmates across ${findFiles(/offense/).length} file(s)`);
