@@ -5,6 +5,7 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { track } from '../../services/trackingService';
 import s from './NameLandingV3Incarceration.module.css';
 import { useBrand } from '../../services/brand';
+import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 
 /** Step index for progress bar (1–4). Interstitials and final-search don't show a step. */
 const getStepIndex = (step) => {
@@ -287,6 +288,9 @@ const NameSearchLandingV3Page = () => {
             <div className={s.form}>
               <h2 className={s.sectionTitle}>Inmate matches found</h2>
               <p className={s.helper}>A few more details help us surface the exact person.</p>
+              {/* Real booking records for the entered name (first-party /api/incarceration). Renders
+                  nothing until the feed is live, so it's safe in the live funnel. */}
+              <InmateBookingTeaser firstName={firstName} lastName={lastName} state={state} />
               <div className={s.field}>
                 <label className={s.label} htmlFor="v3-age">Age (optional)</label>
                 <input id="v3-age" type="text" className={s.input} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
