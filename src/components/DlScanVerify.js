@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 const GREEN = '#0d5d2f';
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
@@ -17,6 +17,7 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
 export default function DlScanVerify({ recordName, onVerified, onCancel }) {
   const [status, setStatus] = useState('idle'); // idle | reading | matched | mismatch | unreadable
   const [detail, setDetail] = useState('');
+  const fileRef = useRef(null);
 
   const handleFile = async (e) => {
     const file = e.target.files && e.target.files[0];
@@ -24,8 +25,16 @@ export default function DlScanVerify({ recordName, onVerified, onCancel }) {
     setStatus('reading');
     setDetail('');
     let url;
+    let zxing, aamva;
     try {
-      const [zxing, aamva] = await Promise.all([import('@zxing/library'), import('aamva-parser')]);
+      [zxing, aamva] = await Promise.all([import('@zxing/library'), import('aamva-parser')]);
+    } catch {
+      setStatus('unreadable');
+      setDetail("Couldn't load the license reader. Check your connection and try again — or skip this, it's optional.");
+      e.target.value = '';
+      return;
+    }
+    try {
       const { BrowserPDF417Reader } = zxing;
       url = URL.createObjectURL(file);
       let raw;
@@ -78,10 +87,11 @@ export default function DlScanVerify({ recordName, onVerified, onCancel }) {
         <div style={{ fontSize: 14, fontWeight: 800, color: GREEN }}>🛡️ ID verified — thanks!</div>
       ) : (
         <>
-          <label style={{ display: 'inline-block', background: GREEN, color: '#fff', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 800, cursor: status === 'reading' ? 'wait' : 'pointer' }}>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+          <button type="button" onClick={() => { if (status !== 'reading' && fileRef.current) fileRef.current.click(); }} disabled={status === 'reading'}
+            style={{ display: 'inline-block', background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 800, cursor: status === 'reading' ? 'wait' : 'pointer' }}>
             {status === 'reading' ? 'Reading…' : 'Upload license photo'}
-            <input type="file" accept="image/*" capture="environment" onChange={handleFile} disabled={status === 'reading'} style={{ display: 'none' }} />
-          </label>
+          </button>
           {onCancel && (
             <button type="button" onClick={onCancel} style={{ marginLeft: 12, background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>
               Not now
