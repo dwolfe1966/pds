@@ -32,6 +32,26 @@ independent of BC. Inmate data + email both ride that pattern.
   (NameSearchLandingV3Page.js, the incarceration-themed funnel). **SAFE-BY-DEFAULT: renders NOTHING
   until a feed is live** (count 0), so it's already in the live funnel with zero disruption.
 
+## Update 2026-07-17 — JailBase wired but unreliable; Florida OBIS built + verified
+- **JailBase → RapidAPI (commit `c5c78e3`):** owner subscribed; adapter now uses the RapidAPI host,
+  env-keyed (`JAILBASE_RAPIDAPI_KEY`, host default `jailbase-jailbase.p.rapidapi.com`, endpoint `/search/`
+  — NOT `/search_records/`, that 404s). Auth VERIFIED working. **BUT JailBase's own origin 503s
+  persistently all session** (their service — nginx 503 through RapidAPI's proxy) → can't get live data.
+  Key is ENV-ONLY, never committed; local copy in gitignored `seo/.env.local`. **Owner pasted the key in
+  chat → suggested rotating.** Treat JailBase as flaky enrichment, not the backbone.
+- **Florida OBIS (commit `d951782`) — the reliable source we control.** FL DOC's full inmate DB = free
+  monthly tab-delimited zips (fdc.myflorida.com), no key/permission. `scripts/ingest-florida-obis.mjs`
+  (header-driven, streaming, batched upsert → Neon `fl_inmates`; joins offenses+aliases by DC number).
+  `florida-obis` provider queries fl_inmates (FL/stateless only). **Verified end-to-end** (synthetic FL
+  inmate → findBookings count 1, normalized w/ computed age + charges). To load real data: download+unzip
+  OBIS → `node --env-file=.env.local scripts/ingest-florida-obis.mjs <dir>`. Confirm the exact column
+  header names on first run (parser is fuzzy-header-mapped; add aliases in COLS if a field is blank).
+
+## Email platform (investment #2) — foundation built 2026-07-17 (commit `afed7c3`)
+`sendCampaign` (suppression-aware + logged), `email_sends`/`email_suppression` Neon tables, generic
+`POST /api/email/send`, welcome flow. Env-gated on `SENDGRID_API_KEY` — blocked only on owner SendGrid
+domain-auth. See [[project_email_recovery_pipeline]].
+
 ## To activate (owner + trial)
 1. **JailBase**: solve the datacenter-IP block (RapidAPI tier or proxy); it's per-jail (source_id) so
    decide state coverage strategy (fetch sources list per state, or start with high-volume jails).
