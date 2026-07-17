@@ -19,23 +19,27 @@ const sql = neon(URL);
 const dir = process.argv[2];
 if (!dir || !fs.existsSync(dir)) { console.error('usage: ingest-florida-obis.mjs <dir-of-unzipped-obis-files>'); process.exit(1); }
 
+const INSPECT = process.argv.includes('--inspect');
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 const H = (h) => String(h || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-// candidate header names per target field (OBIS layout varies; add aliases as needed)
+// candidate header names per target field (OBIS layout varies; broadened + add more as --inspect reveals)
 const COLS = {
-  dc: ['dcnumber', 'dcnbr', 'dc'],
+  dc: ['dcnumber', 'dcnbr', 'dc', 'dcnum'],
   last: ['lastname', 'lname', 'offenderlastname'],
   first: ['firstname', 'fname', 'offenderfirstname'],
-  middle: ['middlename', 'mname'],
+  middle: ['middlename', 'mname', 'middlenam'],
   race: ['race'],
   sex: ['sex', 'gender'],
-  dob: ['birthdate', 'dob', 'dateofbirth'],
-  facility: ['currentfacility', 'facility', 'currentlocation', 'location', 'facilityname'],
+  dob: ['birthdate', 'dob', 'dateofbirth', 'birthdte'],
+  facility: ['currentfacility', 'facility', 'currentlocation', 'location', 'facilityname', 'currentprison', 'currentfac', 'facilityid', 'currentcustodyfacility'],
   status: ['custodystatus', 'status', 'currentcustody'],
-  release: ['releasedate', 'currentreleasedate', 'tentativereleasedate'],
+  release: ['releasedate', 'currentreleasedate', 'tentativereleasedate', 'reldate'],
 };
+const OFFENSE_DESC = ['offensedescription', 'offense', 'chargedescription', 'statutedescription', 'adjudicationcharge', 'offensedesc', 'primaryoffense', 'description'];
+const OFFENSE_STATUTE = ['statute', 'offensestatute', 'flstatute', 'statutenumber'];
 
-function findFile(re) { return fs.readdirSync(dir).find((f) => re.test(f.toLowerCase())); }
+function findFiles(re) { return fs.readdirSync(dir).filter((f) => re.test(f.toLowerCase()) && /\.(txt|csv|dat|tab)$/i.test(f)); }
+function findFile(re) { return findFiles(re)[0]; }
 
 // Header-driven streaming parse. onRow(recordObj) per data line. Returns count.
 async function parseTab(file, want, onRow) {
@@ -48,6 +52,12 @@ async function parseTab(file, want, onRow) {
       const hmap = {}; cells.forEach((h, i) => { hmap[H(h)] = i; });
       idx = {};
       for (const [k, aliases] of Object.entries(want)) { const a = aliases.find((x) => hmap[x] != null); idx[k] = a != null ? hmap[a] : -1; }
+      if (INSPECT) {
+        console.log(`\n[${file}] ${cells.length} columns:`);
+        console.log('  headers:', cells.map((c) => c.trim()).filter(Boolean).join(' | '));
+        console.log('  MAPPED :', Object.entries(idx).map(([k, i]) => `${k}→${i >= 0 ? `"${cells[i].trim()}"` : 'MISSING'}`).join('  '));
+        rl.close(); return 0; // header-only in inspect mode
+      }
       continue;
     }
     if (!line.trim()) continue;
@@ -59,22 +69,21 @@ async function parseTab(file, want, onRow) {
 }
 
 async function main() {
-  // ── offenses + aliases (grouped by DC) first, so roots can attach them ──
+  // ── offenses + aliases (grouped by DC) first, so roots can attach them. OBIS ships MULTIPLE offense
+  //    files (active/release × CPS/prpr) — parse them all and merge. ──
   const offenses = new Map(); const aliases = new Map();
-  const offFile = findFile(/offenses/);
-  if (offFile) {
-    await parseTab(offFile, { dc: COLS.dc, desc: ['offensedescription', 'offense', 'chargedescription', 'statutedescription'], statute: ['statute', 'offensestatute'] }, (r) => {
+  for (const offFile of findFiles(/offense/)) {
+    await parseTab(offFile, { dc: COLS.dc, desc: OFFENSE_DESC, statute: OFFENSE_STATUTE }, (r) => {
       const arr = offenses.get(r.dc) || []; const d = [r.desc, r.statute].filter(Boolean).join(' — '); if (d) arr.push(d); offenses.set(r.dc, arr);
     });
-    console.log(`offenses: ${offenses.size} inmates`);
   }
-  const aliasFile = findFile(/alias/);
-  if (aliasFile) {
+  console.log(`offenses: ${offenses.size} inmates across ${findFiles(/offense/).length} file(s)`);
+  for (const aliasFile of findFiles(/alias/)) {
     await parseTab(aliasFile, { dc: COLS.dc, last: COLS.last, first: COLS.first }, (r) => {
       const arr = aliases.get(r.dc) || []; const nm = [r.first, r.last].filter(Boolean).join(' '); if (nm) arr.push(nm); aliases.set(r.dc, arr);
     });
-    console.log(`aliases: ${aliases.size} inmates`);
   }
+  console.log(`aliases: ${aliases.size} inmates`);
 
   // ── roots (active + release) → upsert ──
   const roots = fs.readdirSync(dir).filter((f) => /root/.test(f.toLowerCase()) && /\.txt$/i.test(f));
@@ -104,7 +113,9 @@ async function main() {
         first_norm: norm(r.first), last_norm: norm(r.last), race: r.race || null, sex: r.sex || null,
         birth_date: r.dob || null, custody_status: r.status || (active ? 'active' : 'released'),
         facility: r.facility || null, release_date: r.release || null,
-        offenses: JSON.stringify(offenses.get(r.dc) || []), aliases: JSON.stringify(aliases.get(r.dc) || []),
+        // Pass ARRAYS (not JSON.stringify'd) — the whole payload is stringified once and jsonb_to_recordset
+        // reads offenses/aliases as jsonb arrays. (Stringifying here double-encoded them into jsonb strings.)
+        offenses: offenses.get(r.dc) || [], aliases: aliases.get(r.dc) || [],
         source_file: rf,
       });
     });
@@ -113,6 +124,7 @@ async function main() {
     await flush();
     total += n; console.log(`${rf}: ${n} rows (running ${total})`);
   }
+  if (INSPECT) { console.log('\n--inspect: headers shown above, NO rows written. Fix any MISSING mappings in COLS/OFFENSE_* then re-run without --inspect.'); return; }
   const [c] = await sql`SELECT count(*)::int n FROM fl_inmates`;
   console.log(`DONE — fl_inmates now has ${c.n} rows`);
 }
