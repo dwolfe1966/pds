@@ -35,25 +35,36 @@ const clean = (s) => (s == null ? '' : String(s).replace(/\s+/g, ' ').trim());
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/[^\d]/g, ''), 10); return Number.isNaN(n) ? null : n; };
 const stripTags = (s) => clean(String(s || '').replace(/<[^>]*>/g, ''));
 
-// ── TX · TDCJ ── POST search.action (Struts, server-rendered HTML table). No auth/captcha. No mugshots.
-//    Verified 2026-07-18: POST lastName=SMITH firstName=JAMES → tdcj_table rows. Fully enumerable.
-async function TX(query) {
-  const body = new URLSearchParams({
-    page: 'index', lastName: clean(query.lastName).toUpperCase(), firstName: clean(query.firstName).toUpperCase(),
-    tdcj: '', sid: '', gender: 'ALL', race: 'ALL', btnSearch: 'Search',
-  }).toString();
-  // TDCJ IP-blocks datacenter egress → route through STATE_PROXY_URL when set (else direct).
-  const res = await proxyFetch('https://inmate.tdcj.texas.gov/InmateSearch/search.action', {
-    method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body,
-  });
-  if (!res.ok) throw new Error(`TX ${res.status}`);
-  const html = await res.text();
+// #2 BROWSER TIER (moat infra) — run a Puppeteer function on Browserless (real browser TLS + behavior)
+// to beat WAF/anti-bot sites (TX/TDCJ Akamai, NY F5) that reset proxied NON-browser connections. Those
+// sites also block the browser's datacenter IP, so we append Browserless's RESIDENTIAL proxy. Set
+// BROWSER_SERVICE_URL to your Browserless /function endpoint (…?token=…). Returns the fn's `data` (Browserless
+// wraps it as {data,type}), or null. ⚠️ OWNER: Browserless account with residential-proxy capability.
+async function browserFunction(code) {
+  const svc = process.env.BROWSER_SERVICE_URL;
+  if (!svc) return null;
+  let url;
+  try {
+    url = new URL(svc);
+    if (!url.searchParams.has('proxy')) { url.searchParams.set('proxy', 'residential'); url.searchParams.set('proxyCountry', process.env.BROWSER_PROXY_COUNTRY || 'us'); }
+  } catch { return null; }
+  try {
+    const res = await fetch(url.toString(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, context: {} }) });
+    if (!res.ok) return null;
+    const j = await res.json().catch(() => null);
+    return j ? j.data : null;
+  } catch { return null; }
+}
+
+// ── TX · TDCJ ── Struts HTML table. TDCJ's Akamai WAF RESETS proxied non-browser connections (verified:
+//    every Decodo tier incl. US residential → TLS reset), so live requires the BROWSER TIER (real browser
+//    + residential). Verified 2026-07-18 via Browserless: form-fill + submit → 26 rows. Direct/proxy path
+//    kept for non-blocked hosts (e.g. the crawler off a residential box).
+function parseTxHtml(html) {
   const out = [];
-  // Each result row: <a href="/InmateSearch/viewDetail.action?sid=NNNN">LAST,FIRST</a> then <td>s:
-  // [TDCJ#, Race, Gender, ProjectedReleaseDate, Unit, Age]
   const rowRe = /viewDetail\.action\?sid=(\d+)">([^<]+)<\/a>([\s\S]*?)(?=viewDetail\.action\?sid=|<\/table>)/g;
   let m;
-  while ((m = rowRe.exec(html)) !== null) {
+  while ((m = rowRe.exec(html || '')) !== null) {
     const rawName = clean(m[2]);
     const tds = [...m[3].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((t) => stripTags(t[1]));
     const [tdcjNum = '', race = '', gender = '', relDate = '', unit = '', age = ''] = tds;
@@ -70,6 +81,24 @@ async function TX(query) {
     });
   }
   return out;
+}
+async function TX(query) {
+  const ln = clean(query.lastName).toUpperCase(), fn = clean(query.firstName).toUpperCase();
+  if (process.env.BROWSER_SERVICE_URL) {
+    const code = `export default async function ({ page }) {
+      await page.goto("https://inmate.tdcj.texas.gov/InmateSearch/start", { waitUntil: "domcontentloaded", timeout: 45000 });
+      await page.evaluate((fn, ln) => { const q = (n) => document.querySelector("[name=" + n + "]"); if (q("lastName")) q("lastName").value = ln; if (q("firstName")) q("firstName").value = fn; }, ${JSON.stringify(fn)}, ${JSON.stringify(ln)});
+      await Promise.all([ page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 45000 }).catch(() => null), page.evaluate(() => { const b = document.querySelector("[name=btnSearch]"); if (b) b.click(); }) ]);
+      return { data: await page.content(), type: "text/html" };
+    }`;
+    return parseTxHtml(await browserFunction(code));
+  }
+  const body = new URLSearchParams({ page: 'index', lastName: ln, firstName: fn, tdcj: '', sid: '', gender: 'ALL', race: 'ALL', btnSearch: 'Search' }).toString();
+  const res = await proxyFetch('https://inmate.tdcj.texas.gov/InmateSearch/search.action', {
+    method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body,
+  });
+  if (!res.ok) throw new Error(`TX ${res.status}`);
+  return parseTxHtml(await res.text());
 }
 
 // ── CA · CDCR (CIRIS) ── FeathersJS JSON API. No auth/captcha. No mugshots/charges (contact court).
@@ -218,13 +247,10 @@ async function NY(query) {
     }, ${JSON.stringify(body)});
     return { data: result, type: 'application/json' };
   }`;
-  let json;
-  try {
-    const res = await fetch(svc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, context: {} }) });
-    if (!res.ok) return [];
-    json = await res.json().catch(() => null); // response body IS the returned `data` (the search rows)
-  } catch { return []; }
-  const rows = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : []);
+  // Route through browserFunction so it gets the residential proxy (DOCCS resets Browserless's datacenter
+  // IP too). Returns the fn's `data` = the SearchByName rows (or {__status} on an in-page block).
+  const result = await browserFunction(code);
+  const rows = Array.isArray(result) ? result : [];
   return (Array.isArray(rows) ? rows : []).map((r) => {
     const nm = clean(r.name); const comma = nm.indexOf(',');
     const last = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
