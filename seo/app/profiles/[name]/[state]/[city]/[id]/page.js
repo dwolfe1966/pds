@@ -3,8 +3,8 @@
 // renders server-side into the initial HTML. No client JS is required to see
 // any content on this page (teardown §1.7).
 
-import { notFound } from 'next/navigation';
-import { getPerson } from '../../../../../../lib/data';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { getPerson, getPeopleByNameCity } from '../../../../../../lib/data';
 import { personPath, namePath, citySlug } from '../../../../../../lib/ids';
 import { SITE, MAIN } from '../../../../../../lib/site';
 import {
@@ -13,6 +13,13 @@ import {
 } from '../../../../../../lib/schema';
 
 export const revalidate = 5184000; // 60d — REVALIDATE_SECONDS (Next needs a literal here)
+
+// Enable ISR (SEO, 2026-07-18): WITHOUT generateStaticParams a dynamic route is rendered LIVE on every
+// request (Cache-Control: private, no-store) — so every Googlebot hit was a live Neon render, and any DB
+// hiccup under crawl load → notFound() → transient 404s. Returning [] prerenders nothing at build but,
+// with dynamicParams=true (default), each page is generated on first hit and CACHED for `revalidate`
+// (60d) → served from cache (public) on subsequent crawls. Fast, reliable, crawl-budget-friendly.
+export function generateStaticParams() { return []; }
 
 // The CTA goes DIRECTLY to this person's SUP/teaser page on the MAIN app (the
 // funnel lives on idlookup.ai regardless of where the SEO surface is hosted).
@@ -45,9 +52,22 @@ const cta = {
 };
 
 export default async function PersonPage({ params }) {
-  const { id } = await params;
+  const { id, name, state, city } = await params;
   const person = await getPerson(id);
-  if (!person) notFound();
+  if (!person) {
+    // ID-CHURN RECOVERY (SEO, 2026-07-18): the public id is minted from stable attributes
+    // (name+city+first-seen), but if that data shifts between sweeps the id changes — so a
+    // URL Google indexed 404s while the re-swept page exists at a new id. That mass-404 is
+    // what deindexed the directory (impressions → 0, 7/15). Instead of 404ing, recover the
+    // equity: 308 to the same person if we can uniquely resolve them by name+city, else to
+    // the name-in-city hub (which lists the current ids). Only a truly unknown person 404s.
+    const hub = await getPeopleByNameCity(name, state, city).catch(() => null);
+    if (hub && hub.people && hub.people.length) {
+      if (hub.people.length === 1) permanentRedirect(personPath(hub.people[0]));
+      permanentRedirect(`/profiles/${name}/${state}/${city}`);
+    }
+    notFound();
+  }
 
   const paths = { person: personPath(person), name: namePath(person) };
   const faqs = buildFaq(person);

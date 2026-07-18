@@ -6,6 +6,10 @@ import { notFound } from 'next/navigation';
 import { resolveNameInState, nameInStateMetadata, nameInStatePath, NameInStateView } from '../../../lib/name-in-state';
 
 export const revalidate = 5184000; // 60d
+// ISR (SEO 2026-07-18): [] + dynamicParams=true → each page is generated on first hit and CACHED for
+// `revalidate` instead of live-rendering per request (which returned private/no-store and made every
+// Googlebot hit a live Neon render → transient 404s). Flips this route from ƒ Dynamic → ● cached.
+export function generateStaticParams() { return []; }
 
 export async function generateMetadata({ params }) {
   const { state, name } = await params;
