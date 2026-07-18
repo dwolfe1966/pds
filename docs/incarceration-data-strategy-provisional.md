@@ -57,16 +57,22 @@ Two kinds of "open" state data exist, and only one is useful:
 - **Named web locator** — all 50 states have one (named, one-at-a-time). With scraper capability, ALL 50
   become viable sources. This is the plan.
 
-## Big-6 states (initial pass; live recon in progress)
-| State | Agency | Bulk? | Locator | Path |
+## Big-6 states — BUILT 2026-07-18 (`seo/lib/stateInmates.mjs`, wired into findBookings as `stateDoc`)
+| State | Method | Mugshots | Live on Vercel? | Notes |
 |---|---|---|---|---|
-| FL | FL DOC | ✅ OBIS bulk + mugshots | — | **DONE** |
-| TX | TDCJ | ❌ | current-only web search | scrape |
-| CA | CDCR | ❌ | CIRIS (likely SPA) | scrape (browser?) |
-| NY | DOCCS | ❌ (bulk is de-identified) | named web lookup (DIN) | scrape |
-| IL | IDOC | ❌ (datasets aggregate) | named web search | scrape |
-| PA | PA DOC | ? | inmate locator | recon |
-| NJ | NJ DOC | ? | inmate finder | recon |
+| FL | OBIS bulk (Neon) | ✅ | ✅ | separate (floridaObis provider) |
+| **CA** | CDCR CIRIS JSON API | ❌ | ✅ **14 recs verified** | needs full `$limit+$skip+$sort`, literal `$` |
+| **PA** | PA DOC Captor JSON API | ✅ (detail data-URI) | ✅ **29 recs verified** | mugshot opt-in (STATE_INMATES_PHOTOS) |
+| **IL** | IDOC 2-step ASP | ✅ (URL) | ✅ verified | mugshot = pub_showfront.asp URL |
+| **TX** | TDCJ HTML POST | ❌ | ❌ **IP-BLOCKED** | works via curl; TDCJ blocks Vercel/datacenter IPs → needs proxy |
+| **NY** | DOCCS JSON POST | ❌ | ⛔ browser-tier | F5 BIG-IP WAF; TS cookie needs a real browser (Playwright) |
+| **NJ** | DOC (SPA) | ❌ | ⛔ browser-tier | SPA/anti-bot; curl sample failed; roster IS crawlable via browser |
+
+### Infra reality (this IS the moat's operational surface)
+Three egress classes emerged — the operational capability to handle all three is the durable edge:
+1. **Direct from Vercel** — CA, PA, IL (JSON APIs + old ASP). Just works.
+2. **Datacenter-IP-blocked** — TX (TDCJ). Needs a **residential/rotating proxy** egress.
+3. **JS/WAF-gated** — NY (F5). Needs **headless browser** (Playwright) to mint the challenge cookie.
 
 ## Aggregators (the bridge)
 - **UCC** — verified self-serve; `GET unlimitedcriminalchecks.com/api-2.0/search.php`, X-API-Key+X-API-Secret,
