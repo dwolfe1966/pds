@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
+import { getFlow } from '../../services/funnelFlow';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
@@ -385,7 +386,7 @@ const SalesSearchResultsPage = () => {
             {/* INMATE FLOW ONLY: lead the results with the booking teaser (mugshots + example charges +
                 facilities) — the payoff the inmate searcher came for. Loose match (name-search surface).
                 Self-gates to nothing when there are no matching records. */}
-            {flow === 'inmate' && searchQuery.lastName && (
+            {(getFlow() === 'inmate' || flow === 'inmate') && searchQuery.lastName && (
               <InmateBookingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
             )}
             {/* Filters moved to the Refine region at the bottom (owner — top placement

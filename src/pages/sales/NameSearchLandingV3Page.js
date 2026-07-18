@@ -6,6 +6,7 @@ import { track } from '../../services/trackingService';
 import s from './NameLandingV3Incarceration.module.css';
 import { useBrand } from '../../services/brand';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
+import { useFunnelFlow } from '../../services/funnelFlow';
 
 /** Step index for progress bar (1–4). Interstitials and final-search don't show a step. */
 const getStepIndex = (step) => {
@@ -69,6 +70,7 @@ const NameSearchLandingV3Page = () => {
   const [city, setCity] = useState(queryParams.get('city') || '');
   const [state, setState] = useState(queryParams.get('state') || '');
   const [age, setAge] = useState(queryParams.get('age') || '');
+  useFunnelFlow('inmate'); // session-wide: this landing sets the 'inmate' intent (clears any prior flow)
   const [step, setStep] = useState('name');
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
