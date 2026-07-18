@@ -1319,13 +1319,204 @@ async function SD(query) {
   return out;
 }
 
-// Registry — direct-fetch (last-name OK): CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL/SC/KY/UT/NV/AR/MS/ID/HI/IA/RI/SD, plus OR/LA/MA
-// (need a first name: OR trips a "too many results" cap on a bare surname; LA/MA/VINE have no wildcard roster —
-// MA needs BOTH first+last). NE fetches the full captcha-free roster xlsx (~3MB per cold query, 6h cache) and
+// ── AK · AK DOC (VINE) ── Alaska has no first-party locator (doc.alaska.gov is DataDome-walled); custody
+//    lookups go to VINELink (Appriss/Equifax). Same guest-session dance as LA: POST /accounts (Auth: Basic
+//    anonymous:<pw>) → capture x-vine-session-id + x-vine-jwt → GET /persons (siteRefId AKSWVINE,
+//    obscurePersonData=true). REQUIRES BOTH first + last (the /persons endpoint 400s on a bare surname; no
+//    wildcard roster). AK disables mugshots (imageDisplay off); guest ids are masked (237***) → null. VINE
+//    carries custody STATUS + facility + gender only — no charges. Verified 2026-07-18.
+async function AK(query) {
+  const last = clean(query.lastName), first = clean(query.firstName);
+  if (!last || !first) return []; // AK VINE /persons enforces BOTH names (400 on a bare surname)
+  const API = 'https://vinelink-mobile.vineapps.com/api/v1';
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let pw = '';
+  for (let i = 0; i < 12; i++) pw += cs[Math.floor(Math.random() * cs.length)]; pw += 'aA1!'; // satisfy complexity
+  const base = { Accept: 'application/json', 'x-vine-application': 'VINELINK', 'x-vine-language': 'ENGLISH', 'User-Agent': UA, Referer: 'https://vinelink.vineapps.com/' };
+  const acc = await fetch(`${API}/accounts`, { method: 'POST', headers: { ...base, 'Content-Type': 'application/json', Auth: `Basic ${Buffer.from(`anonymous:${pw}`).toString('base64')}`, Origin: 'https://vinelink.vineapps.com' }, body: JSON.stringify({ termsRead: false }) });
+  if (!acc.ok) throw new Error(`AK ${acc.status}`);
+  const sessionId = acc.headers.get('x-vine-session-id'), jwt = acc.headers.get('x-vine-jwt');
+  const qs = new URLSearchParams();
+  qs.set('siteRefId', 'AKSWVINE'); qs.set('personLastName', last); qs.set('personFirstName', first);
+  qs.append('personContextTypes', 'offender'); qs.append('personContextTypes', 'defendant');
+  qs.set('limit', '20'); qs.set('offset', '0'); qs.set('obscurePersonData', 'true');
+  qs.set('includeJuveniles', 'false'); qs.set('includeSearchBlocked', 'false');
+  qs.set('includeRegistrantInfo', 'true'); qs.set('addImageWatermark', 'true'); qs.set('language', 'ENGLISH');
+  const res = await fetch(`${API}/persons?${qs.toString()}`, { headers: { ...base, 'x-vine-session-id': sessionId, 'x-vine-jwt': jwt } });
+  if (!res.ok) throw new Error(`AK ${res.status}`);
+  const data = await res.json().catch(() => null);
+  const persons = (data && data._embedded && Array.isArray(data._embedded.persons)) ? data._embedded.persons : [];
+  const gnorm = (g) => { const v = clean(g); return /^m/i.test(v) ? 'male' : /^f/i.test(v) ? 'female' : (v || null); };
+  return persons.map((p) => {
+    const nm = p.personName || {}; const locs = Array.isArray(p.locations) ? p.locations : [];
+    const holding = locs.find((l) => l.locationType === 'HOLDING_FACILITY');
+    const reporting = locs.find((l) => l.locationType === 'REPORTING_AGENCY');
+    const oi = p.offenderInfo || {}, cust = oi.custodyStatus || {};
+    const rawId = clean(p.displayId || (p.personContext || {}).contextRefId);
+    return {
+      source: 'ak-vine', sourceName: 'Alaska DOC (VINE)',
+      firstName: clean(nm.firstName), lastName: clean(nm.lastName),
+      name: [nm.firstName, nm.middleName, nm.lastName].map(clean).filter(Boolean).join(' '),
+      age: num(p.age), gender: gnorm((p.gender || {}).name || (p.gender || {}).code), race: clean((p.race || {}).name) || null,
+      charges: [], mugshotUrl: null, // AK imageDisplay disabled — no photos
+      bookingDate: null, releaseStatus: clean(cust.name || cust.code) || null,
+      facility: clean(oi.custodyDetail) || (holding && clean(holding.locationName)) || (reporting && clean(reporting.locationName)) || null,
+      county: null, state: 'AK', inmateId: rawId && !rawId.includes('*') ? rawId : null, // guest-masked (237***) → null
+    };
+  });
+}
+
+// ── ND · DOCR ── legacy classic-ASP (nd.gov/docr/offenderlkup), plain form, no cookie/CSRF/captcha/JS. POST
+//    nameprocessor.asp (lastName only, prefix match) → HTML grid: offenderID | Last | First | Middle |
+//    DOB(mm/dd/yyyy). MUGSHOT is a predictable URL (images/<offenderID>.jpg) — no per-record fetch. Facility +
+//    release date are detail-only (offenderDetails.asp) → null live. Roster = CURRENT residents only. Age from
+//    DOB. No first-name field (client-filter). Enumerable (surname sweep). Verified 2026-07-18.
+async function ND(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://www.nd.gov/docr/offenderlkup';
+  const res = await fetch(`${BASE}/nameprocessor.asp`, {
+    method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${BASE}/index.asp` },
+    body: new URLSearchParams({ lastName: last, Submit: 'Submit' }).toString(),
+  });
+  if (!res.ok) throw new Error(`ND ${res.status}`);
+  const html = await res.text();
+  const ageFromDob = (d) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(clean(d)); if (!m) return null; const t = new Date(); let a = t.getFullYear() - Number(m[3]); if (t.getMonth() + 1 < Number(m[1]) || (t.getMonth() + 1 === Number(m[1]) && t.getDate() < Number(m[2]))) a--; return a > 0 && a < 120 ? a : null; };
+  const fnq = clean(query.firstName).toLowerCase();
+  const out = []; const seen = new Set();
+  for (const tr of (html.match(/<tr\b[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    const cells = []; let id = null;
+    const cellRe = /<td[^>]*>\s*<a[^>]*offenderID=(\d+)[^>]*>([\s\S]*?)<\/a>\s*<\/td>/gi; let c;
+    while ((c = cellRe.exec(tr)) !== null) { id = c[1]; cells.push(stripTags(c[2])); }
+    if (!id || cells.length < 5 || seen.has(id)) continue; seen.add(id); // rows: ID | Last | First | Middle | DOB
+    const [, lastN, firstN, mid, dob] = cells;
+    if (fnq && !clean(firstN).toLowerCase().startsWith(fnq)) continue; // form has no first-name field — client-filter
+    out.push({
+      source: 'nd-docr', sourceName: 'North Dakota DOCR',
+      firstName: clean(firstN), lastName: clean(lastN), name: [firstN, mid, lastN].map(clean).filter(Boolean).join(' '),
+      age: ageFromDob(dob), gender: null, race: null,
+      charges: [], mugshotUrl: `${BASE}/images/${id}.jpg`, bookingDate: null, releaseStatus: 'incarcerated',
+      facility: null, county: null, state: 'ND', inmateId: id,
+    });
+  }
+  return out;
+}
+
+// ── VT · Vermont DOC ── CentralSquare "public-safety-cloud" Public Roster (Vue SPA over a clean JSON API).
+//    POST /publicroster-api/api/VERMONTDOC/search-offenders {FirstName,LastName,MiddleName,SearchType:"active"}
+//    → {success,data:[…]}. reCAPTCHA v3 is configured but NOT enforced (tokenless POST returns full rows). NO
+//    mugshots (VT sets disableImages). Charges live inline in row.detailsJson (CriminalOffenses table); age +
+//    sex/race in the AdditionalInfo nvp section. Enumerable (surname prefix sweep; empty query caps at 500).
+//    Verified 2026-07-18.
+async function VT(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const API = 'https://omsweb.public-safety-cloud.com/publicroster-api/api/VERMONTDOC';
+  const REFERER = 'https://omsweb.public-safety-cloud.com/publicroster/VERMONTDOC';
+  const nn = (v) => { const c = clean(v); return c && c.toLowerCase() !== 'none' ? c : null; };
+  const res = await fetch(`${API}/search-offenders`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': UA, Referer: REFERER },
+    body: JSON.stringify({ FirstName: clean(query.firstName), LastName: last, MiddleName: '', SearchType: 'active' }),
+  });
+  if (!res.ok) throw new Error(`VT ${res.status}`);
+  const json = await res.json().catch(() => null);
+  if (!json || !json.success) throw new Error(`VT search error: ${(json && json.errorMessage) || 'unknown'}`);
+  return (json.data || []).map((row) => {
+    const info = {}; const charges = [];
+    let sections; try { sections = JSON.parse(row.detailsJson || '[]'); } catch { sections = []; }
+    for (const sec of sections || []) {
+      if (sec && sec.type === 'table' && /offens|charge|criminal/i.test(sec.filename || '')) for (const c of sec.data || []) { const d = clean(c['Charge Description'] || c.Offense); if (d && !charges.includes(d)) charges.push(d); }
+      if (sec && sec.type === 'nvp') for (const p of sec.data || []) if (p && p.Name != null) info[String(p.Name)] = p.Value;
+    }
+    const first = clean(row.firstName), mid = clean(row.middleName), lastN = clean(row.lastName), suf = clean(row.nameSuffix);
+    return {
+      source: 'vt-doc', sourceName: 'Vermont DOC',
+      firstName: first, lastName: lastN, name: [first, mid, lastN, suf].filter(Boolean).join(' '),
+      age: info.Age != null ? num(info.Age) : null, gender: nn(row.gender) || nn(info.Sex), race: nn(info.Race),
+      charges, mugshotUrl: null, // VT disables images
+      bookingDate: nn(row.bookDate) || nn(info['Booking Date']),
+      releaseStatus: nn(info.Status) || nn(row.supervisionStatus), // Detained / Sentenced / Active
+      facility: nn(row.multiAgencyName), county: null, state: 'VT',
+      inmateId: nn(row.agencyOffenderPermanentId) || (row.id != null ? String(row.id) : null),
+    };
+  });
+}
+
+// ── WY · WDOC ── ASP.NET MVC Offender Locator (wdoc-loc.wyo.gov). Stateful: GET landing (cookies +
+//    __RequestVerificationToken) → POST name (302; query stored server-side) → GET /Home/getInmateList JSON
+//    feed. No captcha/rate-limit. Covers BOTH sub-DBs: WCIS (incarcerated) + MONITOR (parole/probation). List
+//    gives name/age/gender/DOC#/status(groupKind); race/facility/charges are detail-only (null live). No
+//    mugshots anywhere. lastName ≥2 required by the site. Verified 2026-07-18.
+async function WY(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://wdoc-loc.wyo.gov';
+  const jar = new Map();
+  const absorb = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [p] = c.split(';'); const i = p.indexOf('='); if (i > 0) jar.set(p.slice(0, i).trim(), p.slice(i + 1).trim()); } };
+  const ckh = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
+  const g = await fetch(`${BASE}/`, { redirect: 'manual', headers: { 'User-Agent': UA } });
+  absorb(g);
+  const token = ((await g.text()).match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/) || [])[1];
+  if (!token) throw new Error('WY token missing');
+  const body = new URLSearchParams({ __RequestVerificationToken: token, offenderID: '', lastName: last, firstName: clean(query.firstName), age: '', genderGroup: 'a' });
+  const p = await fetch(`${BASE}/`, { method: 'POST', redirect: 'manual', headers: { 'User-Agent': UA, Cookie: ckh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() });
+  absorb(p);
+  if (p.status !== 302) throw new Error(`WY search ${p.status}`); // results staged in the server session on the 302
+  const lr = await fetch(`${BASE}/Home/getInmateList`, { headers: { 'User-Agent': UA, Cookie: ckh(), 'X-Requested-With': 'XMLHttpRequest' } });
+  if (!lr.ok) throw new Error(`WY ${lr.status}`);
+  const json = await lr.json().catch(() => null);
+  const rows = (json && Array.isArray(json.data)) ? json.data : [];
+  return rows.map((r) => {
+    const first = clean(r.firstName), lastN = clean(r.lastName), doc = clean(r.docID), sex = clean(r.gender);
+    return {
+      source: 'wy-wdoc', sourceName: 'Wyoming DOC (WDOC)',
+      firstName: first, lastName: lastN, name: [first, lastN].filter(Boolean).join(' '),
+      age: num(r.age), gender: /^m/i.test(sex) ? 'male' : /^f/i.test(sex) ? 'female' : (sex || null), race: null,
+      charges: [], mugshotUrl: null, bookingDate: null,
+      releaseStatus: clean(r.groupKind) || null, // Inmate | Parole | Probation
+      facility: null, county: null, state: 'WY',
+      inmateId: (r.fromDB === 'WCIS' && doc) ? doc : (r.offenderID != null ? String(r.offenderID) : (doc || null)),
+    };
+  });
+}
+
+// ── DC · Federal BOP ── DC has no state prison system; DC-sentenced felons are housed by the federal Bureau of
+//    Prisons, so the "DC locator" IS the BOP inmate locator. Clean public JSON (no auth/cookie/token;
+//    Captcha=false observed): GET /PublicInfo/execute/inmateloc?todo=query&output=json&nameFirst&nameLast. Name
+//    search REQUIRES BOTH names + is capped at 100 (alphabetical). No mugshots/charges. releaseCode: ""=in
+//    custody, R=released (actRelDate), D=deceased. Verified 2026-07-18.
+async function DC(query) {
+  const last = clean(query.lastName), first = clean(query.firstName);
+  if (!last || !first) return []; // BOP name search needs BOTH names
+  const qs = new URLSearchParams({ todo: 'query', output: 'json', nameFirst: first, nameLast: last, nameMiddle: '', inmateNumType: 'IRN', sex: '', race: '', age: '' });
+  const res = await fetch(`https://www.bop.gov/PublicInfo/execute/inmateloc?${qs.toString()}`, {
+    headers: { 'User-Agent': UA, 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`DC ${res.status}`);
+  const data = await res.json().catch(() => null);
+  if (data && data.Captcha) throw new Error('DC BOP captcha gate');
+  const titleCase = (s) => clean(s).toLowerCase().replace(/\b([a-z])/g, (_, c) => c.toUpperCase());
+  const rows = (data && Array.isArray(data.InmateLocator)) ? data.InmateLocator : [];
+  return rows.map((r) => {
+    const first0 = titleCase(r.nameFirst), mid = titleCase(r.nameMiddle), lastN = titleCase(r.nameLast), suf = clean(r.suffix);
+    const code = clean(r.releaseCode).toUpperCase(), proj = clean(r.projRelDate);
+    const releaseStatus = code === 'R' ? (clean(r.actRelDate) ? `released ${clean(r.actRelDate)}` : 'released')
+      : code === 'D' ? (clean(r.actRelDate) ? `deceased ${clean(r.actRelDate)}` : 'deceased')
+        : (proj && proj.toUpperCase() !== 'UNKNOWN' ? `in custody (proj. release ${proj})` : 'in custody');
+    return {
+      source: 'dc-bop', sourceName: 'Federal BOP (DC-sentenced)',
+      firstName: first0, lastName: lastN, name: [first0, mid, lastN, suf ? titleCase(suf) : ''].filter(Boolean).join(' '),
+      age: /^\d+$/.test(clean(r.age)) ? num(r.age) : null, gender: clean(r.sex) || null, race: clean(r.race) || null,
+      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus,
+      facility: clean(r.faclName) || null, county: null, state: 'DC', inmateId: clean(r.inmateNum) || null,
+    };
+  });
+}
+
+// Registry — direct-fetch (last-name OK): CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL/SC/KY/UT/NV/AR/MS/ID/HI/IA/RI/SD/ND/VT/WY, plus OR/LA/MA/AK/DC
+// (need a first name: OR trips a "too many results" cap on a bare surname; LA/MA/AK VINE have no wildcard
+// roster — MA/AK need BOTH first+last; DC = federal BOP, name search needs BOTH). NE fetches the full
+// captcha-free roster xlsx (~3MB per cold query, 6h cache) and
 // filters client-side; SD (SAVIN) is slow (~35s). Captcha-gated (returns [] live until a vision solver is added):
 // MO/CO. Akamai-gated (403/unfiltered from a datacenter IP → [] live; need a browser or non-blocked host):
 // NH, ME (ME also client-filters as a guard). Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD };
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
