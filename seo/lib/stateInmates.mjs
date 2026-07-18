@@ -880,10 +880,222 @@ async function NV(query) {
   return out;
 }
 
-// Registry — direct-fetch: CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL/SC/KY/UT/NV, plus OR/LA (both need a first name:
-// OR trips a "too many results" cap on a bare surname; LA/VINE has no wildcard roster). Captcha-gated (returns []
-// live until a vision solver is added): MO/CO. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV };
+// ── AR · ADC ── Laravel app behind CloudFront. GET homepage (Laravel _token + XSRF-TOKEN/inmate_search_session
+//    cookies, both `secure`) → GET /index.php/results with the COMPLETE form field set. CloudFront emits http://
+//    redirect URLs, but the secure cookies won't ride http → a naive follow bounces http↔https forever, dropping
+//    the session. We mirror the browser's HSTS upgrade: manual redirect + rewrite every http:// Location to https.
+//    Omit a field and the `results` route does a canonicalization 302 (→ same loop) — so send ALL fields. HTML
+//    table (Name|DC#|Race|Gender|PE-TE|Facility|BirthDate). MUGSHOT = predictable cloudfront /prod/inmate/{dc}.jpg.
+//    A unique/dc_num hit 302s straight to the detail page (list-only live). Verified 2026-07-18.
+async function AR(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://inmate.ark.org', MUG = 'https://d2do6krhnt2rgj.cloudfront.net/prod/inmate';
+  const jar = new Map();
+  const absorb = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [p] = c.split(';'); const i = p.indexOf('='); if (i > 0) jar.set(p.slice(0, i).trim(), p.slice(i + 1).trim()); } };
+  const ckh = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
+  // fetch that survives the CloudFront http↔https downgrade loop (manual redirect + HSTS-style upgrade each hop)
+  const hop = async (url) => { let cur = url; for (let i = 0; i < 6; i++) { const r = await fetch(cur, { redirect: 'manual', headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml', ...(ckh() ? { Cookie: ckh() } : {}) } }); absorb(r); if (r.status >= 300 && r.status < 400) { const loc = r.headers.get('location'); if (!loc) return r; cur = new URL(loc, cur).href.replace(/^http:\/\//i, 'https://'); continue; } return r; } throw new Error('AR redirect loop'); };
+  const home = await hop(`${BASE}/`); if (!home.ok) throw new Error(`AR ${home.status}`);
+  const token = ((await home.text()).match(/name="_token"\s+value="([^"]+)"/i) || [])[1] || '';
+  const p = new URLSearchParams({ _token: token, dc_num: '', county: '0', last_name: last, first_name: clean(query.firstName), facility: '0', crime: '0', age_type: '1', age: '', ethnicity: '0', disclaimer: '1', B1: 'Search' });
+  const res = await hop(`${BASE}/index.php/results?${p.toString()}`); if (!res.ok) throw new Error(`AR ${res.status}`);
+  const html = await res.text();
+  const ageFromDob = (d) => { const m = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(d || '')); if (!m) return null; const t = new Date(); let a = t.getFullYear() - Number(m[3]); if (t.getMonth() + 1 < Number(m[1]) || (t.getMonth() + 1 === Number(m[1]) && t.getDate() < Number(m[2]))) a--; return a > 0 && a < 120 ? a : null; };
+  const out = [];
+  for (const tr of (html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    const tds = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+    if (tds.length < 7) continue; // (photo) | Name(Last, First) | DC# | Race | Gender | PE-TE | Facility | BirthDate
+    const nm = tds[1]; if (!nm || !/[A-Za-z]/.test(nm)) continue;
+    const dc = tds[2]; if (!dc) continue;
+    const comma = nm.indexOf(','), sex = tds[4];
+    const lastN = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
+    const firstN = comma >= 0 ? clean(nm.slice(comma + 1)) : '';
+    out.push({
+      source: 'ar-adoc', sourceName: 'Arkansas DOC (ADC)',
+      firstName: firstN, lastName: lastN, name: [firstN, lastN].filter(Boolean).join(' ') || clean(nm),
+      age: ageFromDob(tds[7]), gender: /^f/i.test(sex) ? 'female' : /^m/i.test(sex) ? 'male' : null, race: tds[3] || null,
+      charges: [], mugshotUrl: `${MUG}/${dc}.jpg`, bookingDate: null, releaseStatus: 'incarcerated',
+      facility: tds[6] || null, county: null, state: 'AR', inmateId: dc,
+    });
+  }
+  return out;
+}
+
+// ── MS · MDOC ── ASP.NET MVC, session-stateful, no CSRF/captcha. GET /Search/Index (session cookie) → POST
+//    /Search/Index name mode (302 → GetSearchResults) → GET the results grid (#SearchResults: ID|Last|First|
+//    Location|Term|Offense). Charges = the row's primary Offense string. Mugshot/DOB/county are detail-only
+//    (null live). A unique surname 302s straight to GetDetails/<id> — one minimal fetch salvages that lone row.
+//    Verified 2026-07-18. Enumerable by sequential MDOC ID (name search caps near 400 for common surnames).
+async function MS(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://www.ms.gov/mdoc/inmate';
+  const jar = new Map();
+  const absorb = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [p] = c.split(';'); const i = p.indexOf('='); if (i > 0) jar.set(p.slice(0, i).trim(), p.slice(i + 1).trim()); } };
+  const ckh = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
+  absorb(await fetch(`${BASE}/Search/Index`, { redirect: 'manual', headers: { 'User-Agent': UA, Cookie: ckh() } }));
+  const post = await fetch(`${BASE}/Search/Index`, { method: 'POST', redirect: 'manual', headers: { 'User-Agent': UA, Cookie: ckh(), 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ SearchCriteria: 'name', LastName: last, FirstName: clean(query.firstName), MdocId: '', ClickEvent: 'SEARCH >>' }).toString() });
+  absorb(post);
+  const loc = post.headers.get('location') || `${BASE}/Search/GetSearchResults`;
+  const single = loc.match(/GetDetails\/(\d+)/); // a unique surname jumps straight to the detail sheet
+  if (single) {
+    const d = await fetch(`${BASE}/Search/GetDetails/${single[1]}`, { headers: { 'User-Agent': UA, Cookie: ckh() } });
+    if (!d.ok) throw new Error(`MS ${d.status}`);
+    const dh = await d.text();
+    const nm = stripTags((dh.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i) || [])[1] || ''), parts = nm.split(/\s+/);
+    const mug = (dh.match(/GetImage\?path=[^"'&\s]+/i) || [])[0];
+    return [{
+      source: 'ms-mdoc', sourceName: 'Mississippi DOC (MDOC)',
+      firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || '', name: nm || null,
+      age: null, gender: null, race: null, charges: [], mugshotUrl: mug ? `${BASE}/Search/${mug}` : null,
+      bookingDate: null, releaseStatus: null, facility: null, county: null, state: 'MS', inmateId: single[1],
+    }];
+  }
+  const lr = await fetch(loc.startsWith('http') ? loc : `${BASE}/Search/GetSearchResults`, { headers: { 'User-Agent': UA, Cookie: ckh() } });
+  if (!lr.ok) throw new Error(`MS ${lr.status}`);
+  const html = await lr.text();
+  const tbody = (html.match(/<tbody[\s\S]*?<\/tbody>/i) || [html])[0];
+  const out = [];
+  for (const row of (tbody.match(/<tr[\s\S]*?<\/tr>/gi) || [])) {
+    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+    if (cells.length < 6 || !/^\d+$/.test(cells[0])) continue; // ID | Last | First | Location | Term | Offense
+    const [id, lastN, firstN, facility, , offense] = cells;
+    out.push({
+      source: 'ms-mdoc', sourceName: 'Mississippi DOC (MDOC)',
+      firstName: clean(firstN), lastName: clean(lastN), name: [clean(firstN), clean(lastN)].filter(Boolean).join(' '),
+      age: null, gender: null, race: null, charges: offense ? [offense] : [], mugshotUrl: null,
+      bookingDate: null, releaseStatus: null, facility: facility || null, county: null, state: 'MS', inmateId: id,
+    });
+  }
+  return out;
+}
+
+// ── NE · NDCS ── the interactive name search is reCAPTCHA-gated, but NDCS publishes the FULL active roster as a
+//    captcha-free .xlsx (InmateExcelDownloadActiveRetrievalServlet, ~3MB, ~8.5k in custody/parole/post-release/
+//    absconder/escape). We download once (6h module cache), parse SpreadsheetML by hand (inline strings; zlib
+//    inflate), join the master + offense sheets on ID, and filter client-side (prefix match). No mugshots. Fully
+//    enumerable. ⚠️ pulls ~3MB per COLD query (serverless cold starts may not keep the cache warm → slower than
+//    the other direct-fetch states). Verified 2026-07-18.
+let _neRoster = { at: 0, people: null };
+async function NE(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const now = Date.now();
+  if (!_neRoster.people || now - _neRoster.at > 6 * 60 * 60 * 1000) {
+    const zlib = await import('node:zlib');
+    const res = await fetch('https://dcs-inmatesearch.ne.gov/Corrections/InmateExcelDownloadActiveRetrievalServlet', { headers: { 'User-Agent': UA } });
+    if (!res.ok) throw new Error(`NE ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    // minimal ZIP reader (xlsx central directory) — inflate each stored member
+    const files = {}; let eocd = -1;
+    for (let i = buf.length - 22; i >= 0 && i > buf.length - 22 - 65536; i--) { if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break; } }
+    if (eocd < 0) throw new Error('NE not a zip');
+    const cdCount = buf.readUInt16LE(eocd + 10); let pp = buf.readUInt32LE(eocd + 16);
+    for (let n = 0; n < cdCount; n++) {
+      if (buf.readUInt32LE(pp) !== 0x02014b50) break;
+      const method = buf.readUInt16LE(pp + 10), compSize = buf.readUInt32LE(pp + 20), nameLen = buf.readUInt16LE(pp + 28), extraLen = buf.readUInt16LE(pp + 30), commentLen = buf.readUInt16LE(pp + 32), localOff = buf.readUInt32LE(pp + 42);
+      const name = buf.toString('utf8', pp + 46, pp + 46 + nameLen);
+      const dataStart = localOff + 30 + buf.readUInt16LE(localOff + 26) + buf.readUInt16LE(localOff + 28);
+      const comp = buf.subarray(dataStart, dataStart + compSize);
+      files[name] = method === 0 ? comp : zlib.inflateRawSync(comp);
+      pp += 46 + nameLen + extraLen + commentLen;
+    }
+    const decodeXml = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, d) => String.fromCharCode(+d)).replace(/&amp;/g, '&');
+    const colIdx = (ref) => { const mm = /^([A-Z]+)/.exec(ref); let c = 0; for (const ch of mm[1]) c = c * 26 + (ch.charCodeAt(0) - 64); return c - 1; };
+    const parseSheet = (xml) => { const rows = []; const rowRe = /<row\b[^>]*>([\s\S]*?)<\/row>/g; let rm; while ((rm = rowRe.exec(xml))) { const cells = []; const cellRe = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g; let cm; while ((cm = cellRe.exec(rm[1]))) { const attrs = cm[1], inner = cm[2] || ''; const refM = /r="([A-Z]+\d+)"/.exec(attrs); const idx = refM ? colIdx(refM[1]) : cells.length; const t = /t="([^"]+)"/.exec(attrs); let val = ''; if (t && t[1] === 'inlineStr') { const im = /<t[^>]*>([\s\S]*?)<\/t>/.exec(inner); val = im ? decodeXml(im[1]) : ''; } else { const vm = /<v>([\s\S]*?)<\/v>/.exec(inner); val = vm ? decodeXml(vm[1]) : ''; } cells[idx] = val; } rows.push(cells); } return rows; };
+    const intId = (v) => { const s = clean(v); const nn = parseFloat(s); return Number.isFinite(nn) ? String(Math.round(nn)) : s; };
+    const titleCase = (s) => clean(s).toLowerCase().replace(/\b([a-z])/g, (mm) => mm.toUpperCase());
+    const EXCEL_EPOCH = Date.UTC(1899, 11, 30);
+    const excelDate = (v) => { const s = clean(v); if (!s) return ''; if (!/^\d+(\.0+)?$/.test(s)) return s; const serial = parseFloat(s); if (serial < 60 || serial > 80000) return s; const d = new Date(EXCEL_EPOCH + serial * 86400000); return isNaN(d) ? s : d.toISOString().slice(0, 10); };
+    const ageFromSerial = (v) => { const iso = excelDate(v); if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null; const d = new Date(iso); if (isNaN(d)) return null; const t = new Date(); let a = t.getFullYear() - d.getFullYear(); if (t.getMonth() < d.getMonth() || (t.getMonth() === d.getMonth() && t.getDate() < d.getDate())) a--; return a >= 0 && a < 130 ? a : null; };
+    const master = parseSheet(files['xl/worksheets/sheet1.xml'].toString('utf8')).slice(1);
+    const offense = parseSheet(files['xl/worksheets/sheet2.xml'].toString('utf8')).slice(1);
+    const offBy = new Map(); // offense cols: 0 ID | 10 CHARGE DESC | 12 FELONY/MSDMNR | 17 COUNTY COMMITTED
+    for (const r of offense) { const id = intId(r[0]); if (!id) continue; if (!offBy.has(id)) offBy.set(id, []); offBy.get(id).push({ charge: clean(r[10]), cls: clean(r[12]), county: clean(r[17]) }); }
+    // master cols: 0 ID | 5/1 LEGAL/COMMITTED LAST | 6/2 FIRST | 7/3 MIDDLE | 9 DOB | 10 RACE | 11 GENDER | 12 FACILITY | 15 SENTENCE BEGIN | 29 STATUS
+    _neRoster = { at: now, people: master.filter((r) => clean(r[0])).map((r) => {
+      const id = intId(r[0]), sex = clean(r[11]), offs = offBy.get(id) || [];
+      const lastN = titleCase(clean(r[5]) || clean(r[1])), firstN = titleCase(clean(r[6]) || clean(r[2])), mid = titleCase(clean(r[7]) || clean(r[3]));
+      return {
+        source: 'ne-ndcs', sourceName: 'Nebraska DOC (NDCS)',
+        firstName: firstN, lastName: lastN, name: [firstN, mid, lastN].filter(Boolean).join(' '),
+        age: ageFromSerial(r[9]), gender: /^f/i.test(sex) ? 'female' : /^m/i.test(sex) ? 'male' : null, race: titleCase(r[10]) || null,
+        charges: offs.map((o) => o.charge + (o.cls ? ` (${titleCase(o.cls)})` : '')).filter(Boolean),
+        mugshotUrl: null, bookingDate: excelDate(r[15]) || null, releaseStatus: clean(r[29]) || null,
+        facility: titleCase(r[12]) || null, county: titleCase((offs.find((o) => o.county) || {}).county) || null,
+        state: 'NE', inmateId: id,
+      };
+    }) };
+  }
+  const ln = last.toLowerCase(), fn = clean(query.firstName).toLowerCase();
+  return _neRoster.people.filter((p) => (!ln || p.lastName.toLowerCase().startsWith(ln)) && (!fn || p.firstName.toLowerCase().startsWith(fn)));
+}
+
+// ── ID · IDOC ── Drupal resident/client search, plain GET (no cookie/CSRF/captcha/JS). last_name (or number)
+//    ≥3 chars required. HTML table: IDOC# | Last | First | Middle | BirthYear | Status ("In custody"/"In
+//    community"/"Discharged …"). Birth YEAR only (age approx); no sex/race/facility/county/charges/mugshot.
+//    Enumerable (prefix sweep + &page=N; 100/page — we take page 0 live). Verified 2026-07-18.
+async function ID(query) {
+  const last = clean(query.lastName); if (!last || last.length < 3) return []; // IDOC requires a ≥3-char last name
+  const url = `https://www.idoc.idaho.gov/content/prisons/resident-client-search/results?last_name=${encodeURIComponent(last)}&first_name=${encodeURIComponent(clean(query.firstName))}&number=&page=0`;
+  const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'text/html' } });
+  if (!res.ok) throw new Error(`ID ${res.status}`);
+  const html = await res.text();
+  const clip = (s) => stripTags(String(s || '').replace(/<div class="col-header">[^<]*<\/div>/gi, '')); // drop mobile label div
+  const out = []; const thisYear = new Date().getFullYear();
+  for (const part of html.split(/<tr role="row"><td headers="item\d+ columnheader1"/i).slice(1)) {
+    const chunk = part.slice(0, part.indexOf('</tr>'));
+    const firstCell = chunk.slice(0, chunk.indexOf('</td>'));
+    const idoc = clip(firstCell.slice(firstCell.indexOf('>') + 1));
+    const cell = (n) => { const m = chunk.match(new RegExp('columnheader' + n + '"[^>]*>([\\s\\S]*?)</td>', 'i')); return m ? clip(m[1]) : ''; };
+    const lastN = cell(2), firstN = cell(3), mid = cell(4), yr = parseInt(cell(5), 10);
+    if (!idoc && !lastN) continue;
+    out.push({
+      source: 'id-idoc', sourceName: 'Idaho DOC (IDOC)',
+      firstName: firstN, lastName: lastN, name: [firstN, mid, lastN].filter(Boolean).join(' '),
+      age: Number.isFinite(yr) ? thisYear - yr : null, gender: null, race: null,
+      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus: cell(9) || null,
+      facility: null, county: null, state: 'ID', inmateId: idoc || null,
+    });
+  }
+  return out;
+}
+
+// ── HI · DCR (SAVIN/VINE) ── the old HI DOC locator is decommissioned; custody-status lookups go to Hawai'i
+//    SAVIN on VINELink (Appriss/Equifax). Guest JSON REST (HAL) — no auth/session/captcha. GET /guest/persons
+//    with siteRefId=HISWVINE; personLastName ≥2 chars REQUIRED (x-vine-language MUST be the full word ENGLISH).
+//    Guest data is masked (id → "A611****"; mugshot is a signed/expiring bewit URL). VINE carries custody STATUS
+//    + facility + gender + mugshot only — no age/race/charges/county. Not enumerable. Verified 2026-07-18.
+async function HI(query) {
+  const last = clean(query.lastName); if (!last || last.length < 2) return []; // VINE needs a ≥2-char last name
+  const API = 'https://vinelink-mobile.vineapps.com/api/v1';
+  const qs = new URLSearchParams({ siteRefId: 'HISWVINE', personLastName: last, searchType: 'OFFENDER', isPartialSearch: 'true', offset: '0', limit: '25', obscurePersonData: 'true' });
+  if (clean(query.firstName)) qs.set('personFirstName', clean(query.firstName));
+  qs.append('personContextTypes', 'offender');
+  const res = await fetch(`${API}/guest/persons?${qs.toString()}`, { headers: { Accept: 'application/json', 'x-vine-application': 'VINELINK', 'x-vine-language': 'ENGLISH', 'User-Agent': UA, Origin: 'https://vinelink.vineapps.com', Referer: 'https://vinelink.vineapps.com/' } });
+  if (!res.ok) throw new Error(`HI ${res.status}`);
+  const data = await res.json().catch(() => null);
+  const persons = (data && data._embedded && Array.isArray(data._embedded.persons)) ? data._embedded.persons : [];
+  const gnorm = (g) => { const v = clean(g); return /^m/i.test(v) ? 'male' : /^f/i.test(v) ? 'female' : (v || null); };
+  return persons.map((p) => {
+    const nm = p.personName || {}, img = p.imageLinks || {}, oi = p.offenderInfo || {}, cust = oi.custodyStatus || {};
+    const holding = (Array.isArray(p.locations) ? p.locations : []).find((l) => l.locationType === 'HOLDING_FACILITY');
+    return {
+      source: 'hi-savin', sourceName: 'Hawaii DCR (VINE)',
+      firstName: clean(nm.firstName), lastName: clean(nm.lastName),
+      name: [nm.firstName, nm.middleName, nm.lastName].map(clean).filter(Boolean).join(' '),
+      age: null, gender: gnorm((p.gender || {}).name || (p.gender || {}).code), race: null,
+      charges: [], mugshotUrl: img.desktopImageLink || img.mobileImageLink || img.thumbnailImageLink || (p._links && p._links.desktopImage && p._links.desktopImage.href) || null,
+      bookingDate: null, releaseStatus: clean(cust.name || cust.code) || null,
+      facility: clean(oi.custodyDetail) || (holding && clean(holding.locationName)) || null,
+      county: null, state: 'HI', inmateId: clean(p.displayId || (p.personContext || {}).contextRefId) || null,
+    };
+  });
+}
+
+// Registry — direct-fetch (last-name OK): CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL/SC/KY/UT/NV/AR/MS/ID/HI, plus OR/LA
+// (need a first name: OR trips a "too many results" cap on a bare surname; LA/VINE has no wildcard roster). NE
+// fetches the full captcha-free roster xlsx (~3MB per cold query, 6h cache) and filters client-side. Captcha-gated
+// (returns [] live until a vision solver is added): MO/CO. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
