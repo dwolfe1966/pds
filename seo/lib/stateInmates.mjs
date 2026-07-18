@@ -124,8 +124,59 @@ async function PA(query, opts = {}) {
   return out.concat(norm.slice(10));
 }
 
-// Registry — add NY, IL, NJ as recon lands.
-export const STATE_ADAPTERS = { TX, CA, PA };
+// ── IL · IDOC ── legacy classic-ASP, two-step x-www-form-urlencoded. No auth/captcha. MUGSHOT is a plain
+//    URL (pub_showfront.asp?idoc=DOC) — no per-record fetch needed. Verified 2026-07-18. Facility/status/
+//    charges need the detail page (opt-in via includePhotos to avoid one POST per record).
+async function IL(query, opts = {}) {
+  const BASE = 'https://www.idoc.state.il.us/subsections/search';
+  const last = clean(query.lastName); if (!last) return [];
+  const term = clean(query.firstName) ? `${last}, ${clean(query.firstName)}` : last;
+  const lr = await fetch(`${BASE}/ISListInmates2.asp`, {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA, Referer: `${BASE}/ISdefault2.asp` },
+    body: new URLSearchParams({ selectlist1: 'Last', idoc: term, submit: 'Find' }).toString(),
+  });
+  if (!lr.ok) throw new Error(`IL ${lr.status}`);
+  const lh = await lr.text();
+  const rawOpts = [...lh.matchAll(/<OPTION[^>]*>(?:<font[^>]*>\s*<\/font>)?\s*([A-Z]\d{4,}\s*\|\s*[\d/-]+\s*\|\s*[^<]+?)\s*<\/option>/gi)].map((m) => m[1]);
+  const ageFromDob = (d) => { const p = String(d || '').split(/[/-]/).map(Number); if (p.length < 3) return null; const [mm, dd, yy] = p; if (!yy) return null; const t = new Date(); let a = t.getFullYear() - yy; if (t.getMonth() + 1 < mm || (t.getMonth() + 1 === mm && t.getDate() < dd)) a--; return a > 0 && a < 120 ? a : null; };
+  const records = rawOpts.map((opt) => {
+    const p = opt.split('|').map((s) => s.trim());
+    const doc = p[0], dob = /^0+[/-]0+[/-]0+$/.test(p[1] || '') ? '' : (p[1] || ''), nm = p[2] || '';
+    const [lastN, rest] = nm.split(',').map((s) => (s || '').trim());
+    return {
+      source: 'il-idoc', sourceName: 'Illinois DOC',
+      firstName: (rest || '').split(/\s+/)[0] || '', lastName: lastN || '', name: clean(nm),
+      age: ageFromDob(dob), gender: null, race: null, charges: [],
+      mugshotUrl: `${BASE}/pub_showfront.asp?idoc=${encodeURIComponent(doc)}`,
+      bookingDate: null, releaseStatus: null, facility: null, county: null,
+      state: 'IL', inmateId: doc, _opt: opt,
+    };
+  });
+  if (opts.includePhotos) {
+    const val = (html, label) => { const re = new RegExp(`${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^<]*</b>\\s*</font>\\s*</td>\\s*<td[^>]*>\\s*<font[^>]*>([^<]*)</font>`, 'i'); const m = html.match(re); return m ? clean(m[1]) : ''; };
+    for (const rec of records.slice(0, 10)) {
+      try {
+        const dr = await fetch(`${BASE}/ISinms2.asp`, {
+          method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA, Referer: `${BASE}/ISListInmates2.asp` },
+          body: new URLSearchParams({ idoc: rec._opt }).toString(),
+        });
+        if (dr.ok) {
+          const d = await dr.text();
+          rec.facility = val(d, 'Parent Institution') || rec.facility;
+          rec.releaseStatus = val(d, 'Offender Status') || rec.releaseStatus;
+          const off = [...d.matchAll(/OFFENSE:<\/font>[^<]*<\/td>\s*<td[^>]*>\s*<font[^>]*>([^<]+)/gi)].map((m) => clean(m[1]));
+          if (off.length) rec.charges = off;
+        }
+      } catch { /* keep base record */ }
+    }
+  }
+  records.forEach((r) => { delete r._opt; });
+  return records;
+}
+
+// Registry — TX/CA/PA/IL live via fetch. NY = browser-tier (F5 WAF needs a real browser to mint the TS
+// cookie; SearchByName/SearchByDin JSON API otherwise clean). NJ pending recon.
+export const STATE_ADAPTERS = { TX, CA, PA, IL };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 /**
