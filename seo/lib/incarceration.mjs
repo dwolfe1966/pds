@@ -10,6 +10,7 @@
 
 import { neon } from '@neondatabase/serverless';
 import { findStateInmates, STATE_ADAPTERS } from './stateInmates.mjs';
+import { queryInmates, upsertInmates, hasInmatesDb } from './inmatesDb.mjs';
 
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/\D/g, ''), 10); return Number.isNaN(n) ? null : n; };
 const clean = (s) => (s == null ? '' : String(s).trim());
@@ -196,10 +197,17 @@ async function enformion(query, opts) {
   });
 }
 
-// First-party state DOC scrapers (the moat — stateInmates.mjs). Wrapped so it fits the (query, opts)
-// provider signature; opts.env carries the env (kill switch + photo flag live in findStateInmates).
-const stateDoc = (query, opts) => findStateInmates(query, (opts && opts.env) || {});
-const PROVIDERS = { jailbase, ucc, floridaObis, enformion, stateDoc };
+// First-party state DOC scrapers (the moat — stateInmates.mjs). Write-through: every live result is
+// upserted into the `inmates` table (fire-and-forget) so the first-party roster grows from real searches.
+const stateDoc = async (query, opts) => {
+  const recs = await findStateInmates(query, (opts && opts.env) || {});
+  if (recs.length && hasInmatesDb) upsertInmates(recs).catch(() => {}); // never block the response
+  return recs;
+};
+// Cached first-party roster (inmatesDb) — serves persisted rows (fast, and the fallback when a live
+// scrape is blocked/down), each carrying `asOf` for the freshness display.
+const dbInmates = (query, opts) => queryInmates({ state: query.state, firstName: query.firstName, lastName: query.lastName, limit: (opts && opts.limit) || 20 });
+const PROVIDERS = { jailbase, ucc, floridaObis, enformion, stateDoc, dbInmates };
 
 /**
  * Query all enabled incarceration providers for a person; return normalized, best-effort merged records.
@@ -230,6 +238,8 @@ export async function findBookings(query, env = {}) {
   if (opts.enformionName && opts.enformionPass) enabled.push('enformion');
   // First-party state DOC scraper — enabled whenever we have an adapter for the searched state.
   if (STATE_ADAPTERS[st] && env.STATE_INMATES_DISABLED !== '1') enabled.push('stateDoc');
+  // Cached first-party roster — serve persisted rows for any state (coverage + blocked-state fallback).
+  if (hasInmatesDb && st) enabled.push('dbInmates');
   const settled = await Promise.allSettled(enabled.map((k) => PROVIDERS[k](query, opts)));
   const records = [];
   const sources = {};
