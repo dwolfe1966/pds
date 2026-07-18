@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSignup, generatePassword } from '../../hooks/useSignup';
 import { useBrand } from '../../services/brand';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
+import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 
 /**
  * Shared "default SUP" teaser (the variant-A design), driven by a `palette` so
@@ -82,6 +83,11 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
     .split(/\s+/).slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?';
   const cityState = person.location || '';
   const addressObf = cityState ? `••••• ••••••, ${cityState}` : 'Available in full report';
+  // Booking-record teaser identity (self-gates: shows only when incarceration records match).
+  const _nm = (person.fullName || '').trim().split(/\s+/).filter(Boolean);
+  const bkFirst = _nm[0] || '';
+  const bkLast = _nm.length > 1 ? _nm[_nm.length - 1] : '';
+  const bkState = ((cityState.match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '').toUpperCase();
   // Honest freshness signal (not a fabricated count) — 3 days before today, the
   // same "recently updated" cue approved on the payment vCard.
   const updatedDate = new Date(Date.now() - 3 * 86400000)
@@ -240,6 +246,10 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
               {foundChips.map((c) => <span key={c} style={chip}>{c}</span>)}
             </div>
           )}
+
+          {/* Incarceration/arrest records — a high-intent conversion lever. Self-gates: renders nothing
+              unless our first-party data has booking records matching this name + state. */}
+          {bkLast && <InmateBookingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} accent={P.accent || P.ink} dark={P.ink} />}
         </div>
 
         {/* Variant D (map layout): location map panel — stylized, self-contained

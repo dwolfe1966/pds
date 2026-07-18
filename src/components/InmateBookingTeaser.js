@@ -23,6 +23,8 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
   if (count === 0) return null; // nothing to show yet — no funnel disruption
 
   const records = (data.records || []).slice(0, 4);
+  // A couple of real example charges (across all records) to preview under the mugshots.
+  const exampleCharges = [...new Set((data.records || []).flatMap((r) => r.charges || []).filter(Boolean))];
   return (
     <div style={{ marginTop: '1rem', border: `1px solid ${accent}33`, borderRadius: 12, background: '#f7fbfe', padding: '0.9rem 1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -44,6 +46,13 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
           </div>
         ))}
       </div>
+      {exampleCharges.length > 0 && (
+        <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: '#374151', lineHeight: 1.4 }}>
+          <span aria-hidden="true" style={{ color: '#b91c1c' }}>⚖️ </span>
+          {exampleCharges.slice(0, 2).join(' · ')}
+          {exampleCharges.length > 2 ? ` +${exampleCharges.length - 2} more` : ''}
+        </p>
+      )}
       <p style={{ margin: '8px 0 0', fontSize: '0.8rem', color: '#5b7484', lineHeight: 1.45 }}>
         Continue to unlock mugshots, charges, booking dates, and facility details.
       </p>
