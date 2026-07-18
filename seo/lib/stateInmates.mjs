@@ -332,8 +332,41 @@ async function OH(query) {
   return out;
 }
 
-// Registry — direct-fetch: CA/PA/IL/WA/OH. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (F5, WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH };
+// ── NC · NC DAC ── Struts POST → HTML table (9 cols). MUGSHOT via viewpicture.do URL. Also publishes the
+//    FULL BULK roster (opus.doc.state.nc.us/offenders/*.zip) — a future OBIS-style ingest. Verified 2026-07-18.
+async function NC(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://webapps.doc.state.nc.us/opi';
+  const body = new URLSearchParams({
+    heightTotalInchesMinimum: '0', heightTotalInchesMaximum: '0', activeFilter: '2',
+    searchLastName: last.toUpperCase(), searchFirstName: clean(query.firstName).toUpperCase(),
+    searchMiddleName: '', searchOffenderId: '', searchGender: '', searchRace: '', ethnicity: '',
+    searchDOB: '', searchDOBRange: '0', ageMinimum: '', ageMaximum: '',
+  });
+  const res = await fetch(`${BASE}/offendersearch.do?method=list`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA }, body: body.toString() });
+  if (!res.ok) throw new Error(`NC ${res.status}`);
+  const html = await res.text();
+  const out = []; const seen = new Set();
+  const rowRe = /<tr[^>]*class="tableRow(?:Odd|Even)"[^>]*>([\s\S]*?)<\/tr>/g; let m;
+  while ((m = rowRe.exec(html)) && out.length < 24) {
+    const block = m[1]; if (!/viewoffender\.do/.test(block)) continue;
+    const cells = [...block.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => stripTags(c[1]));
+    if (cells.length < 9) continue;
+    const [, lastN, suffix, first, middle, gender, race, , age] = cells;
+    const id = (/offenderID=(\d{7})/.exec(block) || [])[1] || cells[0];
+    if (!id || seen.has(id)) continue; seen.add(id);
+    out.push({
+      source: 'nc-dac', sourceName: 'North Carolina DAC', firstName: first || '', lastName: lastN || '',
+      name: [first, middle, lastN, suffix].filter(Boolean).join(' '), age: num(age), gender: gender || null, race: race || null,
+      charges: [], mugshotUrl: `${BASE}/viewpicture.do?method=view&showDate=N&pictureType=I&pictureSequence=1&offenderID=${id}`,
+      bookingDate: null, releaseStatus: null, facility: null, county: null, state: 'NC', inmateId: id,
+    });
+  }
+  return out;
+}
+
+// Registry — direct-fetch: CA/PA/IL/WA/OH/NC. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (F5, WIP).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
