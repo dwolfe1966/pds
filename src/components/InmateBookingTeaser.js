@@ -2,12 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { fetchBookings } from '../services/incarcerationService';
 
 /**
- * Inmate booking teaser for the /name/landing/v3 flow. Fetches real incarceration records (mugshots,
- * charges, facility, booking date) from our first-party /api/incarceration and shows a locked preview
- * that motivates the searcher to continue. SAFE-BY-DEFAULT: renders NOTHING until a data source is live
- * (count 0) or while loading, so it can sit in the live funnel now and light up when the feed is wired.
+ * Inmate booking teaser. Fetches real incarceration records from our first-party /api/incarceration and
+ * shows a locked preview. SAFE-BY-DEFAULT: renders NOTHING until records exist.
+ *
+ * TWO MODES:
+ *  - LOOSE (default) — for NAME-SEARCH surfaces (/name/landing/v3): shows all records matching name+state,
+ *    framed as "records matching this name". Honest there — the user is browsing a name, not a person.
+ *  - STRICT (`strict` + `personAge`) — for a SPECIFIC PROFILE/SUP: a name+state match can be a DIFFERENT
+ *    same-name person, so we must NOT stamp a stranger's mugshot/charges onto this profile. We only surface
+ *    records that CORROBORATE the person on age (±2). States that expose no age can't corroborate → nothing.
+ *    Even a corroborated hit isn't a confirmed ID, so the copy says "Possible match — verify".
  */
-export default function InmateBookingTeaser({ firstName, lastName, state, city, accent = '#007cc2', dark = '#055a86' }) {
+export default function InmateBookingTeaser({ firstName, lastName, state, city, personAge, strict = false, accent = '#007cc2', dark = '#055a86' }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -19,18 +25,26 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
     return () => { alive = false; };
   }, [firstName, lastName, state, city]);
 
-  const count = (data && data.count) || 0;
-  if (count === 0) return null; // nothing to show yet — no funnel disruption
+  const all = (data && data.records) || [];
+  // STRICT: corroborate on age (±2) so we never attribute a same-name stranger's record to this profile.
+  const pa = parseInt(personAge, 10);
+  const matched = strict
+    ? all.filter((r) => Number.isFinite(pa) && Number.isFinite(r.age) && Math.abs(r.age - pa) <= 2)
+    : all;
+  const count = strict ? matched.length : ((data && data.count) || 0);
+  if (!data || count === 0) return null; // nothing corroborated / nothing to show
 
-  const records = (data.records || []).slice(0, 4);
-  // A couple of real example charges (across all records) to preview under the mugshots.
-  const exampleCharges = [...new Set((data.records || []).flatMap((r) => r.charges || []).filter(Boolean))];
+  const records = matched.slice(0, 4);
+  const exampleCharges = [...new Set(matched.flatMap((r) => r.charges || []).filter(Boolean))];
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
   return (
     <div style={{ marginTop: '1rem', border: `1px solid ${accent}33`, borderRadius: 12, background: '#f7fbfe', padding: '0.9rem 1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span aria-hidden="true" style={{ fontSize: 18 }}>🔒</span>
         <span style={{ fontWeight: 800, color: dark, fontSize: '0.95rem' }}>
-          {count} booking record{count === 1 ? '' : 's'} found for {[firstName, lastName].filter(Boolean).join(' ')}{state ? ` in ${state}` : ''}
+          {strict
+            ? <>Possible incarceration record for {fullName} — verify this is the right person</>
+            : <>{count} booking record{count === 1 ? '' : 's'} found for {fullName}{state ? ` in ${state}` : ''}</>}
         </span>
       </div>
       <div style={{ display: 'flex', gap: 8, overflow: 'hidden' }}>
