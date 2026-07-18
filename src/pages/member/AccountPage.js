@@ -1097,10 +1097,6 @@ const AccountPage = () => {
       {/* ── OVERVIEW TAB (account landing) ───────────────────────────────────── */}
       {activeTab === 'overview' && (
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>This is your account</h2>
-          <p style={{ color: '#4b5563', marginTop: 0 }}>
-            Welcome{user && user.firstName ? `, ${user.firstName}` : ''}. Manage your identity, security, subscription, and messages — all in one place.
-          </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginTop: 16 }}>
             {[
               { key: 'contact', icon: '✉️', title: 'Contact', desc: 'Your email and phone.' },
