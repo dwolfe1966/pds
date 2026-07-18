@@ -178,6 +178,37 @@ export function getTaxonomyUrls() {
   return urls;
 }
 
+// Canonical DIRECTORY sitemap set (SEO recovery 2026-07-18). The full taxonomy is ~335k name-in-city
+// pages — the thin-page volume that tanked the domain on 7/13 and that Google has already declined
+// ("discovered – not indexed"). So we DON'T re-dump it. We submit a population-prioritized QUALITY core:
+// every state + every city (real ACS content) + the top `maxNamePages` name-in-city pages (biggest cities
+// first). Stays under Google's 50k-URL/urlset limit and re-crawls the pages that can actually rank,
+// without re-flooding a recovering young domain. cityNameOk still gates each name page to content-bearing.
+export function getDirectoryUrls({ maxNamePages = 45000 } = {}) {
+  const states = getStateList(); // population desc
+  const core = ['/people'];
+  const cityRefs = [];
+  for (const st of states) {
+    core.push(statePath(st.code));
+    for (const c of st.cities) cityRefs.push({ st, c });
+  }
+  cityRefs.sort((a, b) => (b.c.pop || 0) - (a.c.pop || 0)); // biggest cities first
+  const cityUrls = [];
+  const nameUrls = [];
+  let capped = 0;
+  for (const { st, c } of cityRefs) {
+    let cityAdded = false;
+    for (const slug of STATE_SLICE.topNames) {
+      const nm = NAME_SLICE[slug];
+      if (!nm || !cityNameOk(nm.estPeople, c.pop, st.share)) continue;
+      if (!cityAdded) { cityUrls.push(cityPath(st.code, c.slug)); cityAdded = true; }
+      if (nameUrls.length < maxNamePages) nameUrls.push(cityNamePath(st.code, c.slug, slug));
+      else capped++;
+    }
+  }
+  return { all: [...core, ...cityUrls, ...nameUrls], counts: { core: core.length, cities: cityUrls.length, names: nameUrls.length, droppedNames: capped } };
+}
+
 // Re-exported so the sitemap (in data.js) can iterate the slices without importing
 // the JSON a second time.
 export { NAME_SLICE, STATE_SLICE };
