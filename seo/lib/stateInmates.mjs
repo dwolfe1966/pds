@@ -551,18 +551,24 @@ async function CO(query) {
 async function MN(query) {
   const last = clean(query.lastName); if (!last) return [];
   const B = 'https://coms.doc.state.mn.us/PublicViewer';
+  // MN DOC serves an INCOMPLETE TLS chain (missing intermediate) → Node/undici rejects it
+  // (UNABLE_TO_VERIFY_LEAF_SIGNATURE), even though curl accepts it. Scope a dispatcher that skips
+  // verification for THIS host only (public read, no secrets sent) — never a global TLS-off.
+  let dispatcher;
+  try { const { Agent } = await import('undici'); dispatcher = new Agent({ connect: { rejectUnauthorized: false } }); } catch { dispatcher = undefined; }
+  const F = (url, opts = {}) => fetch(url, dispatcher ? { ...opts, dispatcher } : opts);
   const jar = new Map();
   const absorb = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [p] = c.split(';'); const i = p.indexOf('='); if (i > 0) jar.set(p.slice(0, i).trim(), p.slice(i + 1).trim()); } };
   const ckh = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
-  const land = await fetch(`${B}/`, { headers: { 'User-Agent': UA } });
+  const land = await F(`${B}/`, { headers: { 'User-Agent': UA } });
   if (!land.ok) throw new Error(`MN ${land.status}`);
   absorb(land);
   const tok = ((await land.text()).match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/) || [])[1] || '';
   const form = new URLSearchParams({ rdogrp: '1', firstName: clean(query.firstName), lastName: last, oid: '' });
   if (tok) form.set('__RequestVerificationToken', tok);
-  const post = await fetch(`${B}/Home/Index`, { method: 'POST', redirect: 'manual', headers: { 'User-Agent': UA, Cookie: ckh(), 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${B}/` }, body: form.toString() });
+  const post = await F(`${B}/Home/Index`, { method: 'POST', redirect: 'manual', headers: { 'User-Agent': UA, Cookie: ckh(), 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${B}/` }, body: form.toString() });
   absorb(post);
-  const gr = await fetch(`${B}/SearchResults/GetOffenders////1`, { headers: { 'User-Agent': UA, Cookie: ckh(), 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json', Referer: `${B}/SearchResults` } });
+  const gr = await F(`${B}/SearchResults/GetOffenders////1`, { headers: { 'User-Agent': UA, Cookie: ckh(), 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json', Referer: `${B}/SearchResults` } });
   if (!gr.ok) throw new Error(`MN ${gr.status}`);
   const rows = await gr.json().catch(() => []);
   const ageFromDob = (d) => { const m = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(d || '')); if (!m) return null; const t = new Date(); let a = t.getFullYear() - Number(m[3]); if (t.getMonth() + 1 < Number(m[1]) || (t.getMonth() + 1 === Number(m[1]) && t.getDate() < Number(m[2]))) a--; return a > 0 && a < 120 ? a : null; };
