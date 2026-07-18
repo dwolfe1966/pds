@@ -44,14 +44,20 @@ UCC_API_URL   = https://api.unlimitedcriminalchecks.com   # confirm the real bas
 instant key, **100 free searches/mo**, no contract. The Criminal Search API returns name, mugshot, case
 number, county, offense city/state, DOB. Adapter is **built + wired** (env-keyed) — just add creds.
 
+**Endpoint CONFIRMED live 2026-07-17** (validated against the account): `POST https://devapi.endato.com/
+CriminalSearch/v2`, header `galaxy-search-type: CriminalV2`, auth `galaxy-ap-name`/`galaxy-ap-password`.
+Request uses `OffenseState`; response records carry FullName/First/Last, `Photos[].ImageUrl`/`ThumbUrl`
+(mugshot), `Offenses[].OffenseDescription`/`OffenseDate`, `Addresses[].County`/`State`. Adapter maps all of
+these. **PersonSearch works on the current AccessProfile, but Criminal Search V2 does NOT** — the API
+returns *"Access Profile does not permit client to call Criminal Search V2."*
+
 **What to get:**
-1. Sign up at **[go.enformion.com](https://go.enformion.com/developer-apis/)** → get your **AccessProfile
-   credentials** (`galaxy-ap-name` + `galaxy-ap-password`) from the **Keys** tab at api.enformion.com.
-2. **⚠️ Confirm consumer-display permission in writing** (same as UCC — non-CRA, ask if displaying the
-   returned records incl. mugshots to consumers is permitted).
-3. In the trial, run a sample Criminal Search and confirm the **response field names** — my mapper is
-   best-effort (PascalCase + camelCase variants); finalize any mismatch in `seo/lib/incarceration.mjs` →
-   `enformion()`. Also confirm the exact endpoint (I used `POST {base}/CriminalSearch/V1`).
+1. **⚠️ Enable the Criminal Search V2 product on your Enformion AccessProfile** — this is the blocker.
+   PersonSearch is enabled; Criminal Search V2 is a separate product/permission. Add it in the EnformionGO
+   console (or contact their support) so the AccessProfile is permitted to call Criminal Search V2.
+2. **Confirm consumer-display permission in writing** (non-CRA — displaying records incl. mugshots to consumers).
+3. Once enabled, run one live sample and confirm the top-level records key (`criminalRecords` vs `records`) +
+   field names against my mapper in `seo/lib/incarceration.mjs` → `enformion()` (one-line fix if different).
 
 **Env to set on Vercel (SEO project):**
 ```

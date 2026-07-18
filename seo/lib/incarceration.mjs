@@ -126,39 +126,42 @@ async function ucc(query, opts) {
 //    best-effort (PascalCase + camelCase variants) — finalize in the trial from a live sample. ──
 async function enformion(query, opts) {
   if (!opts.enformionName || !opts.enformionPass) return [];
+  // Confirmed live (2026-07-17): POST /CriminalSearch/v2 + galaxy-search-type: CriminalV2; auth =
+  // galaxy-ap-name/password. Request uses OffenseState; response records carry FullName/First/Last,
+  // Photos[].ImageUrl/ThumbUrl (mugshot), Offenses[].OffenseDescription/OffenseDate, Addresses[].County/State.
+  // (Requires the AccessProfile to have the Criminal Search V2 product enabled — else "Access denied".)
   const base = (opts.enformionUrl || 'https://devapi.endato.com').replace(/\/$/, '');
-  const res = await fetch(`${base}/CriminalSearch/V1`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json', Accept: 'application/json',
-      'galaxy-ap-name': opts.enformionName,
-      'galaxy-ap-password': opts.enformionPass,
-      'galaxy-client-type': opts.enformionClient || 'DevAPI',
-      'galaxy-search-type': opts.enformionSearchType || 'Criminal',
-    },
-    body: JSON.stringify({ FirstName: query.firstName, LastName: query.lastName, State: query.state, Page: 1, ResultsPerPage: 20 }),
+  const headers = {
+    'Content-Type': 'application/json', Accept: 'application/json',
+    'galaxy-ap-name': opts.enformionName, 'galaxy-ap-password': opts.enformionPass,
+    'galaxy-search-type': opts.enformionSearchType || 'CriminalV2',
+  };
+  if (opts.enformionClient) headers['galaxy-client-type'] = opts.enformionClient;
+  const res = await fetch(`${base}/CriminalSearch/v2`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ FirstName: query.firstName, LastName: query.lastName, OffenseState: query.state, Page: 1, ResultsPerPage: 20 }),
   });
-  if (!res.ok) throw new Error(`enformion ${res.status}`);
   const data = await res.json().catch(() => null);
-  const records = (data && (data.records || data.Records || data.results || data.persons)) || [];
-  const g = (r, ...keys) => { for (const k of keys) { if (r[k] != null && r[k] !== '') return r[k]; } return ''; };
+  if (!res.ok || (data && data.isError)) throw new Error(`enformion ${res.status}: ${data && data.error && data.error.message || ''}`.trim());
+  const g = (o, ...keys) => { if (!o) return ''; for (const k of keys) { if (o[k] != null && o[k] !== '') return o[k]; } return ''; };
+  const records = (data && (data.criminalRecords || data.records || data.Records || data.persons || data.results)) || [];
   return records.map((r) => {
-    const raw = g(r, 'charges', 'Charges', 'offenses', 'Offenses');
-    const charges = Array.isArray(raw)
-      ? raw.map((c) => clean(typeof c === 'object' ? g(c, 'description', 'Description', 'charge', 'Charge', 'offense') : c)).filter(Boolean)
-      : (clean(g(r, 'offense', 'Offense', 'charge', 'Charge')) ? [clean(g(r, 'offense', 'Offense', 'charge', 'Charge'))] : []);
+    const nm = r.name && typeof r.name === 'object' ? r.name : r; // person-style nested name{} or flat
+    const photos = Array.isArray(r.Photos || r.photos) ? (r.Photos || r.photos) : [];
+    const offenses = Array.isArray(r.Offenses || r.offenses) ? (r.Offenses || r.offenses) : [];
+    const addr = Array.isArray(r.Addresses || r.addresses) ? (r.Addresses || r.addresses)[0] : (r.address || {});
     return {
-      source: 'enformion', sourceName: clean(g(r, 'source', 'Source', 'agency', 'Agency')) || 'Enformion',
-      firstName: clean(g(r, 'firstName', 'FirstName')), lastName: clean(g(r, 'lastName', 'LastName')),
-      name: clean(g(r, 'fullName', 'FullName', 'name', 'Name')) || [g(r, 'firstName', 'FirstName'), g(r, 'lastName', 'LastName')].map(clean).filter(Boolean).join(' '),
-      age: num(g(r, 'age', 'Age', 'dobAge')), gender: clean(g(r, 'gender', 'Gender', 'sex', 'Sex')) || null, race: clean(g(r, 'race', 'Race')) || null,
-      charges,
-      mugshotUrl: clean(g(r, 'mugshot', 'Mugshot', 'mugshotUrl', 'MugshotUrl', 'image', 'Image')) || null,
-      bookingDate: clean(g(r, 'bookingDate', 'BookingDate', 'arrestDate', 'ArrestDate', 'offenseDate', 'OffenseDate')) || null,
-      releaseStatus: clean(g(r, 'status', 'Status', 'releaseStatus', 'ReleaseStatus')) || null,
-      facility: clean(g(r, 'facility', 'Facility', 'agency', 'Agency')) || null,
-      county: clean(g(r, 'county', 'County')) || null,
-      state: (clean(g(r, 'state', 'State', 'offenseState', 'OffenseState')) || query.state || '').toUpperCase() || null,
+      source: 'enformion', sourceName: clean(g(r, 'Source', 'source')) || 'Enformion',
+      firstName: clean(g(nm, 'FirstName', 'firstName')), lastName: clean(g(nm, 'LastName', 'lastName')),
+      name: clean(g(nm, 'FullName', 'fullName')) || [g(nm, 'FirstName', 'firstName'), g(nm, 'LastName', 'lastName')].map(clean).filter(Boolean).join(' '),
+      age: num(g(r, 'Age', 'age')), gender: clean(g(r, 'Sex', 'sex', 'Gender', 'gender')) || null, race: clean(g(r, 'Race', 'race')) || null,
+      charges: offenses.map((o) => clean(g(o, 'OffenseDescription', 'offenseDescription', 'Description', 'description'))).filter(Boolean),
+      mugshotUrl: clean(g(photos[0] || {}, 'ImageUrl', 'imageUrl', 'ThumbUrl', 'thumbUrl')) || null,
+      bookingDate: clean(g(offenses[0] || {}, 'OffenseDate', 'offenseDate', 'ConvictionDate', 'CaseDate')) || null,
+      releaseStatus: null,
+      facility: clean(g(r, 'Source', 'source')) || null,
+      county: clean(g(addr, 'County', 'county')) || clean(g(offenses[0] || {}, 'OffenseCounty', 'County')) || null,
+      state: (clean(g(addr, 'State', 'state')) || clean(g(offenses[0] || {}, 'SourceState', 'OffenseState')) || query.state || '').toUpperCase() || null,
     };
   });
 }
