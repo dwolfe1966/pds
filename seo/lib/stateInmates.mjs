@@ -40,7 +40,7 @@ const stripTags = (s) => clean(String(s || '').replace(/<[^>]*>/g, ''));
 // sites also block the browser's datacenter IP, so we append Browserless's RESIDENTIAL proxy. Set
 // BROWSER_SERVICE_URL to your Browserless /function endpoint (…?token=…). Returns the fn's `data` (Browserless
 // wraps it as {data,type}), or null. ⚠️ OWNER: Browserless account with residential-proxy capability.
-async function browserFunction(code) {
+async function browserFunction(code, tries = 3) {
   const svc = process.env.BROWSER_SERVICE_URL;
   if (!svc) return null;
   let url;
@@ -48,12 +48,14 @@ async function browserFunction(code) {
     url = new URL(svc);
     if (!url.searchParams.has('proxy')) { url.searchParams.set('proxy', 'residential'); url.searchParams.set('proxyCountry', process.env.BROWSER_PROXY_COUNTRY || 'us'); }
   } catch { return null; }
-  try {
-    const res = await fetch(url.toString(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, context: {} }) });
-    if (!res.ok) return null;
-    const j = await res.json().catch(() => null);
-    return j ? j.data : null;
-  } catch { return null; }
+  // Residential exit nodes are flaky (some rotate into an IP the target resets/empties) — retry a few times.
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url.toString(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, context: {} }) });
+      if (res.ok) { const j = await res.json().catch(() => null); const data = j ? j.data : null; if (data != null && !(data && data.__status)) return data; }
+    } catch { /* retry */ }
+  }
+  return null;
 }
 
 // ── TX · TDCJ ── Struts HTML table. TDCJ's Akamai WAF RESETS proxied non-browser connections (verified:
