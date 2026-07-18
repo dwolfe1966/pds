@@ -9,7 +9,7 @@
 //     writes when ENFORMION_ENRICH_PERSIST=1 is set (flip that ON only after confirming Enformion's
 //     agreement permits storing returned data; the free/dev tier may restrict to query-time use).
 import { personToEnrichment } from '../../../lib/person-search.mjs';
-import { upsertMemberEnrichment, hasSearchDb } from '../../../lib/search-activity-db.mjs';
+import { upsertMemberEnrichment, getMemberEnrichment, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
@@ -46,8 +46,26 @@ export async function POST(req) {
   const dryRun = body.dryRun === true || !persistAllowed;
 
   try {
+    const userId = String(body.userId);
+    // FILL-ONLY (quota + provenance): skip the Enformion call entirely if the member already has BOTH
+    // relatives and past_locations — never overwrite BC-sourced (licensed, richer) data, and don't burn
+    // a free-tier search (100/mo) re-enriching. Only fill the dimension(s) currently empty.
+    let need = { relatives: true, past: true };
+    if (hasSearchDb && !dryRun) {
+      try {
+        const cur = await getMemberEnrichment(userId);
+        if (cur) {
+          need.relatives = !(Array.isArray(cur.relatives) && cur.relatives.length > 0);
+          need.past = !(Array.isArray(cur.past_locations) && cur.past_locations.length > 0);
+        }
+      } catch { /* row absent — fill both */ }
+      if (!need.relatives && !need.past) {
+        return new Response(JSON.stringify({ ok: true, enriched: false, reason: 'already_enriched' }), { status: 200, headers });
+      }
+    }
+
     const r = await personToEnrichment({
-      userId: String(body.userId),
+      userId,
       firstName: body.firstName, lastName: body.lastName,
       city: body.city, state: body.state, age: body.age,
     });
@@ -67,8 +85,14 @@ export async function POST(req) {
     if (!hasSearchDb) {
       return new Response(JSON.stringify({ ok: true, enriched: false, reason: 'no_db', wouldWrite: preview }), { status: 200, headers });
     }
-    await upsertMemberEnrichment(r.enrichment);
-    return new Response(JSON.stringify({ ok: true, enriched: true, ...preview }), { status: 200, headers });
+    // Fill-only: pass empty arrays for dimensions already present so the upsert's
+    // "CASE WHEN length>0 THEN new ELSE keep" preserves the existing (BC-sourced) values.
+    await upsertMemberEnrichment({
+      ...r.enrichment,
+      relatives: need.relatives ? r.enrichment.relatives : [],
+      pastLocations: need.past ? r.enrichment.pastLocations : [],
+    });
+    return new Response(JSON.stringify({ ok: true, enriched: true, filled: { relatives: need.relatives, past: need.past }, ...preview }), { status: 200, headers });
   } catch (e) {
     return new Response(JSON.stringify({ error: 'enrich failed' }), { status: 500, headers });
   }

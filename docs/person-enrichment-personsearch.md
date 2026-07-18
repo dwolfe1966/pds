@@ -31,18 +31,25 @@ and **`past_local` ("Once lived in your area")** — the high-intrigue teasers W
    compute-at-query-time (fetch PersonSearch live in the WSFY build, compute tags in memory, persist
    nothing) — a latency/cost hit, but no retention exposure.
 
-## To activate (once retention is confirmed)
+## Activation — retention CONFIRMED by owner 2026-07-17 (storage permitted)
 ```
 # already set for PersonSearch: ENFORMION_AP_NAME / ENFORMION_AP_PASSWORD (env-only, per profile)
-ENFORMION_ENRICH_PERSIST = 1     # ONLY after Enformion confirms storage is permitted
+ENFORMION_ENRICH_PERSIST = 1     # SET THIS on the Vercel SEO project to turn persistence on in prod
 ```
-Then wire the consumer app to `POST /api/enrich-person { userId, firstName, lastName, city, state, age }`
-on signup / identity-mapping (client wiring intentionally deferred until the gate is on — dry-run is a
-no-op). A one-time backfill script over existing `member_enrichment` rows is the other follow-up (also
-retention-gated).
+Set locally in `seo/.env.local`; **owner must set it on the Vercel SEO project** for production.
+
+Client wiring is live: `saveIdentityFormInfo` (checkout card-capture — the members with no self-report)
+fires `enrichViaPersonSearch()` → `POST /api/enrich-person`, **once per member** (localStorage-guarded;
+free tier is 100 searches/mo). Server is **fill-only**: it reads the current row and only fills the
+relatives/past_locations dimension that's empty — never overwrites BC-sourced data, never re-burns quota.
 
 ## Status
-- ✅ `findPerson` + `personToEnrichment` (corroboration gate) — built, tested live against Enformion.
-- ✅ `POST /api/enrich-person` — built (dry-run default, retention-gated persist).
-- ⏸️ Client wiring + backfill — deferred pending the **retention answer** (owner) and, for display of any
-  raw field, the same written permission as criminal.
+- ✅ `findPerson` + `personToEnrichment` (corroboration gate) — built, tested live (corroborated match =
+  50 relatives / 8 past cities; name-only "John Smith" → refused).
+- ✅ `POST /api/enrich-person` — fill-only, retention-gated persist. Write path validated on a real row
+  (relatives preserved at 2, past_locations filled to 8, source=enformion_personsearch).
+- ✅ Client wiring — `enrichViaPersonSearch` fired from card-capture, guarded to once/member.
+- ⏭️ Owner TODO: set `ENFORMION_ENRICH_PERSIST=1` on Vercel + upload the consumer bundle. Free-tier quota
+  (100/mo) means **production volume needs a paid Enformion plan** — flag before real traffic.
+- ⏸️ KBA-from-PersonSearch still deferred — any KBA surfaces one real fact as an option (= "display"), so
+  it needs the same written permission as criminal. Backfill is moot (only 1 corroboratable member exists).

@@ -110,6 +110,45 @@ function post(payload) {
   } catch { /* fetch unavailable */ }
 }
 
+function personEnrichUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'enrich-person'); }
+
+/**
+ * Augment this member's WSFY network from Enformion PersonSearch (real relatives + address history) so
+ * `shared_relative` / `verified_relative` / `past_local` affinities can fire. All the hard gating —
+ * corroboration (age/city or it refuses), opt-out, and the retention/persist switch — lives SERVER-side;
+ * the server is also fill-only (never overwrites BC-sourced data). Highest value for members with NO
+ * self-report (card-capture path), whose relatives/past_locations are otherwise empty.
+ *
+ * Fires at most ONCE per member: the free tier is 100 searches/mo, so we localStorage-guard on any
+ * definitive outcome (enriched, or already-enriched/opted-out) and let soft failures retry later.
+ * @param {{name?:string, city?:string, state?:string, age?:number|string}} who  the member's OWN identity
+ */
+export function enrichViaPersonSearch(who = {}) {
+  const userId = currentUserId();
+  if (!userId) return;
+  const parts = String(who.name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return;               // need first + last to search
+  if (!who.city && !who.age) return;          // no corroboration signal → server would refuse anyway
+  const guard = `enformionEnriched:${userId}`;
+  try { if (localStorage.getItem(guard)) return; } catch { /* ignore */ }
+  try {
+    fetch(personEnrichUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({
+        userId, firstName: parts[0], lastName: parts[parts.length - 1],
+        city: who.city || undefined, state: who.state || undefined, age: who.age || undefined,
+      }),
+    })
+      .then((r) => r.json()).then((d) => {
+        // Only permanently guard on a settled outcome — let not_configured/ambiguous/no_db retry later.
+        if (d && (d.enriched || d.reason === 'already_enriched' || d.reason === 'opted_out')) {
+          try { localStorage.setItem(guard, '1'); } catch { /* ignore */ }
+        }
+      }).catch(() => { /* best-effort */ });
+  } catch { /* fetch unavailable */ }
+}
+
 /**
  * Store the member's OWN form-provided identity info (owner 2026-07-16) so WSFY has a name to match
  * on even when they never map an identity. Persisted under `attributes` (merged server-side), keyed
@@ -130,6 +169,13 @@ export function saveIdentityFormInfo(info = {}) {
   if (clean(info.providedState)) attributes.providedState = clean(info.providedState).toUpperCase();
   if (!Object.keys(attributes).length) return;
   post({ userId, attributes, source: 'form-capture' });
+  // Members captured here typically have NO self-report → empty relatives/past_locations. Augment from
+  // Enformion PersonSearch (server-gated, fill-only, once). Prefer the card identity (city corroborates).
+  enrichViaPersonSearch({
+    name: attributes.cardName || attributes.providedName,
+    city: attributes.cardCity || attributes.providedCity,
+    state: attributes.cardState || attributes.providedState,
+  });
 }
 
 /**
