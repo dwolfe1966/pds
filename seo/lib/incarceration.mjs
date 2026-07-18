@@ -238,10 +238,14 @@ export async function findBookings(query, env = {}) {
     if (s.status === 'fulfilled') { records.push(...s.value); sources[k] = s.value.length; }
     else sources[k] = { error: String(s.reason && s.reason.message || s.reason) };
   });
-  // Dedupe by name+bookingDate+facility; prefer records that carry a mugshot.
+  // Dedupe; prefer records that carry a mugshot. Key on the SOURCE + stable inmate id when present
+  // (distinct inmates from a state roster share name but have unique DOC#s, and often have no
+  // facility/bookingDate on the list view — keying on name+date+facility alone collapsed real people).
   const byKey = new Map();
   for (const r of records) {
-    const key = `${clean(r.name).toLowerCase()}|${r.bookingDate || ''}|${(r.facility || '').toLowerCase()}`;
+    const key = r.inmateId
+      ? `${r.source || ''}|${String(r.inmateId).toLowerCase()}`
+      : `${clean(r.name).toLowerCase()}|${r.bookingDate || ''}|${(r.facility || '').toLowerCase()}`;
     const prev = byKey.get(key);
     if (!prev || (!prev.mugshotUrl && r.mugshotUrl)) byKey.set(key, r);
   }
