@@ -447,35 +447,51 @@ async function MI(query) {
 //    POST search. ⚠️ CAPTCHA-GATED: a cold session must solve a numeric-image captcha before searching, so
 //    the live path throws 'MO captcha gate' (→ [] via findStateInmates) until a vision solver is wired. The
 //    flow + parser are kept for the crawler (one solve per session clears it). MUGSHOT via PhotoServer. Probed 2026-07-18.
-async function MO(query) {
-  const last = clean(query.lastName); if (!last) return [];
-  const BASE = 'https://web.mo.gov/doc/offSearchWeb';
-  const jar = new Map();
-  const absorb = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [p] = c.split(';'); const i = p.indexOf('='); if (i > 0) jar.set(p.slice(0, i).trim(), p.slice(i + 1).trim()); } };
-  const ckh = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
-  const w = await fetch(`${BASE}/welcome.do`, { headers: { 'User-Agent': UA } });
-  if (!w.ok) throw new Error(`MO ${w.status}`);
-  absorb(w); await w.text();
-  const body = new URLSearchParams({ docId: '', firstName: clean(query.firstName), lastName: last, subType: 'Search' });
-  const s = await fetch(`${BASE}/searchOffenderAction.do`, { method: 'POST', redirect: 'follow', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Cookie: ckh(), Referer: `${BASE}/welcome.do` }, body: body.toString() });
-  if (!s.ok) throw new Error(`MO ${s.status}`);
-  const html = await s.text();
-  if (/captcha/i.test(html) && !/offenderListForm|Assigned Location/i.test(html)) throw new Error('MO captcha gate');
+function parseMoHtml(html) {
   const ageFromDob = (d) => { const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(d || ''); if (!m) return null; const t = new Date(); let a = t.getFullYear() - Number(m[3]); if (t.getMonth() + 1 < Number(m[1]) || (t.getMonth() + 1 === Number(m[1]) && t.getDate() < Number(m[2]))) a--; return a > 0 && a < 120 ? a : null; };
   const out = [];
-  for (const tr of (html.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [])) {
+  for (const tr of ((html || '').match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [])) {
     const cells = [...tr.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/g)].map((c) => stripTags(c[1]));
-    if (cells.length < 8 || !/^\d+$/.test(cells[0])) continue; // list cols: DOC ID | Last | First | DOB | Race | Hgt | Wgt | Sex
+    if (cells.length < 8 || !/^\d+$/.test(cells[0])) continue; // DOC ID | Last | First | DOB | Race | Hgt | Wgt | Sex
     const [docId, lastN, firstN, dob, race, , , sex] = cells;
     out.push({
       source: 'mo-doc', sourceName: 'Missouri DOC',
       firstName: clean(firstN), lastName: clean(lastN), name: `${clean(firstN)} ${clean(lastN)}`.trim(),
       age: ageFromDob(dob), gender: /^m/i.test(sex) ? 'male' : /^f/i.test(sex) ? 'female' : null, race: race || null,
-      charges: [], mugshotUrl: `${BASE.replace('/offSearchWeb', '')}/PhotoServer/getPublicFrontal?docId=${docId}`,
+      charges: [], mugshotUrl: `https://web.mo.gov/doc/PhotoServer/getPublicFrontal?docId=${docId}`,
       bookingDate: null, releaseStatus: 'active', facility: null, county: null, state: 'MO', inmateId: docId,
     });
   }
   return out;
+}
+
+// ── MO · Missouri DOC ── #CAPTCHA WAVE proof. Imperva WAF (blocks datacenter IPs) + a numeric-image captcha.
+//    COMBINED unlock: Browserless (residential — clears Imperva, verified) loads welcome.do, grabs the
+//    session-bound captcha PNG, solves it via 2Captcha IN-FLOW, POSTs the answer to clear the session, then
+//    searches + returns the results HTML. Needs BROWSER_SERVICE_URL + CAPTCHA_SOLVER_KEY. Browser-tier (slow).
+async function MO(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  if (!process.env.BROWSER_SERVICE_URL || !process.env.CAPTCHA_SOLVER_KEY) return []; // self-gate until configured
+  const code = `export default async function ({ page }) {
+    await page.goto("https://web.mo.gov/doc/offSearchWeb/welcome.do", { waitUntil: "domcontentloaded", timeout: 45000 });
+    const capB64 = await page.evaluate(async () => {
+      const r = await fetch("/doc/offSearchWeb/captcha", { cache: "no-store" });
+      const buf = new Uint8Array(await r.arrayBuffer()); let s = ""; for (let i = 0; i < buf.length; i++) s += String.fromCharCode(buf[i]); return btoa(s);
+    });
+    const KEY = ${JSON.stringify(process.env.CAPTCHA_SOLVER_KEY)};
+    const sub = await fetch("https://2captcha.com/in.php", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "key=" + KEY + "&method=base64&numeric=1&json=1&body=" + encodeURIComponent(capB64) });
+    const subj = await sub.json(); if (subj.status !== 1) return { data: "", type: "text/html" };
+    let ans = null;
+    for (let i = 0; i < 20; i++) { await new Promise((r) => setTimeout(r, 5000)); const pr = await fetch("https://2captcha.com/res.php?key=" + KEY + "&action=get&id=" + subj.request + "&json=1"); const prj = await pr.json(); if (prj.status === 1) { ans = prj.request; break; } if (prj.request !== "CAPCHA_NOT_READY") break; }
+    if (!ans) return { data: "", type: "text/html" };
+    const html = await page.evaluate(async (ans, ln, fn) => {
+      await fetch("/doc/offSearchWeb/welcome.do", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "captcha=" + encodeURIComponent(ans) + "&subType=" + encodeURIComponent("Proceed to Offender Search") });
+      const r = await fetch("/doc/offSearchWeb/searchOffenderAction.do", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "docId=&firstName=" + encodeURIComponent(fn) + "&lastName=" + encodeURIComponent(ln) + "&subType=Search" });
+      return await r.text();
+    }, ans, ${JSON.stringify(last)}, ${JSON.stringify(clean(query.firstName))});
+    return { data: html, type: "text/html" };
+  }`;
+  return parseMoHtml(await browserFunction(code));
 }
 
 // ── MD · DPSCS (Incarcerated Individual Locator) ── ASP.NET WebForms, plain GET, no cookie/CSRF/captcha.
@@ -1522,7 +1538,7 @@ export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
 // path — so we SKIP them there (serve from the `inmates` DB instead) and refresh the DB asynchronously
 // (crawler + on-demand hydration). Direct-fetch states (CA/PA/IL) are fast and run live.
-export const BROWSER_TIER = new Set(['TX', 'NY']);
+export const BROWSER_TIER = new Set(['TX', 'NY', 'MO']);
 
 /**
  * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no
