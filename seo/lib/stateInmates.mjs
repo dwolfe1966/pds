@@ -682,9 +682,208 @@ async function AL(query) {
   return out;
 }
 
-// Registry — direct-fetch: CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL. Captcha-gated (returns [] live until a vision
-// solver is added): MO/CO. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL };
+// ── SC · SCDC ── clean JSON API (Struts .do). No auth/cookie/CSRF/captcha. POST inmateSearch.do with all
+//    params on the query string → a JSON array. MUGSHOT ships INLINE as a base64 JPEG in `thumbnail` (data URI,
+//    no hosted URL). offense/institution/offenseCounty/dates are detail-only (null in the list). Verified 2026-07-18.
+async function SC(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const qs = new URLSearchParams({ lastName: last, firstName: clean(query.firstName), scdcId: '', sid: '', phoneticMatch: 'false' }).toString();
+  const res = await fetch(`https://public.doc.state.sc.us/scdc-public/inmateSearch.do?${qs}`, {
+    method: 'POST', headers: { Accept: 'application/json, text/plain, */*', 'Content-Type': 'application/json', 'User-Agent': UA, Referer: 'https://public.doc.state.sc.us/scdc-public/' },
+  });
+  if (!res.ok) throw new Error(`SC ${res.status}`);
+  const rows = await res.json().catch(() => null);
+  return (Array.isArray(rows) ? rows : []).map((r) => {
+    const first = clean(r.fname), mid = clean(r.mname), lastN = clean(r.lname), sex = clean(r.sex);
+    return {
+      source: 'sc-scdc', sourceName: 'South Carolina DOC (SCDC)',
+      firstName: first, lastName: lastN, name: [first, mid, lastN].filter(Boolean).join(' '),
+      age: num(r.age), gender: /^m/i.test(sex) ? 'male' : /^f/i.test(sex) ? 'female' : null, race: clean(r.race) || null,
+      charges: [], mugshotUrl: r.thumbnail ? `data:image/jpeg;base64,${r.thumbnail}` : null,
+      bookingDate: null, releaseStatus: 'incarcerated', facility: clean(r.institution) || null,
+      county: clean(r.offenseCounty) || null, state: 'SC', inmateId: clean(r.scdcId) || null,
+    };
+  });
+}
+
+// ── LA · LA DOC (VINE) ── doc.la.gov delegates to VINELink (Appriss/Equifax VINE). JSON API: bootstrap an
+//    anonymous guest session (POST /accounts with an "Auth: Basic anonymous:<pw>" header — the header is
+//    literally "Auth", not "Authorization"), capture x-vine-session-id + x-vine-jwt, then GET /persons. A
+//    reCAPTCHA-v3 (score-based) fronts the SPA but the guest search returns live data with no token — pace
+//    requests. Guest data is OBSCURED (DOB + booking#/contextRefId masked; mugshot is a signed, expiring URL).
+//    VINE carries NO charges — custody STATUS only. Requires BOTH first + last (no wildcard roster). Verified 2026-07-18.
+async function LA(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const API = 'https://vinelink-mobile.vineapps.com/api/v1';
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let pw = '';
+  for (let i = 0; i < 12; i++) pw += cs[Math.floor(Math.random() * cs.length)]; pw += 'aA1!'; // satisfy complexity
+  const base = { Accept: 'application/json', 'x-vine-application': 'VINELINK', 'x-vine-language': 'ENGLISH', 'User-Agent': UA, Referer: 'https://vinelink.vineapps.com/' };
+  const acc = await fetch(`${API}/accounts`, { method: 'POST', headers: { ...base, 'Content-Type': 'application/json', Auth: `Basic ${Buffer.from(`anonymous:${pw}`).toString('base64')}`, Origin: 'https://vinelink.vineapps.com' }, body: JSON.stringify({ termsRead: false }) });
+  if (!acc.ok) throw new Error(`LA ${acc.status}`);
+  const sessionId = acc.headers.get('x-vine-session-id'), jwt = acc.headers.get('x-vine-jwt');
+  const qs = new URLSearchParams();
+  qs.set('siteRefId', 'LASWVINE'); qs.set('personLastName', last);
+  if (clean(query.firstName)) qs.set('personFirstName', clean(query.firstName));
+  qs.append('personContextTypes', 'offender'); qs.append('personContextTypes', 'defendant');
+  qs.set('limit', '20'); qs.set('offset', '0'); qs.set('obscurePersonData', 'true');
+  qs.set('includeJuveniles', 'false'); qs.set('includeSearchBlocked', 'false');
+  qs.set('includeRegistrantInfo', 'true'); qs.set('addImageWatermark', 'true'); qs.set('language', 'ENGLISH');
+  const res = await fetch(`${API}/persons?${qs.toString()}`, { headers: { ...base, 'x-vine-session-id': sessionId, 'x-vine-jwt': jwt } });
+  if (!res.ok) throw new Error(`LA ${res.status}`);
+  const data = await res.json().catch(() => null);
+  const persons = (data && data._embedded && Array.isArray(data._embedded.persons)) ? data._embedded.persons : [];
+  const gnorm = (g) => { const v = clean(g); return /^m/i.test(v) ? 'male' : /^f/i.test(v) ? 'female' : (v || null); };
+  return persons.map((p) => {
+    const nm = p.personName || {}; const locs = Array.isArray(p.locations) ? p.locations : [];
+    const holding = locs.find((l) => l.locationType === 'HOLDING_FACILITY');
+    const reporting = locs.find((l) => l.locationType === 'REPORTING_AGENCY');
+    const oi = p.offenderInfo || {}, img = p.imageLinks || {}, cust = oi.custodyStatus || {};
+    return {
+      source: 'la-vine', sourceName: 'Louisiana DOC (VINE)',
+      firstName: clean(nm.firstName), lastName: clean(nm.lastName),
+      name: [nm.firstName, nm.middleName, nm.lastName].map(clean).filter(Boolean).join(' '),
+      age: num(p.age), gender: gnorm((p.gender || {}).name || (p.gender || {}).code), race: clean((p.race || {}).name) || null,
+      charges: [], mugshotUrl: img.desktopImageLink || (p._links && p._links.desktopImage && p._links.desktopImage.href) || img.mobileImageLink || img.thumbnailImageLink || null,
+      bookingDate: null, releaseStatus: clean(cust.name || cust.code) || null,
+      facility: clean(oi.custodyDetail) || (holding && clean(holding.locationName)) || (reporting && clean(reporting.locationName)) || null,
+      county: (reporting && clean(reporting.locationName)) || null,
+      state: 'LA', inmateId: clean((p.personContext || {}).contextRefId) || null, // guest-obscured (10005*****); not stable for dedup
+    };
+  });
+}
+
+// ── KY · KOOL ── ASP.NET MVC, plain GET, server-rendered HTML. No captcha/CSRF/auth/cookie. GET "/" with
+//    returnResults=True renders the results table (skip the 302 from AdvancedSearchWithAnchor). MUGSHOT is a
+//    plain URL (Content/OffenderPhotos/<PID zero-padded to 7>.jpg) when a Camera.gif marker is present. Charges
+//    arrive as offense-category summaries ("Dangerous Drugs(1)"); full per-offense detail is on /KOOL/Details/{PID}.
+//    sortOrder MUST be an exact enum string or it 500s. Verified 2026-07-18. Fully enumerable (sequential PID).
+async function KY(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://kool.corrections.ky.gov';
+  const qs = new URLSearchParams({ returnResults: 'True', showAdvancedOptions: 'False', sortOrder: 'Last Name, First Name', lastName: last, firstName: clean(query.firstName), middleName: '', searchAliases: 'False', onlyPhotoRecords: 'False' }).toString();
+  const res = await fetch(`${BASE}/?${qs}`, { headers: { 'User-Agent': UA, Accept: 'text/html' } });
+  if (!res.ok) throw new Error(`KY ${res.status}`);
+  const html = await res.text();
+  const out = [];
+  const rowRe = /<a href="\/KOOL\/Details\/(\d+)">([^<]*)<\/a>([\s\S]*?)(?=<a href="\/KOOL\/Details\/\d+">|<\/table>)/g; let m;
+  while ((m = rowRe.exec(html)) !== null) {
+    const pid = m[1], disp = stripTags(m[2]), chunk = m[3];
+    const comma = disp.indexOf(',');
+    const lastN = comma >= 0 ? clean(disp.slice(0, comma)) : disp;
+    const firstN = comma >= 0 ? clean(disp.slice(comma + 1)) : '';
+    const loc = chunk.match(/target="_blank"[^>]*>([^<]+)<\/a>/);
+    const charges = (chunk.match(/([A-Za-z][A-Za-z ]+\(\d+\))/g) || []).map(clean);
+    out.push({
+      source: 'ky-doc', sourceName: 'Kentucky DOC (KOOL)',
+      firstName: firstN, lastName: lastN, name: [firstN, lastN].filter(Boolean).join(' '),
+      age: null, gender: null, race: null, charges,
+      mugshotUrl: /Camera\.gif/i.test(chunk) ? `${BASE}/Content/OffenderPhotos/${pid.padStart(7, '0')}.jpg` : null,
+      bookingDate: null, releaseStatus: null, facility: loc ? clean(loc[1]) : null, county: null,
+      state: 'KY', inmateId: pid,
+    });
+  }
+  return out;
+}
+
+// ── OR · ODOC (OOS) ── JSF (JavaServer Faces) postback. No captcha/WAF. GET searchCriteria.jsf → JSESSIONID +
+//    javax.faces.ViewState + a form action carrying ;jsessionid=…, then POST the name criteria. List row cols:
+//    SID | First | Middle | Last | DOB(MM/YYYY). NOT enumerable: a broad/surname-only search returns "Too many
+//    results to display" → [] (needs a first name). Age from DOB. facility/charges/race/gender + mugshot
+//    (imageLoader.jsp?idno=SID needs the session cookie, so null here) are detail-only postbacks. Verified 2026-07-18.
+async function OR(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://docpub.state.or.us';
+  const dec = (s) => String(s || '').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  const g = await fetch(`${BASE}/OOS/searchCriteria.jsf`, { headers: { 'User-Agent': UA, Accept: 'text/html' } });
+  if (!g.ok) throw new Error(`OR ${g.status}`);
+  const sc = g.headers.getSetCookie ? g.headers.getSetCookie() : (g.headers.get('set-cookie') ? [g.headers.get('set-cookie')] : []);
+  const cookie = sc.map((c) => c.split(';')[0]).join('; ');
+  const gh = await g.text();
+  const viewState = dec((gh.match(/name="javax\.faces\.ViewState"[^>]*value="([^"]*)"/) || [])[1] || '');
+  const action = dec((gh.match(/action="([^"]*searchCriteria\.jsf[^"]*)"/) || [])[1] || '/OOS/searchCriteria.jsf');
+  if (!viewState) throw new Error('OR ViewState missing');
+  const form = new URLSearchParams({ mainBodyForm: 'mainBodyForm', 'mainBodyForm:FirstName': clean(query.firstName), 'mainBodyForm:MiddleName': '', 'mainBodyForm:LastName': last, 'mainBodyForm:SidNumber': '', 'mainBodyForm:sendQuery': 'Search', 'javax.faces.ViewState': viewState });
+  const s = await fetch(`${BASE}${action}`, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie, Accept: 'text/html', Referer: `${BASE}/OOS/searchCriteria.jsf` }, body: form.toString() });
+  if (!s.ok) throw new Error(`OR ${s.status}`);
+  const html = await s.text();
+  if (/Too many results to display/i.test(html)) return [];
+  const ageFromDob = (d) => { const mm = /(\d{1,2})\/(\d{4})/.exec(String(d || '')); if (!mm) return null; const t = new Date(); let a = t.getFullYear() - Number(mm[2]); if (t.getMonth() + 1 < Number(mm[1])) a--; return a > 0 && a < 120 ? a : null; };
+  const out = [];
+  for (const row of (html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    if (!/foundOffenders:\d+:/.test(row)) continue;
+    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+    if (cells.length < 5) continue; // SID | First | Middle | Last | DOB(MM/YYYY)
+    const [sid, firstN, mid, lastN, dob] = cells;
+    if (!sid) continue;
+    out.push({
+      source: 'or-odoc', sourceName: 'Oregon DOC (OOS)',
+      firstName: clean(firstN), lastName: clean(lastN), name: [firstN, mid, lastN].map(clean).filter(Boolean).join(' '),
+      age: ageFromDob(dob), gender: null, race: null, charges: [], mugshotUrl: null,
+      bookingDate: null, releaseStatus: null, facility: null, county: null, state: 'OR', inmateId: clean(sid) || null,
+    });
+  }
+  return out;
+}
+
+// ── UT · UDC ── OPEN JSON API on the api.utah.gov gateway. No auth/key/cookie/captcha; CORS *. GET name search →
+//    {results:[{offenderNumber,offenderName:"LAST, FIRST MIDDLE",dateOfBirth}]}. UDC has NO photos anywhere.
+//    facility/status are detail-only (keyed by offenderNumber). age derived from DOB. Verified 2026-07-18.
+async function UT(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const url = `https://api.utah.gov/udc/v1/public/rest/offenders/name?first=${encodeURIComponent(clean(query.firstName))}&last=${encodeURIComponent(last)}&index=0&pageCount=100`;
+  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': UA, Referer: 'https://corrections.utah.gov/' } });
+  if (!res.ok) throw new Error(`UT ${res.status}`);
+  const body = await res.json().catch(() => null);
+  const rows = (body && Array.isArray(body.results)) ? body.results : [];
+  const ageFromDob = (d) => { const mm = /(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); if (!mm) return null; const t = new Date(); let a = t.getFullYear() - Number(mm[1]); if (t.getMonth() + 1 < Number(mm[2]) || (t.getMonth() + 1 === Number(mm[2]) && t.getDate() < Number(mm[3]))) a--; return a > 0 && a < 120 ? a : null; };
+  return rows.map((r) => {
+    const nm = clean(r.offenderName), comma = nm.indexOf(','); // "LAST, FIRST MIDDLE"
+    const lastN = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
+    const firstN = comma >= 0 ? clean(nm.slice(comma + 1)).split(/\s+/)[0] : '';
+    return {
+      source: 'ut-udc', sourceName: 'Utah DOC (UDC)',
+      firstName: firstN, lastName: lastN, name: nm,
+      age: ageFromDob(r.dateOfBirth), gender: null, race: null,
+      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus: null,
+      facility: null, county: null, state: 'UT', inmateId: r.offenderNumber != null ? String(r.offenderNumber) : null,
+    };
+  });
+}
+
+// ── NV · NDOC ── plain server-side POST form (no captcha/CSRF/cookie/JS). POST fname/lname/submit=true → an
+//    HTML results table (under the "Search Results" caption), CAPPED at 20 rows; cols: OffenderID(form) | First |
+//    Middle | Last | Gender | Institution. Each row's ID cell is a mini <form> POSTing onumber for the detail page
+//    (charges + a base64 mugshot live there — detail-only, not fetched live). Bulk TSVs at download_offender_data/*.csv.
+//    Verified 2026-07-18.
+async function NV(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const body = new URLSearchParams({ onumber: '', fname: clean(query.firstName), lname: last, submit: 'true' }).toString();
+  const res = await fetch('https://ofdsearch.doc.nv.gov/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA }, body });
+  if (!res.ok) throw new Error(`NV ${res.status}`);
+  const html = await res.text();
+  const cap = html.indexOf('Search Results');
+  const ts = cap >= 0 ? html.lastIndexOf('<table', cap) : -1;
+  const tbl = ts >= 0 ? html.slice(ts, html.indexOf('</table>', cap) + 8) : '';
+  const out = [];
+  for (const row of (tbl.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    const idm = row.match(/name="onumber"\s+value="?(\d+)"?/i); if (!idm) continue; // skip header row
+    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+    const firstN = cells[1] || '', mid = cells[2] || '', lastN = cells[3] || '', sex = cells[4] || '';
+    out.push({
+      source: 'nv-ndoc', sourceName: 'Nevada DOC (NDOC)',
+      firstName: firstN, lastName: lastN, name: [firstN, mid, lastN].filter(Boolean).join(' '),
+      age: null, gender: /^m/i.test(sex) ? 'male' : /^f/i.test(sex) ? 'female' : null, race: null,
+      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus: null,
+      facility: clean(cells[5]) || null, county: null, state: 'NV', inmateId: idm[1],
+    });
+  }
+  return out;
+}
+
+// Registry — direct-fetch: CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL/SC/KY/UT/NV, plus OR/LA (both need a first name:
+// OR trips a "too many results" cap on a bare surname; LA/VINE has no wildcard roster). Captcha-gated (returns []
+// live until a vision solver is added): MO/CO. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
