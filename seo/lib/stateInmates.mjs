@@ -272,16 +272,36 @@ async function NY(query) {
 export const STATE_ADAPTERS = { TX, CA, PA, IL, NY };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
+// Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
+// path — so we SKIP them there (serve from the `inmates` DB instead) and refresh the DB asynchronously
+// (crawler + on-demand hydration). Direct-fetch states (CA/PA/IL) are fast and run live.
+export const BROWSER_TIER = new Set(['TX', 'NY']);
+
 /**
- * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter for that
- * state, no lastName, or the adapter errors (never throws). Kill switch: env.STATE_INMATES_DISABLED==='1'.
- * @returns {Promise<object[]>} normalized BookingRecords
+ * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no
+ * lastName, the adapter errors, or (in the live path) the state is browser-tier. Never throws.
+ * @param {object} [opts] { allowBrowser } — set by the crawler / hydration to run browser-tier states.
  */
-export async function findStateInmates(query, env = process.env) {
+export async function findStateInmates(query, env = process.env, opts = {}) {
   if (env.STATE_INMATES_DISABLED === '1') return [];
   const st = (query.state || '').toUpperCase();
   const fn = STATE_ADAPTERS[st];
   if (!fn || !clean(query.lastName)) return [];
-  const opts = { includePhotos: env.STATE_INMATES_PHOTOS === '1' };
-  try { return await fn(query, opts); } catch { return []; }
+  if (BROWSER_TIER.has(st) && !opts.allowBrowser) return []; // don't run the slow browser in the live path
+  try { return await fn(query, { includePhotos: env.STATE_INMATES_PHOTOS === '1' }); } catch { return []; }
+}
+
+/**
+ * Run the adapter with the browser allowed and write-through to the `inmates` table. For the crawler AND
+ * on-demand hydration — call from the route's after() so a browser-tier search still refreshes the DB
+ * (the searcher gets the cached rows now; the next searcher gets fresh ones). Never throws.
+ * @returns {Promise<number>} rows upserted
+ */
+export async function hydrateStateInmates(query, env = process.env) {
+  try {
+    const recs = await findStateInmates(query, env, { allowBrowser: true });
+    if (!recs.length) return 0;
+    const { upsertInmates } = await import('./inmatesDb.mjs');
+    return await upsertInmates(recs);
+  } catch { return 0; }
 }
