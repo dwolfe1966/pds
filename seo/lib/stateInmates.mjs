@@ -1091,11 +1091,241 @@ async function HI(query) {
   });
 }
 
-// Registry — direct-fetch (last-name OK): CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL/SC/KY/UT/NV/AR/MS/ID/HI, plus OR/LA
-// (need a first name: OR trips a "too many results" cap on a bare surname; LA/VINE has no wildcard roster). NE
-// fetches the full captcha-free roster xlsx (~3MB per cold query, 6h cache) and filters client-side. Captcha-gated
-// (returns [] live until a vision solver is added): MO/CO. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI };
+// ── MA · MADOC (VINE) ── Massachusetts has NO first-party DOC locator; mass.gov's "find someone in a MA
+//    prison" page delegates to VINELink (Appriss/Equifax). Guest JSON REST (HAL) on vinelink-mobile — no
+//    auth/session/captcha; the required header x-vine-application: VINELINK supplies the guest requesterUsername
+//    (else 400). siteRefId MASWVINE. REQUIRES BOTH first + last (no wildcard/browse; by-id detail 401s, guest
+//    ids masked). VINE carries custody STATUS + facility + gender only — no age/DOB/county/charges/mugshot.
+//    Verified 2026-07-18.
+async function MA(query) {
+  const last = clean(query.lastName), first = clean(query.firstName);
+  if (!last || !first) return []; // MA VINE needs BOTH names — no browse/wildcard roster
+  const API = 'https://vinelink-mobile.vineapps.com/api/v1';
+  const qs = new URLSearchParams({ siteRefId: 'MASWVINE', personLastName: last, personFirstName: first, personType: 'Offender', offset: '0', limit: '20', includeJuveniles: 'false', includeSearchBlocked: 'false', includeRegistrantInfo: 'true', addImageWatermark: 'true', obscurePersonData: 'true' });
+  qs.append('personContextTypes', 'offender');
+  const res = await fetch(`${API}/guest/persons?${qs.toString()}`, { headers: { Accept: 'application/json', 'x-vine-application': 'VINELINK', 'x-vine-language': 'ENGLISH', 'User-Agent': UA, Origin: 'https://vinelink.vineapps.com', Referer: 'https://vinelink.vineapps.com/' } });
+  if (!res.ok) throw new Error(`MA ${res.status}`);
+  const data = await res.json().catch(() => null);
+  const persons = (data && data._embedded && Array.isArray(data._embedded.persons)) ? data._embedded.persons : [];
+  const gnorm = (g) => { const v = clean(g); return /^m/i.test(v) ? 'male' : /^f/i.test(v) ? 'female' : (v || null); };
+  return persons.map((p) => {
+    const nm = p.personName || {}, img = p.imageLinks || {}, oi = p.offenderInfo || {}, cust = oi.custodyStatus || {};
+    const holding = (Array.isArray(p.locations) ? p.locations : []).find((l) => l.locationType === 'HOLDING_FACILITY');
+    const reporting = (Array.isArray(p.locations) ? p.locations : []).find((l) => l.locationType === 'REPORTING_AGENCY');
+    return {
+      source: 'ma-vine', sourceName: 'Massachusetts DOC (VINE)',
+      firstName: clean(nm.firstName), lastName: clean(nm.lastName),
+      name: [nm.firstName, nm.middleName, nm.lastName].map(clean).filter(Boolean).join(' '),
+      age: null, gender: gnorm((p.gender || {}).name || (p.gender || {}).code), race: clean((p.race || {}).name) || null,
+      charges: [], mugshotUrl: img.desktopImageLink || img.mobileImageLink || img.thumbnailImageLink || (p._links && p._links.desktopImage && p._links.desktopImage.href) || null,
+      bookingDate: null, releaseStatus: clean(cust.name || cust.code) || null,
+      facility: clean(oi.custodyDetail) || (holding && clean(holding.locationName)) || (reporting && clean(reporting.locationName)) || null,
+      county: null, state: 'MA', inmateId: clean(p.displayId || (p.personContext || {}).contextRefId) || null,
+    };
+  });
+}
+
+// ── IA · IDOC ── ASP.NET Core Razor app (Cloudflare-fronted, no interactive challenge). Name search is a
+//    jQuery DataTables JSON endpoint: GET /Offender/Search banks the __cf_bm + antiforgery cookies, then POST
+//    /api/offender/GetOffenderListAjax (antiforgery NOT enforced; every columns[i][search][value|regex] IS
+//    required or it 400s). List JSON = Name("First Middle Last")/OffenderNumber/Age/Gender only — race/facility/
+//    county/charges are detail-only (no live fetch). No mugshots. lastName-only OK; fully enumerable (empty
+//    filter = full ~350k roster, pageable). Verified 2026-07-18.
+async function IA(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://doc-search.iowa.gov';
+  const g = await fetch(`${BASE}/Offender/Search`, { headers: { 'User-Agent': UA, Accept: 'text/html' } });
+  const jar = g.headers.getSetCookie ? g.headers.getSetCookie() : (g.headers.get('set-cookie') ? [g.headers.get('set-cookie')] : []);
+  const cookie = jar.map((c) => c.split(';')[0]).join('; ');
+  const cols = ['Name', 'OffenderNumber', 'Age', 'Gender'];
+  const body = new URLSearchParams();
+  body.set('draw', '1'); body.set('start', '0'); body.set('length', '25');
+  cols.forEach((n, i) => { body.set(`columns[${i}][data]`, n); body.set(`columns[${i}][name]`, n); body.set(`columns[${i}][searchable]`, 'true'); body.set(`columns[${i}][orderable]`, 'true'); body.set(`columns[${i}][search][value]`, ''); body.set(`columns[${i}][search][regex]`, 'false'); });
+  body.set('order[0][column]', '0'); body.set('order[0][dir]', 'asc'); body.set('search[value]', ''); body.set('search[regex]', 'false');
+  body.set('searchModel.FirsName', clean(query.firstName)); // sic — the app's real (misspelled) field name
+  body.set('searchModel.MiddleName', ''); body.set('searchModel.LastName', last); body.set('searchModel.OffenderNumber', '');
+  body.set('searchModel.Gender', ''); body.set('searchModel.County', ''); body.set('searchModel.Location', ''); body.set('searchModel.Offense', ''); body.set('searchModel.SearchType', 'SW');
+  const res = await fetch(`${BASE}/api/offender/GetOffenderListAjax`, {
+    method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With': 'XMLHttpRequest', Origin: BASE, Referer: `${BASE}/Offender/SearchResult`, ...(cookie ? { Cookie: cookie } : {}) },
+    body: body.toString(),
+  });
+  if (!res.ok) throw new Error(`IA ${res.status}`);
+  const json = await res.json().catch(() => null);
+  const rows = (json && Array.isArray(json.data)) ? json.data : [];
+  return rows.map((r) => {
+    const nm = clean(r.Name), parts = nm.split(/\s+/); // "First Middle Last"
+    const firstN = parts[0] || '', lastN = parts.length > 1 ? parts[parts.length - 1] : '', sex = clean(r.Gender);
+    return {
+      source: 'ia-idoc', sourceName: 'Iowa DOC (IDOC)',
+      firstName: firstN, lastName: lastN, name: nm,
+      age: num(r.Age), gender: /^m/i.test(sex) ? 'male' : /^f/i.test(sex) ? 'female' : null, race: null,
+      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus: null,
+      facility: null, county: null, state: 'IA', inmateId: clean(r.OffenderNumber) || null,
+    };
+  });
+}
+
+// ── NH · NH DOC ── ASP.NET WebForms (business.nh.gov/inmate_locator, Default.aspx). GET harvests __VIEWSTATE/
+//    __VIEWSTATEGENERATOR/__EVENTVALIDATION → POST txtLName/txtFName/btnSubmit. No cookie/CSRF/captcha, but an
+//    Akamai Bot Manager fronts it — datacenter/curl fetches 403 (→ throws → [] via findStateInmates; passes
+//    from a real/headless browser). List is a Repeater: lblFirst/Middle/Last/Suffix, lblDOB (holds AGE, not a
+//    DOB), lblPrisonerID (INMATE ID), lblBookedDate, lblFacility. No mugshots; no sex/race/charges (court/docket
+//    only). lastName-only OK; uncapped/enumerable. Verified 2026-07-18.
+async function NH(query) {
+  const last = clean(query.lastName), first = clean(query.firstName);
+  if (!last && !first) return [];
+  const BASE = 'https://business.nh.gov/inmate_locator/';
+  const hidden = (html, name) => { const m = html.match(new RegExp(`name="${name}"[^>]*value="([^"]*)"`, 'i')); return m ? m[1] : ''; };
+  const g = await fetch(BASE, { headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.9' } });
+  if (!g.ok) throw new Error(`NH ${g.status}`); // Akamai 403 from a datacenter IP → [] upstream
+  const gh = await g.text();
+  const body = new URLSearchParams({
+    __VIEWSTATE: hidden(gh, '__VIEWSTATE'), __VIEWSTATEGENERATOR: hidden(gh, '__VIEWSTATEGENERATOR'), __EVENTVALIDATION: hidden(gh, '__EVENTVALIDATION'),
+    'ctl00$cphMain$txtLName': last, 'ctl00$cphMain$txtFName': first, 'ctl00$cphMain$btnSubmit': 'Search',
+  });
+  const p = await fetch(BASE, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Referer: BASE }, body: body.toString() });
+  if (!p.ok) throw new Error(`NH ${p.status}`);
+  const html = await p.text();
+  const out = [];
+  const itemRe = /rptrInmate_(ctl\d+)_lblFirst"[^>]*>([\s\S]*?)(?=rptrInmate_ctl\d+_lblFirst"|<\/body)/g; let m;
+  while ((m = itemRe.exec(html)) !== null) {
+    const idx = m[1], block = m[0];
+    const span = (label) => { const mm = block.match(new RegExp(`rptrInmate_${idx}_${label}"[^>]*>([\\s\\S]*?)</span>`, 'i')); return mm ? stripTags(mm[1]) : ''; };
+    const first0 = span('lblFirst'), middle = span('lblMiddle'), lastN = span('lblLast'), suffix = span('lblSuffix');
+    const name = [first0, middle, lastN, suffix].filter(Boolean).join(' ');
+    if (!name) continue;
+    const facility = span('lblFacility'), booked = span('lblBookedDate');
+    out.push({
+      source: 'nh-doc', sourceName: 'New Hampshire DOC',
+      firstName: first0, lastName: lastN, name,
+      age: num(span('lblDOB')), gender: null, race: null,
+      charges: [], mugshotUrl: null, bookingDate: booked && booked !== '1/1/1900' ? booked : null,
+      releaseStatus: facility ? 'incarcerated' : null, facility: facility || null, county: null,
+      state: 'NH', inmateId: span('lblPrisonerID') || null,
+    });
+  }
+  return out;
+}
+
+// ── ME · MDOC ── Perl CGI (apps1.web.maine.gov), server-rendered HTML, no captcha/JS. GET search.pl mints the
+//    `mdoc` session cookie → POST criteria to search.pl (the form's results.pl action is a decoy: POSTing there
+//    302s back; search.pl 302s forward) → GET results.pl (30/page). MUGSHOT is a plain URL by MDOC#
+//    (images/mdoc_photos/<mdoc>.jpg). List cols: (link)|Name(Last, First Middle)|?|Status|DOB|Race|Sex|
+//    EarliestRelease|Location. ⚠️ Akamai fronts it: from a datacenter IP the criteria POST's redirect target
+//    403s and results.pl serves the UNFILTERED roster, so we client-filter by name (never leak non-matches;
+//    full results need a browser/non-blocked host). No county/charges at list level. Verified 2026-07-18.
+async function ME(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const ORIGIN = 'https://apps1.web.maine.gov', BASE = `${ORIGIN}/cgi-bin/online/correctionssearch`;
+  const readCookie = (r) => { const raw = (r.headers.getSetCookie ? r.headers.getSetCookie() : []).concat(r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const mm = /(?:^|[,\s])mdoc=([^;,\s]+)/.exec(c); if (mm) return `mdoc=${mm[1]}`; } return null; };
+  const g = await fetch(`${BASE}/search.pl`, { headers: { 'User-Agent': UA } }); await g.text();
+  const cookie = readCookie(g);
+  const H = { 'User-Agent': UA, ...(cookie ? { Cookie: cookie } : {}) };
+  const form = new URLSearchParams({ mdoc_number: '', first_name: clean(query.firstName), middle_name: '', last_name: last, gender: '', age_from: '', age_to: '', feet_from: '', inches_from: '', feet_to: '', inches_to: '', weight_from: '', weight_to: '', race: '', eyecolor: '', haircolor: '', mark: '', description: '', location: '', status: '', keywords: '', mejis_index: '', submit: 'Search' });
+  await fetch(`${BASE}/search.pl`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/x-www-form-urlencoded', Origin: ORIGIN, Referer: `${BASE}/search.pl` }, body: form.toString(), redirect: 'manual' }).catch(() => null);
+  const res = await fetch(`${BASE}/results.pl?start_limit=0&order_by=last_name`, { headers: H });
+  if (!res.ok) throw new Error(`ME ${res.status}`);
+  const html = await res.text();
+  const out = [];
+  for (const row of (html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    if (!/detail\.pl\?mdoc_number1=/i.test(row)) continue;
+    const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+    if (cells.length < 9) continue;
+    const mdoc = (row.match(/detail\.pl\?mdoc_number1=(\d+)/i) || [])[1] || '';
+    const nm = cells[1], comma = nm.indexOf(',');
+    const lastN = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
+    const firstN = comma >= 0 ? clean(nm.slice(comma + 1)).split(/\s+/)[0] : '';
+    out.push({
+      source: 'me-mdoc', sourceName: 'Maine DOC (MDOC)',
+      firstName: firstN, lastName: lastN, name: nm,
+      age: null, gender: /^m/i.test(cells[6]) ? 'male' : /^f/i.test(cells[6]) ? 'female' : null, race: cells[5] || null,
+      charges: [], mugshotUrl: mdoc ? `${ORIGIN}/online/correctionssearch/images/mdoc_photos/${mdoc}.jpg` : null,
+      bookingDate: null, releaseStatus: cells[3] || null, facility: cells[8] || null,
+      county: null, state: 'ME', inmateId: mdoc || null,
+    });
+  }
+  // Akamai guard: results.pl may return the full unfiltered roster — client-filter so we never return non-matches.
+  const ln = last.toLowerCase(), fnq = clean(query.firstName).toLowerCase();
+  return out.filter((r) => r.lastName.toLowerCase().startsWith(ln) && (!fnq || r.firstName.toLowerCase().startsWith(fnq)));
+}
+
+// ── RI · RI DOC ── the doc.ri.gov gateway embeds datadoc.ri.gov/inmate-search (server-rendered HTML, POST-only
+//    results — a GET renders the shell but runs no query). No captcha, but an F5 BIG-IP ASM (TS* cookies / TSPD
+//    challenge) fronts datadoc: a challenged POST returns the interstitial instead of rows (we throw → [] then;
+//    a solved browser session clears it). List cols: (link)|InmateID|Last|First|MI|NameType|Race|Gender|Age|
+//    LastResidence|Security(facility). No mugshots/DOB/county. lastName-only OK; uncapped. Verified 2026-07-18.
+async function RI(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const API = 'https://datadoc.ri.gov/inmate-search';
+  const G = { male: 'M', female: 'F', m: 'M', f: 'F' };
+  const body = new URLSearchParams({ i_inmateid: '', i_lname: last.toUpperCase(), i_fname: clean(query.firstName).toUpperCase(), i_nametype: '', i_race: '', i_gender: G[clean(query.gender).toLowerCase()] || '', i_agemin: '0', i_agemax: '100', i_residence: '', image: 'Search' });
+  const res = await fetch(`${API}/search_results.php`, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${API}/search.php` }, body: body.toString(), redirect: 'follow' });
+  if (!res.ok) throw new Error(`RI ${res.status}`);
+  const html = await res.text();
+  if (/TSPD|\/TSPD\/|type=8|type=12/.test(html) && !/Search Results/i.test(html)) throw new Error('RI F5 challenge'); // no valid TS* cookies
+  const out = [];
+  for (const row of (html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    const cells = [...row.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((c) => stripTags(c[1]));
+    if (cells.length < 11) continue;
+    const id = cells[1]; if (!/^\d+$/.test(id)) continue;
+    const firstN = cells[3], mi = cells[4], lastN = cells[2], sex = cells[7];
+    out.push({
+      source: 'ri-doc', sourceName: 'Rhode Island DOC',
+      firstName: firstN, lastName: lastN, name: [firstN, mi, lastN].filter(Boolean).join(' '),
+      age: num(cells[8]), gender: /^m/i.test(sex) ? 'male' : /^f/i.test(sex) ? 'female' : null, race: cells[6] || null,
+      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus: null,
+      facility: cells[10] || null, county: null, state: 'RI', inmateId: id,
+    });
+  }
+  return out;
+}
+
+// ── SD · SD DOC (SAVIN) ── SD DOC's own Offender Locator (docadultlookup.sd.gov) is reCAPTCHA-v2-gated + Akamai-
+//    blocked, so we use the AG's SAVIN portal (savin.sd.gov), whose results page is a STATELESS GET (no cookie/
+//    captcha). THIN data only: name + age + in/out-of-custody flag (rows are "Last, First Middle [alias] Age
+//    [status]"). facility/charges/DOC#/mugshot are suppressed in the public SAVIN view (rich fields live behind
+//    the captcha app — detail NOT fetched live). inmateId ABSENT (SAVIN exposes only an internal GUID). ⚠️ SLOW
+//    (~35s/query — may exceed serverless timeouts). lastName-only OK. Verified 2026-07-18.
+async function SD(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://savin.sd.gov/portal/Offender';
+  const params = new URLSearchParams({ facility: '00000000-0000-0000-0000-000000000000', id: '', first: clean(query.firstName), last, case: '' });
+  const res = await fetch(`${BASE}/OffenderSearchResults.aspx?${params.toString()}`, { headers: { 'User-Agent': UA } });
+  if (!res.ok) throw new Error(`SD ${res.status}`);
+  const html = await res.text();
+  const marks = []; const re = /OffenderDetail\.aspx\?OffenderGuid=[0-9a-f-]{36}"[^>]*>/gi; let m;
+  while ((m = re.exec(html)) !== null) marks.push({ start: m.index, end: re.lastIndex });
+  const out = [];
+  for (let i = 0; i < marks.length; i++) {
+    // row text lives between this detail anchor and the next (its cells: real name, alias, age, status)
+    const seg = html.slice(marks[i].end, i + 1 < marks.length ? marks[i + 1].start : Math.min(html.length, marks[i].end + 400));
+    let text = clean(seg.replace(/<[^>]+>/g, ' ')).replace(/^\s*Details\s*/i, '').trim();
+    const outOfCustody = /Out of Custody/i.test(text);
+    text = clean(text.replace(/Out of Custody/i, ''));
+    const ageMatch = text.match(/\b(\d{1,3})\b(?!.*\b\d{1,3}\b)/);
+    const nameText = clean(text.replace(/\s*\b\d{1,3}\b\s*$/, '')); // real name is the first "Last, First" group
+    const comma = nameText.indexOf(',');
+    const lastN = comma >= 0 ? clean(nameText.slice(0, comma)) : clean(nameText.split(/\s+/).slice(-1)[0]);
+    const firstN = comma >= 0 ? clean(nameText.slice(comma + 1)).split(/\s+/)[0] : clean(nameText.split(/\s+/)[0]);
+    out.push({
+      source: 'sd-savin', sourceName: 'South Dakota DOC (SAVIN)',
+      firstName: firstN, lastName: lastN, name: [firstN, lastN].filter(Boolean).join(' ') || nameText,
+      age: ageMatch ? num(ageMatch[1]) : null, gender: null, race: null,
+      charges: [], mugshotUrl: null, bookingDate: null,
+      releaseStatus: outOfCustody ? 'Out of Custody' : 'In Custody',
+      facility: null, county: null, state: 'SD', inmateId: null, // SAVIN exposes only an internal GUID, not a DOC#
+    });
+  }
+  return out;
+}
+
+// Registry — direct-fetch (last-name OK): CA/PA/IL/WA/OH/NC/GA/MI/MD/IN/MN/AL/SC/KY/UT/NV/AR/MS/ID/HI/IA/RI/SD, plus OR/LA/MA
+// (need a first name: OR trips a "too many results" cap on a bare surname; LA/MA/VINE have no wildcard roster —
+// MA needs BOTH first+last). NE fetches the full captcha-free roster xlsx (~3MB per cold query, 6h cache) and
+// filters client-side; SD (SAVIN) is slow (~35s). Captcha-gated (returns [] live until a vision solver is added):
+// MO/CO. Akamai-gated (403/unfiltered from a datacenter IP → [] live; need a browser or non-blocked host):
+// NH, ME (ME also client-filters as a guard). Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
