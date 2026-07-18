@@ -20,7 +20,14 @@ async function proxyFetch(url, init = {}) {
   if (!px) return fetch(url, init);
   if (!_proxyDispatcher && !_proxyTried) {
     _proxyTried = true;
-    try { const { ProxyAgent } = await import('undici'); _proxyDispatcher = new ProxyAgent(px); } catch { /* undici missing → direct */ }
+    try {
+      const { ProxyAgent } = await import('undici');
+      const u = new URL(px); // http://USER:PASS@host:port
+      const opts = { uri: `${u.protocol}//${u.host}` };
+      // Set Proxy-Authorization explicitly — some undici versions ignore URL-embedded credentials.
+      if (u.username || u.password) opts.token = `Basic ${Buffer.from(`${decodeURIComponent(u.username)}:${decodeURIComponent(u.password)}`).toString('base64')}`;
+      _proxyDispatcher = new ProxyAgent(opts);
+    } catch { /* undici missing / bad URL → direct */ }
   }
   return _proxyDispatcher ? fetch(url, { ...init, dispatcher: _proxyDispatcher }) : fetch(url, init);
 }
@@ -199,18 +206,25 @@ async function NY(query) {
   const svc = process.env.BROWSER_SERVICE_URL;
   if (!svc || !clean(query.lastName)) return [];
   const body = { din: null, nysid: null, lastName: clean(query.lastName).toUpperCase(), firstName: clean(query.firstName).toUpperCase(), middleInitial: '', suffix: '', birthYear: '', userDisplayableMessage: null, clickNextFlag: '', clickNextDin: '' };
-  // Browserless /function contract (adapt to your chosen service): boot the SPA to mint the WAF cookie,
-  // then do the API fetch in-page so the request carries it.
+  // Browserless /function (verified contract 2026-07-18): POST {code, context}; the code exports a default
+  // async fn receiving { page } and MUST return { data, type }; that `data` becomes the HTTP response body.
+  // Boot the SPA (mints the F5 TS cookie), let Blazor settle, then do the API fetch IN-PAGE so it carries it.
   const code = `export default async function ({ page }) {
-    await page.goto('https://nysdoccslookup.doccs.ny.gov/', { waitUntil: 'networkidle2' });
-    return page.evaluate(async (b) => { const r = await fetch('/IncarceratedPerson/SearchByName', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(b) }); return r.ok ? r.json() : null; }, ${JSON.stringify(body)});
+    await page.goto('https://nysdoccslookup.doccs.ny.gov/', { waitUntil: 'networkidle2', timeout: 30000 });
+    await new Promise((r) => setTimeout(r, 2500));
+    const result = await page.evaluate(async (b) => {
+      const resp = await fetch('/IncarceratedPerson/SearchByName', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
+      return resp.ok ? await resp.json() : { __status: resp.status };
+    }, ${JSON.stringify(body)});
+    return { data: result, type: 'application/json' };
   }`;
   let json;
   try {
     const res = await fetch(svc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, context: {} }) });
-    json = await res.json().catch(() => null);
+    if (!res.ok) return [];
+    json = await res.json().catch(() => null); // response body IS the returned `data` (the search rows)
   } catch { return []; }
-  const rows = Array.isArray(json) ? json : (json && (json.data || json.result)) || [];
+  const rows = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : []);
   return (Array.isArray(rows) ? rows : []).map((r) => {
     const nm = clean(r.name); const comma = nm.indexOf(',');
     const last = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
