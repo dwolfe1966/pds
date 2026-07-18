@@ -13,8 +13,8 @@ Memory: `project_inmate_data_layer`, `project_personsearch_enrichment`.
 | **Florida OBIS** | FL inmate bulk | ✅ built + ingested | **LIVE-READY** (670k rows, 99.6% w/ charges, mugshot URLs) | none — deploy + point consumer env |
 | **Enformion PersonSearch** | person enrichment | ✅ built + wired + validated | **works today** (no gate) | owner: `ENFORMION_ENRICH_PERSIST=1` on Vercel + paid plan for volume |
 | **Enformion Criminal Search V2** | nationwide criminal + mugshots | ✅ adapter built | **BLOCKED** | Enformion **Sales** must enable the product on the AccessProfile (owner messaged Sales) |
-| **UnlimitedCriminalChecks (UCC)** | criminal + mugshots | ⚠️ adapter (unverified) | pending | owner: key + **written display permission**; confirm req/resp shape |
-| **JailBase** | county booking + mugshots | ✅ adapter (RapidAPI) | flaky | JailBase upstream intermittently 503s; enrichment-only, not backbone |
+| **UnlimitedCriminalChecks (UCC)** | criminal + mugshots | ✅ adapter (spec VERIFIED + rewritten 2026-07-18) | **best self-serve candidate** | owner: get 2 keys (X-API-Key + X-API-Secret) + **written display permission** |
+| **JailBase** | county booking + mugshots | ⚠️ adapter exists | 🔴 **DROP — chronic 503** | origin down on every call across sessions (re-tested 7/18); not viable |
 
 ---
 
@@ -51,18 +51,22 @@ Memory: `project_inmate_data_layer`, `project_personsearch_enrichment`.
 - Once enabled: drop the permitted profile's creds in `.env.local` / Vercel, run one live sample, confirm
   the records key + field names against `enformion()` in `seo/lib/incarceration.mjs` (one-line if different).
 
-## 4. UnlimitedCriminalChecks (UCC) — pending (self-serve display candidate)
-- Adapter in `incarceration.mjs` → `ucc()` (best-effort shapes, unverified). Self-serve, ~$0.006–0.01/search,
-  bundles DOC/arrest/mugshot/court/sex-offender.
-- **Owner TODO**: dev account + API key (25 free credits, no approval) + **⚠️ written display permission**
-  (their default posture is "informational, not FCRA"). Confirm exact req/resp shape in the trial.
-- Env: `UCC_API_KEY`, `UCC_API_URL`.
+## 4. UnlimitedCriminalChecks (UCC) — VERIFIED, best self-serve candidate (spec confirmed 2026-07-18)
+- Adapter `incarceration.mjs` → `ucc()` **rewritten to the real spec**: `GET https://unlimitedcriminalchecks.com/api-2.0/search.php`,
+  headers `X-API-Key` + `X-API-Secret`, params first_name/last_name/state/city/age/limit/feeds; response
+  `{success, results:{sor|doc|arrest|court:{count,records[]}}, credits}`. Flattens all 4 feeds → normalized.
+- Self-serve, ~$0.01/search ($25 = 25k credits, never expire), 100 req/min. Bundles sex-offender + DOC +
+  arrest/warrant + court + mugshots.
+- **Owner TODO**: (1) get the 2 keys at `unlimitedcriminalchecks.com/Developers/` (25 free credits);
+  (2) **⚠️ written display permission** (site says "public records, informational" — confirm consumer
+  display of records incl. mugshots); (3) one live sample to confirm mugshot/booking field names (defensive
+  map in place). Env: `UCC_API_KEY`, `UCC_API_SECRET`, `UCC_API_URL` (default set).
 
-## 5. JailBase — flaky enrichment (free county bookings)
-- Adapter WIRED for the **RapidAPI** tier (direct jailbase.com 503s datacenter IPs). Endpoints `/search/`,
-  `/recent/`, `/sources/` (NOT `/search_records/` → 404s). Env `JAILBASE_RAPIDAPI_KEY`.
-- **Caveat**: JailBase's own upstream intermittently 503s (their service). Degrades gracefully (returns 0,
-  never crashes). Coverage-fill only, not the backbone.
+## 5. JailBase — 🔴 DROPPED (chronic 503)
+- Re-tested 2026-07-18: `503 Service Temporarily Unavailable` on `/search/` AND `/sources/` via RapidAPI
+  (key set). Down on every call across every session — their origin is chronically offline (still listed on
+  RapidAPI but broken). **Recommend removing from the roadmap.** Adapter left in place (harmless, returns 0)
+  but do not rely on it.
 
 ---
 

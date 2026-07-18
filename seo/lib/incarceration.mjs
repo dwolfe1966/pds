@@ -91,33 +91,62 @@ async function jailbase(query, opts) {
   }));
 }
 
-// ── UnlimitedCriminalChecks — env-configured (key + base URL). Bundles DOC/inmate + arrest/booking +
-//    mugshots. Exact field names to be confirmed in the trial; the mapper below is best-effort + defensive
-//    so finalizing is a one-spot edit. Only enabled when UCC_API_KEY is present AND display rights confirmed. ──
+// ── UnlimitedCriminalChecks — VERIFIED spec (2026-07-18, from unlimitedcriminalchecks.com/Developers/):
+//    GET {base}/search.php, auth = X-API-Key + X-API-Secret headers, query params first_name/last_name/
+//    state/city/age/limit/feeds. Response: { success, results: { total, sor|doc|arrest|court: {count,
+//    records[]} }, credits }. Bundles sex-offender + DOC/inmate + arrest/warrant + court + mugshots.
+//    Only enabled when BOTH keys are set AND consumer-display permission is confirmed in writing.
+//    Record field names beyond NAME/AGE/STATE/CITY/ADDRESS/OFFENSE aren't documented — mapped defensively
+//    (multiple candidates via g()); confirm from a live sample once a key is in hand (one-spot edit). ──
+const UCC_FEEDS = { sor: 'Sex Offender Registry', doc: 'Dept. of Corrections', arrest: 'Arrest & Warrant', court: 'Court Records' };
 async function ucc(query, opts) {
-  if (!opts.uccKey) return [];
-  const base = opts.uccUrl || 'https://api.unlimitedcriminalchecks.com';
-  const res = await fetch(`${base}/v1/criminal/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${opts.uccKey}` },
-    body: JSON.stringify({ first_name: query.firstName, last_name: query.lastName, state: query.state, age: query.age }),
+  if (!opts.uccKey || !opts.uccSecret) return [];
+  const g = (o, ...keys) => { if (!o) return ''; for (const k of keys) { if (o[k] != null && o[k] !== '') return o[k]; } return ''; };
+  const base = (opts.uccUrl || 'https://unlimitedcriminalchecks.com/api-2.0').replace(/\/$/, '');
+  const qs = new URLSearchParams();
+  if (query.firstName) qs.set('first_name', query.firstName);
+  if (query.lastName) qs.set('last_name', query.lastName);
+  if (query.state) qs.set('state', query.state);
+  if (query.city) qs.set('city', query.city);
+  if (query.age) qs.set('age', String(query.age));
+  qs.set('limit', String(opts.limit || 12));
+  const res = await fetch(`${base}/search.php?${qs.toString()}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json', 'X-API-Key': opts.uccKey, 'X-API-Secret': opts.uccSecret },
   });
+  if (res.status === 429) throw new Error('ucc 429 rate-limited');
   if (!res.ok) throw new Error(`ucc ${res.status}`);
   const data = await res.json().catch(() => null);
-  const records = (data && (data.records || data.results || data.data)) || [];
-  return records.map((r) => ({
-    source: 'ucc', sourceName: clean(r.source || r.agency) || null,
-    firstName: clean(r.first_name || r.firstName), lastName: clean(r.last_name || r.lastName),
-    name: clean(r.full_name || r.name) || [r.first_name, r.last_name].map(clean).filter(Boolean).join(' '),
-    age: num(r.age || r.dob_age), gender: clean(r.gender || r.sex) || null, race: clean(r.race) || null,
-    charges: Array.isArray(r.charges) ? r.charges.map((c) => clean(c.description || c.charge || c)).filter(Boolean)
-      : (clean(r.charge) ? [clean(r.charge)] : []),
-    mugshotUrl: clean(r.mugshot || r.mugshot_url || r.image) || null,
-    bookingDate: clean(r.booking_date || r.arrest_date) || null,
-    releaseStatus: clean(r.release_status || r.status) || null,
-    facility: clean(r.facility || r.jail) || null, county: clean(r.county) || null,
-    state: (clean(r.state) || query.state || '').toUpperCase() || null,
-  }));
+  if (!data || data.success === false) throw new Error(`ucc ${(data && data.error) || 'no results object'}`);
+  const results = (data && data.results) || {};
+  // Flatten every feed (sex-offender / DOC / arrest / court) into one normalized list.
+  const out = [];
+  for (const feed of Object.keys(UCC_FEEDS)) {
+    const recs = (results[feed] && Array.isArray(results[feed].records)) ? results[feed].records : [];
+    for (const r of recs) {
+      const first = clean(g(r, 'FIRST_NAME', 'first_name', 'firstName', 'First'));
+      const last = clean(g(r, 'LAST_NAME', 'last_name', 'lastName', 'Last'));
+      const full = clean(g(r, 'NAME', 'name', 'full_name', 'fullName')) || [first, last].filter(Boolean).join(' ');
+      const offenseRaw = g(r, 'OFFENSE', 'offense', 'charges', 'charge', 'CHARGE');
+      const charges = Array.isArray(offenseRaw)
+        ? offenseRaw.map((c) => clean(typeof c === 'object' ? g(c, 'description', 'charge', 'name') : c)).filter(Boolean)
+        : (clean(offenseRaw) ? [clean(offenseRaw)] : []);
+      out.push({
+        source: 'ucc', sourceName: UCC_FEEDS[feed],
+        firstName: first, lastName: last, name: full,
+        age: num(g(r, 'AGE', 'age')), gender: clean(g(r, 'GENDER', 'gender', 'SEX', 'sex')) || null,
+        race: clean(g(r, 'RACE', 'race')) || null,
+        charges,
+        mugshotUrl: clean(g(r, 'MUGSHOT', 'mugshot', 'mugshot_url', 'MUGSHOT_URL', 'PHOTO', 'photo', 'photo_url', 'IMAGE', 'image')) || null,
+        bookingDate: clean(g(r, 'BOOKING_DATE', 'booking_date', 'ARREST_DATE', 'arrest_date', 'DATE', 'date')) || null,
+        releaseStatus: clean(g(r, 'STATUS', 'status', 'CUSTODY_STATUS', 'custody_status')) || null,
+        facility: clean(g(r, 'FACILITY', 'facility', 'JAIL', 'jail', 'AGENCY', 'agency', 'SOURCE', 'source')) || null,
+        county: clean(g(r, 'COUNTY', 'county')) || null,
+        state: (clean(g(r, 'STATE', 'state')) || query.state || '').toUpperCase() || null,
+      });
+    }
+  }
+  return out;
 }
 
 // ── Enformion / Endato Criminal Search — the nationwide self-serve source (600M+ records, mugshots).
@@ -180,7 +209,7 @@ export async function findBookings(query, env = {}) {
     jailbaseRapidKey: env.JAILBASE_RAPIDAPI_KEY,
     jailbaseRapidHost: env.JAILBASE_RAPIDAPI_HOST || 'jailbase-jailbase.p.rapidapi.com',
     jailbaseSearchPath: env.JAILBASE_SEARCH_PATH,
-    uccKey: env.UCC_API_KEY, uccUrl: env.UCC_API_URL,
+    uccKey: env.UCC_API_KEY, uccSecret: env.UCC_API_SECRET, uccUrl: env.UCC_API_URL,
     enformionName: env.ENFORMION_AP_NAME, enformionPass: env.ENFORMION_AP_PASSWORD,
     enformionUrl: env.ENFORMION_API_URL, enformionClient: env.ENFORMION_CLIENT_TYPE, enformionSearchType: env.ENFORMION_SEARCH_TYPE,
     limit: Math.min(Number(env.INCARCERATION_LIMIT) || 12, 40),
@@ -191,7 +220,7 @@ export async function findBookings(query, env = {}) {
   if (flSql && env.FL_OBIS_ENABLED !== 'false' && (!st || st === 'FL')) enabled.push('floridaObis');
   // Only enable JailBase when the RapidAPI key is set (direct calls 503 from datacenter IPs).
   if (opts.jailbaseRapidKey || env.JAILBASE_API_URL) enabled.push('jailbase');
-  if (opts.uccKey) enabled.push('ucc');
+  if (opts.uccKey && opts.uccSecret) enabled.push('ucc');
   // Enformion — nationwide + mugshots; enabled when AccessProfile creds are set.
   if (opts.enformionName && opts.enformionPass) enabled.push('enformion');
   const settled = await Promise.allSettled(enabled.map((k) => PROVIDERS[k](query, opts)));

@@ -16,24 +16,31 @@ enrichment) → Florida OBIS (free depth in one state).**
 sex-offender, ~$0.006–0.01/search. It's the cleanest source we can legally **display** — *if* they
 grant it in writing.
 
+**Spec VERIFIED 2026-07-18** (from `unlimitedcriminalchecks.com/Developers/`) — adapter rewritten to match:
+- **Sign-up:** `https://unlimitedcriminalchecks.com/Developers/` (25 free credits, no approval).
+- **Endpoint:** `GET https://unlimitedcriminalchecks.com/api-2.0/search.php`
+- **Auth:** headers **`X-API-Key`** + **`X-API-Secret`** (you get TWO keys, not a Bearer token).
+- **Params:** `first_name, last_name, state, city, age, limit, feeds` (feeds = sor,doc,arrest,court).
+- **Response:** `{ success, results: { total, sor|doc|arrest|court: { count, records[] } }, credits }`.
+- **Cost:** ~$0.01/search; $25 = 25,000 credits (never expire); **100 req/min** → 429 w/ retry_after.
+- **Data:** sex-offender + DOC/inmate + arrest/warrant + court → NAME/AGE/STATE/CITY/ADDRESS/OFFENSE +
+  mugshots + booking details.
+
 **What to get:**
-1. **Developer account + API key** — sign up at `unlimitedcriminalchecks.com` → Developers (they give
-   **25 free credits**, no approval). Copy the API key.
-2. **⚠️ WRITTEN consumer-display permission** — this is the load-bearing one. Their default posture is
-   "informational / personal-safety, not FCRA." Email their team and get in writing: *"We display
-   returned booking/incarceration records (including mugshots) to consumers on our website — is that
-   permitted under our agreement?"* **Do not enable UCC in prod until you have a yes in writing.**
-3. **Confirm two things in the trial** (I built the adapter defensively so finalizing is a one-spot edit
-   in `seo/lib/incarceration.mjs` → `ucc()`):
-   - the **exact request shape** (endpoint path + params) and **auth header** (I assumed
-     `POST /v1/criminal/search` + `Authorization: Bearer <key>` — correct if their docs differ),
-   - the **exact response field names** (I mapped `first_name/last_name/charges[].description/mugshot/
-     booking_date/facility/state` best-effort).
+1. **Two keys** — sign up at the Developers URL, copy `X-API-Key` + `X-API-Secret`.
+2. **⚠️ WRITTEN consumer-display permission** — the load-bearing one. Their site says only *"Public records
+   only. For informational purposes."* Email them and get in writing: *"We display returned booking/
+   incarceration records (including mugshots) to consumers on our website — is that permitted?"* **Do not
+   enable UCC in prod until you have a yes in writing.**
+3. **Confirm record field names from ONE live sample** — the docs list `NAME/AGE/STATE/CITY/ADDRESS/
+   OFFENSE` but not the mugshot/booking/facility field names. The adapter maps those defensively (multiple
+   candidates); a live sample makes it a one-spot edit in `seo/lib/incarceration.mjs` → `ucc()`.
 
 **Env to set on Vercel (SEO project):**
 ```
-UCC_API_KEY   = <your key>
-UCC_API_URL   = https://api.unlimitedcriminalchecks.com   # confirm the real base URL
+UCC_API_KEY    = <your X-API-Key>
+UCC_API_SECRET = <your X-API-Secret>
+UCC_API_URL    = https://unlimitedcriminalchecks.com/api-2.0   # (default; override only if it changes)
 ```
 
 ---
