@@ -269,9 +269,71 @@ async function NY(query) {
   });
 }
 
-// Registry — TX/CA/PA/IL live via fetch (TX needs STATE_PROXY_URL from Vercel). NY = browser-tier
-// (needs BROWSER_SERVICE_URL). NJ = browser-tier too, pending a live-verified spec (recon sample failed).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY };
+// ── WA · WA DOC ── Drupal Views exposed GET filter. No auth/CSRF/cookies. HTML table (DOC#, name, age,
+//    facility). No mugshots/charges. Verified 2026-07-18. Enumerable (surname sweep + ?page=N).
+async function WA(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const u = new URL('https://doc.wa.gov/records/incarcerated-data-search/incarcerated-search');
+  u.searchParams.set('field_last_name_value', last);
+  u.searchParams.set('field_first_name_value', clean(query.firstName));
+  const res = await fetch(u.toString(), { headers: { 'User-Agent': UA } });
+  if (!res.ok) throw new Error(`WA ${res.status}`);
+  const html = await res.text();
+  const tb = html.match(/<tbody>([\s\S]*?)<\/tbody>/i); if (!tb) return [];
+  const out = [];
+  for (const row of (tb[1].match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    const cells = (row.match(/<td[^>]*>[\s\S]*?<\/td>/gi) || []).map(stripTags);
+    if (cells.length < 4) continue;
+    const [inmateId, nameDisplay, age, facility] = cells;
+    const parts = nameDisplay.split(',').map((s) => clean(s));
+    const lastN = parts[0] || '', firstN = (parts[1] || '').split(/\s+/)[0] || '';
+    if (!inmateId || !nameDisplay) continue;
+    out.push({
+      source: 'wa-doc', sourceName: 'Washington DOC', firstName: firstN, lastName: lastN, name: nameDisplay,
+      age: num(age), gender: null, race: null, charges: [], mugshotUrl: null, bookingDate: null,
+      releaseStatus: 'incarcerated', facility, county: null, state: 'WA', inmateId,
+    });
+  }
+  return out;
+}
+
+// ── OH · ODRC ── ASP.NET MVC double-submit antiforgery: GET landing (token+cookie) → POST search → GET
+//    results. HTML table w/ MUGSHOT (URL pattern) + offenses. Verified 2026-07-18. DOC# = letter+digits.
+async function OH(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const BASE = 'https://appgateway.drc.ohio.gov/OffenderSearch';
+  const setCookies = (r) => (r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []));
+  const jarHdr = (arr) => arr.map((c) => c.split(';')[0]).join('; ');
+  const mugshot = (num) => { const m = /^([A-Z])(\d+)$/.exec(num || ''); if (!m) return null; const b = Math.floor(parseInt(m[2], 10) / 100000) * 100; return `https://appgateway.drc.ohio.gov/images/${m[1]}/${b}k/${num}.jpg`; };
+  const g = await fetch(BASE, { redirect: 'manual', headers: { 'User-Agent': UA } });
+  const jar = setCookies(g); const gh = await g.text();
+  const token = (gh.match(/name="__RequestVerificationToken"[^>]*value="([^"]*)"/i) || [])[1];
+  if (!token) throw new Error('OH token missing');
+  const body = new URLSearchParams({ __RequestVerificationToken: token, IsAuthenticated: '', LastName: last, FirstName: clean(query.firstName), CntyCommitment: '', CntyResidential: '', ZipCode: '', Status: 'A', PbDate: '', NumPrefix: 'A', OffNumber: '', Sort: 'N' });
+  const p = await fetch(`${BASE}/Search/SearchResults`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: jarHdr(jar), Referer: BASE, 'User-Agent': UA }, body });
+  const jar2 = jarHdr([...jar, ...setCookies(p)]);
+  const r = await fetch(`${BASE}/Search/Results`, { headers: { Cookie: jar2, Referer: `${BASE}/Search/SearchResults`, 'User-Agent': UA } });
+  const rhtml = await r.text();
+  const out = [];
+  for (const row of (rhtml.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    const cell = (row.match(/<td[^>]*>[\s\S]*?<\/td>/gi) || []).map(stripTags);
+    if (cell.length < 6) continue;
+    const numId = cell[2]; if (!/^[A-Z]\d{4,}$/.test(numId)) continue;
+    const full = cell[1]; const cm = full.split(',');
+    const lastN = cm.length >= 2 ? clean(cm[0]) : clean(full.split(/\s+/).slice(-1)[0]);
+    const firstN = cm.length >= 2 ? clean(cm.slice(1).join(',')) : clean(full.split(/\s+/).slice(0, -1).join(' '));
+    out.push({
+      source: 'oh-odrc', sourceName: 'Ohio DRC', firstName: firstN, lastName: lastN, name: [firstN, lastN].filter(Boolean).join(' '),
+      age: null, gender: null, race: null, charges: cell[5] ? cell[5].split(/,\s*/).map(clean).filter(Boolean) : [],
+      mugshotUrl: mugshot(numId), bookingDate: null, releaseStatus: cell[4] || null, facility: null,
+      county: null, state: 'OH', inmateId: numId,
+    });
+  }
+  return out;
+}
+
+// Registry — direct-fetch: CA/PA/IL/WA/OH. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (F5, WIP).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
