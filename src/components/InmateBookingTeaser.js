@@ -35,10 +35,10 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
         {records.map((r, i) => (
           <div key={i} style={{ flex: '0 0 auto', width: 68, textAlign: 'center' }}>
             <div style={{ width: 68, height: 68, borderRadius: 8, background: '#dbe9f2', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
-              <span style={{ filter: 'blur(2px)' }}>👤</span>
-              {r.mugshotUrl && <img src={r.mugshotUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(5px)' }} />}
+              <span>👤</span>
+              {r.mugshotUrl && <img src={r.mugshotUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
             </div>
-            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, filter: 'blur(2px)', userSelect: 'none' }}>
+            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, userSelect: 'none' }}>
               {r.charges && r.charges.length ? `${r.charges.length} charge${r.charges.length === 1 ? '' : 's'}` : 'Record'}
             </div>
           </div>
