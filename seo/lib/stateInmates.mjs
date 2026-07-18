@@ -9,6 +9,21 @@
 //
 // Guardrails (docs): public records only; polite single requests; NO captcha-busting; never pay-to-remove.
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
+
+// #1 PROXY (SEO moat infra) — some state sites (TX/TDCJ) block datacenter IPs, so they return nothing from
+// Vercel. Set STATE_PROXY_URL to a residential/rotating proxy (http://user:pass@host:port) and blocked-state
+// adapters route through it via undici's ProxyAgent. Unset → direct fetch (works only from a non-blocked
+// host). ⚠️ BLOCKED ON OWNER: a residential-proxy account (e.g. Bright Data / Oxylabs / Smartproxy).
+let _proxyDispatcher; let _proxyTried = false;
+async function proxyFetch(url, init = {}) {
+  const px = process.env.STATE_PROXY_URL;
+  if (!px) return fetch(url, init);
+  if (!_proxyDispatcher && !_proxyTried) {
+    _proxyTried = true;
+    try { const { ProxyAgent } = await import('undici'); _proxyDispatcher = new ProxyAgent(px); } catch { /* undici missing → direct */ }
+  }
+  return _proxyDispatcher ? fetch(url, { ...init, dispatcher: _proxyDispatcher }) : fetch(url, init);
+}
 const clean = (s) => (s == null ? '' : String(s).replace(/\s+/g, ' ').trim());
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/[^\d]/g, ''), 10); return Number.isNaN(n) ? null : n; };
 const stripTags = (s) => clean(String(s || '').replace(/<[^>]*>/g, ''));
@@ -20,7 +35,8 @@ async function TX(query) {
     page: 'index', lastName: clean(query.lastName).toUpperCase(), firstName: clean(query.firstName).toUpperCase(),
     tdcj: '', sid: '', gender: 'ALL', race: 'ALL', btnSearch: 'Search',
   }).toString();
-  const res = await fetch('https://inmate.tdcj.texas.gov/InmateSearch/search.action', {
+  // TDCJ IP-blocks datacenter egress → route through STATE_PROXY_URL when set (else direct).
+  const res = await proxyFetch('https://inmate.tdcj.texas.gov/InmateSearch/search.action', {
     method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body,
   });
   if (!res.ok) throw new Error(`TX ${res.status}`);
@@ -174,9 +190,46 @@ async function IL(query, opts = {}) {
   return records;
 }
 
-// Registry — TX/CA/PA/IL live via fetch. NY = browser-tier (F5 WAF needs a real browser to mint the TS
-// cookie; SearchByName/SearchByDin JSON API otherwise clean). NJ pending recon.
-export const STATE_ADAPTERS = { TX, CA, PA, IL };
+// ── NY · DOCCS ── #2 BROWSER TIER (moat infra). F5 BIG-IP WAF: the SearchByName/SearchByDin JSON API is
+//    clean, but the TS cookie is minted by a JS challenge at Blazor boot — headless Chrome doesn't run on
+//    Vercel serverless, so route through a browser SERVICE. Set BROWSER_SERVICE_URL to a Browserless
+//    /function endpoint (navigate origin → boot → in-page fetch). Returns [] until configured.
+//    ⚠️ BLOCKED ON OWNER: a headless-browser service account (Browserless / ScrapingBee / Bright Data).
+async function NY(query) {
+  const svc = process.env.BROWSER_SERVICE_URL;
+  if (!svc || !clean(query.lastName)) return [];
+  const body = { din: null, nysid: null, lastName: clean(query.lastName).toUpperCase(), firstName: clean(query.firstName).toUpperCase(), middleInitial: '', suffix: '', birthYear: '', userDisplayableMessage: null, clickNextFlag: '', clickNextDin: '' };
+  // Browserless /function contract (adapt to your chosen service): boot the SPA to mint the WAF cookie,
+  // then do the API fetch in-page so the request carries it.
+  const code = `export default async function ({ page }) {
+    await page.goto('https://nysdoccslookup.doccs.ny.gov/', { waitUntil: 'networkidle2' });
+    return page.evaluate(async (b) => { const r = await fetch('/IncarceratedPerson/SearchByName', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(b) }); return r.ok ? r.json() : null; }, ${JSON.stringify(body)});
+  }`;
+  let json;
+  try {
+    const res = await fetch(svc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, context: {} }) });
+    json = await res.json().catch(() => null);
+  } catch { return []; }
+  const rows = Array.isArray(json) ? json : (json && (json.data || json.result)) || [];
+  return (Array.isArray(rows) ? rows : []).map((r) => {
+    const nm = clean(r.name); const comma = nm.indexOf(',');
+    const last = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
+    const first = comma >= 0 ? clean(nm.slice(comma + 1)) : '';
+    return {
+      source: 'ny-doccs', sourceName: 'New York DOCCS',
+      firstName: first, lastName: last, name: nm,
+      age: num(r.age), gender: null, race: clean(r.race) || null,
+      charges: Array.isArray(r.crime) ? r.crime.map(clean).filter(Boolean) : [], mugshotUrl: null,
+      bookingDate: null, releaseStatus: clean(r.status) || null,
+      facility: clean(r.facility) || null, county: null,
+      state: 'NY', inmateId: clean(r.din) || null,
+    };
+  });
+}
+
+// Registry — TX/CA/PA/IL live via fetch (TX needs STATE_PROXY_URL from Vercel). NY = browser-tier
+// (needs BROWSER_SERVICE_URL). NJ = browser-tier too, pending a live-verified spec (recon sample failed).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 /**
