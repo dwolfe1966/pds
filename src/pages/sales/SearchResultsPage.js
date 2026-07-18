@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
+import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
@@ -49,6 +50,7 @@ const SalesSearchResultsPage = () => {
   }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
   
   const [results, setResults] = useState([]);
+  const [flow, setFlow] = useState(''); // 'inmate' → lead the SERP with the booking teaser
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState({ firstName: '', lastName: '', state: '' });
@@ -94,6 +96,7 @@ const SalesSearchResultsPage = () => {
             try { sessionStorage.removeItem('nameSearchResults'); } catch {}
           } else {
             setResults(data.results || []);
+            setFlow(data.flow || '');
             setSearchQuery({ ...(data.query || {}), city: cityParam || (data.query && data.query.city) || '', age: ageParam || (data.query && data.query.age) || '' });
             setTotalCount(data.pagination?.total || 0);
             if (data.searchContext) {
@@ -379,6 +382,12 @@ const SalesSearchResultsPage = () => {
                 </label>
               )}
             </div>
+            {/* INMATE FLOW ONLY: lead the results with the booking teaser (mugshots + example charges +
+                facilities) — the payoff the inmate searcher came for. Loose match (name-search surface).
+                Self-gates to nothing when there are no matching records. */}
+            {flow === 'inmate' && searchQuery.lastName && (
+              <InmateBookingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
+            )}
             {/* Filters moved to the Refine region at the bottom (owner — top placement
                 pushed the results down on mobile). */}
             {sortedResults.length === 0 && (

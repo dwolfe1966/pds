@@ -35,6 +35,7 @@ const NameSearchLoaderPage = () => {
   const age = params.get('age');
   const city = params.get('city');
   const state = params.get('state');
+  const flow = params.get('flow'); // 'inmate' → results page leads with the booking teaser
 
   const [status, setStatus] = useState('Initializing search...');
   const [progress, setProgress] = useState(0);
@@ -147,7 +148,8 @@ const NameSearchLoaderPage = () => {
           results: mappedResults,
           query: { firstName, lastName, middleName, age, city, state },
           searchContext: response.searchContext || {},
-          pagination: response.pagination || {}
+          pagination: response.pagination || {},
+          flow: flow || undefined
         }));
 
         // Also store search context globally for report creation and opt-out

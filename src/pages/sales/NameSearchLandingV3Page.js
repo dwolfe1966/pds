@@ -135,6 +135,7 @@ const NameSearchLandingV3Page = () => {
     if (middleName.trim()) params.set('middleName', middleName.trim());
     if (age.trim()) params.set('age', age.trim());
     if (city.trim()) params.set('city', city.trim());
+    params.set('flow', 'inmate'); // inmate flow → results page leads with the booking teaser
     navigate(`/name/loader?${params.toString()}`);
   };
 
