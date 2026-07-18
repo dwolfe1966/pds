@@ -6,6 +6,9 @@ import { findBookings } from '../../../lib/incarceration.mjs';
 import { BROWSER_TIER, hydrateStateInmates } from '../../../lib/stateInmates.mjs';
 
 export const runtime = 'nodejs';
+// Browser-tier + captcha hydration (after()) runs a ~30–60s Browserless + 2Captcha flow post-response —
+// give the invocation room so Vercel doesn't kill it before the DB upsert. (Capped by the plan's max.)
+export const maxDuration = 300;
 
 const ALLOWED_ORIGINS = new Set([
   'https://www.idlookup.ai',
