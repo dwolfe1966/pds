@@ -3,7 +3,7 @@
 // (location history, relatives if teased) render; paid modules are LOCKED with NO real data in the HTML
 // (revenue safety) + an unlock CTA into the main funnel. Everything SEO-critical is in the initial HTML.
 
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getNameInCity } from '../../../../../../lib/directory';
 import { getCapturedPeople, norm } from '../../../../../../lib/search-activity-db.mjs';
 import { cityNamePath, cityPath, statePath, ageToken } from '../../../../../../lib/ids';
@@ -50,7 +50,12 @@ const LOCKED = [
 
 export default async function ProfilePage({ params }) {
   const { state, city, name, id, person } = await resolve(params);
-  if (!person) notFound();
+  if (!person) {
+    // ID-CHURN RECOVERY (SEO, 2026-07-18): the id here is an age-token; if the captured person's age
+    // shifts (or they drop from the corpus) the token changes → a URL Google indexed 404s. Recover the
+    // equity: 308 to the name-in-city hub (which lists current tokens) instead of notFound().
+    permanentRedirect(cityNamePath(state, city, name));
+  }
 
   const d = getNameInCity(state, city, name); // optional Census context (proper city/state names)
   const stateName = d?.stateName || person.state;
