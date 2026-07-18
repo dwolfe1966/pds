@@ -36,6 +36,9 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
 
   const records = matched.slice(0, 4);
   const exampleCharges = [...new Set(matched.flatMap((r) => r.charges || []).filter(Boolean))];
+  // Facility names are public INSTITUTION names (not personal identifiers) — safe to preview as credibility
+  // proof on the loose name-search teaser. Kept off strict/profile mode (there we minimize to a possible match).
+  const exampleFacilities = strict ? [] : [...new Set(matched.map((r) => r.facility).filter(Boolean))];
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
   return (
     <div style={{ marginTop: '1rem', border: `1px solid ${accent}33`, borderRadius: 12, background: '#f7fbfe', padding: '0.9rem 1rem' }}>
@@ -65,6 +68,13 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
           <span aria-hidden="true" style={{ color: '#b91c1c' }}>⚖️ </span>
           {exampleCharges.slice(0, 2).join(' · ')}
           {exampleCharges.length > 2 ? ` +${exampleCharges.length - 2} more` : ''}
+        </p>
+      )}
+      {exampleFacilities.length > 0 && (
+        <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#374151', lineHeight: 1.4 }}>
+          <span aria-hidden="true">📍 </span>
+          {exampleFacilities.slice(0, 2).join(' · ')}
+          {exampleFacilities.length > 2 ? ` +${exampleFacilities.length - 2} more` : ''}
         </p>
       )}
       <p style={{ margin: '8px 0 0', fontSize: '0.8rem', color: '#5b7484', lineHeight: 1.45 }}>
