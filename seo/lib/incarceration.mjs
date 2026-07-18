@@ -9,6 +9,7 @@
 // residential proxy or their paid/RapidAPI tier may be needed for reliable server-side calls.
 
 import { neon } from '@neondatabase/serverless';
+import { findStateInmates, STATE_ADAPTERS } from './stateInmates.mjs';
 
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/\D/g, ''), 10); return Number.isNaN(n) ? null : n; };
 const clean = (s) => (s == null ? '' : String(s).trim());
@@ -195,7 +196,10 @@ async function enformion(query, opts) {
   });
 }
 
-const PROVIDERS = { jailbase, ucc, floridaObis, enformion };
+// First-party state DOC scrapers (the moat — stateInmates.mjs). Wrapped so it fits the (query, opts)
+// provider signature; opts.env carries the env (kill switch + photo flag live in findStateInmates).
+const stateDoc = (query, opts) => findStateInmates(query, (opts && opts.env) || {});
+const PROVIDERS = { jailbase, ucc, floridaObis, enformion, stateDoc };
 
 /**
  * Query all enabled incarceration providers for a person; return normalized, best-effort merged records.
@@ -213,6 +217,7 @@ export async function findBookings(query, env = {}) {
     enformionName: env.ENFORMION_AP_NAME, enformionPass: env.ENFORMION_AP_PASSWORD,
     enformionUrl: env.ENFORMION_API_URL, enformionClient: env.ENFORMION_CLIENT_TYPE, enformionSearchType: env.ENFORMION_SEARCH_TYPE,
     limit: Math.min(Number(env.INCARCERATION_LIMIT) || 12, 40),
+    env,
   };
   const enabled = [];
   // Florida OBIS (our Neon) — free/reliable; only for FL or stateless searches (efficiency).
@@ -223,6 +228,8 @@ export async function findBookings(query, env = {}) {
   if (opts.uccKey && opts.uccSecret) enabled.push('ucc');
   // Enformion — nationwide + mugshots; enabled when AccessProfile creds are set.
   if (opts.enformionName && opts.enformionPass) enabled.push('enformion');
+  // First-party state DOC scraper — enabled whenever we have an adapter for the searched state.
+  if (STATE_ADAPTERS[st] && env.STATE_INMATES_DISABLED !== '1') enabled.push('stateDoc');
   const settled = await Promise.allSettled(enabled.map((k) => PROVIDERS[k](query, opts)));
   const records = [];
   const sources = {};
