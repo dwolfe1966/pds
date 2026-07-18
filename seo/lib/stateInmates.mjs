@@ -407,8 +407,44 @@ async function GA(query) {
   return out;
 }
 
-// Registry — direct-fetch: CA/PA/IL/WA/OH/NC/GA. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (F5, WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA };
+// ── MI · MDOC OTIS ── stateful ASP.NET behind F5 + Cloudflare. 4-step session dance; results live in
+//    server-side session keyed by the F5 `TS…` affinity cookie — so all requests MUST share ONE socket or
+//    /Results bounces empty. We pin a single undici Agent (connections:1). List gives name/charges(MCL)/
+//    facility/status; mugshot is on the profile page (deferred). Verified 2026-07-18. Degrades to [] if split.
+async function MI(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const B = 'https://mdocweb.state.mi.us';
+  let dispatcher;
+  try { const { Agent } = await import('undici'); dispatcher = new Agent({ connections: 1, pipelining: 1, keepAliveTimeout: 30000 }); } catch { dispatcher = undefined; }
+  const jar = new Map();
+  const absorb = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [p] = c.split(';'); const i = p.indexOf('='); if (i > 0) jar.set(p.slice(0, i).trim(), p.slice(i + 1).trim()); } };
+  const H = (extra = {}) => { const h = { 'User-Agent': UA, 'Accept-Language': 'en-US,en;q=0.9', ...extra }; const c = [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; '); if (c) h.Cookie = c; return h; };
+  const F = (url, opts = {}) => fetch(url, dispatcher ? { ...opts, dispatcher } : opts);
+  try {
+    absorb(await F(`${B}/OTIS2/Search`, { headers: H() }));
+    const body = new URLSearchParams({ LastName: last.toUpperCase(), FirstName: clean(query.firstName).toUpperCase(), MDOCNumber: '', Sex: 'Either', Race: 'All', Age: '', OffenderStatus: 'Prison', MarksScarsTattoos: '', 'action:Search': 'Search' });
+    absorb(await F(`${B}/OTIS2/Search`, { method: 'POST', redirect: 'manual', body, headers: H({ 'Content-Type': 'application/x-www-form-urlencoded', Origin: B, Referer: `${B}/OTIS2/Search` }) }));
+    const res = await F(`${B}/OTIS2/Results`, { headers: H({ Referer: `${B}/OTIS2/Search` }) });
+    absorb(res);
+    const html = await res.text();
+    const out = [];
+    const rowRe = /action:LoadProfile"\s+value="(\d+)"[^>]*>\s*<\/td>([\s\S]*?)<\/tr>/gi; let m;
+    while ((m = rowRe.exec(html))) {
+      const cells = [...m[2].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+      const [lastN, first, , sex, race, mcl, location, status] = cells;
+      out.push({
+        source: 'mi-otis', sourceName: 'Michigan DOC (OTIS)', firstName: first || '', lastName: lastN || '',
+        name: [first, lastN].filter(Boolean).join(' '), age: null, gender: sex || null, race: race || null,
+        charges: mcl ? [mcl] : [], mugshotUrl: null, bookingDate: null, releaseStatus: status || null,
+        facility: location || null, county: null, state: 'MI', inmateId: m[1],
+      });
+    }
+    return out;
+  } catch { return []; } finally { try { if (dispatcher) dispatcher.close(); } catch { /* ignore */ } }
+}
+
+// Registry — direct-fetch: CA/PA/IL/WA/OH/NC/GA/MI. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
