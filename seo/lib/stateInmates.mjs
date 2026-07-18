@@ -365,8 +365,50 @@ async function NC(query) {
   return out;
 }
 
-// Registry — direct-fetch: CA/PA/IL/WA/OH/NC. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (F5, WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC };
+// ── GA · GDC ── session (disclaimer) → name search → per-record detail (N+1, so capped). Rich: charges,
+//    mugshot, county, facility, status. services.gdc.ga.gov app host (NOT the Cloudflare-challenged mirror).
+//    Verified 2026-07-18. Enumerable (surname sweep / sequential GDC#). Slow-ish live → write-through to DB.
+async function GA(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const B = 'https://services.gdc.ga.gov/GDC/OffenderQuery/jsp', IMG = 'https://services.gdc.ga.gov/offenderimg';
+  const jar = {};
+  const merge = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [kv] = c.split(';'); const i = kv.indexOf('='); if (i > 0) jar[kv.slice(0, i).trim()] = kv.slice(i + 1).trim(); } };
+  const ckh = () => Object.entries(jar).map(([k, v]) => `${k}=${v}`).join('; ');
+  const gstrip = (h) => (h || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+  const grab = (t, re) => { const m = re.exec(t); return m ? gstrip(m[1]) : ''; };
+  const searchBody = (over) => Object.entries(Object.assign({ vLastName: '', vFirstName: '', vMiddleName: '', vAlias: '', vUnoCaseNoRadioButton: 'none', vOffenderId: '', vGender: '', vRace: '', vAgeLow: '', vAgeHigh: '', vHeightLow: '', vHeightHigh: '', vWeightLow: '', vWeightHigh: '', vEyeColor: '', vHairColor: '', vSMT: '', vCurrentInstitution: '', vCounty: '', vOffense: '', vSentencedTo: '', vScope: '', vListType: '', vOutput: 'Detailed', vDetailFormat: 'Summary', vIsCookieEnabled: 'Y', RecordsPerPage: '45', NextPage: '2' }, over)).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v ?? '')}`).join('&');
+  const post = (body) => fetch(`${B}/OffQryRedirector.jsp`, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Cookie: ckh(), Referer: `${B}/OffQryForm.jsp` }, body });
+  const parse = (html, recNo) => {
+    const t = html.replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, '');
+    const gdcId = grab(t, /GDC ID:\s*<\/?[^>]*>?\s*([0-9]{6,10})/i) || recNo;
+    const name = grab(t, /NAME:([^<]+)</i);
+    const yob = grab(t, /YOB:\s*<\/?[^>]*>?\s*([0-9]{4})/i);
+    const charges = []; const re = /OFFENSE:\s*<\/?[^>]*>?\s*([^<]+)</gi; let m2;
+    while ((m2 = re.exec(t))) { const c = gstrip(m2[1]); if (c && !charges.includes(c)) charges.push(c); }
+    const st = grab(t, /CURRENT STATUS:\s*<\/?[^>]*>?\s*([A-Z]+)/i);
+    let lastN = '', first = ''; if (name.includes(',')) { const p = name.split(','); lastN = clean(p[0]); first = clean((p[1] || '').split(/\s+/)[0]); }
+    return {
+      source: 'ga-gdc', sourceName: 'Georgia DOC', inmateId: gdcId, name, firstName: first, lastName: lastN,
+      age: yob ? (new Date().getFullYear() - Number(yob)) : null,
+      gender: grab(t, /GENDER:\s*<\/?[^>]*>?\s*([A-Z]+)/i) || null, race: grab(t, /RACE:\s*<\/?[^>]*>?\s*([A-Z ]+?)\s*(?:GENDER|<)/i) || null,
+      charges, mugshotUrl: `${IMG}/${gdcId}.jpg`, bookingDate: grab(t, /INCARCERATION BEGIN:\s*<\/?[^>]*>?\s*([0-9/]+)/i) || null,
+      releaseStatus: st || null, facility: grab(t, /MOST RECENT INSTITUTION:\s*<\/?[^>]*>?\s*([^<]+)</i) || null,
+      county: grab(t, /CONVICTION COUNTY:\s*<\/?[^>]*>?\s*([^<&]+)/i) || null, state: 'GA',
+    };
+  };
+  let r = await fetch(`${B}/OffQryForm.jsp`, { headers: { 'User-Agent': UA } }); merge(r); await r.text();
+  r = await fetch(`${B}/OffQryForm.jsp`, { method: 'POST', redirect: 'manual', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Cookie: ckh() }, body: 'vDisclaimer=True&submit2=agree' }); merge(r); await r.text();
+  const lr = await post(searchBody({ vLastName: last.toUpperCase(), vFirstName: clean(query.firstName).toUpperCase() }));
+  const list = await lr.text();
+  if (/GDC ID:/i.test(list) && !/name="vRecNo"/i.test(list)) return [parse(list, grab(list, /GDC ID:\s*<\/?[^>]*>?\s*([0-9]{6,10})/i))];
+  const recs = [...new Set([...list.matchAll(/name="vRecNo"\s+type="hidden"\s+value="([0-9]{6,10})"/gi)].map((m) => m[1]))].slice(0, 8);
+  const out = [];
+  for (const rec of recs) { try { const d = await post(`vRecNo=${rec}&NextPage=6&btn1=View+Offender+Info`); out.push(parse(await d.text(), rec)); } catch { /* skip */ } }
+  return out;
+}
+
+// Registry — direct-fetch: CA/PA/IL/WA/OH/NC/GA. Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (F5, WIP).
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
