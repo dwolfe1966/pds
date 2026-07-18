@@ -61,16 +61,22 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 50 | WY | ⬜ TODO | — | — | recon-7 |
 | 51 | DC | ⬜ TODO | — | — | recon-7 (federal BOP for DC sentenced) |
 
-## Tally (2026-07-18)
-- ✅ **LIVE: 17** — AL, CA, FL, GA, IL, IN, LA, MD, NC, NV, OH, OR, PA, SC, TX, UT, WA
-- 🟢 **pending (recon-5): 5** — AR, HI, ID, MS, NE → ~22 live
-- 🔬 **RECON (recon-6): 8** — DE, IA, MA, ME, MT, NH, RI, SD
-- ⬜ **TODO (recon-7): 5** — AK, ND, VT, WY, DC
-- 🔴 **PROBLEM: 16** — AZ, CO, CT, KS, KY, MI, MN, MO, NJ, NM, NY, OK, TN, VA, WI, WV
+## FINAL Tally (2026-07-18) — all 50 + DC surveyed & integrated
+- ✅ **LIVE: 31** (verified on prod) — AK, AL, AR, CA, DC, FL, GA, HI, IA, ID, IL, IN, LA, MA, MD, ME, MS,
+  NC, ND, NE, NV, OH, OR, PA, SC, SD, TX, UT, VT, WA, WY
+  - mugshots on: FL, GA, IL, NC, OH, PA, SC, AL, AR, MS, ME, ND (+ more via detail)
+  - caveats: MD/MA/AK/DC need first+last · SD ~57s (may serverless-timeout) · LA/HI/MA/AK VINE ids masked · TX browser-tier
+- 🔴 **PROBLEM: 20** — AZ, CO, CT, DE, KS, KY, MI, MN, MO, MT, NH, NJ, NM, NY, OK, RI, TN, VA, WI, WV
+  - NEW findings: **KY resets even Browserless+residential** (hard, like NY — NOT a cheap proxy fix);
+    NH = Akamai 403s datacenter IP; RI = F5 TLS-fingerprint block (node/Vercel); DE/KS/NM/WV/OK/MO/CO/DE captcha.
 
 ## First-party roster (inmates table): **451k records** (NC 448k w/mugshots) — growing per search + bulk loads.
 
-## Plan
-1. Finish recon (recon-6 landing, recon-7 = last 5) → every jurisdiction surveyed.
-2. Integrate all direct-fetch wins → maximize LIVE.
-3. **Sweep back to PROBLEM states by fix wave** (proxy → tls → browser → captcha) — see problem-states doc.
+## Fix-wave reality check (2026-07-18)
+The "proxy wave" assumption was too optimistic — several IP-blocked states (KY, NH, RI) *also* TLS-reset or
+Akamai/F5-block browsers, so they're NOT cheap proxy fixes. Revised waves by leverage:
+1. **captcha-solver wave (best ROI)** — DE, KS, MO, CO, NM, OK, WV: ~7 states, most with mugshots, unblocked by
+   one captcha-solver account (2Captcha/CapSolver, ~$1-3/1000). NM hardest (reCAPTCHA Enterprise). Needs owner key.
+2. **tls wave** — MN: ship the missing intermediate cert / NODE_EXTRA_CA_CERTS.
+3. **browser wave** — NY, AZ, CT, NJ, VA, WI, TN, MI (+ KY/NH/RI): Browserless flows; NY/AZ/KY are the hard ones.
+4. **bulk/alt-source** — AR (paid INA bulk), NE (roster xlsx → make it a bulk ingest not live), SD (slow → cache).
