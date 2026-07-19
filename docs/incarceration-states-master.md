@@ -14,9 +14,9 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 3 | AZ | 🔴 PROBLEM | browser | ✅ | Cloudflare + WebForms |
 | 4 | AR | 🟢 pending | html | ✅ | recon-5; +paid INA bulk |
 | 5 | CA | ✅ LIVE | json | ❌ | CIRIS; charges=court |
-| 6 | CO | 🔴 PROBLEM | captcha | ✅ | shape-count captcha |
+| 6 | CO | ✅ LIVE | captcha | ✅ | **CRACKED 7/19**: shape-count captcha (2Captcha textinstructions, ~50% retry); facility+age+mug |
 | 7 | CT | 🔴 PROBLEM | browser | ❌ | WAF blocks curl |
-| 8 | DE | 🔬 RECON | — | — | recon-6 |
+| 8 | DE | ✅ LIVE | vine | ❌ | **CRACKED 7/19**: VINE guest session (no captcha, fast); custody+facility; needs first+last |
 | 9 | FL | ✅ LIVE | bulk | ✅ | OBIS 670k |
 | 10 | GA | ✅ LIVE | html | ✅ charges | session flow |
 | 11 | HI | 🟢 pending | json | ✅ | recon-5 |
@@ -24,7 +24,7 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 13 | IL | ✅ LIVE | html | ✅ | 2-step |
 | 14 | IN | ✅ LIVE | html | ❌ | 10 rows |
 | 15 | IA | 🔬 RECON | — | — | recon-6 |
-| 16 | KS | 🔴 PROBLEM | captcha | ✅ | KASPER |
+| 16 | KS | ✅ LIVE | captcha | ✅ | **CRACKED 7/19**: KASPER reCAPTCHA v2 node-only; charges+facility+age+status |
 | 17 | KY | 🔴 PROBLEM | proxy | ✅ | IP-blocked on Vercel (works residential) |
 | 18 | LA | ✅ LIVE | html | ⚠️ | VINE; obscured id + expiring mug (caveat) |
 | 19 | ME | 🔬 RECON | — | — | recon-6 |
@@ -39,12 +39,12 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 28 | NV | ✅ LIVE | html | ✅ (detail) | 20-row cap |
 | 29 | NH | 🔴 PROBLEM | browser | ❌ | Akamai 403 even via Browserless+residential (2x confirmed 7/18) — HARD tier w/ NY/KY |
 | 30 | NJ | 🔴 PROBLEM | browser | ✅ | SPA/anti-bot (recon-1/2) |
-| 31 | NM | 🔴 PROBLEM | captcha | ✅ | reCAPTCHA **Enterprise** (hardest) |
+| 31 | NM | ✅ LIVE | captcha | ❌ | **CRACKED 7/19**: reCAPTCHA v2 (NOT Enterprise) node-only; list-level (name/id/status); last-only OK; detail-enrich available |
 | 32 | NY | 🔴 PROBLEM | browser | ❌ | F5 WAF; drops browser+residential |
 | 33 | NC | ✅ LIVE | bulk+html | ✅ | **448k bulk roster** |
 | 34 | ND | ⬜ TODO | — | — | recon-7 |
 | 35 | OH | ✅ LIVE | html | ✅ charges | antiforgery |
-| 36 | OK | 🔴 PROBLEM | captcha | ✅ | |
+| 36 | OK | ✅ LIVE | captcha | ✅ | **CRACKED 7/19**: reCAPTCHA v2 node-only; mugshots+age+status; needs first+last |
 | 37 | OR | ✅ LIVE | html | ❌ | needs first name |
 | 38 | PA | ✅ LIVE | json | ✅ (opt-in) | Captor API |
 | 39 | RI | ✅ LIVE | browser | ❌ | **CRACKED 7/18**: F5/TSPD via Browserless form-submit navigation |
@@ -56,8 +56,8 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 45 | VT | ⬜ TODO | — | — | recon-7 |
 | 46 | VA | ✅ LIVE | captcha | ❌ | **CRACKED 7/18**: reCAPTCHA v2 solved NODE-ONLY via 2Captcha (no browser); needs first+last; james smith→10 |
 | 47 | WA | ✅ LIVE | html | ❌ | Drupal filter |
-| 48 | WV | 🔴 PROBLEM | captcha | ✅ | |
-| 49 | WI | 🔴 PROBLEM | captcha | ✅ | reCAPTCHA v2 at entry disclaimer (once/session, then free) → captcha-solver bucket |
+| 48 | WV | 🟡 browser-tier | captcha+waf | ✅ | WORKING but AWS WAF (behavior-triggered) needs a real browser; reCAPTCHA solves node-side; charges+facility+mug (detail). Needs browser driver like MO |
+| 49 | WI | ✅ LIVE | captcha | ✅ | **CRACKED 7/19**: reCAPTCHA v2 at entry (once/session, then free); demographics+mug+aliases; surname-only enumerable |
 | 50 | WY | ⬜ TODO | — | — | recon-7 |
 | 51 | DC | ⬜ TODO | — | — | recon-7 (federal BOP for DC sentenced) |
 

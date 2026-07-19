@@ -39,6 +39,9 @@ export async function solveImageCaptcha(base64, opts = {}) {
   if (opts.minLength) body.set('min_len', String(opts.minLength));
   if (opts.maxLength) body.set('max_len', String(opts.maxLength));
   if (opts.phrase) body.set('phrase', '1');
+  // `textinstructions` routes the image to a human worker with a natural-language prompt (e.g. CO's
+  // "count the squares" shape-count captcha, where the question is TEXT, not in the image).
+  if (opts.textInstructions) body.set('textinstructions', String(opts.textInstructions));
   try {
     const r = await fetch(`${BASE}/in.php`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
     const j = await r.json().catch(() => null);

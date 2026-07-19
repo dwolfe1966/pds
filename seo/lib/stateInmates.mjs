@@ -9,6 +9,8 @@
 //
 // Guardrails (docs): public records only; polite single requests; NO captcha-busting; never pay-to-remove.
 import { solveRecaptcha } from './captchaSolver.mjs';
+// Captcha/browser-gated adapters (reCAPTCHA v2: OK/NM/KS/WI; shape-count image: CO; VINE no-captcha: DE).
+import { OK, NM, KS, WI, CO, DE } from './stateAdaptersCaptcha.mjs';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
 // Normalize CAPTCHA_SOLVER_KEY against paste errors (stray leading `=`, quotes, whitespace) — 32 hex chars.
@@ -567,40 +569,8 @@ async function MD(query) {
   return out;
 }
 
-// ── CO · DOC (Offender Search Site) ── Prototype.js Ajax → HTML fragments. GET /oss/ (PHPSESSID) → POST
-//    list_offenders. ⚠️ CAPTCHA-GATED: a cold session returns a shape-count captcha challenge, so the live
-//    path throws 'CO captcha gate' (→ [] via findStateInmates) until a vision solver is wired. The flow +
-//    parser are kept for the crawler (one solve per session clears it). MUGSHOT via photo URL. Probed 2026-07-18.
-async function CO(query) {
-  const last = clean(query.lastName); if (!last) return [];
-  const BASE = 'https://www.doc.state.co.us/oss/controller/ctl_ajax.php';
-  const land = await fetch('https://www.doc.state.co.us/oss/', { redirect: 'manual', headers: { 'User-Agent': UA } });
-  const sc = land.headers.getSetCookie ? land.headers.getSetCookie() : (land.headers.get('set-cookie') ? [land.headers.get('set-cookie')] : []);
-  const cookie = sc.map((c) => c.split(';')[0]).find((c) => /PHPSESSID=/.test(c)) || '';
-  const body = new URLSearchParams({ docno: '', lnam: last, fnam: clean(query.firstName), gender: 'ALL', sec: 'list_offenders', search: 'true', start: '0', order_col: '', order_dir: '' });
-  const s = await fetch(BASE, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie, 'X-Requested-With': 'XMLHttpRequest', Referer: 'https://www.doc.state.co.us/oss/' }, body: body.toString() });
-  if (!s.ok) throw new Error(`CO ${s.status}`);
-  const html = await s.text();
-  if (/CAPTCHA Challenge/i.test(html) || /captcha_toggle\([^)]*'on'\)/.test(html)) throw new Error('CO captcha gate');
-  const out = [];
-  for (const tr of (html.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [])) {
-    if (!/get_offender\('[^']*','?\d+'?\)/.test(tr)) continue; // skip header / control rows
-    const tds = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((x) => stripTags(x[1]));
-    if (tds.length < 6) continue; // cols: Name(Last, First) | DOC# | Ethnicity | Gender | Facility | Age
-    const [nm, docno, ethnicity, gender, facility, age] = tds;
-    const comma = nm.indexOf(',');
-    const lastN = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
-    const firstN = comma >= 0 ? clean(nm.slice(comma + 1)) : '';
-    out.push({
-      source: 'co-doc', sourceName: 'Colorado DOC',
-      firstName: firstN, lastName: lastN, name: clean(nm),
-      age: num(age), gender: /^m/i.test(gender) ? 'male' : /^f/i.test(gender) ? 'female' : null, race: ethnicity || null,
-      charges: [], mugshotUrl: `https://www.doc.state.co.us/offender_search/offender_photos/PRODUCTION/${docno.slice(0, 3)}/${docno}.jpg`,
-      bookingDate: null, releaseStatus: null, facility: facility || null, county: null, state: 'CO', inmateId: docno,
-    });
-  }
-  return out;
-}
+// ── CO · CDOC ── moved to lib/stateAdaptersCaptcha.mjs (shape-count image captcha now solved via 2Captcha
+//    textinstructions). Imported at the top; browser/async-tier (served from DB, refreshed off-request).
 
 // ── MN · DOC (COMS PublicViewer) ── ASP.NET MVC: GET landing (session cookie + __RequestVerificationToken) →
 //    POST name search (302; results kept in session) → GET grid JSON. No captcha; a Radware bot-manager
@@ -1647,7 +1617,7 @@ async function VA(query) {
   return parseVaHtml(await p.text());
 }
 
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC, VA };
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC, VA, OK, NM, KS, WI, DE };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
@@ -1656,7 +1626,10 @@ export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 // Async-tier: too slow for the live request path (headless-browser session and/or a captcha solve, 15–120s+).
 // Skipped on the live path (served from the `inmates` DB) and refreshed by the off-request crawler. NOTE: TX
 // needs a real browser; VA is node-only but slow (reCAPTCHA solve). Direct-fetch states (CA/PA/IL) run live.
-export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI', 'VA']);
+// OK/NM/KS/WI/CO added: each does a slow captcha solve (reCAPTCHA v2 or a shape-count image, 15–120s+), so
+// they're async-tier — skipped live, served from the DB, refreshed off-request. DE is NOT here: it's fast
+// captcha-free VINE and runs live.
+export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI', 'VA', 'OK', 'NM', 'KS', 'WI', 'CO']);
 
 /**
  * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no
