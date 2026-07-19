@@ -61,14 +61,13 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 50 | WY | ✅ LIVE | html | ❌ | json feed; name/age/gender/status/DOC#; "james smith"=0 is real (small state) |
 | 51 | DC | ⬜ TODO | — | — | recon-7 (federal BOP for DC sentenced) |
 
-## FINAL Tally (2026-07-18) — all 50 + DC surveyed & integrated
-- ✅ **LIVE: 31** (verified on prod) — AK, AL, AR, CA, DC, FL, GA, HI, IA, ID, IL, IN, LA, MA, MD, ME, MS,
-  NC, ND, NE, NV, OH, OR, PA, SC, SD, TX, UT, VT, WA, WY
-  - mugshots on: FL, GA, IL, NC, OH, PA, SC, AL, AR, MS, ME, ND (+ more via detail)
-  - caveats: MD/MA/AK/DC need first+last · SD ~57s (may serverless-timeout) · LA/HI/MA/AK VINE ids masked · TX browser-tier
-- 🔴 **PROBLEM: 20** — AZ, CO, CT, DE, KS, KY, MI, MN, MO, MT, NH, NJ, NM, NY, OK, RI, TN, VA, WI, WV
-  - NEW findings: **KY resets even Browserless+residential** (hard, like NY — NOT a cheap proxy fix);
-    NH = Akamai 403s datacenter IP; RI = F5 TLS-fingerprint block (node/Vercel); DE/KS/NM/WV/OK/MO/CO/DE captcha.
+## TALLY (2026-07-19) — see `incarceration-coverage-grid.md` for the full data-types grid
+- ✅ **COVERED: 41 / 51 (~80%)** — AK, AL, AR, CA, CO, DC, DE, FL, GA, HI, IA, ID, IL, IN, KS, LA, MA, MD, ME,
+  MI, MO?, MS, MT, NC, NE, NM, NV, OH, OK, OR, PA, RI, SC, SD, TX, UT, VA, VT, WA, WI, WY  *(MO listed under "not yet")*
+  - **mugshots** (~13): FL, GA, IL, NC, OH, PA, SC, AL, AR, MS, ME, ND, OK, WI, CO (+ more on detail: MI, MT, KS)
+  - **charges** at list: FL, GA, OH, MS, VT, KS, NE (+ detail: MI, MT, WV)
+- ❌ **NOT YET: 10** — WV + MO (working, need a browser driver), NY, KY, NH, MN, AZ, CT, NJ, TN (hard WAF/cert).
+- **7/18–19 crackings:** MI, RI, VA (browser/captcha) · OK, NM, KS, WI, CO, DE (captcha wave) · MT (browser) · NE, WY (were false-negatives).
 
 ## First-party roster (inmates table): **451k records** (NC 448k w/mugshots) — growing per search + bulk loads.
 
