@@ -45,7 +45,7 @@ export default function InmateBookingSection({ firstName, lastName, state, perso
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontWeight: 800, color: '#0f172a', fontSize: 15 }}>{r.name}{r.age ? `, ${r.age}` : ''}</span>
-                {r.releaseStatus && <span style={{ fontSize: 11, fontWeight: 700, color: '#166534', background: '#dcfce7', borderRadius: 999, padding: '2px 8px' }}>{r.releaseStatus}</span>}
+                {r.releaseStatus && <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...(r.recordType === 'court' ? { color: '#b45309', background: '#fef3c7' } : { color: '#166534', background: '#dcfce7' }) }}>{r.releaseStatus}</span>}
                 <span style={{ marginLeft: 'auto', fontSize: 11, color: '#94a3b8' }}>{r.sourceName || r.source}</span>
               </div>
               <div style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>

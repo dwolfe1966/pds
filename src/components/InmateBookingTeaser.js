@@ -34,6 +34,14 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
   const count = strict ? matched.length : ((data && data.count) || 0);
   if (!data || count === 0) return null; // nothing corroborated / nothing to show
 
+  // Owner: surface (never hide) the incarcerated-vs-court distinction — a court record ≠ someone in jail.
+  const inCustody = matched.filter((r) => r.recordType !== 'court').length;
+  const courtOnly = matched.filter((r) => r.recordType === 'court').length;
+  const summaryParts = [];
+  if (inCustody) summaryParts.push(`${inCustody} incarceration record${inCustody === 1 ? '' : 's'}`);
+  if (courtOnly) summaryParts.push(`${courtOnly} court record${courtOnly === 1 ? '' : 's'}`);
+  const summaryLabel = summaryParts.join(' + ') || `${count} record${count === 1 ? '' : 's'}`;
+
   const records = matched.slice(0, 4);
   const exampleCharges = [...new Set(matched.flatMap((r) => r.charges || []).filter(Boolean))];
   // Facility names are public INSTITUTION names (not personal identifiers) — safe to preview as credibility
@@ -46,8 +54,8 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
         <span aria-hidden="true" style={{ fontSize: 18 }}>🔒</span>
         <span style={{ fontWeight: 800, color: dark, fontSize: '0.95rem' }}>
           {strict
-            ? <>Possible incarceration record for {fullName} — verify this is the right person</>
-            : <>{count} booking record{count === 1 ? '' : 's'} found for {fullName}{state ? ` in ${state}` : ''}</>}
+            ? <>Possible {courtOnly && !inCustody ? 'court' : 'incarceration'} record for {fullName} — verify this is the right person</>
+            : <>{summaryLabel} found for {fullName}{state ? ` in ${state}` : ''}</>}
         </span>
       </div>
       <div style={{ display: 'flex', gap: 8, overflow: 'hidden' }}>
@@ -57,8 +65,10 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
               <span>👤</span>
               {r.mugshotUrl && <img src={r.mugshotUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
             </div>
-            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, userSelect: 'none' }}>
-              {r.charges && r.charges.length ? `${r.charges.length} charge${r.charges.length === 1 ? '' : 's'}` : 'Record'}
+            <div style={{ fontSize: 10, color: r.recordType === 'court' ? '#b45309' : '#6b7280', marginTop: 3, userSelect: 'none' }}>
+              {r.recordType === 'court'
+                ? 'Court record'
+                : (r.charges && r.charges.length ? `${r.charges.length} charge${r.charges.length === 1 ? '' : 's'}` : (r.releaseStatus || 'Record'))}
             </div>
           </div>
         ))}
