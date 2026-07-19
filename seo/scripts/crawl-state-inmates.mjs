@@ -27,7 +27,7 @@ const TOP_SURNAMES = ['smith', 'johnson', 'williams', 'brown', 'jones', 'garcia'
 const TOP_FIRSTNAMES = ['james', 'john', 'robert', 'michael', 'david', 'william', 'jose', 'juan',
   'richard', 'thomas', 'christopher', 'daniel', 'anthony', 'mark', 'maria', 'carlos', 'kevin', 'brian',
   'jason', 'jesus'];
-const NEEDS_FIRST = new Set(['TX', 'MD', 'OR']); // locators that reject surname-only
+const NEEDS_FIRST = new Set(['TX', 'MD', 'OR', 'VA']); // locators that reject surname-only
 
 const args = Object.fromEntries(process.argv.slice(2).map((a) => { const m = a.match(/^--([^=]+)(?:=(.*))?$/); return m ? [m[1], m[2] ?? true] : [a, true]; }));
 const state = String(args.state || '').toUpperCase();

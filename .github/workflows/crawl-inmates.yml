@@ -1,0 +1,76 @@
+# Off-request inmate-roster crawler (the moat asset).
+#
+# WHY THIS EXISTS: the async-tier state locators (TX/MI/RI browser flows, VA reCAPTCHA solve) each take
+# 15–120s+ per query. Vercel's per-request `after()` gets killed before they finish, so the browser/captcha
+# states never populated the DB there. This job runs the SAME crawler (seo/scripts/crawl-state-inmates.mjs)
+# with a real time budget (up to 6h), decoupled from user requests, and write-through-upserts into the
+# `inmates` table. Live searches then serve those states instantly from the DB.
+#
+# COST: each query hits Browserless (browser-tier states) and/or 2Captcha (VA reCAPTCHA ~$0.003/solve).
+# The schedule is intentionally DISABLED — enable it only after you've OK'd the cadence/spend. Until then,
+# run it on demand from the Actions tab (workflow_dispatch).
+#
+# REQUIRED REPO SECRETS (Settings → Secrets and variables → Actions):
+#   DATABASE_URL         Neon connection string (the `inmates` table)
+#   BROWSER_SERVICE_URL  Browserless /function endpoint incl. ?token=…  (TX/MI/RI)
+#   CAPTCHA_SOLVER_KEY   2Captcha API key                               (VA and other captcha states)
+#   STATE_PROXY_URL      (optional) residential proxy for direct-fetch blocked states
+name: Crawl inmate rosters
+
+on:
+  workflow_dispatch:
+    inputs:
+      states:
+        description: 'Comma-separated async-tier states to crawl'
+        default: 'MI,RI'
+      surnames:
+        description: 'Comma-separated surnames (blank = built-in top-50)'
+        default: ''
+      firstnames:
+        description: 'First names for first×last states TX/MD/OR/VA (blank = built-in top-20)'
+        default: ''
+      delay:
+        description: 'Politeness delay between queries (ms)'
+        default: '1200'
+  # schedule:
+  #   - cron: '0 7 * * *'   # OWNER: uncomment to run daily at 07:00 UTC once the cadence/spend is approved.
+
+concurrency:
+  group: crawl-inmates
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    defaults:
+      run:
+        working-directory: seo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Crawl states
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BROWSER_SERVICE_URL: ${{ secrets.BROWSER_SERVICE_URL }}
+          CAPTCHA_SOLVER_KEY: ${{ secrets.CAPTCHA_SOLVER_KEY }}
+          STATE_PROXY_URL: ${{ secrets.STATE_PROXY_URL }}
+          STATES: ${{ github.event.inputs.states || 'MI,RI' }}
+          SURNAMES: ${{ github.event.inputs.surnames }}
+          FIRSTNAMES: ${{ github.event.inputs.firstnames }}
+          DELAY: ${{ github.event.inputs.delay || '1200' }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then echo "::error::DATABASE_URL secret is not set"; exit 1; fi
+          IFS=',' read -ra ST <<< "$STATES"
+          for s in "${ST[@]}"; do
+            s=$(echo "$s" | tr -d ' ')
+            [ -z "$s" ] && continue
+            ARGS="--state=$s --delay=$DELAY"
+            [ -n "$SURNAMES" ] && ARGS="$ARGS --surnames=$SURNAMES"
+            [ -n "$FIRSTNAMES" ] && ARGS="$ARGS --firstnames=$FIRSTNAMES"
+            echo "=== crawling $s ($ARGS) ==="
+            node scripts/crawl-state-inmates.mjs $ARGS || echo "::warning::$s crawl failed (continuing)"
+          done
