@@ -51,4 +51,8 @@ name/age/gender/state, the event fields (dates, county, offenses, spouse), and a
 - Incarceration/court: fully mapped (report criminal area + identity module + tight match). ✅
 - Divorce: provider built (`lib/lifeEvents.mjs`, entitled, $0.05). NOT yet mapped to report/identity/relationships. ← next
 - Marriage: provider ready, self-gated on Enformion entitlement (`MARRIAGE_ENABLED`).
-- Sex-offender: NSOPW adapter in recon (first-party, $0).
+- Sex-offender: NSOPW adapter built (`lib/sexOffender.mjs`, browser-tier). **NOT a report record** (owner 2026-07-19):
+  name-attributing a fuzzy ALIAS match to a searched person is the weak/risky use — pulled from the report. The right
+  use is the **"other people" dimension** we haven't fleshed out: a **location-based "registered offenders near you"**
+  safety feature on the MEMBER'S OWN profile (NSOPW supports zip + GPS coords — no attribution problem, real safety
+  value), and/or confident attribution only via the relationship graph. Adapter/endpoint (opt-in `sexOffender`) kept ready.
