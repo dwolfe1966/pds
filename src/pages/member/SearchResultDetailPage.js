@@ -7,6 +7,7 @@ import { getIdentityContext, getSearchContext } from '../../services/searchConte
 import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../utils/reportExtract';
 import ProfileView, { styles } from '../../components/ProfileView';
 import MyProfileModular from '../../components/MyProfileModular';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../../services/incarcerationService';
 import MarriageDivorceSection from '../../components/MarriageDivorceSection';
 import { fetchLifeEvents } from '../../services/lifeEventsService';
@@ -220,7 +221,11 @@ const SearchResultDetailPage = () => {
   };
 
   // ── Data extraction ───────────────────────────────────────────────────────
-  const data = report ? extractAll(report) : null;
+  // Guarded: extractAll runs in the render body, so a throw on an unexpected BC shape would blank the
+  // whole app via the top-level ErrorBoundary. Degrade to the graceful in-page error panel instead.
+  let data = null;
+  let extractError = null;
+  try { data = report ? extractAll(report) : null; } catch (e) { extractError = e; }
   // Report renders as the modular Profile (others mode, paid tier → full detail, no data loss). The
   // exhaustive grid stays available via a "Full details" toggle.
   const [reportView, setReportView] = useState('profile'); // 'profile' | 'details'
@@ -357,6 +362,27 @@ const SearchResultDetailPage = () => {
     );
   }
 
+  // extractAll threw on this report's shape — show the graceful error panel (not a blank app).
+  if (extractError) {
+    return (
+      <main style={styles.main}>
+        <div style={styles.errorBox}>
+          <p style={{ fontWeight: 600, marginTop: 0 }}>We couldn't display this report.</p>
+          <p style={{ color: '#475569', marginBottom: '1.25rem' }}>
+            The record loaded but contained an unexpected format. Our team has the details.
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/people-search')} style={styles.btnSecondary}>Back to Search</button>
+            <button onClick={() => navigate('/dashboard')} style={styles.btnPrimary}>Go to Dashboard</button>
+          </div>
+          {process.env.NODE_ENV === 'development' && (
+            <pre style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#dc3545', whiteSpace: 'pre-wrap' }}>{String(extractError && extractError.stack || extractError)}</pre>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   if (!data) return null;
 
   const commerceContentId = report?.commerceContentId;
@@ -451,20 +477,24 @@ const SearchResultDetailPage = () => {
 
       {/* Incarceration/court records are MERGED into the report body's "Legal & Court Records" section
           (via mergedData.criminalRecords) — no separate top block. */}
-      {reportView === 'profile' ? (
-        <MyProfileModular
-          data={mergedData}
-          hero={{ name: data.fullName, age: data.age, location: data.currentLocation }}
-          mode="others"
-          viewerTier="paid"
-        />
-      ) : (
-        <ProfileView data={mergedData} viewer="paid" />
-      )}
+      {/* Local boundary: a render throw anywhere in the report body (bad BC shape, new field type) degrades to
+          a small in-place notice instead of blanking the entire app via the top-level ErrorBoundary. */}
+      <ErrorBoundary>
+        {reportView === 'profile' ? (
+          <MyProfileModular
+            data={mergedData}
+            hero={{ name: data.fullName, age: data.age, location: data.currentLocation }}
+            mode="others"
+            viewerTier="paid"
+          />
+        ) : (
+          <ProfileView data={mergedData} viewer="paid" />
+        )}
 
-      {/* Marriage & Divorce (relationship data) from the life-events fetch; ex-spouse also folded into Relatives
-          above. Sex-offender is NOT here — repurposed to a location-based "near you" feature on the member's profile. */}
-      <MarriageDivorceSection records={marriageDivorceRecords} />
+        {/* Marriage & Divorce (relationship data) from the life-events fetch; ex-spouse also folded into Relatives
+            above. Sex-offender is NOT here — repurposed to a location-based "near you" feature on the member's profile. */}
+        <MarriageDivorceSection records={marriageDivorceRecords} />
+      </ErrorBoundary>
     </main>
   );
 };
