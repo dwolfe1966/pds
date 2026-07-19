@@ -240,41 +240,46 @@ async function IL(query, opts = {}) {
 //    Vercel serverless, so route through a browser SERVICE. Set BROWSER_SERVICE_URL to a Browserless
 //    /function endpoint (navigate origin → boot → in-page fetch). Returns [] until configured.
 //    ⚠️ BLOCKED ON OWNER: a headless-browser service account (Browserless / ScrapingBee / Bright Data).
-async function NY(query) {
-  const svc = process.env.BROWSER_SERVICE_URL;
-  if (!svc || !clean(query.lastName)) return [];
-  const body = { din: null, nysid: null, lastName: clean(query.lastName).toUpperCase(), firstName: clean(query.firstName).toUpperCase(), middleInitial: '', suffix: '', birthYear: '', userDisplayableMessage: null, clickNextFlag: '', clickNextDin: '' };
-  // Browserless /function (verified contract 2026-07-18): POST {code, context}; the code exports a default
-  // async fn receiving { page } and MUST return { data, type }; that `data` becomes the HTTP response body.
-  // Boot the SPA (mints the F5 TS cookie), let Blazor settle, then do the API fetch IN-PAGE so it carries it.
-  const code = `export default async function ({ page }) {
-    await page.goto('https://nysdoccslookup.doccs.ny.gov/', { waitUntil: 'networkidle2', timeout: 30000 });
-    await new Promise((r) => setTimeout(r, 2500));
-    const result = await page.evaluate(async (b) => {
-      const resp = await fetch('/IncarceratedPerson/SearchByName', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
-      return resp.ok ? await resp.json() : { __status: resp.status };
-    }, ${JSON.stringify(body)});
-    return { data: result, type: 'application/json' };
-  }`;
-  // Route through browserFunction so it gets the residential proxy (DOCCS resets Browserless's datacenter
-  // IP too). Returns the fn's `data` = the SearchByName rows (or {__status} on an in-page block).
-  const result = await browserFunction(code);
-  const rows = Array.isArray(result) ? result : [];
-  return (Array.isArray(rows) ? rows : []).map((r) => {
-    const nm = clean(r.name); const comma = nm.indexOf(',');
-    const last = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
-    const first = comma >= 0 ? clean(nm.slice(comma + 1)) : '';
+// ── VINE (Appriss/Equifax) universal side-door ── The nationwide victim-notification backend aggregates
+//    ~2,900 facilities' offenders (state DOC + county jails) behind a guest JSON API with NO WAF/captcha/auth.
+//    This is how we cover states whose OWN lookup is walled by enterprise bot-detection (NY F5/Shape,
+//    NJ Imperva-reese84, CT/NH/KY/TN, WV AWS-WAF, MN TLS) — VINE bypasses all of it. Guest data is solid but
+//    THIN: name/age/sex/race/facility come through; DOB + displayId are masked; NO mugshots, NO charges.
+//    siteRefId is `<ST>SWVINE`. lastName required (firstName narrows). Verified live 2026-07-19.
+async function vineGuestSearch(query, opts) {
+  const last = clean(query.lastName); if (!last) return [];
+  const API = 'https://vinelink-mobile.vineapps.com/api/v1';
+  const qs = new URLSearchParams({ siteRefId: opts.siteRefId, personLastName: last, searchType: 'OFFENDER', isPartialSearch: 'true', offset: '0', limit: '25', obscurePersonData: 'true' });
+  if (clean(query.firstName)) qs.set('personFirstName', clean(query.firstName));
+  const res = await fetch(`${API}/guest/persons?${qs.toString()}`, { headers: { Accept: 'application/json', 'x-vine-application': 'VINELINK', 'x-vine-language': 'ENGLISH', 'User-Agent': UA, Origin: 'https://vinelink.vineapps.com', Referer: 'https://vinelink.vineapps.com/' } });
+  if (!res.ok) throw new Error(`${opts.state} ${res.status}`);
+  const j = await res.json().catch(() => null);
+  const persons = (j && j._embedded && j._embedded.persons) || [];
+  return persons.map((p) => {
+    const nm = p.personName || {};
+    const loc = (p.locations && p.locations[0]) || {};
+    const first = clean(nm.firstName), lastN = clean(nm.lastName), mid = clean(nm.middleName);
     return {
-      source: 'ny-doccs', sourceName: 'New York DOCCS',
-      firstName: first, lastName: last, name: nm,
-      age: num(r.age), gender: null, race: clean(r.race) || null,
-      charges: Array.isArray(r.crime) ? r.crime.map(clean).filter(Boolean) : [], mugshotUrl: null,
-      bookingDate: null, releaseStatus: clean(r.status) || null,
-      facility: clean(r.facility) || null, county: null,
-      state: 'NY', inmateId: clean(r.din) || null,
+      source: opts.source, sourceName: opts.sourceName,
+      firstName: first, lastName: lastN, name: [first, mid, lastN].filter(Boolean).join(' '),
+      age: num(p.age), gender: p.gender && p.gender.name ? p.gender.name.toLowerCase() : null,
+      race: p.race && p.race.name ? p.race.name : null,
+      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus: null,
+      facility: clean(loc.locationName) || null, county: null,
+      state: opts.state, inmateId: p.personId != null ? String(p.personId) : null,
     };
   });
 }
+// WAF-blocked states, covered via VINE (their own lookups are walled). NY/WV confirmed to include STATE DOC
+// (NYSTDOC / WV Division of Corrections); the rest aggregate state DOC + county jails.
+const NY = (q) => vineGuestSearch(q, { siteRefId: 'NYSWVINE', source: 'ny-vine', sourceName: 'New York (VINE)', state: 'NY' });
+const NJ = (q) => vineGuestSearch(q, { siteRefId: 'NJSWVINE', source: 'nj-vine', sourceName: 'New Jersey (VINE)', state: 'NJ' });
+const KY = (q) => vineGuestSearch(q, { siteRefId: 'KYSWVINE', source: 'ky-vine', sourceName: 'Kentucky (VINE)', state: 'KY' });
+const CT = (q) => vineGuestSearch(q, { siteRefId: 'CTSWVINE', source: 'ct-vine', sourceName: 'Connecticut (VINE)', state: 'CT' });
+const NH = (q) => vineGuestSearch(q, { siteRefId: 'NHSWVINE', source: 'nh-vine', sourceName: 'New Hampshire (VINE)', state: 'NH' });
+const TN = (q) => vineGuestSearch(q, { siteRefId: 'TNSWVINE', source: 'tn-vine', sourceName: 'Tennessee (VINE)', state: 'TN' });
+const WV = (q) => vineGuestSearch(q, { siteRefId: 'WVSWVINE', source: 'wv-vine', sourceName: 'West Virginia (VINE)', state: 'WV' });
+const MN = (q) => vineGuestSearch(q, { siteRefId: 'MNSWVINE', source: 'mn-vine', sourceName: 'Minnesota (VINE)', state: 'MN' });
 
 // ── WA · WA DOC ── Drupal Views exposed GET filter. No auth/CSRF/cookies. HTML table (DOC#, name, age,
 //    facility). No mugshots/charges. Verified 2026-07-18. Enumerable (surname sweep + ?page=N).
@@ -573,48 +578,8 @@ async function MD(query) {
 // ── CO · CDOC ── moved to lib/stateAdaptersCaptcha.mjs (shape-count image captcha now solved via 2Captcha
 //    textinstructions). Imported at the top; browser/async-tier (served from DB, refreshed off-request).
 
-// ── MN · DOC (COMS PublicViewer) ── ASP.NET MVC: GET landing (session cookie + __RequestVerificationToken) →
-//    POST name search (302; results kept in session) → GET grid JSON. No captcha; a Radware bot-manager
-//    fronts it (may decoy the DETAIL page, but the search grid is clean). No mugshot / gender / charges at
-//    list level; age derived from DOB. lastName-only OK. Verified 2026-07-18.
-async function MN(query) {
-  const last = clean(query.lastName); if (!last) return [];
-  const B = 'https://coms.doc.state.mn.us/PublicViewer';
-  // MN DOC serves an INCOMPLETE TLS chain (missing intermediate) → Node/undici rejects it
-  // (UNABLE_TO_VERIFY_LEAF_SIGNATURE), even though curl accepts it. Scope a dispatcher that skips
-  // verification for THIS host only (public read, no secrets sent) — never a global TLS-off.
-  let dispatcher;
-  try { const { Agent } = await import('undici'); dispatcher = new Agent({ connect: { rejectUnauthorized: false } }); } catch { dispatcher = undefined; }
-  const F = (url, opts = {}) => fetch(url, dispatcher ? { ...opts, dispatcher } : opts);
-  const jar = new Map();
-  const absorb = (r) => { const raw = r.headers.getSetCookie ? r.headers.getSetCookie() : (r.headers.get('set-cookie') ? [r.headers.get('set-cookie')] : []); for (const c of raw) { const [p] = c.split(';'); const i = p.indexOf('='); if (i > 0) jar.set(p.slice(0, i).trim(), p.slice(i + 1).trim()); } };
-  const ckh = () => [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
-  const land = await F(`${B}/`, { headers: { 'User-Agent': UA } });
-  if (!land.ok) throw new Error(`MN ${land.status}`);
-  absorb(land);
-  const tok = ((await land.text()).match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/) || [])[1] || '';
-  const form = new URLSearchParams({ rdogrp: '1', firstName: clean(query.firstName), lastName: last, oid: '' });
-  if (tok) form.set('__RequestVerificationToken', tok);
-  const post = await F(`${B}/Home/Index`, { method: 'POST', redirect: 'manual', headers: { 'User-Agent': UA, Cookie: ckh(), 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${B}/` }, body: form.toString() });
-  absorb(post);
-  const gr = await F(`${B}/SearchResults/GetOffenders////1`, { headers: { 'User-Agent': UA, Cookie: ckh(), 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json', Referer: `${B}/SearchResults` } });
-  if (!gr.ok) throw new Error(`MN ${gr.status}`);
-  const rows = await gr.json().catch(() => []);
-  const ageFromDob = (d) => { const m = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(d || '')); if (!m) return null; const t = new Date(); let a = t.getFullYear() - Number(m[3]); if (t.getMonth() + 1 < Number(m[1]) || (t.getMonth() + 1 === Number(m[1]) && t.getDate() < Number(m[2]))) a--; return a > 0 && a < 120 ? a : null; };
-  return (Array.isArray(rows) ? rows : []).map((r) => {
-    const nm = clean(r.FullName); const comma = nm.indexOf(','); // "Last, First Middle"
-    const lastN = comma >= 0 ? clean(nm.slice(0, comma)) : nm;
-    const firstN = comma >= 0 ? clean(nm.slice(comma + 1)).split(/\s+/)[0] : '';
-    return {
-      source: 'mn-doc', sourceName: 'Minnesota DOC',
-      firstName: firstN, lastName: lastN, name: nm,
-      age: ageFromDob(r.DOB), gender: null, race: null,
-      charges: [], mugshotUrl: null, bookingDate: null,
-      releaseStatus: clean(r.CurrentStatus) || null, facility: null, county: null,
-      state: 'MN', inmateId: r.OID != null ? String(r.OID) : null,
-    };
-  });
-}
+// MN moved to VINE (see the VINE block above) — the direct COMS PublicViewer has an incomplete TLS chain that
+// node AND Chrome both reject; VINE bypasses it. Tradeoff: VINE uses its own personId, not the state OID.
 
 // ── IN · IDOC (Offender Locator / OFS) ── legacy Java app, plain GET form, HTML tables. No captcha/CSRF/JS.
 //    Cloudflare fronts it (__cf_bm) but a browser-UA GET returns 200; datacenter IPs MAY get CF-challenged →
@@ -786,33 +751,9 @@ async function LA(query) {
 //    plain URL (Content/OffenderPhotos/<PID zero-padded to 7>.jpg) when a Camera.gif marker is present. Charges
 //    arrive as offense-category summaries ("Dangerous Drugs(1)"); full per-offense detail is on /KOOL/Details/{PID}.
 //    sortOrder MUST be an exact enum string or it 500s. Verified 2026-07-18. Fully enumerable (sequential PID).
-async function KY(query) {
-  const last = clean(query.lastName); if (!last) return [];
-  const BASE = 'https://kool.corrections.ky.gov';
-  const qs = new URLSearchParams({ returnResults: 'True', showAdvancedOptions: 'False', sortOrder: 'Last Name, First Name', lastName: last, firstName: clean(query.firstName), middleName: '', searchAliases: 'False', onlyPhotoRecords: 'False' }).toString();
-  const res = await fetch(`${BASE}/?${qs}`, { headers: { 'User-Agent': UA, Accept: 'text/html' } });
-  if (!res.ok) throw new Error(`KY ${res.status}`);
-  const html = await res.text();
-  const out = [];
-  const rowRe = /<a href="\/KOOL\/Details\/(\d+)">([^<]*)<\/a>([\s\S]*?)(?=<a href="\/KOOL\/Details\/\d+">|<\/table>)/g; let m;
-  while ((m = rowRe.exec(html)) !== null) {
-    const pid = m[1], disp = stripTags(m[2]), chunk = m[3];
-    const comma = disp.indexOf(',');
-    const lastN = comma >= 0 ? clean(disp.slice(0, comma)) : disp;
-    const firstN = comma >= 0 ? clean(disp.slice(comma + 1)) : '';
-    const loc = chunk.match(/target="_blank"[^>]*>([^<]+)<\/a>/);
-    const charges = (chunk.match(/([A-Za-z][A-Za-z ]+\(\d+\))/g) || []).map(clean);
-    out.push({
-      source: 'ky-doc', sourceName: 'Kentucky DOC (KOOL)',
-      firstName: firstN, lastName: lastN, name: [firstN, lastN].filter(Boolean).join(' '),
-      age: null, gender: null, race: null, charges,
-      mugshotUrl: /Camera\.gif/i.test(chunk) ? `${BASE}/Content/OffenderPhotos/${pid.padStart(7, '0')}.jpg` : null,
-      bookingDate: null, releaseStatus: null, facility: loc ? clean(loc[1]) : null, county: null,
-      state: 'KY', inmateId: pid,
-    });
-  }
-  return out;
-}
+// KY moved to VINE (see the VINE block above). NOTE: the direct KY KOOL locator (kool.corrections.ky.gov) is
+// RICHER — charges + mugshots + real DOC# + enumerable — but it TLS-resets our datacenter/Browserless IPs, so
+// it's blocked from Vercel. If we ever crawl from a residential box, KOOL is worth restoring for KY (git history).
 
 // ── OR · ODOC (OOS) ── JSF (JavaServer Faces) postback. No captcha/WAF. GET searchCriteria.jsf → JSESSIONID +
 //    javax.faces.ViewState + a form action carrying ;jsessionid=…, then POST the name criteria. List row cols:
@@ -1200,41 +1141,8 @@ async function IA(query) {
 //    from a real/headless browser). List is a Repeater: lblFirst/Middle/Last/Suffix, lblDOB (holds AGE, not a
 //    DOB), lblPrisonerID (INMATE ID), lblBookedDate, lblFacility. No mugshots; no sex/race/charges (court/docket
 //    only). lastName-only OK; uncapped/enumerable. Verified 2026-07-18.
-async function NH(query) {
-  const last = clean(query.lastName), first = clean(query.firstName);
-  if (!last && !first) return [];
-  const BASE = 'https://business.nh.gov/inmate_locator/';
-  const hidden = (html, name) => { const m = html.match(new RegExp(`name="${name}"[^>]*value="([^"]*)"`, 'i')); return m ? m[1] : ''; };
-  const g = await fetch(BASE, { headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.9' } });
-  if (!g.ok) throw new Error(`NH ${g.status}`); // Akamai 403 from a datacenter IP → [] upstream
-  const gh = await g.text();
-  const body = new URLSearchParams({
-    __VIEWSTATE: hidden(gh, '__VIEWSTATE'), __VIEWSTATEGENERATOR: hidden(gh, '__VIEWSTATEGENERATOR'), __EVENTVALIDATION: hidden(gh, '__EVENTVALIDATION'),
-    'ctl00$cphMain$txtLName': last, 'ctl00$cphMain$txtFName': first, 'ctl00$cphMain$btnSubmit': 'Search',
-  });
-  const p = await fetch(BASE, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Referer: BASE }, body: body.toString() });
-  if (!p.ok) throw new Error(`NH ${p.status}`);
-  const html = await p.text();
-  const out = [];
-  const itemRe = /rptrInmate_(ctl\d+)_lblFirst"[^>]*>([\s\S]*?)(?=rptrInmate_ctl\d+_lblFirst"|<\/body)/g; let m;
-  while ((m = itemRe.exec(html)) !== null) {
-    const idx = m[1], block = m[0];
-    const span = (label) => { const mm = block.match(new RegExp(`rptrInmate_${idx}_${label}"[^>]*>([\\s\\S]*?)</span>`, 'i')); return mm ? stripTags(mm[1]) : ''; };
-    const first0 = span('lblFirst'), middle = span('lblMiddle'), lastN = span('lblLast'), suffix = span('lblSuffix');
-    const name = [first0, middle, lastN, suffix].filter(Boolean).join(' ');
-    if (!name) continue;
-    const facility = span('lblFacility'), booked = span('lblBookedDate');
-    out.push({
-      source: 'nh-doc', sourceName: 'New Hampshire DOC',
-      firstName: first0, lastName: lastN, name,
-      age: num(span('lblDOB')), gender: null, race: null,
-      charges: [], mugshotUrl: null, bookingDate: booked && booked !== '1/1/1900' ? booked : null,
-      releaseStatus: facility ? 'incarcerated' : null, facility: facility || null, county: null,
-      state: 'NH', inmateId: span('lblPrisonerID') || null,
-    });
-  }
-  return out;
-}
+// NH moved to VINE (see the VINE block above) — the business.nh.gov WebForms locator Akamai-403s our
+// datacenter/Browserless IPs. VINE (name/age/sex/race/facility) is the working path.
 
 // ── ME · MDOC ── Perl CGI (apps1.web.maine.gov), server-rendered HTML, no captcha/JS. GET search.pl mints the
 //    `mdoc` session cookie → POST criteria to search.pl (the form's results.pl action is a decoy: POSTing there
@@ -1618,7 +1526,7 @@ async function VA(query) {
   return parseVaHtml(await p.text());
 }
 
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC, VA, OK, NM, KS, WI, DE, MT, AZ };
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC, VA, OK, NM, KS, WI, DE, MT, AZ, NJ, CT, TN, WV };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
@@ -1630,7 +1538,7 @@ export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 // OK/NM/KS/WI/CO added: each does a slow captcha solve (reCAPTCHA v2 or a shape-count image, 15–120s+), so
 // they're async-tier — skipped live, served from the DB, refreshed off-request. DE is NOT here: it's fast
 // captcha-free VINE and runs live.
-export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI', 'VA', 'OK', 'NM', 'KS', 'WI', 'CO', 'MT', 'AZ']);
+export const BROWSER_TIER = new Set(['TX', 'MO', 'MI', 'RI', 'VA', 'OK', 'NM', 'KS', 'WI', 'CO', 'MT', 'AZ']);
 
 /**
  * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no
