@@ -7,19 +7,27 @@ import { fetchLifeEvents } from '../services/lifeEventsService';
  * the real hook is the RELATIONSHIP reveal: WHO they married/divorced (spouse/ex-spouse name), teased then locked.
  * Safe-by-default: renders NOTHING until records exist.
  */
-export default function DivorceTeaser({ firstName, lastName, state, accent = '#7c3aed', dark = '#5b21b6' }) {
+export default function DivorceTeaser({ firstName, lastName, state, personAge, personGender, strict = false, accent = '#7c3aed', dark = '#5b21b6' }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
     let alive = true;
     if (!lastName) return undefined;
-    fetchLifeEvents({ firstName, lastName, state })
+    fetchLifeEvents({ firstName, lastName, state, age: personAge, gender: personGender })
       .then((r) => { if (alive) setData(r); })
       .catch(() => {});
     return () => { alive = false; };
-  }, [firstName, lastName, state]);
+  }, [firstName, lastName, state, personAge, personGender]);
 
-  const records = ((data && data.records) || []).filter((r) => r.recordType === 'divorce' || r.recordType === 'marriage');
+  let records = ((data && data.records) || []).filter((r) => r.recordType === 'divorce' || r.recordType === 'marriage');
+  // STRICT (SUP / specific-profile): tighter than the loose name-search teaser. Divorce/marriage records carry no
+  // age to corroborate, so we (1) drop records whose age IS present but far off the profile, and (2) show at most
+  // the top 2 as a conservative "possible match — verify" rather than boasting a full count of same-name records.
+  if (strict) {
+    const pa = parseInt(personAge, 10);
+    if (Number.isFinite(pa)) records = records.filter((r) => !Number.isFinite(r.age) || Math.abs(r.age - pa) <= 3);
+    records = records.slice(0, 2);
+  }
   if (!records.length) return null;
 
   const divorces = records.filter((r) => r.recordType === 'divorce').length;
@@ -35,7 +43,11 @@ export default function DivorceTeaser({ firstName, lastName, state, accent = '#7
     <div style={{ marginTop: '1rem', border: `1px solid ${accent}33`, borderRadius: 12, background: '#faf7fe', padding: '0.9rem 1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <span aria-hidden="true" style={{ fontSize: 18 }}>🔒</span>
-        <span style={{ fontWeight: 800, color: dark, fontSize: '0.95rem' }}>{summary} found for {fullName}{state ? ` in ${state}` : ''}</span>
+        <span style={{ fontWeight: 800, color: dark, fontSize: '0.95rem' }}>
+          {strict
+            ? <>Possible marriage/divorce record for {fullName} — verify this is the right person</>
+            : <>{summary} found for {fullName}{state ? ` in ${state}` : ''}</>}
+        </span>
       </div>
       <div style={{ display: 'grid', gap: 6 }}>
         {preview.map((r, i) => {

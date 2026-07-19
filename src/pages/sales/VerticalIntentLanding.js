@@ -39,6 +39,7 @@ const Icon = ({ name, className }) => (
 );
 
 import DivorceTeaser from '../../components/DivorceTeaser';
+import { useFunnelFlow } from '../../services/funnelFlow';
 
 const getStepIndex = (step) => ({ name: 1, location: 2, details: 3, confirm: 4 }[step] || 0);
 const TOTAL_STEPS = 4;
@@ -46,6 +47,7 @@ const TOTAL_STEPS = 4;
 const VerticalIntentLanding = ({ cfg }) => {
   const brand = useBrand();
   useLandingTrack('name', cfg.variant);
+  useFunnelFlow(cfg.flow); // session-wide intent (divorce/death) so the SERP + SUP can customize (like inmate)
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);

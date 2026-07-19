@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
+import DivorceTeaser from '../../components/DivorceTeaser';
 import { getFlow } from '../../services/funnelFlow';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
@@ -389,6 +390,11 @@ const SalesSearchResultsPage = () => {
             {(getFlow() === 'inmate' || flow === 'inmate') && searchQuery.lastName && (
               <div style={{ marginBottom: 28, paddingBottom: 4 }}>
                 <InmateBookingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
+              </div>
+            )}
+            {(getFlow() === 'divorce' || flow === 'divorce') && searchQuery.lastName && (
+              <div style={{ marginBottom: 28, paddingBottom: 4 }}>
+                <DivorceTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
               </div>
             )}
             {/* Filters moved to the Refine region at the bottom (owner — top placement
