@@ -231,8 +231,9 @@ export async function findBookings(query, env = {}) {
   // Florida OBIS (our Neon) — free/reliable; only for FL or stateless searches (efficiency).
   const st = (query.state || '').toUpperCase();
   if (flSql && env.FL_OBIS_ENABLED !== 'false' && (!st || st === 'FL')) enabled.push('floridaObis');
-  // Only enable JailBase when the RapidAPI key is set (direct calls 503 from datacenter IPs).
-  if (opts.jailbaseRapidKey || env.JAILBASE_API_URL) enabled.push('jailbase');
+  // JailBase is DROPPED (dead upstream — reliably 503s from Vercel; non-authoritative scraper-aggregate).
+  // Off by default so it stops erroring in the sources map; set JAILBASE_ENABLED=1 to re-try it.
+  if (env.JAILBASE_ENABLED === '1' && (opts.jailbaseRapidKey || env.JAILBASE_API_URL)) enabled.push('jailbase');
   if (opts.uccKey && opts.uccSecret) enabled.push('ucc');
   // Enformion — nationwide + mugshots; enabled when AccessProfile creds are set.
   if (opts.enformionName && opts.enformionPass) enabled.push('enformion');
