@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { fetchBookings } from '../services/incarcerationService';
+import { fetchBookings, corroboratesAge, cleanReleaseStatus } from '../services/incarcerationService';
+
+// When a record has no mugshot we show a 👤 placeholder — cycle its color per row so multiple no-photo
+// records read as distinct people, not a repeated blank (owner 2026-07-19): light blue / green / pink.
+const PLACEHOLDER_BG = [
+  { bg: '#dbe9f2', fg: '#5b7f9c' }, // light blue
+  { bg: '#dcfce7', fg: '#4d9e78' }, // light green
+  { bg: '#fde2e7', fg: '#c77a8c' }, // light pink/red
+];
 
 /**
  * Inmate booking teaser. Fetches real incarceration records from our first-party /api/incarceration and
@@ -26,11 +34,9 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
   }, [firstName, lastName, state, city]);
 
   const all = (data && data.records) || [];
-  // STRICT: corroborate on age (±2) so we never attribute a same-name stranger's record to this profile.
-  const pa = parseInt(personAge, 10);
-  const matched = strict
-    ? all.filter((r) => Number.isFinite(pa) && Number.isFinite(r.age) && Math.abs(r.age - pa) <= 2)
-    : all;
+  // STRICT: corroborate on age so we never attribute a same-name stranger's record to this profile. Handles a
+  // RANGE personAge ("35-40") — a plain parseInt would collapse to the low end and wipe valid top-of-range records.
+  const matched = strict ? all.filter((r) => corroboratesAge(r.age, personAge)) : all;
   const count = strict ? matched.length : ((data && data.count) || 0);
   if (!data || count === 0) return null; // nothing corroborated / nothing to show
 
@@ -61,14 +67,14 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
       <div style={{ display: 'flex', gap: 8, overflow: 'hidden' }}>
         {records.map((r, i) => (
           <div key={i} style={{ flex: '0 0 auto', width: 68, textAlign: 'center' }}>
-            <div style={{ width: 68, height: 68, borderRadius: 8, background: '#dbe9f2', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
+            <div style={{ width: 68, height: 68, borderRadius: 8, background: PLACEHOLDER_BG[i % PLACEHOLDER_BG.length].bg, color: PLACEHOLDER_BG[i % PLACEHOLDER_BG.length].fg, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
               <span>👤</span>
               {r.mugshotUrl && <img src={r.mugshotUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
             </div>
             <div style={{ fontSize: 10, color: r.recordType === 'court' ? '#b45309' : '#6b7280', marginTop: 3, userSelect: 'none' }}>
               {r.recordType === 'court'
                 ? 'Court record'
-                : (r.charges && r.charges.length ? `${r.charges.length} charge${r.charges.length === 1 ? '' : 's'}` : (r.releaseStatus || 'Record'))}
+                : (r.charges && r.charges.length ? `${r.charges.length} charge${r.charges.length === 1 ? '' : 's'}` : (cleanReleaseStatus(r.releaseStatus, r.recordType) || 'Record'))}
             </div>
           </div>
         ))}
@@ -88,7 +94,13 @@ export default function InmateBookingTeaser({ firstName, lastName, state, city, 
         </p>
       )}
       <p style={{ margin: '8px 0 0', fontSize: '0.8rem', color: '#5b7484', lineHeight: 1.45 }}>
-        Continue to unlock mugshots, charges, booking dates, and facility details.
+        {(() => {
+          // Build the "unlock" line from what the matched records ACTUALLY carry — don't promise mugshots/charges
+          // for VINE-thin states that have neither (P2 audit fix).
+          const has = (f) => matched.some((r) => (f === 'mug' ? r.mugshotUrl : f === 'charges' ? (r.charges || []).length : r[f]));
+          const items = [has('mug') && 'mugshots', has('charges') && 'charges', has('bookingDate') && 'booking dates', 'facility & custody details'].filter(Boolean);
+          return `Continue to unlock ${items.join(', ')}.`;
+        })()}
       </p>
     </div>
   );

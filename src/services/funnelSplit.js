@@ -17,6 +17,8 @@
  * are left as direct results — they carry a person context, so no landing split.
  */
 
+import { setFlow } from './funnelFlow';
+
 const V11 = '/name/landing/v11';
 const V2 = '/name/landing/v2';
 const V3 = '/name/landing/v3';
@@ -59,6 +61,9 @@ function pickWeighted(arms, key) {
  */
 export function resolvePaidRoute(campaignRoute) {
   if (campaignRoute && V3_FAMILY.includes(campaignRoute)) {
+    // The v3 family IS the inmate campaign — tag the session flow so BOTH arms (v3 sets it itself; v11 is
+    // otherwise flow-agnostic) know the referral is inmate and can show the booking teaser (owner 2026-07-19).
+    setFlow('inmate');
     return pickWeighted([[V3, 0.75], [V11, 0.25]], 'split.paidv3');
   }
   return null;

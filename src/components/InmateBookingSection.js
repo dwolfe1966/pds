@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { fetchBookings } from '../services/incarcerationService';
+import { fetchBookings, corroboratesAge, cleanReleaseStatus } from '../services/incarcerationService';
+
+// No-mugshot placeholder colors, cycled per row so multiple photo-less records read as distinct people
+// (owner 2026-07-19): light blue / green / pink.
+const PLACEHOLDER_BG = [
+  { bg: '#dbe9f2', fg: '#5b7f9c' },
+  { bg: '#dcfce7', fg: '#4d9e78' },
+  { bg: '#fde2e7', fg: '#c77a8c' },
+];
 
 /**
  * Full booking / incarceration records for a person — the DELIVERED product on the report/detail page
@@ -13,39 +21,53 @@ import { fetchBookings } from '../services/incarcerationService';
  * the profile has no age to check) are NOT shown. Mirrors the strict mode of InmateBookingTeaser (SUP).
  */
 export default function InmateBookingSection({ firstName, lastName, state, personAge }) {
-  const [data, setData] = useState(null);
+  const [result, setResult] = useState({ status: 'loading', data: null });
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     let alive = true;
     if (!lastName) return undefined;
-    fetchBookings({ firstName, lastName, state, age: personAge }).then((r) => { if (alive) setData(r); }).catch(() => {});
+    setResult({ status: 'loading', data: null });
+    fetchBookings({ firstName, lastName, state, age: personAge })
+      .then((r) => { if (alive) setResult({ status: 'done', data: r }); })
+      .catch(() => { if (alive) setResult({ status: 'error', data: null }); });
     return () => { alive = false; };
-  }, [firstName, lastName, state, personAge]);
+  }, [firstName, lastName, state, personAge, nonce]);
 
-  // STRICT: only records whose age corroborates this profile (±2). No profile age → can't verify → show nothing.
-  const pa = parseInt(personAge, 10);
-  const records = Number.isFinite(pa)
-    ? ((data && data.records) || []).filter((r) => Number.isFinite(r.age) && Math.abs(r.age - pa) <= 2)
-    : [];
-  if (!records.length) return null;
+  // STRICT: only records whose age corroborates this profile. Range-aware (handles "35-40"). No age → nothing.
+  const records = ((result.data && result.data.records) || []).filter((r) => corroboratesAge(r.age, personAge));
+
+  // Delivered product: a transient /api/incarceration failure (it runs a 30–60s browser/captcha flow) must NOT
+  // look identical to "no records." Offer a retry instead of a silent blank.
+  if (result.status === 'error') {
+    return (
+      <section style={{ margin: '20px 0', border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', padding: '14px 18px' }}>
+        <div style={{ fontSize: 14, color: '#475569' }}>Couldn&apos;t load booking &amp; incarceration records right now.{' '}
+          <button type="button" onClick={() => setNonce((n) => n + 1)} style={{ color: '#0d5d2f', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Retry</button>
+        </div>
+      </section>
+    );
+  }
+  if (result.status === 'loading') return null; // brief; avoids a flash of empty
+  if (!records.length) return null; // genuine no-match → hide (self-gating)
 
   return (
     <section style={{ margin: '20px 0', border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', borderBottom: '1px solid #eef2f7', background: '#f8faf9' }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>🔒 Possible Booking &amp; Incarceration Records <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>⚖️ Possible Booking &amp; Incarceration Records <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
         <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>Matched to this profile on name, state, and age (±2). Verify identity before relying on any record.</p>
       </div>
       <div style={{ display: 'grid', gap: 0 }}>
         {records.map((r, i) => (
           <div key={i} style={{ display: 'flex', gap: 14, padding: '14px 18px', borderBottom: i < records.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-            <div style={{ flexShrink: 0, width: 84, height: 100, borderRadius: 8, overflow: 'hidden', background: '#e5e7eb', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#94a3b8' }}>
+            <div style={{ flexShrink: 0, width: 84, height: 100, borderRadius: 8, overflow: 'hidden', background: PLACEHOLDER_BG[i % PLACEHOLDER_BG.length].bg, color: PLACEHOLDER_BG[i % PLACEHOLDER_BG.length].fg, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
               👤
               {r.mugshotUrl && <img src={r.mugshotUrl} alt={`${r.name} booking photo`} onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontWeight: 800, color: '#0f172a', fontSize: 15 }}>{r.name}{r.age ? `, ${r.age}` : ''}</span>
-                {r.releaseStatus && <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...(r.recordType === 'court' ? { color: '#b45309', background: '#fef3c7' } : { color: '#166534', background: '#dcfce7' }) }}>{r.releaseStatus}</span>}
+                {cleanReleaseStatus(r.releaseStatus, r.recordType) && <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...(r.recordType === 'court' ? { color: '#b45309', background: '#fef3c7' } : { color: '#166534', background: '#dcfce7' }) }}>{cleanReleaseStatus(r.releaseStatus, r.recordType)}</span>}
                 <span style={{ marginLeft: 'auto', fontSize: 11, color: '#94a3b8' }}>{r.sourceName || r.source}</span>
               </div>
               <div style={{ fontSize: 13, color: '#475569', marginTop: 3 }}>

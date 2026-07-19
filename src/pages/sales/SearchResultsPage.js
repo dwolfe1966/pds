@@ -387,7 +387,7 @@ const SalesSearchResultsPage = () => {
                 facilities) — the payoff the inmate searcher came for. Loose match (name-search surface).
                 Self-gates to nothing when there are no matching records. */}
             {(getFlow() === 'inmate' || flow === 'inmate') && searchQuery.lastName && (
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 28, paddingBottom: 4 }}>
                 <InmateBookingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
               </div>
             )}

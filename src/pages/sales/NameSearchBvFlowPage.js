@@ -13,6 +13,8 @@ import { useBrand } from '../../services/brand';
 import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat, StatStrip } from './BvSocialProof';
 import v3 from './NameLandingV3Incarceration.module.css'; // reuse v3's green header + CTA
 import loader from './LoaderPage.module.css';
+import InmateBookingTeaser from '../../components/InmateBookingTeaser';
+import { isFlow } from '../../services/funnelFlow';
 
 /**
  * BeenVerified-style OPTIONAL funnel flow (name vertical).
@@ -129,6 +131,12 @@ const NameSearchBvFlowPage = () => {
           {step === 'name' && <NameStep query={query} onNext={advance} />}
           {step === 'location' && <LocationStep query={query} onNext={advance} />}
           {step === 'details' && <DetailsStep query={query} dest={dest} onNext={advance} />}
+          {/* Inmate referral (v3-family paid split routed here) + we have a name → show the booking teaser.
+              v11 converts 300% better on inmate traffic; leading the last step with real records reinforces it.
+              Self-gates to nothing when there are no records. (Owner 2026-07-19.) */}
+          {step === 'details' && isFlow('inmate') && query.lastName && (
+            <InmateBookingTeaser firstName={query.firstName} lastName={query.lastName} state={query.state} />
+          )}
           {/* Trust footer inside the card (BV-style social proof). */}
           <ReviewStars />
           <TrustBadges />
