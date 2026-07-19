@@ -42,6 +42,7 @@ concurrency:
 jobs:
   crawl:
     runs-on: ubuntu-latest
+    environment: Production   # DATABASE_URL / BROWSER_SERVICE_URL / CAPTCHA_SOLVER_KEY live here, not at repo level
     timeout-minutes: 350
     defaults:
       run:
