@@ -20,7 +20,8 @@ const PLACEHOLDER_BG = [
  * So we require age corroboration (±2) against the profile's age; records that don't corroborate (or when
  * the profile has no age to check) are NOT shown. Mirrors the strict mode of InmateBookingTeaser (SUP).
  */
-export default function InmateBookingSection({ firstName, lastName, state, personAge }) {
+export default function InmateBookingSection({ firstName, lastName, state, personAge, context = 'search' }) {
+  const isIdentity = context === 'identity'; // member's OWN exposure view vs a searched person's report
   const [result, setResult] = useState({ status: 'loading', data: null });
   const [nonce, setNonce] = useState(0);
 
@@ -54,8 +55,10 @@ export default function InmateBookingSection({ firstName, lastName, state, perso
   return (
     <section style={{ margin: '20px 0', border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', borderBottom: '1px solid #eef2f7', background: '#f8faf9' }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>⚖️ Possible Booking &amp; Incarceration Records <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
-        <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>Matched to this profile on name, state, and age (±2). Verify identity before relying on any record.</p>
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>⚖️ {isIdentity ? 'Your Public Incarceration & Court Records' : 'Possible Booking & Incarceration Records'} <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>{isIdentity
+          ? 'Public records matching your name, state, and age — part of what’s exposed about you. Not you? These may be a same-name individual.'
+          : 'Matched to this profile on name, state, and age (±2). Verify identity before relying on any record.'}</p>
       </div>
       <div style={{ display: 'grid', gap: 0 }}>
         {records.map((r, i) => (

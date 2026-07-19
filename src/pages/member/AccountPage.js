@@ -14,6 +14,7 @@ import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
 import MyProfileModularLive from '../../components/MyProfileModularLive';
 import MyProfileSummary from '../../components/MyProfileSummary';
+import InmateBookingSection from '../../components/InmateBookingSection';
 import PageHeader, { PageShell } from '../../components/PageHeader';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -1141,7 +1142,20 @@ const AccountPage = () => {
                 : 'Everywhere you appear online, and how to take control.'}
           </p>
 
-          {identitySubTab === 'modular' && <MyProfileModularLive />}
+          {identitySubTab === 'modular' && (
+            <>
+              <MyProfileModularLive />
+              {/* YOUR OWN incarceration/court exposure (owner 2026-07-19): first-party /api/incarceration
+                  (50/51 states, court-vs-incarcerated labeled), age-corroborated against your linked identity so
+                  a same-name stranger's record isn't shown as yours. Self-gates to nothing when you have none. */}
+              {identity && identity.name && identity.state && (() => {
+                const parts = String(identity.name).trim().split(/\s+/).filter(Boolean);
+                return parts.length >= 2
+                  ? <InmateBookingSection firstName={parts[0]} lastName={parts[parts.length - 1]} state={identity.state} personAge={identity.age} context="identity" />
+                  : null;
+              })()}
+            </>
+          )}
 
           {identitySubTab === 'footprint' && (
             <>
