@@ -45,8 +45,9 @@ export function cleanReleaseStatus(status, recordType) {
   if (/life/i.test(s)) return 'Life sentence';
   if (/parole/i.test(s)) return 'On parole';
   if (/probation/i.test(s)) return 'On probation';
-  // A raw date or an already-clean phrase → title-case-ish passthrough, but hide snake_case dev values.
-  if (/_/.test(s)) return 'In custody';
+  // A raw projected-release DATE (e.g. TX "2045-02-24") means still incarcerated — don't leak the date as a status.
+  if (/^\d{4}-\d{2}-\d{2}$|^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) return 'In custody';
+  if (/_/.test(s)) return 'In custody'; // hide snake_case dev values (in_custody etc.)
   return s;
 }
 

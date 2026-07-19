@@ -281,12 +281,26 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
     ) },
     { id: 'court', icon: '⚖️', title: 'Court & Criminal', source: 'record', protectOnly: true, body: () => (
       <div style={wrap}>
-        {(d.criminalRecords || []).map((c, i) => <Chip key={`cr${i}`}>⚖️ {c.charge || 'Court record'}{c.disposition ? ` · ${c.disposition}` : ''}</Chip>)}
+        {(d.criminalRecords || []).map((c, i) => <Chip key={`cr${i}`}>⚖️ {c._firstParty ? (c._recordType === 'court' ? 'Court record' : (c.charge || 'Incarceration')) : (c.charge || 'Court record')}{c.disposition ? ` · ${c.disposition}` : ''}</Chip>)}
         {!(d.criminalRecords || []).length && none('No court or criminal records found.')}
       </div>
     ), full: () => (
       <div>
-        {(d.criminalRecords || []).map((c, i) => (
+        {(d.criminalRecords || []).map((c, i) => c._firstParty ? (
+          <div key={`cr${i}`} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+            <div style={{ flexShrink: 0, width: 60, height: 74, borderRadius: 6, overflow: 'hidden', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#94a3b8', position: 'relative' }}>
+              👤{c.photo && <img src={c.photo} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontWeight: 700, color: '#111827', fontSize: 14 }}>{c._recordType === 'court' ? 'Court record' : (c.charge || 'Incarceration record')}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...(c._recordType === 'court' ? { color: '#b45309', background: '#fef3c7' } : { color: '#166534', background: '#dcfce7' }) }}>{c._recordType === 'court' ? 'Court' : 'Incarceration'}</span>
+                <span title={c._strength === 'strong' ? 'Age and gender both match' : 'Age matches; gender not confirmed'} style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...(c._strength === 'strong' ? { color: '#166534', background: '#dcfce7' } : { color: '#64748b', background: '#f1f5f9' }) }}>{c._strength === 'strong' ? 'Strong match' : 'Possible match'}</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>{[c.disposition, c.source].filter(Boolean).join(' · ')}</div>
+            </div>
+          </div>
+        ) : (
           <Item key={`cr${i}`}><Title>⚖️ {c.charge || 'Court record'}</Title><Meta><F label="Case" value={c.caseNumber} /><F label="Court" value={c.court} /><F label="Disposition" value={c.disposition} /><F label="Filed" value={c.chargesFiledDate} /></Meta></Item>
         ))}
         {!(d.criminalRecords || []).length && none('No court or criminal records found.')}

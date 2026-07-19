@@ -7,7 +7,7 @@ import { getIdentityContext, getSearchContext } from '../../services/searchConte
 import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../utils/reportExtract';
 import ProfileView, { styles } from '../../components/ProfileView';
 import MyProfileModular from '../../components/MyProfileModular';
-import InmateBookingSection from '../../components/InmateBookingSection';
+import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../../services/incarcerationService';
 import { enrichFromReport } from '../../services/memberEnrichment';
 import { captureProfileView } from '../../services/searchActivity';
 import { track } from '../../services/trackingService';
@@ -223,6 +223,40 @@ const SearchResultDetailPage = () => {
   // exhaustive grid stays available via a "Full details" toggle.
   const [reportView, setReportView] = useState('profile'); // 'profile' | 'details'
 
+  // First-party incarceration/court records → MERGED into the report's "Legal & Court Records" section (owner
+  // 2026-07-19), not a separate block. TIGHT match (age±1 + gender when known) so a same-name stranger isn't
+  // attributed. Mapped to the CriminalCard shape (photo/description/disposition/physical) + first-party markers.
+  const [incRows, setIncRows] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const nm = data && data.fullName;
+    const parts = String(nm || '').trim().split(/\s+/).filter(Boolean);
+    const st = (data && Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
+      || (String((data && data.currentLocation) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+    if (parts.length < 2 || !st) { setIncRows([]); return undefined; }
+    fetchBookings({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age })
+      .then((r) => {
+        if (!alive) return;
+        setIncRows((r.records || [])
+          .map((rec) => { const m = corroboratePerson(rec, { age: data.age, gender: data.gender }); return m ? { rec, strength: m.strength } : null; })
+          .filter(Boolean)
+          .map(({ rec, strength }) => {
+            const isCourt = rec.recordType === 'court';
+            return {
+              id: `inc-${rec.source || ''}-${rec.inmateId || rec.name}`,
+              _firstParty: true, _recordType: rec.recordType, _strength: strength, source: rec.sourceName || rec.source,
+              photo: rec.mugshotUrl || null,
+              description: isCourt ? 'Court record' : ((rec.charges && rec.charges.length) ? rec.charges.join('; ') : 'Incarceration record'),
+              name: rec.name, physical: { sex: rec.gender, race: rec.race },
+              disposition: [cleanReleaseStatus(rec.releaseStatus, rec.recordType), rec.facility].filter(Boolean).join(' · ') || null,
+            };
+          }));
+      })
+      .catch(() => { if (alive) setIncRows([]); });
+    return () => { alive = false; };
+  }, [data && data.fullName, data && data.age, data && data.gender]);
+  const mergedData = data ? { ...data, criminalRecords: [...(data.criminalRecords || []), ...incRows] } : data;
+
   // ── Loading / error states ───────────────────────────────────────────────
   if (loading) {
     return (
@@ -383,24 +417,17 @@ const SearchResultDetailPage = () => {
         </div>
       )}
 
-      {/* Booking/incarceration records — the delivered inmate product. Self-gates: nothing unless the
-          person has booking records, so it only shows for the inmate vertical. */}
-      {(() => {
-        const parts = String(data.fullName || '').trim().split(/\s+/).filter(Boolean);
-        const st = (Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
-          || (String(data.currentLocation || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
-        return parts.length >= 2 ? <InmateBookingSection firstName={parts[0]} lastName={parts[parts.length - 1]} state={st} personAge={data.age} personGender={data.gender} /> : null;
-      })()}
-
+      {/* Incarceration/court records are MERGED into the report body's "Legal & Court Records" section
+          (via mergedData.criminalRecords) — no separate top block. */}
       {reportView === 'profile' ? (
         <MyProfileModular
-          data={data}
+          data={mergedData}
           hero={{ name: data.fullName, age: data.age, location: data.currentLocation }}
           mode="others"
           viewerTier="paid"
         />
       ) : (
-        <ProfileView data={data} viewer="paid" />
+        <ProfileView data={mergedData} viewer="paid" />
       )}
     </main>
   );

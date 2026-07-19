@@ -592,6 +592,15 @@ const CriminalCard = ({ record }) => {
           {r.description || r.caseType || r.category || 'Court record'}
           {r.counts && <span style={{ fontWeight: 400, color: '#6b7280' }}> · count {r.counts}</span>}
         </p>
+        {r._firstParty && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '3px 0 5px', alignItems: 'center' }}>
+            {r._recordType === 'court'
+              ? <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309', background: '#fef3c7', borderRadius: 999, padding: '2px 8px' }}>Court record</span>
+              : <span style={{ fontSize: 11, fontWeight: 700, color: '#166534', background: '#dcfce7', borderRadius: 999, padding: '2px 8px' }}>Incarceration record</span>}
+            <span title={r._strength === 'strong' ? 'Age and gender both match this profile' : 'Age matches; gender not confirmed'} style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...(r._strength === 'strong' ? { color: '#166534', background: '#dcfce7' } : { color: '#64748b', background: '#f1f5f9' }) }}>{r._strength === 'strong' ? 'Strong match' : 'Possible match'}</span>
+            {r.source && <span style={{ fontSize: 11, color: '#94a3b8' }}>{r.source}</span>}
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.4rem 1.25rem', marginTop: '0.5rem', fontSize: '0.85rem', color: '#374151' }}>
           {r.name && <div style={{ gridColumn: 'span 2' }}><strong>Name on record:</strong> {r.name}</div>}
           {r.physical && (

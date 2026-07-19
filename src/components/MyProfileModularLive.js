@@ -95,12 +95,20 @@ export default function MyProfileModularLive() {
       .then((r) => {
         if (!alive) return;
         const rows = (r.records || [])
-          .filter((rec) => corroboratePerson(rec, { age: identity.age, gender: identity.gender }))
-          .map((rec) => ({
-            charge: rec.recordType === 'court' ? 'Court record' : ((rec.charges && rec.charges[0]) || 'Incarceration'),
-            disposition: rec.recordType === 'court' ? (rec.facility || null) : (cleanReleaseStatus(rec.releaseStatus, rec.recordType) || rec.facility || null),
-            court: rec.facility || null, chargesFiledDate: rec.bookingDate || null, _firstParty: true,
-          }));
+          .map((rec) => { const m = corroboratePerson(rec, { age: identity.age, gender: identity.gender }); return m ? { rec, strength: m.strength } : null; })
+          .filter(Boolean)
+          .map(({ rec, strength }) => {
+            const isCourt = rec.recordType === 'court';
+            return {
+              id: `inc-${rec.source || ''}-${rec.inmateId || rec.name}`,
+              _firstParty: true, _recordType: rec.recordType, _strength: strength, source: rec.sourceName || rec.source,
+              photo: rec.mugshotUrl || null,
+              charge: isCourt ? 'Court record' : ((rec.charges && rec.charges[0]) || 'Incarceration record'),
+              name: rec.name, physical: { sex: rec.gender, race: rec.race },
+              court: rec.facility || null, chargesFiledDate: rec.bookingDate || null,
+              disposition: [cleanReleaseStatus(rec.releaseStatus, rec.recordType), rec.facility].filter(Boolean).join(' · ') || null,
+            };
+          });
         setIncarcerationRows(rows);
       })
       .catch(() => { if (alive) setIncarcerationRows([]); });
