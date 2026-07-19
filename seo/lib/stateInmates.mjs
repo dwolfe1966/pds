@@ -11,7 +11,7 @@
 import { solveRecaptcha } from './captchaSolver.mjs';
 // Captcha/browser-gated adapters (reCAPTCHA v2: OK/NM/KS/WI; shape-count image: CO; VINE no-captcha: DE).
 import { OK, NM, KS, WI, CO, DE } from './stateAdaptersCaptcha.mjs';
-import { MT } from './stateAdaptersBrowser.mjs';
+import { MT, AZ } from './stateAdaptersBrowser.mjs';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
 // Normalize CAPTCHA_SOLVER_KEY against paste errors (stray leading `=`, quotes, whitespace) — 32 hex chars.
@@ -1618,7 +1618,7 @@ async function VA(query) {
   return parseVaHtml(await p.text());
 }
 
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC, VA, OK, NM, KS, WI, DE, MT };
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC, VA, OK, NM, KS, WI, DE, MT, AZ };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
@@ -1630,7 +1630,7 @@ export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 // OK/NM/KS/WI/CO added: each does a slow captcha solve (reCAPTCHA v2 or a shape-count image, 15–120s+), so
 // they're async-tier — skipped live, served from the DB, refreshed off-request. DE is NOT here: it's fast
 // captcha-free VINE and runs live.
-export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI', 'VA', 'OK', 'NM', 'KS', 'WI', 'CO', 'MT']);
+export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI', 'VA', 'OK', 'NM', 'KS', 'WI', 'CO', 'MT', 'AZ']);
 
 /**
  * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no

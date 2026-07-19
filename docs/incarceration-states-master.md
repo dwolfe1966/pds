@@ -11,7 +11,7 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 |---|---|---|---|---|---|
 | 1 | AL | ✅ LIVE | html | ✅ | 25 rows |
 | 2 | AK | ⬜ TODO | — | — | recon-7 |
-| 3 | AZ | 🔴 PROBLEM | browser | ✅ | Cloudflare + WebForms |
+| 3 | AZ | ✅ LIVE | browser | ✅ | **CRACKED 7/19**: Cloudflare managed challenge via Browserless BQL verify(cloudflare) (reusable CF bypass); name/ADC#/admit-date/mug; needs last+first-initial |
 | 4 | AR | 🟢 pending | html | ✅ | recon-5; +paid INA bulk |
 | 5 | CA | ✅ LIVE | json | ❌ | CIRIS; charges=court |
 | 6 | CO | ✅ LIVE | captcha | ✅ | **CRACKED 7/19**: shape-count captcha (2Captcha textinstructions, ~50% retry); facility+age+mug |
@@ -38,7 +38,7 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 27 | NE | ✅ LIVE | bulk | ❌ | NDCS xlsx roster; charges+facility+county+status+age; ⚠️18s cold-cache → make a DB bulk-ingest |
 | 28 | NV | ✅ LIVE | html | ✅ (detail) | 20-row cap |
 | 29 | NH | 🔴 PROBLEM | browser | ❌ | Akamai 403 even via Browserless+residential (2x confirmed 7/18) — HARD tier w/ NY/KY |
-| 30 | NJ | 🔴 PROBLEM | browser | ✅ | SPA/anti-bot (recon-1/2) |
+| 30 | NJ | 🔴 PROBLEM | imperva | ✅ | **Imperva reese84 ABP** — walls even real local Chrome; no solver exists → Enformion + OPRA bulk (7/19) |
 | 31 | NM | ✅ LIVE | captcha | ❌ | **CRACKED 7/19**: reCAPTCHA v2 (NOT Enterprise) node-only; list-level (name/id/status); last-only OK; detail-enrich available |
 | 32 | NY | 🔴 PROBLEM | browser | ❌ | F5 WAF; drops browser+residential |
 | 33 | NC | ✅ LIVE | bulk+html | ✅ | **448k bulk roster** |

@@ -45,29 +45,37 @@ Appriss/Equifax VINE guest session · `browser` = Browserless real browser (WAF)
 | WY | html (json feed) | live | · | · | · | ✅ | ✅ | name/age/gender/status; "james smith"=0 is real (small state) |
 | RI | browser (F5) | async | · | ✅ | · | · | ✅ | flaky/low-yield per run |
 | MT | browser (F5) | async | ⚪ | ⚪ | ⚪ | ✅ | ✅ | name/age(YOB)/status at list; facility/charges/mug on detail; surname-only OK |
+| AZ | browser (Cloudflare/BQL) | async | ✅ | ⚪ | ⚪ | ✅ | ⚪ | **CRACKED 7/19** via Browserless BQL verify(cloudflare); name/ADC#/admit-date/**mug**; needs last+first-initial; age/race/facility/charges on detail |
 | NM | captcha (reCAPTCHA v2) | async | · | · | · | ✅ | · | list-level; detail-enrich available |
 | MA | vine | live | · | ✅ | · | ✅ | · | |
 
 *(Rows grouped where several states share the same profile: WA, IN, MD, AK ≈ facility+status+age via html/vine;
 CA/IA/ID/OR/UT ≈ name+age, thinner.)*
 
-## ❌ NOT YET COVERED — 13 jurisdictions
+## ❌ NOT YET COVERED — 9 jurisdictions
 
 | State | Blocker | Path forward | Data if solved |
 |---|---|---|---|
 | WV | AWS WAF (behavior JS challenge) + reCAPTCHA | browser-tier driver (browser clears WAF → node solves captcha) — WORKING, needs wiring | mug + charges + facility |
 | MO | Imperva WAF + image captcha | puppeteer.connect over WS (2Captcha unreachable from inside Browserless) | mug + status |
-| NY | F5 WAF (drops browser+residential) | hard — stealth browser | thin |
-| KY | TLS reset (even residential/browser) | hard — stealth / alt source | mug |
-| NH | Akamai 403 (even browser+residential) | hard — stealth browser | thin |
 | MN | incomplete TLS cert chain (node + Chrome both reject) | ship intermediate cert / NODE_EXTRA_CA_CERTS | mug |
-| AZ | Cloudflare managed challenge + WebForms | stealth browser | mug |
-| CT | F5/Shape "Request Rejected" | stealth browser (headed) | thin (no mug) |
-| NJ | SPA / anti-bot | Browserless SPA render | mug |
-| TN | WAF + JCaptcha | browser + captcha | thin |
+| **NJ** | **Imperva reese84 ABP** — walls even real local Chrome; NO 2Captcha solver exists (continuous fingerprint/PoW sensor) | Enformion Criminal V2 + OPRA bulk | mug |
+| **NY** | **F5/Shape** — drops browser+residential | Enformion Criminal V2 + FOIL bulk (open data is de-identified) | thin |
+| **KY** | **TLS reset** even residential/browser | Enformion + alt source | mug |
+| **CT** | **F5/Shape** "Request Rejected" | Enformion + bulk request | thin (no mug) |
+| **NH** | **Akamai 403** even browser+residential | Enformion + bulk request | thin |
+| **TN** | **WAF + JCaptcha** | browser + captcha (hard) | thin |
+
+**Reality (2026-07-19):** the remaining WAF states split into (a) **crackable** — Cloudflare has a purpose-built
+Browserless-BQL `verify` (AZ ✅); WAFs with a solvable captcha widget work — and (b) **NOT crackable with our
+toolkit** — Imperva reese84 (NJ), F5/Shape (NY, CT), Akamai (NH), TLS-reset (KY): these are continuous
+fingerprint/PoW sensors with no widget to outsource; even real local Chrome is walled. Per the sourcing research,
+these go through **Enformion Criminal V2 (already have) + FOIL/OPRA bulk requests**, not scraping. See
+`incarceration-data-sourcing-research.md`.
+
 ## Tally
-- **Covered: 41 / 51 (~80%)** — of which **~13 carry mugshots**, **~7 carry charges at list level** (more on detail).
-  (NE + WY corrected from "zero" — they work; the sweep's "james smith" probe was a false negative for small states.
-  MT built + integrated 7/19 — browser-tier F5, no captcha.)
-- **Not yet: 10** — 2 working-but-need-browser-driver (WV, MO), 8 hard-WAF/cert (NY, KY, NH, MN, AZ, CT, NJ, TN).
+- **Covered: 42 / 51 (~82%)** — of which **~14 carry mugshots**, **~7 carry charges at list level** (more on detail).
+  (NE + WY were sweep false-negatives; MT + AZ built 7/19 — AZ via Browserless BQL verify(cloudflare), a reusable CF bypass.)
+- **Not yet: 9** — WV + MO (working, need a browser driver), MN (cert), and 6 enterprise-bot-detection states
+  (NJ/NY/KY/CT/NH/TN) that our scrape toolkit can't beat → aggregator + bulk-request path.
 - **First-party roster (`inmates` table): FL 670k + NC 448k + seeded MI/TX/RI + growing via the crawler.**

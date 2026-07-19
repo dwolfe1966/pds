@@ -212,3 +212,99 @@ export async function MT(query) {
 }
 
 export default MT;
+
+// ── AZ · Arizona DOC (ADCRR) ── Cloudflare MANAGED challenge (no Turnstile widget → 2Captcha can't help).
+//   Cracked via Browserless **BrowserQL** `verify(type: cloudflare)` (purpose-built for the JS/PoW interstitial;
+//   the /function + stealth path only cleared ~1/6 exits). One BQL session preserves the __cf_bm context.
+//   Flow: goto → verify(cloudflare) → click btnSearchName (postback reveals name fields) → type lname + first
+//   INITIAL → pick gender/status radios → submit → parse GridView #gvInmate. Real mugshots on public S3 (no CF gate).
+//   Verified 2026-07-19: SMITH/J/Male/Active → 7 pages; GARCIA/M → 5. Needs last name + first initial.
+const AZ_BASE = 'https://inmatedatasearch.azcorrections.gov/';
+const AZ_MUG = 'https://quickbase-uploads.s3.us-gov-west-1.amazonaws.com/MugPhotos/';
+const azClean = (s) => (s == null ? '' : String(s))
+  .replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+  .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+function parseAzGrid(html) {
+  const out = [];
+  const gi = html.indexOf('gvInmate');
+  const chunk = gi >= 0 ? html.slice(gi, gi + 120000) : html;
+  for (const tr of chunk.match(/<tr class="GridViewRow"[\s\S]*?<\/tr>/gi) || []) {
+    const cells = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((m) => azClean(m[1]));
+    if (cells.length < 6) continue;
+    const adc = (cells[1].match(/\d{4,7}/) || [])[0] || '';
+    const last = cells[3] || '', firstMi = cells[4] || '', admitted = cells[5] || '';
+    if (!adc && !last) continue;
+    const [first, mi] = firstMi.split(',').map((s) => s.trim());
+    out.push({ adc, last, first: first || '', mi: (mi || '').replace(/\.$/, ''), admitted });
+  }
+  return out;
+}
+function toAzRecord(r, query) {
+  return {
+    source: 'az-adcrr', sourceName: 'Arizona Department of Corrections, Rehabilitation & Reentry',
+    firstName: r.first || null, lastName: r.last || null,
+    name: [r.first, r.mi, r.last].filter(Boolean).join(' ').trim() || null,
+    age: null, gender: /f/i.test(query.gender || '') ? 'female' : (query.gender ? 'male' : null), race: null,
+    charges: [], mugshotUrl: r.adc ? `${AZ_MUG}${r.adc}.jpg` : null,
+    bookingDate: r.admitted || null, releaseStatus: query.status || 'Active',
+    facility: null, county: null, state: 'AZ', inmateId: r.adc || null,
+  };
+}
+function azBqlEndpoint() {
+  const svc = process.env.BROWSER_SERVICE_URL;
+  if (!svc) return null;
+  const base = new URL(svc);
+  const token = base.searchParams.get('token');
+  const u = new URL(`https://${base.host}/chrome/bql`);
+  if (token) u.searchParams.set('token', token);
+  u.searchParams.set('proxy', 'residential');
+  u.searchParams.set('proxyCountry', process.env.BROWSER_PROXY_COUNTRY || 'us');
+  u.searchParams.set('timeout', '60000');
+  return u.toString();
+}
+function azSearchMutation(ln, fi, gender, status) {
+  const esc = (s) => String(s).replace(/"/g, '\\"');
+  return `mutation AZSearch {
+    goto(url: "${AZ_BASE}", waitUntil: firstMeaningfulPaint) { status }
+    verify(type: cloudflare) { found solved time }
+    toName: click(selector: "input[name='btnSearchName']", timeout: 15000) { time }
+    nav1: waitForNavigation(waitUntil: firstMeaningfulPaint, timeout: 20000) { status }
+    ln: type(selector: "input[name='txtLName']", text: "${esc(ln)}", timeout: 12000) { time }
+    fn: type(selector: "input[name='txtFName']", text: "${esc(fi)}") { time }
+    g: click(selector: "input[name='rblGender'][value='${gender}']") { time }
+    s: click(selector: "input[name='rblStaus'][value='${status}']") { time }
+    go: click(selector: "input[name='btnName']") { time }
+    nav2: waitForNavigation(waitUntil: firstMeaningfulPaint, timeout: 20000) { status }
+    page: html { html }
+  }`;
+}
+async function azRunBql(query, tries = 3) {
+  const url = azBqlEndpoint();
+  if (!url) return null;
+  for (let i = 0; i < tries; i++) {
+    let res, txt;
+    try {
+      res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+      txt = await res.text();
+    } catch { continue; }
+    if (res.status === 429) { await new Promise((r) => setTimeout(r, 20000)); continue; }
+    if (res.status !== 200) continue;
+    let j; try { j = JSON.parse(txt); } catch { continue; }
+    const html = j && j.data && j.data.page && j.data.page.html;
+    if (html && /gvInmate/i.test(html) && !/just a moment/i.test(html)) return html;
+  }
+  return null;
+}
+export async function AZ(query) {
+  const q = typeof query === 'string' ? { lastName: query } : (query || {});
+  const lastName = azClean(q.lastName).toUpperCase();
+  const firstInitial = azClean(q.firstInitial || q.firstName).slice(0, 1).toUpperCase();
+  if (!lastName || !firstInitial) return []; // ADCRR requires last name + first initial
+  if (!process.env.BROWSER_SERVICE_URL) throw new Error('AZ requires BROWSER_SERVICE_URL (Cloudflare — Browserless BQL verify + residential)');
+  const gender = /^f/i.test(q.gender || '') ? 'Female' : 'Male';
+  const status = /^inact/i.test(q.status || '') ? 'Inactive' : 'Active';
+  const html = await azRunBql(azSearchMutation(lastName, firstInitial, gender, status));
+  if (html == null) throw new Error('AZ: Browserless BQL could not clear Cloudflare / return results after retries');
+  return parseAzGrid(html).map((r) => toAzRecord(r, { gender, status }));
+}
