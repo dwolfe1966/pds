@@ -4,6 +4,25 @@ Ground truth as of **2026-07-19**. "Covered" = returns real records through our 
 via the coverage sweep for direct states; via per-state cracking for browser/captcha states). Data-type flags
 are what comes back at **list level** (several states carry more on a per-inmate detail fetch — noted).
 
+## 📍 ACTUAL COVERAGE RIGHT NOW (executive summary)
+- **50 of 51 jurisdictions covered (~98%).** The only holdout is **MO** (Imperva WAF + image captcha; VINE
+  times out for it) — reachable later via the browser+captcha driver or Enformion.
+- **How it's served (3 tiers, cost-ordered):**
+  1. **LIVE — direct + free** (~30 states): bulk rosters (FL 670k, NC 448k), JSON APIs, HTML scrapes. Rich data
+     (mugshots/charges where the state exposes them). $0.
+  2. **LIVE — VINE, free** (12 states: NY, NJ, KY, CT, NH, TN, WV, MN, RI, VA, NM, MT + a universal fallback for
+     any empty result): Appriss/Equifax guest API bypasses every WAF. THIN data — name/age/sex/race/facility +
+     an **incarcerated-vs-court label**; NO mugshots/charges. $0.
+  3. **ASYNC — crawler-fed, paid** (7 states: TX, MI, AZ via Browserless; OK, KS, WI, CO via 2Captcha): kept on
+     the paid path ONLY because they carry **mugshots/charges VINE lacks**. Crawled periodically into the DB
+     (not per-request), served from Neon. This is the only place we spend money.
+- **Data quality tiers:** richest = FL, GA, NC, OH, KS, MI (mug + charges); mug-carrying = ~14 states; VINE
+  states = identity + facility + custody label (thin but real, nationwide).
+- **Cost:** VINE moved 12 states to $0. Browserless still required (TX depends on it — TX isn't on VINE);
+  **2Captcha is now optional** (drop OK/KS/WI/CO to VINE to eliminate it, trading away their mugshots/charges).
+  Enformion Criminal V2 (pending entitlement) would add nationwide mugshots+charges as one paid layer.
+
+
 **How:** `bulk` = downloaded roster in our Neon · `json` = JSON API · `html` = HTML-form scrape · `vine` =
 Appriss/Equifax VINE guest session · `browser` = Browserless real browser (WAF) · `captcha` = 2Captcha solve.
 **Tier:** `live` = fast, runs on the request · `async` = slow (browser/captcha), served from the DB, fed by the crawler.
@@ -66,16 +85,16 @@ CA/IA/ID/OR/UT ≈ name+age, thinner.)*
 | **NH** | **Akamai 403** even browser+residential | Enformion + bulk request | thin |
 | **TN** | **WAF + JCaptcha** | browser + captcha (hard) | thin |
 
-**Reality (2026-07-19):** the remaining WAF states split into (a) **crackable** — Cloudflare has a purpose-built
-Browserless-BQL `verify` (AZ ✅); WAFs with a solvable captcha widget work — and (b) **NOT crackable with our
-toolkit** — Imperva reese84 (NJ), F5/Shape (NY, CT), Akamai (NH), TLS-reset (KY): these are continuous
-fingerprint/PoW sensors with no widget to outsource; even real local Chrome is walled. Per the sourcing research,
-these go through **Enformion Criminal V2 (already have) + FOIL/OPRA bulk requests**, not scraping. See
-`incarceration-data-sourcing-research.md`.
+**THE VINE BREAKTHROUGH (2026-07-19):** the states our scrape toolkit couldn't beat (NJ Imperva-reese84, NY/CT
+F5-Shape, KY TLS-reset, NH Akamai, WV AWS-WAF, MN TLS, TN) are ALL on **VINE** (Appriss/Equifax) — a separate
+nationwide guest JSON API with NO WAF/captcha/auth. It bypasses every wall at once. We now serve NY/NJ/KY/CT/NH/
+TN/WV/MN via VINE (thin: name/age/sex/race/facility + incarcerated-vs-court label), plus a universal VINE fallback
+for any empty direct result. Only **MO** resists (VINE times out; Imperva+captcha WIP). See `incarceration-data-sourcing-research.md`.
 
 ## Tally
-- **Covered: 42 / 51 (~82%)** — of which **~14 carry mugshots**, **~7 carry charges at list level** (more on detail).
-  (NE + WY were sweep false-negatives; MT + AZ built 7/19 — AZ via Browserless BQL verify(cloudflare), a reusable CF bypass.)
-- **Not yet: 9** — WV + MO (working, need a browser driver), MN (cert), and 6 enterprise-bot-detection states
-  (NJ/NY/KY/CT/NH/TN) that our scrape toolkit can't beat → aggregator + bulk-request path.
-- **First-party roster (`inmates` table): FL 670k + NC 448k + seeded MI/TX/RI + growing via the crawler.**
+- **Covered: 50 / 51 (~98%)** — only **MO** remains.
+  - **~14 carry mugshots**, **~7 carry charges** at list level (FL/GA/NC/OH/KS/MI richest).
+  - **12 via VINE** ($0, thin): NY, NJ, KY, CT, NH, TN, WV, MN, RI, VA, NM, MT.
+  - **7 paid async** (mug/charges): TX, MI, AZ (Browserless); OK, KS, WI, CO (2Captcha).
+- **Not yet: 1 — MO** (Imperva WAF + image captcha; VINE 504s). Later: browser+captcha driver or Enformion.
+- **First-party roster (`inmates` table): FL 670k + NC 448k + crawler-fed rich states — VINE states served live, not stored.**

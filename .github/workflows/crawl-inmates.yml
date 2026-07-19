@@ -1,14 +1,15 @@
 # Off-request inmate-roster crawler (the moat asset).
 #
-# WHY THIS EXISTS: the async-tier state locators (TX/MI/RI browser flows, VA reCAPTCHA solve) each take
-# 15–120s+ per query. Vercel's per-request `after()` gets killed before they finish, so the browser/captcha
-# states never populated the DB there. This job runs the SAME crawler (seo/scripts/crawl-state-inmates.mjs)
-# with a real time budget (up to 6h), decoupled from user requests, and write-through-upserts into the
-# `inmates` table. Live searches then serve those states instantly from the DB.
+# WHY THIS EXISTS: as of 2026-07-19 most states are covered LIVE (direct JSON/HTML/bulk + the free VINE guest
+# API, which now covers NY/NJ/KY/CT/NH/TN/WV/MN/RI/VA/NM/MT + a universal fallback) and need NO crawling. This
+# crawler is ONLY for the remaining "rich" async-tier states — TX,MI,AZ (Browserless) + OK,KS,WI,CO (2Captcha)
+# — which carry MUGSHOTS/CHARGES that VINE lacks and take 15–120s/query. Vercel's per-request after() gets killed
+# before they finish, so this job runs the crawler (seo/scripts/crawl-state-inmates.mjs) with a 6h budget,
+# decoupled from requests, upserting into the `inmates` table; live searches serve those states from the DB.
 #
-# COST: each query hits Browserless (browser-tier states) and/or 2Captcha (VA reCAPTCHA ~$0.003/solve).
-# The schedule is intentionally DISABLED — enable it only after you've OK'd the cadence/spend. Until then,
-# run it on demand from the Actions tab (workflow_dispatch).
+# COST: only these 7 states cost money (Browserless / 2Captcha ~$0.001-0.003/query). VINE states are $0 and live.
+# The schedule is intentionally DISABLED — enable it (per-state cadence, owner-defined) after OK'ing the spend.
+# Until then, run on demand from the Actions tab. (2Captcha is now optional — drop OK/KS/WI/CO to VINE to cut it.)
 #
 # REQUIRED REPO SECRETS (Settings → Secrets and variables → Actions):
 #   DATABASE_URL         Neon connection string (the `inmates` table)
@@ -21,13 +22,13 @@ on:
   workflow_dispatch:
     inputs:
       states:
-        description: 'Comma-separated async-tier states to crawl'
-        default: 'MI,RI'
+        description: 'Async-tier states to crawl (the rich browser/captcha states only — VINE states are live, no crawl needed)'
+        default: 'TX,MI,AZ,OK,KS,WI,CO'
       surnames:
         description: 'Comma-separated surnames (blank = built-in top-50)'
         default: ''
       firstnames:
-        description: 'First names for first×last states TX/MD/OR/VA (blank = built-in top-20)'
+        description: 'First names for first×last states TX/MD/OR (blank = built-in top-20)'
         default: ''
       delay:
         description: 'Politeness delay between queries (ms)'
@@ -59,7 +60,7 @@ jobs:
           BROWSER_SERVICE_URL: ${{ secrets.BROWSER_SERVICE_URL }}
           CAPTCHA_SOLVER_KEY: ${{ secrets.CAPTCHA_SOLVER_KEY }}
           STATE_PROXY_URL: ${{ secrets.STATE_PROXY_URL }}
-          STATES: ${{ github.event.inputs.states || 'MI,RI' }}
+          STATES: ${{ github.event.inputs.states || 'TX,MI,AZ,OK,KS,WI,CO' }}
           SURNAMES: ${{ github.event.inputs.surnames }}
           FIRSTNAMES: ${{ github.event.inputs.firstnames }}
           DELAY: ${{ github.event.inputs.delay || '1200' }}
