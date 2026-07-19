@@ -253,7 +253,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
           {/* Incarceration/arrest records — high-intent conversion lever. STRICT mode: this is a SPECIFIC
               person, so we only surface a record that corroborates them on age (±2) — never attribute a
               same-name stranger's mugshot/charges to this profile. Self-gates to nothing otherwise. */}
-          {bkLast && <InmateBookingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} strict accent={P.accent || P.ink} dark={P.ink} />}
+          {bkLast && getFlow() === 'inmate' && <InmateBookingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} strict accent={P.accent || P.ink} dark={P.ink} />}
           {bkLast && getFlow() === 'divorce' && <DivorceTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
           {bkLast && getFlow() === 'dating' && <DatingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
         </div>

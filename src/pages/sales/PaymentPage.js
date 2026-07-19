@@ -5,6 +5,9 @@ import { useCampaign } from '../../context/CampaignContext';
 import WsfyPaymentTeaser from '../../components/WsfyPaymentTeaser';
 import IdentityPaymentTeaser from '../../components/IdentityPaymentTeaser';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
+import DivorceTeaser from '../../components/DivorceTeaser';
+import DatingTeaser from '../../components/DatingTeaser';
+import { getFlow } from '../../services/funnelFlow';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
@@ -781,18 +784,28 @@ const PaymentPage = () => {
         </div>
       )}
 
-      {/* Inmate booking records for the target (first-party /api/incarceration). SELF-GATING: renders
-          nothing unless the target actually has booking records, so it only shows on the inmate vertical
-          and never touches the general funnel. */}
+      {/* Flow-appropriate record teaser for the target. FLOW-GATED (not just data-gated) so each vertical
+          reinforces its own intent at payment: inmate→booking, divorce→marriage/divorce, dating→safety check.
+          A person can have booking records regardless of why they were searched, so gating on data presence
+          alone leaked incarceration into the divorce/dating funnels (owner 2026-07-19). Each teaser also
+          self-gates to nothing when the target has no matching record. */}
       {selectedPerson && !success && !isSelfContext && (() => {
+        const flow = getFlow();
         const parts = String(selectedPerson.fullName || '').trim().split(/\s+/).filter(Boolean);
         const loc = Array.isArray(selectedPerson.locations) ? selectedPerson.locations[0] : selectedPerson.location;
         const st = (String(loc || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
         if (parts.length < 2) return null;
+        const first = parts[0];
+        const last = parts[parts.length - 1];
+        const pAge = selectedPerson.age || selectedPerson.ageRange;
+        const pGender = selectedPerson.gender;
+        let teaser = null;
+        if (flow === 'divorce') teaser = <DivorceTeaser firstName={first} lastName={last} state={st} personAge={pAge} personGender={pGender} strict accent="#0d5d2f" dark="#0a4a25" />;
+        else if (flow === 'dating') teaser = <DatingTeaser firstName={first} lastName={last} state={st} personAge={pAge} personGender={pGender} strict accent="#0d5d2f" dark="#0a4a25" />;
+        else if (flow === 'inmate') teaser = <InmateBookingTeaser firstName={first} lastName={last} state={st} accent="#0d5d2f" dark="#0a4a25" />;
+        if (!teaser) return null;
         return (
-          <div style={{ maxWidth: 960, margin: '0 auto 1.25rem' }}>
-            <InmateBookingTeaser firstName={parts[0]} lastName={parts[parts.length - 1]} state={st} accent="#0d5d2f" dark="#0a4a25" />
-          </div>
+          <div style={{ maxWidth: 960, margin: '0 auto 1.25rem' }}>{teaser}</div>
         );
       })()}
 
