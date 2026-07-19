@@ -14,6 +14,7 @@ import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
 import MyProfileModularLive from '../../components/MyProfileModularLive';
 import MyProfileSummary from '../../components/MyProfileSummary';
+import MarriageDivorceSection from '../../components/MarriageDivorceSection';
 import PageHeader, { PageShell } from '../../components/PageHeader';
 import styles from './AccountPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -1141,9 +1142,19 @@ const AccountPage = () => {
                 : 'Everywhere you appear online, and how to take control.'}
           </p>
 
-          {/* Incarceration/court records are now MERGED into MyProfileModularLive's "Court & Criminal" module
-              (owner 2026-07-19) — one unified area rather than a separate section. */}
-          {identitySubTab === 'modular' && <MyProfileModularLive />}
+          {/* Incarceration/court records are MERGED into MyProfileModularLive's "Court & Criminal" module.
+              Marriage/divorce is a distinct category (relationships) → its own section below. */}
+          {identitySubTab === 'modular' && (
+            <>
+              <MyProfileModularLive />
+              {identity && identity.name && identity.state && (() => {
+                const parts = String(identity.name).trim().split(/\s+/).filter(Boolean);
+                return parts.length >= 2
+                  ? <MarriageDivorceSection firstName={parts[0]} lastName={parts[parts.length - 1]} state={identity.state} personAge={identity.age} context="identity" />
+                  : null;
+              })()}
+            </>
+          )}
 
           {identitySubTab === 'footprint' && (
             <>
