@@ -62,12 +62,14 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 51 | DC | ⬜ TODO | — | — | recon-7 (federal BOP for DC sentenced) |
 
 ## TALLY (2026-07-19) — see `incarceration-coverage-grid.md` for the full data-types grid
-- ✅ **COVERED: 41 / 51 (~80%)** — AK, AL, AR, CA, CO, DC, DE, FL, GA, HI, IA, ID, IL, IN, KS, LA, MA, MD, ME,
-  MI, MO?, MS, MT, NC, NE, NM, NV, OH, OK, OR, PA, RI, SC, SD, TX, UT, VA, VT, WA, WI, WY  *(MO listed under "not yet")*
-  - **mugshots** (~13): FL, GA, IL, NC, OH, PA, SC, AL, AR, MS, ME, ND, OK, WI, CO (+ more on detail: MI, MT, KS)
-  - **charges** at list: FL, GA, OH, MS, VT, KS, NE (+ detail: MI, MT, WV)
-- ❌ **NOT YET: 10** — WV + MO (working, need a browser driver), NY, KY, NH, MN, AZ, CT, NJ, TN (hard WAF/cert).
-- **7/18–19 crackings:** MI, RI, VA (browser/captcha) · OK, NM, KS, WI, CO, DE (captcha wave) · MT (browser) · NE, WY (were false-negatives).
+- ✅ **COVERED: 42 / 51 (~82%)** — AK, AL, AR, AZ, CA, CO, DC, DE, FL, GA, HI, IA, ID, IL, IN, KS, LA, MA, MD, ME,
+  MI, MS, MT, NC, ND, NE, NM, NV, OH, OK, OR, PA, RI, SC, SD, TX, UT, VA, VT, WA, WI, WY
+  - **mugshots** (~14): FL, GA, IL, NC, OH, PA, SC, AL, AR, MS, ME, ND, OK, WI, CO, AZ (+ detail: MI, MT, KS)
+  - **charges** at list: FL, GA, OH, MS, VT, KS, NE (+ detail: MI, MT, WV, AZ)
+- ❌ **NOT YET: 9** — WV + MO (working, need a browser driver), MN (cert), and 6 enterprise-bot-detection
+  states our scrape toolkit can't beat (NJ Imperva-reese84, NY/CT F5-Shape, KY TLS-reset, NH Akamai, TN) →
+  Enformion Criminal V2 + FOIL/OPRA bulk (see `incarceration-data-sourcing-research.md`).
+- **7/18–19 crackings:** MI, RI, VA · OK, NM, KS, WI, CO, DE (captcha wave) · MT, AZ (browser; AZ via BQL CF-verify) · NE, WY (false-negatives).
 
 ## First-party roster (inmates table): **451k records** (NC 448k w/mugshots) — growing per search + bulk loads.
 
