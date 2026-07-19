@@ -44,6 +44,7 @@ Appriss/Equifax VINE guest session · `browser` = Browserless real browser (WAF)
 | NE | bulk (xlsx roster) | live⚠️ | · | ✅ | ✅ | ✅ | ✅ | charges+county; ⚠️ 18s cold-cache → should become a DB bulk-ingest |
 | WY | html (json feed) | live | · | · | · | ✅ | ✅ | name/age/gender/status; "james smith"=0 is real (small state) |
 | RI | browser (F5) | async | · | ✅ | · | · | ✅ | flaky/low-yield per run |
+| MT | browser (F5) | async | ⚪ | ⚪ | ⚪ | ✅ | ✅ | name/age(YOB)/status at list; facility/charges/mug on detail; surname-only OK |
 | NM | captcha (reCAPTCHA v2) | async | · | · | · | ✅ | · | list-level; detail-enrich available |
 | MA | vine | live | · | ✅ | · | ✅ | · | |
 
@@ -64,11 +65,9 @@ CA/IA/ID/OR/UT ≈ name+age, thinner.)*
 | CT | F5/Shape "Request Rejected" | stealth browser (headed) | thin (no mug) |
 | NJ | SPA / anti-bot | Browserless SPA render | mug |
 | TN | WAF + JCaptcha | browser + captcha | thin |
-| MT | not yet integrated (recon-6) | build adapter | tbd |
-
 ## Tally
-- **Covered: 40 / 51 (~78%)** — of which **~13 carry mugshots**, **~7 carry charges at list level** (more on detail).
-  (NE + WY corrected from "zero" — they work; the sweep's "james smith" probe was a false negative for small states.)
-- **Not yet: 11** — 2 working-but-need-browser-driver (WV, MO), 8 hard-WAF/cert (NY, KY, NH, MN, AZ, CT, NJ, TN),
-  1 not-built (MT).
+- **Covered: 41 / 51 (~80%)** — of which **~13 carry mugshots**, **~7 carry charges at list level** (more on detail).
+  (NE + WY corrected from "zero" — they work; the sweep's "james smith" probe was a false negative for small states.
+  MT built + integrated 7/19 — browser-tier F5, no captcha.)
+- **Not yet: 10** — 2 working-but-need-browser-driver (WV, MO), 8 hard-WAF/cert (NY, KY, NH, MN, AZ, CT, NJ, TN).
 - **First-party roster (`inmates` table): FL 670k + NC 448k + seeded MI/TX/RI + growing via the crawler.**
