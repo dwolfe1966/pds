@@ -13,6 +13,8 @@
 // ⚠️ ENDPOINT: verified on `devapi.endato.com` (POST /DivorceSearch, header galaxy-search-type: Divorce →
 // 200 with real records). PROD `api.endato.com/DivorceSearch` 404s (prod uses a different path/version) — set
 // ENFORMION_API_URL to the correct prod base once confirmed. Self-gates to [] when creds/URL missing.
+import { getCachedLifeEvents, setCachedLifeEvents } from './lifeEventsDb.mjs';
+
 const clean = (s) => (s == null ? '' : String(s).trim());
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/\D/g, ''), 10); return Number.isNaN(n) ? null : n; };
 const g = (o, ...keys) => { if (!o) return ''; for (const k of keys) { if (o[k] != null && o[k] !== '') return o[k]; } return ''; };
@@ -31,6 +33,8 @@ function enformionHeaders(env, searchType) {
  */
 export async function divorceSearch(query, env = process.env) {
   if (!env.ENFORMION_AP_NAME || !env.ENFORMION_AP_PASSWORD) return [];
+  // Cache-first: a repeated name+state divorce search hits Neon instead of re-billing Enformion ($0.05/match).
+  if (env.LIFE_EVENTS_CACHE !== '0') { const c = await getCachedLifeEvents('divorce', query); if (c) return c; }
   const base = (env.ENFORMION_API_URL || 'https://devapi.endato.com').replace(/\/$/, '');
   const body = {
     FirstName: clean(query.firstName) || undefined, LastName: clean(query.lastName) || undefined,
@@ -44,7 +48,7 @@ export async function divorceSearch(query, env = process.env) {
     const records = (data && Array.isArray(data.records)) ? data.records : [];
     // Record is a divorce between two parties: `spouse*` (the searched person) and `otherSpouse*` (the ex).
     // Top-level firstName/name are empty — read the spouse fields. ssn/spouseKey/certificatNo deliberately dropped.
-    return records.map((r) => ({
+    const mapped = records.map((r) => ({
       source: 'enformion-divorce', sourceName: 'Divorce record', recordType: 'divorce',
       firstName: clean(g(r, 'spouseFirstName')), lastName: clean(g(r, 'spouseLastName')),
       name: [g(r, 'spouseFirstName'), g(r, 'spouseMiddleName'), g(r, 'spouseLastName')].map(clean).filter(Boolean).join(' '),
@@ -55,6 +59,8 @@ export async function divorceSearch(query, env = process.env) {
       divorceDate: clean(g(r, 'divorceDate')) || null,
       county: clean(g(r, 'county')) || null, state: (clean(g(r, 'state')) || query.state || '').toUpperCase() || null,
     }));
+    if (env.LIFE_EVENTS_CACHE !== '0') setCachedLifeEvents('divorce', query, mapped).catch(() => {});
+    return mapped;
   } catch { return []; }
 }
 
@@ -66,6 +72,7 @@ export async function divorceSearch(query, env = process.env) {
 export async function marriageSearch(query, env = process.env) {
   if (env.MARRIAGE_ENABLED !== '1') return []; // Pro-only, entitlement pending — don't spend on a 400
   if (!env.ENFORMION_AP_NAME || !env.ENFORMION_AP_PASSWORD) return [];
+  if (env.LIFE_EVENTS_CACHE !== '0') { const c = await getCachedLifeEvents('marriage', query); if (c) return c; }
   const base = (env.ENFORMION_API_URL || 'https://devapi.endato.com').replace(/\/$/, '');
   const body = {
     FirstName: clean(query.firstName) || undefined, LastName: clean(query.lastName) || undefined,
@@ -79,7 +86,7 @@ export async function marriageSearch(query, env = process.env) {
     const records = (data && Array.isArray(data.records)) ? data.records : [];
     // Same two-party Enformion shape as DivorceSearch (spouse = searched person, otherSpouse = who they married).
     // Field names assumed identical to the verified divorce record; confirm once Marriage is entitled.
-    return records.map((r) => ({
+    const mapped = records.map((r) => ({
       source: 'enformion-marriage', sourceName: 'Marriage record', recordType: 'marriage',
       firstName: clean(g(r, 'spouseFirstName')), lastName: clean(g(r, 'spouseLastName')),
       name: [g(r, 'spouseFirstName'), g(r, 'spouseMiddleName'), g(r, 'spouseLastName')].map(clean).filter(Boolean).join(' '),
@@ -89,6 +96,8 @@ export async function marriageSearch(query, env = process.env) {
       marriageDate: clean(g(r, 'marriageDate')) || null,
       county: clean(g(r, 'county')) || null, state: (clean(g(r, 'state')) || query.state || '').toUpperCase() || null,
     }));
+    if (env.LIFE_EVENTS_CACHE !== '0') setCachedLifeEvents('marriage', query, mapped).catch(() => {});
+    return mapped;
   } catch { return []; }
 }
 
