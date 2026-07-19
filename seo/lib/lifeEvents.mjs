@@ -104,6 +104,23 @@ export const hasDivorce = (env = process.env) => !!(env.ENFORMION_AP_NAME && env
  * @param {object} [opts] { sexOffender?:boolean }
  */
 export async function findLifeEvents(query, env = process.env, opts = {}) {
+  // LOCATION mode ("offenders near you", owner 2026-07-19): NSOPW zip search, NO name → geographic safety,
+  // no name-attribution problem. Used by the member-profile "Neighborhood Safety" module.
+  if (opts.nearZips && opts.nearZips.length) {
+    try {
+      const { sexOffender } = await import('./sexOffender.mjs');
+      const r = await sexOffender({ zips: opts.nearZips });
+      const records = (r.records || []).map((rec) => ({
+        source: 'nsopw', sourceName: 'Sex-offender registry', recordType: 'sex-offender-nearby',
+        name: rec.name, age: rec.age, gender: rec.gender,
+        city: (rec.locations && rec.locations[0] && rec.locations[0].city) || null,
+        state: (rec.locations && rec.locations[0] && rec.locations[0].state) || null,
+        zip: (rec.locations && rec.locations[0] && rec.locations[0].zip) || null,
+        offenses: rec.offenses || [], photoUrl: rec.photoUrl || null, registryUrl: rec.registryUrl || null,
+      }));
+      return { count: records.length, records };
+    } catch { return { count: 0, records: [] }; }
+  }
   const tasks = [
     divorceSearch(query, env).then((rs) => rs.map((r) => ({ ...r, recordType: 'divorce' }))).catch(() => []),
     marriageSearch(query, env).then((rs) => rs.map((r) => ({ ...r, recordType: 'marriage' }))).catch(() => []),

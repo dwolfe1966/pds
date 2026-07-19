@@ -4,6 +4,7 @@ import MyProfileModular from './MyProfileModular';
 import { getReportDetail } from '../services/reportService';
 import { extractAll } from '../utils/reportExtract';
 import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../services/incarcerationService';
+import NeighborhoodSafetySection from './NeighborhoodSafetySection';
 import {
   getMappedIdentity, fetchMappedIdentity, fetchSuppression, setModuleDisposition, computeProtectionScore,
 } from '../services/memberEnrichment';
@@ -163,6 +164,12 @@ export default function MyProfileModularLive() {
         dispositions={dispositions}
         onDispositionChange={onDispositionChange}
       />
+      {/* Neighborhood safety — registered offenders near YOUR current location (owner 2026-07-19). Keyed on the
+          member's current-address ZIP; self-gates when we don't have a zip or there are none nearby. */}
+      {(() => {
+        const zip = ((mergedData && mergedData.addresses) || []).map((a) => a && a.zip).filter(Boolean)[0];
+        return zip ? <NeighborhoodSafetySection zip={zip} context="identity" location={hero.location} /> : null;
+      })()}
     </>
   );
 }

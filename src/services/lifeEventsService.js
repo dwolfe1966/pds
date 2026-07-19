@@ -28,3 +28,17 @@ export async function fetchLifeEvents({ firstName, lastName, state, city, age, g
     return await res.json();
   } catch { return { count: 0, records: [] }; }
 }
+
+/** Location-only "offenders near you" — NSOPW zip search (no name). @param {{zips:string[]}} */
+export async function fetchOffendersNearby({ zips } = {}) {
+  const list = (Array.isArray(zips) ? zips : [zips]).map((z) => String(z || '').trim()).filter(Boolean);
+  if (!list.length) return { count: 0, records: [] };
+  try {
+    const res = await fetch(endpointUrl(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lastName: 'x', nearZips: list }), // lastName satisfies the route's name guard; unused in near mode
+    });
+    if (!res.ok) return { count: 0, records: [] };
+    return await res.json();
+  } catch { return { count: 0, records: [] }; }
+}

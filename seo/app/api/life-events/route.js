@@ -46,8 +46,10 @@ export async function POST(req) {
       age: body.age, gender: body.gender,
       spouseFirstName: body.spouseFirstName,
     };
-    // sexOffender is opt-in (browser-tier + high-stakes) — only when the caller asks (a post-pay report).
-    const out = await findLifeEvents(query, process.env, { sexOffender: body.sexOffender === true });
+    // Two modes: nearZips → location-only "offenders near you" (member profile); else name-based life events.
+    // sexOffender (name-based) is opt-in (browser-tier + high-stakes).
+    const nearZips = Array.isArray(body.nearZips) ? body.nearZips.map((z) => String(z).trim()).filter(Boolean).slice(0, 5) : null;
+    const out = await findLifeEvents(query, process.env, { sexOffender: body.sexOffender === true, nearZips });
     return new Response(JSON.stringify(out), { status: 200, headers });
   } catch {
     return new Response(JSON.stringify({ error: 'lookup failed', count: 0, records: [] }), { status: 200, headers });
