@@ -44,6 +44,33 @@ So the Enformion enablement (Marriage + Criminal V2) + the already-live Divorce 
 2. Enable **Marriage Search** (new — for the marriage angle).
 3. Confirm the **production** endpoint/base + entitlement (dev works; prod path differs).
 
+## ⚠️ ENFORMION PRICING (owner 2026-07-19) — reshapes the plan
+Per-match pricing varies 40×. The killer: **Criminal V2 = $2.00/match** (Pro-only). Others: **Divorce $0.05**
+(All Plans, entitled), **Marriage $0.10** (Pro-only, not enabled), OFAC $0.10, Eviction/Foreclosure $0.25, Person
+$0.35, Property/Workplace/Business $0.50, Vehicle $1.75. Address Autocomplete $0.00.
+- **Criminal V2 at $2/match is a non-starter for volume** — and we DON'T need it: our **scraped incarceration
+  (50/51, ~$0)** + **IDI criminal/court/arrest/sex-offender via the BC report (already paid)** already cover it.
+  **This pricing VALIDATES the scraping moat.** Do NOT enable Enformion Criminal V2.
+- **Divorce $0.05 is genuinely cheap** — fine to use, but only on a paid report (post-signup), not every prospect search.
+- **Marriage $0.10** — compare to IDI before enabling.
+
+## ALTERNATIVES (owner: don't commit to Enformion alone)
+| Need | Enformion | IDI (existing, via BC) | First-party scrape | Best call |
+|---|---|---|---|---|
+| Criminal / sex-offender | Criminal V2 **$2** ❌ | **idiCRIM**: national criminal, court, arrest, **sex-offender**, 30-yr — via BC report (paid) ✅ | incarceration DONE ($0, 50/51); sex-offender feasible (NSOPW+state) | **scrape + IDI, NOT Enformion** |
+| Divorce | **$0.05** ✅ entitled | "civil records" likely include divorce — CONFIRM via BC data dictionary | county-level, hard | Enformion $0.05 now; confirm IDI (could be ~free) |
+| Marriage | $0.10 (Pro, not enabled) | unclear — CONFIRM | county-level, hard | cheaper of IDI vs Enformion — confirm IDI first |
+
+**Key alternative = IDI** (we already pay for it via BC; nearly 100% US-adult coverage; criminal/court/sex-offender
+confirmed; civil/divorce likely). The unknown is IDI's exact marriage/divorce coverage + whether BC surfaces it —
+get IDI's **data dictionary + coverage matrix** from BC before paying Enformion for overlapping data.
+Other providers (TLOxp/LexisNexis/CLEAR) are enterprise-priced — worse than Enformion for our size.
+
+## COST-CONTROL PRINCIPLE (ties to loose/tight matching)
+Call **paid** providers only where volume is low + value is high — the **paid report (post-signup)**, NOT the
+high-volume **prospect teaser (pre-signup)**. Teasers run on **free** data (scraped incarceration + IDI-in-report);
+paid per-match lookups (Enformion divorce, etc.) fire only when a paying user pulls a specific report. Keeps cost bounded.
+
 ## Recommended next steps
 1. **Divorce (now):** add an Enformion `divorceSearch()` provider (mirror `incarceration.mjs`'s enformion pattern) +
    a divorce data teaser on v6 (spouse name + divorce date + county). This is buildable today with our entitlement.
