@@ -259,13 +259,21 @@ async function vineGuestSearch(query, opts) {
     const nm = p.personName || {};
     const loc = (p.locations && p.locations[0]) || {};
     const first = clean(nm.firstName), lastN = clean(nm.lastName), mid = clean(nm.middleName);
+    const locName = clean(loc.locationName);
+    // Custody type (owner: "court-only vs incarcerated" is highly valuable — include BOTH, but LABEL it).
+    // A "…Court" location is a court/case record (charged, not necessarily in custody); jail/prison/sheriff/
+    // DOC locations are actual custody. Consumers show the label.
+    const isCourt = /\bcourts?\b/i.test(locName);
+    const recordType = isCourt ? 'court' : 'incarcerated';
     return {
       source: opts.source, sourceName: opts.sourceName,
       firstName: first, lastName: lastN, name: [first, mid, lastN].filter(Boolean).join(' '),
       age: num(p.age), gender: p.gender && p.gender.name ? p.gender.name.toLowerCase() : null,
       race: p.race && p.race.name ? p.race.name : null,
-      charges: [], mugshotUrl: null, bookingDate: null, releaseStatus: null,
-      facility: clean(loc.locationName) || null, county: null,
+      charges: [], mugshotUrl: null, bookingDate: null,
+      releaseStatus: isCourt ? 'Court record' : 'In custody',
+      recordType, // 'incarcerated' | 'court' — surfaced on the teaser/report so we never mislabel a court case as jail
+      facility: locName || null, county: null,
       state: opts.state, inmateId: p.personId != null ? String(p.personId) : null,
     };
   });
@@ -1538,20 +1546,41 @@ export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 // OK/NM/KS/WI/CO added: each does a slow captcha solve (reCAPTCHA v2 or a shape-count image, 15–120s+), so
 // they're async-tier — skipped live, served from the DB, refreshed off-request. DE is NOT here: it's fast
 // captcha-free VINE and runs live.
-export const BROWSER_TIER = new Set(['TX', 'MO', 'MI', 'RI', 'VA', 'OK', 'NM', 'KS', 'WI', 'CO', 'MT', 'AZ']);
+// Async-tier (slow: headless browser + captcha solve → cost). Skipped on the live request path (served from
+// the `inmates` DB, refreshed by the crawler). We KEEP these direct because they carry mugshots/charges VINE
+// can't: MI (charges/mug-detail), OK/WI/CO (mug), KS (charges), AZ (mug). MO stays here (browser+captcha, WIP).
+export const BROWSER_TIER = new Set(['TX', 'MO', 'MI', 'OK', 'KS', 'WI', 'CO', 'AZ']);
+
+// (a) Moved to VINE (owner 2026-07-19): these were browser/captcha-tier but carry NO mugshots/charges, so VINE
+// gives equal data for $0 (no Browserless/2Captcha). Verified on VINE (RI+MT are state DOC). TX stayed browser-
+// tier — its own TDCJ adapter works and TXSWVINE is unreliable (504 broad / 0 narrow; TX DOC underfeeds VINE).
+const PREFER_VINE = new Set(['RI', 'VA', 'NM', 'MT']);
+// The 8 states whose registry adapter IS already VINE (don't double-call in the fallback).
+const VINE_NATIVE = new Set(['NY', 'NJ', 'KY', 'CT', 'NH', 'TN', 'WV', 'MN']);
+const vineOptsFor = (st) => ({ siteRefId: `${st}SWVINE`, source: `${st.toLowerCase()}-vine`, sourceName: `${st} (VINE)`, state: st });
 
 /**
- * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no
- * lastName, the adapter errors, or (in the live path) the state is browser-tier. Never throws.
+ * Query the best incarceration source for `query.state`. Order: (a) PREFER_VINE states go straight to the free
+ * VINE guest API; else the direct adapter; (b) if the direct adapter finds nothing, fall back to VINE ($0) so a
+ * name still gets nationwide coverage. Self-gating: returns [] on no lastName / no source / live-path browser-tier.
  * @param {object} [opts] { allowBrowser } — set by the crawler / hydration to run browser-tier states.
  */
 export async function findStateInmates(query, env = process.env, opts = {}) {
   if (env.STATE_INMATES_DISABLED === '1') return [];
   const st = (query.state || '').toUpperCase();
+  if (!clean(query.lastName)) return [];
+  // (a) PREFER_VINE — skip the paid browser/captcha adapter entirely.
+  if (PREFER_VINE.has(st)) { try { return await vineGuestSearch(query, vineOptsFor(st)); } catch { return []; } }
   const fn = STATE_ADAPTERS[st];
-  if (!fn || !clean(query.lastName)) return [];
+  if (!fn) return [];
   if (BROWSER_TIER.has(st) && !opts.allowBrowser) return []; // don't run the slow browser in the live path
-  try { return await fn(query, { includePhotos: env.STATE_INMATES_PHOTOS === '1' }); } catch { return []; }
+  let recs = [];
+  try { recs = await fn(query, { includePhotos: env.STATE_INMATES_PHOTOS === '1' }); } catch { recs = []; }
+  // (b) Universal VINE fallback — direct adapter came up empty → try VINE at $0. Skip when the adapter IS VINE.
+  if (!recs.length && env.VINE_FALLBACK !== '0' && !VINE_NATIVE.has(st)) {
+    try { recs = await vineGuestSearch(query, vineOptsFor(st)); } catch { /* keep [] */ }
+  }
+  return recs;
 }
 
 /**
