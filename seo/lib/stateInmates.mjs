@@ -411,8 +411,44 @@ async function GA(query) {
 //    server-side session keyed by the F5 `TS…` affinity cookie — so all requests MUST share ONE socket or
 //    /Results bounces empty. We pin a single undici Agent (connections:1). List gives name/charges(MCL)/
 //    facility/status; mugshot is on the profile page (deferred). Verified 2026-07-18. Degrades to [] if split.
+function parseMiHtml(html) {
+  const out = [];
+  const rowRe = /action:LoadProfile"\s+value="(\d+)"[^>]*>\s*<\/td>([\s\S]*?)<\/tr>/gi; let m;
+  while ((m = rowRe.exec(html || ''))) {
+    const cells = [...m[2].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((c) => stripTags(c[1]));
+    const [lastN, first, , sex, race, mcl, location, status] = cells;
+    out.push({
+      source: 'mi-otis', sourceName: 'Michigan DOC (OTIS)', firstName: first || '', lastName: lastN || '',
+      name: [first, lastN].filter(Boolean).join(' '), age: null, gender: sex || null, race: race || null,
+      charges: mcl ? [mcl] : [], mugshotUrl: null, bookingDate: null, releaseStatus: status || null,
+      facility: location || null, county: null, state: 'MI', inmateId: m[1],
+    });
+  }
+  return out;
+}
+// MI · Michigan OTIS — F5 session-affinity handshake (GET Search → POST Search → GET Results) that dies on
+// stateless serverless. BROWSER TIER: one Browserless page session persists the cookies across the F5
+// handshake (verified 2026-07-18: james smith → 6 records). Undici path kept for a non-serverless host.
 async function MI(query) {
   const last = clean(query.lastName); if (!last) return [];
+  if (process.env.BROWSER_SERVICE_URL) {
+    const fn = clean(query.firstName).toUpperCase(), ln = last.toUpperCase();
+    const code = `export default async function ({ page }) {
+      const B = "https://mdocweb.state.mi.us";
+      await page.goto(B + "/OTIS2/Search", { waitUntil: "networkidle2", timeout: 45000 });
+      await page.evaluate((fn, ln) => {
+        const set = (n, v) => { const el = document.querySelector("[name='" + n + "']"); if (el) el.value = v; };
+        set("LastName", ln); set("FirstName", fn); set("MDOCNumber", ""); set("Age", ""); set("MarksScarsTattoos", "");
+        const os = document.querySelector("[name='OffenderStatus']"); if (os) os.value = "Prison";
+      }, ${JSON.stringify(fn)}, ${JSON.stringify(ln)});
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }).catch(() => null),
+        page.evaluate(() => { const b = document.querySelector("input[name='action:Search']"); if (b) b.click(); }),
+      ]);
+      return { data: await page.content(), type: "text/html" };
+    }`;
+    return parseMiHtml(await browserFunction(code));
+  }
   const B = 'https://mdocweb.state.mi.us';
   let dispatcher;
   try { const { Agent } = await import('undici'); dispatcher = new Agent({ connections: 1, pipelining: 1, keepAliveTimeout: 30000 }); } catch { dispatcher = undefined; }
@@ -1270,17 +1306,9 @@ async function ME(query) {
 //    challenge) fronts datadoc: a challenged POST returns the interstitial instead of rows (we throw → [] then;
 //    a solved browser session clears it). List cols: (link)|InmateID|Last|First|MI|NameType|Race|Gender|Age|
 //    LastResidence|Security(facility). No mugshots/DOB/county. lastName-only OK; uncapped. Verified 2026-07-18.
-async function RI(query) {
-  const last = clean(query.lastName); if (!last) return [];
-  const API = 'https://datadoc.ri.gov/inmate-search';
-  const G = { male: 'M', female: 'F', m: 'M', f: 'F' };
-  const body = new URLSearchParams({ i_inmateid: '', i_lname: last.toUpperCase(), i_fname: clean(query.firstName).toUpperCase(), i_nametype: '', i_race: '', i_gender: G[clean(query.gender).toLowerCase()] || '', i_agemin: '0', i_agemax: '100', i_residence: '', image: 'Search' });
-  const res = await fetch(`${API}/search_results.php`, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${API}/search.php` }, body: body.toString(), redirect: 'follow' });
-  if (!res.ok) throw new Error(`RI ${res.status}`);
-  const html = await res.text();
-  if (/TSPD|\/TSPD\/|type=8|type=12/.test(html) && !/Search Results/i.test(html)) throw new Error('RI F5 challenge'); // no valid TS* cookies
+function parseRiHtml(html) {
   const out = [];
-  for (const row of (html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+  for (const row of ((html || '').match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
     const cells = [...row.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((c) => stripTags(c[1]));
     if (cells.length < 11) continue;
     const id = cells[1]; if (!/^\d+$/.test(id)) continue;
@@ -1294,6 +1322,38 @@ async function RI(query) {
     });
   }
   return out;
+}
+// RI · Rhode Island DOC — F5/TSPD bot wall. node's TLS fingerprint drew the F5 challenge (no TS* cookies).
+// BROWSER TIER: real Chrome loads search.php (F5 JS sets TS* cookies), then a real form-SUBMIT navigation
+// (not fetch — fetch got re-challenged) carries them to search_results.php (verified cleared 2026-07-18).
+// Direct POST kept for a host that already holds valid TS cookies.
+async function RI(query) {
+  const last = clean(query.lastName); if (!last) return [];
+  const API = 'https://datadoc.ri.gov/inmate-search';
+  const G = { male: 'M', female: 'F', m: 'M', f: 'F' };
+  if (process.env.BROWSER_SERVICE_URL) {
+    const ln = last.toUpperCase(), fn = clean(query.firstName).toUpperCase();
+    const code = `export default async function ({ page }) {
+      await page.goto("${API}/search.php", { waitUntil: "networkidle2", timeout: 45000 });
+      await new Promise(r => setTimeout(r, 3500));
+      await page.evaluate((fn, ln) => {
+        const set = (n, v) => { const e = document.querySelector("[name='" + n + "']"); if (e) e.value = v; };
+        set("i_lname", ln); set("i_fname", fn); set("i_agemin", "0"); set("i_agemax", "100");
+      }, ${JSON.stringify(fn)}, ${JSON.stringify(ln)});
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 45000 }).catch(() => null),
+        page.evaluate(() => { const b = document.querySelector("input[name='image']") || document.querySelector("input[type='image']") || document.querySelector("input[type='submit']"); if (b) b.click(); else { const f = document.querySelector("form"); if (f) f.submit(); } }),
+      ]);
+      return { data: await page.content(), type: "text/html" };
+    }`;
+    return parseRiHtml(await browserFunction(code));
+  }
+  const body = new URLSearchParams({ i_inmateid: '', i_lname: last.toUpperCase(), i_fname: clean(query.firstName).toUpperCase(), i_nametype: '', i_race: '', i_gender: G[clean(query.gender).toLowerCase()] || '', i_agemin: '0', i_agemax: '100', i_residence: '', image: 'Search' });
+  const res = await fetch(`${API}/search_results.php`, { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${API}/search.php` }, body: body.toString(), redirect: 'follow' });
+  if (!res.ok) throw new Error(`RI ${res.status}`);
+  const html = await res.text();
+  if (/TSPD|\/TSPD\/|type=8|type=12/.test(html) && !/Search Results/i.test(html)) throw new Error('RI F5 challenge'); // no valid TS* cookies
+  return parseRiHtml(html);
 }
 
 // ── SD · SD DOC (SAVIN) ── SD DOC's own Offender Locator (docadultlookup.sd.gov) is reCAPTCHA-v2-gated + Akamai-
@@ -1538,7 +1598,7 @@ export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
 // path — so we SKIP them there (serve from the `inmates` DB instead) and refresh the DB asynchronously
 // (crawler + on-demand hydration). Direct-fetch states (CA/PA/IL) are fast and run live.
-export const BROWSER_TIER = new Set(['TX', 'NY', 'MO']);
+export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI']);
 
 /**
  * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no

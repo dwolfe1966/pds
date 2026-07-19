@@ -30,14 +30,14 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 19 | ME | 🔬 RECON | — | — | recon-6 |
 | 20 | MD | ✅ LIVE | html | ❌ | needs first name |
 | 21 | MA | 🔬 RECON | — | — | recon-6 (7M — big) |
-| 22 | MI | 🔴 PROBLEM | session | ✅ | OTIS F5 affinity flaky on serverless |
-| 23 | MN | 🔴 PROBLEM | tls | ✅ | incomplete cert chain |
+| 22 | MI | ✅ LIVE | browser | ✅ (detail) | **CRACKED 7/18**: OTIS via Browserless single-session (james smith→6) |
+| 23 | MN | 🔴 PROBLEM | tls | ✅ | cert rejected by BOTH node AND Chrome; needs intermediate cert / NODE_EXTRA_CA_CERTS |
 | 24 | MS | 🟢 pending | html | ✅ | recon-5 |
 | 25 | MO | 🔴 PROBLEM | captcha | ✅ | numeric-image captcha |
 | 26 | MT | 🔬 RECON | — | — | recon-6 |
 | 27 | NE | 🟢 pending | html | ❌ | recon-5 |
 | 28 | NV | ✅ LIVE | html | ✅ (detail) | 20-row cap |
-| 29 | NH | 🔬 RECON | — | — | recon-6 |
+| 29 | NH | 🔴 PROBLEM | browser | ❌ | Akamai 403 even via Browserless+residential (2x confirmed 7/18) — HARD tier w/ NY/KY |
 | 30 | NJ | 🔴 PROBLEM | browser | ✅ | SPA/anti-bot (recon-1/2) |
 | 31 | NM | 🔴 PROBLEM | captcha | ✅ | reCAPTCHA **Enterprise** (hardest) |
 | 32 | NY | 🔴 PROBLEM | browser | ❌ | F5 WAF; drops browser+residential |
@@ -47,17 +47,17 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 36 | OK | 🔴 PROBLEM | captcha | ✅ | |
 | 37 | OR | ✅ LIVE | html | ❌ | needs first name |
 | 38 | PA | ✅ LIVE | json | ✅ (opt-in) | Captor API |
-| 39 | RI | 🔬 RECON | — | — | recon-6 |
+| 39 | RI | ✅ LIVE | browser | ❌ | **CRACKED 7/18**: F5/TSPD via Browserless form-submit navigation |
 | 40 | SC | ✅ LIVE | json | ✅ | base64 mug; 250 cap |
 | 41 | SD | 🔬 RECON | — | — | recon-6 |
 | 42 | TN | 🔴 PROBLEM | browser+captcha | ❌ | WAF + JCaptcha (recon-3) |
 | 43 | TX | ✅ LIVE | browser | ❌ | TDCJ via Browserless+residential |
 | 44 | UT | ✅ LIVE | json | ❌ | 100-row page |
 | 45 | VT | ⬜ TODO | — | — | recon-7 |
-| 46 | VA | 🔴 PROBLEM | browser | ❌ | blocked (recon-2) |
+| 46 | VA | 🔴 PROBLEM | captcha | ❌ | reCAPTCHA v2 image-challenge (no silent pass, 7/18) → captcha-solver bucket |
 | 47 | WA | ✅ LIVE | html | ❌ | Drupal filter |
 | 48 | WV | 🔴 PROBLEM | captcha | ✅ | |
-| 49 | WI | 🔴 PROBLEM | browser | ✅ | SPA (recon-3) |
+| 49 | WI | 🔴 PROBLEM | captcha | ✅ | reCAPTCHA v2 at entry disclaimer (once/session, then free) → captcha-solver bucket |
 | 50 | WY | ⬜ TODO | — | — | recon-7 |
 | 51 | DC | ⬜ TODO | — | — | recon-7 (federal BOP for DC sentenced) |
 
