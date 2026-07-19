@@ -5,25 +5,35 @@ import { fetchBookings } from '../services/incarcerationService';
  * Full booking / incarceration records for a person — the DELIVERED product on the report/detail page
  * (unblurred: real mugshots, full charge lists, facility, custody status). Self-gating: renders nothing
  * unless the person has booking records, so it only appears for the inmate vertical. First-party
- * /api/incarceration (JailBase / UCC / Florida OBIS), independent of BC.
+ * /api/incarceration (JailBase / UCC / Florida OBIS / state DOC rosters), independent of BC.
+ *
+ * CORROBORATION (owner 2026-07-18): this is a SPECIFIC person's report, but the lookup matches only
+ * name+state — a same-name stranger could otherwise get their mugshot/charges stamped on this person.
+ * So we require age corroboration (±2) against the profile's age; records that don't corroborate (or when
+ * the profile has no age to check) are NOT shown. Mirrors the strict mode of InmateBookingTeaser (SUP).
  */
-export default function InmateBookingSection({ firstName, lastName, state }) {
+export default function InmateBookingSection({ firstName, lastName, state, personAge }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
     let alive = true;
     if (!lastName) return undefined;
-    fetchBookings({ firstName, lastName, state }).then((r) => { if (alive) setData(r); }).catch(() => {});
+    fetchBookings({ firstName, lastName, state, age: personAge }).then((r) => { if (alive) setData(r); }).catch(() => {});
     return () => { alive = false; };
-  }, [firstName, lastName, state]);
+  }, [firstName, lastName, state, personAge]);
 
-  const records = (data && data.records) || [];
+  // STRICT: only records whose age corroborates this profile (±2). No profile age → can't verify → show nothing.
+  const pa = parseInt(personAge, 10);
+  const records = Number.isFinite(pa)
+    ? ((data && data.records) || []).filter((r) => Number.isFinite(r.age) && Math.abs(r.age - pa) <= 2)
+    : [];
   if (!records.length) return null;
 
   return (
     <section style={{ margin: '20px 0', border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', borderBottom: '1px solid #eef2f7', background: '#f8faf9' }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>🔒 Booking &amp; Incarceration Records <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>🔒 Possible Booking &amp; Incarceration Records <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>Matched to this profile on name, state, and age (±2). Verify identity before relying on any record.</p>
       </div>
       <div style={{ display: 'grid', gap: 0 }}>
         {records.map((r, i) => (
