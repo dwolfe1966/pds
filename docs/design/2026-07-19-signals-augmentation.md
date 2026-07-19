@@ -25,8 +25,11 @@ flow-prioritized.*
 suppressed subjects suppress the teaser too**; cheap/fast/cached providers only pre-signup; lead + capped
 "also found," never a wall of badges.
 
-**Scope:** this is about *acquisition teasers + report presence*. The "every record maps to a member+profile"
-freemium/identity north star is downstream and out of scope here (the My Identity column just notes where it connects).
+**Scope:** the signals engine is designed around **three viewer-lenses on one subject-keyed signal set** —
+*prospect → stranger* (acquisition teaser), *member → other* (paid report), *owner → self* (identity
+management). The identity-owner lens is a first-class **architectural** dimension (§7.1) — the same signals +
+inverted framing + an inverted suppression role — but its **UI/product** (identity claiming, freemium tiers)
+is downstream and not built in this effort. We design the seam now so we don't re-architect later.
 
 ---
 
@@ -159,27 +162,62 @@ signup). The lead is "strongest available signal," not a fixed vertical.
 
 ## 7. Proposed architecture
 
-**One per-person signals layer** instead of N teaser components each doing their own fetch + flow check.
+**One subject-keyed signals layer** instead of N teaser components each doing their own fetch + flow check.
+Signals are keyed to the *person* (the subject), not to a surface or a viewer — the same booking record is one
+record whether a prospect teases it, a member buys it, or the person themselves manages it.
 
 ```
-getPersonSignals({ firstName, lastName, state, city, age, gender, stage })
-  → { booking, marriageDivorce, capability, /* post-pay: */ sexOffender, ... }
+getPersonSignals({ subject, viewerRelation, stage, flow })
+  → { booking, marriageDivorce, capability, /* post-pay: */ sexOffender, criminal, ... }
 ```
 
-- **`stage`** = `'pre-signup' | 'post-pay'`. Pre-signup returns only bucket-A signals (cheap/fast/cached/safe);
-  post-pay adds bucket-B. This enforces the invariants in ONE place, not scattered across surfaces.
-- **Suppression gate (invariant #5)** — `getPersonSignals` checks the subject against the `suppression`
-  endpoint *first* and returns empty (or capability-only) for an opted-out/suppressed subject, so no surface
-  can tease a suppressed person. Single choke point, same as WSFY's per-item enforcement.
-- **Cache-backed** — reuses `life_events_cache` + `inmates`; one call per person per stage, memoized.
-- **Flow config drives emphasis** — a small `FLOW_PRIORITY` table (§6) maps flow → `{ lead, secondary[] }`.
-  A shared `<SignalTeaser signals={...} flow={...} />` renders lead + capped "also found." Surfaces pass their
-  own `strict`/layout.
+### 7.1 Two independent axes: stage AND viewer-lens
+
+- **`stage`** = `'pre-signup' | 'post-pay'` — controls WHICH signals are computed (bucket-A cheap/fast/cached
+  vs. bucket-B). Enforces the cost/harm invariants in ONE place, not scattered across surfaces.
+- **`viewerRelation`** = `'prospect' | 'member-other' | 'owner-self'` — controls HOW the same signal set is
+  gated, framed, and how suppression behaves. The signal *computation* is identical across lenses; only
+  presentation + gating differ:
+
+  | Lens | Framing | Paywall | Suppression role | Emphasis driver |
+  |---|---|---|---|---|
+  | **prospect → stranger** | "look what we found — unlock" | yes (pre-signup tease) | **checked** | funnel flow (§6) |
+  | **member → other** | full record, inform | post-pay | **checked** | funnel flow (§6) |
+  | **owner → self** | "here's what's exposed about **you** — manage/suppress" | **no** (seeing your own exposure is the freemium hook) | **created** | highest-exposure-first |
+
+  This is why the identity-owner side is a first-class *architectural* dimension, not a fourth teaser surface:
+  it consumes the same subject-keyed signals with inverted framing and an inverted suppression role.
+
+- **Suppression is the hinge between the two products (invariant #5).** `getPersonSignals` checks the subject
+  against the `suppression` endpoint *first* and returns empty (or capability-only) for a suppressed subject.
+  The identity owner (`owner-self` lens) is the one who *creates* that suppression; the teaser (`prospect` /
+  `member-other`) is the one that *checks* it. Same mechanism, opposite ends — so building the suppression gate
+  now is building the enforcement half of the future identity-management feature. Single choke point, same as
+  WSFY's per-item enforcement.
+
+### 7.2 Rendering
+
+- **Cache-backed** — reuses `life_events_cache` + `inmates`; one call per (subject, stage), memoized.
+- **Emphasis config** — `FLOW_PRIORITY` (§6) maps `flow → { lead, secondary[] }` for the prospect/member
+  lenses; the `owner-self` lens orders by **exposure severity** instead (what's most visible/damaging about
+  you first).
+- **Shared presentation** — `<SignalTeaser signals lens flow />` renders lead + capped "also found" for the
+  acquisition lenses; the identity surfaces (`MyProfileModular` / My Identity) render the same signals in
+  manage/suppress framing. Both consume one `getPersonSignals` result.
 - **Collapses**: `InmateBookingTeaser`, `DivorceTeaser`, `DatingTeaser` per-surface flow checks → one component
   + one config. Adding vertical #4 (death, background) = a config row, not new plumbing.
 
-Net effect: presence is computed once (data + stage), emphasis is a config lookup, and the safety/cost
-invariants live in `getPersonSignals`'s stage gate rather than in every JSX site.
+### 7.3 The two-class data problem (why owner-self is downstream)
+
+The `owner-self` lens's subject is often a **non-member** whose record we hold as a broker — the north-star
+crux ([[project_freemium_identity_community]]). The architecture *accommodates* it now (subject-keyed signals +
+lens dimension + suppression hinge), but the *product* (identity claiming, verified ownership, freemium tiers)
+is downstream. We design the seam now so we don't re-architect later; we don't build the identity UI in this
+effort.
+
+Net effect: presence is computed once (subject + stage), gating/framing is a lens + flow lookup, and the
+safety/cost/suppression invariants live in `getPersonSignals` rather than in every JSX site — serving both the
+acquisition product and the freemium identity product from one spine.
 
 ---
 
