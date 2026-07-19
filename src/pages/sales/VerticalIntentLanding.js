@@ -38,6 +38,8 @@ const Icon = ({ name, className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON_PATHS[name] || ICON_PATHS.search}</svg>
 );
 
+import DivorceTeaser from '../../components/DivorceTeaser';
+
 const getStepIndex = (step) => ({ name: 1, location: 2, details: 3, confirm: 4 }[step] || 0);
 const TOTAL_STEPS = 4;
 
@@ -206,6 +208,10 @@ const VerticalIntentLanding = ({ cfg }) => {
             <div className={s.form}>
               <h2 className={s.sectionTitle}>{cfg.detailsTitle}</h2>
               <p className={s.helper}>A few more details help us surface the exact person.</p>
+              {/* Data hook: reveal real records for the entered name (mirrors the inmate teaser on v3). */}
+              {cfg.teaser === 'divorce' && lastName && state && (
+                <DivorceTeaser firstName={firstName} lastName={lastName} state={state} />
+              )}
               <div className={s.field}>
                 <label className={s.label} htmlFor={id('age')}>Age (optional)</label>
                 <input id={id('age')} type="text" className={s.input} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />

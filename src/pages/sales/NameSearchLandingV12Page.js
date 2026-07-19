@@ -5,6 +5,7 @@ import VerticalIntentLanding from './VerticalIntentLanding';
 const DIVORCE_CFG = {
   variant: 'v12',
   idPrefix: 'v12',
+  teaser: 'divorce', // renders DivorceTeaser at the details step (the conversion hook)
   headline: 'Find Divorce & Marriage Records',
   benefits: [
     ['heart', 'Verify a marriage or divorce'],
