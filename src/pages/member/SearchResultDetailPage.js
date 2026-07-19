@@ -10,7 +10,9 @@ import MyProfileModular from '../../components/MyProfileModular';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../../services/incarcerationService';
 import MarriageDivorceSection from '../../components/MarriageDivorceSection';
+import SexOffenderSection from '../../components/SexOffenderSection';
 import { fetchLifeEvents } from '../../services/lifeEventsService';
+import { getFlow } from '../../services/funnelFlow';
 import { enrichFromReport } from '../../services/memberEnrichment';
 import { captureProfileView } from '../../services/searchActivity';
 import { track } from '../../services/trackingService';
@@ -271,16 +273,24 @@ const SearchResultDetailPage = () => {
     const st = (data && Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
       || (String((data && data.currentLocation) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
     if (parts.length < 2 || !st) { setLifeEvents([]); return undefined; }
-    // sexOffender NOT requested on the report (owner 2026-07-19): name-attributing a fuzzy alias match to a
-    // searched person is the weak/risky use. Sex-offender is repurposed to a LOCATION-based "near you" safety
-    // feature on the member's OWN profile (NSOPW zip/GPS) — see docs/design/life-events-data-mapping.md.
-    fetchLifeEvents({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age, gender: data.gender })
+    // sexOffender is requested ONLY in the DATING flow (the safety-check payoff the dating searcher paid for).
+    // Outside dating, name-attributing a fuzzy alias match to a searched person is the weak/risky use, so it's
+    // off (owner 2026-07-19). Even in dating, records are TIGHT-corroborated (age±1 + gender + state) below
+    // before display — empty-and-safe when they don't match. Location-based "near you" lives on the member's
+    // OWN profile (NSOPW zip/GPS) — see docs/design/life-events-data-mapping.md.
+    fetchLifeEvents({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age, gender: data.gender, sexOffender: getFlow() === 'dating' })
       .then((r) => { if (alive) setLifeEvents(r.records || []); })
       .catch(() => { if (alive) setLifeEvents([]); });
     return () => { alive = false; };
   }, [data && data.fullName, data && data.age, data && data.gender]);
 
   const marriageDivorceRecords = lifeEvents.filter((r) => r.recordType === 'divorce' || r.recordType === 'marriage');
+  // Sex-offender "Safety Check" (dating flow, post-pay). TIGHT corroboration (age±1 + gender + state via
+  // corroboratePerson) BEFORE display — NSOPW matches on alias, so a same-name/alias offender must also match
+  // this person's age+gender or it's dropped. Empty-and-safe: renders nothing when nothing corroborates.
+  const sexOffenderRecords = lifeEvents
+    .filter((r) => r.recordType === 'sex-offender')
+    .filter((r) => corroboratePerson(r, { age: data && data.age, gender: data && data.gender }));
   // Relationship enrichment: fold ex-spouse (divorce) / spouse (marriage) into the relatives list.
   const _relNorm = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
   const spouseRelatives = marriageDivorceRecords
@@ -491,9 +501,12 @@ const SearchResultDetailPage = () => {
           <ProfileView data={mergedData} viewer="paid" />
         )}
 
-        {/* Marriage & Divorce (relationship data) from the life-events fetch; ex-spouse also folded into Relatives
-            above. Sex-offender is NOT here — repurposed to a location-based "near you" feature on the member's profile. */}
+        {/* Marriage & Divorce (relationship data) from the life-events fetch; ex-spouse also folded into Relatives above. */}
         <MarriageDivorceSection records={marriageDivorceRecords} />
+
+        {/* Safety Check (dating flow only): PERSON-ATTRIBUTED sex-offender matches, tight-corroborated. Distinct
+            from any location-based "offenders near them" section — this asks "is THIS person on the registry?" */}
+        <SexOffenderSection records={sexOffenderRecords} personName={data.fullName} />
       </ErrorBoundary>
     </main>
   );

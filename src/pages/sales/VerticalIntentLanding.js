@@ -39,6 +39,7 @@ const Icon = ({ name, className }) => (
 );
 
 import DivorceTeaser from '../../components/DivorceTeaser';
+import DatingTeaser from '../../components/DatingTeaser';
 import { useFunnelFlow } from '../../services/funnelFlow';
 
 const getStepIndex = (step) => ({ name: 1, location: 2, details: 3, confirm: 4 }[step] || 0);
@@ -213,6 +214,9 @@ const VerticalIntentLanding = ({ cfg }) => {
               {/* Data hook: reveal real records for the entered name (mirrors the inmate teaser on v3). */}
               {cfg.teaser === 'divorce' && lastName && state && (
                 <DivorceTeaser firstName={firstName} lastName={lastName} state={state} />
+              )}
+              {cfg.teaser === 'dating' && lastName && state && (
+                <DatingTeaser firstName={firstName} lastName={lastName} state={state} />
               )}
               <div className={s.field}>
                 <label className={s.label} htmlFor={id('age')}>Age (optional)</label>

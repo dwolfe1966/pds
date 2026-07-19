@@ -5,6 +5,7 @@ import { useBrand } from '../../services/brand';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 import DivorceTeaser from '../../components/DivorceTeaser';
+import DatingTeaser from '../../components/DatingTeaser';
 import { getFlow } from '../../services/funnelFlow';
 
 /**
@@ -254,6 +255,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
               same-name stranger's mugshot/charges to this profile. Self-gates to nothing otherwise. */}
           {bkLast && <InmateBookingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} strict accent={P.accent || P.ink} dark={P.ink} />}
           {bkLast && getFlow() === 'divorce' && <DivorceTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
+          {bkLast && getFlow() === 'dating' && <DatingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
         </div>
 
         {/* Variant D (map layout): location map panel — stylized, self-contained
