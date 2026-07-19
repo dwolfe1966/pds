@@ -13,6 +13,9 @@ export const maxDuration = 300;
 const ALLOWED_ORIGINS = new Set([
   'https://www.idlookup.ai',
   'https://idlookup.ai',
+  'https://dev.www.idlookup.ai', // BC dev host — so the inmate teaser works when QA-testing the dev bundle
+  'https://idlookup.me',         // SEO/prototype host
+  'https://www.idlookup.me',
   'http://localhost:3000',
 ]);
 
