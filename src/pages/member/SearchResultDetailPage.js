@@ -9,6 +9,8 @@ import ProfileView, { styles } from '../../components/ProfileView';
 import MyProfileModular from '../../components/MyProfileModular';
 import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../../services/incarcerationService';
 import MarriageDivorceSection from '../../components/MarriageDivorceSection';
+import SexOffenderSection from '../../components/SexOffenderSection';
+import { fetchLifeEvents } from '../../services/lifeEventsService';
 import { enrichFromReport } from '../../services/memberEnrichment';
 import { captureProfileView } from '../../services/searchActivity';
 import { track } from '../../services/trackingService';
@@ -256,7 +258,36 @@ const SearchResultDetailPage = () => {
       .catch(() => { if (alive) setIncRows([]); });
     return () => { alive = false; };
   }, [data && data.fullName, data && data.age, data && data.gender]);
-  const mergedData = data ? { ...data, criminalRecords: [...(data.criminalRecords || []), ...incRows] } : data;
+  // Life-events (divorce/marriage + sex-offender) for this report subject — ONE fetch feeds three uses: the
+  // Marriage & Divorce section, the Sex-Offender section (tight-corroborated), and the relatives enrichment.
+  const [lifeEvents, setLifeEvents] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const parts = String((data && data.fullName) || '').trim().split(/\s+/).filter(Boolean);
+    const st = (data && Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
+      || (String((data && data.currentLocation) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+    if (parts.length < 2 || !st) { setLifeEvents([]); return undefined; }
+    fetchLifeEvents({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age, gender: data.gender, sexOffender: true })
+      .then((r) => { if (alive) setLifeEvents(r.records || []); })
+      .catch(() => { if (alive) setLifeEvents([]); });
+    return () => { alive = false; };
+  }, [data && data.fullName, data && data.age, data && data.gender]);
+
+  const marriageDivorceRecords = lifeEvents.filter((r) => r.recordType === 'divorce' || r.recordType === 'marriage');
+  // Sex-offender is an ALIAS match → require tight corroboration (age±2 + gender) before it's shown at all.
+  const sexOffenderRecords = lifeEvents.filter((r) => r.recordType === 'sex-offender' && corroboratePerson(r, { age: data && data.age, gender: data && data.gender }, { pad: 2 }));
+  // Relationship enrichment: fold ex-spouse (divorce) / spouse (marriage) into the relatives list.
+  const _relNorm = (s) => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
+  const spouseRelatives = marriageDivorceRecords
+    .map((r) => { const nm = r.recordType === 'divorce' ? r.exSpouseName : r.spouseName; return nm ? { name: nm, relationship: r.recordType === 'divorce' ? 'Ex-spouse' : 'Spouse', state: r.state } : null; })
+    .filter(Boolean)
+    .filter((s, i, arr) => arr.findIndex((x) => _relNorm(x.name) === _relNorm(s.name)) === i);
+
+  const mergedData = data ? {
+    ...data,
+    criminalRecords: [...(data.criminalRecords || []), ...incRows],
+    relatives: [...(data.relatives || []), ...spouseRelatives.filter((s) => !(data.relatives || []).some((rel) => _relNorm(rel.name) === _relNorm(s.name)))],
+  } : data;
 
   // ── Loading / error states ───────────────────────────────────────────────
   if (loading) {
@@ -431,14 +462,10 @@ const SearchResultDetailPage = () => {
         <ProfileView data={mergedData} viewer="paid" />
       )}
 
-      {/* Marriage & Divorce records — distinct data category (relationships), so its own section rather than
-          the criminal area. Self-gates. Reveals WHO the person married/divorced (relationship enrichment). */}
-      {(() => {
-        const parts = String(data.fullName || '').trim().split(/\s+/).filter(Boolean);
-        const st = (Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
-          || (String(data.currentLocation || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
-        return parts.length >= 2 ? <MarriageDivorceSection firstName={parts[0]} lastName={parts[parts.length - 1]} state={st} personAge={data.age} personGender={data.gender} /> : null;
-      })()}
+      {/* Life-events sections from the ONE consolidated fetch. Marriage & Divorce = relationship data (its own
+          section; ex-spouse also folded into Relatives above). Sex-offender = safety, tight-corroborated + verify-framed. */}
+      <MarriageDivorceSection records={marriageDivorceRecords} />
+      <SexOffenderSection records={sexOffenderRecords} personName={data.fullName} />
     </main>
   );
 };

@@ -9,20 +9,21 @@ import { fetchLifeEvents } from '../services/lifeEventsService';
  *
  * context: 'search' (a person's report) | 'identity' (the member's OWN exposure view).
  */
-export default function MarriageDivorceSection({ firstName, lastName, state, personAge, personGender, context = 'search' }) {
+export default function MarriageDivorceSection({ firstName, lastName, state, personAge, personGender, records: recordsProp, context = 'search' }) {
   const [data, setData] = useState(null);
   const isIdentity = context === 'identity';
 
   useEffect(() => {
     let alive = true;
-    if (!lastName) return undefined;
+    if (recordsProp || !lastName) return undefined; // parent supplied records → skip the fetch
     fetchLifeEvents({ firstName, lastName, state, age: personAge, gender: personGender })
       .then((r) => { if (alive) setData(r); })
       .catch(() => {});
     return () => { alive = false; };
-  }, [firstName, lastName, state, personAge, personGender]);
+  }, [firstName, lastName, state, personAge, personGender, recordsProp]);
 
-  const records = ((data && data.records) || []).filter((r) => r.recordType === 'divorce' || r.recordType === 'marriage');
+  const src = recordsProp || (data && data.records) || [];
+  const records = src.filter((r) => r.recordType === 'divorce' || r.recordType === 'marriage');
   if (!records.length) return null;
 
   return (
