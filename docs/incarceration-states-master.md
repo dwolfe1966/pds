@@ -35,7 +35,7 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 24 | MS | 🟢 pending | html | ✅ | recon-5 |
 | 25 | MO | 🔴 PROBLEM | captcha+waf | ✅ | Imperva WAF needs Browserless, but 2Captcha is UNREACHABLE from inside Browserless (proxy blocks it); needs puppeteer.connect-over-WS (drive browser from our node, solve locally) |
 | 26 | MT | 🔬 RECON | — | — | recon-6 |
-| 27 | NE | 🟢 pending | html | ❌ | recon-5 |
+| 27 | NE | ✅ LIVE | bulk | ❌ | NDCS xlsx roster; charges+facility+county+status+age; ⚠️18s cold-cache → make a DB bulk-ingest |
 | 28 | NV | ✅ LIVE | html | ✅ (detail) | 20-row cap |
 | 29 | NH | 🔴 PROBLEM | browser | ❌ | Akamai 403 even via Browserless+residential (2x confirmed 7/18) — HARD tier w/ NY/KY |
 | 30 | NJ | 🔴 PROBLEM | browser | ✅ | SPA/anti-bot (recon-1/2) |
@@ -58,7 +58,7 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 47 | WA | ✅ LIVE | html | ❌ | Drupal filter |
 | 48 | WV | 🟡 browser-tier | captcha+waf | ✅ | WORKING but AWS WAF (behavior-triggered) needs a real browser; reCAPTCHA solves node-side; charges+facility+mug (detail). Needs browser driver like MO |
 | 49 | WI | ✅ LIVE | captcha | ✅ | **CRACKED 7/19**: reCAPTCHA v2 at entry (once/session, then free); demographics+mug+aliases; surname-only enumerable |
-| 50 | WY | ⬜ TODO | — | — | recon-7 |
+| 50 | WY | ✅ LIVE | html | ❌ | json feed; name/age/gender/status/DOC#; "james smith"=0 is real (small state) |
 | 51 | DC | ⬜ TODO | — | — | recon-7 (federal BOP for DC sentenced) |
 
 ## FINAL Tally (2026-07-18) — all 50 + DC surveyed & integrated
