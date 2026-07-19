@@ -77,11 +77,15 @@ export async function marriageSearch(query, env = process.env) {
     if (!res.ok) return [];
     const data = await res.json().catch(() => null);
     const records = (data && Array.isArray(data.records)) ? data.records : [];
+    // Same two-party Enformion shape as DivorceSearch (spouse = searched person, otherSpouse = who they married).
+    // Field names assumed identical to the verified divorce record; confirm once Marriage is entitled.
     return records.map((r) => ({
       source: 'enformion-marriage', sourceName: 'Marriage record', recordType: 'marriage',
-      firstName: clean(g(r, 'firstName', 'FirstName')), lastName: clean(g(r, 'lastName', 'LastName')),
-      spouseFirstName: clean(g(r, 'spouseFirstName')), spouseLastName: clean(g(r, 'spouseLastName')),
-      spouseName: [g(r, 'spouseFirstName'), g(r, 'spouseLastName')].map(clean).filter(Boolean).join(' '),
+      firstName: clean(g(r, 'spouseFirstName')), lastName: clean(g(r, 'spouseLastName')),
+      name: [g(r, 'spouseFirstName'), g(r, 'spouseMiddleName'), g(r, 'spouseLastName')].map(clean).filter(Boolean).join(' '),
+      gender: clean(g(r, 'spouseGender')) || null, age: num(g(r, 'spouseAge')),
+      spouseName: clean(g(r, 'otherSpouseFullName')) || [g(r, 'otherSpouseFirstName'), g(r, 'otherSpouseLastName')].map(clean).filter(Boolean).join(' ') || null,
+      spouseAge: num(g(r, 'otherSpouseAge')),
       marriageDate: clean(g(r, 'marriageDate')) || null,
       county: clean(g(r, 'county')) || null, state: (clean(g(r, 'state')) || query.state || '').toUpperCase() || null,
     }));
