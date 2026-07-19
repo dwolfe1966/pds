@@ -33,7 +33,7 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 22 | MI | ✅ LIVE | browser | ✅ (detail) | **CRACKED 7/18**: OTIS via Browserless single-session (james smith→6) |
 | 23 | MN | 🔴 PROBLEM | tls | ✅ | cert rejected by BOTH node AND Chrome; needs intermediate cert / NODE_EXTRA_CA_CERTS |
 | 24 | MS | 🟢 pending | html | ✅ | recon-5 |
-| 25 | MO | 🔴 PROBLEM | captcha | ✅ | numeric-image captcha |
+| 25 | MO | 🔴 PROBLEM | captcha+waf | ✅ | Imperva WAF needs Browserless, but 2Captcha is UNREACHABLE from inside Browserless (proxy blocks it); needs puppeteer.connect-over-WS (drive browser from our node, solve locally) |
 | 26 | MT | 🔬 RECON | — | — | recon-6 |
 | 27 | NE | 🟢 pending | html | ❌ | recon-5 |
 | 28 | NV | ✅ LIVE | html | ✅ (detail) | 20-row cap |
@@ -54,7 +54,7 @@ Detail on non-working states: `incarceration-problem-states.md`. Strategy: `inca
 | 43 | TX | ✅ LIVE | browser | ❌ | TDCJ via Browserless+residential |
 | 44 | UT | ✅ LIVE | json | ❌ | 100-row page |
 | 45 | VT | ⬜ TODO | — | — | recon-7 |
-| 46 | VA | 🔴 PROBLEM | captcha | ❌ | reCAPTCHA v2 image-challenge (no silent pass, 7/18) → captcha-solver bucket |
+| 46 | VA | ✅ LIVE | captcha | ❌ | **CRACKED 7/18**: reCAPTCHA v2 solved NODE-ONLY via 2Captcha (no browser); needs first+last; james smith→10 |
 | 47 | WA | ✅ LIVE | html | ❌ | Drupal filter |
 | 48 | WV | 🔴 PROBLEM | captcha | ✅ | |
 | 49 | WI | 🔴 PROBLEM | captcha | ✅ | reCAPTCHA v2 at entry disclaimer (once/session, then free) → captcha-solver bucket |

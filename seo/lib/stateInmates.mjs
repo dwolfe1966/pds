@@ -8,7 +8,11 @@
 //               bookingDate, releaseStatus, facility, county, state, inmateId? }
 //
 // Guardrails (docs): public records only; polite single requests; NO captcha-busting; never pay-to-remove.
+import { solveRecaptcha } from './captchaSolver.mjs';
+
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
+// Normalize CAPTCHA_SOLVER_KEY against paste errors (stray leading `=`, quotes, whitespace) — 32 hex chars.
+const capKey = () => (process.env.CAPTCHA_SOLVER_KEY || '').trim().replace(/^["'=\s]+/, '').replace(/["'\s]+$/, '');
 
 // #1 PROXY (SEO moat infra) — some state sites (TX/TDCJ) block datacenter IPs, so they return nothing from
 // Vercel. Set STATE_PROXY_URL to a residential/rotating proxy (http://user:pass@host:port) and blocked-state
@@ -507,14 +511,16 @@ function parseMoHtml(html) {
 //    searches + returns the results HTML. Needs BROWSER_SERVICE_URL + CAPTCHA_SOLVER_KEY. Browser-tier (slow).
 async function MO(query) {
   const last = clean(query.lastName); if (!last) return [];
-  if (!process.env.BROWSER_SERVICE_URL || !process.env.CAPTCHA_SOLVER_KEY) return []; // self-gate until configured
+  // Normalize against paste errors (stray leading `=` from a `KEY==value` .env line, quotes, whitespace).
+  const capKey = (process.env.CAPTCHA_SOLVER_KEY || '').trim().replace(/^["'=\s]+/, '').replace(/["'\s]+$/, '');
+  if (!process.env.BROWSER_SERVICE_URL || !capKey) return []; // self-gate until configured
   const code = `export default async function ({ page }) {
     await page.goto("https://web.mo.gov/doc/offSearchWeb/welcome.do", { waitUntil: "domcontentloaded", timeout: 45000 });
     const capB64 = await page.evaluate(async () => {
       const r = await fetch("/doc/offSearchWeb/captcha", { cache: "no-store" });
       const buf = new Uint8Array(await r.arrayBuffer()); let s = ""; for (let i = 0; i < buf.length; i++) s += String.fromCharCode(buf[i]); return btoa(s);
     });
-    const KEY = ${JSON.stringify(process.env.CAPTCHA_SOLVER_KEY)};
+    const KEY = ${JSON.stringify(capKey)};
     const sub = await fetch("https://2captcha.com/in.php", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "key=" + KEY + "&method=base64&numeric=1&json=1&body=" + encodeURIComponent(capB64) });
     const subj = await sub.json(); if (subj.status !== 1) return { data: "", type: "text/html" };
     let ans = null;
@@ -1592,13 +1598,65 @@ async function DC(query) {
 // filters client-side; SD (SAVIN) is slow (~35s). Captcha-gated (returns [] live until a vision solver is added):
 // MO/CO. Akamai-gated (403/unfiltered from a datacenter IP → [] live; need a browser or non-blocked host):
 // NH, ME (ME also client-filters as a guard). Browser-tier (BROWSER_SERVICE_URL): TX (live) / NY (WIP).
-export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC };
+// ── VA · VADOC (Inmate & Supervisee Locator) ── #CAPTCHA WAVE, reCAPTCHA v2, NO WAF (node-reachable, verified).
+//    Solved WITHOUT a browser: GET the page (antiforgery cookie + __RequestVerificationToken + ufprt + sitekey),
+//    solve the reCAPTCHA via 2Captcha (sitekey+url), POST the multipart form with the token in BOTH Captcha +
+//    g-recaptcha-response. REQUIRES first+last (name-only 400s "enter first and last"). ⚠️ reCAPTCHA tokens
+//    expire 120s after solving — a slow 2Captcha solve (overload) expires before the POST → the form re-renders
+//    with no results; retry. Belongs in the time-unbounded crawler, not a live request. Verified captcha-pass 2026-07-18.
+function parseVaHtml(html) {
+  const out = [];
+  // Results table cols (verified 2026-07-18): Name("First Last") | DOC I.D.# | Race | Gender | Age | Location | Release Date
+  for (const row of ((html || '').match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [])) {
+    const cells = [...row.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((c) => stripTags(c[1]));
+    if (cells.length < 6) continue;
+    const [nameCell, docId, race, gender, age, location, release] = cells;
+    if (!/^\d{5,8}$/.test(docId)) continue; // data row (skips the header + any non-result rows)
+    const parts = clean(nameCell).split(/\s+/);
+    const firstN = parts[0] || '', lastN = parts.slice(1).join(' ') || '';
+    out.push({
+      source: 'va-doc', sourceName: 'Virginia DOC (VADOC)',
+      firstName: firstN, lastName: lastN, name: clean(nameCell),
+      age: num(age), gender: /^m/i.test(gender) ? 'male' : /^f/i.test(gender) ? 'female' : null, race: race || null,
+      charges: [], mugshotUrl: null, bookingDate: null,
+      releaseStatus: clean(release) || null, facility: clean(location) || null, county: null,
+      state: 'VA', inmateId: docId,
+    });
+  }
+  return out;
+}
+async function VA(query) {
+  const last = clean(query.lastName), first = clean(query.firstName);
+  if (!last || !first) return []; // VADOC requires BOTH names
+  const key = capKey(); if (!key) return []; // needs the captcha solver
+  const BASE = 'https://vadoc.virginia.gov/general-public/inmate-and-supervisee-locator/';
+  const g = await fetch(BASE, { headers: { 'User-Agent': UA } });
+  if (!g.ok) throw new Error(`VA ${g.status}`);
+  const gh = await g.text();
+  const cookie = (g.headers.getSetCookie ? g.headers.getSetCookie() : []).map((c) => c.split(';')[0]).join('; ');
+  const sitekey = (gh.match(/data-sitekey="([^"]+)"/) || [])[1];
+  const rvt = (gh.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/) || [])[1] || '';
+  const ufprt = (gh.match(/name="ufprt"[^>]*value="([^"]+)"/) || [])[1] || '';
+  if (!sitekey) return [];
+  const token = await solveRecaptcha({ sitekey, pageurl: BASE });
+  if (!token) return []; // unsolved or expired
+  const fd = new FormData();
+  for (const [k, v] of Object.entries({ FirstName: first, LastName: last, OffenderId: '', LocationName: '', Race: '', Gender: '', AgeRange: '', Disclaimer: 'true', Captcha: token, 'g-recaptcha-response': token, __RequestVerificationToken: rvt, ufprt })) fd.set(k, v);
+  const p = await fetch(BASE, { method: 'POST', headers: { 'User-Agent': UA, Cookie: cookie, Referer: BASE }, body: fd });
+  if (!p.ok) throw new Error(`VA ${p.status}`);
+  return parseVaHtml(await p.text());
+}
+
+export const STATE_ADAPTERS = { TX, CA, PA, IL, NY, WA, OH, NC, GA, MI, MO, MD, CO, MN, IN, AL, SC, LA, KY, OR, UT, NV, AR, MS, NE, ID, HI, MA, IA, NH, ME, RI, SD, AK, ND, VT, WY, DC, VA };
 export const STATE_CODES = Object.keys(STATE_ADAPTERS);
 
 // Browser-tier states run a ~15–30s headless-browser session (WAF/anti-bot). Too slow for the live request
 // path — so we SKIP them there (serve from the `inmates` DB instead) and refresh the DB asynchronously
 // (crawler + on-demand hydration). Direct-fetch states (CA/PA/IL) are fast and run live.
-export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI']);
+// Async-tier: too slow for the live request path (headless-browser session and/or a captcha solve, 15–120s+).
+// Skipped on the live path (served from the `inmates` DB) and refreshed by the off-request crawler. NOTE: TX
+// needs a real browser; VA is node-only but slow (reCAPTCHA solve). Direct-fetch states (CA/PA/IL) run live.
+export const BROWSER_TIER = new Set(['TX', 'NY', 'MO', 'MI', 'RI', 'VA']);
 
 /**
  * Query the state DOC adapter for `query.state`. Self-gating: returns [] when we have no adapter, no

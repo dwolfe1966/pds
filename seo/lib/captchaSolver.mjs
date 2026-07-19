@@ -9,6 +9,10 @@
 const BASE = 'https://2captcha.com';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Normalize the key against common paste errors: surrounding whitespace/quotes and a stray leading `=`
+// (a `KEY==value` line in .env parses the value as `=value`). 2Captcha keys are exactly 32 hex chars.
+const apiKey = () => (process.env.CAPTCHA_SOLVER_KEY || '').trim().replace(/^["'=\s]+/, '').replace(/["'\s]+$/, '');
+
 async function poll(key, id, { tries = 20, delay = 5000 } = {}) {
   for (let i = 0; i < tries; i++) {
     await sleep(delay);
@@ -27,7 +31,7 @@ async function poll(key, id, { tries = 20, delay = 5000 } = {}) {
  * `caseSensitive`, `minLength`/`maxLength` tune accuracy. Returns null if unconfigured / unsolved.
  */
 export async function solveImageCaptcha(base64, opts = {}) {
-  const key = process.env.CAPTCHA_SOLVER_KEY;
+  const key = apiKey();
   if (!key || !base64) return null;
   const body = new URLSearchParams({ key, method: 'base64', body: base64.replace(/^data:[^,]+,/, ''), json: '1' });
   if (opts.numeric) body.set('numeric', '1');
@@ -48,7 +52,7 @@ export async function solveImageCaptcha(base64, opts = {}) {
  * @param {{sitekey:string, pageurl:string, enterprise?:boolean, action?:string, v3?:boolean, minScore?:number}} p
  */
 export async function solveRecaptcha(p = {}) {
-  const key = process.env.CAPTCHA_SOLVER_KEY;
+  const key = apiKey();
   if (!key || !p.sitekey || !p.pageurl) return null;
   const body = new URLSearchParams({ key, method: 'userrecaptcha', googlekey: p.sitekey, pageurl: p.pageurl, json: '1' });
   if (p.enterprise) body.set('enterprise', '1');
@@ -61,4 +65,4 @@ export async function solveRecaptcha(p = {}) {
   } catch { return null; }
 }
 
-export const hasCaptchaSolver = () => !!process.env.CAPTCHA_SOLVER_KEY;
+export const hasCaptchaSolver = () => !!apiKey();
