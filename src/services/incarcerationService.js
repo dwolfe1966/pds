@@ -18,6 +18,23 @@ export function corroboratesAge(recordAge, personAge, pad = 2) {
   return recordAge >= lo - pad && recordAge <= hi + pad;
 }
 
+const normGender = (g) => { const s = String(g || '').toLowerCase(); if (/^m|male/.test(s)) return 'male'; if (/^f|female/.test(s)) return 'female'; return ''; };
+
+/**
+ * POST-PAYMENT (report/identity) corroboration — TIGHTER than the pre-pay teasers (owner 2026-07-19).
+ * A record is attributed to a specific person only if age corroborates within `pad` (default ±1) AND, when
+ * BOTH sides expose gender, the genders match. Returns null (no match) or { strength }:
+ *   'strong'  = age + gender both corroborate (gender known on both sides and equal)
+ *   'possible'= age corroborates, gender unknown on one side (can't confirm — still shown, labeled softer)
+ * Pre-pay name-search teasers stay loose (name+state) and do NOT call this.
+ */
+export function corroboratePerson(record, person, { pad = 1 } = {}) {
+  if (!corroboratesAge(record && record.age, person && person.age, pad)) return null;
+  const pg = normGender(person && person.gender), rg = normGender(record && record.gender);
+  if (pg && rg && pg !== rg) return null; // both known + mismatch → reject (different person)
+  return { strength: pg && rg ? 'strong' : 'possible' };
+}
+
 /** Normalize the many upstream custody-status vocabularies to a small, clean, user-facing label set. */
 export function cleanReleaseStatus(status, recordType) {
   if (recordType === 'court') return 'Court record';

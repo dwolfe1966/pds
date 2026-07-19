@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import MyProfileModular from './MyProfileModular';
 import { getReportDetail } from '../services/reportService';
 import { extractAll } from '../utils/reportExtract';
+import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../services/incarcerationService';
 import {
   getMappedIdentity, fetchMappedIdentity, fetchSuppression, setModuleDisposition, computeProtectionScore,
 } from '../services/memberEnrichment';
@@ -80,6 +81,35 @@ export default function MyProfileModularLive() {
   const identityData = identityToProfileData(identity);
   const effectiveData = data || identityData || (DEV ? sampleProfileData : null);
   const usingPartial = !data && !!identityData; // real profile from enrichment, awaiting full report
+
+  // Merge first-party incarceration/court records INTO the criminal module (owner 2026-07-19) — one unified
+  // "Court & Criminal" area, not a separate section. TIGHT match (age±1 + gender when known) so a same-name
+  // stranger isn't attributed to the member. Self-gates: adds nothing when there are no corroborated records.
+  const [incarcerationRows, setIncarcerationRows] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    const nm = identity && identity.name; const st = identity && identity.state;
+    const parts = String(nm || '').trim().split(/\s+/).filter(Boolean);
+    if (!st || parts.length < 2) { setIncarcerationRows([]); return undefined; }
+    fetchBookings({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: identity.age })
+      .then((r) => {
+        if (!alive) return;
+        const rows = (r.records || [])
+          .filter((rec) => corroboratePerson(rec, { age: identity.age, gender: identity.gender }))
+          .map((rec) => ({
+            charge: rec.recordType === 'court' ? 'Court record' : ((rec.charges && rec.charges[0]) || 'Incarceration'),
+            disposition: rec.recordType === 'court' ? (rec.facility || null) : (cleanReleaseStatus(rec.releaseStatus, rec.recordType) || rec.facility || null),
+            court: rec.facility || null, chargesFiledDate: rec.bookingDate || null, _firstParty: true,
+          }));
+        setIncarcerationRows(rows);
+      })
+      .catch(() => { if (alive) setIncarcerationRows([]); });
+    return () => { alive = false; };
+  }, [identity && identity.name, identity && identity.state, identity && identity.age, identity && identity.gender]);
+  const mergedData = effectiveData
+    ? { ...effectiveData, criminalRecords: [...(effectiveData.criminalRecords || []), ...incarcerationRows] }
+    : effectiveData;
+
   const ps = computeProtectionScore(identity, { suppressed, hiddenFields });
   const hero = {
     name: (identity && identity.name) || 'Your profile',
@@ -120,7 +150,7 @@ export default function MyProfileModularLive() {
         </div>
       )}
       <MyProfileModular
-        data={effectiveData}
+        data={mergedData}
         hero={hero}
         dispositions={dispositions}
         onDispositionChange={onDispositionChange}

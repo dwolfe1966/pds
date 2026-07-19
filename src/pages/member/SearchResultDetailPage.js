@@ -389,7 +389,7 @@ const SearchResultDetailPage = () => {
         const parts = String(data.fullName || '').trim().split(/\s+/).filter(Boolean);
         const st = (Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
           || (String(data.currentLocation || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
-        return parts.length >= 2 ? <InmateBookingSection firstName={parts[0]} lastName={parts[parts.length - 1]} state={st} personAge={data.age} /> : null;
+        return parts.length >= 2 ? <InmateBookingSection firstName={parts[0]} lastName={parts[parts.length - 1]} state={st} personAge={data.age} personGender={data.gender} /> : null;
       })()}
 
       {reportView === 'profile' ? (

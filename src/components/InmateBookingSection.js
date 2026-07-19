@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchBookings, corroboratesAge, cleanReleaseStatus } from '../services/incarcerationService';
+import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../services/incarcerationService';
 
 // No-mugshot placeholder colors, cycled per row so multiple photo-less records read as distinct people
 // (owner 2026-07-19): light blue / green / pink.
@@ -20,7 +20,7 @@ const PLACEHOLDER_BG = [
  * So we require age corroboration (±2) against the profile's age; records that don't corroborate (or when
  * the profile has no age to check) are NOT shown. Mirrors the strict mode of InmateBookingTeaser (SUP).
  */
-export default function InmateBookingSection({ firstName, lastName, state, personAge, context = 'search' }) {
+export default function InmateBookingSection({ firstName, lastName, state, personAge, personGender, context = 'search' }) {
   const isIdentity = context === 'identity'; // member's OWN exposure view vs a searched person's report
   const [result, setResult] = useState({ status: 'loading', data: null });
   const [nonce, setNonce] = useState(0);
@@ -35,8 +35,11 @@ export default function InmateBookingSection({ firstName, lastName, state, perso
     return () => { alive = false; };
   }, [firstName, lastName, state, personAge, nonce]);
 
-  // STRICT: only records whose age corroborates this profile. Range-aware (handles "35-40"). No age → nothing.
-  const records = ((result.data && result.data.records) || []).filter((r) => corroboratesAge(r.age, personAge));
+  // POST-PAYMENT TIGHT match (owner 2026-07-19): age±1 + gender-must-match-when-known. Each kept record carries
+  // a confidence strength ('strong' = age+gender corroborate; 'possible' = age only) surfaced as a label.
+  const records = ((result.data && result.data.records) || [])
+    .map((r) => { const m = corroboratePerson(r, { age: personAge, gender: personGender }); return m ? { ...r, _strength: m.strength } : null; })
+    .filter(Boolean);
 
   // Delivered product: a transient /api/incarceration failure (it runs a 30–60s browser/captcha flow) must NOT
   // look identical to "no records." Offer a retry instead of a silent blank.
@@ -55,7 +58,7 @@ export default function InmateBookingSection({ firstName, lastName, state, perso
   return (
     <section style={{ margin: '20px 0', border: '1px solid #e5e7eb', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
       <div style={{ padding: '14px 18px', borderBottom: '1px solid #eef2f7', background: '#f8faf9' }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>⚖️ {isIdentity ? 'Your Public Incarceration & Court Records' : 'Possible Booking & Incarceration Records'} <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>⚖️ {isIdentity ? 'Your Public Incarceration & Court Records' : 'Criminal & Court Records'} <span style={{ color: '#0d5d2f' }}>({records.length})</span></h2>
         <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>{isIdentity
           ? 'Public records matching your name, state, and age — part of what’s exposed about you. Not you? These may be a same-name individual.'
           : 'Matched to this profile on name, state, and age (±2). Verify identity before relying on any record.'}</p>
@@ -70,6 +73,7 @@ export default function InmateBookingSection({ firstName, lastName, state, perso
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontWeight: 800, color: '#0f172a', fontSize: 15 }}>{r.name}{r.age ? `, ${r.age}` : ''}</span>
+                <span title={r._strength === 'strong' ? 'Age and gender both match this profile' : 'Age matches; gender could not be confirmed'} style={{ fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '2px 7px', ...(r._strength === 'strong' ? { color: '#166534', background: '#dcfce7' } : { color: '#64748b', background: '#f1f5f9' }) }}>{r._strength === 'strong' ? 'Strong match' : 'Possible match'}</span>
                 {cleanReleaseStatus(r.releaseStatus, r.recordType) && <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '2px 8px', ...(r.recordType === 'court' ? { color: '#b45309', background: '#fef3c7' } : { color: '#166534', background: '#dcfce7' }) }}>{cleanReleaseStatus(r.releaseStatus, r.recordType)}</span>}
                 <span style={{ marginLeft: 'auto', fontSize: 11, color: '#94a3b8' }}>{r.sourceName || r.source}</span>
               </div>
