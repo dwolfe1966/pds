@@ -117,6 +117,14 @@ const F = ({ label, value }) => value ? (
   </span>
 ) : null;
 const Meta = ({ children }) => <div style={{ marginTop: 3, lineHeight: 1.7 }}>{children}</div>;
+// A property's `lastSale` is the newest transfer OBJECT (from reportExtract history[0]) — never render it
+// directly (React #31). Collapse to a short "$price · date · deed" string; empty string if nothing usable.
+const lastSaleText = (ls) => {
+  if (!ls) return '';
+  if (typeof ls === 'string') return ls;
+  const price = (typeof ls.salesPrice === 'number' && !isNaN(ls.salesPrice)) ? `$${ls.salesPrice.toLocaleString()}` : '';
+  return [price, ls.date || ls.transferDate, ls.deedType].filter(Boolean).join(' · ');
+};
 
 const DEFAULT_DISP = {
   contact: 'protect', locations: 'protect', family: 'protect',
@@ -311,7 +319,7 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         {(d.properties || []).map((p, i) => (
           <div key={`pr${i}`} style={{ padding: '4px 0' }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{p.address || [p.city, p.state].filter(Boolean).join(', ') || 'Property'}</div>
-            <div style={{ fontSize: 12.5, color: '#6b7280' }}>{[p.assessedValue && `Assessed ${p.assessedValue}`, p.lastSale].filter(Boolean).join(' · ')}</div>
+            <div style={{ fontSize: 12.5, color: '#6b7280' }}>{[p.assessedValue && `Assessed ${p.assessedValue}`, lastSaleText(p.lastSale)].filter(Boolean).join(' · ')}</div>
           </div>
         ))}
         {!(d.properties || []).length && none('No property records found.')}
@@ -319,7 +327,7 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
     ), full: () => (
       <div>
         {(d.properties || []).map((p, i) => (
-          <Item key={`pr${i}`}><Title>🏘️ {p.address || [p.city, p.state].filter(Boolean).join(', ') || 'Property'}</Title><Meta><F label="APN" value={p.apn} /><F label="Assessed" value={p.assessedValue} /><F label="Owner" value={p.owner} /><F label="Last sale" value={p.lastSale} /></Meta></Item>
+          <Item key={`pr${i}`}><Title>🏘️ {p.address || [p.city, p.state].filter(Boolean).join(', ') || 'Property'}</Title><Meta><F label="APN" value={p.apn} /><F label="Assessed" value={p.assessedValue} /><F label="Owner" value={p.owner} /><F label="Last sale" value={lastSaleText(p.lastSale)} /></Meta></Item>
         ))}
         {!(d.properties || []).length && none('No property records found.')}
       </div>

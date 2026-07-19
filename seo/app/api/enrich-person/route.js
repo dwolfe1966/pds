@@ -14,7 +14,7 @@ import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_ORIGINS = new Set(['https://www.idlookup.ai', 'https://idlookup.ai', 'http://localhost:3000']);
+const ALLOWED_ORIGINS = new Set(['https://www.idlookup.ai', 'https://idlookup.ai', 'https://dev.www.idlookup.ai', 'http://localhost:3000']);
 function corsHeaders(origin) {
   const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.idlookup.ai';
   return {

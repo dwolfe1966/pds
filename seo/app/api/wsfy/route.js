@@ -16,6 +16,7 @@ export const runtime = 'nodejs';
 const ALLOWED_ORIGINS = new Set([
   'https://www.idlookup.ai',
   'https://idlookup.ai',
+  'https://dev.www.idlookup.ai',
   'http://localhost:3000',
 ]);
 
