@@ -93,3 +93,38 @@ export async function marriageSearch(query, env = process.env) {
 }
 
 export const hasDivorce = (env = process.env) => !!(env.ENFORMION_AP_NAME && env.ENFORMION_AP_PASSWORD);
+
+/**
+ * Orchestrate the life-events providers for ONE person → a single normalized, recordType-tagged list that maps
+ * to the report / identity / relationship surfaces (docs/design/life-events-data-mapping.md). Never throws.
+ *   - divorce (Enformion $0.05, entitled) + marriage (gated on MARRIAGE_ENABLED) run in parallel (fast).
+ *   - sex-offender (NSOPW, browser-tier ~10s, HIGH-STAKES alias match) runs ONLY when opts.sexOffender === true
+ *     (post-pay reports that want the safety flag) — never on the default/teaser path.
+ * @param {{firstName?:string,lastName?:string,state?:string,city?:string,age?:string|number,gender?:string}} query
+ * @param {object} [opts] { sexOffender?:boolean }
+ */
+export async function findLifeEvents(query, env = process.env, opts = {}) {
+  const tasks = [
+    divorceSearch(query, env).then((rs) => rs.map((r) => ({ ...r, recordType: 'divorce' }))).catch(() => []),
+    marriageSearch(query, env).then((rs) => rs.map((r) => ({ ...r, recordType: 'marriage' }))).catch(() => []),
+  ];
+  if (opts.sexOffender) {
+    tasks.push((async () => {
+      try {
+        const { sexOffender } = await import('./sexOffender.mjs');
+        const r = await sexOffender({ firstName: query.firstName, lastName: query.lastName, state: query.state, city: query.city });
+        return (r.records || []).map((rec) => ({
+          source: 'nsopw', sourceName: 'Sex-offender registry', recordType: 'sex-offender',
+          name: rec.name, firstName: rec.firstName, lastName: rec.lastName, age: rec.age, gender: rec.gender,
+          state: (rec.locations && rec.locations[0] && rec.locations[0].state) || query.state || null,
+          county: (rec.locations && rec.locations[0] && rec.locations[0].county) || null,
+          offenses: rec.offenses || [], photoUrl: rec.photoUrl || null, registryUrl: rec.registryUrl || null,
+          matchedAlias: rec.matchedAlias || null, jurisdiction: rec.jurisdiction || null,
+        }));
+      } catch { return []; }
+    })());
+  }
+  const settled = await Promise.allSettled(tasks);
+  const records = settled.filter((s) => s.status === 'fulfilled').flatMap((s) => s.value);
+  return { count: records.length, records };
+}
