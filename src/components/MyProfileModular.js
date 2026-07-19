@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AddressMap from './AddressMap';
 
 /**
  * MyProfileModular — My Profile as a social-profile surface (FB/LinkedIn model). See
@@ -213,11 +214,13 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
     ) },
     { id: 'locations', icon: '📍', title: 'Locations', source: 'observed', body: () => (
       <div style={wrap}>
+        <div style={{ width: '100%' }}><AddressMap addresses={d.addresses} height={200} /></div>
         {(d.addresses || []).map((a, i) => <Chip key={`ad${i}`}>{i === 0 ? '🏠 ' : ''}{[a.city, a.state].filter(Boolean).join(', ')}{a.firstSeen ? ` · ${a.firstSeen}${a.lastSeen ? `–${a.lastSeen}` : ''}` : ''}</Chip>)}
         {!(d.addresses || []).length && none('No addresses on record.')}
       </div>
     ), full: () => (
       <div>
+        <AddressMap addresses={d.addresses} height={240} />
         {(d.addresses || []).map((a, i) => (
           <Item key={`ad${i}`}><Title>{i === 0 ? '🏠 ' : '📍 '}{[a.street, a.city, a.state, a.zip].filter(Boolean).join(', ')}</Title><Meta><F label="County" value={a.county} /><F label="Dates" value={[a.firstSeen, a.lastSeen].filter(Boolean).join('–')} /></Meta></Item>
         ))}
