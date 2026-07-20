@@ -14,6 +14,19 @@ import { SITE, MAIN } from './site';
 
 const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
 
+// OBIS appends the county of conviction to each charge, e.g. "FELONY BATTERY (SARASOTA)". Pull the first one
+// out to show as the record's location, and strip it off the charge text so charges read cleanly.
+function splitCounty(charges) {
+  let county = null;
+  const cleaned = (charges || []).map((c) => {
+    const s = String(c);
+    const m = s.match(/\s*\(([A-Z][A-Z .'-]+)\)\s*$/);
+    if (m) { if (!county) county = m[1].trim(); return s.slice(0, m.index).trim(); }
+    return s;
+  });
+  return { county, cleaned };
+}
+
 // A slug must look like a person name (letters + hyphens), not a stray path segment.
 export const NAME_SLUG_RE = /^[a-z]+(?:-[a-z]+)+$/;
 
@@ -103,15 +116,19 @@ export async function NameInStateView({ state, name }) {
             Public booking &amp; incarceration records matching this name in {st.name}, from state and county correctional sources.
           </p>
           <div style={{ display: 'grid', gap: 8 }}>
-            {inmates.map((rec, i) => (
-              <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontWeight: 700, color: '#111827' }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
-                <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>{[rec.facility, [rec.county, rec.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ')}</div>
-                {Array.isArray(rec.charges) && rec.charges.length > 0 && (
-                  <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>⚖️ {rec.charges.slice(0, 2).join(' · ')}{rec.charges.length > 2 ? ` +${rec.charges.length - 2} more` : ''}</div>
-                )}
-              </div>
-            ))}
+            {inmates.map((rec, i) => {
+              const { county, cleaned } = splitCounty(rec.charges);
+              const loc = [rec.facility, [(rec.county || county) ? `${(rec.county || county)} County` : null, rec.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+              return (
+                <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
+                  <div style={{ fontWeight: 700, color: '#111827' }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
+                  {loc && <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>📍 {loc}</div>}
+                  {cleaned.length > 0 && (
+                    <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>⚖️ {cleaned.slice(0, 2).join(' · ')}{cleaned.length > 2 ? ` +${cleaned.length - 2} more` : ''}</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: state DOC &amp; county correctional rosters. Public record, not a consumer report.</p>
         </section>
