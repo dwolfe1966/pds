@@ -1,7 +1,7 @@
 // Root-level name-in-STATE recovery route — /{state}/{first-last}, e.g. /ca/david-johnson.
 // Google indexed these root URLs from an older structure; they were 404ing. Serves the shared
 // name-in-state view. Canonical points at the /people form so both indexed shapes consolidate.
-// Contained: static segments (/people, /profiles, /api) win; non-state / non-name slugs 404.
+// Contained: static segments (/people, /api) win; non-state / non-name slugs 404.
 import { notFound } from 'next/navigation';
 import { resolveNameInState, nameInStateMetadata, nameInStatePath, NameInStateView } from '../../../lib/name-in-state';
 

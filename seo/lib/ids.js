@@ -31,24 +31,8 @@ export function ageToken(age) {
   return t || 'x';
 }
 
-// Real-profile pages live under /profiles/* (separate category from the
-// state-first /people surface).
-export function personPath(p) {
-  return `/profiles/${nameSlug(p.firstName, p.lastName)}/${p.state.toLowerCase()}/${citySlug(p.city)}/${p.id}`;
-}
-
-export function namePath(p) {
-  return `/profiles/${nameSlug(p.firstName, p.lastName)}`;
-}
-
-// Real-profile hub path builders (name → state → city).
-export function nameStatePath(slug, state) {
-  return `/profiles/${slug}/${String(state).toLowerCase()}`;
-}
-
-export function nameCityPath(slug, state, city) {
-  return `/profiles/${slug}/${String(state).toLowerCase()}/${citySlug(city)}`;
-}
+// (The /profiles/* path builders — personPath/namePath/nameStatePath/nameCityPath — were removed with the
+// abandoned /profiles IDI experiment, 2026-07-20. nameSlug/citySlug below still serve the /people surface.)
 
 // State-first path builders (the lead /people surface).
 export function statePath(code) {

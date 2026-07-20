@@ -2,14 +2,12 @@
   "name": "idlookup-seo",
   "version": "0.1.0",
   "private": true,
-  "description": "IDLookup programmatic-SEO surface. Separate deployable; serves only the /people tree behind the path-split proxy. Profiles persisted in Neon Postgres (falls back to seo/data/profiles.json when no DATABASE_URL).",
+  "description": "IDLookup programmatic-SEO surface. Separate deployable; serves the /people tree (Census name×location directory) behind the path-split proxy.",
   "scripts": {
     "dev": "next dev -p 3005",
     "build": "next build",
     "start": "next start -p 3005",
-    "db:schema": "node scripts/apply-schema.mjs",
-    "db:seed": "node scripts/seed-db.mjs",
-    "sweep": "node scripts/sweep-profiles.mjs"
+    "db:schema": "node scripts/apply-schema.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
