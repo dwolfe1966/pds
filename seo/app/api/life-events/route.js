@@ -14,6 +14,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://idlookup.me',
   'https://www.idlookup.me',
   'http://localhost:3000',
+  'http://localhost:3010',
 ]);
 
 function corsHeaders(origin) {
