@@ -479,12 +479,28 @@ const SalesSearchResultsPage = () => {
             )}
           </div>
         ) : !loading && !errorMessage ? (
-          (() => {
-            const flags = readThinMatch();
-            return campaign?.search?.zeroState === 'thinMatch'
-              ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} version={thinMatchVersion} />
-              : <ZeroResultsPanel searchType="name" query={searchQuery} theme={theme} />;
-          })()
+          <>
+            {/* ZERO / THIN-MATCH RESCUE (owner VIP 2026-07-20): IDI returns TooManyMatches on common names (esp.
+                from the SEO/ads funnel), leaving this page empty. The engine teaser pulls FIRST-PARTY data
+                (incarceration/divorce, independent of IDI) — so it fills the dead-end with real records + a
+                conversion path exactly when BC found nothing. Self-gates to nothing when we have no data. */}
+            {searchQuery.lastName && (
+              <div style={{ marginBottom: 28, paddingBottom: 4 }}>
+                <SignalTeaser
+                  subject={{ firstName: searchQuery.firstName, lastName: searchQuery.lastName, state: searchQuery.state }}
+                  flow={getFlow() || flow || 'general'}
+                  viewerRelation="prospect"
+                  stage="pre-signup"
+                />
+              </div>
+            )}
+            {(() => {
+              const flags = readThinMatch();
+              return campaign?.search?.zeroState === 'thinMatch'
+                ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} version={thinMatchVersion} />
+                : <ZeroResultsPanel searchType="name" query={searchQuery} theme={theme} />;
+            })()}
+          </>
         ) : null}
 
         {/* Refine search — moved below results so results are immediately visible (not pushed
