@@ -8,6 +8,7 @@ import { cache } from 'react';
 import { getStateSlice, getNameInState, getStateTopNames, getStateCities } from './directory';
 import { getFirstNameFacts, getSurnameFacts } from './facts';
 import { rosterByNameState } from './incarceration.mjs';
+import { InmateRecordsSection } from './inmate-records';
 import { nameFromSlug, statePath, cityPath } from './ids';
 import { crumbsJsonLd } from './schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from './ui';
@@ -22,19 +23,6 @@ const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
 // (per-name facts shared across 50 states + per-state city list shared across all names) → noindex.
 const rosterFor = cache((stateCode, first, last) =>
   rosterByNameState({ state: stateCode, firstName: first, lastName: last, limit: 12 }));
-
-// OBIS appends the county of conviction to each charge, e.g. "FELONY BATTERY (SARASOTA)". Pull the first one
-// out to show as the record's location, and strip it off the charge text so charges read cleanly.
-function splitCounty(charges) {
-  let county = null;
-  const cleaned = (charges || []).map((c) => {
-    const s = String(c);
-    const m = s.match(/\s*\(([A-Z][A-Z .'-]+)\)\s*$/);
-    if (m) { if (!county) county = m[1].trim(); return s.slice(0, m.index).trim(); }
-    return s;
-  });
-  return { county, cleaned };
-}
 
 // A slug must look like a person name (letters + hyphens), not a stray path segment.
 export const NAME_SLUG_RE = /^[a-z]+(?:-[a-z]+)+$/;
@@ -124,38 +112,11 @@ export async function NameInStateView({ state, name }) {
 
       <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
 
-      {inmates.length > 0 && (
-        <section style={{ ...stat.card, flex: '1 1 100%', marginTop: 20 }}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Incarceration records for {full} in {st.name} ({inmates.length})</h2>
-          <p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
-            Public booking &amp; incarceration records matching this name in {st.name}, from state and county correctional sources.
-          </p>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {inmates.map((rec, i) => {
-              const { county, cleaned } = splitCounty(rec.charges);
-              const loc = [rec.facility, [(rec.county || county) ? `${(rec.county || county)} County` : null, rec.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
-              // Mugshot via background-image: if the public DOC photo 404s (released/no-photo) it degrades to a
-              // clean gray box — no broken-image icon (server-rendered, no client onError available).
-              const photo = rec.mugshotUrl
-                ? { backgroundColor: '#e5e7eb', backgroundImage: `url(${rec.mugshotUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                : { backgroundColor: '#eef1f4' };
-              return (
-                <div key={i} style={{ display: 'flex', gap: 12, border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
-                  <div aria-hidden="true" style={{ flexShrink: 0, width: 56, height: 68, borderRadius: 8, ...photo }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, color: '#111827' }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
-                    {loc && <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>📍 {loc}</div>}
-                    {cleaned.length > 0 && (
-                      <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>⚖️ {cleaned.slice(0, 2).join(' · ')}{cleaned.length > 2 ? ` +${cleaned.length - 2} more` : ''}</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: state DOC &amp; county correctional rosters. Public record, not a consumer report.</p>
-        </section>
-      )}
+      <InmateRecordsSection
+        records={inmates}
+        heading={`Incarceration records for ${full} in ${st.name} (${inmates.length})`}
+        blurb={`Public booking & incarceration records matching this name in ${st.name}, from state and county correctional sources.`}
+      />
 
       <div style={{ ...stat.wrap, marginTop: 20 }}>
         <div style={stat.card}>
