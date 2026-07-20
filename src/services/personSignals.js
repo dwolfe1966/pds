@@ -17,7 +17,7 @@
  * later phases (SERP → SUP/Payment → landing → post-pay), with the old teasers kept live until augment is proven.
  */
 import { fetchLifeEvents } from './lifeEventsService';
-import { fetchBookings, corroboratePerson } from './incarcerationService';
+import { fetchBookings, corroboratePerson, corroboratesAge } from './incarcerationService';
 
 // Emphasis config (design §6). Flow picks the lead + capped secondary; owner-self orders by exposure severity.
 const FLOW_PRIORITY = {
@@ -68,14 +68,25 @@ async function _computeRaw(subject, stage) {
 }
 
 // Shape raw → exposed signals per stage. This is where the stage/harm gate bites.
-function shapeSignals(raw, { stage, subject }) {
+// strict = a SPECIFIC-PERSON surface (SUP / Payment / profile), so corroborate to this person — a same-name
+// stranger's record must not be attributed. Booking → age±1 (corroboratesAge). Marriage/divorce carry no
+// reliable age, so drop only records whose age IS present and far off, and cap to a conservative few.
+function shapeSignals(raw, { stage, subject, strict }) {
   const signals = { capability: { available: true } };
-  signals.marriageDivorce = { records: raw.marriageDivorce, count: raw.marriageDivorce.length };
+  let md = raw.marriageDivorce;
+  let booking = raw.booking;
+  if (strict) {
+    const pa = parseInt(subject.age, 10);
+    if (Number.isFinite(pa)) md = md.filter((r) => !Number.isFinite(r.age) || Math.abs(r.age - pa) <= 3);
+    md = md.slice(0, 2);
+    booking = booking.filter((r) => corroboratesAge(r.age, subject.age));
+  }
+  signals.marriageDivorce = { records: md, count: md.length };
 
   // Booking: post-pay always; pre-signup only when display permission is confirmed (flag).
   const bookingVisible = stage === 'post-pay' || bookingPreSignupOn();
   signals.booking = bookingVisible
-    ? { records: raw.booking, count: raw.booking.length }
+    ? { records: booking, count: booking.length }
     : { records: [], count: 0 };
 
   // Sex-offender: POST-PAY only, and TIGHT-corroborated to this person (age±1 + gender + state). Empty-and-safe.
@@ -122,15 +133,16 @@ async function isSuppressed(/* subject */) { return false; }
  * @param {'prospect'|'member-other'|'owner-self'} [p.viewerRelation='prospect']
  * @param {'pre-signup'|'post-pay'} [p.stage]  defaults from viewerRelation
  * @param {'inmate'|'divorce'|'dating'|'death'|'general'} [p.flow='general']
+ * @param {boolean} [p.strict=false] specific-person surface → corroborate booking/marriage-divorce to subject
  * @returns {Promise<{suppressed:boolean, lens:string, stage:string, signals:object, lead:string|null, secondary:string[]}>}
  */
-export async function getPersonSignals({ subject, viewerRelation = 'prospect', stage, flow = 'general' } = {}) {
+export async function getPersonSignals({ subject, viewerRelation = 'prospect', stage, flow = 'general', strict = false } = {}) {
   const st = stage || (viewerRelation === 'prospect' ? 'pre-signup' : 'post-pay');
   const base = { suppressed: false, lens: viewerRelation, stage: st, signals: {}, lead: null, secondary: [] };
   if (!subject || (!subject.lastName && !subject.firstName)) return base;
   if (await isSuppressed(subject)) return { ...base, suppressed: true };
   const raw = await rawSignals(subject, st);
-  const signals = shapeSignals(raw, { stage: st, subject });
+  const signals = shapeSignals(raw, { stage: st, subject, strict });
   const { lead, secondary } = resolveEmphasis(signals, { flow, viewerRelation });
   return { suppressed: false, lens: viewerRelation, stage: st, signals, lead, secondary };
 }

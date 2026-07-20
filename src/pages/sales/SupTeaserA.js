@@ -6,7 +6,11 @@ import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 import DivorceTeaser from '../../components/DivorceTeaser';
 import DatingTeaser from '../../components/DatingTeaser';
+import SignalTeaser from '../../components/SignalTeaser';
 import { getFlow } from '../../services/funnelFlow';
+
+// Signals-augmentation Phase 2: flag=1 → unified engine teaser; flag=0 (default) → original per-flow teasers.
+const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
 
 /**
  * Shared "default SUP" teaser (the variant-A design), driven by a `palette` so
@@ -250,12 +254,18 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
             </div>
           )}
 
-          {/* Incarceration/arrest records — high-intent conversion lever. STRICT mode: this is a SPECIFIC
-              person, so we only surface a record that corroborates them on age (±2) — never attribute a
-              same-name stranger's mugshot/charges to this profile. Self-gates to nothing otherwise. */}
-          {bkLast && getFlow() === 'inmate' && <InmateBookingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} strict accent={P.accent || P.ink} dark={P.ink} />}
-          {bkLast && getFlow() === 'divorce' && <DivorceTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
-          {bkLast && getFlow() === 'dating' && <DatingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
+          {/* Record teaser — high-intent conversion lever on a SPECIFIC person → STRICT (corroborate on age so a
+              same-name stranger's record is never attributed here). AUGMENT=1 → unified engine teaser; =0 → the
+              original per-flow strict teasers (unchanged / real rollback). */}
+          {SIGNALS_AUGMENT ? (
+            bkLast && <SignalTeaser subject={{ firstName: bkFirst, lastName: bkLast, state: bkState, age: person.age || person.ageRange, gender: person.gender }} flow={getFlow() || 'general'} viewerRelation="prospect" stage="pre-signup" strict accent={P.accent || P.ink} dark={P.ink} />
+          ) : (
+            <>
+              {bkLast && getFlow() === 'inmate' && <InmateBookingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} strict accent={P.accent || P.ink} dark={P.ink} />}
+              {bkLast && getFlow() === 'divorce' && <DivorceTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
+              {bkLast && getFlow() === 'dating' && <DatingTeaser firstName={bkFirst} lastName={bkLast} state={bkState} personAge={person.age || person.ageRange} personGender={person.gender} strict accent={P.accent || P.ink} dark={P.ink} />}
+            </>
+          )}
         </div>
 
         {/* Variant D (map layout): location map panel — stylized, self-contained

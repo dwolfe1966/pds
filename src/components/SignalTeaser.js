@@ -20,17 +20,17 @@ const CAPABILITIES = [
   ['📍', 'Current location'],
 ];
 
-export default function SignalTeaser({ subject, flow = 'general', viewerRelation = 'prospect', stage = 'pre-signup', accent = '#0d5d2f', dark = '#0a4a25' }) {
+export default function SignalTeaser({ subject, flow = 'general', viewerRelation = 'prospect', stage = 'pre-signup', strict = false, accent = '#0d5d2f', dark = '#0a4a25' }) {
   const [res, setRes] = useState(null);
 
   useEffect(() => {
     let alive = true;
     if (!subject || (!subject.lastName && !subject.firstName)) return undefined;
-    getPersonSignals({ subject, viewerRelation, stage, flow })
+    getPersonSignals({ subject, viewerRelation, stage, flow, strict })
       .then((r) => { if (alive) setRes(r); })
       .catch(() => {});
     return () => { alive = false; };
-  }, [subject && subject.firstName, subject && subject.lastName, subject && subject.state, flow, viewerRelation, stage]);
+  }, [subject && subject.firstName, subject && subject.lastName, subject && subject.state, subject && subject.age, flow, viewerRelation, stage, strict]);
 
   if (!res || res.suppressed) return null;
   const { signals, lead, secondary } = res;

@@ -101,6 +101,24 @@ describe('emphasis', () => {
   });
 });
 
+describe('strict (specific-person surfaces: SUP / Payment)', () => {
+  const BOOK_MATCH = { recordType: 'booking', name: 'Alex Morgan', age: 41 };   // within ±1 of subject age 40
+  const BOOK_FAR = { recordType: 'booking', name: 'Alex Morgan', age: 70 };     // same name, different person
+  test('booking is corroborated on age; a far same-name record is dropped', async () => {
+    process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP = '1';
+    fetchBookings.mockResolvedValue({ count: 2, records: [BOOK_MATCH, BOOK_FAR] });
+    const r = await getPersonSignals({ subject: SUBJECT, stage: 'pre-signup', flow: 'inmate', strict: true });
+    expect(r.signals.booking.count).toBe(1);
+    expect(r.signals.booking.records[0].age).toBe(41);
+  });
+  test('non-strict keeps both same-name booking records (loose SERP behavior)', async () => {
+    process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP = '1';
+    fetchBookings.mockResolvedValue({ count: 2, records: [BOOK_MATCH, BOOK_FAR] });
+    const r = await getPersonSignals({ subject: SUBJECT, stage: 'pre-signup', flow: 'inmate', strict: false });
+    expect(r.signals.booking.count).toBe(2);
+  });
+});
+
 describe('guards', () => {
   test('no name → empty, no fetches', async () => {
     const r = await getPersonSignals({ subject: { state: 'CA' } });
