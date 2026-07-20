@@ -216,9 +216,13 @@ const VerticalIntentLanding = ({ cfg }) => {
             <div className={s.form}>
               <h2 className={s.sectionTitle}>{cfg.detailsTitle}</h2>
               <p className={s.helper}>A few more details help us surface the exact person.</p>
-              {/* Data hook: reveal real records for the entered name. Loose (name+state — no specific person yet). */}
+              {/* Data hook: reveal real records for the entered name. Loose (name+state — no specific person yet).
+                  Gated on cfg.teaser: only verticals with a MATCHING data signal (divorce/dating) augment. A
+                  vertical with a specific promise but no signal yet (death — no death provider wired) must show
+                  NOTHING, not a mismatched general-augment teaser (e.g. incarceration mugshots on a death search).
+                  General-funnel augmentation lives on the SERP/home, not here. */}
               {SIGNALS_AUGMENT ? (
-                lastName && state && (
+                cfg.teaser && lastName && state && (
                   <SignalTeaser subject={{ firstName, lastName, state }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
                 )
               ) : (
