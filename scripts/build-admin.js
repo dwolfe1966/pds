@@ -10,6 +10,12 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 
+// 0. Clean the dist dir first — Parcel doesn't clean --dist-dir, so stale hashed assets accumulate.
+try {
+  fs.rmSync(path.join(root, 'build-admin'), { recursive: true, force: true });
+  console.log('build-admin: cleaned build-admin/ (fresh build — no stale hashed assets)');
+} catch (e) { /* nothing to clean */ }
+
 // 1. Copy .env.admin → .env.production.local so Parcel picks up admin env vars
 const src = path.join(root, '.env.admin');
 const dst = path.join(root, '.env.production.local');
