@@ -47,6 +47,30 @@ Three layers, three different roles:
 Adding a **city** (e.g., "John Smith, Tampa, FL") almost certainly drops under IDI's cap and returns matches.
 Empirical confirmation would require a live captcha-gated funnel search — offered, not run.
 
+## Volatility update (owner 2026-07-20) — TWO failure modes, not one
+"John Smith, CA" returns results *intermittently*, and search was **totally down 7/8–7/12**. So zero-results is
+masking at least three causes: (a) **deterministic cap** (TooManyMatches — narrowing fixes), (b) **transient
+failure / outage** (any name, intermittent — narrowing does NOT fix; retry-same or wait), (c) **genuine zero**
+(rare name — narrowing can't help). Today all three collapse into `thinMatchNoResults`, so we can't retry
+intelligently. **This is why a detailed error code (below) is a prerequisite for any retry.**
+
+## BACKLOG (before Phase 6) — resilient zero-result handling
+1. **BC ask — detailed error code on zero results.** Distinguish TooManyMatches vs provider-error/outage vs
+   genuine-zero (+ ideally a match COUNT). *Prerequisite for smart retry.* (Owner requested from BC 2026-07-20.)
+2. **Smart retry (name/state, zero results only), error-code-driven:**
+   - TooManyMatches → auto-retry narrowed by **age if provided, else largest city** in the state; bound to 1–2
+     retries; if still capped → "add more detail" prompt (don't loop). Be honest results were narrowed
+     ("likely matches in {city}").
+   - Transient/provider-down → retry SAME query once after short backoff; else fail gracefully.
+   - Genuine zero → no retry → thin-match/broad-report offer.
+   - GUI: "deep search" interstitial to cover the retry latency (honest copy).
+   - Needs a state→largest-city map (have it via Census/SEO data).
+3. **First-party fallback (durable):** when IDI is capped/down, serve our own data (incarceration roster + SEO
+   people directory name×state) as a "which one?" list. Makes the funnel resilient to IDI volatility entirely.
+4. **Investigate the 7/8–7/12 outage** — ask BC for an incident/status; confirm whether it was IDI-side or BC-side.
+
+**Sequencing:** (1) before (2); (3) is the strategic resilience play; all BEFORE Phase 6 legacy-teaser removal.
+
 ## Our-side fix (deferred — owner chose "diagnose only")
 - (A) Detect `raws[0].subType === 'TooManyMatches'` → route to a "narrow your search (add city/age/middle) →
   re-search" step instead of the zero dead-end.
