@@ -8,20 +8,14 @@ import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../
 import ProfileView, { styles } from '../../components/ProfileView';
 import MyProfileModular from '../../components/MyProfileModular';
 import ErrorBoundary from '../../components/ErrorBoundary';
-import { fetchBookings, corroboratePerson, cleanReleaseStatus } from '../../services/incarcerationService';
+import { corroboratePerson, cleanReleaseStatus } from '../../services/incarcerationService';
 import MarriageDivorceSection from '../../components/MarriageDivorceSection';
 import SexOffenderSection from '../../components/SexOffenderSection';
-import { fetchLifeEvents } from '../../services/lifeEventsService';
 import { getFlow } from '../../services/funnelFlow';
 import { getPersonSignals } from '../../services/personSignals';
 
-// Signals-augmentation Phase 4: flag=1 → the report's post-pay signals (booking + marriage/divorce + dating SO)
-// come from ONE getPersonSignals call (member-other lens); flag=0 (default) → the original two ad-hoc fetches
-// below, unchanged (real rollback).
-const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
-
-// Map a first-party booking/court record → the CriminalCard row shape (shared by both the flag=0 fetch path
-// and the flag=1 engine path). `strength` is the corroboration confidence badge ('strong' | 'possible').
+// Map a first-party booking/court record → the CriminalCard row shape. `strength` is the corroboration
+// confidence badge ('strong' | 'possible').
 function mapBookingRow(rec, strength) {
   const isCourt = rec.recordType === 'court';
   return {
@@ -266,38 +260,9 @@ const SearchResultDetailPage = () => {
     return { parts, st };
   };
 
-  // ── flag=0 (default): the ORIGINAL two ad-hoc fetches, unchanged ──────────────────────────────
+  // ── ONE engine call (member-other, post-pay) populates the state the derivations below read: booking →
+  //    incRows (merged into Criminal), marriage/divorce + corroborated sex-offender → lifeEvents. ─────────────
   useEffect(() => {
-    if (SIGNALS_AUGMENT) return undefined;
-    let alive = true;
-    const { parts, st } = subjectFrom(data);
-    if (parts.length < 2 || !st) { setIncRows([]); return undefined; }
-    fetchBookings({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age })
-      .then((r) => {
-        if (!alive) return;
-        setIncRows((r.records || [])
-          .map((rec) => { const m = corroboratePerson(rec, { age: data.age, gender: data.gender }); return m ? mapBookingRow(rec, m.strength) : null; })
-          .filter(Boolean));
-      })
-      .catch(() => { if (alive) setIncRows([]); });
-    return () => { alive = false; };
-  }, [data && data.fullName, data && data.age, data && data.gender]);
-  // Life-events (divorce/marriage + sex-offender) — ONE fetch feeds the Marriage & Divorce section, the
-  // Sex-Offender section (tight-corroborated), and the relatives enrichment. sexOffender only in the DATING flow.
-  useEffect(() => {
-    if (SIGNALS_AUGMENT) return undefined;
-    let alive = true;
-    const { parts, st } = subjectFrom(data);
-    if (parts.length < 2 || !st) { setLifeEvents([]); return undefined; }
-    fetchLifeEvents({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age, gender: data.gender, sexOffender: getFlow() === 'dating' })
-      .then((r) => { if (alive) setLifeEvents(r.records || []); })
-      .catch(() => { if (alive) setLifeEvents([]); });
-    return () => { alive = false; };
-  }, [data && data.fullName, data && data.age, data && data.gender]);
-
-  // ── flag=1: ONE engine call (member-other, post-pay) populates the SAME state the derivations below read ──
-  useEffect(() => {
-    if (!SIGNALS_AUGMENT) return undefined;
     let alive = true;
     const { parts, st } = subjectFrom(data);
     if (parts.length < 2 || !st) { setIncRows([]); setLifeEvents([]); return undefined; }

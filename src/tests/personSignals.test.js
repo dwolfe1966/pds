@@ -77,17 +77,17 @@ describe('post-pay sex-offender corroboration (empty-and-safe)', () => {
 });
 
 describe('emphasis', () => {
-  test('flow picks the lead; augment-off yields lead-only (parity)', async () => {
+  test('kill-switch: REACT_APP_SIGNALS_AUGMENT=0 yields lead-only (no "also found")', async () => {
+    process.env.REACT_APP_SIGNALS_AUGMENT = '0';
     fetchLifeEvents.mockResolvedValue({ count: 1, records: [DIVORCE] });
     fetchBookings.mockResolvedValue({ count: 1, records: [BOOKING] });
     process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP = '1'; // so booking is present pre-signup
     const r = await getPersonSignals({ subject: SUBJECT, stage: 'pre-signup', flow: 'divorce' });
     expect(r.lead).toBe('marriageDivorce');
-    expect(r.secondary).toEqual([]); // augment off → no "also found"
+    expect(r.secondary).toEqual([]); // kill-switch → no "also found"
   });
 
-  test('augment-on adds capped secondary', async () => {
-    process.env.REACT_APP_SIGNALS_AUGMENT = '1';
+  test('augment is the DEFAULT: capped secondary shown without any flag set', async () => {
     process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP = '1';
     fetchLifeEvents.mockResolvedValue({ count: 1, records: [DIVORCE] });
     fetchBookings.mockResolvedValue({ count: 1, records: [BOOKING] });

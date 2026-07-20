@@ -31,8 +31,10 @@ const STRENGTH_ORDER = ['booking', 'sexOffender', 'marriageDivorce']; // for gen
 const OWNER_SELF_ORDER = ['sexOffender', 'booking', 'marriageDivorce']; // most-damaging-to-you first
 const MAX_SECONDARY = 3;
 
-// Flags read LAZILY (so tests/env can toggle without reimport).
-const augmentOn = () => process.env.REACT_APP_SIGNALS_AUGMENT === '1';
+// Flags read LAZILY (so tests/env can toggle without reimport). Post-migration (Phase 6) augment is the
+// COMMITTED default — surfaces always render the engine teaser; this flag is now just an operational kill-switch
+// that degrades to lead-only ('=0') if "also found" ever needs disabling.
+const augmentOn = () => process.env.REACT_APP_SIGNALS_AUGMENT !== '0';
 // Booking pre-signup is PERMISSIVE BY DEFAULT — v3/v11 already show booking pre-signup in prod today (the 7.15%
 // CVR inmate channel), so default-on avoids regressing them when AUGMENT flips. Explicit '0' hides it (the
 // display-permission off-switch). Post-pay always includes booking regardless.

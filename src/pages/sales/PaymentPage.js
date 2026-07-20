@@ -4,14 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useCampaign } from '../../context/CampaignContext';
 import WsfyPaymentTeaser from '../../components/WsfyPaymentTeaser';
 import IdentityPaymentTeaser from '../../components/IdentityPaymentTeaser';
-import InmateBookingTeaser from '../../components/InmateBookingTeaser';
-import DivorceTeaser from '../../components/DivorceTeaser';
-import DatingTeaser from '../../components/DatingTeaser';
 import SignalTeaser from '../../components/SignalTeaser';
 import { getFlow } from '../../services/funnelFlow';
-
-// Signals-augmentation Phase 2: flag=1 → unified engine teaser; flag=0 (default) → original per-flow teasers.
-const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
@@ -803,14 +797,8 @@ const PaymentPage = () => {
         const last = parts[parts.length - 1];
         const pAge = selectedPerson.age || selectedPerson.ageRange;
         const pGender = selectedPerson.gender;
-        let teaser = null;
-        if (SIGNALS_AUGMENT) {
-          // Unified engine teaser (specific person at payment → strict). Handles every flow incl. general.
-          teaser = <SignalTeaser subject={{ firstName: first, lastName: last, state: st, age: pAge, gender: pGender }} flow={flow || 'general'} viewerRelation="prospect" stage="pre-signup" strict accent="#0d5d2f" dark="#0a4a25" />;
-        } else if (flow === 'divorce') teaser = <DivorceTeaser firstName={first} lastName={last} state={st} personAge={pAge} personGender={pGender} strict accent="#0d5d2f" dark="#0a4a25" />;
-        else if (flow === 'dating') teaser = <DatingTeaser firstName={first} lastName={last} state={st} personAge={pAge} personGender={pGender} strict accent="#0d5d2f" dark="#0a4a25" />;
-        else if (flow === 'inmate') teaser = <InmateBookingTeaser firstName={first} lastName={last} state={st} accent="#0d5d2f" dark="#0a4a25" />;
-        if (!teaser) return null;
+        // Unified engine teaser (specific person at payment → strict). Handles every flow incl. general.
+        const teaser = <SignalTeaser subject={{ firstName: first, lastName: last, state: st, age: pAge, gender: pGender }} flow={flow || 'general'} viewerRelation="prospect" stage="pre-signup" strict accent="#0d5d2f" dark="#0a4a25" />;
         return (
           <div style={{ maxWidth: 960, margin: '0 auto 1.25rem' }}>{teaser}</div>
         );

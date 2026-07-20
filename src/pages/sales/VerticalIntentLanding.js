@@ -38,14 +38,8 @@ const Icon = ({ name, className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON_PATHS[name] || ICON_PATHS.search}</svg>
 );
 
-import DivorceTeaser from '../../components/DivorceTeaser';
-import DatingTeaser from '../../components/DatingTeaser';
 import SignalTeaser from '../../components/SignalTeaser';
 import { useFunnelFlow } from '../../services/funnelFlow';
-
-// Signals-augmentation Phase 3: flag=1 → unified engine teaser at the details step; flag=0 (default) → the
-// original per-vertical teaser (divorce/dating), unchanged (real rollback).
-const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
 
 const getStepIndex = (step) => ({ name: 1, location: 2, details: 3, confirm: 4 }[step] || 0);
 const TOTAL_STEPS = 4;
@@ -221,19 +215,8 @@ const VerticalIntentLanding = ({ cfg }) => {
                   vertical with a specific promise but no signal yet (death — no death provider wired) must show
                   NOTHING, not a mismatched general-augment teaser (e.g. incarceration mugshots on a death search).
                   General-funnel augmentation lives on the SERP/home, not here. */}
-              {SIGNALS_AUGMENT ? (
-                cfg.teaser && lastName && state && (
-                  <SignalTeaser subject={{ firstName, lastName, state }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
-                )
-              ) : (
-                <>
-                  {cfg.teaser === 'divorce' && lastName && state && (
-                    <DivorceTeaser firstName={firstName} lastName={lastName} state={state} />
-                  )}
-                  {cfg.teaser === 'dating' && lastName && state && (
-                    <DatingTeaser firstName={firstName} lastName={lastName} state={state} />
-                  )}
-                </>
+              {cfg.teaser && lastName && state && (
+                <SignalTeaser subject={{ firstName, lastName, state }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
               )}
               <div className={s.field}>
                 <label className={s.label} htmlFor={id('age')}>Age (optional)</label>

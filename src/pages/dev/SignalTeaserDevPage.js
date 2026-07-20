@@ -29,7 +29,7 @@ export default function SignalTeaserDevPage() {
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ fontSize: 20 }}>SignalTeaser dev harness</h1>
       <p style={{ fontSize: 13, color: augment ? '#166534' : '#b91c1c', fontWeight: 700 }}>
-        REACT_APP_SIGNALS_AUGMENT = {augment ? '1 (unified teaser)' : 'off → SignalTeaser renders, but surfaces use the OLD teasers'}
+        REACT_APP_SIGNALS_AUGMENT = {augment ? '1 (default: lead + also-found)' : 'unset/0 → default augment ON unless =0 (kill-switch → lead-only)'}
         {' · '}BOOKING_PRESIGNUP = {bookingPre ? '1' : 'off (booking hidden pre-signup)'}
       </p>
       {CASES.map((c) => (

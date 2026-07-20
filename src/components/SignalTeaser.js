@@ -3,15 +3,15 @@ import { getPersonSignals } from '../services/personSignals';
 import { cleanReleaseStatus } from '../services/incarcerationService';
 
 /**
- * Unified, engine-driven teaser (signals-augmentation Phase 1). Consumes ONE getPersonSignals result and
- * renders the resolved LEAD prominently + capped "also found" SECONDARY — instead of each surface fetching and
- * flow-checking on its own. Presence is data-driven; emphasis (lead/secondary) is decided by the engine's
- * FLOW_PRIORITY. Atomic per-signal renderers so each signal shows exactly once (no overlap).
+ * Unified, engine-driven teaser. Consumes ONE getPersonSignals result and renders the resolved LEAD prominently
+ * + capped "also found" SECONDARY — the single teaser for every funnel surface (landing/SERP/SUP/Payment).
+ * Presence is data-driven; emphasis (lead/secondary) is decided by the engine's FLOW_PRIORITY. Atomic per-signal
+ * renderers so each signal shows exactly once (no overlap).
  *
- * Gated by REACT_APP_SIGNALS_AUGMENT: at flag=0 the surfaces still render the OLD per-flow teasers (this
- * component is only mounted at flag=1), so rollback stays real. Safe-by-default: renders NOTHING until the
- * engine resolves, and nothing at all when there's no real signal (except the dating flow, whose hook IS the
- * safety-check capability tease). Async pop-in (Q4): appears when data is ready; it's additive, below the CTA.
+ * Safe-by-default: renders NOTHING until the engine resolves, and nothing at all when there's no real signal
+ * (except the dating flow, whose hook IS the safety-check capability tease). Async pop-in: appears when data is
+ * ready; it's additive, below the CTA. The "also found" secondary can be disabled via REACT_APP_SIGNALS_AUGMENT=0
+ * (engine kill-switch → lead-only).
  */
 const CAPABILITIES = [
   ['🛡️', 'Sex-offender & criminal check'],

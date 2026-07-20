@@ -5,12 +5,8 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { track } from '../../services/trackingService';
 import s from './NameLandingV3Incarceration.module.css';
 import { useBrand } from '../../services/brand';
-import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 import SignalTeaser from '../../components/SignalTeaser';
 import { useFunnelFlow } from '../../services/funnelFlow';
-
-// Signals-augmentation Phase 3: flag=1 → unified engine teaser; flag=0 (default) → original inmate teaser.
-const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
 
 /** Step index for progress bar (1–4). Interstitials and final-search don't show a step. */
 const getStepIndex = (step) => {
@@ -295,11 +291,8 @@ const NameSearchLandingV3Page = () => {
             <div className={s.form}>
               <h2 className={s.sectionTitle}>Inmate matches found</h2>
               <p className={s.helper}>A few more details help us surface the exact person.</p>
-              {/* Real records for the entered name. Loose (name+state). flag=1 → unified engine teaser
-                  (booking lead + augment); flag=0 → original inmate teaser. */}
-              {SIGNALS_AUGMENT
-                ? <SignalTeaser subject={{ firstName, lastName, state }} flow="inmate" viewerRelation="prospect" stage="pre-signup" />
-                : <InmateBookingTeaser firstName={firstName} lastName={lastName} state={state} />}
+              {/* Real records for the entered name. Loose (name+state). Unified engine teaser (booking lead + augment). */}
+              <SignalTeaser subject={{ firstName, lastName, state }} flow="inmate" viewerRelation="prospect" stage="pre-signup" />
               <div className={s.field}>
                 <label className={s.label} htmlFor="v3-age">Age (optional)</label>
                 <input id="v3-age" type="text" className={s.input} value={age} onChange={(e) => setAge(e.target.value)} placeholder="Age" inputMode="numeric" />
