@@ -40,7 +40,12 @@ const Icon = ({ name, className }) => (
 
 import DivorceTeaser from '../../components/DivorceTeaser';
 import DatingTeaser from '../../components/DatingTeaser';
+import SignalTeaser from '../../components/SignalTeaser';
 import { useFunnelFlow } from '../../services/funnelFlow';
+
+// Signals-augmentation Phase 3: flag=1 → unified engine teaser at the details step; flag=0 (default) → the
+// original per-vertical teaser (divorce/dating), unchanged (real rollback).
+const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
 
 const getStepIndex = (step) => ({ name: 1, location: 2, details: 3, confirm: 4 }[step] || 0);
 const TOTAL_STEPS = 4;
@@ -211,12 +216,20 @@ const VerticalIntentLanding = ({ cfg }) => {
             <div className={s.form}>
               <h2 className={s.sectionTitle}>{cfg.detailsTitle}</h2>
               <p className={s.helper}>A few more details help us surface the exact person.</p>
-              {/* Data hook: reveal real records for the entered name (mirrors the inmate teaser on v3). */}
-              {cfg.teaser === 'divorce' && lastName && state && (
-                <DivorceTeaser firstName={firstName} lastName={lastName} state={state} />
-              )}
-              {cfg.teaser === 'dating' && lastName && state && (
-                <DatingTeaser firstName={firstName} lastName={lastName} state={state} />
+              {/* Data hook: reveal real records for the entered name. Loose (name+state — no specific person yet). */}
+              {SIGNALS_AUGMENT ? (
+                lastName && state && (
+                  <SignalTeaser subject={{ firstName, lastName, state }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
+                )
+              ) : (
+                <>
+                  {cfg.teaser === 'divorce' && lastName && state && (
+                    <DivorceTeaser firstName={firstName} lastName={lastName} state={state} />
+                  )}
+                  {cfg.teaser === 'dating' && lastName && state && (
+                    <DatingTeaser firstName={firstName} lastName={lastName} state={state} />
+                  )}
+                </>
               )}
               <div className={s.field}>
                 <label className={s.label} htmlFor={id('age')}>Age (optional)</label>
