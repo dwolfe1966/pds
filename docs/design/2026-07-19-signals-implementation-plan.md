@@ -138,10 +138,26 @@ known-good fallback — deliberately last, after the risk has passed. *Risk:* lo
 
 ## 5. Gates / dependencies (must clear before the phase that needs them)
 
+### Decisions — RESOLVED 2026-07-19 (owner)
+- **Q1 = YES** — tease loose booking pre-signup, with strict "possible match — verify" framing +
+  display-permission gate. `REACT_APP_SIGNALS_BOOKING_PRESIGNUP` becomes the display-permission switch, not a
+  policy question.
+- **Q2 = DAILY USAGE CAP** — instead of gating on Enformion's billing model, enforce a hard **per-day call cap**
+  on Enformion (server-side, in the seo app), so cost is bounded regardless of per-search vs per-match. When the
+  day's cap is hit: skip the live call, serve **cache-only** (still free), and return `capped:true` so the
+  client degrades to capability-only. This *replaces* the "verify billing model" blocker — the cap makes the
+  universal rollout safe without waiting on Enformion. Still worth logging actual spend to right-size the cap.
+- **Q3 = YES** — augment the general/background funnel (capped secondary, "strongest signal" lead).
+- **Q4 = YES** — async pop-in (skeleton → content, no layout shift) at every teaser surface.
+- **Verify = YES** — confirm/build the subject-level opt-out lookup (still a prerequisite for Phase 5; may be a
+  build, see below).
+
+
+
 | Gate | Blocks | Owner action |
 |---|---|---|
 | **Q1** — tease loose booking pre-signup at all? | booking in pre-signup bucket (Phase 1+) | decide (design §8 Q1) |
-| **Q2** — Enformion billing (per-search vs per-match) | universal marriage/divorce (Phase 5) | verify with Enformion |
+| **Q2** — ✅ resolved → **daily Enformion cap** (server-side) | universal marriage/divorce (Phase 5) | build the cap (Phase 0 infra); log spend to right-size |
 | **Q3** — augment general funnel? | Phase 5 `general` lead | decide |
 | **Q4** — async pop-in UX | all teaser phases | confirm skeleton pattern |
 | **Display permission** — booking | booking teaser (any) | secure in writing (in progress) |
