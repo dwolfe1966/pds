@@ -5,6 +5,12 @@ import ResultCard from '../../components/ResultCard';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
 import DivorceTeaser from '../../components/DivorceTeaser';
 import DatingTeaser from '../../components/DatingTeaser';
+import SignalTeaser from '../../components/SignalTeaser';
+
+// Signals-augmentation Phase 1: at flag=1 the SERP renders the unified engine-driven <SignalTeaser> (universal
+// augment, flow-prioritized); at flag=0 (default) it renders the original per-flow teasers below (known-good,
+// real rollback). Build-time constant (Parcel inlines REACT_APP_*).
+const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
 import { getFlow } from '../../services/funnelFlow';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
@@ -385,23 +391,38 @@ const SalesSearchResultsPage = () => {
                 </label>
               )}
             </div>
-            {/* INMATE FLOW ONLY: lead the results with the booking teaser (mugshots + example charges +
-                facilities) — the payoff the inmate searcher came for. Loose match (name-search surface).
-                Self-gates to nothing when there are no matching records. */}
-            {(getFlow() === 'inmate' || flow === 'inmate') && searchQuery.lastName && (
-              <div style={{ marginBottom: 28, paddingBottom: 4 }}>
-                <InmateBookingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
-              </div>
-            )}
-            {(getFlow() === 'divorce' || flow === 'divorce') && searchQuery.lastName && (
-              <div style={{ marginBottom: 28, paddingBottom: 4 }}>
-                <DivorceTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
-              </div>
-            )}
-            {(getFlow() === 'dating' || flow === 'dating') && searchQuery.lastName && (
-              <div style={{ marginBottom: 28, paddingBottom: 4 }}>
-                <DatingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
-              </div>
+            {/* Record teaser above the results — the payoff the vertical searcher came for. Loose (name-search
+                surface). AUGMENT=1 → unified engine teaser (all flows, incl. general); AUGMENT=0 → the original
+                per-flow teasers (unchanged / real rollback). Both self-gate to nothing without matching records. */}
+            {SIGNALS_AUGMENT ? (
+              searchQuery.lastName && (
+                <div style={{ marginBottom: 28, paddingBottom: 4 }}>
+                  <SignalTeaser
+                    subject={{ firstName: searchQuery.firstName, lastName: searchQuery.lastName, state: searchQuery.state }}
+                    flow={getFlow() || flow || 'general'}
+                    viewerRelation="prospect"
+                    stage="pre-signup"
+                  />
+                </div>
+              )
+            ) : (
+              <>
+                {(getFlow() === 'inmate' || flow === 'inmate') && searchQuery.lastName && (
+                  <div style={{ marginBottom: 28, paddingBottom: 4 }}>
+                    <InmateBookingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
+                  </div>
+                )}
+                {(getFlow() === 'divorce' || flow === 'divorce') && searchQuery.lastName && (
+                  <div style={{ marginBottom: 28, paddingBottom: 4 }}>
+                    <DivorceTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
+                  </div>
+                )}
+                {(getFlow() === 'dating' || flow === 'dating') && searchQuery.lastName && (
+                  <div style={{ marginBottom: 28, paddingBottom: 4 }}>
+                    <DatingTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} />
+                  </div>
+                )}
+              </>
             )}
             {/* Filters moved to the Refine region at the bottom (owner — top placement
                 pushed the results down on mobile). */}
