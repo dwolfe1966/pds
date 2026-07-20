@@ -32,6 +32,9 @@ research — **a licensed, purpose-built obituary API is the pragmatic primary**
   licensed API the pragmatic primary — exactly the divorce conclusion (license > scrape when scraping is legally
   fraught). Legacy.com has the richest content (obituary text/survivors) if we ever accept the ToS risk.
 
+## Teaser: does the BC teaser search return deceased info? NO (2026-07-20)
+The teaser identity exposes counts (phone/criminal/property/relatives/etc.) + boolean flags, but NO death/deceased field. Death only appears in the full report (deathList, post-pay). CHEAP PATH: BC already projects criminalCount/propertyCount on the teaser — a BC ask to add `deathCount`/`isDeceased` would unlock a free death teaser (no vendor). Try that BEFORE licensing ObituaryMonitor.
+
 ## Owner decisions
 1. **Approve a death/obituary API vendor** — ObituaryMonitor (~$449/mo, verification+link) vs. AIS Death Data
    (richer, get quote) vs. Tracers. New vendor + cost. This unlocks the v13 *teaser*.
