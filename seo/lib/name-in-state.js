@@ -4,6 +4,7 @@
 //   /people/<state>/<name>   (under /people)   → app/people/[state]/[city]/page.js fallback
 // Both render this one view and share ONE canonical (the /people form) to avoid duplicate
 // content. State analog of the leaf name-in-city page.
+import { cache } from 'react';
 import { getStateSlice, getNameInState, getStateTopNames, getStateCities } from './directory';
 import { getFirstNameFacts, getSurnameFacts } from './facts';
 import { rosterByNameState } from './incarceration.mjs';
@@ -13,6 +14,14 @@ import { ui, Breadcrumbs, FcraFooter, JsonLd } from './ui';
 import { SITE, MAIN } from './site';
 
 const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
+
+// ONE roster fetch shared between generateMetadata (robots decision) and the page body (render).
+// React cache() dedupes within a request, so the DB is hit once per page; ISR then caches the page
+// for `revalidate`. This is the Step-2 indexability discriminator: a name-in-state page is indexable
+// IFF it carries combo-unique first-party content (≥1 incarceration record). No records → boilerplate
+// (per-name facts shared across 50 states + per-state city list shared across all names) → noindex.
+const rosterFor = cache((stateCode, first, last) =>
+  rosterByNameState({ state: stateCode, firstName: first, lastName: last, limit: 12 }));
 
 // OBIS appends the county of conviction to each charge, e.g. "FELONY BATTERY (SARASOTA)". Pull the first one
 // out to show as the record's location, and strip it off the charge text so charges read cleanly.
@@ -49,14 +58,19 @@ export function resolveNameInState(state, name) {
   return { st, d, first, last, full };
 }
 
-/** generateMetadata helper. `canonicalPath` lets both URL forms point at the /people canonical. */
-export function nameInStateMetadata(state, name, canonicalPath) {
+/** generateMetadata helper. `canonicalPath` lets both URL forms point at the /people canonical.
+ *  Async: fetches the roster to set robots — indexable only when the page has first-party records. */
+export async function nameInStateMetadata(state, name, canonicalPath) {
   const r = resolveNameInState(state, name);
   if (!r) return { title: 'Not found' };
+  const inmates = await rosterFor(r.st.code, r.first, r.last);
   return {
     title: `${r.full} in ${r.st.name} — Find & Search | IDLookup`,
     description: `Looking for ${r.full} in ${r.st.name}? Search by city, age, and relatives to find the right ${r.full}. Addresses, phone numbers, and public records across ${r.st.name}.`,
     alternates: { canonical: `${SITE}${canonicalPath}` },
+    // Step 2 (SEO recovery): noindex the boilerplate residue, keep follow so link equity flows and the
+    // page stays discoverable/funnel-live. Auto-flips to indexable as more state rosters are ingested.
+    robots: inmates.length > 0 ? { index: true, follow: true } : { index: false, follow: true },
   };
 }
 
@@ -77,7 +91,7 @@ export async function NameInStateView({ state, name }) {
 
   // FIRST-PARTY DIFFERENTIATION: real incarceration records for this name in this state, from our own roster
   // (fl_inmates for FL + inmates). State-grain data on a state-grain page. Self-gating where no coverage.
-  const inmates = await rosterByNameState({ state: st.code, firstName: first, lastName: last, limit: 12 });
+  const inmates = await rosterFor(st.code, first, last); // cache()-shared with generateMetadata → 1 DB hit
 
   const ordinal = (rk) => (rk ? `#${num(rk)}` : '');
   const ff = getFirstNameFacts(first);

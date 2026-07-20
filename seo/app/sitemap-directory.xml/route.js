@@ -18,9 +18,10 @@ export const revalidate = 86400; // 1d
 const LASTMOD = '2026-07-18';
 
 export async function GET() {
-  // maxNamePages trimmed 45k→42k to make room (under the 50k-per-sitemap limit) for the ~5.2k name-in-STATE
-  // URLs now emitted by getDirectoryUrls — those carry the first-party incarceration differentiation and are
-  // higher-value than the boilerplate-heavy name-in-city long tail, so they win the trade.
+  // name-in-city cap. getDirectoryUrls also emits name-in-STATE URLs, but Step 2 gated those to
+  // ROSTER_STATES (~400 URLs) since only they carry indexable first-party content — so the 50k budget is
+  // comfortable. NOTE: name-in-city is still fully listed here pending the owner's Step-2 call on whether
+  // to noindex the ~41k boilerplate name-in-city residue; trim this to the indexable set once decided.
   const { all } = getDirectoryUrls({ maxNamePages: 42000 });
   const items = all.map((path) => {
     const depth = path.split('/').filter(Boolean).length; // /people=1, state=2, name-in-state/city=3, name-in-city=4

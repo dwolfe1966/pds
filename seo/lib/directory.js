@@ -28,6 +28,13 @@ export const EST_IN_STATE_MAX = 10000;     // was 1,000 (block-polluted). Raised
 export const EST_IN_STATE_COMMON_MIN = 200; // city-page focus: only genuinely common names
                                            // (rich name+state teaser results). STARTING value — tune.
 
+// States with real first-party incarceration roster coverage — the only ones whose name-in-state pages
+// carry combo-unique content and so belong in the sitemap (Step 2, SEO recovery). Measured 2026-07-20:
+// FL 670k rows (fl_inmates) + NC 448k, IL/PA ~1k each (inmates). Everything else is sparse → those
+// name-in-state pages serve robots:noindex (see name-in-state.js) and are omitted here. GROW this set
+// as more state rosters are bulk-ingested — pages auto-flip to indexable when their roster fills in.
+export const ROSTER_STATES = new Set(['fl', 'nc', 'il', 'pa']);
+
 // Population base (sum of state pops) for the per-place share.
 const POP_BASE = Object.values(STATE_SLICE.states).reduce((a, s) => a + s.pop, 0);
 const estInCityOf = (est, cityPop) => Math.max(1, Math.round(est * (cityPop / POP_BASE)));
@@ -199,8 +206,12 @@ export function getDirectoryUrls({ maxNamePages = 45000 } = {}) {
   let capped = 0;
   // Name-in-state pages (/people/{state}/{name}) carry the first-party incarceration differentiation
   // (NameInStateView). They MUST be in the sitemap or Googlebot never discovers our one genuinely
-  // unique, non-boilerplate page type. Top names per state — bounded, high-value, no near-dup risk.
+  // unique, non-boilerplate page type. Step 2 (SEO recovery): only EMIT the states with real roster
+  // coverage — elsewhere the page is boilerplate and now serves robots:noindex (page-level, in
+  // name-in-state.js), so listing it here would just mix a noindex URL into the sitemap. Grow this set
+  // as more state rosters are bulk-ingested (fl_inmates=FL deep, inmates=NC deep + IL/PA light).
   for (const st of states) {
+    if (!ROSTER_STATES.has(st.code.toLowerCase())) continue;
     for (const n of getStateTopNames(st.code, 100)) {
       nameStateUrls.push(`/people/${st.code.toLowerCase()}/${n.slug}`);
     }
