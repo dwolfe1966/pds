@@ -40,15 +40,15 @@ describe('stage gate', () => {
     expect(fetchLifeEvents).toHaveBeenCalledWith(expect.objectContaining({ sexOffender: false }));
   });
 
-  test('pre-signup: booking hidden unless display-permission flag is on', async () => {
+  test('pre-signup: booking shown by DEFAULT (permissive); hidden only when explicitly disabled', async () => {
     fetchBookings.mockResolvedValue({ count: 1, records: [BOOKING] });
     let r = await getPersonSignals({ subject: SUBJECT, stage: 'pre-signup', flow: 'inmate' });
-    expect(r.signals.booking.count).toBe(0);
+    expect(r.signals.booking.count).toBe(1); // default = permissive (matches current prod v3/v11)
 
     _resetSignalsCache();
-    process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP = '1';
+    process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP = '0';
     r = await getPersonSignals({ subject: SUBJECT, stage: 'pre-signup', flow: 'inmate' });
-    expect(r.signals.booking.count).toBe(1);
+    expect(r.signals.booking.count).toBe(0); // explicit off-switch
   });
 });
 

@@ -31,9 +31,12 @@ const STRENGTH_ORDER = ['booking', 'sexOffender', 'marriageDivorce']; // for gen
 const OWNER_SELF_ORDER = ['sexOffender', 'booking', 'marriageDivorce']; // most-damaging-to-you first
 const MAX_SECONDARY = 3;
 
-// Flags read LAZILY (so tests/env can toggle without reimport). Default OFF = today's behavior.
+// Flags read LAZILY (so tests/env can toggle without reimport).
 const augmentOn = () => process.env.REACT_APP_SIGNALS_AUGMENT === '1';
-const bookingPreSignupOn = () => process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP === '1';
+// Booking pre-signup is PERMISSIVE BY DEFAULT — v3/v11 already show booking pre-signup in prod today (the 7.15%
+// CVR inmate channel), so default-on avoids regressing them when AUGMENT flips. Explicit '0' hides it (the
+// display-permission off-switch). Post-pay always includes booking regardless.
+const bookingPreSignupOn = () => process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP !== '0';
 
 const norm = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '');
 const subjectKey = (s) => [norm(s.firstName), norm(s.lastName), norm(s.state), norm(s.age)].join(':');
