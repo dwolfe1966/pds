@@ -27,6 +27,7 @@ import NameSearchLandingV10Page from './pages/sales/NameSearchLandingV10Page';
 import NameSearchLandingV12Page from './pages/sales/NameSearchLandingV12Page';
 import NameSearchLandingV13Page from './pages/sales/NameSearchLandingV13Page';
 import NameSearchLandingV14Page from './pages/sales/NameSearchLandingV14Page';
+import SignalTeaserDevPage from './pages/dev/SignalTeaserDevPage';
 import NameSearchLandingV3aPage from './pages/sales/NameSearchLandingV3aPage';
 import NameSearchLandingV3bPage from './pages/sales/NameSearchLandingV3bPage';
 import NameSearchLoaderPage from './pages/sales/NameSearchLoaderPage';
@@ -189,6 +190,7 @@ const App = () => {
           <Route path="/name/landing/v12" element={<NameSearchLandingV12Page />} />
           <Route path="/name/landing/v13" element={<NameSearchLandingV13Page />} />
           <Route path="/name/landing/v14" element={<NameSearchLandingV14Page />} />
+          <Route path="/dev/signal-teaser" element={<SignalTeaserDevPage />} />
           <Route path="/name/landing/v3a" element={<NameSearchLandingV3aPage />} />
           <Route path="/name/landing/v3b" element={<NameSearchLandingV3bPage />} />
           {/* BeenVerified-style flow — v11 landing slot (the shN split routes here).
