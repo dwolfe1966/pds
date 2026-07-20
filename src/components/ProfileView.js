@@ -299,9 +299,9 @@ export default function ProfileView({ data, viewer = 'paid' }) { // eslint-disab
             ))}
             {data.deaths?.map((d) => (
               <div key={d.id} style={styles.listItem}>
-                <p style={styles.listItemTitle}>Death Record</p>
+                <p style={styles.listItemTitle}>⚰️ Death Record{d.date ? ` — died ${d.date}` : ''}</p>
                 <p style={styles.listItemSub}>
-                  {[d.date, d.state, d.sourceName].filter(Boolean).join(' · ')}
+                  {[d.dob && `Born ${d.dob}`, d.age && `Age ${d.age}`, [d.city, d.state].filter(Boolean).join(', '), d.birthState && `SSN issued ${d.birthState}`, d.sourceName].filter(Boolean).join(' · ')}
                 </p>
               </div>
             ))}

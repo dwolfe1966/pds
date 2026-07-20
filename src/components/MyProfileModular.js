@@ -195,6 +195,25 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
         <Row label="Citizenship" value={d.citizenship} />
       </>
     ) },
+    // Death record (IDI/DMF) — ONLY included when the subject has a death record (deceased). Safe-by-default:
+    // never shown on a living person's report. Prominent (right after About) since it's the payoff of the death
+    // vertical. Obituary/burial come from the death teaser vendor; this confirms the passing (dates + residence).
+    ...((d.deaths || []).length ? [{ id: 'death', icon: '⚰️', title: 'Death Record & Obituary', source: 'record', body: () => (
+      <div>
+        {(d.deaths || []).map((dr, i) => (
+          <div key={`de${i}`} style={{ padding: '4px 0' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{dr.date ? `Died ${dr.date}` : 'Death record'}</div>
+            <div style={{ fontSize: 12.5, color: '#6b7280' }}>{[dr.dob && `Born ${dr.dob}`, dr.age && `Age ${dr.age}`, [dr.city, dr.state].filter(Boolean).join(', '), dr.sourceName].filter(Boolean).join(' · ')}</div>
+          </div>
+        ))}
+      </div>
+    ), full: () => (
+      <div>
+        {(d.deaths || []).map((dr, i) => (
+          <Item key={`de${i}`}><Title>⚰️ {dr.date ? `Died ${dr.date}` : 'Death record'}</Title><Meta><F label="Born" value={dr.dob} /><F label="Age at death" value={dr.age} /><F label="Last residence" value={[dr.city, dr.state].filter(Boolean).join(', ')} /><F label="SSN issued" value={dr.birthState} /><F label="Source" value={dr.sourceName} /></Meta></Item>
+        ))}
+      </div>
+    ) }] : []),
     { id: 'contact', icon: '📇', title: 'Contact', source: 'observed', body: () => (
       <div style={wrap}>
         {(d.phones || []).map((p, i) => <Chip key={`ph${i}`}>📞 {p.number}{p.type ? ` · ${p.type}` : ''}</Chip>)}

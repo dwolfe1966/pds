@@ -694,11 +694,19 @@ function extractAll(result) {
     description: safeStr(a.description),
     date: pickBcDate(a.date),
   }));
+  // IDI deathList (DMF/vital-records derived). Shape is unconfirmed against a real deceased record, so extract
+  // defensively across the common DMF field names (per feedback_expose_all_report_data). Obituary/burial come
+  // from the death teaser vendor, not IDI — this section confirms the passing (dates + last residence).
   const deaths = (primary.deathList || []).map((d, i) => ({
     id: `death-${i}`,
-    date: pickBcDate(d.date, d.deathDate),
-    state: safeStr(d.state),
-    sourceName: safeStr(d.sourceName),
+    date: pickBcDate(d.date, d.deathDate, d.dateOfDeath, d.death?.date),
+    dob: pickBcDate(d.dob, d.birthDate, d.dateOfBirth, d.dob?.date),
+    age: safeStr(d.age || d.ageAtDeath),
+    city: safeStr(d.city || d.lastResidenceCity),
+    state: safeStr(d.state || d.lastResidenceState),
+    zip: safeStr(d.zip || d.zipCode || d.lastResidenceZip),
+    birthState: safeStr(d.birthState || d.ssnIssueState || d.ssnState),
+    sourceName: safeStr(d.sourceName || d.source),
   }));
 
   // Family Watchdog (sex offender registry — separate data class)
