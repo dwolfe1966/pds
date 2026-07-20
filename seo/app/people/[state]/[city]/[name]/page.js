@@ -1,6 +1,7 @@
 // Name-in-city — /people/{state}/{city}/{first-last}, e.g. /people/tx/houston/john-smith.
 // The leaf of the state → city → name taxonomy: name statistics scoped to the city +
 // a SERP hand-off that carries state (teaser resolves) + city (client-side narrows).
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { getNameInCity, getCityTopNames } from '../../../../../lib/directory';
 import { getCityAcs, getFirstNameFacts, getSurnameFacts, cityStats, nameProse } from '../../../../../lib/facts';
@@ -18,6 +19,15 @@ export const revalidate = 5184000; // 60d
 export function generateStaticParams() { return []; }
 
 const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
+
+// ONE captured-people fetch shared between generateMetadata (robots) and the page body. React cache()
+// dedupes within a request → one DB hit; ISR caches the page 60d. Step 2 (SEO recovery) discriminator:
+// a name-in-city page is indexable IFF we've actually CAPTURED a real individual with this name in this
+// city (person_profiles). Otherwise it's ~85% shared boilerplate (per-name facts identical across every
+// city + per-city ACS identical across every name) = near-dup residue that drags a recovering domain.
+const capturedFor = cache((firstNorm, lastNorm, state, cityNorm) =>
+  getCapturedPeople({ firstNorm, lastNorm, state, cityNorm }));
+
 const serpHref = (first, last, state, city) =>
   `${MAIN}/name/search-result?firstName=${encodeURIComponent(first)}&lastName=${encodeURIComponent(last)}&state=${encodeURIComponent(state)}&city=${encodeURIComponent(city)}&utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory`;
 
@@ -26,10 +36,14 @@ export async function generateMetadata({ params }) {
   const d = getNameInCity(state, city, name);
   if (!d) return { title: 'Not found' };
   const full = `${d.first} ${d.last}`;
+  const people = await capturedFor(norm(d.first), norm(d.last), d.state, norm(d.city));
   return {
     title: `${full} in ${d.city}, ${d.state} — Find & Search | IDLookup`,
     description: `Looking for ${full} in ${d.city}, ${d.stateName}? Search by age and relatives to find the right ${full} in ${d.city}. Addresses, phone numbers, and public records.`,
     alternates: { canonical: `${SITE}${cityNamePath(state, city, name)}` },
+    // Step 2 (SEO recovery): noindex the boilerplate residue (no captured individual for this name+city),
+    // keep follow so link equity flows + funnel stays live. Auto-flips to indexable as the corpus grows.
+    robots: people.length > 0 ? { index: true, follow: true } : { index: false, follow: true },
   };
 }
 
@@ -58,7 +72,7 @@ export default async function NameInCity({ params }) {
 
   // Real individuals we've actually captured with this name in this city (person_profiles corpus) —
   // each links to its own crawlable Others-Profile leaf.
-  const people = await getCapturedPeople({ firstNorm: norm(d.first), lastNorm: norm(d.last), state: d.state, cityNorm: norm(d.city) });
+  const people = await capturedFor(norm(d.first), norm(d.last), d.state, norm(d.city)); // cache()-shared with generateMetadata → 1 DB hit
 
   const ff = getFirstNameFacts(d.first);
   const lf = getSurnameFacts(d.last);

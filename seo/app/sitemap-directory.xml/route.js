@@ -18,11 +18,13 @@ export const revalidate = 86400; // 1d
 const LASTMOD = '2026-07-18';
 
 export async function GET() {
-  // name-in-city cap. getDirectoryUrls also emits name-in-STATE URLs, but Step 2 gated those to
-  // ROSTER_STATES (~400 URLs) since only they carry indexable first-party content — so the 50k budget is
-  // comfortable. NOTE: name-in-city is still fully listed here pending the owner's Step-2 call on whether
-  // to noindex the ~41k boilerplate name-in-city residue; trim this to the indexable set once decided.
-  const { all } = getDirectoryUrls({ maxNamePages: 42000 });
+  // Step 2 (owner-approved 2026-07-20): DON'T list name-in-city here. Only ~980 of ~42k carry unique
+  // first-party content (a captured individual, person_profiles); the other ~41k now serve robots:noindex
+  // (page-level, in the name-in-city route) as near-dup boilerplate. Listing 41k noindex URLs in the
+  // sitemap of a recovering domain is an anti-signal, so we emit ZERO name-in-city (maxNamePages: 0). The
+  // ~980 indexable ones stay discoverable via internal links (each city page links its top-60 names) and
+  // index fine since they're not noindexed. Sitemap = core + states + cities + roster-state name-in-state.
+  const { all } = getDirectoryUrls({ maxNamePages: 0 });
   const items = all.map((path) => {
     const depth = path.split('/').filter(Boolean).length; // /people=1, state=2, name-in-state/city=3, name-in-city=4
     const priority = depth <= 1 ? '1.0' : depth === 2 ? '0.9' : depth === 3 ? '0.8' : '0.6';
