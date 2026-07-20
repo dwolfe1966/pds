@@ -68,8 +68,14 @@ intelligently. **This is why a detailed error code (below) is a prerequisite for
 3. **First-party fallback (durable):** when IDI is capped/down, serve our own data (incarceration roster + SEO
    people directory name×state) as a "which one?" list. Makes the funnel resilient to IDI volatility entirely.
 4. **Investigate the 7/8–7/12 outage** — ask BC for an incident/status; confirm whether it was IDI-side or BC-side.
+5. **Consider going straight to Enformion for person search** (owner 2026-07-20) — we already use Enformion
+   (divorce, PersonSearch enrichment via `/api/enrich-person`). Enformion PersonSearch as an alternative/
+   supplement to the BC→IDI teaser search would (a) sidestep IDI's TooManyMatches behavior + volatility, (b)
+   reduce a BC dependency, (c) unify on one vendor we already integrate. Bigger strategic move; evaluate
+   coverage/cost/latency + display-rights vs. the IDI path.
 
-**Sequencing:** (1) before (2); (3) is the strategic resilience play; all BEFORE Phase 6 legacy-teaser removal.
+**Status (owner 2026-07-20):** DEFERRED — whole item on backlog. **Phase 6 is NO LONGER gated on it** — owner
+chose to proceed with legacy-teaser removal now; resilient zero-result handling is a separate backlog track.
 
 ## Our-side fix (deferred — owner chose "diagnose only")
 - (A) Detect `raws[0].subType === 'TooManyMatches'` → route to a "narrow your search (add city/age/middle) →
