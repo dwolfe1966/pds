@@ -53,18 +53,26 @@ describe('stage gate', () => {
 });
 
 describe('post-pay sex-offender corroboration (empty-and-safe)', () => {
-  test('keeps an age+gender match, drops a mismatch', async () => {
+  test('keeps an age+gender match, drops a mismatch (when opted in)', async () => {
     fetchLifeEvents.mockResolvedValue({ count: 2, records: [SO_MATCH, SO_MISMATCH] });
-    const r = await getPersonSignals({ subject: SUBJECT, viewerRelation: 'member-other', flow: 'dating' });
+    const r = await getPersonSignals({ subject: SUBJECT, viewerRelation: 'member-other', flow: 'dating', sexOffender: true });
     expect(r.stage).toBe('post-pay');
     expect(r.signals.sexOffender.count).toBe(1);
     expect(r.signals.sexOffender.records[0].age).toBe(41);
+    expect(fetchLifeEvents).toHaveBeenCalledWith(expect.objectContaining({ sexOffender: true }));
   });
 
   test('drops ALL when the subject has no age (unknown → reject)', async () => {
     fetchLifeEvents.mockResolvedValue({ count: 1, records: [SO_MATCH] });
-    const r = await getPersonSignals({ subject: { ...SUBJECT, age: '' }, viewerRelation: 'member-other' });
+    const r = await getPersonSignals({ subject: { ...SUBJECT, age: '' }, viewerRelation: 'member-other', sexOffender: true });
     expect(r.signals.sexOffender.count).toBe(0);
+  });
+
+  test('post-pay WITHOUT the sexOffender opt-in never runs the NSOPW lookup', async () => {
+    fetchLifeEvents.mockResolvedValue({ count: 1, records: [SO_MATCH] });
+    const r = await getPersonSignals({ subject: SUBJECT, viewerRelation: 'member-other', flow: 'divorce' });
+    expect(r.signals.sexOffender.count).toBe(0);
+    expect(fetchLifeEvents).toHaveBeenCalledWith(expect.objectContaining({ sexOffender: false }));
   });
 });
 

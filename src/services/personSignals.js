@@ -44,17 +44,16 @@ const subjectKey = (s) => [norm(s.firstName), norm(s.lastName), norm(s.state), n
 const _raw = new Map();
 export function _resetSignalsCache() { _raw.clear(); }
 
-async function rawSignals(subject, stage) {
-  const key = `${stage}|${subjectKey(subject)}`;
+async function rawSignals(subject, stage, wantSO) {
+  const key = `${stage}|${wantSO ? 'so' : 'noso'}|${subjectKey(subject)}`;
   if (_raw.has(key)) return _raw.get(key);
-  const p = _computeRaw(subject, stage).catch(() => ({ marriageDivorce: [], sexOffenderRaw: [], booking: [] }));
+  const p = _computeRaw(subject, wantSO).catch(() => ({ marriageDivorce: [], sexOffenderRaw: [], booking: [] }));
   _raw.set(key, p);
   return p;
 }
 
-async function _computeRaw(subject, stage) {
+async function _computeRaw(subject, wantSO) {
   const { firstName, lastName, state, city, age, gender } = subject;
-  const wantSO = stage === 'post-pay'; // sex-offender is POST-PAY only (never a pre-signup call — ~10s + harm)
   const [life, booking] = await Promise.all([
     fetchLifeEvents({ firstName, lastName, state, city, age, gender, sexOffender: wantSO }),
     fetchBookings({ firstName, lastName, state, city, age }),
@@ -71,7 +70,7 @@ async function _computeRaw(subject, stage) {
 // strict = a SPECIFIC-PERSON surface (SUP / Payment / profile), so corroborate to this person — a same-name
 // stranger's record must not be attributed. Booking → age±1 (corroboratesAge). Marriage/divorce carry no
 // reliable age, so drop only records whose age IS present and far off, and cap to a conservative few.
-function shapeSignals(raw, { stage, subject, strict }) {
+function shapeSignals(raw, { stage, subject, strict, wantSO }) {
   const signals = { capability: { available: true } };
   let md = raw.marriageDivorce;
   let booking = raw.booking;
@@ -89,8 +88,10 @@ function shapeSignals(raw, { stage, subject, strict }) {
     ? { records: booking, count: booking.length }
     : { records: [], count: 0 };
 
-  // Sex-offender: POST-PAY only, and TIGHT-corroborated to this person (age±1 + gender + state). Empty-and-safe.
-  if (stage === 'post-pay') {
+  // Sex-offender: POST-PAY only + explicitly opted in (wantSO), and TIGHT-corroborated to this person
+  // (age±1 + gender + state). Defensive: gate exposure on wantSO too, so SO never surfaces unless requested,
+  // even if the provider returns records we didn't ask for. Empty-and-safe.
+  if (stage === 'post-pay' && wantSO) {
     const so = raw.sexOffenderRaw.filter((r) => corroboratePerson(r, { age: subject.age, gender: subject.gender }));
     signals.sexOffender = { records: so, count: so.length };
   } else {
@@ -134,15 +135,21 @@ async function isSuppressed(/* subject */) { return false; }
  * @param {'pre-signup'|'post-pay'} [p.stage]  defaults from viewerRelation
  * @param {'inmate'|'divorce'|'dating'|'death'|'general'} [p.flow='general']
  * @param {boolean} [p.strict=false] specific-person surface → corroborate booking/marriage-divorce to subject
+ * @param {boolean} [p.sexOffender=false] post-pay only: opt in to the ~10s NSOPW lookup (dating report payoff)
  * @returns {Promise<{suppressed:boolean, lens:string, stage:string, signals:object, lead:string|null, secondary:string[]}>}
  */
-export async function getPersonSignals({ subject, viewerRelation = 'prospect', stage, flow = 'general', strict = false } = {}) {
+export async function getPersonSignals({ subject, viewerRelation = 'prospect', stage, flow = 'general', strict = false, sexOffender = false } = {}) {
   const st = stage || (viewerRelation === 'prospect' ? 'pre-signup' : 'post-pay');
+  // Sex-offender is POST-PAY only AND opt-in per call — it's a ~10s browser-tier lookup, so callers request it
+  // only where it's the payoff (dating report), not on every post-pay report. The owner-self lens (seeing your
+  // OWN exposure) always includes it: showing you your registry exposure is the point, and there's no
+  // wrong-person harm when the subject is yourself.
+  const wantSO = st === 'post-pay' && (sexOffender === true || viewerRelation === 'owner-self');
   const base = { suppressed: false, lens: viewerRelation, stage: st, signals: {}, lead: null, secondary: [] };
   if (!subject || (!subject.lastName && !subject.firstName)) return base;
   if (await isSuppressed(subject)) return { ...base, suppressed: true };
-  const raw = await rawSignals(subject, st);
-  const signals = shapeSignals(raw, { stage: st, subject, strict });
+  const raw = await rawSignals(subject, st, wantSO);
+  const signals = shapeSignals(raw, { stage: st, subject, strict, wantSO });
   const { lead, secondary } = resolveEmphasis(signals, { flow, viewerRelation });
   return { suppressed: false, lens: viewerRelation, stage: st, signals, lead, secondary };
 }

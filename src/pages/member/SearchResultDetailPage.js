@@ -13,6 +13,26 @@ import MarriageDivorceSection from '../../components/MarriageDivorceSection';
 import SexOffenderSection from '../../components/SexOffenderSection';
 import { fetchLifeEvents } from '../../services/lifeEventsService';
 import { getFlow } from '../../services/funnelFlow';
+import { getPersonSignals } from '../../services/personSignals';
+
+// Signals-augmentation Phase 4: flag=1 → the report's post-pay signals (booking + marriage/divorce + dating SO)
+// come from ONE getPersonSignals call (member-other lens); flag=0 (default) → the original two ad-hoc fetches
+// below, unchanged (real rollback).
+const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
+
+// Map a first-party booking/court record → the CriminalCard row shape (shared by both the flag=0 fetch path
+// and the flag=1 engine path). `strength` is the corroboration confidence badge ('strong' | 'possible').
+function mapBookingRow(rec, strength) {
+  const isCourt = rec.recordType === 'court';
+  return {
+    id: `inc-${rec.source || ''}-${rec.inmateId || rec.name}`,
+    _firstParty: true, _recordType: rec.recordType, _strength: strength, source: rec.sourceName || rec.source,
+    photo: rec.mugshotUrl || null,
+    description: isCourt ? 'Court record' : ((rec.charges && rec.charges.length) ? rec.charges.join('; ') : 'Incarceration record'),
+    name: rec.name, physical: { sex: rec.gender, race: rec.race },
+    disposition: [cleanReleaseStatus(rec.releaseStatus, rec.recordType), rec.facility].filter(Boolean).join(' · ') || null,
+  };
+}
 import { enrichFromReport } from '../../services/memberEnrichment';
 import { captureProfileView } from '../../services/searchActivity';
 import { track } from '../../services/trackingService';
@@ -236,51 +256,66 @@ const SearchResultDetailPage = () => {
   // 2026-07-19), not a separate block. TIGHT match (age±1 + gender when known) so a same-name stranger isn't
   // attributed. Mapped to the CriminalCard shape (photo/description/disposition/physical) + first-party markers.
   const [incRows, setIncRows] = useState([]);
+  const [lifeEvents, setLifeEvents] = useState([]);
+
+  // Helper: subject name-parts + state from the extracted report data (shared by both paths).
+  const subjectFrom = (d) => {
+    const parts = String((d && d.fullName) || '').trim().split(/\s+/).filter(Boolean);
+    const st = (d && Array.isArray(d.addresses) && d.addresses[0] && d.addresses[0].state)
+      || (String((d && d.currentLocation) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+    return { parts, st };
+  };
+
+  // ── flag=0 (default): the ORIGINAL two ad-hoc fetches, unchanged ──────────────────────────────
   useEffect(() => {
+    if (SIGNALS_AUGMENT) return undefined;
     let alive = true;
-    const nm = data && data.fullName;
-    const parts = String(nm || '').trim().split(/\s+/).filter(Boolean);
-    const st = (data && Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
-      || (String((data && data.currentLocation) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+    const { parts, st } = subjectFrom(data);
     if (parts.length < 2 || !st) { setIncRows([]); return undefined; }
     fetchBookings({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age })
       .then((r) => {
         if (!alive) return;
         setIncRows((r.records || [])
-          .map((rec) => { const m = corroboratePerson(rec, { age: data.age, gender: data.gender }); return m ? { rec, strength: m.strength } : null; })
-          .filter(Boolean)
-          .map(({ rec, strength }) => {
-            const isCourt = rec.recordType === 'court';
-            return {
-              id: `inc-${rec.source || ''}-${rec.inmateId || rec.name}`,
-              _firstParty: true, _recordType: rec.recordType, _strength: strength, source: rec.sourceName || rec.source,
-              photo: rec.mugshotUrl || null,
-              description: isCourt ? 'Court record' : ((rec.charges && rec.charges.length) ? rec.charges.join('; ') : 'Incarceration record'),
-              name: rec.name, physical: { sex: rec.gender, race: rec.race },
-              disposition: [cleanReleaseStatus(rec.releaseStatus, rec.recordType), rec.facility].filter(Boolean).join(' · ') || null,
-            };
-          }));
+          .map((rec) => { const m = corroboratePerson(rec, { age: data.age, gender: data.gender }); return m ? mapBookingRow(rec, m.strength) : null; })
+          .filter(Boolean));
       })
       .catch(() => { if (alive) setIncRows([]); });
     return () => { alive = false; };
   }, [data && data.fullName, data && data.age, data && data.gender]);
-  // Life-events (divorce/marriage + sex-offender) for this report subject — ONE fetch feeds three uses: the
-  // Marriage & Divorce section, the Sex-Offender section (tight-corroborated), and the relatives enrichment.
-  const [lifeEvents, setLifeEvents] = useState([]);
+  // Life-events (divorce/marriage + sex-offender) — ONE fetch feeds the Marriage & Divorce section, the
+  // Sex-Offender section (tight-corroborated), and the relatives enrichment. sexOffender only in the DATING flow.
   useEffect(() => {
+    if (SIGNALS_AUGMENT) return undefined;
     let alive = true;
-    const parts = String((data && data.fullName) || '').trim().split(/\s+/).filter(Boolean);
-    const st = (data && Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state)
-      || (String((data && data.currentLocation) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+    const { parts, st } = subjectFrom(data);
     if (parts.length < 2 || !st) { setLifeEvents([]); return undefined; }
-    // sexOffender is requested ONLY in the DATING flow (the safety-check payoff the dating searcher paid for).
-    // Outside dating, name-attributing a fuzzy alias match to a searched person is the weak/risky use, so it's
-    // off (owner 2026-07-19). Even in dating, records are TIGHT-corroborated (age±1 + gender + state) below
-    // before display — empty-and-safe when they don't match. Location-based "near you" lives on the member's
-    // OWN profile (NSOPW zip/GPS) — see docs/design/life-events-data-mapping.md.
     fetchLifeEvents({ firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age, gender: data.gender, sexOffender: getFlow() === 'dating' })
       .then((r) => { if (alive) setLifeEvents(r.records || []); })
       .catch(() => { if (alive) setLifeEvents([]); });
+    return () => { alive = false; };
+  }, [data && data.fullName, data && data.age, data && data.gender]);
+
+  // ── flag=1: ONE engine call (member-other, post-pay) populates the SAME state the derivations below read ──
+  useEffect(() => {
+    if (!SIGNALS_AUGMENT) return undefined;
+    let alive = true;
+    const { parts, st } = subjectFrom(data);
+    if (parts.length < 2 || !st) { setIncRows([]); setLifeEvents([]); return undefined; }
+    getPersonSignals({
+      subject: { firstName: parts[0], lastName: parts[parts.length - 1], state: st, age: data.age, gender: data.gender },
+      viewerRelation: 'member-other', stage: 'post-pay', sexOffender: getFlow() === 'dating',
+    })
+      .then((res) => {
+        if (!alive) return;
+        const booking = (res.signals.booking && res.signals.booking.records) || [];
+        setIncRows(booking
+          .map((rec) => { const m = corroboratePerson(rec, { age: data.age, gender: data.gender }); return m ? mapBookingRow(rec, m.strength) : null; })
+          .filter(Boolean));
+        const md = (res.signals.marriageDivorce && res.signals.marriageDivorce.records) || [];
+        const so = (res.signals.sexOffender && res.signals.sexOffender.records) || [];
+        setLifeEvents([...md, ...so]);
+      })
+      .catch(() => { if (alive) { setIncRows([]); setLifeEvents([]); } });
     return () => { alive = false; };
   }, [data && data.fullName, data && data.age, data && data.gender]);
 
