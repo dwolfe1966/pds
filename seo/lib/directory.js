@@ -195,7 +195,16 @@ export function getDirectoryUrls({ maxNamePages = 45000 } = {}) {
   cityRefs.sort((a, b) => (b.c.pop || 0) - (a.c.pop || 0)); // biggest cities first
   const cityUrls = [];
   const nameUrls = [];
+  const nameStateUrls = [];
   let capped = 0;
+  // Name-in-state pages (/people/{state}/{name}) carry the first-party incarceration differentiation
+  // (NameInStateView). They MUST be in the sitemap or Googlebot never discovers our one genuinely
+  // unique, non-boilerplate page type. Top names per state — bounded, high-value, no near-dup risk.
+  for (const st of states) {
+    for (const n of getStateTopNames(st.code, 100)) {
+      nameStateUrls.push(`/people/${st.code.toLowerCase()}/${n.slug}`);
+    }
+  }
   for (const { st, c } of cityRefs) {
     let cityAdded = false;
     for (const slug of STATE_SLICE.topNames) {
@@ -206,7 +215,7 @@ export function getDirectoryUrls({ maxNamePages = 45000 } = {}) {
       else capped++;
     }
   }
-  return { all: [...core, ...cityUrls, ...nameUrls], counts: { core: core.length, cities: cityUrls.length, names: nameUrls.length, droppedNames: capped } };
+  return { all: [...core, ...cityUrls, ...nameStateUrls, ...nameUrls], counts: { core: core.length, cities: cityUrls.length, nameStates: nameStateUrls.length, names: nameUrls.length, droppedNames: capped } };
 }
 
 // Re-exported so the sitemap (in data.js) can iterate the slices without importing
