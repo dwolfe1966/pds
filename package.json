@@ -51,7 +51,9 @@
     },
     "moduleNameMapper": {
       "\\.(css|less|scss|sass)$": "<rootDir>/src/__mocks__/styleMock.js",
-      "\\.(png|jpg|jpeg|gif|svg|webp)$": "<rootDir>/src/__mocks__/fileMock.js"
+      "\\.(png|jpg|jpeg|gif|svg|webp)$": "<rootDir>/src/__mocks__/fileMock.js",
+      "^react-leaflet$": "<rootDir>/src/__mocks__/reactLeafletMock.js",
+      "^leaflet$": "<rootDir>/src/__mocks__/leafletMock.js"
     },
     "setupFiles": [
       "<rootDir>/src/__mocks__/envMock.js"

@@ -14,6 +14,7 @@
 // 200 with real records). PROD `api.endato.com/DivorceSearch` 404s (prod uses a different path/version) — set
 // ENFORMION_API_URL to the correct prod base once confirmed. Self-gates to [] when creds/URL missing.
 import { getCachedLifeEvents, setCachedLifeEvents } from './lifeEventsDb.mjs';
+import { tryConsumeEnformion } from './enformionBudget.mjs';
 
 const clean = (s) => (s == null ? '' : String(s).trim());
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/\D/g, ''), 10); return Number.isNaN(n) ? null : n; };
@@ -35,6 +36,9 @@ export async function divorceSearch(query, env = process.env) {
   if (!env.ENFORMION_AP_NAME || !env.ENFORMION_AP_PASSWORD) return [];
   // Cache-first: a repeated name+state divorce search hits Neon instead of re-billing Enformion ($0.05/match).
   if (env.LIFE_EVENTS_CACHE !== '0') { const c = await getCachedLifeEvents('divorce', query); if (c) return c; }
+  // Daily cap (cost backstop): once the day's Enformion budget is spent, serve cache-only → []. Don't cache the
+  // capped [] (it's not a real "no records" result — next day should try again).
+  if (!(await tryConsumeEnformion(env))) return [];
   const base = (env.ENFORMION_API_URL || 'https://devapi.endato.com').replace(/\/$/, '');
   const body = {
     FirstName: clean(query.firstName) || undefined, LastName: clean(query.lastName) || undefined,
@@ -73,6 +77,7 @@ export async function marriageSearch(query, env = process.env) {
   if (env.MARRIAGE_ENABLED !== '1') return []; // Pro-only, entitlement pending — don't spend on a 400
   if (!env.ENFORMION_AP_NAME || !env.ENFORMION_AP_PASSWORD) return [];
   if (env.LIFE_EVENTS_CACHE !== '0') { const c = await getCachedLifeEvents('marriage', query); if (c) return c; }
+  if (!(await tryConsumeEnformion(env))) return []; // daily cap (shared budget with divorce)
   const base = (env.ENFORMION_API_URL || 'https://devapi.endato.com').replace(/\/$/, '');
   const body = {
     FirstName: clean(query.firstName) || undefined, LastName: clean(query.lastName) || undefined,
