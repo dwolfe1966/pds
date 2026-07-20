@@ -97,13 +97,20 @@ Audited every teaser render site: **all route through the engine at flag=1** (ea
 | Payment | PaymentPage | ✅ branched (strict) |
 | Report (post-pay) | SearchResultDetailPage | ✅ reads getPersonSignals |
 
-⚠️ **Inmate presentation caveat (CVR):** the engine delivers the **same booking data** (same
-`/api/incarceration` source) on v3/v11, but `SignalTeaser`'s booking renderer is slightly **leaner** than the
-proven `InmateBookingTeaser` — it drops the **facility-name preview** and the **tailored "unlock mugshots,
-charges, booking dates, facility" line** (uses a generic CTA). Since inmate is a proven **7.15% CVR** asset,
-before flipping v3/v11 either (a) **match `InmateBookingTeaser`'s presentation exactly** in the booking
-renderer, or (b) **A/B test augment vs control on inmate** rather than a blind global flip. The global flag
-flips *all* flows at once — inmate included — so this is the highest-stakes surface to de-risk.
+✅ **Inmate presentation parity — RESOLVED 2026-07-20 (commit 642423a).** `SignalTeaser`'s booking renderer now
+matches `InmateBookingTeaser` exactly (cycling placeholder colors, facility-name preview, tailored "unlock
+mugshots, charges, booking dates, facility" line; strict → "Possible … — verify"). Same `/api/incarceration`
+data source. v3/v11 at flag=1 render the proven presentation **plus** the "also found" augmentation. Verified
+live on the harness.
+
+✅ **Booking pre-signup is now PERMISSIVE BY DEFAULT.** v3/v11 already show booking pre-signup in prod, so the
+engine defaults booking-on pre-signup (`REACT_APP_SIGNALS_BOOKING_PRESIGNUP !== '0'`) — flipping `AUGMENT=1`
+will NOT regress the inmate teaser. `=0` is the explicit display-permission off-switch. **So the prod flip only
+needs `AUGMENT=1`** (booking is already on); do NOT need to remember a second flag.
+
+**Engine is keyed on a name QUERY, not a person ID** — `subject = {name, state, +optional age/gender}`, no
+auth/login/extId. Default `viewerRelation='prospect'` (anonymous). Suppression is a no-op stub today →
+maximally permissive to start (per owner). The only deliberate restriction is SO=post-pay+corroborated.
 
 ---
 
