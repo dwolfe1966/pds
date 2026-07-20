@@ -6,6 +6,7 @@
 // content. State analog of the leaf name-in-city page.
 import { getStateSlice, getNameInState, getStateTopNames, getStateCities } from './directory';
 import { getFirstNameFacts, getSurnameFacts } from './facts';
+import { rosterByNameState } from './incarceration.mjs';
 import { nameFromSlug, statePath, cityPath } from './ids';
 import { crumbsJsonLd } from './schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from './ui';
@@ -54,11 +55,16 @@ const stat = {
   sub: { fontSize: 13, color: '#374151' },
 };
 
-/** The rendered view. Callers should have already resolved/notFound()'d. */
-export function NameInStateView({ state, name }) {
+/** The rendered view. Callers should have already resolved/notFound()'d. Async: fetches the first-party
+ *  incarceration roster (DB-only, ISR-cached with the page) to differentiate this name-in-state page. */
+export async function NameInStateView({ state, name }) {
   const r = resolveNameInState(state, name);
   if (!r) return null;
   const { st, d, first, last, full } = r;
+
+  // FIRST-PARTY DIFFERENTIATION: real incarceration records for this name in this state, from our own roster
+  // (fl_inmates for FL + inmates). State-grain data on a state-grain page. Self-gating where no coverage.
+  const inmates = await rosterByNameState({ state: st.code, firstName: first, lastName: last, limit: 12 });
 
   const ordinal = (rk) => (rk ? `#${num(rk)}` : '');
   const ff = getFirstNameFacts(first);
@@ -89,6 +95,27 @@ export function NameInStateView({ state, name }) {
       </p>
 
       <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
+
+      {inmates.length > 0 && (
+        <section style={{ ...stat.card, flex: '1 1 100%', marginTop: 20 }}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Incarceration records for {full} in {st.name} ({inmates.length})</h2>
+          <p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
+            Public booking &amp; incarceration records matching this name in {st.name}, from state and county correctional sources.
+          </p>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {inmates.map((rec, i) => (
+              <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontWeight: 700, color: '#111827' }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
+                <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>{[rec.facility, [rec.county, rec.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ')}</div>
+                {Array.isArray(rec.charges) && rec.charges.length > 0 && (
+                  <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>⚖️ {rec.charges.slice(0, 2).join(' · ')}{rec.charges.length > 2 ? ` +${rec.charges.length - 2} more` : ''}</div>
+                )}
+              </div>
+            ))}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: state DOC &amp; county correctional rosters. Public record, not a consumer report.</p>
+        </section>
+      )}
 
       <div style={{ ...stat.wrap, marginTop: 20 }}>
         <div style={stat.card}>

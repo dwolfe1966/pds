@@ -10,7 +10,6 @@ import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../../lib/ui';
 import { SITE, MAIN } from '../../../../../lib/site';
 import { getCapturedPeople, norm } from '../../../../../lib/search-activity-db.mjs';
 import { ageToken } from '../../../../../lib/ids';
-import { queryInmates } from '../../../../../lib/inmatesDb.mjs';
 
 export const revalidate = 5184000; // 60d
 // ISR (SEO 2026-07-18): [] + dynamicParams=true → each page is generated on first hit and CACHED for
@@ -61,11 +60,6 @@ export default async function NameInCity({ params }) {
   // each links to its own crawlable Others-Profile leaf.
   const people = await getCapturedPeople({ firstNorm: norm(d.first), lastNorm: norm(d.last), state: d.state, cityNorm: norm(d.city) });
 
-  // FIRST-PARTY DIFFERENTIATION (SEO dedup step 1): real incarceration records for this name in this state,
-  // from our own scraped roster (inmatesDb). Combo-unique content no competitor has → breaks the name-facts/
-  // city-facts near-duplication. Self-gating: renders nothing where we have no roster coverage for the name+state.
-  const inmates = await queryInmates({ state: d.state, firstName: d.first, lastName: d.last, limit: 12 });
-
   const ff = getFirstNameFacts(d.first);
   const lf = getSurnameFacts(d.last);
   const acs = getCityAcs(d.state, city);
@@ -87,27 +81,6 @@ export default async function NameInCity({ params }) {
       </p>
 
       <a href={serpHref(d.first, d.last, d.state, d.city)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {d.city} →</a>
-
-      {inmates.length > 0 && (
-        <section style={{ ...ui.card, marginTop: 20 }}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Incarceration records for {full} in {d.stateName} ({inmates.length})</h2>
-          <p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>
-            Public booking &amp; incarceration records matching this name in {d.stateName}, from state and county correctional sources.
-          </p>
-          <div style={{ display: 'grid', gap: 8 }}>
-            {inmates.map((r, i) => (
-              <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontWeight: 700, color: '#111827' }}>{r.name}{r.age ? `, ${r.age}` : ''}</div>
-                <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>{[r.facility, [r.county, r.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ')}</div>
-                {Array.isArray(r.charges) && r.charges.length > 0 && (
-                  <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>⚖️ {r.charges.slice(0, 2).join(' · ')}{r.charges.length > 2 ? ` +${r.charges.length - 2} more` : ''}</div>
-                )}
-              </div>
-            ))}
-          </div>
-          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: state DOC &amp; county correctional rosters. Public record, not a consumer report.</p>
-        </section>
-      )}
 
       {people.length > 0 && (
         <section style={{ ...ui.card, marginTop: 20 }}>

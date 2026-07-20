@@ -48,6 +48,29 @@ async function floridaObis(query) {
 }
 
 /**
+ * DB-ONLY roster lookup for a name+state — for SEO pages (ISR-safe: reads our own Neon, no live scraping).
+ * Combines fl_inmates (Florida, via floridaObis) + the general `inmates` roster (queryInmates), deduped.
+ * Returns the standard normalized booking-record shape. Empty where we have no coverage (self-gating).
+ */
+export async function rosterByNameState({ state, firstName, lastName, limit = 12 }) {
+  if (!lastName || !state) return [];
+  const st = String(state).toUpperCase();
+  const [fl, gen] = await Promise.all([
+    st === 'FL' ? floridaObis({ firstName, lastName }) : Promise.resolve([]),
+    queryInmates({ state: st, firstName, lastName, limit }),
+  ]);
+  const seen = new Set();
+  const out = [];
+  for (const r of [...fl, ...gen]) {
+    const k = `${norm(r.name)}|${r.age || ''}|${r.facility || ''}`;
+    if (seen.has(k)) { continue; }
+    seen.add(k);
+    out.push(r);
+  }
+  return out.slice(0, limit);
+}
+
+/**
  * Normalized booking record — the single shape every provider maps into (callers depend on THIS,
  * never a provider's raw shape).
  * @typedef {{ source:string, sourceName?:string, firstName?:string, lastName?:string, name?:string,
