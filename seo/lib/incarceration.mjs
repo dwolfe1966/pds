@@ -52,6 +52,42 @@ async function floridaObis(query) {
  * Combines fl_inmates (Florida, via floridaObis) + the general `inmates` roster (queryInmates), deduped.
  * Returns the standard normalized booking-record shape. Empty where we have no coverage (self-gating).
  */
+const titleCase = (s) => String(s || '').split(/[-\s]+/).map((w) => (w ? w[0].toUpperCase() + w.slice(1) : '')).join(' ').trim();
+
+/** Top names (ranked by record count) that ACTUALLY have incarceration records in a state, from our own
+ *  roster. Powers the state-hub "Incarceration & inmate records in {state}" section. DATA-DRIVEN, not the
+ *  Census name slice — so (a) it self-gates to empty where a state has no coverage, and (b) every name it
+ *  lists links to a name-in-state page that carries real records → indexable (Step 2). This fixes the CA
+ *  bug where getStateTopNames applied the consumer-search est cap (EST_IN_STATE_MAX) and excluded exactly
+ *  the common names that have the most records. FL reads fl_inmates; all states read the `inmates` table. */
+export async function rosterTopNamesByState({ state, limit = 30 }) {
+  const st = String(state || '').toUpperCase();
+  if (!flSql || !st) return [];
+  const NAME_RE = '^[a-z]+$';                          // single alpha token → forms a valid name slug
+  const SUFFIX = ['jr', 'sr', 'ii', 'iii', 'iv', 'v']; // drop suffix-as-surname junk (e.g. "smith jr")
+  const lim = limit * 2;
+  const [flRows, genRows] = await Promise.all([
+    st === 'FL'
+      ? flSql`SELECT first_norm, last_norm, count(*)::int n FROM fl_inmates
+              WHERE first_norm ~ ${NAME_RE} AND last_norm ~ ${NAME_RE} AND last_norm <> ALL(${SUFFIX})
+              GROUP BY first_norm, last_norm ORDER BY n DESC LIMIT ${lim}`.catch(() => [])
+      : Promise.resolve([]),
+    flSql`SELECT first_norm, last_norm, count(*)::int n FROM inmates
+           WHERE upper(state)=${st} AND first_norm ~ ${NAME_RE} AND last_norm ~ ${NAME_RE} AND last_norm <> ALL(${SUFFIX})
+           GROUP BY first_norm, last_norm ORDER BY n DESC LIMIT ${lim}`.catch(() => []),
+  ]);
+  const counts = new Map();
+  for (const r of [...flRows, ...genRows]) {
+    if (!r.first_norm || !r.last_norm) continue;
+    const slug = `${r.first_norm}-${r.last_norm}`;
+    counts.set(slug, (counts.get(slug) || 0) + Number(r.n || 0));
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([slug, n]) => ({ slug, name: titleCase(slug), count: n }));
+}
+
 export async function rosterByNameState({ state, firstName, lastName, limit = 12 }) {
   if (!lastName || !state) return [];
   const st = String(state).toUpperCase();

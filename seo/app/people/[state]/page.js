@@ -2,7 +2,8 @@
 // taxonomy: a data-driven city dot-map and the state's cities, each linking to a
 // city landing. All public-domain Census data.
 import { notFound } from 'next/navigation';
-import { getStateSlice, getStateCities, getStateTopNames } from '../../../lib/directory';
+import { getStateSlice, getStateCities } from '../../../lib/directory';
+import { rosterTopNamesByState } from '../../../lib/incarceration.mjs';
 import { statePath, cityPath } from '../../../lib/ids';
 import { collectionJsonLd, crumbsJsonLd } from '../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../lib/ui';
@@ -34,7 +35,10 @@ export default async function StateLanding({ params }) {
   if (!st) notFound();
 
   const cities = getStateCities(state);
-  const topNames = getStateTopNames(state, 30);
+  // Data-driven from our roster (not the est-capped name slice): names that actually have incarceration
+  // records in this state, ranked by count. Self-gates to empty where we have no coverage; every link
+  // lands on a name-in-state page that carries real records (→ indexable). Fixes the CA-empty bug.
+  const topNames = await rosterTopNamesByState({ state: st.code, limit: 30 });
   const crumbs = [
     { name: 'People Search', path: '/people' },
     { name: st.name, path: statePath(state) },
@@ -73,11 +77,14 @@ export default async function StateLanding({ params }) {
         <section style={{ ...ui.card, marginTop: 16 }}>
           <h2 style={{ marginTop: 0, fontSize: 18 }}>Incarceration &amp; inmate records in {st.name}</h2>
           <p style={{ ...ui.muted, margin: '0 0 10px', fontSize: 14 }}>
-            Search public booking, incarceration, and criminal records for people in {st.name} by name — sourced from state and county correctional rosters.
+            People with public booking, incarceration, and criminal records in {st.name} — from state and county
+            correctional rosters. Pick a name to see matching records, or search directly.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
             {topNames.map((n) => (
-              <a key={n.slug} href={`/people/${st.code.toLowerCase()}/${n.slug}`} style={{ ...ui.link, fontSize: 14 }}>{n.name}</a>
+              <a key={n.slug} href={`/people/${st.code.toLowerCase()}/${n.slug}`} style={{ ...ui.link, fontSize: 14 }}>
+                {n.name}{n.count ? <span style={ui.muted}> ({num(n.count)})</span> : null}
+              </a>
             ))}
           </div>
         </section>
