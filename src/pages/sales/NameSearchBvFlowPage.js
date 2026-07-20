@@ -14,7 +14,12 @@ import { ReviewStars, TrustBadges, Testimonials, UseCaseDonut, LiveStat, StatStr
 import v3 from './NameLandingV3Incarceration.module.css'; // reuse v3's green header + CTA
 import loader from './LoaderPage.module.css';
 import InmateBookingTeaser from '../../components/InmateBookingTeaser';
+import SignalTeaser from '../../components/SignalTeaser';
 import { isFlow } from '../../services/funnelFlow';
+
+// Signals-augmentation Phase 3: flag=1 → unified engine teaser; flag=0 (default) → original inmate teaser.
+// v11 is HIGH-CVR inmate traffic (v3+v11 are the top inmate channel) — keep the isFlow('inmate') gate + inmate flow.
+const SIGNALS_AUGMENT = process.env.REACT_APP_SIGNALS_AUGMENT === '1';
 
 /**
  * BeenVerified-style OPTIONAL funnel flow (name vertical).
@@ -135,7 +140,9 @@ const NameSearchBvFlowPage = () => {
               v11 converts 300% better on inmate traffic; leading the last step with real records reinforces it.
               Self-gates to nothing when there are no records. (Owner 2026-07-19.) */}
           {step === 'details' && isFlow('inmate') && query.lastName && (
-            <InmateBookingTeaser firstName={query.firstName} lastName={query.lastName} state={query.state} />
+            SIGNALS_AUGMENT
+              ? <SignalTeaser subject={{ firstName: query.firstName, lastName: query.lastName, state: query.state }} flow="inmate" viewerRelation="prospect" stage="pre-signup" />
+              : <InmateBookingTeaser firstName={query.firstName} lastName={query.lastName} state={query.state} />
           )}
           {/* Trust footer inside the card (BV-style social proof). */}
           <ReviewStars />
