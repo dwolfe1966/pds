@@ -105,6 +105,7 @@ export async function NameInStateView({ state, name }) {
         {d?.estInState
           ? <>An estimated <strong>{num(d.estInState)}</strong> people named {full} live in {st.name}. Search below to find the specific {full} you're looking for.</>
           : <>Find people named {full} across {st.name}. Search by city, age, and relatives to identify the right {full}.</>}
+        {inmates.length > 0 && <> <strong>{inmates.length}</strong> {inmates.length === 1 ? 'has' : 'have'} public incarceration records in {st.name} — see below.</>}
       </p>
 
       <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
@@ -119,13 +120,21 @@ export async function NameInStateView({ state, name }) {
             {inmates.map((rec, i) => {
               const { county, cleaned } = splitCounty(rec.charges);
               const loc = [rec.facility, [(rec.county || county) ? `${(rec.county || county)} County` : null, rec.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+              // Mugshot via background-image: if the public DOC photo 404s (released/no-photo) it degrades to a
+              // clean gray box — no broken-image icon (server-rendered, no client onError available).
+              const photo = rec.mugshotUrl
+                ? { backgroundColor: '#e5e7eb', backgroundImage: `url(${rec.mugshotUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                : { backgroundColor: '#eef1f4' };
               return (
-                <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
-                  <div style={{ fontWeight: 700, color: '#111827' }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
-                  {loc && <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>📍 {loc}</div>}
-                  {cleaned.length > 0 && (
-                    <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>⚖️ {cleaned.slice(0, 2).join(' · ')}{cleaned.length > 2 ? ` +${cleaned.length - 2} more` : ''}</div>
-                  )}
+                <div key={i} style={{ display: 'flex', gap: 12, border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
+                  <div aria-hidden="true" style={{ flexShrink: 0, width: 56, height: 68, borderRadius: 8, ...photo }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, color: '#111827' }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
+                    {loc && <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>📍 {loc}</div>}
+                    {cleaned.length > 0 && (
+                      <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>⚖️ {cleaned.slice(0, 2).join(' · ')}{cleaned.length > 2 ? ` +${cleaned.length - 2} more` : ''}</div>
+                    )}
+                  </div>
                 </div>
               );
             })}
