@@ -215,9 +215,12 @@ class ApiWrapperCsrService {
   // credential; never double-issue on a flaky retry. Optional `redirect` = post-login SPA path.
   async csrGetAutoLoginUrl(userId, redirect) {
     const args = redirect ? { userId, redirect } : { userId };
+    // retryOnError:true — this is NOT a destructive/financial mutation (it mints a login URL; a double
+    // mint just yields two short-lived links, harmless). So if the deployed csrWrapper IIFE doesn't yet
+    // expose api.user.getAutoLoginUrl (BC added it 2026-07-21), fall back to the direct POST.
     return await this._viaCsr('api.user.getAutoLoginUrl', args,
       () => apiWrapper._csrPost('/user/management/getAutoLoginUrl', args),
-      { retryOnError: false });
+      { retryOnError: true });
   }
 
   // csrWrapper.api.attachment.download — GET /api/attachment/download.
