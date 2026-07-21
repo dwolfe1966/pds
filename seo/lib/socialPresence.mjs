@@ -11,6 +11,7 @@
 //     screening) obligations, same as our other record surfaces. Honor opt-out; label confidence.
 //  3. Do NOT generate faceprints from photos (BIPA). Showing a self-hosted avatar URL is fine; face-matching is not.
 import { socialFootprint } from './socialFootprint.mjs';
+import { tryConsumePdl, recordPdlMatch } from './pdlBudget.mjs';
 
 const PDL_KEY = process.env.PDL_API_KEY;
 
@@ -40,11 +41,14 @@ async function pdlEnrich({ email, name, city, state }) {
   if (email) params.email = email;
   else if (name) { params.name = name; if (city) params.locality = city; if (state) params.region = regionOf(state); }
   else return null;
+  // Usage tracking + optional daily cap (owner: track spend, control it). Over cap → skip PDL, degrade to Gravatar.
+  if (!(await tryConsumePdl())) return null;
   try {
     const r = await fetch(`https://api.peopledatalabs.com/v5/person/enrich?${new URLSearchParams(params)}`, { headers: { 'X-Api-Key': PDL_KEY } });
     if (r.status !== 200) return null; // 404 not_found (common name PDL won't guess) / 400 insufficient data → no match
     const j = await r.json();
     const d = j.data || {};
+    if (d.full_name) recordPdlMatch(); // billable match — record for cost (fire-and-forget)
     return {
       matched: !!d.full_name, name: d.full_name || null, likelihood: j.likelihood ?? null, key: email ? 'email' : 'name',
       location: Array.isArray(d.location_names) ? d.location_names[0] : (d.location_name || null),
