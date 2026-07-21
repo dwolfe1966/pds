@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useSignup, validatePassword } from '../hooks/useSignup';
+import { useSignup, generatePassword } from '../hooks/useSignup';
 import { thinMatchVariant } from '../services/thinMatch';
+import { getCapturedEmail } from '../services/emailCapture';
 import { buildPreviewCards } from '../services/previewCards';
 import { PersonAvatar } from './PersonAvatar';
 
@@ -42,7 +43,7 @@ const VARIANT_COPY = {
   },
 };
 
-const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme = null, version = 1 }) => {
+const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme = null }) => {
   const variant = thinMatchVariant(flags) || 'default';
   const copy = VARIANT_COPY[variant] || VARIANT_COPY.default;
   const { cards, fullName, stName } = useMemo(() => buildPreviewCards(searchType, query), [searchType, query]);
@@ -54,18 +55,27 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
 
   const { token, isPaid } = useAuth();
   const { submit, loading, error, setError } = useSignup();
+  // Email already captured upstream (e.g. the v11 BV loader's mid-flow gate)? Then we
+  // skip the input and just show Continue. See getCapturedEmail (localStorage lead store).
+  const capturedEmail = useMemo(() => getCapturedEmail(), []);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [optin, setOptin] = useState(true);
+  const [optin] = useState(true);
 
-  const handleSubmit = async (e) => {
+  // Unified thin-match CTA (owner 2026-07-21, replaces the v1/v2 A/B): a visitor goes
+  // STRAIGHT to payment — email-only signup (auto-generated password, no field), so no
+  // interstitial "create a password" page. If the email was already captured, no input
+  // at all → one-click Continue. Mirrors SupTeaserA's email-only mechanism.
+  const handleContinue = async (e) => {
     e.preventDefault();
     setError('');
-    const pwErr = validatePassword(password);
-    if (pwErr) { setError(pwErr); return; }
-    // Thin-match signup has no target report, so send the new member straight to the
-    // payment page in its general/promo mode (→ dashboard after they subscribe).
-    await submit({ email: email.trim(), password, optin, redirectParam: '/payment' });
+    const em = (capturedEmail || email).trim();
+    if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setError('Please enter a valid email address.'); return; }
+    const pw = generatePassword();
+    // _pwAuto tells PaymentPage to REVEAL the auto-generated password on the confirmation
+    // screen — without it the member never learns their credentials. (advisor guard)
+    try { sessionStorage.setItem('_pwAuto', '1'); } catch { /* storage unavailable */ }
+    // No target report → PaymentPage runs in general/promo mode (→ dashboard after subscribe).
+    await submit({ email: em, password: pw, optin, redirectParam: '/payment' });
   };
 
   return (
@@ -115,42 +125,42 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
         ))}
       </div>
 
-      {/* CTA — visitor sees inline signup, free member sees upgrade CTA,
-          paid member sees a "refine search" hint instead of a payment prompt. */}
+      {/* CTA — unified Continue→payment. Visitor: email-only signup (no password field)
+          straight to payment; if the email was already captured upstream (v11 BV flow) we
+          skip the input → one-click Continue. Free member: Continue to payment. Paid member:
+          refine hint. The "Refine Search" form renders below this (in SearchResultsPage). */}
       {!token ? (
-        // VERSION 2 drops the whole signup rectangle; VERSION 1 keeps a streamlined form.
-        version === 2 ? null : (
-          <div style={{
-            border: '2px solid #0d5d2f',
-            borderRadius: '0.75rem',
-            padding: '1.5rem',
-            background: '#fff',
-          }}>
-            <h3 style={{ margin: '0 0 0.75rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
-              View full results
-            </h3>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        <div style={{
+          border: '2px solid #0d5d2f',
+          borderRadius: '0.75rem',
+          padding: '1.5rem',
+          background: '#fff',
+        }}>
+          <h3 style={{ margin: '0 0 0.75rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
+            View full results
+          </h3>
+          <form onSubmit={handleContinue} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+            {!capturedEmail && (
               <input
-                type="email" required autoComplete="email"
+                type="email" autoComplete="email"
                 placeholder="Email address"
                 value={email} onChange={(e) => setEmail(e.target.value)}
                 style={inputStyle}
               />
-              <input
-                type="password" required autoComplete="new-password"
-                placeholder="Create a password (at least 8 characters)"
-                value={password} onChange={(e) => setPassword(e.target.value)}
-                style={inputStyle}
-              />
-              {error && (
-                <div style={{ color: '#b91c1c', fontSize: '0.8125rem' }}>{error}</div>
-              )}
-              <button type="submit" disabled={loading} style={ctaStyle(loading, theme)}>
-                {loading ? 'Creating your account…' : 'Continue'}
-              </button>
-            </form>
-          </div>
-        )
+            )}
+            {error && (
+              <div style={{ color: '#b91c1c', fontSize: '0.8125rem' }}>
+                {error === 'already_exists' ? 'That email already has an account — please sign in to continue.' : error}
+              </div>
+            )}
+            <button type="submit" disabled={loading} style={ctaStyle(loading, theme)}>
+              {loading ? 'One moment…' : 'Continue'}
+            </button>
+          </form>
+          {capturedEmail && (
+            <p style={{ margin: '0.6rem 0 0', fontSize: '0.75rem', color: '#6b7280' }}>Continuing as {capturedEmail}</p>
+          )}
+        </div>
       ) : !isPaid ? (
         <div style={{
           border: '2px solid #0d5d2f',
@@ -159,7 +169,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
           background: '#fff',
         }}>
           <h3 style={{ margin: '0 0 0.5rem', color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>
-            Upgrade to view the full report
+            View full results
           </h3>
           <p style={{ margin: '0 0 1rem', color: '#4b5563', fontSize: '0.9rem' }}>
             You're signed in. Add a payment method to unlock contact details, relatives, and full address history.
@@ -173,7 +183,7 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
             textDecoration: 'none',
             fontWeight: 700,
           }}>
-            Upgrade now
+            Continue
           </Link>
         </div>
       ) : (

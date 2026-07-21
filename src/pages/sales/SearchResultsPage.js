@@ -497,7 +497,7 @@ const SalesSearchResultsPage = () => {
             {(() => {
               const flags = readThinMatch();
               return campaign?.search?.zeroState === 'thinMatch'
-                ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} version={thinMatchVersion} />
+                ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} />
                 : <ZeroResultsPanel searchType="name" query={searchQuery} theme={theme} />;
             })()}
           </>
@@ -534,7 +534,7 @@ const SalesSearchResultsPage = () => {
               </div>
             )}
             <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.75rem', color: theme ? theme.ink : 'var(--color-text-primary)' }}>
-              Search again
+              Refine Search
             </h2>
             <form onSubmit={submitRefine} style={{ maxWidth: '640px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
