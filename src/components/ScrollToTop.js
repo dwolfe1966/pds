@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { gtmPageView } from '../services/gtm';
+import { captureOnboardParam } from '../services/funnelFlow';
 
 /**
  * Maps a route to a unique, human-readable page title. Without this, document.title is
@@ -55,6 +56,7 @@ const ScrollToTop = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    captureOnboardParam(); // persist ?onboard=1 (test flag) so it survives landing→loader→SERP hops
     const title = titleForPath(pathname);
     try { document.title = title; } catch { /* SSR / non-DOM */ }
     gtmPageView(pathname, title);

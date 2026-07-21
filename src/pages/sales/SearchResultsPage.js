@@ -5,7 +5,7 @@ import ResultCard from '../../components/ResultCard';
 import SignalTeaser from '../../components/SignalTeaser';
 import SocialPresenceTeaser from '../../components/SocialPresenceTeaser';
 import OnboardingReveal from '../../components/OnboardingReveal';
-import { getFlow } from '../../services/funnelFlow';
+import { getFlow, onboardRevealOn } from '../../services/funnelFlow';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
@@ -259,8 +259,9 @@ const SalesSearchResultsPage = () => {
 
     // Onboarding animation (per-flow config or ?onboard=1) — a ~15s enrichment reveal between the SERP and
     // the SUP/Payment, capturing email if we don't have it. Gated so the default funnel is unchanged.
-    const onboardingEnabled = !!(campaign && campaign.onboarding)
-      || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('onboard'));
+    // Enabled by a flow's campaign config, OR the ?onboard=1 test flag (persisted across the funnel by
+    // ScrollToTop → onboardRevealOn, since the landing→loader→SERP hops drop the raw query param).
+    const onboardingEnabled = !!(campaign && campaign.onboarding) || onboardRevealOn();
 
   const handleResultClick = (result) => {
     // Store result in sessionStorage for the preview/payment page

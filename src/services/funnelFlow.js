@@ -27,11 +27,26 @@ export function clearFlow() {
 
 export function isFlow(flow) { return getFlow() === flow; }
 
+// Onboarding-reveal session flag. The ?onboard=1 test param is set on a LANDING, but the reveal fires on the
+// SERP — and the landing→loader→SERP hops rebuild query params, dropping it. So we PERSIST it to sessionStorage
+// on the landing (per-tab) and read it on the SERP. A real per-flow variant would set onboarding via its
+// campaign config; this makes the ?onboard=1 test carry through the whole funnel.
+const ONBOARD_KEY = 'onboardReveal';
+export function captureOnboardParam() {
+  try { if (new URLSearchParams(window.location.search).has('onboard')) sessionStorage.setItem(ONBOARD_KEY, '1'); } catch { /* ignore */ }
+}
+export function onboardRevealOn() {
+  try {
+    if (sessionStorage.getItem(ONBOARD_KEY) === '1') return true;
+    return new URLSearchParams(window.location.search).has('onboard');
+  } catch { return false; }
+}
+
 /**
  * Landing-page hook: declare this landing's flow. Sets it on mount (overwriting any prior landing's flow),
  * so the whole session downstream knows the intent. Call once at the top of each landing component:
  *   useFunnelFlow('inmate');
  */
 export function useFunnelFlow(flow) {
-  useEffect(() => { setFlow(flow); }, [flow]);
+  useEffect(() => { setFlow(flow); captureOnboardParam(); }, [flow]);
 }
