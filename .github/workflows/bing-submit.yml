@@ -1,0 +1,37 @@
+# Daily Bing URL submission — the 100/day GUARANTEED-processing channel (distinct from IndexNow, which
+# Bing crawls at its discretion). Regenerates the highest-value URL set from the live inmates DB, then
+# submits the top-N that fit the site's daily quota (Bing grows the quota with authority). Runs after the
+# 07:00 inmate crawl so name-in-state / county pages reflect fresh data.
+name: Bing URL submission
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 8 * * *'   # daily 08:30 UTC (after the 07:00 crawl + its ~ tail)
+
+concurrency:
+  group: bing-submit
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    environment: Production      # DATABASE_URL lives here (same as the crawler)
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: seo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Generate priority URLs + submit to Bing
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BING_WEBMASTER_KEY: ${{ secrets.BING_WEBMASTER_KEY }}
+        run: |
+          if [ -z "$BING_WEBMASTER_KEY" ]; then echo "::error::BING_WEBMASTER_KEY not set"; exit 1; fi
+          node scripts/gen-bing-priority-urls.mjs > bing-priority-urls.txt
+          node scripts/bing-url-submit.mjs

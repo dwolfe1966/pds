@@ -6,3 +6,4 @@ node_modules/
 out/
 scripts/.real-*.json
 scripts/.batch*.json
+bing-api-key.txt
