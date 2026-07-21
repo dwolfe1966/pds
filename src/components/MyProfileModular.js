@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AddressMap from './AddressMap';
+import { fetchSocialPresence } from '../services/socialPresenceService';
+
+// Social-presence enrichment (EXPERIMENTAL, behind REACT_APP_SIGNALS_SOCIAL). On the report we have the
+// subject's EMAIL → PDL/Gravatar returns a RICH set (not the spotty name-key). Merged into the existing
+// "Online presence" module. ⚠️ PDL terms bar production people-search display — experimental until cleared.
+const socialEnrichOn = () => process.env.REACT_APP_SIGNALS_SOCIAL === '1';
+const SOC_PLATFORM = { linkedin: 'LinkedIn', facebook: 'Facebook', twitter: 'Twitter / X', instagram: 'Instagram', youtube: 'YouTube', tiktok: 'TikTok', pinterest: 'Pinterest', github: 'GitHub', gravatar: 'Gravatar', quora: 'Quora', crunchbase: 'Crunchbase', angellist: 'AngelList', vimeo: 'Vimeo', 'about.me': 'about.me', wordpress: 'WordPress', reddit: 'Reddit' };
+const socPlatform = (n) => SOC_PLATFORM[n] || (String(n || '').charAt(0).toUpperCase() + String(n || '').slice(1));
 
 /**
  * MyProfileModular — My Profile as a social-profile surface (FB/LinkedIn model). See
@@ -144,6 +152,35 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
   // Update local state AND persist (when a handler is wired — dev preview leaves it local).
   const set = (id, v) => { setDisp((s) => ({ ...s, [id]: v })); if (onDispositionChange) onDispositionChange(id, v); };
   const d = data || {};
+
+  // Social-presence enrichment — key on the subject's EMAIL (rich, unlike the spotty name-key teaser) and
+  // merge into the "Online presence" module below. Self-gating (no match → nothing added).
+  const [extraSocial, setExtraSocial] = useState([]);
+  const subjEmail = ((d.emails || [])[0] || {}).address || '';
+  const subjName = d.fullName || hero.name || '';
+  const subjState = ((hero.location || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
+  useEffect(() => {
+    if (!socialEnrichOn() || (!subjEmail && !subjName)) return undefined;
+    let alive = true;
+    const parts = String(subjName).trim().split(/\s+/);
+    fetchSocialPresence({ email: subjEmail || undefined, firstName: parts[0], lastName: parts.length > 1 ? parts[parts.length - 1] : '', state: subjState })
+      .then((r) => {
+        if (!alive || !r || !r.matched) return;
+        setExtraSocial((r.profiles || []).map((p) => ({ platform: socPlatform(p.network), username: p.username, url: p.url, confidence: p.confidence, enriched: true })));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [subjEmail, subjName, subjState]);
+  // Merged online-presence list: report-native social + enriched (deduped by url/platform).
+  const socialItems = (() => {
+    const seen = new Set(); const out = [];
+    for (const s of [...(d.social || []), ...extraSocial]) {
+      const k = String(s.url || `${s.platform}:${s.username || ''}`).toLowerCase();
+      if (k && !seen.has(k)) { seen.add(k); out.push(s); }
+    }
+    return out;
+  })();
+
   const view = ownerMode ? viewAs : viewerTier; // effective viewer: 'you' | 'anonymous' | 'free' | 'paid'
   const isOwner = ownerMode && viewAs === 'you'; // owner controls active only here
 
@@ -172,7 +209,7 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
     family: (d.relatives || []).length,
     work: (d.jobs || []).length,
     education: (d.education || []).length,
-    online: (d.social || []).length,
+    online: socialItems.length,
     activity: 3,
     court: (d.criminalRecords || []).length,
     property: (d.properties || []).length,
@@ -283,15 +320,20 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
     ) },
     { id: 'online', icon: '🌐', title: 'Online presence', source: 'user', body: () => (
       <div style={wrap}>
-        {(d.social || []).map((s, i) => <Chip key={`so${i}`}>{s.platform}{s.username ? ` · @${s.username}` : ''}</Chip>)}
-        {!(d.social || []).length && none('No linked profiles yet — promote to add them.')}
+        {socialItems.map((s, i) => <Chip key={`so${i}`}>{s.platform}{s.username ? ` · @${s.username}` : ''}</Chip>)}
+        {!socialItems.length && none('No linked profiles yet — promote to add them.')}
       </div>
     ), full: () => (
       <div>
-        {(d.social || []).map((s, i) => (
-          <Item key={`so${i}`}><Title>{s.platform}{s.username ? ` · @${s.username}` : ''}</Title>{s.url && <div style={{ marginTop: 2 }}><a href={s.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: '#1d4ed8' }}>{s.url}</a></div>}</Item>
+        {socialItems.map((s, i) => (
+          <Item key={`so${i}`}>
+            <Title>{s.platform}{s.username ? ` · @${s.username}` : ''}
+              {s.enriched && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: s.confidence === 'confirmed' ? '#0d5d2f' : '#92400e', background: s.confidence === 'confirmed' ? '#f0fdf4' : '#fffbeb', border: `1px solid ${s.confidence === 'confirmed' ? '#bbf7d0' : '#fde68a'}`, borderRadius: 999, padding: '1px 6px' }}>{s.confidence === 'confirmed' ? '✓ verified' : 'found online'}</span>}
+            </Title>
+            {s.url && <div style={{ marginTop: 2 }}><a href={s.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: '#1d4ed8' }}>{s.url}</a></div>}
+          </Item>
         ))}
-        {!(d.social || []).length && none('No linked profiles yet — promote to add them.')}
+        {!socialItems.length && none('No linked profiles yet — promote to add them.')}
       </div>
     ) },
     { id: 'activity', icon: '📰', title: 'Activity', source: 'user', body: () => (
@@ -390,7 +432,7 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
   if (disp.family !== 'protect') actions.push({ icon: '🔒', text: 'Protect your relatives', sub: 'A common way people track you down.' });
   if (disp.locations !== 'protect' && pastAddrs > 0) actions.push({ icon: '📍', text: 'Protect your address history', sub: `${pastAddrs} past address${pastAddrs === 1 ? '' : 'es'} on record.` });
   if (recordsTotal > 0) actions.push({ icon: '🧹', text: 'Remove records from data brokers', sub: `${recordsTotal} public record${recordsTotal === 1 ? '' : 's'} exist elsewhere.` });
-  if (!(d.social || []).length) actions.push({ icon: '📣', text: 'Add your links', sub: 'Promote the profile you want people to see.' });
+  if (!socialItems.length) actions.push({ icon: '📣', text: 'Add your links', sub: 'Promote the profile you want people to see.' });
 
   const legend = (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: '#6b7280' }}>
