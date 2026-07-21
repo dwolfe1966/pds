@@ -18,12 +18,14 @@
  */
 import { fetchLifeEvents } from './lifeEventsService';
 import { fetchBookings, corroboratePerson, corroboratesAge } from './incarcerationService';
+import { fetchSocialPresence } from './socialPresenceService';
 
 // Emphasis config (design §6). Flow picks the lead + capped secondary; owner-self orders by exposure severity.
 const FLOW_PRIORITY = {
-  inmate:  { lead: 'booking',         secondary: ['marriageDivorce'] },
-  divorce: { lead: 'marriageDivorce', secondary: ['booking'] },
-  dating:  { lead: 'capability',      secondary: ['marriageDivorce', 'booking'] },
+  inmate:  { lead: 'booking',         secondary: ['marriageDivorce', 'social'] },
+  divorce: { lead: 'marriageDivorce', secondary: ['booking', 'social'] },
+  dating:  { lead: 'capability',      secondary: ['social', 'marriageDivorce', 'booking'] },
+  social:  { lead: 'social',          secondary: ['__rest__'] },
   death:   { lead: 'marriageDivorce', secondary: [] },
   general: { lead: '__strongest__',   secondary: ['__rest__'] },
 };
@@ -39,6 +41,9 @@ const augmentOn = () => process.env.REACT_APP_SIGNALS_AUGMENT !== '0';
 // CVR inmate channel), so default-on avoids regressing them when AUGMENT flips. Explicit '0' hides it (the
 // display-permission off-switch). Post-pay always includes booking regardless.
 const bookingPreSignupOn = () => process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP !== '0';
+// Social presence (PDL + Gravatar) — EXPERIMENTAL, default OFF. PDL's terms bar production people-search
+// display, so this stays behind an explicit opt-in until we resolve display terms (or swap to Spokeo/Pipl).
+const socialOn = () => process.env.REACT_APP_SIGNALS_SOCIAL === '1';
 
 const norm = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '');
 const subjectKey = (s) => [norm(s.firstName), norm(s.lastName), norm(s.state), norm(s.age)].join(':');
@@ -52,22 +57,24 @@ export function _resetSignalsCache() { _raw.clear(); }
 async function rawSignals(subject, stage, wantSO) {
   const key = `${stage}|${wantSO ? 'so' : 'noso'}|${subjectKey(subject)}`;
   if (_raw.has(key)) return _raw.get(key);
-  const p = _computeRaw(subject, wantSO).catch(() => ({ marriageDivorce: [], sexOffenderRaw: [], booking: [] }));
+  const p = _computeRaw(subject, wantSO).catch(() => ({ marriageDivorce: [], sexOffenderRaw: [], booking: [], social: null }));
   _raw.set(key, p);
   return p;
 }
 
 async function _computeRaw(subject, wantSO) {
-  const { firstName, lastName, state, city, age, gender } = subject;
-  const [life, booking] = await Promise.all([
+  const { firstName, lastName, state, city, age, gender, email } = subject;
+  const [life, booking, social] = await Promise.all([
     fetchLifeEvents({ firstName, lastName, state, city, age, gender, sexOffender: wantSO }),
     fetchBookings({ firstName, lastName, state, city, age }),
+    socialOn() ? fetchSocialPresence({ firstName, lastName, state, city, email }) : Promise.resolve(null),
   ]);
   const lifeRecords = (life && life.records) || [];
   return {
     marriageDivorce: lifeRecords.filter((r) => r.recordType === 'divorce' || r.recordType === 'marriage'),
     sexOffenderRaw: lifeRecords.filter((r) => r.recordType === 'sex-offender'),
     booking: (booking && booking.records) || [],
+    social: social && social.matched ? social : null,
   };
 }
 
@@ -102,6 +109,15 @@ function shapeSignals(raw, { stage, subject, strict, wantSO }) {
   } else {
     signals.sexOffender = { records: [], count: 0 };
   }
+
+  // Social presence (EXPERIMENTAL, flag-gated) — a matched person's public social profiles (PDL + Gravatar).
+  // Self-gating: only present when the enrichment matched. Pre-signup TEASES (platforms + count, URLs gated
+  // in the renderer); post-pay shows the URLs. Name+state matches are spotty by design (PDL declines common
+  // names → no false attribution).
+  signals.social = (socialOn() && raw.social)
+    ? { profiles: raw.social.profiles || [], count: (raw.social.profiles || []).length, name: raw.social.name, photoUrl: raw.social.photoUrl, likelihood: raw.social.matchLikelihood }
+    : { profiles: [], count: 0 };
+
   return signals;
 }
 

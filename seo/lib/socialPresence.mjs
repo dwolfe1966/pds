@@ -28,19 +28,26 @@ const NET = (n) => {
   return s;
 };
 
+// State abbrev → full name (PDL's `region` wants the full state name).
+const STATE_NAME = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming' };
+const regionOf = (state) => { const s = String(state || '').trim(); return s.length === 2 ? (STATE_NAME[s.toUpperCase()] || s) : s; };
+
 async function pdlEnrich({ email, name, city, state }) {
   if (!PDL_KEY) return null;
-  const params = { min_likelihood: email ? '2' : '6' }; // email is high-conf; name-only needs a stronger match
+  // Permissive floor to get a match; the caller gates on the returned `likelihood` (email = high-confidence
+  // key; name+region = weaker → display should require a higher likelihood before asserting it's the person).
+  const params = { min_likelihood: '2' };
   if (email) params.email = email;
-  else if (name) { params.name = name; const loc = [city, state].filter(Boolean).join(', '); if (loc) params.locality = loc; }
+  else if (name) { params.name = name; if (city) params.locality = city; if (state) params.region = regionOf(state); }
   else return null;
   try {
     const r = await fetch(`https://api.peopledatalabs.com/v5/person/enrich?${new URLSearchParams(params)}`, { headers: { 'X-Api-Key': PDL_KEY } });
-    if (r.status !== 200) return null;
+    if (r.status !== 200) return null; // 404 not_found (common name PDL won't guess) / 400 insufficient data → no match
     const j = await r.json();
     const d = j.data || {};
     return {
-      matched: !!d.full_name, name: d.full_name || null, likelihood: j.likelihood ?? null,
+      matched: !!d.full_name, name: d.full_name || null, likelihood: j.likelihood ?? null, key: email ? 'email' : 'name',
+      location: Array.isArray(d.location_names) ? d.location_names[0] : (d.location_name || null),
       profiles: (d.profiles || []).map((p) => ({ network: p.network, url: p.url || null, username: p.username || null })),
     };
   } catch { return null; }
@@ -86,6 +93,11 @@ export async function getSocialPresence({ email, name, city, state, expectedName
     name: grav?.name || pdl?.name || null,
     photoUrl: grav?.photoUrl || null,      // only Gravatar (self-hosted, display-safe); no faceprinting
     nameCorroborated: !!grav?.nameCorroborated,
+    // Match confidence for the DISPLAY gate: email key = strong; name+region = weaker (require higher
+    // likelihood before asserting "this is them" to avoid false attribution / defamation on common names).
+    matchKey: pdl?.key || (grav?.found ? 'email' : null),
+    matchLikelihood: pdl?.likelihood ?? null,   // PDL 1–10 (null when only Gravatar)
+    matchLocation: pdl?.location || null,
     profiles,
     sources,
   };
