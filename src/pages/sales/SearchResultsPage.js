@@ -4,6 +4,7 @@ import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SignalTeaser from '../../components/SignalTeaser';
 import SocialPresenceTeaser from '../../components/SocialPresenceTeaser';
+import OnboardingReveal from '../../components/OnboardingReveal';
 import { getFlow } from '../../services/funnelFlow';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
@@ -62,6 +63,7 @@ const SalesSearchResultsPage = () => {
   const [loadMoreCount, setLoadMoreCount] = useState(0); // GAP-5: pagination engagement
   const [totalCount, setTotalCount] = useState(0);
   const [sortBy, setSortBy] = useState('relevance');
+  const [onboarding, setOnboarding] = useState(null); // onboarding-reveal interstitial (per-flow / ?onboard=1)
   // Client-side refine filters on the data BC already returns (no extra teaser call).
   const [filters, setFilters] = useState({ criminal: false, property: false, relatives: false, employment: false, gender: '' });
   const toggleFilter = (k) => setFilters((f) => ({ ...f, [k]: !f[k] }));
@@ -255,22 +257,32 @@ const SalesSearchResultsPage = () => {
     return copy;
   }, [narrowedResults, sortBy]);
 
+    // Onboarding animation (per-flow config or ?onboard=1) — a ~15s enrichment reveal between the SERP and
+    // the SUP/Payment, capturing email if we don't have it. Gated so the default funnel is unchanged.
+    const onboardingEnabled = !!(campaign && campaign.onboarding)
+      || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('onboard'));
+
   const handleResultClick = (result) => {
     // Store result in sessionStorage for the preview/payment page
     sessionStorage.setItem(`result_${result.id}`, JSON.stringify(result));
-    // If we've already captured an email upstream (e.g. the BV mid-loader gate), don't
-    // re-ask for it on the SUP — send the user straight to payment via a silent
-    // auto-signup (captured email + generated password). Only for not-logged-in
-    // visitors; logged-in members keep the normal path. If the account already exists,
-    // SignupPage's auto path falls back to the form.
-    const hasEmail = (() => { try { return !!getCapturedEmail(); } catch { return false; } })();
     const loggedIn = (() => { try { return !!localStorage.getItem('accessToken'); } catch { return false; } })();
-    if (hasEmail && !loggedIn) {
-      track('serp_result_autocheckout', { personId: result.id });
-      navigate(`/signup?selected=${result.id}&redirect=/payment&auto=1`);
+    // Destination AFTER any onboarding — re-checks email (onboarding may have just captured it): a not-logged-in
+    // visitor with an email goes straight to payment via silent auto-signup; otherwise the SUP.
+    const go = () => {
+      const hasEmail = (() => { try { return !!getCapturedEmail(); } catch { return false; } })();
+      if (hasEmail && !loggedIn) {
+        track('serp_result_autocheckout', { personId: result.id });
+        navigate(`/signup?selected=${result.id}&redirect=/payment&auto=1`);
+      } else {
+        navigate(`/search/${result.id}`);
+      }
+    };
+    if (onboardingEnabled && !loggedIn) {
+      track('serp_result_onboarding', { personId: result.id });
+      setOnboarding({ person: { ...result, fullName: result.fullName || result.name, location: result.location }, onDone: go });
       return;
     }
-    navigate(`/search/${result.id}`);
+    go();
   };
 
   // Refine search — editable first/last/state/city/age (previously name-only).
@@ -302,6 +314,7 @@ const SalesSearchResultsPage = () => {
 
   return (
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
+      {onboarding && <OnboardingReveal person={onboarding.person} onDone={onboarding.onDone} variant={getFlow() || flow || 'general'} />}
       {/* Minimal self-chrome header — matches the landing wizard (logo only, no nav). */}
       <header style={{ display: 'flex', alignItems: 'center', padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#0d5d2f', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
         <a href="/" style={{ fontSize: '1.15rem', fontWeight: 800, color: theme && theme.onDark ? theme.accent : '#ffffff', textDecoration: 'none', letterSpacing: '-0.01em' }}>{brand.name}</a>

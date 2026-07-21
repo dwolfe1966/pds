@@ -37,6 +37,10 @@ export const CAMPAIGN_REGISTRY = {
     // an shN with thinmatch:'no' resolves to 'noRecords' ("no results found").
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },
     detail:  { variant: 'a' },                  // shared SupTeaserA design (green); legacy '1' inline layout retired 2026-07-04
+    // onboarding (optional, owner 2026-07-21): set `onboarding: true` on a campaign/flow to insert the ~15s
+    // OnboardingReveal (enrichment reveal + email capture) between the SERP and the SUP/Payment. Absent =
+    // default funnel (no interstitial). Also force-testable on any flow via the ?onboard=1 URL param.
+    // onboarding: true,
 
     signup:  { variant: 'stepped', fields: ['email', 'password', 'optin'] },
     // requireTermsCheckbox (bug #34): on the default shN we SHOW + REQUIRE the
