@@ -40,3 +40,17 @@ Run PDL through this now (harness: `scratchpad/social-spike/pdl-eval.mjs`); appl
 
 ## Recommendation
 Start PDL **today** (free, no sales) to bank the professional-layer number, and fire the Spokeo + Pipl outreach in parallel for the consumer-social production feed. Decide the production buy on the scorecard — coverage of FB/IG/X on *our* resolved people is the axis that settles it.
+
+## PDL LIVE RESULT (2026-07-21, free tier, email key) — stronger than expected
+Ran the free self-serve key against a ground-truth email (owner's). PDL matched the person and returned
+**12 social profiles from ONE email lookup, including the marquee consumer platforms**:
+`linkedin · facebook · twitter · github · gravatar · angellist · foursquare · pinterest · about.me · google+ · wordpress · myspace`.
+- **Overturns the "LinkedIn-only / thin FB-IG" expectation** — FB + Twitter + LinkedIn + Pinterest all came back. Far richer than the free OSS layer (Holehe = 6 dev/utility sites, no FB/Twitter).
+- Match key here = **email** (we have emails on the consumer BC report → email-enrich is directly usable there).
+- CAVEATS: (1) includes **stale/dead platforms** (google+, myspace) → filter by liveness; (2) **name+location key** (the people-search-style key, e.g. on SEO where we lack email) is UNTESTED — needs our own resolved name+city pairs; (3) **PDL terms bar production people-search/FCRA display** → strong for EVAL + internal enrichment, but production *display* needs terms clearance OR the FCRA-clean vendors (Spokeo/Pipl, owner reaching out); (4) production cost = Pro ~$0.20–0.28/record.
+- **Verdict:** PDL is the technically strongest + only self-serve source that returns the consumer-social presence. It settles the eval's deciding axis (marquee coverage from email = excellent). Next: (a) test the name+location key on our resolved people; (b) resolve display terms (PDL vs Spokeo/Pipl).
+
+## Free layer built ("start with what we have"): seo/lib/socialFootprint.mjs
+Server-side Gravatar enrichment (email → name + photo + verified linked accounts), pure-JS, no keys, no
+terms restriction (public opt-in data) — shippable as the corroboration tier + a photo source, alongside a
+paid seed (PDL/Spokeo/Pipl) for breadth.
