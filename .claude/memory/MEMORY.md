@@ -103,3 +103,4 @@
 - [Address-history map on profile](reference_address_map.md) — Leaflet + OSM; report + My Identity; safe-by-default; ⚠️ CSP must allow *.tile.openstreetmap.org on BC or tiles blank; bundle public.956f8994.js
 - [Signals augmentation (universal enrichment, flow-prioritized)](project_signals_augmentation.md) — presence=data-driven/emphasis=flow-driven; 3 viewer-lenses (prospect/member/owner-self) on 1 subject-keyed signal set; getPersonSignals + 6-phase plan; awaiting owner Q1-Q4 + subject-opt-out verification
 - [SEO recovery brainstorm](project_seo_recovery.md) — SEO floundering (generic people-directory pages on a new domain); pivot to first-party data verticals (INMATE lead) + authority-building; prune thin pages; docs/seo/seo-recovery-brainstorm.md
+- [Thin-match → payment fix](project_thinmatch_payment_fix.md) — no email+password dead-end; unified CTA (bundle public.58aaced5.js)
