@@ -22,8 +22,8 @@ on:
   workflow_dispatch:
     inputs:
       states:
-        description: 'Async-tier states to crawl (the rich browser/captcha states only — VINE states are live, no crawl needed)'
-        default: 'TX,MI,AZ,OK,KS,WI,CO'
+        description: 'States to crawl into the inmates DB. Default = all CLOUD-CAPABLE (browser/captcha + VINE-API) states; direct-fetch DOC states are blocked from datacenter IPs so crawl those locally or set STATE_PROXY_URL.'
+        default: 'TX,MI,AZ,OK,KS,WI,CO,NY,NJ,KY,CT,NH,TN,WV,MN,RI,VA,NM,MT'
       surnames:
         description: 'Comma-separated surnames (blank = built-in top-50)'
         default: ''
@@ -33,8 +33,9 @@ on:
       delay:
         description: 'Politeness delay between queries (ms)'
         default: '1200'
-  # schedule:
-  #   - cron: '0 7 * * *'   # OWNER: uncomment to run daily at 07:00 UTC once the cadence/spend is approved.
+  schedule:
+    - cron: '0 7 * * *'   # daily 07:00 UTC — refresh the cloud-capable states into the inmates DB (owner
+                          # approved unlimited spend 2026-07-20). Direct-fetch states are crawled locally.
 
 concurrency:
   group: crawl-inmates
@@ -60,7 +61,7 @@ jobs:
           BROWSER_SERVICE_URL: ${{ secrets.BROWSER_SERVICE_URL }}
           CAPTCHA_SOLVER_KEY: ${{ secrets.CAPTCHA_SOLVER_KEY }}
           STATE_PROXY_URL: ${{ secrets.STATE_PROXY_URL }}
-          STATES: ${{ github.event.inputs.states || 'TX,MI,AZ,OK,KS,WI,CO' }}
+          STATES: ${{ github.event.inputs.states || 'TX,MI,AZ,OK,KS,WI,CO,NY,NJ,KY,CT,NH,TN,WV,MN,RI,VA,NM,MT' }}
           SURNAMES: ${{ github.event.inputs.surnames }}
           FIRSTNAMES: ${{ github.event.inputs.firstnames }}
           DELAY: ${{ github.event.inputs.delay || '1200' }}
