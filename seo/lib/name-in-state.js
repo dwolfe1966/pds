@@ -68,13 +68,6 @@ export async function nameInStateMetadata(state, name, canonicalPath) {
   };
 }
 
-const stat = {
-  wrap: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 },
-  card: { flex: '1 1 200px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px' },
-  label: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280', fontWeight: 700 },
-  big: { fontSize: 24, fontWeight: 800, color: '#0d5d2f', margin: '2px 0 4px' },
-  sub: { fontSize: 13, color: '#374151' },
-};
 
 /** The rendered view. Callers should have already resolved/notFound()'d. Async: fetches the first-party
  *  incarceration roster (DB-only, ISR-cached with the page) to differentiate this name-in-state page. */
@@ -87,6 +80,11 @@ export async function NameInStateView({ state, name }) {
   // (fl_inmates for FL + inmates). State-grain data on a state-grain page. Self-gating where no coverage.
   const inmates = await rosterFor(st.code, first, last); // cache()-shared with generateMetadata → 1 DB hit
   const offenders = await soFor(st.code, first, last);   // registered sex offenders matching this name
+  // Data-driven lead fragments (differ per page → de-templated intro).
+  const recordLead = [
+    inmates.length ? `${inmates.length} public incarceration record${inmates.length === 1 ? '' : 's'}` : null,
+    offenders.length ? `${offenders.length} registered sex-offender record${offenders.length === 1 ? '' : 's'}` : null,
+  ].filter(Boolean);
 
   const ordinal = (rk) => (rk ? `#${num(rk)}` : '');
   const ff = getFirstNameFacts(first);
@@ -110,11 +108,15 @@ export async function NameInStateView({ state, name }) {
       <Breadcrumbs crumbs={crumbs} />
 
       <h1 style={ui.h1}>{full} in {st.name}</h1>
+      {/* De-template (Step 4): lead with the records that actually DIFFER per page (incarceration / sex-offender
+          counts) instead of an identical "An estimated N people…" template, so no two name-in-state pages open
+          the same way. Falls back to the estimate only when there are no records. */}
       <p style={{ margin: '0 0 20px', fontSize: 17, lineHeight: 1.6 }}>
-        {d?.estInState
-          ? <>An estimated <strong>{num(d.estInState)}</strong> people named {full} live in {st.name}. Search below to find the specific {full} you're looking for.</>
-          : <>Find people named {full} across {st.name}. Search by city, age, and relatives to identify the right {full}.</>}
-        {inmates.length > 0 && <> <strong>{inmates.length}</strong> {inmates.length === 1 ? 'has' : 'have'} public incarceration records in {st.name} — see below.</>}
+        {recordLead.length
+          ? <>Public records for <strong>{full}</strong> in {st.name}: {recordLead.join(' and ')} match this name{d?.estInState ? <>, among an estimated {num(d.estInState)} {full}s statewide</> : ''}. See the details below, or search to find the specific person.</>
+          : (d?.estInState
+            ? <>An estimated <strong>{num(d.estInState)}</strong> people named {full} live in {st.name}. Search by city, age, and relatives to find the specific {full} you're looking for.</>
+            : <>Find people named {full} across {st.name}. Search by city, age, and relatives to identify the right {full}.</>)}
       </p>
 
       <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
@@ -131,25 +133,14 @@ export async function NameInStateView({ state, name }) {
         blurb={`Public sex-offender registry records matching this name in ${st.name}.`}
       />
 
-      <div style={{ ...stat.wrap, marginTop: 20 }}>
-        <div style={stat.card}>
-          <div style={stat.label}>First name</div>
-          <div style={stat.big}>{first}</div>
-          <div style={stat.sub}>
-            {(d?.firstRank || ff?.rank) ? <>{ordinal(d?.firstRank || ff?.rank)} most common first name in the U.S.</> : 'A U.S. given name'}
-            {genderLabel && <> · {genderLabel}</>}
-            {ff?.peakDecade && <> · peaked {ff.peakDecade}</>}
-          </div>
-        </div>
-        <div style={stat.card}>
-          <div style={stat.label}>Surname</div>
-          <div style={stat.big}>{last}</div>
-          <div style={stat.sub}>
-            {(d?.lastRank || lf?.rank) ? <>{ordinal(d?.lastRank || lf?.rank)} most common surname in the U.S.</> : 'A U.S. surname'}
-            {topEth && topEth[1] >= 40 && <> · {topEth[1]}% {topEth[0]}</>}
-          </div>
-        </div>
-      </div>
+      {/* De-template (Step 4): the two large "First name / Surname" stat cards were IDENTICAL across all 50
+          states for a given name (pure cross-page boilerplate). Demoted to one compact context line so the
+          unique per-page content (records, above) dominates. */}
+      {(ff || lf) && (
+        <p style={{ margin: '18px 0 0', fontSize: 13.5, color: '#6b7280', lineHeight: 1.6 }}>
+          <strong>{first}</strong> {(d?.firstRank || ff?.rank) ? <>is the {ordinal(d?.firstRank || ff?.rank)} most common U.S. first name</> : 'is a U.S. given name'}{genderLabel ? ` (${genderLabel})` : ''}; <strong>{last}</strong> {(d?.lastRank || lf?.rank) ? <>the {ordinal(d?.lastRank || lf?.rank)} most common surname</> : 'a U.S. surname'}{topEth && topEth[1] >= 40 ? `, ${topEth[1]}% ${topEth[0]}` : ''}.
+        </p>
+      )}
 
       {cities.length > 0 && (
         <section style={ui.card}>
