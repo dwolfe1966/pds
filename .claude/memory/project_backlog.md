@@ -27,7 +27,7 @@ originSessionId: ed6a1fb6-9daf-4f36-a40e-b2ed117467bc
 
 - **HP-2 — CSR: auto-login-URL / impersonation. GENERATOR HALF SHIPPED 2026-07-21 (admin.b1ef2368.js, NOT deployed).**
   Built: `csrGetAutoLoginUrl` → `admin-auto-login-url` → `api.adminGetAutoLoginUrl` → `UserDetailPage` "Log in
-  as user" button (ADMIN-role gated — takeover > suspend; opens link in fresh tab; audit note that NEVER stores
+  as user" button (all-CSR (staff-gated app + audit note) — takeover > suspend; opens link in fresh tab; audit note that NEVER stores
   the URL). **HELD:** consumer session-adoption (`/auth/session` + `AuthContext.adoptSession`) — blocked on BC
   Q1 "does no-arg `auth.login({})` return a real accessToken for a loginLink session, or just status?" + owner
   dev-test (does cookie-auth carry / what does no-arg login return). Q1-Q5 (TTL/single-use/revocable/audit) in

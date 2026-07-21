@@ -38,7 +38,7 @@ Findings from (a)/(b) decide the adoption route design (build to reality, not th
 
 ## Build state
 - ✅ `apiWrapperCsr.csrGetAutoLoginUrl` · `admin-auto-login-url` route · `api.adminGetAutoLoginUrl`
-- ✅ `UserDetailPage` "Log in as user" button — **admin-role gated**, audit note (no URL), opens new tab
+- ✅ `UserDetailPage` "Log in as user" button — **visible to all CSRs**, audit note (no URL), opens new tab
 - ⏸️ Consumer `/auth/session` adoption route + `AuthContext.adoptSession` — **held on Q1**
 - ⚠️ Guardrail decided: audit note never stores the loginHash URL (bearer credential = account takeover)
 
