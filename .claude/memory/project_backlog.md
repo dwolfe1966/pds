@@ -25,7 +25,14 @@ originSessionId: ed6a1fb6-9daf-4f36-a40e-b2ed117467bc
   `orderHistories`. See [[reference_cancel_at_period_end]], [[reference_bc_getorder_price]],
   [[feedback_subscription_state_authority]].
 
-- **HP-2 — CSR: auto-login-URL from an email (impersonate via link).** BC shipped
+- **HP-2 — CSR: auto-login-URL / impersonation. GENERATOR HALF SHIPPED 2026-07-21 (admin.b1ef2368.js, NOT deployed).**
+  Built: `csrGetAutoLoginUrl` → `admin-auto-login-url` → `api.adminGetAutoLoginUrl` → `UserDetailPage` "Log in
+  as user" button (ADMIN-role gated — takeover > suspend; opens link in fresh tab; audit note that NEVER stores
+  the URL). **HELD:** consumer session-adoption (`/auth/session` + `AuthContext.adoptSession`) — blocked on BC
+  Q1 "does no-arg `auth.login({})` return a real accessToken for a loginLink session, or just status?" + owner
+  dev-test (does cookie-auth carry / what does no-arg login return). Q1-Q5 (TTL/single-use/revocable/audit) in
+  `docs/BC_AUTOLOGIN_ASK.md`. HP-2 + HP-3 are ONE build (adoption needs the no-arg session pickup). Original ask below.
+- **HP-2 (orig) — CSR: auto-login-URL from an email (impersonate via link).** BC shipped
   **`csrWrapper.api.user.getAutoLoginUrl({ userId, redirect? })`** (added 2026-07-21,
   `POST /api/user/management/getAutoLoginUrl`) → returns `{ url }` (a `/api/auth/loginLink?loginHash=…&clientId=…&apiId=…`
   link). Visiting the URL logs the server in AS that user; optional `redirect` (e.g. `/contact`) lands them
