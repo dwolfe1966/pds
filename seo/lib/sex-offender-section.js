@@ -6,7 +6,8 @@ import { ui } from './ui';
 
 // Registry placeholders that aren't real locations (incarcerated / homeless / unknown) — don't render them
 // as a city/zip.
-const JUNK = new Set(['', 'unknown', 'none', 'n/a', 'na', 'incarcerated', 'homeless', 'transient', 'unavailable']);
+const JUNK = new Set(['', 'unknown', 'none', 'n/a', 'na', 'incarcerated', 'homeless', 'transient', 'unavailable',
+  'out of state', 'out-of-state', 'refused', 'not reported', 'not available', 'unk']);
 const realVal = (s) => { const t = String(s || '').trim(); return t && !JUNK.has(t.toLowerCase()) ? t : ''; };
 const realZip = (z) => { const t = String(z || '').trim(); return /^\d{5}/.test(t) && t !== '00000' ? t.slice(0, 5) : ''; };
 const cap = (s) => String(s || '').toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase());
