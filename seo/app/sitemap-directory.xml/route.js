@@ -20,7 +20,8 @@ export const revalidate = 86400; // 1d
 // FRESH one-time bump (owner + advisor 2026-07-18): the listed pages genuinely changed (fixed + made
 // cacheable), so a single new lastmod legitimately says "re-crawl these." Keep it STABLE afterward —
 // a per-crawl `now()` trains crawlers to distrust lastmod. Bump only on a real content change.
-const LASTMOD = '2026-07-18';
+const LASTMOD = '2026-07-20'; // bumped: county-hub taxonomy added + incarceration/SO enrichment across the
+                              // listed state/city/name pages — a genuine content change, so a legit re-crawl signal.
 
 export async function GET() {
   // Step 2 (owner-approved 2026-07-20): DON'T list name-in-city here. Only ~980 of ~42k carry unique

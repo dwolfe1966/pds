@@ -2,6 +2,8 @@
 //
 // Usage:
 //   node scripts/indexnow-submit.mjs --scope=conservative        # the 1000 sitemapv2 URLs (default)
+//   node scripts/indexnow-submit.mjs --scope=directory           # the quality core: states+cities+name-in-
+//                                                                 # state+county hubs (sitemap-directory.xml)
 //   node scripts/indexnow-submit.mjs --scope=full                # every URL in the sitemap.xml index (~360k)
 //   node scripts/indexnow-submit.mjs --scope=full --dry          # count + preview only, no POST
 //   node scripts/indexnow-submit.mjs --scope=full --max=50000    # cap the number submitted
@@ -39,6 +41,11 @@ async function fetchText(url) {
 async function collectUrls() {
   if (scope === 'conservative') {
     return locs(await fetchText(`${SITE}/sitemapv2.xml`));
+  }
+  if (scope === 'directory') {
+    // The QUALITY core (states + cities + roster-state name-in-state + county hubs) — the set robots
+    // points at. This is what to ping after adding differentiated pages (county hubs, SO enrichment).
+    return locs(await fetchText(`${SITE}/sitemap-directory.xml`));
   }
   // full: the sitemap.xml index → chunk sitemaps → page URLs
   const index = await fetchText(`${SITE}/sitemap.xml`);
