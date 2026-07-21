@@ -50,7 +50,13 @@ export async function upsertInmates(records) {
     facility: r.facility || null, county: r.county || null, release_status: r.releaseStatus || null,
     booking_date: r.bookingDate || null, mugshot_url: r.mugshotUrl || null, charges: r.charges || [],
   }));
-  if (!rows.length) return 0;
+  // ON CONFLICT DO UPDATE cannot affect the same id twice in ONE insert — and some adapters (VINE returns a
+  // person under multiple locations; null inmateId + same name) produce duplicate ids in a single batch,
+  // which threw and silently wrote 0 (e.g. LA: 80 found / 0 upserted). Dedupe by id (last wins) first.
+  const byId = new Map();
+  for (const r of rows) byId.set(r.id, r);
+  const deduped = [...byId.values()];
+  if (!deduped.length) return 0;
   try {
     await sql`
       INSERT INTO inmates (id, state, source, source_name, inmate_id, first_name, middle_name, last_name, name,
@@ -59,7 +65,7 @@ export async function upsertInmates(records) {
       SELECT x.id, x.state, x.source, x.source_name, x.inmate_id, x.first_name, x.middle_name, x.last_name, x.name,
         x.first_norm, x.last_norm, x.age, x.sex, x.race, x.birth_date, x.facility, x.county, x.release_status,
         x.booking_date, x.mugshot_url, x.charges, now(), now()
-      FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) AS x(
+      FROM jsonb_to_recordset(${JSON.stringify(deduped)}::jsonb) AS x(
         id text, state text, source text, source_name text, inmate_id text, first_name text, middle_name text,
         last_name text, name text, first_norm text, last_norm text, age int, sex text, race text, birth_date text,
         facility text, county text, release_status text, booking_date text, mugshot_url text, charges jsonb)
@@ -75,7 +81,7 @@ export async function upsertInmates(records) {
         mugshot_url = COALESCE(EXCLUDED.mugshot_url, inmates.mugshot_url),
         charges = CASE WHEN jsonb_array_length(EXCLUDED.charges) > 0 THEN EXCLUDED.charges ELSE inmates.charges END,
         last_crawled = now(), updated_at = now()`;
-    return rows.length;
+    return deduped.length;
   } catch { return 0; }
 }
 
