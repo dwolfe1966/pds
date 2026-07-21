@@ -16,6 +16,9 @@ import './styles/base.css';
 import './styles/contentContainer.css';
 
 captureReferralParams();
+// Onboarding-reveal test flag: persist ?onboard=1 synchronously at entry (before any
+// render/redirect) so it survives the landing→loader→SERP hops and the SERP can read it.
+try { if (new URLSearchParams(window.location.search).has('onboard')) sessionStorage.setItem('onboardReveal', '1'); } catch { /* ignore */ }
 // NOTE: GTM is loaded by the per-brand snippet in public/index.html (maps
 // hostname → container). We intentionally do NOT call a second JS loader here —
 // doing so double-loaded GTM (and loaded the dev container on prod via
