@@ -3,7 +3,7 @@
 // city landing. All public-domain Census data.
 import { notFound } from 'next/navigation';
 import { getStateSlice, getStateCities } from '../../../lib/directory';
-import { rosterTopNamesByState } from '../../../lib/incarceration.mjs';
+import { rosterTopNamesByState, countiesByState } from '../../../lib/incarceration.mjs';
 import { statePath, cityPath } from '../../../lib/ids';
 import { collectionJsonLd, crumbsJsonLd } from '../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../lib/ui';
@@ -39,6 +39,7 @@ export default async function StateLanding({ params }) {
   // records in this state, ranked by count. Self-gates to empty where we have no coverage; every link
   // lands on a name-in-state page that carries real records (→ indexable). Fixes the CA-empty bug.
   const topNames = await rosterTopNamesByState({ state: st.code, limit: 30 });
+  const counties = await countiesByState({ state: st.code, limit: 60 });
   const crumbs = [
     { name: 'People Search', path: '/people' },
     { name: st.name, path: statePath(state) },
@@ -84,6 +85,22 @@ export default async function StateLanding({ params }) {
             {topNames.map((n) => (
               <a key={n.slug} href={`/people/${st.code.toLowerCase()}/${n.slug}`} style={{ ...ui.link, fontSize: 14 }}>
                 {n.name}{n.count ? <span style={ui.muted}> ({num(n.count)})</span> : null}
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {counties.length > 0 && (
+        <section style={{ ...ui.card, marginTop: 16 }}>
+          <h2 style={{ marginTop: 0, fontSize: 18 }}>Incarceration records by county in {st.name}</h2>
+          <p style={{ ...ui.muted, margin: '0 0 10px', fontSize: 14 }}>
+            Browse booking &amp; incarceration records by county — ranked by number of records on file.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+            {counties.map((c) => (
+              <a key={c.slug} href={`/people/${st.code.toLowerCase()}/county/${c.slug}`} style={{ ...ui.link, fontSize: 14 }}>
+                {c.name} County <span style={ui.muted}>({num(c.count)})</span>
               </a>
             ))}
           </div>

@@ -28,9 +28,20 @@ const flPhoto = (dc) => { const s = String(dc || '').trim(); return s ? `https:/
 async function floridaObis(query) {
   if (!flSql || !query.lastName) return [];
   const ln = norm(query.lastName); const fn = norm(query.firstName);
-  const rows = fn
-    ? await flSql`SELECT dc_number, first_name, middle_name, last_name, race, sex, birth_date, custody_status, facility, release_date, offenses FROM fl_inmates WHERE last_norm = ${ln} AND first_norm = ${fn} LIMIT 20`
-    : await flSql`SELECT dc_number, first_name, middle_name, last_name, race, sex, birth_date, custody_status, facility, release_date, offenses FROM fl_inmates WHERE last_norm = ${ln} LIMIT 20`;
+  const cty = query.county ? String(query.county).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : null;
+  const lim = query.limit || 20;
+  // county-scoped (name-in-county page) vs name-only (name-in-state). county_norm was backfilled from the
+  // OBIS charge-text county; slugify it the same way as the URL key to match.
+  let rows;
+  if (cty) {
+    rows = fn
+      ? await flSql`SELECT * FROM fl_inmates WHERE last_norm=${ln} AND first_norm=${fn} AND regexp_replace(coalesce(county_norm,''),${'[^a-z0-9]+'},${'-'},${'g'})=${cty} LIMIT ${lim}`
+      : await flSql`SELECT * FROM fl_inmates WHERE last_norm=${ln} AND regexp_replace(coalesce(county_norm,''),${'[^a-z0-9]+'},${'-'},${'g'})=${cty} LIMIT ${lim}`;
+  } else {
+    rows = fn
+      ? await flSql`SELECT * FROM fl_inmates WHERE last_norm=${ln} AND first_norm=${fn} LIMIT ${lim}`
+      : await flSql`SELECT * FROM fl_inmates WHERE last_norm=${ln} LIMIT ${lim}`;
+  }
   return rows.map((r) => {
     let age = null;
     const y = String(r.birth_date || '').match(/(19|20)\d\d/);
@@ -42,7 +53,7 @@ async function floridaObis(query) {
       age, gender: clean(r.sex) || null, race: clean(r.race) || null,
       charges: Array.isArray(r.offenses) ? r.offenses.map(clean).filter(Boolean) : [],
       mugshotUrl: flPhoto(r.dc_number), bookingDate: null, releaseStatus: clean(r.custody_status) || null,
-      facility: clean(r.facility) || null, county: null, state: 'FL',
+      facility: clean(r.facility) || null, county: clean(r.county) || null, state: 'FL',
     };
   });
 }
@@ -53,6 +64,8 @@ async function floridaObis(query) {
  * Returns the standard normalized booking-record shape. Empty where we have no coverage (self-gating).
  */
 const titleCase = (s) => String(s || '').split(/[-\s]+/).map((w) => (w ? w[0].toUpperCase() + w.slice(1) : '')).join(' ').trim();
+// Counties keep their internal punctuation (Miami-Dade, St. Lucie, Palm Beach) — capitalize each word in place.
+const countyTitle = (s) => String(s || '').toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase());
 
 /** Top names (ranked by record count) that ACTUALLY have incarceration records in a state, from our own
  *  roster. Powers the state-hub "Incarceration & inmate records in {state}" section. DATA-DRIVEN, not the
@@ -104,6 +117,115 @@ export async function rosterByNameState({ state, firstName, lastName, limit = 12
     out.push(r);
   }
   return out.slice(0, limit);
+}
+
+// County-hub taxonomy (/people/{state}/county/{county}/...) — incarceration data's natural finest grain
+// (records carry county, NOT city), so a county URL has combo-unique content with no cross-city dup.
+// A URL-safe county key: "MIAMI-DADE" / "PALM BEACH" / "ST. LUCIE" → "miami-dade" / "palm-beach" / "st-lucie".
+export const countySlug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// The county of a record: fl_inmates carries it in charge text (recordCounty extracts), the `inmates`
+// table has a county column (PA/CA/GA/…).
+function recordCounty(rec) {
+  if (rec.county) return String(rec.county).trim();
+  for (const c of rec.charges || []) {
+    const m = String(c).match(/\(([A-Z][A-Z .'-]+)\)\s*$/);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
+/** County-scoped roster for a name (name-in-county page): the state roster filtered to one county.
+ *  Combo-unique first-party content → indexable, no cross-city dup. Self-gates to [] where no match. */
+export async function rosterByNameCounty({ state, county, firstName, lastName, limit = 12 }) {
+  if (!county || !lastName || !state) return [];
+  const st = String(state).toUpperCase();
+  const [fl, gen] = await Promise.all([
+    st === 'FL' ? floridaObis({ firstName, lastName, county, limit }) : Promise.resolve([]),
+    queryInmates({ state: st, firstName, lastName, county, limit }),
+  ]);
+  const seen = new Set();
+  const out = [];
+  for (const r of [...fl, ...gen]) {
+    const k = `${norm(r.name)}|${r.age || ''}|${r.facility || ''}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(r);
+  }
+  return out.slice(0, limit);
+}
+
+/** Counties in a state that actually have incarceration records, ranked by count (county-hub index +
+ *  the "by county" links on name-in-state). FL reads fl_inmates.county_norm; others read inmates.county. */
+export async function countiesByState({ state, limit = 120 }) {
+  const st = String(state || '').toUpperCase();
+  if (!flSql || !st) return [];
+  const [fl, gen] = await Promise.all([
+    st === 'FL'
+      ? flSql`SELECT county_norm k, max(county) nm, count(*)::int n FROM fl_inmates
+              WHERE county_norm IS NOT NULL AND county_norm ~ ${'^[a-z]'} GROUP BY county_norm ORDER BY n DESC LIMIT ${limit}`.catch(() => [])
+      : Promise.resolve([]),
+    flSql`SELECT lower(trim(county)) k, max(county) nm, count(*)::int n FROM inmates
+           WHERE upper(state)=${st} AND county IS NOT NULL AND county <> '' GROUP BY lower(trim(county)) ORDER BY n DESC LIMIT ${limit}`.catch(() => []),
+  ]);
+  const m = new Map();
+  for (const r of [...fl, ...gen]) {
+    const slug = countySlug(r.k);
+    if (!slug) continue;
+    const e = m.get(slug) || { slug, name: countyTitle(r.nm || r.k), count: 0 };
+    e.count += Number(r.n || 0);
+    m.set(slug, e);
+  }
+  return [...m.values()].sort((a, b) => b.count - a.count).slice(0, limit);
+}
+
+/** Top names (by record count) with records in a specific county — powers the county-hub name list. */
+export async function rosterTopNamesByCounty({ state, county, limit = 40 }) {
+  const st = String(state || '').toUpperCase();
+  const slug = countySlug(county);
+  if (!flSql || !st || !slug) return [];
+  const NAME_RE = '^[a-z]+$';
+  const SUFFIX = ['jr', 'sr', 'ii', 'iii', 'iv', 'v'];
+  const [fl, gen] = await Promise.all([
+    st === 'FL'
+      ? flSql`SELECT first_norm, last_norm, count(*)::int n FROM fl_inmates
+              WHERE regexp_replace(coalesce(county_norm,''), ${'[^a-z0-9]+'}, ${'-'}, ${'g'})=${slug}
+                AND first_norm ~ ${NAME_RE} AND last_norm ~ ${NAME_RE} AND last_norm <> ALL(${SUFFIX})
+              GROUP BY first_norm, last_norm ORDER BY n DESC LIMIT ${limit * 2}`.catch(() => [])
+      : Promise.resolve([]),
+    flSql`SELECT first_norm, last_norm, count(*)::int n FROM inmates
+           WHERE upper(state)=${st} AND regexp_replace(lower(trim(coalesce(county,''))), ${'[^a-z0-9]+'}, ${'-'}, ${'g'})=${slug}
+             AND first_norm ~ ${NAME_RE} AND last_norm ~ ${NAME_RE} AND last_norm <> ALL(${SUFFIX})
+           GROUP BY first_norm, last_norm ORDER BY n DESC LIMIT ${limit * 2}`.catch(() => []),
+  ]);
+  const counts = new Map();
+  for (const r of [...fl, ...gen]) {
+    if (!r.first_norm || !r.last_norm) continue;
+    const key = `${r.first_norm}-${r.last_norm}`;
+    counts.set(key, (counts.get(key) || 0) + Number(r.n || 0));
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit)
+    .map(([s, n]) => ({ slug: s, name: titleCase(s), count: n }));
+}
+
+/** All county-hub URLs for the given states — for the directory sitemap. County hubs are differentiated
+ *  (one URL/county, real records), so they belong in the sitemap; name-in-county leaves are discoverable
+ *  from each hub's name list. States with no county coverage (e.g. NC null county) yield nothing. */
+export async function allCountyHubUrls(stateCodes) {
+  const urls = [];
+  for (const st of stateCodes) {
+    const cs = await countiesByState({ state: st, limit: 120 });
+    for (const c of cs) urls.push(`/people/${String(st).toLowerCase()}/county/${c.slug}`);
+  }
+  return urls;
+}
+
+/** Resolve a county slug back to its display name for a state (or null). Uses the ranked county list. */
+export async function countyFromSlug(state, slug) {
+  const s = countySlug(slug);
+  if (!s) return null;
+  const list = await countiesByState({ state, limit: 200 });
+  return list.find((c) => c.slug === s) || null;
 }
 
 /**

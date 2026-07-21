@@ -12,14 +12,20 @@ const idFor = (r) => `${r.state}:${r.source}:${r.inmateId || norm(r.name)}`.toLo
 
 /** Read cached roster rows for a name+state. Serves the blocked-state fallback + SEO; each row carries
  *  `asOf` (last_crawled) so the display can show freshness. Excludes takedown (`removed`) rows. */
-export async function queryInmates({ state, firstName, lastName, limit = 20 }) {
+export async function queryInmates({ state, firstName, lastName, county, limit = 20 }) {
   if (!sql || !lastName || !state) return [];
   const ln = norm(lastName), fn = norm(firstName), st = String(state).toUpperCase();
+  const cty = county ? String(county).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : null;
+  const fnLike = fn ? `${fn}%` : null;
   let rows;
   try {
-    rows = fn
-      ? await sql`SELECT * FROM inmates WHERE state = ${st} AND last_norm = ${ln} AND first_norm LIKE ${`${fn}%`} AND removed = FALSE ORDER BY last_crawled DESC LIMIT ${limit}`
-      : await sql`SELECT * FROM inmates WHERE state = ${st} AND last_norm = ${ln} AND removed = FALSE ORDER BY last_crawled DESC LIMIT ${limit}`;
+    // Optional first-name + county filters (a null filter matches everything). County-slug match mirrors
+    // the URL key so /people/{state}/county/{slug}/{name} resolves the right rows.
+    rows = await sql`SELECT * FROM inmates
+      WHERE state = ${st} AND last_norm = ${ln} AND removed = FALSE
+        AND (${fnLike}::text IS NULL OR first_norm LIKE ${fnLike})
+        AND (${cty}::text IS NULL OR regexp_replace(lower(trim(coalesce(county,''))), ${'[^a-z0-9]+'}, ${'-'}, ${'g'}) = ${cty})
+      ORDER BY last_crawled DESC LIMIT ${limit}`;
   } catch { return []; }
   return rows.map((r) => ({
     source: r.source, sourceName: r.source_name,
