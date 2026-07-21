@@ -42,7 +42,7 @@ export default function SignalTeaser({ subject, flow = 'general', viewerRelation
 
   if (!res || res.suppressed) return null;
   const { signals, lead, secondary } = res;
-  const hasReal = ((signals.marriageDivorce && signals.marriageDivorce.count) || 0) + ((signals.booking && signals.booking.count) || 0) + ((signals.social && signals.social.count) || 0) > 0;
+  const hasReal = ((signals.marriageDivorce && signals.marriageDivorce.count) || 0) + ((signals.booking && signals.booking.count) || 0) > 0;
   if (!hasReal && flow !== 'dating') return null; // no hollow teaser (except dating, where capability IS the hook)
 
   const fullName = [subject.firstName, subject.lastName].filter(Boolean).join(' ') || 'this person';
@@ -69,51 +69,9 @@ function renderSignal(key, signals, ctx) {
   switch (key) {
     case 'marriageDivorce': return <MarriageDivorce records={(signals.marriageDivorce || {}).records || []} {...ctx} />;
     case 'booking':         return <Booking records={(signals.booking || {}).records || []} {...ctx} />;
-    case 'social':          return <SocialPresence social={signals.social || {}} {...ctx} />;
     case 'capability':      return <Capability {...ctx} />;
     default:                return null;
   }
-}
-
-// Social-presence renderer (EXPERIMENTAL). Teases the matched public profiles: platform + a masked handle +
-// 🔒, gated behind signup. Self-gating (renders nothing unless the enrichment matched). No faceprints.
-const NET_LABEL = {
-  facebook: ['📘', 'Facebook'], linkedin: ['💼', 'LinkedIn'], twitter: ['🐦', 'Twitter/X'], instagram: ['📸', 'Instagram'],
-  youtube: ['▶️', 'YouTube'], pinterest: ['📌', 'Pinterest'], github: ['💻', 'GitHub'], gravatar: ['🖼️', 'Gravatar'],
-  quora: ['❓', 'Quora'], crunchbase: ['📊', 'Crunchbase'], angellist: ['👼', 'AngelList'], vimeo: ['🎬', 'Vimeo'],
-  'about.me': ['🔗', 'about.me'], wordpress: ['📝', 'WordPress'], tiktok: ['🎵', 'TikTok'], reddit: ['👽', 'Reddit'],
-};
-const netLabel = (n) => NET_LABEL[n] || ['🌐', String(n || '').charAt(0).toUpperCase() + String(n || '').slice(1)];
-
-function SocialPresence({ social, prominent, fullName, dark }) {
-  const profiles = (social && social.profiles) || [];
-  if (!profiles.length) return null;
-  const names = profiles.map((p) => netLabel(p.network)[1]);
-  if (!prominent) {
-    return (
-      <div style={{ fontSize: '0.85rem', color: '#374151' }}>
-        <strong style={{ color: dark }}>🌐 Also found:</strong> {profiles.length} social profile{profiles.length === 1 ? '' : 's'} ({names.slice(0, 4).join(', ')}{names.length > 4 ? `, +${names.length - 4}` : ''})
-      </div>
-    );
-  }
-  return (
-    <div>
-      <Header dark={dark}>{profiles.length} social profile{profiles.length === 1 ? '' : 's'} found for {fullName}</Header>
-      <div style={{ display: 'grid', gap: 5 }}>
-        {profiles.slice(0, 8).map((p, i) => {
-          const [ic, label] = netLabel(p.network);
-          const handle = String(p.username || p.url || 'profile').replace(/^https?:\/\/(www\.)?/, '');
-          return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.83rem', color: '#374151' }}>
-              <span aria-hidden="true">{ic}</span><span style={{ fontWeight: 700 }}>{label}</span>
-              <span style={{ filter: 'blur(4px)', userSelect: 'none', color: dark, fontWeight: 600 }}>{handle.slice(0, 22)}</span>
-              <span style={{ marginLeft: 'auto', fontSize: 12 }}>🔒</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 function Header({ children, dark }) {

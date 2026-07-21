@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ResultCard from '../../components/ResultCard';
 import SignalTeaser from '../../components/SignalTeaser';
+import SocialPresenceTeaser from '../../components/SocialPresenceTeaser';
 import { getFlow } from '../../services/funnelFlow';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
@@ -395,6 +396,12 @@ const SalesSearchResultsPage = () => {
                   stage="pre-signup"
                 />
               </div>
+            )}
+            {/* Social presence — standalone on the has-results SERP (NOT inside the flow teaser above), so it
+                shows for the searched person on a normal search without competing with booking/divorce/SO.
+                Self-gating (renders nothing without a match); experimental (REACT_APP_SIGNALS_SOCIAL). */}
+            {searchQuery.lastName && (
+              <SocialPresenceTeaser firstName={searchQuery.firstName} lastName={searchQuery.lastName} state={searchQuery.state} theme={theme} />
             )}
             {/* Filters moved to the Refine region at the bottom (owner — top placement
                 pushed the results down on mobile). */}
