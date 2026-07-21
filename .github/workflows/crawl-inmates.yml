@@ -23,7 +23,7 @@ on:
     inputs:
       states:
         description: 'States to crawl into the inmates DB. Default = all CLOUD-CAPABLE (browser/captcha + VINE-API) states; direct-fetch DOC states are blocked from datacenter IPs so crawl those locally or set STATE_PROXY_URL.'
-        default: 'TX,MI,AZ,OK,KS,WI,CO,NY,NJ,KY,CT,NH,TN,WV,MN,RI,VA,NM,MT'
+        default: 'NY,NJ,KY,CT,NH,TN,WV,MN,RI,VA,NM,MT,MO,TX,MI,AZ,OK,KS,WI,CO'
       surnames:
         description: 'Comma-separated surnames (blank = built-in top-50)'
         default: ''
@@ -61,7 +61,7 @@ jobs:
           BROWSER_SERVICE_URL: ${{ secrets.BROWSER_SERVICE_URL }}
           CAPTCHA_SOLVER_KEY: ${{ secrets.CAPTCHA_SOLVER_KEY }}
           STATE_PROXY_URL: ${{ secrets.STATE_PROXY_URL }}
-          STATES: ${{ github.event.inputs.states || 'TX,MI,AZ,OK,KS,WI,CO,NY,NJ,KY,CT,NH,TN,WV,MN,RI,VA,NM,MT' }}
+          STATES: ${{ github.event.inputs.states || 'NY,NJ,KY,CT,NH,TN,WV,MN,RI,VA,NM,MT,MO,TX,MI,AZ,OK,KS,WI,CO' }}
           SURNAMES: ${{ github.event.inputs.surnames }}
           FIRSTNAMES: ${{ github.event.inputs.firstnames }}
           DELAY: ${{ github.event.inputs.delay || '1200' }}

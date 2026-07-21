@@ -10,7 +10,7 @@ run() { echo "=== $(date '+%H:%M:%S') $* ==="; node --env-file=.env.local script
 # FAST TIER ONLY — direct DOC + VINE adapters (free, residential IP, surname-only; script cross-products
 # MD/OR/VA). The browser/captcha tier (TX/MI/AZ/OK/KS/WI/CO) is handled by the GitHub Action (cloud, has the
 # Browserless/2Captcha secrets) so we don't tie up the local machine on 9-120s/query states.
-FAST="CA PA IL NY WA OH NC GA MN NJ KY CT TN WV NH ME MD IN AL SC LA OR UT NV AR MS NE ID HI MA IA RI SD AK ND VT WY DC VA NM DE"
+FAST="CA PA IL NY WA OH NC GA MN NJ KY CT TN WV NH ME MD IN AL SC LA OR UT NV AR MS NE ID HI MA IA RI SD AK ND VT WY DC VA NM DE MT"
 for st in $FAST; do run --state=$st --delay=800; done
 
 echo "=== $(date '+%H:%M:%S') FAST-TIER ALL-STATES CRAWL DONE ==="
