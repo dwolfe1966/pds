@@ -4,6 +4,46 @@ description: Forward-looking work — the five BACKLOG-X tracks plus known gaps 
 type: project
 originSessionId: ed6a1fb6-9daf-4f36-a40e-b2ed117467bc
 ---
+## ⭐ HIGH PRIORITY (owner 2026-07-21)
+
+- **HP-1 — Mirror legacy customer-status business rules in the CSR.** Our CSR status
+  (`src/pages/admin/userState.js` `getPlanState` + the per-page badges) is a client-side re-derivation
+  that DOESN'T match our legacy business rules. The legacy system encodes **complex retry/provisioning
+  logic**: e.g. a **trial is provisioned even when the initial payment fails**, and we **retry the charge
+  (dunning) before cancelling the trial** — so "payment failed" is not immediately "cancelled/expired,"
+  it's a retry window. We must mirror those exact statuses + transitions in the CSR so it reads the same
+  as legacy + BC's own admin view. **Confirmed broken today:** Trial NEVER rolls into Subscriber for 100%
+  of customers (frozen `transient.amount.collected` vs cycle price — count settled `sale` payments
+  instead); refunded orders collapse to raw "Inactive"; `subStatus:expired` is overloaded across
+  expiry+refund; cancel-at-period-end (still-has-access) shows flat "Cancelled". **Blockers/inputs owner
+  is getting us:** (i) the legacy business-rules doc; (ii) ACCESS to BC's admin tool that replicates
+  these statuses (the authoritative reference to mirror). **Also unused:** BC's `orderHistories`
+  transition timeline is plumbed end-to-end (`csrFindOrderHistories`) but rendered nowhere — surface it.
+  Full audit + evidence + target vocabulary + BC-confirm list in `docs/admin/order-status-definitions.md`.
+  **How to apply:** wait for the legacy doc + BC-admin access; decide mirror-BC vs derived-labels; then
+  rework `userState.js` (payment-count trial rule, refund-needs-inactive, resolve raw Inactive) + surface
+  `orderHistories`. See [[reference_cancel_at_period_end]], [[reference_bc_getorder_price]],
+  [[feedback_subscription_state_authority]].
+
+- **HP-2 — CSR: auto-login-URL from an email (impersonate via link).** BC shipped
+  **`csrWrapper.api.user.getAutoLoginUrl({ userId, redirect? })`** (added 2026-07-21,
+  `POST /api/user/management/getAutoLoginUrl`) → returns `{ url }` (a `/api/auth/loginLink?loginHash=…&clientId=…&apiId=…`
+  link). Visiting the URL logs the server in AS that user; optional `redirect` (e.g. `/contact`) lands them
+  on a path post-login. **Use:** CSR generates a one-click "log in as this customer" link (email it or open
+  it) to reproduce/solve the customer's problem in their own session. **How to apply:** wire `getAutoLoginUrl`
+  into `apiWrapperCsr.js` + `apiRouterAdmin.js` + `api.js`; add a CSR action button on `UserDetailPage`.
+  Guard it (CSR-role only, audit-log who impersonated whom). ⚠️ Impersonation = sensitive; confirm the
+  loginHash is single-use/short-TTL with BC.
+
+- **HP-3 — CSR: log a user in from the CSR to solve their problem.** BC:
+  **`apiWrapper.api.auth.login({ username, password })`** — and calling `login()` with NO
+  username/password checks whether the session is already logged in on the server (session-status check the
+  client uses to maintain login state). Companion to HP-2 (getAutoLoginUrl is the linkless path). **How to
+  apply:** scope alongside HP-2 — prefer `getAutoLoginUrl` (no credential handling) for CSR impersonation;
+  use `auth.login()`'s no-arg session-check for verifying/maintaining the impersonated session state.
+
+---
+
 Five named tracks the team plans against. Numbers are referenced in commits/PRs.
 
 **BACKLOG-1 — Outbound Email Platform.** `server/emailService.js` wired with SendGrid + SES + SMTP + console fallback. Unsubscribe handler lives at `/admin/unsubscribe`. **Gap:** there is no UI entry to send broadcasts — `EmailBroadcastPage.js` was deleted (the `/admin/email` route and nav link were removed in `2a9f31b`; verified absent 2026-05-29). `sendAlertDigest` is exported but never scheduled. No open/click tracking pixels in templates.
