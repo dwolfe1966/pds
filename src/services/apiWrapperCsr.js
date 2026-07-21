@@ -208,6 +208,18 @@ class ApiWrapperCsrService {
       () => apiWrapper._csrPost('/user/management/detail', { userId }));
   }
 
+  // csrWrapper.api.user.getAutoLoginUrl — POST /user/management/getAutoLoginUrl (BC added 2026-07-21).
+  // Returns { url } — a one-click loginLink that logs the SERVER in AS the target user. The URL is a
+  // BEARER CREDENTIAL (whoever opens it becomes that user), used for CSR impersonation ("log in as this
+  // customer" to troubleshoot). Lib-first with a direct fallback. retryOnError:false — it MINTS a
+  // credential; never double-issue on a flaky retry. Optional `redirect` = post-login SPA path.
+  async csrGetAutoLoginUrl(userId, redirect) {
+    const args = redirect ? { userId, redirect } : { userId };
+    return await this._viaCsr('api.user.getAutoLoginUrl', args,
+      () => apiWrapper._csrPost('/user/management/getAutoLoginUrl', args),
+      { retryOnError: false });
+  }
+
   // csrWrapper.api.attachment.download — GET /api/attachment/download.
   // Per BC docs: attachments returned by Find User Contact carry an `attachmentId`;
   // this downloads it. The IIFE manages the browser download (like downloadPdfReport),

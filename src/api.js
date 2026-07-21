@@ -577,6 +577,12 @@ const api = {
     return await routeApiRequest('admin-user-detail', { id });
   },
 
+  // CSR impersonation: returns { url } — a one-click login-as-user link (bearer credential).
+  // `redirect` = the SPA path to land on after BC establishes the session.
+  adminGetAutoLoginUrl: async (id, redirect) => {
+    return await routeApiRequest('admin-auto-login-url', { id, redirect });
+  },
+
   adminSuspendUser: async (id) => {
     return await routeApiRequest('admin-suspend-user', { id });
   },

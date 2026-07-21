@@ -31,6 +31,11 @@ export async function callAdminAPI(endpoint, params) {
       return await apiWrapperCsr.csrGetUserDetail(params.id);
     }
 
+    // CSR impersonation — mint a one-click "log in as this customer" URL (bearer credential).
+    case 'admin-auto-login-url': {
+      return await apiWrapperCsr.csrGetAutoLoginUrl(params.id, params.redirect);
+    }
+
     // csrWrapper.api.attachment.download → GET /api/attachment/download
     case 'admin-download-attachment': {
       return await apiWrapperCsr.csrDownloadAttachment(params.attachmentId, { playAudioFlag: params.playAudioFlag });
