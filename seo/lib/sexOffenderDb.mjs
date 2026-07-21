@@ -79,7 +79,13 @@ export async function upsertSexOffenders(records) {
     risk_level: r.riskLevel || null, absconder: r.absconder === true, photo_url: r.photoUrl || null,
     registry_url: r.registryUrl || null, offenses: r.offenses || [], aliases: r.aliases || [], locations: r.locations || [],
   }));
-  if (!rows.length) return 0;
+  // ON CONFLICT DO UPDATE cannot affect the same id twice in ONE insert — and NSOPW returns the same
+  // offender under multiple location entries, so a single name query yields duplicate ids. Dedupe by id
+  // (last wins) before the batch, or the whole insert throws and silently writes 0.
+  const byId = new Map();
+  for (const r of rows) byId.set(r.id, r);
+  const deduped = [...byId.values()];
+  if (!deduped.length) return 0;
   try {
     await sql`
       INSERT INTO sex_offenders (id, source, source_name, offender_id, jurisdiction, first_name, last_name, name,
@@ -90,7 +96,7 @@ export async function upsertSexOffenders(records) {
         x.first_norm, x.last_norm, x.age, x.dob, x.gender, x.address, x.city, x.county, x.state, x.zip, x.city_norm,
         x.county_norm, x.latitude, x.longitude, x.risk_level, x.absconder, x.photo_url, x.registry_url, x.offenses,
         x.aliases, x.locations, now(), now()
-      FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb) AS x(
+      FROM jsonb_to_recordset(${JSON.stringify(deduped)}::jsonb) AS x(
         id text, source text, source_name text, offender_id text, jurisdiction text, first_name text, last_name text,
         name text, first_norm text, last_norm text, age int, dob text, gender text, address text, city text,
         county text, state text, zip text, city_norm text, county_norm text, latitude double precision,
@@ -110,7 +116,7 @@ export async function upsertSexOffenders(records) {
         aliases = CASE WHEN jsonb_array_length(EXCLUDED.aliases) > 0 THEN EXCLUDED.aliases ELSE sex_offenders.aliases END,
         locations = CASE WHEN jsonb_array_length(EXCLUDED.locations) > 0 THEN EXCLUDED.locations ELSE sex_offenders.locations END,
         last_crawled = now(), updated_at = now()`;
-    return rows.length;
+    return deduped.length;
   } catch (e) { return 0; }
 }
 
