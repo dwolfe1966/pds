@@ -13,7 +13,7 @@ metadata:
 3. **SOCIAL PRESENCE vertical (experimental)** — full research (docs/research/social-presence-*.md). Built: seo/lib/{socialFootprint,socialPresence}.mjs (PDL+Gravatar, liveness-verify [drop only 404/410], confidence tiers) + /api/social-presence + /api/pdl-usage + pdlBudget (track spend, PDL_DAILY_CAP cap). Consumer: SocialPresenceTeaser on has-results SERP (name-key, confidence-gated) + report "Online presence" enriched (email-key, rich, liveness-filtered, confidence-badged). PDL_API_KEY LIVE in Vercel. Thin-match payment fix earlier.
 4. **Onboarding-reveal** — OnboardingReveal (~15s enrichment reveal + email gate) between SERP and SUP/Payment, per-flow (campaign.onboarding OR ?onboard=1).
 
-**CURRENT CONSUMER BUNDLE (social ON + onboarding, for testing): `public.1285825f.js`** (default/production build without REACT_APP_SIGNALS_SOCIAL keeps social OFF). NOT on BC.
+**CURRENT CONSUMER BUNDLE (social ON + onboarding, for testing): `public.dd976490.js`** (default/production build without REACT_APP_SIGNALS_SOCIAL keeps social OFF). NOT on BC.
 
 **PENDING OWNER ACTIONS:** (1) upload consumer bundle to BC when ready; (2) submit **sitemap-directory.xml** in GSC + Bing WMT (both were on the thin sitemapv2); (3) Spokeo + Pipl outreach (FCRA-clean social display; drafts in vendor-eval doc) + resolve PDL display terms; (4) 16 Dependabot vulns (4 high) — untouched. **NEXT CANDIDATES:** MO/AK/NM adapter check; death-vertical BC ask; wire social on more surfaces; city/state intro de-template (optional).
 
