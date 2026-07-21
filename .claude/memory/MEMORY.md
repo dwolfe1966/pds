@@ -105,3 +105,4 @@
 - [SEO recovery brainstorm](project_seo_recovery.md) — SEO floundering (generic people-directory pages on a new domain); pivot to first-party data verticals (INMATE lead) + authority-building; prune thin pages; docs/seo/seo-recovery-brainstorm.md
 - [Thin-match → payment fix](project_thinmatch_payment_fix.md) — no email+password dead-end; unified CTA (bundle public.7e4ba4bb.js)
 - [Social presence enrichment](project_social_presence.md) — PDL+Gravatar getSocialPresence + /api/social-presence; experimenting, legal flags
+- [Session end 2026-07-21](project_session_end_2026_07_21.md) — inmate moat scaled, SEO recovery complete, social-presence vertical, onboarding reveal; bundle public.aaa166f4.js
