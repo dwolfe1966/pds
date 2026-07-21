@@ -54,7 +54,11 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
   const headlineTitle = variant === 'providerDown' ? copy.title : `We found people named ${fullName}${inState}`;
 
   const { token, isPaid } = useAuth();
-  const { submit, loading, error, setError } = useSignup();
+  const { submit, loading, error, setError, success } = useSignup();
+  // Continuous "Processing…" feedback from click → payment nav: `loading` covers the request,
+  // `success` covers the ~2s redirect window (useSignup navigates on a timeout) so the button
+  // never flips back to "Continue" mid-redirect. Also blocks a double-submit.
+  const busy = loading || success;
   // Email already captured upstream (e.g. the v11 BV loader's mid-flow gate)? Then we
   // skip the input and just show Continue. See getCapturedEmail (localStorage lead store).
   const capturedEmail = useMemo(() => getCapturedEmail(), []);
@@ -153,8 +157,8 @@ const ThinMatchPreview = ({ searchType = 'name', query = {}, flags = {}, theme =
                 {error === 'already_exists' ? 'That email already has an account — please sign in to continue.' : error}
               </div>
             )}
-            <button type="submit" disabled={loading} style={ctaStyle(loading, theme)}>
-              {loading ? 'One moment…' : 'Continue'}
+            <button type="submit" disabled={busy} style={ctaStyle(busy, theme)}>
+              {busy ? 'Processing…' : 'Continue'}
             </button>
           </form>
           {capturedEmail && (
