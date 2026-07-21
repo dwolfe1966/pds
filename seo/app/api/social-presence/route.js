@@ -37,12 +37,12 @@ export async function POST(req) {
   const headers = { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' };
   let body;
   try { body = await req.json(); } catch { body = null; }
-  const { email, name, city, state, expectedName } = body || {};
+  const { email, name, city, state, expectedName, verify } = body || {};
   if (!email && !name) {
     return new Response(JSON.stringify({ error: 'email or name required' }), { status: 400, headers });
   }
   try {
-    const result = await getSocialPresence({ email, name, city, state, expectedName });
+    const result = await getSocialPresence({ email, name, city, state, expectedName, verify: !!verify });
     return new Response(JSON.stringify(result), { status: 200, headers });
   } catch (e) {
     return new Response(JSON.stringify({ error: 'enrichment_failed' }), { status: 500, headers });

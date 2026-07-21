@@ -14,6 +14,7 @@ import { socialFootprint } from './socialFootprint.mjs';
 import { tryConsumePdl, recordPdlMatch } from './pdlBudget.mjs';
 
 const PDL_KEY = process.env.PDL_API_KEY;
+const normName = (s) => String(s || '').toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
 // Defunct / low-value networks to drop (PDL returns historical ones).
 const DEAD = new Set(['google', 'googleplus', 'gplus', 'plus.google', 'myspace', 'foursquare', 'friendster',
@@ -57,11 +58,30 @@ async function pdlEnrich({ email, name, city, state }) {
   } catch { return null; }
 }
 
+// Liveness: return TRUE only when a URL is DEFINITIVELY gone (404/410). Everything else — 200, 3xx, 403,
+// 429, 999 (LinkedIn), login-walls, timeouts, network errors — is AMBIGUOUS and kept, because the marquee
+// platforms block bots and a false "dead" would drop exactly the profiles we want. Conservative by design.
+async function isDeadUrl(url) {
+  if (!url) return false;
+  const u = /^https?:\/\//.test(url) ? url : `https://${url}`;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4500);
+    let r;
+    try {
+      r = await fetch(u, { method: 'HEAD', redirect: 'follow', signal: ctrl.signal, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; idlookup/1.0)' } });
+    } catch { clearTimeout(t); return false; } // network/timeout → ambiguous → keep
+    clearTimeout(t);
+    if (r.status === 405 || r.status === 501) return false; // HEAD unsupported → don't judge
+    return r.status === 404 || r.status === 410;
+  } catch { return false; }
+}
+
 /**
- * @param {{email?,name?,city?,state?,expectedName?}} q
+ * @param {{email?,name?,city?,state?,expectedName?,verify?}} q  verify=true → drop definitively-dead (404/410) URLs
  * @returns {{ matched, name, photoUrl, nameCorroborated, profiles:Array<{network,url,username,confidence,sources}>, sources:string[] }}
  */
-export async function getSocialPresence({ email, name, city, state, expectedName } = {}) {
+export async function getSocialPresence({ email, name, city, state, expectedName, verify = false } = {}) {
   const expected = expectedName || name || null;
   const [pdl, grav] = await Promise.all([
     pdlEnrich({ email, name, city, state }),
@@ -82,7 +102,7 @@ export async function getSocialPresence({ email, name, city, state, expectedName
   if (pdl?.profiles) for (const p of pdl.profiles) add(p.network, p.url, p.username, 'pdl');
   if (grav?.accounts) for (const a of grav.accounts) add(a.network, a.url, null, 'gravatar', a.confidence === 'confirmed');
 
-  const profiles = [...byNet.values()]
+  let profiles = [...byNet.values()]
     .map((e) => ({
       network: e.network, url: e.url, username: e.username,
       // confirmed = self-declared (Gravatar verified) OR corroborated across ≥2 sources; else reported (single seed)
@@ -91,12 +111,32 @@ export async function getSocialPresence({ email, name, city, state, expectedName
     }))
     .sort((a, b) => (a.confidence === b.confidence ? 0 : a.confidence === 'confirmed' ? -1 : 1));
 
+  // Liveness (report/display surfaces): drop only DEFINITIVELY-dead (404/410) URLs; keep bot-blocked ones.
+  if (verify && profiles.length) {
+    const dead = await Promise.all(profiles.map((p) => isDeadUrl(p.url)));
+    profiles = profiles.filter((_, i) => !dead[i]);
+  }
+
   const sources = [pdl?.matched ? 'pdl' : null, grav?.found ? 'gravatar' : null].filter(Boolean);
+
+  // Overall match confidence for DISPLAY gating — the name-key SERP teaser must not tease a WRONG match.
+  // Likelihood is unreliable (low even when correct), so corroborate on the NAME + a profile-count floor:
+  //   high   = email key OR Gravatar hit (strong keys)
+  //   medium = name key, PDL's returned name corroborates the searched name, AND ≥2 profiles
+  //   low    = name key, weak (single profile or name mismatch) → gate OFF the teaser
+  const searched = normName(expectedName || name || '');
+  const returned = normName(pdl?.name || '');
+  const nameMatches = !!(searched && returned && searched.split(' ').filter(Boolean).every((t) => returned.includes(t)));
+  let confidence = 'low';
+  if (pdl?.key === 'email' || grav?.found) confidence = 'high';
+  else if (pdl?.matched && nameMatches && profiles.length >= 2) confidence = 'medium';
+
   return {
     matched: !!(pdl?.matched || grav?.found),
     name: grav?.name || pdl?.name || null,
     photoUrl: grav?.photoUrl || null,      // only Gravatar (self-hosted, display-safe); no faceprinting
     nameCorroborated: !!grav?.nameCorroborated,
+    confidence, nameMatches,
     // Match confidence for the DISPLAY gate: email key = strong; name+region = weaker (require higher
     // likelihood before asserting "this is them" to avoid false attribution / defamation on common names).
     matchKey: pdl?.key || (grav?.found ? 'email' : null),

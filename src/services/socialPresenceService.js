@@ -17,14 +17,14 @@ function endpointUrl() {
 }
 
 /** @returns {Promise<{matched,name,photoUrl,matchKey,matchLikelihood,profiles:Array,count:number}>} */
-export async function fetchSocialPresence({ firstName, lastName, state, city, email } = {}) {
+export async function fetchSocialPresence({ firstName, lastName, state, city, email, verify } = {}) {
   if (!lastName && !firstName && !email) return { matched: false, profiles: [], count: 0 };
   const name = [firstName, lastName].filter(Boolean).join(' ').trim();
   try {
     const res = await fetch(endpointUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email || undefined, name: name || undefined, city, state, expectedName: name || undefined }),
+      body: JSON.stringify({ email: email || undefined, name: name || undefined, city, state, expectedName: name || undefined, verify: !!verify }),
     });
     if (!res.ok) return { matched: false, profiles: [], count: 0 };
     const d = await res.json();

@@ -163,7 +163,7 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
     if (!socialEnrichOn() || (!subjEmail && !subjName)) return undefined;
     let alive = true;
     const parts = String(subjName).trim().split(/\s+/);
-    fetchSocialPresence({ email: subjEmail || undefined, firstName: parts[0], lastName: parts.length > 1 ? parts[parts.length - 1] : '', state: subjState })
+    fetchSocialPresence({ email: subjEmail || undefined, firstName: parts[0], lastName: parts.length > 1 ? parts[parts.length - 1] : '', state: subjState, verify: true })
       .then((r) => {
         if (!alive || !r || !r.matched) return;
         setExtraSocial((r.profiles || []).map((p) => ({ platform: socPlatform(p.network), username: p.username, url: p.url, confidence: p.confidence, enriched: true })));

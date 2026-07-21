@@ -24,7 +24,9 @@ export default function SocialPresenceTeaser({ firstName, lastName, state, theme
     if (!socialOn() || !lastName) return undefined;
     let alive = true;
     fetchSocialPresence({ firstName, lastName, state })
-      .then((r) => { if (alive && r && r.matched && r.count) setData(r); })
+      // Confidence gate: the name-key SERP can match the WRONG person, so only tease when PDL's returned
+      // name corroborates the search + ≥2 profiles (confidence != 'low'). Report (email-key) is always high.
+      .then((r) => { if (alive && r && r.matched && r.count && r.confidence !== 'low') setData(r); })
       .catch(() => {});
     return () => { alive = false; };
   }, [firstName, lastName, state]);
