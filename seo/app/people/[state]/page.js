@@ -4,6 +4,7 @@
 import { notFound } from 'next/navigation';
 import { getStateSlice, getStateCities } from '../../../lib/directory';
 import { rosterTopNamesByState, countiesByState } from '../../../lib/incarceration.mjs';
+import { countSexOffenders } from '../../../lib/sexOffenderDb.mjs';
 import { statePath, cityPath } from '../../../lib/ids';
 import { collectionJsonLd, crumbsJsonLd } from '../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../lib/ui';
@@ -40,6 +41,7 @@ export default async function StateLanding({ params }) {
   // lands on a name-in-state page that carries real records (→ indexable). Fixes the CA-empty bug.
   const topNames = await rosterTopNamesByState({ state: st.code, limit: 30 });
   const counties = await countiesByState({ state: st.code, limit: 60 });
+  const soCount = await countSexOffenders({ state: st.code });
   const crumbs = [
     { name: 'People Search', path: '/people' },
     { name: st.name, path: statePath(state) },
@@ -59,6 +61,7 @@ export default async function StateLanding({ params }) {
       <p style={{ ...ui.muted, margin: '0 0 18px', fontSize: 15 }}>
         {st.name} has a population of about <strong>{num(st.pop)}</strong> across {st.cities.length}+ cities and towns.
         Pick a city to browse people by name, or search directly.
+        {soCount > 0 && <> Our directory also indexes <strong>{num(soCount)}</strong> registered sex offenders and public incarceration records across {st.name} — see the city and name pages.</>}
       </p>
 
       <StateMap cities={st.cities} name={st.name} />

@@ -8,7 +8,9 @@ import { cache } from 'react';
 import { getStateSlice, getNameInState, getStateTopNames, getStateCities } from './directory';
 import { getFirstNameFacts, getSurnameFacts } from './facts';
 import { rosterByNameState } from './incarceration.mjs';
+import { querySexOffenders } from './sexOffenderDb.mjs';
 import { InmateRecordsSection } from './inmate-records';
+import { SexOffenderSection } from './sex-offender-section';
 import { nameFromSlug, statePath, cityPath } from './ids';
 import { crumbsJsonLd } from './schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from './ui';
@@ -23,6 +25,10 @@ const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
 // (per-name facts shared across 50 states + per-state city list shared across all names) → noindex.
 const rosterFor = cache((stateCode, first, last) =>
   rosterByNameState({ state: stateCode, firstName: first, lastName: last, limit: 12 }));
+
+// Registered sex offenders matching this name in this state (owner-cleared display). Shared metadata+body.
+const soFor = cache((stateCode, first, last) =>
+  querySexOffenders({ state: stateCode, firstName: first, lastName: last, limit: 12 }));
 
 // A slug must look like a person name (letters + hyphens), not a stray path segment.
 export const NAME_SLUG_RE = /^[a-z]+(?:-[a-z]+)+$/;
@@ -51,14 +57,14 @@ export function resolveNameInState(state, name) {
 export async function nameInStateMetadata(state, name, canonicalPath) {
   const r = resolveNameInState(state, name);
   if (!r) return { title: 'Not found' };
-  const inmates = await rosterFor(r.st.code, r.first, r.last);
+  const [inmates, offenders] = await Promise.all([rosterFor(r.st.code, r.first, r.last), soFor(r.st.code, r.first, r.last)]);
   return {
     title: `${r.full} in ${r.st.name} — Find & Search | IDLookup`,
     description: `Looking for ${r.full} in ${r.st.name}? Search by city, age, and relatives to find the right ${r.full}. Addresses, phone numbers, and public records across ${r.st.name}.`,
     alternates: { canonical: `${SITE}${canonicalPath}` },
-    // Step 2 (SEO recovery): noindex the boilerplate residue, keep follow so link equity flows and the
-    // page stays discoverable/funnel-live. Auto-flips to indexable as more state rosters are ingested.
-    robots: inmates.length > 0 ? { index: true, follow: true } : { index: false, follow: true },
+    // Step 2 (SEO recovery): indexable when the page carries combo-unique first-party content — an
+    // incarceration OR sex-offender record. Else noindex the boilerplate (keep follow for link equity).
+    robots: inmates.length > 0 || offenders.length > 0 ? { index: true, follow: true } : { index: false, follow: true },
   };
 }
 
@@ -80,6 +86,7 @@ export async function NameInStateView({ state, name }) {
   // FIRST-PARTY DIFFERENTIATION: real incarceration records for this name in this state, from our own roster
   // (fl_inmates for FL + inmates). State-grain data on a state-grain page. Self-gating where no coverage.
   const inmates = await rosterFor(st.code, first, last); // cache()-shared with generateMetadata → 1 DB hit
+  const offenders = await soFor(st.code, first, last);   // registered sex offenders matching this name
 
   const ordinal = (rk) => (rk ? `#${num(rk)}` : '');
   const ff = getFirstNameFacts(first);
@@ -116,6 +123,12 @@ export async function NameInStateView({ state, name }) {
         records={inmates}
         heading={`Incarceration records for ${full} in ${st.name} (${inmates.length})`}
         blurb={`Public booking & incarceration records matching this name in ${st.name}, from state and county correctional sources.`}
+      />
+
+      <SexOffenderSection
+        records={offenders}
+        heading={`Registered sex offenders named ${full} in ${st.name} (${offenders.length})`}
+        blurb={`Public sex-offender registry records matching this name in ${st.name}.`}
       />
 
       <div style={{ ...stat.wrap, marginTop: 20 }}>

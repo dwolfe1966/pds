@@ -11,6 +11,8 @@ import { collectionJsonLd, crumbsJsonLd } from '../../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
 import { resolveNameInState, nameInStateMetadata, nameInStatePath, NameInStateView } from '../../../../lib/name-in-state';
+import { querySexOffenders } from '../../../../lib/sexOffenderDb.mjs';
+import { SexOffenderSection } from '../../../../lib/sex-offender-section';
 
 export const revalidate = 5184000; // 60d
 // ISR (SEO 2026-07-18): [] + dynamicParams=true → each page is generated on first hit and CACHED for
@@ -52,6 +54,9 @@ export default async function CityLanding({ params }) {
   }
 
   const names = getCityTopNames(state, city, 60);
+  // Registered sex offenders in this city (location-native — SO records carry a real city, so this is
+  // combo-unique per city, no cross-city dup). Owner-cleared display.
+  const offenders = await querySexOffenders({ state: c.stateCode, city: c.city, limit: 16 });
   // City-native names are limited by the strict common-name gate — often a handful (small states
   // scale the ~200 in-state floor down to only the very top names). Top every city page up to a
   // healthy names surface with the next most common STATE names (linked to name-in-state pages,
@@ -262,6 +267,12 @@ export default async function CityLanding({ params }) {
           </div>
         </section>
       )}
+
+      <SexOffenderSection
+        records={offenders}
+        heading={`Registered sex offenders in ${c.city}, ${c.stateCode} (${offenders.length})`}
+        blurb={`Public sex-offender registry records for people in ${c.city}, ${c.stateName}.`}
+      />
 
       <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${c.stateCode}`} style={ui.cta}>Search people in {c.city} →</a>
 
