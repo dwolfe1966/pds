@@ -36,6 +36,41 @@ Fixed 2026-07-16 (commits `2bda4ed` sitemapv2 + `e5d6902` robots repoint).
   chunks left resolving but no longer referenced anywhere → fades from crawler attention.
 - Owner resubmits sitemapv2.xml in Search Console + Bing manually. Recovery = days-to-weeks.
 
+## 2026-07-18 UPDATE — it got WORSE (impressions → 0) + recovery shipped
+Owner reported Google traffic **stopped**. GSC facts: **no manual action**; **impressions → 0** (7/12
+drop → 0 on 7/15) = pages were **DEINDEXED, not demoted**. GSC Pages: Discovered-not-indexed 13,015 +
+Crawled-not-indexed 767 + **Not found(404) 1,231** + duplicates 260 + ~13.5k indexed. Owner: "the 404
+pages exist when I visit" — confirmed (25/25 sampled = 200). So **transient/churn 404s**, not real gone.
+**Root cause = the URL-structure churn itself** (profile pages moved `/people/<name>` → `/profiles/<name>`,
+`/people/` handed to state directory) mass-404'd Google's indexed set 7/12–7/15 → deindex cascade.
+Ruled out: X-Robots-Tag header (none), robots block (allows all), canonical errors (self-referential now).
+
+**Phase 1 fixes SHIPPED (auto-deployed to Vercel):**
+- **Caching FIXED** (reversed the earlier "not necessary" call — situation escalated): added
+  `generateStaticParams(){return []}` to all 9 dynamic routes → flipped `ƒ Dynamic` → `● ISR-cached`.
+  Verified LIVE: leaf went `private,no-store,MISS` → `public…HIT`. Kills per-crawl live Neon renders
+  (the 404 amplifier).
+- **404 → 308 id-fallback** on BOTH leaf systems: `/profiles/.../[id]` (p-id from `profiles`) and
+  `/people/.../[id]` (age-token from captured corpus). Churned id now redirects to same-person or the
+  name-in-city hub instead of `notFound()`. Verified: `/profiles/.../pFAKE` → 308 → hub.
+- Legacy-URL audit: root `/<state>/<name>`, `/people/<state>/<name>`, legacy `/people/<name>` (middleware
+  301→/profiles) all resolve 200/301. Zero 404s on indexed patterns.
+- Also: 338k URLs submitted to **Bing via IndexNow** (key route `app/<key>.txt`, script
+  `scripts/indexnow-submit.mjs --scope=full`).
+
+**Canonical directory sitemap SHIPPED (live):** `/sitemap-directory.xml` = flat urlset, **46,562 URLs**
+(all 52 states + 1,509 cities + top **45k** name-in-city by population; `getDirectoryUrls()` in
+directory.js, cap 45k). Fresh `LASTMOD=2026-07-18` (one-time bump — pages genuinely changed; keep stable
+after). Deliberately EXCLUDES the ~290k thin long-tail (the incident set). robots.txt now lists BOTH
+sitemapv2 (1000) + sitemap-directory. Honest caveat: this re-crawls the fixed/indexed-then-404'd pages;
+it will NOT force the 13.8k never-indexed thin pages in ("discovered – not indexed" = Google already declined).
+
+**Phase 2 — OWNER must do in Search Console:** (1) Validate Fix on "Not found(404)" + "Duplicate"; (2)
+submit a sitemap of the CANONICAL name/profile URLs (sitemapv2 only has the 1000 — the name pages Google
+wants aren't in it); (3) URL-Inspect → Request Indexing on ~5 top pages. Recovery = 2–6 wks as Google
+re-crawls. **Phase 3 (the 13.8k never-indexed thin pages) = slow authority/content game** (consolidate
+duplicate URL patterns to one canonical + thicken pages via [[project_seo_content_augmentation]]).
+
 ## Strategy going forward
 Don't advertise the 360k leaves until they carry REAL per-person content (the profile/lazy-pull
 work in [[project_seo_individual_profiles]]). Earn trust on ~1000 solid pages, then WIDEN
