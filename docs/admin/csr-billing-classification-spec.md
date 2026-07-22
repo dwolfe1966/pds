@@ -157,6 +157,25 @@ true production shape (finer S-labels + whether the full cascade schedule is lis
 - Is the retry/cascade logic **running inside BC** (so state is authoritative there), confirming CSR is
   read-only forecast, not a re-implementation?
 
+## 5b. ⚠️ VALIDATION GATE — before this reaches a CSR (Phase 1 built 2026-07-22, NOT deploy-ready)
+`classifyBilling` + `BillingLifecyclePanel` are built + unit-tested, but the tests are **circular** (fixtures
+encode the same assumptions as the code). Three interpretations must be confirmed against ONE real order
+(the impersonated **Tera Callan** trial/subscriber is a perfect subject) — each silently shifts what every
+rep sees if wrong:
+1. **Does the trial charge book as `commercePayments[] {type:'sale', status:'fulfilled'}`?** `currentCycle =
+   settledSales − 1` depends on it. If not, every S-code is off by one.
+2. **`schedule.data.sequence` numbering** — assumed trial=0, first recurring=1 (`SEQ_TRIAL`). One doc sample
+   agrees (n=1); confirm on a known trial-only vs a known month-2 customer.
+3. **`schedule.data.retry` semantics** — is `retry:1` the *first retry* (→ S1.1, our assumption per the KPI
+   deck) or the *first attempt*? If BC 1-indexes attempts, `.m` is off by one — the exact number reps read.
+Also: **prepaid (`cpd=P`) detection is a guess** (docs show no card-level prepaid field) — confirm from a
+real card's `transient.bin`. And **grain**: panel classifies per-order (a user with an old expired + a new
+active order shows two S-codes) — confirm CSR wants per-order vs one current-state rollup.
+
+Capture command (CSR console, viewing/for Tera): 
+`(async()=>{const w=window.CsrWrapper.getInstance({endpointUrl:'/api'});console.log(JSON.stringify((await w.api.user.findOrders({userId:'6a5df156fefbeeff9abd5b02'})).getData?.(),null,2));})();`
+→ paste; I check 1–3 + prepaid + fix `SEQ_TRIAL`/retry offset (one-line constants) if needed.
+
 ## 6. Build shape (once unblocked) — proposed
 - A `classifyBilling(order, payments, histories)` pure function → `{ sCode, label, nextEvent: {type, date,
   attempt, maxAttempts, amount} }`, replacing the ambiguous plan labels for CSR surfaces.
