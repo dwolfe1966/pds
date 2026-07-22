@@ -43,6 +43,29 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.hasAccess).toBe(true);
   });
 
+  test('LIVE Tera shape: cancelled trial → S0, C1, access-ends (no phantom renewal)', () => {
+    const signup = Date.parse('2026-07-20T09:58:47Z');
+    const cancel = Date.parse('2026-07-22T09:08:43Z');
+    const o = {
+      status: 'active', subStatus: 'canceled', orderTimestamp: signup,
+      commercePayments: [{ type: 'sale', status: 'fulfilled', createdTimestamp: signup }],
+      commerceTokens: [debitToken()],
+      schedule: { dueTimestamp: 1785159047120, data: { sequence: 1, retry: 0, totalPrice: { amount: 49.98 } } },
+      orderHistories: [
+        { status: 'active', subStatus: 'canceled', statusReason: 'SuccessfulTx', createdAt: new Date(cancel).toISOString() },
+        { status: 'active', statusReason: 'SuccessfulTx', createdAt: new Date(signup + 22 * 60 * 1000).toISOString() },
+      ],
+    };
+    const c = classifyBilling(o, { now: Date.parse('2026-07-23T00:00:00Z') });
+    expect(c.sCode).toBe('S0');
+    expect(c.phase).toBe('cancelled_active');
+    expect(c.hasAccess).toBe(true);
+    expect(c.earlyCancel).toBe('C1');          // cancelled 2 days in, before first monthly charge
+    expect(c.card.cpd).toBe('P');              // prepaid
+    expect(c.nextEvent.type).toBe('access-ends'); // NOT a renewal
+    expect(c.nextEvent.amount).toBeNull();     // no charge amount shown
+  });
+
   test('expired: inactive + subStatus expired', () => {
     const o = { status: 'inactive', subStatus: 'expired', commercePayments: [sale(1.01), sale()] };
     const c = classifyBilling(o);

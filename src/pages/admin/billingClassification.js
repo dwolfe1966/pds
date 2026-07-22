@@ -88,14 +88,17 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   if (!order) return null;
   const status = lc(order.status);
   const settled = settledSales(order);
-  const cyclesBilled = settled.length;          // trial charge counts as 1
-  const currentCycle = Math.max(0, cyclesBilled - 1); // 0 = S0 (trial), 1 = S1, …
+  const cyclesBilled = settled.length;          // settled sale payments (trial books as 1 — verified 2026-07-22)
 
   const sch = order.schedule || null;
   const nextSeq = Number.isFinite(sch?.data?.sequence) ? sch.data.sequence : null;
   const nextRetry = Number.isFinite(sch?.data?.retry) ? sch.data.retry : 0;
   const dueTs = Number.isFinite(sch?.dueTimestamp) ? sch.dueTimestamp : null;
   const nextAmount = sch?.data?.totalPrice?.amount ?? null;
+
+  // Current cycle REACHED: prefer BC's own schedule sequence (next charge) − 1; fall back to settled
+  // count − 1. Verified 2026-07-22 (Tera trial): schedule.sequence=1 (next=S1) → currentCycle 0 = S0.
+  const currentCycle = Number.isFinite(nextSeq) ? Math.max(0, nextSeq - 1) : Math.max(0, cyclesBilled - 1);
 
   const card = cardProfile(order);
   const refunded = orderIsRefunded(order);
@@ -130,18 +133,19 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
 
   const earlyCancel = earlyCancelCode(order, cyclesBilled, now);
 
-  // Next expected event — only meaningful while the order can still bill.
-  const canBill = status === 'active';
-  const nextEvent = (canBill && dueTs)
-    ? {
-        date: dueTs,
-        amount: nextAmount,
-        cycle: nextSeq,
-        retry: nextRetry,
-        isRetry: nextRetry > 0,
-        type: nextRetry > 0 ? 'retry' : (nextSeq === SEQ_TRIAL ? 'trial-charge' : 'renewal'),
-      }
-    : null;
+  // Next expected event. A cancelled-but-active order will NOT bill again — its schedule.dueTimestamp is
+  // when ACCESS ENDS, not a charge (verified 2026-07-22: Tera cancelled trial still carries a $49.98
+  // sequence-1 schedule). So surface it as access-ends, never as a phantom renewal.
+  const canBill = status === 'active' && !canceled;
+  let nextEvent = null;
+  if (phase === 'cancelled_active' && dueTs) {
+    nextEvent = { type: 'access-ends', date: dueTs, amount: null, cycle: null, retry: 0, isRetry: false };
+  } else if (canBill && dueTs) {
+    nextEvent = {
+      date: dueTs, amount: nextAmount, cycle: nextSeq, retry: nextRetry, isRetry: nextRetry > 0,
+      type: nextRetry > 0 ? 'retry' : (nextSeq === SEQ_TRIAL ? 'trial-charge' : 'renewal'),
+    };
+  }
 
   return {
     sCode, phase, phaseLabel, hasAccess, dunning,

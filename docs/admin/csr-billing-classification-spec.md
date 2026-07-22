@@ -157,7 +157,20 @@ true production shape (finer S-labels + whether the full cascade schedule is lis
 - Is the retry/cascade logic **running inside BC** (so state is authoritative there), confirming CSR is
   read-only forecast, not a re-implementation?
 
-## 5b. ⚠️ VALIDATION GATE — before this reaches a CSR (Phase 1 built 2026-07-22, NOT deploy-ready)
+## 5c. ✅ VALIDATION CLOSED (live Tera Callan findOrders, 2026-07-22)
+All three assumptions confirmed against a real order + one bug fixed:
+1. ✅ Trial books as `{type:'sale', status:'fulfilled'}` — settled-count math valid.
+2. ✅ `schedule.data.sequence=1` for a trial (next=S1) → trial=S0. Now read `sequence−1` as the current
+   cycle (BC-authoritative), settled-count as fallback.
+3. ✅ `Sx.1` = first retry (owner) — `schedule.data.retry` maps straight to `.m`.
+4. ✅ cpd is explicit at `commerceTokens[0].transient.bin.extra.cpd` (Tera = prepaid).
+🔴 **Bug found + fixed:** Tera is a **cancelled trial** (`status:active, subStatus:canceled`) whose schedule
+STILL carries a `$49.98 sequence-1` due date — a cancelled order will NOT bill, so the classifier now
+surfaces that dueTimestamp as **access-ends**, never a phantom renewal. Tera classifies correctly: **S0 ·
+Cancelled — access remains · C1 · Prepaid(P)⚠ · access ends Jul 25**. Covered by a live-shape unit test.
+Admin bundle `admin.e0408c2a.js`. **Now CSR-ready pending only the retry-cadence ("of N") in Phase 2.**
+
+## 5b. VALIDATION GATE (superseded by 5c) — Phase 1 built 2026-07-22
 `classifyBilling` + `BillingLifecyclePanel` are built + unit-tested, but the tests are **circular** (fixtures
 encode the same assumptions as the code). Three interpretations must be confirmed against ONE real order
 (the impersonated **Tera Callan** trial/subscriber is a perfect subject) — each silently shifts what every

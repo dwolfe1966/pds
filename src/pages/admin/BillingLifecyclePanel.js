@@ -35,9 +35,11 @@ export default function BillingLifecyclePanel({ order }) {
   const timeline = billingTimeline(order);
 
   const nextLine = ne
-    ? (ne.isRetry
-        ? `Retry ${ne.retry} on ${fmtDate(ne.date)}${ne.amount != null ? ` · ${fmtMoney(ne.amount)}` : ''} · auto-cancels if retries exhaust`
-        : `${ne.type === 'trial-charge' ? 'First bill' : 'Renewal'} ${fmtMoney(ne.amount)} on ${fmtDate(ne.date)}${ne.cycle != null ? ` · cycle ${ne.cycle}` : ''}`)
+    ? (ne.type === 'access-ends'
+        ? `No further charges — access continues until ${fmtDate(ne.date)}, then expires`
+        : ne.isRetry
+          ? `Retry ${ne.retry} on ${fmtDate(ne.date)}${ne.amount != null ? ` · ${fmtMoney(ne.amount)}` : ''} · auto-cancels if retries exhaust`
+          : `${ne.type === 'trial-charge' ? 'First bill' : 'Renewal'} ${fmtMoney(ne.amount)} on ${fmtDate(ne.date)}${ne.cycle != null ? ` · cycle ${ne.cycle}` : ''}`)
     : (c.phase === 'cancelled_active'
         ? 'No further charges — access continues until the period ends, then expires'
         : 'No upcoming billing event');
