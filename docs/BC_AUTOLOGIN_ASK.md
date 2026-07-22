@@ -36,6 +36,29 @@ note, and opens the URL in a new tab (redirect `/dashboard`). Observe:
 
 Findings from (a)/(b) decide the adoption route design (build to reality, not the doc).
 
+## Live findings (2026-07-21, owner testing on admin.www.bytecrtrs.com / www.idlookup.ai)
+- **CSR mint FAILS** ("Failed on csr" → our "No login URL returned by BC"). Root cause TBD by the admin
+  console diagnostic below — either the deployed `CsrWrapper` IIFE lacks `getAutoLoginUrl` (BC added it
+  TODAY), or the `/user/management/getAutoLoginUrl` endpoint isn't deployed to this environment, or a
+  permission/param error. NOTE the doc's example loginLink host is `dev1002.dev.www.idlookup.ai` — the
+  feature may only be live on **dev**, not the prod-ish hosts the owner is on.
+- **Consumer no-arg `auth.login({})` on a LOGGED-OUT tab → HTTP 401, returns a wrapped error object
+  `c {params:{…}}`, NO token.** So Q1 is answered *for the no-session case* (401/no token). The
+  loginLink-session case is still UNTESTED because the CSR mint never produced a valid link to open.
+  (Also `getUserOrders 403` on that tab = same no-session state.) ⚠️ Even the wrapped-object shape hints
+  the no-arg login may be a status check, not a token issuer — Q1 stands.
+
+### Admin-console diagnostic to pin the CSR failure (run on admin app, viewing a user)
+```js
+(async () => {
+  const w = window.CsrWrapper.getInstance({ endpointUrl: '/api' });
+  console.log('getAutoLoginUrl type:', typeof w?.api?.user?.getAutoLoginUrl);
+  try { console.log('RESULT:', await w.api.user.getAutoLoginUrl({ userId: 'THE_USER_ID' })); }
+  catch (e) { console.log('THREW:', e); }
+})();
+```
+`type: undefined` → IIFE lacks it (BC ship). A wrapped error result → read BC's actual error (perm/not-deployed).
+
 ## Build state
 - ✅ `apiWrapperCsr.csrGetAutoLoginUrl` · `admin-auto-login-url` route · `api.adminGetAutoLoginUrl`
 - ✅ `UserDetailPage` "Log in as user" button — **visible to all CSRs**, audit note (no URL), opens new tab
