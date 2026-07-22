@@ -122,6 +122,8 @@ function extractPayments(orders) {
           amount: amt != null ? `$${Number(amt).toFixed(2)}` : '—',
           type: p?.type || 'sale',
           status: p?.status || '—',
+          sequence: Number.isFinite(p?.sequence) ? p.sequence : null, // 0=trial(S0), 1=first bill(S1), …
+          retry: Number.isFinite(p?.retry) ? p.retry : 0,
           date: p?.paymentTimestamp ? new Date(p.paymentTimestamp).toISOString() : (p?.createdAt || null),
           card,
           ip: p?.ipAddress || '—',
@@ -175,9 +177,16 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
       : t === 'void' ? 'canceled'
       : /fail|declin|reject|error|block/.test(s) ? 'payment_failed'
       : s === 'refunded' ? 'refund' : s === 'canceled' ? 'canceled' : 'payment';
-    const label = kind === 'payment_failed' ? `Payment failed ${p.amount}`
+    // S-code context: seq 0 = trial (S0), 1 = first bill (S1), N = renewal (SN); retry M = dunning Sn.m.
+    const sTag = p.sequence == null ? '' : `S${p.sequence}${p.retry > 0 ? `.${p.retry}` : ''}`;
+    const chargeName = t === 'validate' ? 'Card validation'
+      : p.sequence === 0 ? 'Trial charge'
+      : p.sequence === 1 ? 'First bill'
+      : p.sequence != null ? 'Renewal' : 'Payment';
+    const label = kind === 'payment_failed' ? `${chargeName} failed ${p.amount}${sTag ? ` · ${sTag}` : ''}`
       : kind === 'refund' ? `Refunded ${p.amount}`
-      : kind === 'canceled' ? (t === 'void' ? `Voided ${p.amount}` : 'Subscription canceled') : `Payment ${p.amount}`;
+      : kind === 'canceled' ? (t === 'void' ? `Voided ${p.amount}` : 'Subscription canceled')
+      : `${chargeName} ${p.amount}${sTag ? ` · ${sTag}` : ''}`;
     add(p.date, kind, label, `Order …${String(p.orderId || '').slice(-8)}${p.status ? ` · ${p.status}` : ''}`);
   }
   // Order status transitions (orderHistories) — the CANCEL / expire / refund-end events live HERE, not in
