@@ -35,6 +35,28 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent.retry).toBe(2);
   });
 
+  test('S0-cluster: initial trial payment failed, no capture, actively retrying → S0.2 (not S1)', () => {
+    // rakim/amyjo/moninoso cluster: schedule.sequence ran ahead to 1, but NOTHING captured → still S0.
+    const o = {
+      status: 'active',
+      commercePayments: [{ type: 'sale', status: 'declined' }], // attempted, never fulfilled
+      schedule: { dueTimestamp: Date.now() + 3 * 864e5, data: { sequence: 1, retry: 2, totalPrice: { amount: 49.98 } } },
+    };
+    const c = classifyBilling(o);
+    expect(c.sCode).toBe('S0.2');                 // NOT S1.2
+    expect(c.phase).toBe('dunning');
+    expect(c.hasAccess).toBe(true);
+    expect(c.access).toBe('grace');
+    expect(c.nextEvent.cycle).toBe(0);            // retry of the INITIAL/trial charge, not a full S1
+    expect(c.nextEvent.maxAttempts).toBe(10);
+    expect(c.nextEvent.attemptsRemaining).toBe(8);
+  });
+
+  test('access field: healthy trial = yes, expired = no', () => {
+    expect(classifyBilling({ status: 'active', commercePayments: [sale(1.01)], schedule: schedule(1, 0) }).access).toBe('yes');
+    expect(classifyBilling({ status: 'inactive', subStatus: 'expired', commercePayments: [sale(1.01), sale()] }).access).toBe('no');
+  });
+
   test('cancelled-at-period-end: active + subStatus canceled, keeps access', () => {
     const due = Date.now() + 5 * 864e5;
     const o = { status: 'active', subStatus: 'canceled', commercePayments: [sale(1.01), sale()], schedule: { dueTimestamp: due, data: { sequence: 2, retry: 0 } } };

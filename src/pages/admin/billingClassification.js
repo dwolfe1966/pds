@@ -23,6 +23,12 @@ import { orderIsRefunded } from './userState';
 
 const SEQ_TRIAL = 0; // BC sequence value that represents the trial/S0 charge
 
+// Retry cascade rules (legacy business rules). BC's schedule.dueTimestamp overrides the NEXT attempt
+// date; these rules supply the "of N" total. ⚠️ maxAttempts from the KPI deck ("retry … up to 10 times
+// before we stop") — CONFIRM the exact N + per-attempt cadence against the business-rules doc. We do NOT
+// project fabricated retry dates from a guessed cadence — only the count + BC's authoritative next date.
+export const RETRY_RULES = { maxAttempts: 10 };
+
 const lc = (s) => (s || '').toLowerCase();
 
 export function settledSales(order) {
@@ -96,35 +102,51 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const dueTs = Number.isFinite(sch?.dueTimestamp) ? sch.dueTimestamp : null;
   const nextAmount = sch?.data?.totalPrice?.amount ?? null;
 
-  // Current cycle REACHED: prefer BC's own schedule sequence (next charge) − 1; fall back to settled
-  // count − 1. Verified 2026-07-22 (Tera trial): schedule.sequence=1 (next=S1) → currentCycle 0 = S0.
-  const currentCycle = Number.isFinite(nextSeq) ? Math.max(0, nextSeq - 1) : Math.max(0, cyclesBilled - 1);
-
   const card = cardProfile(order);
   const refunded = orderIsRefunded(order);
   const canceled = isCanceled(order);
   const hasSettled = cyclesBilled > 0;
 
+  // Current cycle REACHED = index of the last CAPTURED charge. A captured payment is ground truth, so the
+  // settled-sale count is the authority; schedule.sequence can run AHEAD of reality (an uncaptured S0 whose
+  // schedule already points at S1 — the rakim/amyjo/moninoso cluster), so use it only as a fallback when
+  // nothing has been captured.
+  const currentCycle = hasSettled
+    ? Math.max(0, cyclesBilled - 1)
+    : (Number.isFinite(nextSeq) ? Math.max(0, nextSeq - 1) : 0);
+  // The charge currently being ATTEMPTED = the next UNCAPTURED charge = settled count.
+  // 0 = trial/initial (S0), 1 = first monthly (S1), … — NOT schedule.sequence.
+  const failCycle = cyclesBilled;
+
   let phase, phaseLabel, sCode, hasAccess = false, dunning = false;
 
-  if (!hasSettled) {
-    phase = 'payment_failed'; phaseLabel = 'No settled payment'; sCode = '—';
-  } else if (refunded && status !== 'active') {
-    phase = 'refunded'; phaseLabel = 'Refunded'; sCode = `S${currentCycle}`;
-  } else if (status === 'active' && canceled) {
+  if (status === 'active' && canceled) {
     phase = 'cancelled_active'; phaseLabel = 'Cancelled — access remains'; hasAccess = true;
     sCode = currentCycle === SEQ_TRIAL ? 'S0' : `S${currentCycle}`;
   } else if (status === 'active' && nextRetry > 0) {
-    phase = 'dunning'; dunning = true;
-    // The failing bill is the pending charge → S{pendingCycle}.{retry}
-    const failCycle = nextSeq != null ? nextSeq : currentCycle + 1;
+    // DUNNING — checked BEFORE the no-settled case. The big cluster (owner 2026-07-22): an initial trial
+    // (S0) payment FAILED but we keep them and keep retrying (ISF cascade). No payment captured yet, but
+    // actively retrying the INITIAL charge → S0.x, and the next attempt is the trial/initial charge —
+    // never a "full S1 charge". Also covers S1.x+ renewal-bill retries.
+    phase = 'dunning'; dunning = true; hasAccess = true;
     sCode = `S${failCycle}.${nextRetry}`;
-    phaseLabel = failCycle <= 1 ? 'First bill failing — retrying' : `Cycle ${failCycle} bill failing — retrying`;
-    hasAccess = true;
+    phaseLabel = failCycle === 0 ? 'Trial/initial charge failed — retrying'
+      : failCycle === 1 ? 'First monthly bill failed — retrying'
+      : `Cycle ${failCycle} bill failed — retrying`;
+  } else if (refunded && status !== 'active') {
+    phase = 'refunded'; phaseLabel = 'Refunded'; sCode = hasSettled ? `S${currentCycle}` : '—';
   } else if (status === 'active') {
     hasAccess = true;
-    if (currentCycle === SEQ_TRIAL) { phase = 'trial'; phaseLabel = 'Trial'; sCode = 'S0'; }
-    else { phase = 'subscriber'; phaseLabel = `Subscriber — cycle ${currentCycle}`; sCode = `S${currentCycle}`; }
+    if (!hasSettled) {
+      // Active, nothing captured, not in a retry — trial provisioned, initial charge still pending.
+      phase = 'trial'; phaseLabel = 'Trial — initial charge pending'; sCode = 'S0';
+    } else if (currentCycle === SEQ_TRIAL) {
+      phase = 'trial'; phaseLabel = 'Trial'; sCode = 'S0';
+    } else {
+      phase = 'subscriber'; phaseLabel = `Subscriber — cycle ${currentCycle}`; sCode = `S${currentCycle}`;
+    }
+  } else if (!hasSettled) {
+    phase = 'payment_failed'; phaseLabel = 'No settled payment'; sCode = '—';
   } else if (canceled) {
     phase = 'cancelled_ended'; phaseLabel = 'Cancelled — ended'; sCode = `S${currentCycle}`;
   } else {
@@ -141,14 +163,30 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   if (phase === 'cancelled_active' && dueTs) {
     nextEvent = { type: 'access-ends', date: dueTs, amount: null, cycle: null, retry: 0, isRetry: false };
   } else if (canBill && dueTs) {
+    const isRetry = nextRetry > 0;
+    // For a retry, the failing charge is the next UNCAPTURED one (failCycle) — NOT schedule.sequence, which
+    // may point ahead (an uncaptured S0 whose schedule reads S1). This is the rakim/amyjo fix.
+    const cyc = isRetry ? failCycle : (Number.isFinite(nextSeq) ? nextSeq : failCycle);
     nextEvent = {
-      date: dueTs, amount: nextAmount, cycle: nextSeq, retry: nextRetry, isRetry: nextRetry > 0,
-      type: nextRetry > 0 ? 'retry' : (nextSeq === SEQ_TRIAL ? 'trial-charge' : 'renewal'),
+      date: dueTs, amount: nextAmount, cycle: cyc, retry: nextRetry, isRetry,
+      type: isRetry ? 'retry' : (cyc === SEQ_TRIAL ? 'trial-charge' : 'renewal'),
+      // "of N" from the rules; BC's dueTimestamp already gave the next date. (BC full-cascade override, when
+      // it ever appears in the schedule, would replace maxAttempts/remaining here.)
+      maxAttempts: isRetry ? RETRY_RULES.maxAttempts : null,
+      attemptsRemaining: isRetry ? Math.max(0, RETRY_RULES.maxAttempts - nextRetry) : null,
     };
   }
 
+  // Single unified access-first status (toward the taxonomy simplification, owner 2026-07-22): ONE line
+  // that says access / no-access + why. 'grace' = has access but something is wrong/ending (dunning or
+  // cancel-at-period-end). NOTE: account-level suspension (BC 'blocked') is NOT visible here (order-only) —
+  // the caller must let a suspended account override this to no-access. See getCustomerStatus (planned).
+  const access = !hasAccess ? 'no' : (dunning || phase === 'cancelled_active') ? 'grace' : 'yes';
+  const accessLabel = access === 'yes' ? 'Has access' : access === 'grace' ? 'Has access (at risk)' : 'No access';
+  const statusLine = `${accessLabel} · ${phaseLabel}${sCode !== '—' ? ` · ${sCode}` : ''}`;
+
   return {
-    sCode, phase, phaseLabel, hasAccess, dunning,
+    sCode, phase, phaseLabel, hasAccess, dunning, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
     nextEvent,

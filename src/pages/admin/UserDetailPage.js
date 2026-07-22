@@ -180,6 +180,25 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
       : kind === 'canceled' ? (t === 'void' ? `Voided ${p.amount}` : 'Subscription canceled') : `Payment ${p.amount}`;
     add(p.date, kind, label, `Order …${String(p.orderId || '').slice(-8)}${p.status ? ` · ${p.status}` : ''}`);
   }
+  // Order status transitions (orderHistories) — the CANCEL / expire / refund-end events live HERE, not in
+  // payments (cancel-at-period-end is a status change, not a payment — owner 2026-07-22). Dedup revisions.
+  const seenTx = new Set();
+  for (const o of orders || []) {
+    const oid = String(getOrderId(o) || '').slice(-8);
+    for (const h of (Array.isArray(o?.orderHistories) ? o.orderHistories : [])) {
+      const sub = String(h?.subStatus || '').toLowerCase();
+      const reason = String(h?.statusReason || '').toLowerCase();
+      let kind = null, label = null;
+      if (sub === 'canceled' || sub === 'cancelled') { kind = 'canceled'; label = 'Subscription canceled'; }
+      else if (sub === 'expired' && /refund/.test(reason)) { kind = 'refund'; label = 'Refunded — order ended'; }
+      else if (sub === 'expired') { kind = 'canceled'; label = 'Subscription expired'; }
+      if (!kind || !h?.createdAt) continue;
+      const key = `${new Date(h.createdAt).getTime()}|${kind}|${oid}`;
+      if (seenTx.has(key)) continue;
+      seenTx.add(key);
+      add(h.createdAt, kind, label, `Order …${oid}${h.updaterName ? ` · by ${h.updaterName}` : ''}`);
+    }
+  }
   for (const l of logins || []) {
     add(l.createdAt || l.date, 'login', 'Logged in', [l.device, l.ipAddress || l.ip].filter(Boolean).join(' · '));
   }
