@@ -8,7 +8,6 @@ import RefundEmailModal from './RefundEmailModal';
 import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, CSR_TERMS } from './userState';
 import { useZipCity } from './zipCity';
 import { useAuth } from '../../context/AuthContext';
-import BillingLifecyclePanel from './BillingLifecyclePanel';
 import BillingEventsTable from './BillingEventsTable';
 import { classifyBilling, getCustomerStatus } from './billingClassification';
 
@@ -1602,290 +1601,35 @@ const UserDetailPage = () => {
             {/* ── Tab: Orders & Payments ──────────────────── */}
             {activeTab === 'Orders & Payments' && (
               <>
-                {/* Multi-order refund button */}
-                {!ordersLoading && !ordersError && orders.length > 1 && (() => {
-                  const totalEligible = orders.reduce((sum, o) => sum + getEligiblePayments(o).length, 0);
-                  return totalEligible > 0 ? (
-                    <div className={styles.multiRefundBar}>
-                      <span className={styles.multiRefundLabel}>
-                        {orders.length} orders — {totalEligible} refundable payment{totalEligible !== 1 ? 's' : ''}
-                      </span>
-                      <button
-                        className={styles.refundAllBtn}
-                        onClick={openMultiOrderRefund}
-                        disabled={batchRefundProcessing}
-                      >
-                        Refund All Orders
-                      </button>
-                    </div>
-                  ) : null;
-                })()}
-                {ordersLoading && (
-                  <div className={styles.loadingState}>Loading orders…</div>
-                )}
-                {!ordersLoading && ordersError && (
-                  <div className={styles.errorState}>{ordersError}</div>
-                )}
+                {ordersLoading && <div className={styles.loadingState}>Loading orders…</div>}
+                {!ordersLoading && ordersError && <div className={styles.errorState}>{ordersError}</div>}
                 {!ordersLoading && !ordersError && orders.length === 0 && (
-                  <div className={styles.emptyState}>
-                    <p style={{ margin: 0 }}>No orders retrieved.</p>
-                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.82rem', color: '#6b7280' }}>
-                      If you expect this user to have orders: BC's CSR order endpoints
-                      (<code>/commerceMgnt/userOrders</code>) are returning 404 on this
-                      deployment, and <code>/database/search</code> on the commerceOrder
-                      collection returns 0 docs to admin sessions. Check the browser
-                      console for <code>[csrFindUserOrders]</code> probe output and
-                      escalate to BC if every probe is empty.
-                    </p>
-                  </div>
+                  <div className={styles.emptyState}><p style={{ margin: 0 }}>No orders retrieved.</p></div>
                 )}
-                {!ordersLoading && !ordersError && orders.length > 0 && orders.map((o) => {
-                  const oid = getOrderId(o);
-                  const oStatus = o.status || '—';
-                  // subStatus=canceled is the cancel-at-period-end shape (status stays
-                  // 'active'); reflect it so a cancelled order doesn't read plain "active".
-                  const canceled = o.transient?.canceled || o.subStatus === 'canceled' || o.subStatus === 'cancelled';
-                  const isExpanded = expandedOrders[oid];
-                  const cpArray = Array.isArray(o?.commercePayments) ? o.commercePayments : [];
-                  const extraData = extraPayments[oid];
-                  const extraPmts = extraData?.payments || [];
-                  const allPmts = [...cpArray, ...extraPmts];
-                  const schedule = o.schedule;
-                  const eligible = getEligiblePayments(o);
-                  const hasEligible = eligible.length > 0;
-                  const card = getOrderCard(o);
-
-                  return (
-                    <div key={oid} className={styles.orderCard}>
-                      {/* S-code lifecycle classification (access/state/risk/event/next). */}
-                      <BillingLifecyclePanel order={o} />
-                      {/* Methodical billing-events table — charge · outcome · notes, newest first, next event pinned. */}
-                      <BillingEventsTable order={o} />
-                      {/* Order summary row */}
-                      <div
-                        className={styles.orderSummary}
-                        onClick={() => setExpandedOrders(prev => ({ ...prev, [oid]: !prev[oid] }))}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <span className={styles.orderExpandIcon}>{isExpanded ? '▾' : '▸'}</span>
-                        <div className={styles.orderSummaryMain}>
-                          <span className={styles.orderIdShort}>Order ...{oid.slice(-8)}</span>
-                          <span className={styles.orderAmount}>{getAmount(o)}</span>
-                          <span className={
-                            orderIsRefunded(o) ? styles.badgeSuspended
-                            : oStatus === 'active' && !canceled ? styles.badgeActive
-                            : canceled ? styles.badgeSuspended
-                            : styles.badgeFree
-                          }>
-                            {/* 'active (canceled)' read as a contradiction (bug list 7/2 #9)
-                                — say what actually happens and when. */}
-                            {orderIsRefunded(o) ? 'Refunded'
-                              : canceled && oStatus === 'active'
-                                ? `Active — cancels ${(o.schedule?.dueTimestamp || o.dueTimestamp) ? formatDate(new Date(o.schedule?.dueTimestamp || o.dueTimestamp).toISOString()) : 'at period end'}`
-                              : o.subStatus && String(o.subStatus).toLowerCase() !== String(oStatus).toLowerCase()
-                                ? `${oStatus} — ${o.subStatus}`
-                                : oStatus}
-                          </span>
-                          <span className={styles.orderDate}>{formatDate(o.createdAt)}</span>
-                          {card && (
-                            <span
-                              title={[card.expiry && `Exp ${card.expiry}`, [card.type, card.level].filter(Boolean).join(' '), card.bank, card.country].filter(Boolean).join(' · ')}
-                              style={{ fontSize: '0.78rem', color: '#374151', background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '999px', padding: '0.1rem 0.55rem', whiteSpace: 'nowrap' }}
-                            >
-                              💳 {card.brand || 'Card'} ••{card.last4}
-                            </span>
-                          )}
-                          {schedule && (
-                            <span className={styles.orderSchedule}>
-                              {/* Definitive upcoming price per Kwan (mtg 2026-06-23): the next
-                                  recurring charge lives on the order's schedule, not the offer
-                                  endpoint — schedule.data.totalPrice + schedule.dueTimestamp. */}
-                              Next: {schedule.dueTimestamp ? formatDate(new Date(schedule.dueTimestamp).toISOString()) : '—'}
-                              {schedule.data?.totalPrice?.amount != null
-                                && ` — $${Number(schedule.data.totalPrice.amount).toFixed(2)}`}
-                            </span>
-                          )}
-                        </div>
-                        <div className={styles.orderSummaryActions}>
-                          {hasEligible && (
-                            <button
-                              className={styles.refundAllBtn}
-                              onClick={(e) => { e.stopPropagation(); openBatchRefund(o); }}
-                              disabled={batchRefundProcessing}
-                              title="Refund all eligible payments"
-                            >
-                              Refund All
-                            </button>
-                          )}
-                          <Link
-                            to={`/purchases/${oid}?userId=${id}`}
-                            className={styles.orderDetailLink}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Full Detail →
-                          </Link>
-                        </div>
-                      </div>
-
-                      {/* Expanded: payment rows */}
-                      {isExpanded && (
-                        <div className={styles.orderPayments}>
-                          {allPmts.length === 0 && (
-                            <div className={styles.emptyState} style={{ padding: '1rem', fontSize: '0.85rem' }}>
-                              No payment records for this order.
-                            </div>
-                          )}
-                          {allPmts.length > 0 && (
-                            <table className={styles.table}>
-                              <thead>
-                                <tr>
-                                  <th className={styles.th}>Date</th>
-                                  <th className={styles.th}>Amount</th>
-                                  <th className={styles.th}>Type</th>
-                                  <th className={styles.th}>Status</th>
-                                  <th className={styles.th}>Card</th>
-                                  <th className={styles.th}>Device</th>
-                                  <th className={styles.th}>Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {allPmts.map((p, idx) => {
-                                  const pAmt = p?.totalPrice?.amount ?? p?.transient?.amount?.collected ?? null;
-                                  const pDate = p?.paymentTimestamp
-                                    ? new Date(p.paymentTimestamp).toISOString()
-                                    : (p?.createdAt || null);
-                                  const pCard = p?.rawRequest?.ccnumber || '—';
-                                  const canRefund = isPaymentRefundable(p);
-                                  const isRefundFormOpen = refundForm?.paymentId === p._id && refundForm?.orderId === oid;
-                                  return (
-                                    <React.Fragment key={p._id || idx}>
-                                      <tr className={styles.tr}>
-                                        <td className={styles.td}>{formatDateTime(pDate)}</td>
-                                        <td className={styles.td}>{pAmt != null ? `$${Number(pAmt).toFixed(2)}` : '—'}</td>
-                                        <td className={styles.td}>
-                                          <span className={getPaymentTypeBadge(p?.type || 'sale', styles)}>
-                                            {p?.type || 'sale'}
-                                          </span>
-                                        </td>
-                                        <td className={styles.td}>
-                                          <span className={getPaymentStatusClass(p?.status || '—', styles)}>
-                                            {p?.status || '—'}
-                                          </span>
-                                        </td>
-                                        <td className={`${styles.td} ${styles.mono}`}>{pCard}</td>
-                                        <td className={styles.td}>{p?.device || '—'}</td>
-                                        <td className={styles.td}>
-                                          {canRefund && !isRefundFormOpen && (
-                                            <button
-                                              className={styles.refundBtn}
-                                              onClick={() => openRefundForm(oid, p)}
-                                              disabled={refundProcessing}
-                                            >
-                                              Refund
-                                            </button>
-                                          )}
-                                          {isRefundFormOpen && (
-                                            <span className={styles.badgePending}>editing...</span>
-                                          )}
-                                        </td>
-                                      </tr>
-                                      {/* Inline refund form row */}
-                                      {isRefundFormOpen && (
-                                        <tr className={styles.refundFormRow}>
-                                          <td colSpan="7" className={styles.refundFormCell}>
-                                            <div className={styles.refundInlineForm}>
-                                              <div className={styles.refundFormField}>
-                                                <label className={styles.refundLabel}>Amount ($)</label>
-                                                <input
-                                                  type="number"
-                                                  className={styles.refundInput}
-                                                  value={refundForm.amount}
-                                                  onChange={(e) => setRefundForm(prev => ({ ...prev, amount: e.target.value }))}
-                                                  min="0.01"
-                                                  max={refundForm.maxAmount || undefined}
-                                                  step="0.01"
-                                                  disabled={refundProcessing}
-                                                />
-                                              </div>
-                                              <div className={styles.refundFormField}>
-                                                <label className={styles.refundLabel}>Type</label>
-                                                <select
-                                                  className={styles.refundSelect}
-                                                  value={refundForm.type}
-                                                  onChange={(e) => setRefundForm(prev => ({ ...prev, type: e.target.value }))}
-                                                  disabled={refundProcessing}
-                                                >
-                                                  <option value="refund">Refund (partial)</option>
-                                                  <option value="void">Void (full reversal)</option>
-                                                </select>
-                                              </div>
-                                              <div className={styles.refundFormActions}>
-                                                <button
-                                                  className={styles.refundConfirmBtn}
-                                                  onClick={handleRefundSubmit}
-                                                  disabled={refundProcessing}
-                                                >
-                                                  {refundProcessing ? 'Processing...' : 'Confirm'}
-                                                </button>
-                                                <button
-                                                  className={styles.refundCancelBtn}
-                                                  onClick={() => setRefundForm(null)}
-                                                  disabled={refundProcessing}
-                                                >
-                                                  Cancel
-                                                </button>
-                                              </div>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      )}
-                                    </React.Fragment>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          )}
-                          {/* Load more payments for this order */}
-                          {cpArray.length > 0 && !(extraData?.noMore) && (() => {
-                            const lastPmt = allPmts[allPmts.length - 1];
-                            const lastPmtId = lastPmt?._id || lastPmt?.id;
-                            if (!lastPmtId) return null;
-                            return (
-                              <button
-                                className={styles.addNoteBtn}
-                                style={{ marginTop: '8px' }}
-                                disabled={extraData?.loading}
-                                onClick={() => handleLoadMorePayments(oid, lastPmtId)}
-                              >
-                                {extraData?.loading ? 'Loading…' : 'Load More Payments'}
-                              </button>
-                            );
-                          })()}
-                          {/* Cancel / Reactivate order button */}
-                          <div className={styles.orderFooterActions}>
-                            {canceled ? (
-                              <button
-                                className={styles.reactivateBtn}
-                                onClick={() => handleCancelOrder(oid, false)}
-                                disabled={cancelProcessing === oid}
-                              >
-                                {cancelProcessing === oid ? 'Reactivating...' : 'Reactivate Order'}
-                              </button>
-                            ) : (
-                              <button
-                                className={styles.cancelOrderBtn}
-                                onClick={() => handleCancelOrder(oid, true)}
-                                disabled={cancelProcessing === oid}
-                              >
-                                {cancelProcessing === oid ? 'Canceling...' : 'Cancel Order'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                {!ordersLoading && !ordersError && orders.length > 0 && custStatus && (() => {
+                  const TONE = { green: { bg: '#d1fae5', fg: '#065f46' }, yellow: { bg: '#fef3c7', fg: '#92400e' }, red: { bg: '#fee2e2', fg: '#991b1b' } };
+                  const at = custStatus.access === 'yes' ? TONE.green : custStatus.access === 'grace' ? TONE.yellow : TONE.red;
+                  const Item = ({ label, children }) => (
+                    <div style={{ minWidth: 150 }}>
+                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', fontWeight: 700, marginBottom: 3 }}>{label}</div>
+                      <div style={{ fontSize: '0.88rem', color: '#111827' }}>{children}</div>
                     </div>
                   );
-                })}
+                  return (
+                    <>
+                      {/* (1) Summary rectangle: current state · last event · anticipated next event */}
+                      <div style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '0.9rem 1.1rem', marginBottom: '1rem', background: '#fff', display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+                        <Item label="Current state">
+                          <span style={{ display: 'inline-block', padding: '2px 12px', borderRadius: 999, fontWeight: 800, background: at.bg, color: at.fg }}>{custStatus.classificationLabel}</span>
+                        </Item>
+                        <Item label="Last event">{custStatus.latestEvent}</Item>
+                        <Item label="Anticipated next event">{custStatus.nextEventShort}</Item>
+                      </div>
+                      {/* (2) Billing events — consolidated, descending; actionable orders link out to detail. */}
+                      <BillingEventsTable orders={orders} userId={id} />
+                    </>
+                  );
+                })()}
               </>
             )}
 
