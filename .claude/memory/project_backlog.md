@@ -36,6 +36,13 @@ originSessionId: ed6a1fb6-9daf-4f36-a40e-b2ed117467bc
   "not available in either API"), wrapped-response URL extraction, popup-block. **Still open:** BC Q2-Q5
   (TTL/single-use/revocable/server-audit) in `docs/BC_AUTOLOGIN_ASK.md` — nice-to-have, not blocking. Deploy BOTH
   bundles together (admin redirect needs the consumer /auth/session route live).
+  **FOLLOW-UPS (tracked, owner 2026-07-22 — not blocking):**
+  (a) **Send BC Q2–Q5** — TTL / single-use / revocable / server-side audit for the `getAutoLoginUrl` loginHash
+      (it's a bearer credential). Route via the **bc-asks-register** agent; questions already drafted in
+      `docs/BC_AUTOLOGIN_ASK.md`.
+  (b) **"Viewing as {customer}" banner** on the consumer app during an impersonated session — a persistent
+      indicator (and ideally an "exit impersonation" affordance) so a CSR never mistakes the customer's session
+      for their own. Small follow-up; the impersonated session is a normal member session today (no banner).
 - **HP-2 (orig) — CSR: auto-login-URL from an email (impersonate via link).** BC shipped
   **`csrWrapper.api.user.getAutoLoginUrl({ userId, redirect? })`** (added 2026-07-21,
   `POST /api/user/management/getAutoLoginUrl`) → returns `{ url }` (a `/api/auth/loginLink?loginHash=…&clientId=…&apiId=…`
