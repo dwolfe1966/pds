@@ -9,14 +9,17 @@ Built 2026-07-22: a per-customer billing lifecycle classifier that mirrors the l
 
 **Core module:** `src/pages/admin/billingClassification.js` — `classifyBilling(order)` (per-order) + `getCustomerStatus(user, orders)` (customer rollup, folds account suspension). Spec/evidence: `docs/admin/csr-billing-classification-spec.md`; legacy defs (gitignored, local): `docs/legacy/` (KPI deck kpi1-3.jpeg + P&L CSV + PDS Data Dictionary).
 
-**High-level classification (owner canonical, embeds the S-code):**
-`trial-S0-paid` | `trial-S0-unpaid` | `trial-S0-norenewal` | `subscriber-S{n}-paid` | `subscriber-S{n}.{retry}-unpaid` | `subscriber-S{n}-norenewal` | `inactive`. Derived from the detailed `stateCode` = `S{n}-paid` / `S{n}-unpaid[.retry] of {max}`.
+**High-level classification (CEO-authoritative 2026-07-22, S for paid + D for declines):**
+`trial-S0-paid` | `trial-S0-unpaid` | `trial-S0-norenewal` | `trial-D{n}.{x}` (in retry, still trial) |
+`subscriber-S{n}-paid` | `subscriber-D{n}.{x}` (renewal declining) | `subscriber-S{n}-norenewal` | `inactive`.
+Detailed `stateCode`: `S0-paid` / `S0-unpaid` / `S{n}-paid` (billed month n) / **`D{n}.{x} of {max}`** (declining cycle-n charge, retry x).
 
-**Taxonomy rules (owner-confirmed):**
-- **S0** = trial ($1); **S1** = subscriber who CLEARED the first membership charge; S2 = month 2, etc. "S1" implies cleared/subscriber.
-- **-paid** = the S{n} charge cleared; **-unpaid** = not cleared; **-norenewal** = has access but cancelled/won't renew; **inactive** = no access.
-- **NO retry model for S0** — we do NOT retry the $1 trial. If the $1 fails (ISF) we still let them in; at ~day 7 we attempt the full $49 (multiple times).
-- **"Assume S{n} while actively retrying"**: once the S{n} retry process has begun and isn't PAUSED by a hard error, the customer IS S{n} (unpaid) — the state keys on the charge being RETRIED (`schedule.data.sequence`), whether or not the $1 ever cleared.
+**Taxonomy rules (CEO — Hana Ang — is the legacy authority; supersedes earlier owner directions):**
+- **S0** = trial (base identity — everyone who signed up; "no matter what they are still S0"). **S1/S2… = subscriber = a monthly charge SUCCEEDED** (S1 = billed month 1). Keep **S** for the paid ladder.
+- **A retry is a DECLINE (`D{n}.{x}`), and the customer STAYS a trial (S0) until a bill SUCCEEDS** — they are NOT a subscriber while retrying. (This REVERSED the earlier "assume S1 while retrying" call.) `D1.x` = first monthly charge failing; `D2.x` = a subscriber's month-2 renewal failing (bucket=subscriber then, since they cleared S1). `.x` = `schedule.data.retry`.
+- **-norenewal** = has access but cancelled/won't renew; **inactive** = no access.
+- **NO retry model for S0** — we do NOT retry the $1 trial. If the $1 fails (ISF) we still let them in; at ~day 7 we attempt the full $49 (multiple times) = the D1.x retries.
+- **suspended** = fraud OR retries exhausted (~5 tries → no access until they bill). ⚠️ maxAttempts: CEO says ~5, deck said 10 — set to **5**, CONFIRM.
 - **Never-captured ($0 ever collected)** is a distinct beast from a happy-path unpaid: same code but risk = **High/red** + a "⚠ Never captured — $0 collected" note (happy-path = Medium/yellow).
 - **Decline type drives behavior**: `51:ISF` → BC RETRIES (dunning, S1-unpaid.x). `59:Suspected Fraud` → BC SUSPENDS/stops (order subStatus `suspended`, no schedule) → "Fraud stop" (noted distinctly).
 
