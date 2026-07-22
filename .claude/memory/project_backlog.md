@@ -4,6 +4,24 @@ description: Forward-looking work — the five BACKLOG-X tracks plus known gaps 
 type: project
 originSessionId: ed6a1fb6-9daf-4f36-a40e-b2ed117467bc
 ---
+## ⭐ HIGH PRIORITY (owner 2026-07-21 / 2026-07-22)
+
+- **HP-4 — CA members: no online cancel → redirect to Contact CS (consumer, owner 2026-07-22).** For any
+  member whose BILLING ADDRESS is in **California (state = CA)**, change the CONSUMER experience so that
+  attempting to cancel a subscription online **redirects them to Contact Customer Support** instead of
+  self-serve online cancellation. (Legal/retention: CA auto-renewal law nuance / handle via CS.) **How to
+  apply:** gate the consumer cancel flow on the billing-address state — CA → route to `/contact` (or a
+  CS-cancel path) instead of the cancel action. Billing state lives on the ORDER's billingAddress (BC), not
+  the user object (see [[reference_bc_user_object_no_zip]]); the member's paid state derives from BC orders
+  ([[feedback_subscription_state_authority]]). Confirm where the consumer cancel action lives + how to read
+  the member's billing-address state client-side. NON-CA members keep online cancel.
+
+## HP-1 — CSR STATUS ✅ LARGELY BUILT 2026-07-22 (see [[project_csr_billing_classification]])
+Full billing lifecycle classifier + S-code taxonomy shipped across all CSR surfaces (list, vCard, Orders
+tab, Purchases/Orders, order detail). Validated against 6 live customers. Deploy candidate
+`admin.14ee842c.js` (NOT on BC). Only open item: confirm real retry `maxAttempts` (currently 10). Legacy
+business rules mirrored (S0 no-retry, day-7 $49, ISF-retry vs Fraud-suspend, never-captured High-risk).
+
 ## ⭐ HIGH PRIORITY (owner 2026-07-21)
 
 - **HP-1 — Mirror legacy customer-status business rules in the CSR.** Our CSR status

@@ -106,3 +106,5 @@
 - [Thin-match → payment fix](project_thinmatch_payment_fix.md) — no email+password dead-end; unified CTA (bundle public.7e4ba4bb.js)
 - [Social presence enrichment](project_social_presence.md) — PDL+Gravatar getSocialPresence + /api/social-presence; experimenting, legal flags
 - [Session end 2026-07-21](project_session_end_2026_07_21.md) — inmate moat scaled, SEO recovery complete, social-presence vertical, onboarding reveal; bundle public.dd976490.js
+- [CSR billing classification (S-code taxonomy)](project_csr_billing_classification.md) — trial-S0-*/subscriber-Sn.x-*/inactive; BC schedule.data.retry, cpd, ISF-vs-Fraud; admin.14ee842c.js
+- [Session end 2026-07-22](project_session_end_2026_07_22.md) — CSR billing classification overhaul (admin.14ee842c.js), impersonation done, onboarding fixes; NEXT=SEO traffic + HP-4 CA-cancel
