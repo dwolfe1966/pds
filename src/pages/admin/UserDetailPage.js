@@ -692,7 +692,10 @@ const UserDetailPage = () => {
     )) return;
     setImpersonating(true);
     try {
-      const res = await api.adminGetAutoLoginUrl(id, '/dashboard');
+      // Redirect to the consumer session-adoption route (public) — it hydrates auth from BC's server
+      // session, then forwards to /dashboard. (Landing straight on /dashboard would bounce to /login
+      // before the SPA adopts the cookie session.)
+      const res = await api.adminGetAutoLoginUrl(id, '/auth/session');
       const url = findLoginUrl(res);
       if (!url) throw new Error('No login URL returned by BC.');
       // Show the link in an in-app modal (visible, no popup-blocker) — CSR clicks Open/Copy there.

@@ -38,6 +38,7 @@ import SearchDetailPreviewPage from './pages/sales/SearchDetailPreviewPage';
 import SignupPage from './pages/sales/SignupPage';
 import SignupPageStepped from './pages/sales/SignupPageStepped';
 import LoginPage from './pages/sales/LoginPage';
+import SessionAdoptPage from './pages/sales/SessionAdoptPage';
 import ForgotPasswordPage from './pages/sales/ForgotPasswordPage';
 import PaymentPage from './pages/sales/PaymentPage';
 import PhoneLandingPage from './pages/sales/PhoneLandingPage';
@@ -206,6 +207,8 @@ const App = () => {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/signup/v2" element={<SignupPageStepped />} />
           <Route path="/login" element={<LoginPage />} />
+          {/* CSR getAutoLoginUrl landing — adopts BC's server session, then routes to ?next (default /dashboard) */}
+          <Route path="/auth/session" element={<SessionAdoptPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/payment" element={<PaymentPage />} />
           {/* Confirmation URL — PaymentPage replaceState's to /paymentconfirm on success.

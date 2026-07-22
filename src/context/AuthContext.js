@@ -218,6 +218,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Adopt an EXISTING BC server session with no credentials — used by the CSR "log in as user"
+  // (getAutoLoginUrl) flow: BC's loginLink sets the session cookie on this origin, then the no-arg
+  // BC login returns { accessToken, user } (a synthetic app token + the real user) exactly like a normal
+  // login, so we hydrate identically. Throws if there's no live session (BC returns 401 → api.login throws).
+  const adoptSession = async () => {
+    const data = await api.login({}); // empty body → BC checks the existing server session
+    if (!data?.accessToken || !data?.user) throw new Error('No active session to adopt.');
+    const userData = data.user;
+    setToken(data.accessToken);
+    setUser(userData);
+    gtmSetUser({
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      phone: userData.phone,
+      zip: userData.zip,
+    });
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+    return userData;
+  };
+
   const logout = async () => {
     setToken(null);
     setUser(null);
@@ -252,6 +275,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    adoptSession,
     setUser,
     setToken,
     subscription,

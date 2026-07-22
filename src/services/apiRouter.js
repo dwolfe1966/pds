@@ -444,11 +444,14 @@ async function callNewAPI(endpoint, params) {
   switch (endpoint) {
     case 'login': {
       const loginBody = params.body || params;
-      // ByteCrtrs auth.login expects { username, password } — map from our { email, password }
-      const bcBody = {
-        username: loginBody.username || loginBody.email,
-        password: loginBody.password,
-      };
+      // ByteCrtrs auth.login expects { username, password } — map from our { email, password }.
+      // NO-CRED session adoption: an empty body makes BC check the EXISTING server session (e.g. one
+      // established by a CSR getAutoLoginUrl loginLink) and return the logged-in user. Send a truly empty
+      // {} (not {username:undefined}) so BC takes the session-check path (verified live 2026-07-22).
+      const hasCreds = !!(loginBody.username || loginBody.email || loginBody.password);
+      const bcBody = hasCreds
+        ? { username: loginBody.username || loginBody.email, password: loginBody.password }
+        : {};
 
       // 1. Login via ByteCrtrs — establishes session cookie needed for report endpoints.
       const raw = await apiWrapper.login(bcBody);
