@@ -55,9 +55,9 @@ function PlanBadge({ user }) {
     : s.access === 'grace' ? { bg: '#fef3c7', fg: '#92400e', dot: '#d97706' }
     : { bg: '#fee2e2', fg: '#991b1b', dot: '#dc2626' };
   return (
-    <span title={`${s.accessLabel} · ${s.reason}`} className={styles.badge} style={{ ...base, color: tone.fg, background: tone.bg }}>
+    <span title={`${s.accessLabel} · ${s.reason} · ${s.stateCode || ''}`} className={styles.badge} style={{ ...base, color: tone.fg, background: tone.bg }}>
       <span style={{ width: 7, height: 7, borderRadius: '50%', background: tone.dot }} />
-      {s.sCode && s.sCode !== '—' ? s.sCode : s.accessLabel}
+      {s.classificationLabel || s.accessLabel}
     </span>
   );
 }

@@ -268,6 +268,32 @@ describe('stateCode — definitive S{n}-paid / S{n}-unpaid[.retry] taxonomy (own
   });
 });
 
+describe('classification — high-level bucket (owner 2026-07-22)', () => {
+  const fsale = (seq, amt = 49.98) => ({ type: 'sale', status: 'fulfilled', sequence: seq, totalPrice: { amount: amt } });
+  const cls = (o, now) => classifyBilling(o, now ? { now } : undefined).classification;
+  test('trial captured → trial-S0-paid', () => {
+    expect(cls({ status: 'active', commercePayments: [fsale(0, 1)], schedule: schedule(1, 0) })).toBe('trial-S0-paid');
+  });
+  test('never captured, not retrying → trial-S0-unpaid', () => {
+    expect(cls({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }], schedule: schedule(1, 0) })).toBe('trial-S0-unpaid');
+  });
+  test('cancelled trial, access remains → trial-S0-norenewal', () => {
+    expect(cls({ status: 'active', subStatus: 'canceled', commercePayments: [fsale(0, 1)], schedule: { dueTimestamp: Date.now() + 5 * 864e5, data: { sequence: 1, retry: 0 } } })).toBe('trial-S0-norenewal');
+  });
+  test('S1 charge failing retry 2 → subscriber-S1.2-unpaid', () => {
+    expect(cls({ status: 'active', commercePayments: [fsale(0, 1), { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) })).toBe('subscriber-S1.2-unpaid');
+  });
+  test('cleared trial + S1 → subscriber-S1-paid', () => {
+    expect(cls({ status: 'active', commercePayments: [fsale(0, 1), fsale(1)], schedule: schedule(2, 0) })).toBe('subscriber-S1-paid');
+  });
+  test('subscriber cancelled → subscriber-S1-norenewal', () => {
+    expect(cls({ status: 'active', subStatus: 'canceled', commercePayments: [fsale(0, 1), fsale(1)], schedule: { dueTimestamp: Date.now() + 5 * 864e5, data: { sequence: 2, retry: 0 } } })).toBe('subscriber-S1-norenewal');
+  });
+  test('expired → inactive', () => {
+    expect(cls({ status: 'inactive', subStatus: 'expired', commercePayments: [fsale(0, 1)] })).toBe('inactive');
+  });
+});
+
 describe('money + expectation summary', () => {
   test('captured $1 trial → money.collected 1, expectation says converts', () => {
     const o = { status: 'active', orderTimestamp: Date.now() - 3 * 864e5, commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, totalPrice: { amount: 1 } }], schedule: schedule(1, 0) };

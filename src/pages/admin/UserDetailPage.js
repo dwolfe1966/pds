@@ -1407,6 +1407,12 @@ const UserDetailPage = () => {
             ];
             return (
               <div style={{ marginTop: 10, textAlign: 'left', fontSize: '0.82rem' }}>
+                {/* High-level classification (owner) — the headline bucket, coloured by risk. */}
+                <div style={{ textAlign: 'center', marginBottom: 10 }}>
+                  <span style={{ display: 'inline-block', padding: '4px 14px', borderRadius: 999, fontSize: '0.9rem', fontWeight: 800, background: accessTone.bg, color: accessTone.fg }}>
+                    {custStatus.classificationLabel}
+                  </span>
+                </div>
                 {custStatus.fraudStop && (
                   <div style={{ marginBottom: 8, padding: '6px 10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#991b1b', fontWeight: 700, fontSize: '0.8rem' }}>
                     🚫 Sequence stopped — suspected fraud{custStatus.billing?.declineReason ? ` (${custStatus.billing.declineReason})` : ''}

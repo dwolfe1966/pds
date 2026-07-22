@@ -51,7 +51,7 @@ export default function BillingLifecyclePanel({ order }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: ps.bg, color: ps.fg, borderRadius: 999, padding: '0.2rem 0.7rem', fontWeight: 800, fontSize: '0.95rem' }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: ps.dot }} />
-          {c.sCode}
+          {c.classificationLabel}
         </span>
         <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#111827' }}>{c.phaseLabel}</span>
         {c.hasAccess && <span style={{ fontSize: '0.72rem', color: '#065f46' }}>has access</span>}
