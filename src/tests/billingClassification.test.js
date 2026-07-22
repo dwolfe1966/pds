@@ -1,4 +1,4 @@
-import { classifyBilling, settledSales, cardProfile, billingTimeline, getCustomerStatus } from '../pages/admin/billingClassification';
+import { classifyBilling, settledSales, cardProfile, billingTimeline, billingEvents, getCustomerStatus } from '../pages/admin/billingClassification';
 
 // Minimal BC-order fixtures matching the documented shapes (docs/admin/csr-billing-classification-spec.md).
 const sale = (amount = 39.01, status = 'fulfilled') => ({ type: 'sale', status, transient: { amount: { total: amount } }, createdTimestamp: 1_700_000_000_000 });
@@ -325,5 +325,24 @@ describe('helpers', () => {
   });
   test('cardProfile null when no card', () => {
     expect(cardProfile({})).toBeNull();
+  });
+  test('billingEvents: charge/outcome/notes newest-first (godwill-like)', () => {
+    const o = { commercePayments: [
+      { type: 'sale', status: 'rejected', sequence: 1, retry: 1, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '51:Insufficient Funds' }, paymentTimestamp: 3 },
+      { type: 'sale', status: 'fulfilled', sequence: 0, totalPrice: { amount: 1 }, paymentTimestamp: 1 },
+    ] };
+    const ev = billingEvents(o);
+    expect(ev).toHaveLength(2);
+    expect(ev[0].ts).toBeGreaterThan(ev[1].ts);          // newest first
+    expect(ev[0].outcome).toBe('Declined');
+    expect(ev[0].charge).toMatch(/First bill.*retry 1/);
+    expect(ev[0].notes).toMatch(/insufficient/i);
+    expect(ev[1].outcome).toBe('Captured');
+    expect(ev[1].charge).toMatch(/Trial/);
+  });
+  test('billingEvents: surfaces a fraud suspend transition', () => {
+    const o = { subStatus: 'suspended', updatedTimestamp: 9, commercePayments: [{ type: 'sale', status: 'rejected', sequence: 1, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: 5 }] };
+    const ev = billingEvents(o);
+    expect(ev.some((r) => r.outcome === 'Order suspended')).toBe(true);
   });
 });

@@ -399,6 +399,53 @@ export function getCustomerStatus(user, orders) {
   };
 }
 
+// Rich, newest-first billing EVENTS for the Orders & Payments table: { ts, amount, charge, outcome, tone,
+// notes }. Every charge attempt + every status transition (cancel/suspend/expire), methodically.
+export function billingEvents(order) {
+  const rows = [];
+  const cps = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
+  for (const p of cps) {
+    const ty = lc(p?.type), st = lc(p?.status), seq = Number(p?.sequence), retry = Number(p?.retry) || 0;
+    const amount = p?.totalPrice?.amount ?? p?.transient?.amount?.total ?? null;
+    const ts = p?.paymentTimestamp || (p?.createdAt ? Date.parse(p.createdAt) : null);
+    let charge;
+    if (ty === 'validate') charge = 'Card validation';
+    else if (ty === 'refund') charge = 'Refund';
+    else if (ty === 'void') charge = 'Void';
+    else {
+      const name = seq === 0 ? 'Trial charge' : seq === 1 ? 'First bill (S1)' : Number.isFinite(seq) ? `Renewal (S${seq})` : 'Charge';
+      charge = `${name}${retry > 0 ? ` · retry ${retry}` : ''}`;
+    }
+    let outcome, tone;
+    if (ty === 'refund') { outcome = 'Refunded'; tone = 'purple'; }
+    else if (ty === 'void') { outcome = 'Voided'; tone = 'purple'; }
+    else if (st === 'fulfilled') { outcome = ty === 'validate' ? 'Validated' : 'Captured'; tone = ty === 'validate' ? 'gray' : 'green'; }
+    else if (/reject|declin|fail|error|block/.test(st)) { outcome = 'Declined'; tone = 'red'; }
+    else { outcome = st || '—'; tone = 'gray'; }
+    const notes = p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || (ty === 'validate' ? '$0 auth (no capture)' : '');
+    rows.push({ ts, amount, charge, outcome, tone, notes });
+  }
+  const seen = new Set();
+  const addTransition = (ts, sub, extra) => {
+    if (!Number.isFinite(ts)) return;
+    const key = `${ts}|${sub}`;
+    if (seen.has(key)) return; seen.add(key);
+    const outcome = sub === 'suspended' ? 'Order suspended' : sub === 'expired' ? 'Expired' : 'Canceled';
+    rows.push({ ts, amount: null, charge: '—', outcome, tone: sub === 'suspended' ? 'red' : 'gray', notes: extra || '' });
+  };
+  for (const h of (Array.isArray(order?.orderHistories) ? order.orderHistories : [])) {
+    const sub = lc(h?.subStatus);
+    if (['canceled', 'cancelled', 'suspended', 'expired'].includes(sub)) {
+      addTransition(h?.createdAt ? Date.parse(h.createdAt) : null, sub === 'cancelled' ? 'canceled' : sub, h?.statusReason || (h?.updaterName ? `by ${h.updaterName}` : ''));
+    }
+  }
+  const curSub = lc(order?.subStatus);
+  if (['suspended', 'canceled', 'cancelled', 'expired'].includes(curSub)) {
+    addTransition(order?.updatedTimestamp || (order?.updatedAt ? Date.parse(order.updatedAt) : null), curSub === 'cancelled' ? 'canceled' : curSub, latestDecline(order) || '');
+  }
+  return rows.filter((r) => Number.isFinite(r.ts)).sort((a, b) => b.ts - a.ts);
+}
+
 // Merged, newest-first billing event timeline from orderHistories (status transitions) + payments.
 export function billingTimeline(order) {
   const events = [];

@@ -9,6 +9,7 @@ import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, 
 import { useZipCity } from './zipCity';
 import { useAuth } from '../../context/AuthContext';
 import BillingLifecyclePanel from './BillingLifecyclePanel';
+import BillingEventsTable from './BillingEventsTable';
 import { classifyBilling, getCustomerStatus } from './billingClassification';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -1650,8 +1651,10 @@ const UserDetailPage = () => {
 
                   return (
                     <div key={oid} className={styles.orderCard}>
-                      {/* Legacy S-code lifecycle classification + "what happens next" + history (Phase 1). */}
+                      {/* S-code lifecycle classification (access/state/risk/event/next). */}
                       <BillingLifecyclePanel order={o} />
+                      {/* Methodical billing-events table — charge · outcome · notes, newest first, next event pinned. */}
+                      <BillingEventsTable order={o} />
                       {/* Order summary row */}
                       <div
                         className={styles.orderSummary}
