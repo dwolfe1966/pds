@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api';
 import { getOrderCollected, getOrderRefunded } from '../../utils/orderFinancials';
+import BillingLifecyclePanel from './BillingLifecyclePanel';
 import { getOrderCard } from '../../utils/orderCard';
 import styles from './PurchaseDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
@@ -304,6 +305,9 @@ const PurchaseDetailPage = () => {
               <StatusBadge order={order} />
             </div>
           </div>
+
+          {/* Full S-code lifecycle: access/state/risk/event/next + what-to-expect + billing history. */}
+          <BillingLifecyclePanel order={order} />
 
           <div className={styles.layout}>
             {/* ── Left column ── */}

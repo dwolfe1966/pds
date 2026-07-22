@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
+import OrderBillingBadge from './OrderBillingBadge';
 import { useAuth } from '../../context/AuthContext';
 import { getOrderCollected } from '../../utils/orderFinancials';
 import { getOrderCard } from '../../utils/orderCard';
@@ -480,7 +481,7 @@ const OrdersPage = () => {
                             </td>
                             <td className={styles.td}>{formatAmount(order)}</td>
                             <td className={styles.td}>
-                              <StatusBadge status={resolveStatus(order)} />
+                              <OrderBillingBadge order={order} />
                             </td>
                             <td className={styles.td}>{resolveType(order)}</td>
                             <td className={styles.td}>

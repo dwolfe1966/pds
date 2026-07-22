@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api';
+import OrderBillingBadge from './OrderBillingBadge';
 import { useAuth } from '../../context/AuthContext';
 import { getOrderCollected } from '../../utils/orderFinancials';
 import styles from './PurchasesPage.module.css';
@@ -374,7 +375,7 @@ const PurchasesPage = () => {
                         <span className={styles.orderId} title={pid}>{truncId}</span>
                       </td>
                       <td className={styles.amountCell}>{formatAmount(order)}</td>
-                      <td><StatusBadge order={order} /></td>
+                      <td><OrderBillingBadge order={order} /></td>
                       <td>{resolveOrderType(order)}</td>
                       <td>{formatDate(order.createdAt)}</td>
                       <td>
