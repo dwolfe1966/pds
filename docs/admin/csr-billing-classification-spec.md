@@ -223,6 +223,19 @@ Capture command (CSR console, viewing/for Tera):
 - Card `cpd` also confirmed at `commercePayments[].data.cpd` (mirror of `transient.bin.extra.cpd`).
 - `transactionMeta.cascade` (per payment) = the casD signal, if we later surface cascade on the CSR.
 
+## 5f. ✅ RETRY validated (godwill, 2026-07-22) + more live cases
+- **godwill (S1 dunning, retry≥2):** captured $1 trial + **two rejected `sale` attempts** (seq 1, retry 0
+  & retry 1, both `51:Insufficient Funds`) + **`schedule.data.retry: 2`**. `transient.sequenced.retry` read
+  **0** — so the authoritative retry counter is **`schedule.data.retry`** (corroborated by the count of
+  rejected `sale` payments). → **S1.2 · dunning · at-risk** (was mis-shown green S0). Failed attempts ARE
+  stored as `type:sale, status:rejected` with decline codes → Timeline now shows the ISF declines.
+- **maxAttempts** (the "of N") is the ONLY remaining unknown — 10 per the KPI deck, `RETRY_RULES.confirmed`
+  stays false (show real "Retry N", no fabricated "of N") until the owner confirms.
+- **godwill "trial overstayed"**: even before dunning fires, a captured S0 whose S1 due date passed is
+  flagged at-risk (`trialOverstayed`) — belt-and-suspenders for the between-attempts window.
+- **moninoso (active acct + no-access billing):** resolved by collapsing the Users list to ONE
+  getCustomerStatus (removed the redundant account "Status" column).
+
 ## 6. Build shape (once unblocked) — proposed
 - A `classifyBilling(order, payments, histories)` pure function → `{ sCode, label, nextEvent: {type, date,
   attempt, maxAttempts, amount} }`, replacing the ambiguous plan labels for CSR surfaces.
