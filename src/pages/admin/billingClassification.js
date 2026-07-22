@@ -263,7 +263,9 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const dstr = (ms) => (Number.isFinite(ms) ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '');
   let expectation;
   if (phase === 'trial' && !hasSettled) {
-    expectation = `Initial charge not captured. Next attempt: ${$(nextEvent?.amount)} on ${dstr(nextEvent?.date)}${declineReason ? ` (last decline: ${declineReason})` : ''}.`;
+    // Business rule (owner 2026-07-22): once let in, the $1 trial fee is NOT retried — at ~day 7 we attempt
+    // the full membership charge (repeatedly). So the next event is the S1 amount, never a $1 retry.
+    expectation = `Trial fee not captured (not retried). First membership charge ${$(nextEvent?.amount)} attempts on ${dstr(nextEvent?.date)}${declineReason ? ` (last decline: ${declineReason})` : ''}.`;
   } else if (phase === 'trial' && trialOverstayed) {
     expectation = `First bill ${$(nextAmount)} is overdue / not succeeding${declineReason ? ` (${declineReason})` : ''}.`;
   } else if (phase === 'trial') {
