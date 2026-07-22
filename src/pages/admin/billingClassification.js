@@ -26,9 +26,10 @@ const SEQ_TRIAL = 0; // BC sequence value that represents the trial/S0 charge
 // Retry cascade rules (legacy business rules). BC's schedule.dueTimestamp overrides the NEXT attempt date;
 // these rules supply the "of N" total.
 // The retry attempt # is VALIDATED (2026-07-22, godwill: schedule.data.retry=2 alongside two rejected S1
-// `sale` attempts). maxAttempts = 10 from the KPI deck ("retry … up to 10 times"); owner wants "of N"
-// shown, so it's live. Adjust maxAttempts here if the real cap differs.
-export const RETRY_RULES = { maxAttempts: 10, confirmed: true };
+// `sale` attempts). ⚠️ maxAttempts CONFLICT: KPI deck says "up to 10", CEO (2026-07-22) says "~5 times"
+// then suspend. Using 5 (the CEO is the legacy authority) — CONFIRM the exact cap with the owner; it's the
+// number where access is cut and the order goes suspended.
+export const RETRY_RULES = { maxAttempts: 5, confirmed: true };
 
 const lc = (s) => (s || '').toLowerCase();
 
@@ -200,9 +201,10 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     const why = latestDecline(order);
     const isFraud = /fraud/i.test(why || '');
     phase = 'order_suspended';
+    // Suspended = fraud stop OR retries exhausted (CEO 2026-07-22: after ~5 tries, no access until they bill).
     phaseLabel = isFraud
       ? `Stopped — suspected fraud${why ? ` (${why})` : ''}`
-      : (why ? `Suspended — payment declined (${why})` : 'Suspended — payment declined');
+      : `Suspended — retries exhausted${why ? ` (${why})` : ''}`;
     sCode = `S${currentCycle}`;
   } else if (canceled) {
     phase = 'cancelled_ended'; phaseLabel = 'Cancelled — ended'; sCode = `S${currentCycle}`;
@@ -334,16 +336,18 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const clearedSeqs = settled.map((p) => Number(p?.sequence)).filter((n) => Number.isFinite(n));
   const highestCleared = clearedSeqs.length ? Math.max(...clearedSeqs) : (cyclesBilled > 0 ? cyclesBilled - 1 : null);
   const retryMax = RETRY_RULES.maxAttempts;
+  const isSubscriber = (highestCleared ?? -1) >= 1;            // billed at least the first MONTHLY charge (S1+)
   let stateCode;
   if (status === 'active' && curRetry > 0 && Number.isFinite(nextSeq) && nextSeq >= 1) {
-    // Owner rule 2026-07-22: once the retry process for S{n} has begun and hasn't been PAUSED by a hard
-    // error, assume the customer IS S{n} — just not-yet-paid. Key on the charge being retried (S1/S2/…),
-    // whether or not the $1 trial ever cleared. '.retry of max' so a rep sees attempts remaining.
-    stateCode = `S${nextSeq}-unpaid.${curRetry} of ${retryMax}`;
-  } else if (highestCleared !== null) {
-    stateCode = `S${highestCleared}-paid`;                     // cleared through S{highestCleared} (S0-paid, S1-paid…)
+    // CEO 2026-07-22: a retry is a DECLINE, and the customer is STILL S0 (trial) until a bill SUCCEEDS.
+    // So the detailed code is D{cycle}.{retry} (declining the cycle-N charge), NOT S{n}-unpaid.
+    stateCode = `D${nextSeq}.${curRetry} of ${retryMax}`;
+  } else if (isSubscriber) {
+    stateCode = `S${highestCleared}-paid`;                     // billed month {highestCleared} (S1-paid, S2-paid…)
+  } else if (hasSettled) {
+    stateCode = 'S0-paid';                                     // trial, $1 captured
   } else {
-    stateCode = 'S0-unpaid';                                   // trial never captured, not yet in a sub retry
+    stateCode = 'S0-unpaid';                                   // trial, $1 not captured
   }
 
   // HIGH-LEVEL classification (owner 2026-07-22) — the coarse bucket for the customer list + detail header
@@ -351,21 +355,22 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   //   trial-S0-paid | trial-S0-unpaid | trial-S0-norenewal
   //   subscriber-S{n}-paid | subscriber-S{n}.{retry}-unpaid | subscriber-S{n}-norenewal
   //   inactive (no access)
+  // Membership bucket (CEO 2026-07-22): 'subscriber' ONLY once a monthly charge has SUCCEEDED (S1+).
+  // A customer in retry is still a 'trial' (they never cleared a monthly bill) — the retry is a Decline.
+  const bucket = isSubscriber ? 'subscriber' : 'trial';
   let classification;
   if (!hasAccess) {
     classification = 'inactive';
   } else if (dunning) {
-    // actively retrying the S{nextSeq} charge → subscriber-S{n}.{retry}-unpaid (Sn.x form; assume Sn)
-    const n = Number.isFinite(nextSeq) ? nextSeq : currentCycle + 1;
-    classification = `subscriber-S${n}.${curRetry}-unpaid`;
+    // declining the cycle-{n} charge, retry {x} → {bucket}-D{n}.{x} (still trial unless already a subscriber)
+    const n = Number.isFinite(nextSeq) ? nextSeq : (highestCleared ?? 0) + 1;
+    classification = `${bucket}-D${n}.${curRetry}`;
   } else if (phase === 'cancelled_active') {
-    classification = (highestCleared ?? 0) === 0 ? 'trial-S0-norenewal' : `subscriber-S${highestCleared}-norenewal`;
-  } else if (phase === 'trial') {
+    classification = isSubscriber ? `subscriber-S${highestCleared}-norenewal` : 'trial-S0-norenewal';
+  } else if (!isSubscriber) {
     classification = hasSettled ? 'trial-S0-paid' : 'trial-S0-unpaid';
-  } else if (phase === 'subscriber') {
-    classification = `subscriber-S${highestCleared}-paid`;
   } else {
-    classification = 'inactive';
+    classification = `subscriber-S${highestCleared}-paid`;
   }
   const classificationLabel = classification.charAt(0).toUpperCase() + classification.slice(1);
   const latestEvent = latestChargeEvent(order);
