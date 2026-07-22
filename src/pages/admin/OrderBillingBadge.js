@@ -18,6 +18,7 @@ export default function OrderBillingBadge({ order }) {
   const title = [
     c.stateName,
     c.nextEventShort && c.nextEventShort !== 'None' ? `Next: ${c.nextEventShort}` : null,
+    c.renewalNote ? `⚠ ${c.renewalNote}` : null,
     c.fraudStop ? '🚫 Suspected fraud' : null,
   ].filter(Boolean).join(' · ');
   return (

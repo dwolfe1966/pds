@@ -159,7 +159,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const trialOverstayed = hasSettled && currentCycle === SEQ_TRIAL && status === 'active' && !canceled
     && Number.isFinite(dueTs) && now > dueTs;
 
-  let phase, phaseLabel, sCode, hasAccess = false, dunning = false;
+  let phase, phaseLabel, sCode, hasAccess = false, dunning = false, retrySeq = null;
 
   if (status === 'active' && canceled) {
     phase = 'cancelled_active'; phaseLabel = 'Cancelled — access remains'; hasAccess = true;
@@ -170,10 +170,14 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     // actively retrying the INITIAL charge → S0.x, and the next attempt is the trial/initial charge —
     // never a "full S1 charge". Also covers S1.x+ renewal-bill retries.
     phase = 'dunning'; dunning = true; hasAccess = true;
-    sCode = `S${failCycle}.${curRetry}`;
-    phaseLabel = failCycle === 0 ? 'Trial/initial charge failed — retrying'
-      : failCycle === 1 ? 'First monthly bill failed — retrying'
-      : `Cycle ${failCycle} bill failed — retrying`;
+    // The customer is STILL at their achieved level (S{currentCycle}); the retry is the ATTEMPT to move to
+    // the next charge — NOT a level they've reached. Owner 2026-07-22: godwill is "still S0", we're rolling
+    // him into S1 — so lead with the membership level (S0), and keep the P&L retry code (S1.2) as detail.
+    sCode = `S${currentCycle}`;
+    retrySeq = `S${failCycle}.${curRetry}`;
+    phaseLabel = failCycle === 0 ? `Initial charge failing — attempt ${curRetry}`
+      : failCycle === 1 ? `Rolling to subscription — attempt ${curRetry}`
+      : `Renewal failing — attempt ${curRetry}`;
   } else if (refunded && status !== 'active') {
     phase = 'refunded'; phaseLabel = 'Refunded'; sCode = hasSettled ? `S${currentCycle}` : '—';
   } else if (status === 'active') {
@@ -295,6 +299,14 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     expectation = 'Ended — no access, no further charges.';
   }
 
+  // Will there be a FUTURE CHARGE (a renewal / continuation)? FALSE for cancel-at-period-end (access ends,
+  // no charge) and every terminal state. Owner 2026-07-22: if the customer HAS access but there is NO
+  // chance of renewal (cancelled, or a stop event), note it explicitly.
+  const willRenew = !!(nextEvent && nextEvent.type !== 'access-ends');
+  const renewalNote = (hasAccess && !willRenew)
+    ? (nextEvent?.type === 'access-ends' ? `Will NOT renew — access ends ${dstr(nextEvent.date)}` : 'Will NOT renew — no further charges')
+    : null;
+
   // 'grace' = has access but at risk: dunning, cancel-at-period-end, OR a trial whose initial charge never
   // captured (the S0-failed cluster — kept around, BC about to attempt the full S1).
   const access = !hasAccess ? 'no'
@@ -308,7 +320,9 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     : access === 'grace' ? { level: 'Medium', tone: 'yellow' }
     : { level: 'High', tone: 'red' };
   const STATE_NAME = { trial: 'Trial', subscriber: 'Subscriber', dunning: 'Retrying charge', cancelled_active: 'Cancelled', cancelled_ended: 'Cancelled', expired: 'Expired', refunded: 'Refunded', order_suspended: 'Suspended', payment_failed: 'Unpaid' };
-  const stateName = fraudStop ? 'Fraud stop' : (STATE_NAME[phase] || phase);
+  const stateName = fraudStop ? 'Fraud stop'
+    : phase === 'dunning' ? (failCycle === 1 ? 'Rolling to subscription' : failCycle === 0 ? 'Initial charge failing' : 'Renewal failing')
+    : (STATE_NAME[phase] || phase);
   const latestEvent = latestChargeEvent(order);
   const nextEventShort = nextEvent
     ? (nextEvent.type === 'access-ends' ? `Access ends ${dstr(nextEvent.date)}`
@@ -317,10 +331,10 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     : 'None';
 
   return {
-    sCode, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
+    sCode, retrySeq, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
-    nextEvent, expectation, declineReason, fraudStop, money, memberDays, subscriberDays,
+    nextEvent, expectation, declineReason, fraudStop, willRenew, renewalNote, money, memberDays, subscriberDays,
     risk, stateName, latestEvent, nextEventShort,
     raw: { status, subStatus: lc(order.subStatus), nextSeq, nextRetry, dueTs, nextAmount },
   };
@@ -358,7 +372,7 @@ export function getCustomerStatus(user, orders) {
     expectation: billing.expectation, money: billing.money, memberDays: billing.memberDays,
     subscriberDays: billing.subscriberDays,
     risk: billing.risk, stateName: billing.stateName, latestEvent: billing.latestEvent, nextEventShort: billing.nextEventShort,
-    fraudStop: billing.fraudStop, billing,
+    fraudStop: billing.fraudStop, willRenew: billing.willRenew, renewalNote: billing.renewalNote, billing,
   };
 }
 

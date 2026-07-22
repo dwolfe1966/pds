@@ -25,10 +25,11 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.currentCycle).toBe(2);
   });
 
-  test('S1.2 dunning: first bill failing, retry 2', () => {
+  test('dunning: first bill failing, retry 2 → still S0, retrySeq S1.2', () => {
     const o = { status: 'active', commercePayments: [sale(1.01)], schedule: schedule(1, 2) };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S1.2');
+    expect(c.sCode).toBe('S0');            // membership — rolling to subscription
+    expect(c.retrySeq).toBe('S1.2');       // P&L retry code
     expect(c.phase).toBe('dunning');
     expect(c.dunning).toBe(true);
     expect(c.nextEvent.isRetry).toBe(true);
@@ -79,7 +80,8 @@ describe('classifyBilling — S-code lifecycle', () => {
       schedule: { dueTimestamp: Date.now() + 3 * 864e5, data: { sequence: 1, retry: 2, totalPrice: { amount: 49.98 } } },
     };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S0.2');                 // NOT S1.2
+    expect(c.sCode).toBe('S0');                   // membership still S0 (initial charge never captured)
+    expect(c.retrySeq).toBe('S0.2');              // retrying the INITIAL charge — NOT S1
     expect(c.phase).toBe('dunning');
     expect(c.hasAccess).toBe(true);
     expect(c.access).toBe('grace');
@@ -99,10 +101,12 @@ describe('classifyBilling — S-code lifecycle', () => {
       schedule: { dueTimestamp: 1784899800139, data: { sequence: 1, retry: 2, totalPrice: { amount: 49.98 } } },
     };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S1.2');                  // schedule.data.retry=2, one trial captured
+    expect(c.sCode).toBe('S0');                     // still S0 — rolling into a subscription (owner framing)
+    expect(c.retrySeq).toBe('S1.2');                // the P&L retry code kept as detail
+    expect(c.stateName).toBe('Rolling to subscription');
     expect(c.phase).toBe('dunning');
     expect(c.access).toBe('grace');
-    expect(c.phaseLabel).toMatch(/first monthly/i);
+    expect(c.phaseLabel).toMatch(/rolling to subscription/i);
     expect(c.nextEvent.isRetry).toBe(true);
     expect(c.nextEvent.retry).toBe(2);
     expect(c.nextEvent.cycle).toBe(1);

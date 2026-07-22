@@ -1411,6 +1411,11 @@ const UserDetailPage = () => {
                     🚫 Sequence stopped — suspected fraud{custStatus.billing?.declineReason ? ` (${custStatus.billing.declineReason})` : ''}
                   </div>
                 )}
+                {custStatus.renewalNote && (
+                  <div style={{ marginBottom: 8, padding: '6px 10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, color: '#92400e', fontWeight: 700, fontSize: '0.8rem' }}>
+                    ⚠ {custStatus.renewalNote}
+                  </div>
+                )}
                 {rows.map(([label, val]) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
                     <span style={{ width: 84, color: '#6b7280', fontWeight: 600, flexShrink: 0 }}>{label}</span>
