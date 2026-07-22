@@ -34,13 +34,6 @@ function resolveStatus(u) {
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
-function StatusBadge({ status }) {
-  const s = (status || '').toLowerCase();
-  if (s === 'active') return <span title={CSR_TERMS.active} className={`${styles.badge} ${styles.badgeActive}`}>Active</span>;
-  if (s === 'suspended' || s === 'blocked') return <span title={CSR_TERMS.suspended} className={`${styles.badge} ${styles.badgeSuspended}`}>Suspended</span>;
-  return <span className={`${styles.badge} ${styles.badgeUnknown}`}>Unknown</span>;
-}
-
 // Plan state (Free/Trial/Subscriber/Cancelled/Expired). The list user objects don't carry
 // order data, so this lazy-loads the user's orders on mount (throttled + cached in
 // userState.js) and derives the true plan — replacing the old always-"Pro" guess.
@@ -85,14 +78,14 @@ function CustomerCard({ user }) {
   const uid = user._id || user.id;
   const truncId = uid ? `${uid.slice(0, 8)}...` : '—';
   const name = getDisplayName(user);
-  const status = resolveStatus(user);
 
   return (
     <div className={styles.card}>
       <div className={styles.cardTop}>
         <h3 className={styles.customerName}>{name}</h3>
+        {/* ONE status (getCustomerStatus) — account suspension folded in. No separate account chip: an
+            'Active account' next to 'No access' read as a contradiction (owner 2026-07-22, moninoso case). */}
         <div className={styles.badgeRow}>
-          <StatusBadge status={status} />
           <PlanBadge user={user} />
         </div>
       </div>
@@ -537,7 +530,6 @@ const UsersPage = () => {
               <th className={styles.th}>Name</th>
               <th className={styles.th}>Email</th>
               <th className={styles.th}>Status</th>
-              <th className={styles.th}>Plan</th>
               <th className={styles.th}>Joined</th>
               <th className={styles.th}></th>
             </tr></thead>
@@ -546,7 +538,6 @@ const UsersPage = () => {
                 const uid = u._id || u.id;
                 const truncId = uid ? `${uid.slice(0, 8)}...` : '—';
                 const name = getDisplayName(u);
-                const status = resolveStatus(u);
                 return (
                   <tr key={uid} className={styles.tr}>
                     <td className={styles.td}>
@@ -554,7 +545,6 @@ const UsersPage = () => {
                     </td>
                     <td className={styles.td}>{name}</td>
                     <td className={styles.td}>{u.email || '—'}</td>
-                    <td className={styles.td}><StatusBadge status={status} /></td>
                     <td className={styles.td}><PlanBadge user={u} /></td>
                     <td className={styles.td}>{formatDate(u.createdAt)}</td>
                     <td className={styles.td}>

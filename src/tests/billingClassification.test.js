@@ -84,8 +84,21 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.hasAccess).toBe(true);
     expect(c.access).toBe('grace');
     expect(c.nextEvent.cycle).toBe(0);            // retry of the INITIAL/trial charge, not a full S1
-    expect(c.nextEvent.maxAttempts).toBe(10);
-    expect(c.nextEvent.attemptsRemaining).toBe(8);
+    expect(c.nextEvent.maxAttempts).toBeNull();   // "of N" gated until RETRY_RULES.confirmed (no live retry≥2 seen)
+  });
+
+  test('godwill: trial overstayed — captured S0 but S1 charge date passed, still S0 → at-risk, not green', () => {
+    const o = {
+      status: 'active',
+      commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, totalPrice: { amount: 1 } }],
+      transient: { sequenced: { sequence: 0, retry: 0 } },
+      schedule: { dueTimestamp: Date.parse('2026-07-14T00:00:00Z'), data: { sequence: 1, retry: 0, totalPrice: { amount: 49.98 } } },
+    };
+    const c = classifyBilling(o, { now: Date.parse('2026-07-22T00:00:00Z') }); // 8 days later, still S0
+    expect(c.sCode).toBe('S0');
+    expect(c.trialOverstayed).toBe(true);
+    expect(c.access).toBe('grace');                 // NOT green
+    expect(c.phaseLabel).toMatch(/overdue|not succeeding/i);
   });
 
   test('access field: healthy trial = yes, expired = no', () => {

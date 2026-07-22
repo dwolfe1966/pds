@@ -23,11 +23,14 @@ import { orderIsRefunded } from './userState';
 
 const SEQ_TRIAL = 0; // BC sequence value that represents the trial/S0 charge
 
-// Retry cascade rules (legacy business rules). BC's schedule.dueTimestamp overrides the NEXT attempt
-// date; these rules supply the "of N" total. ⚠️ maxAttempts from the KPI deck ("retry … up to 10 times
-// before we stop") — CONFIRM the exact N + per-attempt cadence against the business-rules doc. We do NOT
-// project fabricated retry dates from a guessed cadence — only the count + BC's authoritative next date.
-export const RETRY_RULES = { maxAttempts: 10 };
+// Retry cascade rules (legacy business rules). BC's schedule.dueTimestamp overrides the NEXT attempt date;
+// these rules supply the "of N" total.
+// ⚠️ UNVALIDATED (2026-07-22): we have NOT yet seen a live order with retry>0 — rakim (the S0-failed
+// cluster) reads retry:0 in every field (transient.sequenced.retry AND schedule.data.retry), and stores no
+// declined `sale` attempt (only a $0 `validate`). So (a) which field carries the retry attempt # and
+// (b) maxAttempts are BOTH unconfirmed. Until `confirmed:true`, we show "Retry N" WITHOUT a fabricated
+// "of N", and flag the count as provisional. Needs one capture of an owner-confirmed retry≥2 order.
+export const RETRY_RULES = { maxAttempts: 10, confirmed: false };
 
 const lc = (s) => (s || '').toLowerCase();
 
@@ -122,6 +125,12 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   // 0 = trial/initial (S0), 1 = first monthly (S1), … — NOT schedule.sequence.
   const failCycle = cyclesBilled;
 
+  // Trial OVERSTAYED (owner 2026-07-22, godwill): a captured trial (S0) whose scheduled S1 charge date has
+  // already PASSED but is still S0 → the first bill isn't succeeding (past the trial window). Derivable
+  // now (dueTimestamp < now) even without the retry-attempt field. Flags it at-risk instead of green S0.
+  const trialOverstayed = hasSettled && currentCycle === SEQ_TRIAL && status === 'active' && !canceled
+    && Number.isFinite(dueTs) && now > dueTs;
+
   let phase, phaseLabel, sCode, hasAccess = false, dunning = false;
 
   if (status === 'active' && canceled) {
@@ -147,7 +156,9 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
       // paying trial. Verified live 2026-07-22 (rakim: validate $0, schedule seq1 $49.98).
       phase = 'trial'; phaseLabel = 'Trial — initial charge NOT captured'; sCode = 'S0';
     } else if (currentCycle === SEQ_TRIAL) {
-      phase = 'trial'; phaseLabel = 'Trial'; sCode = 'S0';
+      phase = 'trial';
+      phaseLabel = trialOverstayed ? 'Trial — first bill (S1) overdue / not succeeding' : 'Trial';
+      sCode = 'S0';
     } else {
       phase = 'subscriber'; phaseLabel = `Subscriber — cycle ${currentCycle}`; sCode = `S${currentCycle}`;
     }
@@ -179,8 +190,8 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
       type: isRetry ? 'retry' : (cyc === SEQ_TRIAL ? 'trial-charge' : cyc <= 1 ? 'first-bill' : 'renewal'),
       // "of N" from the rules; BC's dueTimestamp already gave the next date. (BC full-cascade override, when
       // it ever appears in the schedule, would replace maxAttempts/remaining here.)
-      maxAttempts: isRetry ? RETRY_RULES.maxAttempts : null,
-      attemptsRemaining: isRetry ? Math.max(0, RETRY_RULES.maxAttempts - curRetry) : null,
+      maxAttempts: (isRetry && RETRY_RULES.confirmed) ? RETRY_RULES.maxAttempts : null,
+      attemptsRemaining: (isRetry && RETRY_RULES.confirmed) ? Math.max(0, RETRY_RULES.maxAttempts - curRetry) : null,
     };
   }
 
@@ -191,13 +202,13 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   // 'grace' = has access but at risk: dunning, cancel-at-period-end, OR a trial whose initial charge never
   // captured (the S0-failed cluster — kept around, BC about to attempt the full S1).
   const access = !hasAccess ? 'no'
-    : (dunning || phase === 'cancelled_active' || (phase === 'trial' && !hasSettled)) ? 'grace'
+    : (dunning || phase === 'cancelled_active' || (phase === 'trial' && !hasSettled) || trialOverstayed) ? 'grace'
     : 'yes';
   const accessLabel = access === 'yes' ? 'Has access' : access === 'grace' ? 'Has access (at risk)' : 'No access';
   const statusLine = `${accessLabel} · ${phaseLabel}${sCode !== '—' ? ` · ${sCode}` : ''}`;
 
   return {
-    sCode, phase, phaseLabel, hasAccess, dunning, access, accessLabel, statusLine,
+    sCode, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
     nextEvent,
