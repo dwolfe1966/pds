@@ -76,10 +76,14 @@ export function getPlanState(orders) {
 
   const active = paid.find(isActive);
   if (active) {
-    const collected = orderCollected(active);
-    const recurring = Number(active?.schedule?.data?.totalPrice?.amount ?? 0);
-    // Still in trial until a full recurring cycle has been billed.
-    const stillTrial = recurring > 0 ? collected < recurring : collected < 10;
+    // S0 (trial) vs S1+ (subscriber) — aligned with billingClassification (verified live 2026-07-22):
+    // read BC's schedule.sequence (the NEXT charge) — a trial's next charge is sequence 1, so seq<=1 is
+    // still S0; fall back to settled sale-count (the trial books as 1 fulfilled sale). Replaces the frozen
+    // `collected < recurring` heuristic that never converted anyone (100% stuck at "Trial").
+    const seq = active?.schedule?.data?.sequence;
+    const settledCount = (Array.isArray(active?.commercePayments) ? active.commercePayments : [])
+      .filter((p) => (p?.type || '').toLowerCase() === 'sale' && (p?.status || '').toLowerCase() === 'fulfilled').length;
+    const stillTrial = Number.isFinite(seq) ? seq <= 1 : settledCount <= 1;
     return stillTrial ? PLAN_STATES.trial : PLAN_STATES.subscriber;
   }
   // No active order left — a settled refund beats cancelled/expired for display

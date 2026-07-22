@@ -9,6 +9,7 @@ import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, 
 import { useZipCity } from './zipCity';
 import { useAuth } from '../../context/AuthContext';
 import BillingLifecyclePanel from './BillingLifecyclePanel';
+import { classifyBilling } from './billingClassification';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -1284,6 +1285,8 @@ const UserDetailPage = () => {
   const initials  = getInitials(user);
   const status    = getStatus(user);
   const plan      = ordersLoading ? null : getPlanState(orders);
+  // S-code for the header — from the primary (active, else most recent) order, so header/list/panel agree.
+  const headerBilling = ordersLoading ? null : classifyBilling(orders.find((o) => (o.status || '').toLowerCase() === 'active') || orders[0] || null);
   const joinDate  = formatDate(user?.createdAt);
   const isSuspended = isSuspendedStatus(status);
 
@@ -1359,6 +1362,14 @@ const UserDetailPage = () => {
                 style={{ color: plan.color, background: plan.bg, padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}
               >
                 {plan.label}
+              </span>
+            )}
+            {headerBilling && headerBilling.sCode !== '—' && (
+              <span
+                title={`Billing lifecycle: ${headerBilling.phaseLabel}. See the Orders tab for what happens next.`}
+                style={{ color: '#3730a3', background: '#eef2ff', border: '1px solid #c7d2fe', padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 800 }}
+              >
+                {headerBilling.sCode}
               </span>
             )}
           </div>
