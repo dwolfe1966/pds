@@ -11,6 +11,25 @@ import { useAuth } from '../../context/AuthContext';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
+// getAutoLoginUrl returns BC's standard wrapped response — the { url } payload can sit at the top
+// level, under getData(), or under params.response.data depending on how far it was unwrapped. Dig for
+// it: a `url` field, else the first loginLink-looking string. Depth-capped to avoid cycles.
+function findLoginUrl(o, depth = 0) {
+  if (o == null || depth > 5) return null;
+  if (typeof o === 'string') return /^https?:\/\/\S*loginLink/i.test(o) ? o : null;
+  if (typeof o !== 'object') return null;
+  if (typeof o.url === 'string' && /^https?:\/\//.test(o.url)) return o.url;
+  if (typeof o.getData === 'function') {
+    try { const u = findLoginUrl(o.getData(), depth + 1); if (u) return u; } catch { /* ignore */ }
+  }
+  for (const k of Object.keys(o)) {
+    if (k === 'getData') continue;
+    const u = findLoginUrl(o[k], depth + 1);
+    if (u) return u;
+  }
+  return null;
+}
+
 function getInitials(user) {
   if (!user) return '?';
   if (user.firstName) {
@@ -674,7 +693,7 @@ const UserDetailPage = () => {
     setImpersonating(true);
     try {
       const res = await api.adminGetAutoLoginUrl(id, '/dashboard');
-      const url = res?.url || res?.data?.url || (typeof res?.getData === 'function' ? res.getData()?.url : null);
+      const url = findLoginUrl(res);
       if (!url) throw new Error('No login URL returned by BC.');
       // Show the link in an in-app modal (visible, no popup-blocker) — CSR clicks Open/Copy there.
       // The URL is a live bearer credential: held only in ephemeral React state, never persisted.
