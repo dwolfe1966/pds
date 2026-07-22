@@ -101,6 +101,10 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const nextRetry = Number.isFinite(sch?.data?.retry) ? sch.data.retry : 0;
   const dueTs = Number.isFinite(sch?.dueTimestamp) ? sch.dueTimestamp : null;
   const nextAmount = sch?.data?.totalPrice?.amount ?? null;
+  // Current retry attempt: prefer the ORDER's own counter (transient.sequenced.retry) — a cascading order
+  // can carry retry>0 here while schedule.data.retry reads 0 (verified shapes 2026-07-22, Cassie/Tera).
+  // This drives dunning detection so the ISF trial cascade isn't missed.
+  const curRetry = Number.isFinite(order?.transient?.sequenced?.retry) ? order.transient.sequenced.retry : nextRetry;
 
   const card = cardProfile(order);
   const refunded = orderIsRefunded(order);
@@ -123,13 +127,13 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   if (status === 'active' && canceled) {
     phase = 'cancelled_active'; phaseLabel = 'Cancelled — access remains'; hasAccess = true;
     sCode = currentCycle === SEQ_TRIAL ? 'S0' : `S${currentCycle}`;
-  } else if (status === 'active' && nextRetry > 0) {
+  } else if (status === 'active' && curRetry > 0) {
     // DUNNING — checked BEFORE the no-settled case. The big cluster (owner 2026-07-22): an initial trial
     // (S0) payment FAILED but we keep them and keep retrying (ISF cascade). No payment captured yet, but
     // actively retrying the INITIAL charge → S0.x, and the next attempt is the trial/initial charge —
     // never a "full S1 charge". Also covers S1.x+ renewal-bill retries.
     phase = 'dunning'; dunning = true; hasAccess = true;
-    sCode = `S${failCycle}.${nextRetry}`;
+    sCode = `S${failCycle}.${curRetry}`;
     phaseLabel = failCycle === 0 ? 'Trial/initial charge failed — retrying'
       : failCycle === 1 ? 'First monthly bill failed — retrying'
       : `Cycle ${failCycle} bill failed — retrying`;
@@ -163,17 +167,18 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   if (phase === 'cancelled_active' && dueTs) {
     nextEvent = { type: 'access-ends', date: dueTs, amount: null, cycle: null, retry: 0, isRetry: false };
   } else if (canBill && dueTs) {
-    const isRetry = nextRetry > 0;
+    const isRetry = curRetry > 0;
     // For a retry, the failing charge is the next UNCAPTURED one (failCycle) — NOT schedule.sequence, which
     // may point ahead (an uncaptured S0 whose schedule reads S1). This is the rakim/amyjo fix.
     const cyc = isRetry ? failCycle : (Number.isFinite(nextSeq) ? nextSeq : failCycle);
     nextEvent = {
-      date: dueTs, amount: nextAmount, cycle: cyc, retry: nextRetry, isRetry,
-      type: isRetry ? 'retry' : (cyc === SEQ_TRIAL ? 'trial-charge' : 'renewal'),
+      date: dueTs, amount: nextAmount, cycle: cyc, retry: curRetry, isRetry,
+      // cyc 0 = the trial/initial charge; cyc 1 = the S0→S1 first bill (converts to subscriber); ≥2 = renewal.
+      type: isRetry ? 'retry' : (cyc === SEQ_TRIAL ? 'trial-charge' : cyc <= 1 ? 'first-bill' : 'renewal'),
       // "of N" from the rules; BC's dueTimestamp already gave the next date. (BC full-cascade override, when
       // it ever appears in the schedule, would replace maxAttempts/remaining here.)
       maxAttempts: isRetry ? RETRY_RULES.maxAttempts : null,
-      attemptsRemaining: isRetry ? Math.max(0, RETRY_RULES.maxAttempts - nextRetry) : null,
+      attemptsRemaining: isRetry ? Math.max(0, RETRY_RULES.maxAttempts - curRetry) : null,
     };
   }
 
@@ -191,6 +196,33 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     card, earlyCancel, refunded,
     nextEvent,
     raw: { status, subStatus: lc(order.subStatus), nextSeq, nextRetry, dueTs, nextAmount },
+  };
+}
+
+// getCustomerStatus(user, orders) — the SINGLE access-first status (taxonomy redesign, owner 2026-07-22):
+// one answer to "does this customer have access, and why". Folds the account axis (BC 'blocked' → no
+// access, overrides billing) and picks the authoritative order (active, else most recent). Replaces the
+// old two-axis account-status + plan-status + loose S-code.
+//   access: 'yes' (active/healthy) | 'grace' (has access but at-risk/ending) | 'no'
+export function getCustomerStatus(user, orders) {
+  const list = Array.isArray(orders) ? orders : [];
+  const acct = lc(user?.status || user?.transient?.status || '');
+  const suspended = acct === 'blocked' || acct === 'suspended' || acct === 'banned';
+  const primary = list.find((o) => lc(o?.status) === 'active') || list[0] || null;
+  const billing = primary ? classifyBilling(primary) : null;
+
+  // Suspension overrides billing — a blocked account has no access regardless of subscription state.
+  if (suspended) {
+    return { access: 'no', tone: 'suspended', accessLabel: 'No access', reason: 'Suspended (account blocked)',
+      sCode: billing?.sCode ?? null, nextEvent: null, billing };
+  }
+  if (!billing) {
+    return { access: 'no', tone: 'none', accessLabel: 'No access', reason: list.length ? 'No settled payment' : 'Signup only (no orders)',
+      sCode: null, nextEvent: null, billing: null };
+  }
+  return {
+    access: billing.access, tone: billing.phase, accessLabel: billing.accessLabel,
+    reason: billing.phaseLabel, sCode: billing.sCode, nextEvent: billing.nextEvent, billing,
   };
 }
 

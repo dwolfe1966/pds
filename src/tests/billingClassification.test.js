@@ -1,4 +1,4 @@
-import { classifyBilling, settledSales, cardProfile, billingTimeline } from '../pages/admin/billingClassification';
+import { classifyBilling, settledSales, cardProfile, billingTimeline, getCustomerStatus } from '../pages/admin/billingClassification';
 
 // Minimal BC-order fixtures matching the documented shapes (docs/admin/csr-billing-classification-spec.md).
 const sale = (amount = 39.01, status = 'fulfilled') => ({ type: 'sale', status, transient: { amount: { total: amount } }, createdTimestamp: 1_700_000_000_000 });
@@ -13,7 +13,7 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.sCode).toBe('S0');
     expect(c.phase).toBe('trial');
     expect(c.hasAccess).toBe(true);
-    expect(c.nextEvent.type).toBe('renewal');
+    expect(c.nextEvent.type).toBe('first-bill'); // S0→S1 first charge (converts to subscriber)
     expect(c.nextEvent.isRetry).toBe(false);
   });
 
@@ -33,6 +33,25 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.dunning).toBe(true);
     expect(c.nextEvent.isRetry).toBe(true);
     expect(c.nextEvent.retry).toBe(2);
+  });
+
+  test('LIVE Cassie Happy Path S0: captured $1 trial, next is the first bill (converts), not a renewal', () => {
+    const o = {
+      status: 'active',
+      commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1 }, createdTimestamp: Date.parse('2026-07-21T09:43:13Z') }],
+      commerceTokens: [{ lastDigits: '3797', transient: { bin: { brand: 'VISA', type: 'DEBIT', level: 'CLASSIC', extra: { cpd: 'debit' } } } }],
+      transient: { sequenced: { sequence: 0, retry: 0 }, amount: { collected: 1 } },
+      schedule: { dueTimestamp: 1785245413404, data: { sequence: 1, retry: 0, totalPrice: { amount: 49.98 } } },
+      orderHistories: [{ status: 'active', statusReason: 'SuccessfulTx', createdAt: '2026-07-21T09:43:15Z' }],
+    };
+    const c = classifyBilling(o);
+    expect(c.sCode).toBe('S0');
+    expect(c.phase).toBe('trial');
+    expect(c.access).toBe('yes');
+    expect(c.card.cpd).toBe('D');                 // Green Dot debit
+    expect(c.nextEvent.type).toBe('first-bill');  // NOT 'renewal'
+    expect(c.nextEvent.cycle).toBe(1);
+    expect(c.nextEvent.amount).toBe(49.98);
   });
 
   test('S0-cluster: initial trial payment failed, no capture, actively retrying → S0.2 (not S1)', () => {
@@ -142,6 +161,25 @@ describe('classifyBilling — S-code lifecycle', () => {
     };
     const c = classifyBilling(o);
     expect(c.earlyCancel).toBe('C0');
+  });
+});
+
+describe('getCustomerStatus — single access-first status', () => {
+  const trialOrder = { status: 'active', commercePayments: [sale(1)], schedule: schedule(1, 0) };
+  test('suspended account overrides billing → no access', () => {
+    const s = getCustomerStatus({ status: 'blocked' }, [trialOrder]);
+    expect(s.access).toBe('no');
+    expect(s.reason).toMatch(/suspend|block/i);
+  });
+  test('active trial → has access', () => {
+    const s = getCustomerStatus({ status: 'active' }, [trialOrder]);
+    expect(s.access).toBe('yes');
+    expect(s.sCode).toBe('S0');
+  });
+  test('no orders → no access, signup only', () => {
+    const s = getCustomerStatus({ status: 'active' }, []);
+    expect(s.access).toBe('no');
+    expect(s.reason).toMatch(/signup|no orders/i);
   });
 });
 

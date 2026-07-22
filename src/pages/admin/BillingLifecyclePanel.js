@@ -39,7 +39,7 @@ export default function BillingLifecyclePanel({ order }) {
         ? `No further charges — access continues until ${fmtDate(ne.date)}, then expires`
         : ne.isRetry
           ? `Retry ${ne.retry}${ne.maxAttempts ? ` of ${ne.maxAttempts}` : ''} of the ${ne.cycle === 0 ? 'trial/initial charge' : ne.cycle === 1 ? 'first monthly charge' : `cycle-${ne.cycle} charge`} on ${fmtDate(ne.date)}${ne.amount != null ? ` · ${fmtMoney(ne.amount)}` : ''}${ne.attemptsRemaining != null ? ` · ${ne.attemptsRemaining} left before auto-cancel` : ' · auto-cancels if retries exhaust'}`
-          : `${ne.type === 'trial-charge' ? 'Initial/trial charge' : 'Renewal'} ${fmtMoney(ne.amount)} on ${fmtDate(ne.date)}${ne.cycle != null ? ` · cycle ${ne.cycle}` : ''}`)
+          : `${ne.type === 'trial-charge' ? 'Initial/trial charge' : ne.type === 'first-bill' ? 'First bill (converts to subscriber)' : 'Renewal'} ${fmtMoney(ne.amount)} on ${fmtDate(ne.date)}${ne.cycle != null ? ` · cycle ${ne.cycle}` : ''}`)
     : (c.phase === 'cancelled_active'
         ? 'No further charges — access continues until the period ends, then expires'
         : 'No upcoming billing event');
