@@ -171,8 +171,10 @@ describe('classifyBilling — S-code lifecycle', () => {
     const c = classifyBilling(o);
     expect(c.phase).toBe('order_suspended');
     expect(c.access).toBe('no');
-    expect(c.phaseLabel).toMatch(/suspended.*fraud/i);
-    expect(c.nextEvent).toBeNull();              // no forecast — BC stopped (no retry on fraud)
+    expect(c.fraudStop).toBe(true);
+    expect(c.phaseLabel).toMatch(/fraud/i);
+    expect(c.stateName).toBe('Fraud stop');
+    expect(c.nextEvent).toBeNull();              // no forecast — stopped (no retry on fraud)
   });
 
   test('expired: inactive + subStatus expired', () => {

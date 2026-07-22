@@ -193,11 +193,15 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   } else if (!hasSettled) {
     phase = 'payment_failed'; phaseLabel = 'No settled payment'; sCode = '—';
   } else if (lc(order.subStatus) === 'suspended') {
-    // Order-level suspend (distinct from account 'blocked'): BC suspended the order after a hard decline —
-    // e.g. S1 rejected '59:Suspected Fraud' → no retry, no schedule (christenbury 2026-07-22). Say WHY.
+    // Order-level suspend (distinct from account 'blocked'): the sequence was STOPPED after a hard decline —
+    // e.g. S1 rejected '59:Suspected Fraud' → no retry, no schedule (christenbury/amyjo 2026-07-22). When
+    // it's fraud we call it out distinctly (owner: "we have to note it").
     const why = latestDecline(order);
+    const isFraud = /fraud/i.test(why || '');
     phase = 'order_suspended';
-    phaseLabel = why ? `Suspended — payment declined (${why})` : 'Suspended — payment declined';
+    phaseLabel = isFraud
+      ? `Stopped — suspected fraud${why ? ` (${why})` : ''}`
+      : (why ? `Suspended — payment declined (${why})` : 'Suspended — payment declined');
     sCode = `S${currentCycle}`;
   } else if (canceled) {
     phase = 'cancelled_ended'; phaseLabel = 'Cancelled — ended'; sCode = `S${currentCycle}`;
@@ -257,6 +261,8 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
 
   // Decline reason (surfaced when it explains the state: dunning / suspended / overstayed).
   const declineReason = (dunning || phase === 'order_suspended' || trialOverstayed) ? latestDecline(order) : null;
+  // Fraud stop — the sequence was halted for suspected fraud (owner: must be noted distinctly).
+  const fraudStop = phase === 'order_suspended' && /fraud/i.test(declineReason || '');
 
   // Plain-English "what to expect next" — phase-aware, incorporating the decline type.
   const $ = (a) => `$${Number(a || 0).toFixed(2)}`;
@@ -302,7 +308,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     : access === 'grace' ? { level: 'Medium', tone: 'yellow' }
     : { level: 'High', tone: 'red' };
   const STATE_NAME = { trial: 'Trial', subscriber: 'Subscriber', dunning: 'Retrying charge', cancelled_active: 'Cancelled', cancelled_ended: 'Cancelled', expired: 'Expired', refunded: 'Refunded', order_suspended: 'Suspended', payment_failed: 'Unpaid' };
-  const stateName = STATE_NAME[phase] || phase;
+  const stateName = fraudStop ? 'Fraud stop' : (STATE_NAME[phase] || phase);
   const latestEvent = latestChargeEvent(order);
   const nextEventShort = nextEvent
     ? (nextEvent.type === 'access-ends' ? `Access ends ${dstr(nextEvent.date)}`
@@ -314,7 +320,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     sCode, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
-    nextEvent, expectation, declineReason, money, memberDays, subscriberDays,
+    nextEvent, expectation, declineReason, fraudStop, money, memberDays, subscriberDays,
     risk, stateName, latestEvent, nextEventShort,
     raw: { status, subStatus: lc(order.subStatus), nextSeq, nextRetry, dueTs, nextAmount },
   };
@@ -352,7 +358,7 @@ export function getCustomerStatus(user, orders) {
     expectation: billing.expectation, money: billing.money, memberDays: billing.memberDays,
     subscriberDays: billing.subscriberDays,
     risk: billing.risk, stateName: billing.stateName, latestEvent: billing.latestEvent, nextEventShort: billing.nextEventShort,
-    billing,
+    fraudStop: billing.fraudStop, billing,
   };
 }
 
