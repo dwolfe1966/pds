@@ -19,6 +19,39 @@ forecast its next move**. What the engine does (owner):
   charge fails, **retry up to 10 times** before giving up.
 - **Failure codes** — decline/failure reasons classified as **C1, D1, …** (C-series / D-series).
 
+## 1b. ✅ AUTHORITATIVE DEFINITIONS (legacy KPI deck + master P&L CSV, received 2026-07-22)
+Source: `docs/legacy/kpi1.jpeg` (Customer Lifecycle Terminology), `kpi2.jpeg` (Business KPIs),
+`kpi3.jpeg` (lifecycle state-machine diagram), `Copy of Mocked up KPI - C W.csv` (weekly master P&L by
+partner). These ARE the definitions — no longer guessed.
+
+**Lifecycle state machine (kpi3):** `Sale → Trial Period → Membership → Cancel`
+`Ads → Clicks → Signup(S0) → 5-day trial → 1st Bill(S1) → 2nd Bill(S2) → S3+ → Cancel Membership →
+Remaining Membership (still has access) → Expired (no access)`
+
+**Terminology (kpi1):**
+- **S0** = a **signup/conversion** — card + trial fee (typically 5-day / $1.00). User becomes a member.
+- **S1.0** = stayed through trial → **first month charged** ($39.97, billed **in advance**).
+- **S1.x** = **retry sequence on a failed S1.0**: `S1.1` = 1st retry, `S1.2` = 2nd, … `S1.x` = all retries;
+  after retries exhaust the **system auto-cancels** the member. (Generalizes to `Sn.m` = retry *m* on the
+  month-*n* bill — kpi3 shows the retry box for the $39.97 first bill; the CSV carries S1.x…S9.x.)
+- **C0** = customer cancels **within day 1** (poor first impression signal).
+- **C1** = customer cancels **before the first monthly charge is attempted**.
+- **Decline** = member through trial, but the monthly billing attempt **fails** (ISF / issuer decline).
+- **Identity:** **`S0 = S1.0 + C0 + C1 + Declines`** (every trial resolves into exactly one of these).
+
+**Business KPIs (kpi2):** Sales=S0 · CPA=cost per S0 · **LTV/GSR**=gross subscription revenue ($1 trial +
+$39.97/mo) · **Retention**=% of trial members still paying each month (S1.0 + S1.x predict cohort revenue) ·
+Cancels · Refunds/Chargebacks (CS request OR bank chargeback).
+
+**Master P&L CSV** = weekly time-series **by Partner** (Campaign Group). Metric rows enumerate the full
+taxonomy we must support: `S0#`, `S1.0%`, `S1.x%`, `S2.x%`…`S9.x%` (retention by month/tier), `C0+C1%`,
+`casD%` / `S1.x casD%` / `S2.x casD%` (cascade decline), `cpd-C% / cpd-P% / cpd-D%` (chargeback/decline by
+**C/P/D** family) + `S1.x cpd-*`, `3ds%`, and financials (GSR, CPA, eCPA, EBITDA, Contribution Margin, Var
+Costs). This is also the **validation oracle** — our CSR rollups should reconcile to these definitions.
+
+**Two grains this serves:** (a) **per-customer** CSR view (this doc's build) = one member's current S-code +
+next event; (b) **aggregate** KPI/P&L (the CSV) = partner cohort rollups. Same taxonomy, two grains.
+
 ## 2. The classification scheme (S-codes) — mirror EXACTLY
 Owner's definitions (confirm the full enumerated list — this is the seed):
 - **S0** = **Trial** (in the 7-day trial window).
