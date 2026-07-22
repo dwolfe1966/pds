@@ -182,6 +182,16 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Prefill the topic when a CA member is redirected here to cancel (HP-4: ?topic=cancel).
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      if (new URLSearchParams(window.location.search).get('topic') === 'cancel') {
+        setForm((f) => (f.reason ? f : { ...f, reason: 'Cancel subscription' }));
+      }
+    } catch { /* ignore */ }
+  }, [isOpen]);
   const [threadUrl, setThreadUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -342,6 +352,7 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
                 <option value="">Select a Topic</option>
                 <option value="Privacy">Privacy</option>
                 <option value="Remove my information">Remove my information</option>
+                <option value="Cancel subscription">Cancel subscription</option>
                 <option value="Billing question">Billing question</option>
                 <option value="Technical support">Technical support</option>
                 <option value="General inquiry">General inquiry</option>
