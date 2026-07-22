@@ -9,7 +9,7 @@ import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, 
 import { useZipCity } from './zipCity';
 import { useAuth } from '../../context/AuthContext';
 import BillingLifecyclePanel from './BillingLifecyclePanel';
-import { classifyBilling } from './billingClassification';
+import { classifyBilling, getCustomerStatus } from './billingClassification';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -1306,6 +1306,8 @@ const UserDetailPage = () => {
   const plan      = ordersLoading ? null : getPlanState(orders);
   // S-code for the header — from the primary (active, else most recent) order, so header/list/panel agree.
   const headerBilling = ordersLoading ? null : classifyBilling(orders.find((o) => (o.status || '').toLowerCase() === 'active') || orders[0] || null);
+  // Single access-first status (taxonomy redesign) — folds account suspension + billing into one.
+  const custStatus = ordersLoading ? null : getCustomerStatus(user, orders);
   const joinDate  = formatDate(user?.createdAt);
   const isSuspended = isSuspendedStatus(status);
 
@@ -1364,33 +1366,23 @@ const UserDetailPage = () => {
           <h2 className={styles.profileName}>{name || '—'}</h2>
           <p className={styles.profileEmail}>{user?.email || '—'}</p>
 
+          {/* SINGLE access-first status (taxonomy redesign 2026-07-22): one chip = access + why + S-code,
+              replacing the old two-axis account+plan+S-code chips. Suspension folded in (blocked → no access). */}
           <div className={styles.badgeRow}>
-            {/* Account chip only when it carries information (suspended). A plain
-                'Active' next to 'Expired'/'Cancelled' read as a contradiction —
-                account status and subscription state are different dimensions
-                (bug list 7/2 #9/#10; docs/design/customer-state-model.md §3). */}
-            {isSuspended && (
-              <span title={CSR_TERMS.suspended} className={styles.badgeSuspended}>
-                Suspended
-              </span>
-            )}
-            {plan && (
-              <span
-                title={CSR_TERMS[plan.key]}
-                className={styles.badge}
-                style={{ color: plan.color, background: plan.bg, padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}
-              >
-                {plan.label}
-              </span>
-            )}
-            {headerBilling && headerBilling.sCode !== '—' && (
-              <span
-                title={`Billing lifecycle: ${headerBilling.phaseLabel}. See the Orders tab for what happens next.`}
-                style={{ color: '#3730a3', background: '#eef2ff', border: '1px solid #c7d2fe', padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 800 }}
-              >
-                {headerBilling.sCode}
-              </span>
-            )}
+            {custStatus && (() => {
+              const tone = custStatus.access === 'yes' ? { bg: '#d1fae5', fg: '#065f46', dot: '#059669' }
+                : custStatus.access === 'grace' ? { bg: '#fef3c7', fg: '#92400e', dot: '#d97706' }
+                : { bg: '#fee2e2', fg: '#991b1b', dot: '#dc2626' };
+              return (
+                <span
+                  title="Access + reason. See the Orders tab for what happens next."
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: tone.bg, color: tone.fg, padding: '4px 12px', borderRadius: 999, fontSize: '0.8rem', fontWeight: 800 }}
+                >
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: tone.dot }} />
+                  {custStatus.accessLabel} · {custStatus.reason}{custStatus.sCode && custStatus.sCode !== '—' ? ` · ${custStatus.sCode}` : ''}
+                </span>
+              );
+            })()}
           </div>
 
           <div className={styles.metaTable}>

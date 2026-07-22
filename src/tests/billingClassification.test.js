@@ -54,6 +54,23 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent.amount).toBe(49.98);
   });
 
+  test('LIVE rakim S0-failed: validate-only ($0), no capture, BC scheduled $49.98 → S0 at-risk, first-bill', () => {
+    const o = {
+      status: 'active',
+      commercePayments: [{ type: 'validate', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 0 } }],
+      transient: { sequenced: { sequence: 0, retry: 0 } },
+      schedule: { dueTimestamp: 1785159000479, data: { sequence: 1, retry: 0, totalPrice: { amount: 49.98 } } },
+      orderHistories: [{ status: 'active', statusReason: 'SuccessfulTx' }],
+    };
+    const c = classifyBilling(o);
+    expect(c.sCode).toBe('S0');
+    expect(c.phase).toBe('trial');
+    expect(c.access).toBe('grace');            // at-risk: initial charge never captured
+    expect(c.phaseLabel).toMatch(/not captured/i);
+    expect(c.nextEvent.type).toBe('first-bill'); // BC scheduled the $49.98 S1 charge
+    expect(c.nextEvent.amount).toBe(49.98);
+  });
+
   test('S0-cluster: initial trial payment failed, no capture, actively retrying → S0.2 (not S1)', () => {
     // rakim/amyjo/moninoso cluster: schedule.sequence ran ahead to 1, but NOTHING captured → still S0.
     const o = {

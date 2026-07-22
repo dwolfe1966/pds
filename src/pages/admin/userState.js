@@ -125,7 +125,7 @@ function runQueued(fn) {
 // views don't keep showing the pre-mutation state for the rest of the session
 // (bug list 7/2 #8: directory said Trial after a refund).
 export function invalidatePlanState(userId) {
-  if (userId) planCache.delete(userId);
+  if (userId) { planCache.delete(userId); ordersCache.delete(userId); }
 }
 
 export async function fetchPlanState(userId) {
@@ -134,10 +134,27 @@ export async function fetchPlanState(userId) {
   try {
     const res = await runQueued(() => api.adminListPurchases({ userId }));
     const orders = res?.data ?? res?.orders ?? (Array.isArray(res) ? res : []);
+    ordersCache.set(userId, orders);
     const plan = getPlanState(orders);
     planCache.set(userId, plan);
     return plan;
   } catch {
     return null; // unknown — leave blank, don't cache the failure
+  }
+}
+
+// Raw orders for a user (cached) — lets the Users list compute the single getCustomerStatus (which needs
+// the order set + the user's account status). Shares the fetch/cache with fetchPlanState.
+const ordersCache = new Map();
+export async function fetchUserOrders(userId) {
+  if (!userId) return [];
+  if (ordersCache.has(userId)) return ordersCache.get(userId);
+  try {
+    const res = await runQueued(() => api.adminListPurchases({ userId }));
+    const orders = res?.data ?? res?.orders ?? (Array.isArray(res) ? res : []);
+    ordersCache.set(userId, orders);
+    return orders;
+  } catch {
+    return [];
   }
 }

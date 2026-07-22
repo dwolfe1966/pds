@@ -3,7 +3,8 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { isValidEmail } from '../../utils/email';
 import styles from './UsersPage.module.css';
-import { fetchPlanState, PLAN_STATES, CSR_TERMS } from './userState';
+import { fetchPlanState, fetchUserOrders, PLAN_STATES, CSR_TERMS } from './userState';
+import { getCustomerStatus } from './billingClassification';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -43,16 +44,29 @@ function StatusBadge({ status }) {
 // Plan state (Free/Trial/Subscriber/Cancelled/Expired). The list user objects don't carry
 // order data, so this lazy-loads the user's orders on mount (throttled + cached in
 // userState.js) and derives the true plan — replacing the old always-"Pro" guess.
-function PlanBadge({ userId }) {
-  const [plan, setPlan] = useState(null);
+// Single access-first billing status for the list (taxonomy redesign 2026-07-22): the S-code coloured by
+// access (green=has / amber=at-risk / red=none), full "access · reason · Scode" in the tooltip. Folds
+// account suspension (blocked → no access). Lazy-loads the user's orders (throttled + cached in userState).
+function PlanBadge({ user }) {
+  const uid = user?._id || user?.id;
+  const [orders, setOrders] = useState(null);
   useEffect(() => {
     let live = true;
-    fetchPlanState(userId).then((p) => { if (live) setPlan(p); });
+    fetchUserOrders(uid).then((o) => { if (live) setOrders(o); });
     return () => { live = false; };
-  }, [userId]);
-  const base = { padding: '2px 9px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' };
-  if (!plan) return <span className={styles.badge} style={{ ...base, opacity: 0.4 }}>…</span>;
-  return <span title={CSR_TERMS[plan.key]} className={styles.badge} style={{ ...base, color: plan.color, background: plan.bg }}>{plan.label}</span>;
+  }, [uid]);
+  const base = { padding: '2px 9px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 };
+  if (orders === null) return <span className={styles.badge} style={{ ...base, opacity: 0.4 }}>…</span>;
+  const s = getCustomerStatus(user, orders);
+  const tone = s.access === 'yes' ? { bg: '#d1fae5', fg: '#065f46', dot: '#059669' }
+    : s.access === 'grace' ? { bg: '#fef3c7', fg: '#92400e', dot: '#d97706' }
+    : { bg: '#fee2e2', fg: '#991b1b', dot: '#dc2626' };
+  return (
+    <span title={`${s.accessLabel} · ${s.reason}`} className={styles.badge} style={{ ...base, color: tone.fg, background: tone.bg }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: tone.dot }} />
+      {s.sCode && s.sCode !== '—' ? s.sCode : s.accessLabel}
+    </span>
+  );
 }
 
 function SkeletonCard() {
@@ -79,7 +93,7 @@ function CustomerCard({ user }) {
         <h3 className={styles.customerName}>{name}</h3>
         <div className={styles.badgeRow}>
           <StatusBadge status={status} />
-          <PlanBadge userId={uid} />
+          <PlanBadge user={user} />
         </div>
       </div>
 
@@ -541,7 +555,7 @@ const UsersPage = () => {
                     <td className={styles.td}>{name}</td>
                     <td className={styles.td}>{u.email || '—'}</td>
                     <td className={styles.td}><StatusBadge status={status} /></td>
-                    <td className={styles.td}><PlanBadge userId={uid} /></td>
+                    <td className={styles.td}><PlanBadge user={u} /></td>
                     <td className={styles.td}>{formatDate(u.createdAt)}</td>
                     <td className={styles.td}>
                       <Link to={`/users/${uid}`} className={styles.tableViewBtn}>Details</Link>

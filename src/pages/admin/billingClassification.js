@@ -142,8 +142,10 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   } else if (status === 'active') {
     hasAccess = true;
     if (!hasSettled) {
-      // Active, nothing captured, not in a retry — trial provisioned, initial charge still pending.
-      phase = 'trial'; phaseLabel = 'Trial — initial charge pending'; sCode = 'S0';
+      // Active, NOTHING captured (only a $0 'validate', or a failed initial) — the S0-failed cluster.
+      // Kept around; BC has typically scheduled the full S1 ($49.98) next. Flag it as at-risk, not a clean
+      // paying trial. Verified live 2026-07-22 (rakim: validate $0, schedule seq1 $49.98).
+      phase = 'trial'; phaseLabel = 'Trial — initial charge NOT captured'; sCode = 'S0';
     } else if (currentCycle === SEQ_TRIAL) {
       phase = 'trial'; phaseLabel = 'Trial'; sCode = 'S0';
     } else {
@@ -186,7 +188,11 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   // that says access / no-access + why. 'grace' = has access but something is wrong/ending (dunning or
   // cancel-at-period-end). NOTE: account-level suspension (BC 'blocked') is NOT visible here (order-only) —
   // the caller must let a suspended account override this to no-access. See getCustomerStatus (planned).
-  const access = !hasAccess ? 'no' : (dunning || phase === 'cancelled_active') ? 'grace' : 'yes';
+  // 'grace' = has access but at risk: dunning, cancel-at-period-end, OR a trial whose initial charge never
+  // captured (the S0-failed cluster — kept around, BC about to attempt the full S1).
+  const access = !hasAccess ? 'no'
+    : (dunning || phase === 'cancelled_active' || (phase === 'trial' && !hasSettled)) ? 'grace'
+    : 'yes';
   const accessLabel = access === 'yes' ? 'Has access' : access === 'grace' ? 'Has access (at risk)' : 'No access';
   const statusLine = `${accessLabel} · ${phaseLabel}${sCode !== '—' ? ` · ${sCode}` : ''}`;
 
