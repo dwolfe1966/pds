@@ -201,6 +201,7 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
       const reason = String(h?.statusReason || '').toLowerCase();
       let kind = null, label = null;
       if (sub === 'canceled' || sub === 'cancelled') { kind = 'canceled'; label = 'Subscription canceled'; }
+      else if (sub === 'suspended') { kind = 'canceled'; label = 'Order suspended'; }
       else if (sub === 'expired' && /refund/.test(reason)) { kind = 'refund'; label = 'Refunded — order ended'; }
       else if (sub === 'expired') { kind = 'canceled'; label = 'Subscription expired'; }
       if (!kind || !h?.createdAt) continue;
@@ -208,6 +209,16 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
       if (seenTx.has(key)) continue;
       seenTx.add(key);
       add(h.createdAt, kind, label, `Order …${oid}${h.updaterName ? ` · by ${h.updaterName}` : ''}`);
+    }
+    // The current terminal subStatus may NOT be a discrete orderHistories entry (e.g. a suspend after a
+    // fraud decline). Emit it from the order itself so cancel/suspend/expire always appear on the timeline.
+    const curSub = String(o?.subStatus || '').toLowerCase();
+    if (curSub === 'suspended' || curSub === 'canceled' || curSub === 'cancelled' || curSub === 'expired') {
+      const ts = o?.updatedTimestamp || (o?.updatedAt ? new Date(o.updatedAt).getTime() : null);
+      const kind = 'canceled';
+      const label = curSub === 'suspended' ? 'Order suspended' : curSub === 'expired' ? 'Subscription expired' : 'Subscription canceled';
+      const key = `${ts}|${kind}|${oid}`;
+      if (ts && !seenTx.has(key)) { seenTx.add(key); add(o.updatedAt || new Date(ts).toISOString(), kind, label, `Order …${oid}`); }
     }
   }
   for (const l of logins || []) {
@@ -1377,39 +1388,39 @@ const UserDetailPage = () => {
           <h2 className={styles.profileName}>{name || '—'}</h2>
           <p className={styles.profileEmail}>{user?.email || '—'}</p>
 
-          {/* SINGLE access-first status (taxonomy redesign 2026-07-22): one chip = access + why + S-code,
-              replacing the old two-axis account+plan+S-code chips. Suspension folded in (blocked → no access). */}
-          <div className={styles.badgeRow}>
-            {custStatus && (() => {
-              const tone = custStatus.access === 'yes' ? { bg: '#d1fae5', fg: '#065f46', dot: '#059669' }
-                : custStatus.access === 'grace' ? { bg: '#fef3c7', fg: '#92400e', dot: '#d97706' }
-                : { bg: '#fee2e2', fg: '#991b1b', dot: '#dc2626' };
-              return (
-                <span
-                  title="Access + reason. See the Orders tab for what happens next."
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: tone.bg, color: tone.fg, padding: '4px 12px', borderRadius: 999, fontSize: '0.8rem', fontWeight: 800 }}
-                >
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: tone.dot }} />
-                  {custStatus.accessLabel} · {custStatus.reason}{custStatus.sCode && custStatus.sCode !== '—' ? ` · ${custStatus.sCode}` : ''}
-                </span>
-              );
-            })()}
-          </div>
-
-          {/* One plain-English expectation + a compact money/tenure line — keep the vCard simple. */}
-          {custStatus && custStatus.expectation && (
-            <p style={{ fontSize: '0.82rem', color: custStatus.access === 'no' ? '#991b1b' : '#4b5563', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.35 }}>
-              {custStatus.expectation}
-            </p>
-          )}
-          {custStatus && custStatus.money && (
-            <p style={{ fontSize: '0.76rem', color: custStatus.money.capturedAny ? '#6b7280' : '#9a3412', margin: '4px 0 0', textAlign: 'center' }}>
-              💰 {custStatus.money.capturedAny ? `Captured $${custStatus.money.collected.toFixed(2)}` : 'No money captured'}
-              {custStatus.money.refunded > 0 ? ` · Refunded $${custStatus.money.refunded.toFixed(2)}` : ''}
-              {custStatus.memberDays != null ? ` · Member ${custStatus.memberDays}d` : ''}
-              {custStatus.subscriberDays > 0 ? ` · Paid ${custStatus.subscriberDays}d` : ''}
-            </p>
-          )}
+          {/* STRUCTURED status (owner 2026-07-22): access | state | risk | event | next event. One clean
+              field grid — the single source of truth, replacing the old two-axis chips. */}
+          {custStatus && (() => {
+            const TONE = { green: { bg: '#d1fae5', fg: '#065f46' }, yellow: { bg: '#fef3c7', fg: '#92400e' }, red: { bg: '#fee2e2', fg: '#991b1b' } };
+            const accessTone = custStatus.access === 'yes' ? TONE.green : custStatus.access === 'grace' ? TONE.yellow : TONE.red;
+            const riskTone = TONE[custStatus.risk?.tone] || TONE.red;
+            const Pill = ({ t, children }) => (
+              <span style={{ display: 'inline-block', background: t.bg, color: t.fg, padding: '1px 9px', borderRadius: 999, fontSize: '0.76rem', fontWeight: 800 }}>{children}</span>
+            );
+            const rows = [
+              ['Access', <Pill t={accessTone}>{custStatus.accessLabel}</Pill>],
+              ['State', `${custStatus.sCode && custStatus.sCode !== '—' ? custStatus.sCode + ' · ' : ''}${custStatus.stateName}`],
+              ['Risk', <Pill t={riskTone}>{custStatus.risk?.level}</Pill>],
+              ['Event', custStatus.latestEvent],
+              ['Next event', custStatus.nextEventShort],
+            ];
+            return (
+              <div style={{ marginTop: 10, textAlign: 'left', fontSize: '0.82rem' }}>
+                {rows.map(([label, val]) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
+                    <span style={{ width: 84, color: '#6b7280', fontWeight: 600, flexShrink: 0 }}>{label}</span>
+                    <span style={{ color: '#111827' }}>{val}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: 6, fontSize: '0.76rem', color: custStatus.money?.capturedAny ? '#6b7280' : '#9a3412' }}>
+                  💰 {custStatus.money?.capturedAny ? `Captured $${custStatus.money.collected.toFixed(2)}` : 'No money captured'}
+                  {custStatus.money?.refunded > 0 ? ` · Refunded $${custStatus.money.refunded.toFixed(2)}` : ''}
+                  {custStatus.memberDays != null ? ` · Member ${custStatus.memberDays}d` : ''}
+                  {custStatus.subscriberDays > 0 ? ` · Paid ${custStatus.subscriberDays}d` : ''}
+                </div>
+              </div>
+            );
+          })()}
 
           <div className={styles.metaTable}>
             <div className={styles.metaRow}>

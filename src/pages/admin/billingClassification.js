@@ -49,6 +49,22 @@ function latestDecline(order) {
   return p ? (p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || p?.subStatus || null) : null;
 }
 
+// The latest charge OUTCOME (the "event" — what just happened on the most recent charge).
+function latestChargeEvent(order) {
+  const cps = (Array.isArray(order?.commercePayments) ? order.commercePayments : [])
+    .filter((p) => ['sale', 'refund', 'void', 'validate'].includes(lc(p?.type)))
+    .sort((a, b) => (b?.paymentTimestamp || b?.createdTimestamp || 0) - (a?.paymentTimestamp || a?.createdTimestamp || 0));
+  const p = cps[0];
+  if (!p) return 'No charge attempted';
+  const ty = lc(p.type), st = lc(p.status), seq = Number(p.sequence);
+  const which = seq === 0 ? 'Initial charge' : seq === 1 ? 'First bill' : Number.isFinite(seq) ? `Cycle-${seq} charge` : 'Charge';
+  if (ty === 'validate') return 'Initial charge not captured';
+  if (ty === 'refund' || ty === 'void') return 'Refunded';
+  if (st === 'fulfilled') return `${which} captured`;
+  const why = p?.requestResult?.primaryCodeMessage || p?.subStatus;
+  return `${which} failed${why ? ` (${why})` : ''}`;
+}
+
 function isCanceled(order) {
   return !!(order?.transient?.canceled || lc(order?.subStatus) === 'canceled' || lc(order?.subStatus) === 'cancelled');
 }
@@ -247,7 +263,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const dstr = (ms) => (Number.isFinite(ms) ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '');
   let expectation;
   if (phase === 'trial' && !hasSettled) {
-    expectation = `Initial charge not captured. BC will attempt ${$(nextEvent?.amount)} on ${dstr(nextEvent?.date)}${declineReason ? ` (last decline: ${declineReason})` : ''}.`;
+    expectation = `Initial charge not captured. Next attempt: ${$(nextEvent?.amount)} on ${dstr(nextEvent?.date)}${declineReason ? ` (last decline: ${declineReason})` : ''}.`;
   } else if (phase === 'trial' && trialOverstayed) {
     expectation = `First bill ${$(nextAmount)} is overdue / not succeeding${declineReason ? ` (${declineReason})` : ''}.`;
   } else if (phase === 'trial') {
@@ -279,11 +295,25 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const accessLabel = access === 'yes' ? 'Has access' : access === 'grace' ? 'Has access (at risk)' : 'No access';
   const statusLine = `${accessLabel} · ${phaseLabel}${sCode !== '—' ? ` · ${sCode}` : ''}`;
 
+  // Structured fields for the compact vCard (owner 2026-07-22): access | state | risk | event | next event.
+  const risk = access === 'yes' ? { level: 'Low', tone: 'green' }
+    : access === 'grace' ? { level: 'Medium', tone: 'yellow' }
+    : { level: 'High', tone: 'red' };
+  const STATE_NAME = { trial: 'Trial', subscriber: 'Subscriber', dunning: 'Retrying charge', cancelled_active: 'Cancelled', cancelled_ended: 'Cancelled', expired: 'Expired', refunded: 'Refunded', order_suspended: 'Suspended', payment_failed: 'Unpaid' };
+  const stateName = STATE_NAME[phase] || phase;
+  const latestEvent = latestChargeEvent(order);
+  const nextEventShort = nextEvent
+    ? (nextEvent.type === 'access-ends' ? `Access ends ${dstr(nextEvent.date)}`
+      : nextEvent.isRetry ? `Retry ${$(nextEvent.amount)} @ ${dstr(nextEvent.date)}`
+      : `Attempt ${$(nextEvent.amount)} @ ${dstr(nextEvent.date)}`)
+    : 'None';
+
   return {
     sCode, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
     nextEvent, expectation, declineReason, money, memberDays, subscriberDays,
+    risk, stateName, latestEvent, nextEventShort,
     raw: { status, subStatus: lc(order.subStatus), nextSeq, nextRetry, dueTs, nextAmount },
   };
 }
@@ -301,19 +331,26 @@ export function getCustomerStatus(user, orders) {
   const billing = primary ? classifyBilling(primary) : null;
 
   // Suspension overrides billing — a blocked account has no access regardless of subscription state.
+  const highRisk = { level: 'High', tone: 'red' };
   if (suspended) {
     return { access: 'no', tone: 'suspended', accessLabel: 'No access', reason: 'Suspended (account blocked)',
-      sCode: billing?.sCode ?? null, nextEvent: null, billing };
+      sCode: billing?.sCode ?? null, nextEvent: null, expectation: 'Account blocked — no access, no further charges.',
+      risk: highRisk, stateName: 'Blocked', latestEvent: billing?.latestEvent ?? '—', nextEventShort: 'None',
+      money: billing?.money, memberDays: billing?.memberDays ?? null, subscriberDays: billing?.subscriberDays ?? 0, billing };
   }
   if (!billing) {
     return { access: 'no', tone: 'none', accessLabel: 'No access', reason: list.length ? 'No settled payment' : 'Signup only (no orders)',
-      sCode: null, nextEvent: null, billing: null };
+      sCode: null, nextEvent: null, expectation: 'No orders — signup only.',
+      risk: highRisk, stateName: list.length ? 'Unpaid' : 'Signup only', latestEvent: 'No charge attempted', nextEventShort: 'None',
+      money: { collected: 0, refunded: 0, net: 0, saleCount: 0, capturedAny: false }, memberDays: null, subscriberDays: 0, billing: null };
   }
   return {
     access: billing.access, tone: billing.phase, accessLabel: billing.accessLabel,
     reason: billing.phaseLabel, sCode: billing.sCode, nextEvent: billing.nextEvent,
     expectation: billing.expectation, money: billing.money, memberDays: billing.memberDays,
-    subscriberDays: billing.subscriberDays, billing,
+    subscriberDays: billing.subscriberDays,
+    risk: billing.risk, stateName: billing.stateName, latestEvent: billing.latestEvent, nextEventShort: billing.nextEventShort,
+    billing,
   };
 }
 
