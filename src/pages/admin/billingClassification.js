@@ -35,21 +35,28 @@ function isCanceled(order) {
 }
 
 // cpd — card type (Credit / Prepaid / Debit): the payment-propensity signal (read side of BIN gating).
+// BC exposes it DEFINITIVELY at commerceTokens[0].transient.bin.extra.cpd ∈ {credit,prepaid,debit}
+// (verified live 2026-07-22 — Tera's prepaid-debit Sutton Bank card). Fall back to bin.type/level.
 export function cardProfile(order) {
   const card = getOrderCard(order);
-  if (!card) return null;
-  const type = lc(card.type);           // 'credit' | 'debit'
-  const level = lc(card.level || '');    // sometimes 'prepaid'
-  let cpd = 'C', label = 'Credit';
-  if (level.includes('prepaid') || type.includes('prepaid')) { cpd = 'P'; label = 'Prepaid'; }
-  else if (type.includes('debit')) { cpd = 'D'; label = 'Debit'; }
-  else if (type.includes('credit')) { cpd = 'C'; label = 'Credit'; }
-  else { cpd = null; label = card.type || 'Unknown'; }
+  const tok = (Array.isArray(order?.commerceTokens) && order.commerceTokens[0]) || {};
+  const cpdRaw = lc(tok?.transient?.bin?.extra?.cpd || '');
+  if (!card && !cpdRaw) return null;
+  let cpd = null, label = card?.type || 'Unknown';
+  if (cpdRaw === 'prepaid') { cpd = 'P'; label = 'Prepaid'; }
+  else if (cpdRaw === 'debit') { cpd = 'D'; label = 'Debit'; }
+  else if (cpdRaw === 'credit') { cpd = 'C'; label = 'Credit'; }
+  else {
+    const type = lc(card?.type || ''); const level = lc(card?.level || '');
+    if (level.includes('prepaid') || type.includes('prepaid')) { cpd = 'P'; label = 'Prepaid'; }
+    else if (type.includes('debit')) { cpd = 'D'; label = 'Debit'; }
+    else if (type.includes('credit')) { cpd = 'C'; label = 'Credit'; }
+  }
   return {
     cpd, label,
-    brand: card.brand || null,
-    last4: card.last4 || null,
-    expiry: card.expiry || null,
+    brand: card?.brand || tok.type || null,
+    last4: card?.last4 || tok.lastDigits || null,
+    expiry: card?.expiry || null,
     lowPropensity: cpd === 'P' || cpd === 'D', // prepaid/debit convert worse (owner: BIN-risk gating)
   };
 }

@@ -3,7 +3,8 @@ import { classifyBilling, settledSales, cardProfile, billingTimeline } from '../
 // Minimal BC-order fixtures matching the documented shapes (docs/admin/csr-billing-classification-spec.md).
 const sale = (amount = 39.01, status = 'fulfilled') => ({ type: 'sale', status, transient: { amount: { total: amount } }, createdTimestamp: 1_700_000_000_000 });
 const schedule = (sequence, retry = 0, dueTimestamp = Date.now() + 7 * 864e5, amount = 39.01) => ({ dueTimestamp, data: { sequence, retry, totalPrice: { amount } } });
-const debitToken = () => ({ lastDigits: '9098', bin: '403163', expiration: { month: 12, year: 30 }, transient: { bin: { brand: 'VISA', type: 'DEBIT' } } });
+// Real shape (Tera Callan, 2026-07-22): BC exposes cpd at transient.bin.extra.cpd.
+const debitToken = () => ({ lastDigits: '9098', bin: '403163', expiration: { month: 9, year: 30 }, transient: { bin: { brand: 'VISA', type: 'DEBIT', level: 'PREPAID CLASSIC', extra: { cpd: 'prepaid' } } } });
 
 describe('classifyBilling — S-code lifecycle', () => {
   test('S0 trial: one settled trial charge, active, next renewal pending', () => {
@@ -62,12 +63,18 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.sCode).toBe('—');
   });
 
-  test('cpd card type: debit → D, low propensity', () => {
+  test('cpd card type: prepaid (transient.bin.extra.cpd) → P, low propensity', () => {
     const o = { status: 'active', commercePayments: [sale(1.01)], commerceTokens: [debitToken()], schedule: schedule(1) };
     const c = classifyBilling(o);
-    expect(c.card.cpd).toBe('D');
+    expect(c.card.cpd).toBe('P'); // extra.cpd='prepaid' wins over bin.type='DEBIT'
     expect(c.card.lowPropensity).toBe(true);
     expect(c.card.brand).toBe('VISA');
+  });
+
+  test('cpd fallback: bin.type DEBIT with no extra.cpd → D', () => {
+    const tok = { lastDigits: '1111', transient: { bin: { brand: 'VISA', type: 'DEBIT' } } };
+    const c = classifyBilling({ status: 'active', commercePayments: [sale(1.01)], commerceTokens: [tok], schedule: schedule(1) });
+    expect(c.card.cpd).toBe('D');
   });
 
   test('C1 early cancel: cancelled before first monthly charge (trial only)', () => {
