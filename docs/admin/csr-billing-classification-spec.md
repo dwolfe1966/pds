@@ -189,6 +189,26 @@ Capture command (CSR console, viewing/for Tera):
 `(async()=>{const w=window.CsrWrapper.getInstance({endpointUrl:'/api'});console.log(JSON.stringify((await w.api.user.findOrders({userId:'6a5df156fefbeeff9abd5b02'})).getData?.(),null,2));})();`
 → paste; I check 1–3 + prepaid + fix `SEQ_TRIAL`/retry offset (one-line constants) if needed.
 
+## 5d. Owner directives 2026-07-22 (in-flight / queued)
+- ✅ **S0-failed cluster** (rakim/amyjo/moninoso): initial trial payment fails, we keep + retry them.
+  Fixed — dunning-before-payment_failed, failing charge = next uncaptured (settled-count), so 0 captures +
+  retrying = **S0.x** with forecast = "retry the trial/initial charge" (was a phantom "full S1 charge").
+  Retry "of N" from `RETRY_RULES.maxAttempts` (10, CONFIRM). **Still validate against a real S0-cluster
+  order** (paste one of the 3 emails' compact findOrders).
+- ✅ **Cancel event in the Timeline** — was missing (cancel-at-period-end is a status change, not a
+  payment); now emitted from `orderHistories` (+ expire/refund transitions).
+- ⏳ **TAXONOMY REDESIGN (big, owner wants deliberate):** the two-axis account-status + plan-status + S-code
+  is "too complicated / not meaningful." Collapse to **ONE status that says ACCESS / NO-ACCESS + WHY.**
+  Started: `classifyBilling` now returns `access` (`yes`/`grace`/`no`) + `statusLine`. To finish: a
+  `getCustomerStatus(user, orders)` that (a) folds account **suspension** (BC 'blocked' → no-access
+  override), (b) picks the authoritative order, (c) returns the single status; then replace the
+  Trial/Subscriber/… plan badge + account chip everywhere with it.
+- ⏳ **Propagate the S-code / single-status to all surfaces (owner):** **Users page** (list), **UserDetail
+  vCard** (summary card), **UserDetail Timeline** (cancel done; consider S-code transitions), **UserDetail
+  Orders** (panel done). vCard + Users-list still to do.
+- ℹ️ **"Jump from never-capturing-trial to capturing a subscription is fine"** — don't over-engineer the
+  S0→S1 transition; a customer can go from S0.x straight to a captured subscription without an intermediate.
+
 ## 6. Build shape (once unblocked) — proposed
 - A `classifyBilling(order, payments, histories)` pure function → `{ sCode, label, nextEvent: {type, date,
   attempt, maxAttempts, amount} }`, replacing the ambiguous plan labels for CSR surfaces.
