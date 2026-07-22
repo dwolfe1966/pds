@@ -14,7 +14,6 @@ export default function OrderBillingBadge({ order }) {
   const c = classifyBilling(order);
   if (!c) return <span style={{ color: '#9ca3af' }}>—</span>;
   const t = TONE[c.risk?.tone] || TONE.red;
-  const code = c.sCode && c.sCode !== '—' ? c.sCode : null;
   const title = [
     c.stateName,
     c.nextEventShort && c.nextEventShort !== 'None' ? `Next: ${c.nextEventShort}` : null,
@@ -26,7 +25,7 @@ export default function OrderBillingBadge({ order }) {
       title={title}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: t.bg, color: t.fg, padding: '2px 9px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}
     >
-      {c.fraudStop ? '🚫 ' : ''}{code ? `${code} · ` : ''}{c.stateName}
+      {c.fraudStop ? '🚫 ' : ''}{c.stateCode}
     </span>
   );
 }

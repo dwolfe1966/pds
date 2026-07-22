@@ -238,6 +238,26 @@ describe('classifyBilling — S-code lifecycle', () => {
   });
 });
 
+describe('stateCode — definitive S{n}-paid / S{n}-unpaid[.retry] taxonomy (owner 2026-07-22)', () => {
+  const fsale = (seq, amt = 49.98) => ({ type: 'sale', status: 'fulfilled', sequence: seq, totalPrice: { amount: amt } });
+  const code = (o) => classifyBilling(o).stateCode;
+  test('trial captured, S1 not yet attempted → S0-paid', () => {
+    expect(code({ status: 'active', commercePayments: [fsale(0, 1)], schedule: schedule(1, 0) })).toBe('S0-paid');
+  });
+  test('never captured (validate only) → S0-unpaid (no retry on S0)', () => {
+    expect(code({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }], schedule: schedule(1, 0) })).toBe('S0-unpaid');
+  });
+  test('trial captured, S1 charge failing retry 2 → S1-unpaid.2 (godwill/lacanda12)', () => {
+    expect(code({ status: 'active', commercePayments: [fsale(0, 1), { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) })).toBe('S1-unpaid.2');
+  });
+  test('cleared trial + S1 → S1-paid (subscriber, cleared S1)', () => {
+    expect(code({ status: 'active', commercePayments: [fsale(0, 1), fsale(1)], schedule: schedule(2, 0) })).toBe('S1-paid');
+  });
+  test('subscriber, S2 renewal failing retry 1 → S2-unpaid.1', () => {
+    expect(code({ status: 'active', commercePayments: [fsale(0, 1), fsale(1), { type: 'sale', status: 'rejected', sequence: 2 }], schedule: schedule(2, 1) })).toBe('S2-unpaid.1');
+  });
+});
+
 describe('money + expectation summary', () => {
   test('captured $1 trial → money.collected 1, expectation says converts', () => {
     const o = { status: 'active', orderTimestamp: Date.now() - 3 * 864e5, commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, totalPrice: { amount: 1 } }], schedule: schedule(1, 0) };

@@ -323,6 +323,22 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const stateName = fraudStop ? 'Fraud stop'
     : phase === 'dunning' ? (failCycle === 1 ? 'Rolling to subscription' : failCycle === 0 ? 'Initial charge failing' : 'Renewal failing')
     : (STATE_NAME[phase] || phase);
+
+  // DEFINITIVE current-state code (owner 2026-07-22): S{n}-paid | S{n}-unpaid[.{retry}].
+  //   n = charge sequence: 0 = trial ($1), 1 = first subscription charge, 2 = second, …
+  //   -paid   = the S{n} charge CLEARED. 'S1' therefore means a subscriber who cleared S1.
+  //   -unpaid = not cleared. NO retry suffix on S0 — we don't retry the $1 trial (owner). Retries (.1,.2,…)
+  //             only exist for S1+ (the subscription charges).
+  const clearedSeqs = settled.map((p) => Number(p?.sequence)).filter((n) => Number.isFinite(n));
+  const highestCleared = clearedSeqs.length ? Math.max(...clearedSeqs) : (cyclesBilled > 0 ? cyclesBilled - 1 : null);
+  let stateCode;
+  if (highestCleared === null) {
+    stateCode = 'S0-unpaid';                                   // trial never captured — no retry model for S0
+  } else if (status === 'active' && curRetry > 0) {
+    stateCode = `S${highestCleared + 1}-unpaid.${curRetry}`;   // attempting the next charge, failing (S1-unpaid.2…)
+  } else {
+    stateCode = `S${highestCleared}-paid`;                     // cleared through S{highestCleared} (S0-paid, S1-paid…)
+  }
   const latestEvent = latestChargeEvent(order);
   const nextEventShort = nextEvent
     ? (nextEvent.type === 'access-ends' ? `Access ends ${dstr(nextEvent.date)}`
@@ -331,7 +347,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     : 'None';
 
   return {
-    sCode, retrySeq, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
+    sCode, retrySeq, stateCode, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
     nextEvent, expectation, declineReason, fraudStop, willRenew, renewalNote, money, memberDays, subscriberDays,
@@ -356,13 +372,13 @@ export function getCustomerStatus(user, orders) {
   const highRisk = { level: 'High', tone: 'red' };
   if (suspended) {
     return { access: 'no', tone: 'suspended', accessLabel: 'No access', reason: 'Suspended (account blocked)',
-      sCode: billing?.sCode ?? null, nextEvent: null, expectation: 'Account blocked — no access, no further charges.',
+      sCode: billing?.sCode ?? null, stateCode: billing?.stateCode ?? 'S0-unpaid', nextEvent: null, expectation: 'Account blocked — no access, no further charges.',
       risk: highRisk, stateName: 'Blocked', latestEvent: billing?.latestEvent ?? '—', nextEventShort: 'None',
       money: billing?.money, memberDays: billing?.memberDays ?? null, subscriberDays: billing?.subscriberDays ?? 0, billing };
   }
   if (!billing) {
     return { access: 'no', tone: 'none', accessLabel: 'No access', reason: list.length ? 'No settled payment' : 'Signup only (no orders)',
-      sCode: null, nextEvent: null, expectation: 'No orders — signup only.',
+      sCode: null, stateCode: list.length ? 'S0-unpaid' : 'Signup', nextEvent: null, expectation: 'No orders — signup only.',
       risk: highRisk, stateName: list.length ? 'Unpaid' : 'Signup only', latestEvent: 'No charge attempted', nextEventShort: 'None',
       money: { collected: 0, refunded: 0, net: 0, saleCount: 0, capturedAny: false }, memberDays: null, subscriberDays: 0, billing: null };
   }
@@ -371,8 +387,8 @@ export function getCustomerStatus(user, orders) {
     reason: billing.phaseLabel, sCode: billing.sCode, nextEvent: billing.nextEvent,
     expectation: billing.expectation, money: billing.money, memberDays: billing.memberDays,
     subscriberDays: billing.subscriberDays,
-    risk: billing.risk, stateName: billing.stateName, latestEvent: billing.latestEvent, nextEventShort: billing.nextEventShort,
-    fraudStop: billing.fraudStop, willRenew: billing.willRenew, renewalNote: billing.renewalNote, billing,
+    risk: billing.risk, stateName: billing.stateName, stateCode: billing.stateCode, latestEvent: billing.latestEvent, nextEventShort: billing.nextEventShort,
+    retrySeq: billing.retrySeq, fraudStop: billing.fraudStop, willRenew: billing.willRenew, renewalNote: billing.renewalNote, billing,
   };
 }
 

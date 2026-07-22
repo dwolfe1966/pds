@@ -1399,7 +1399,7 @@ const UserDetailPage = () => {
             );
             const rows = [
               ['Access', <Pill t={accessTone}>{custStatus.accessLabel}</Pill>],
-              ['State', `${custStatus.sCode && custStatus.sCode !== '—' ? custStatus.sCode + ' · ' : ''}${custStatus.stateName}`],
+              ['State', `${custStatus.stateCode}${custStatus.stateName && custStatus.stateName !== custStatus.stateCode ? ` · ${custStatus.stateName}` : ''}`],
               ['Risk', <Pill t={riskTone}>{custStatus.risk?.level}</Pill>],
               ['Event', custStatus.latestEvent],
               ['Next event', custStatus.nextEventShort],
