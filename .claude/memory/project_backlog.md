@@ -6,7 +6,7 @@ originSessionId: ed6a1fb6-9daf-4f36-a40e-b2ed117467bc
 ---
 ## ⭐ HIGH PRIORITY (owner 2026-07-21 / 2026-07-22)
 
-- **HP-4 — CA members: no online cancel → redirect to Contact CS (consumer, owner 2026-07-22).** For any
+- **HP-4 — CA members: no online cancel → redirect to Contact CS. ✅ BUILT 2026-07-22 (public.027157f4.js, NOT deployed).** `AccountPage.isCaBillingOrder` (billing ZIP 90001–96162 + state==='CA' backup — state field is often empty/bogus) → Cancel button + confirm handler redirect CA to `/contact?topic=cancel`; ContactPage got a 'Cancel subscription' topic (prefilled). ⚠️ CONFIRM CA-detection method (zip-based) w/ owner — legal. Orig: For any
   member whose BILLING ADDRESS is in **California (state = CA)**, change the CONSUMER experience so that
   attempting to cancel a subscription online **redirects them to Contact Customer Support** instead of
   self-serve online cancellation. (Legal/retention: CA auto-renewal law nuance / handle via CS.) **How to
