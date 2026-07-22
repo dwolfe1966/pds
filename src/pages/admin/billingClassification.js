@@ -25,11 +25,10 @@ const SEQ_TRIAL = 0; // BC sequence value that represents the trial/S0 charge
 
 // Retry cascade rules (legacy business rules). BC's schedule.dueTimestamp overrides the NEXT attempt date;
 // these rules supply the "of N" total.
-// ⚠️ UNVALIDATED (2026-07-22): we have NOT yet seen a live order with retry>0 — rakim (the S0-failed
-// cluster) reads retry:0 in every field (transient.sequenced.retry AND schedule.data.retry), and stores no
-// declined `sale` attempt (only a $0 `validate`). So (a) which field carries the retry attempt # and
-// (b) maxAttempts are BOTH unconfirmed. Until `confirmed:true`, we show "Retry N" WITHOUT a fabricated
-// "of N", and flag the count as provisional. Needs one capture of an owner-confirmed retry≥2 order.
+// The retry attempt # is VALIDATED (2026-07-22, godwill: schedule.data.retry=2 alongside two rejected S1
+// `sale` attempts). Only maxAttempts is still unconfirmed (10 from the KPI deck "up to 10 times"). Until
+// `confirmed:true`, we show the real "Retry N" WITHOUT a fabricated "of N". Flip to true once the owner
+// confirms the max (or a live order shows auto-cancel after N).
 export const RETRY_RULES = { maxAttempts: 10, confirmed: false };
 
 const lc = (s) => (s || '').toLowerCase();
@@ -104,10 +103,12 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const nextRetry = Number.isFinite(sch?.data?.retry) ? sch.data.retry : 0;
   const dueTs = Number.isFinite(sch?.dueTimestamp) ? sch.dueTimestamp : null;
   const nextAmount = sch?.data?.totalPrice?.amount ?? null;
-  // Current retry attempt: prefer the ORDER's own counter (transient.sequenced.retry) — a cascading order
-  // can carry retry>0 here while schedule.data.retry reads 0 (verified shapes 2026-07-22, Cassie/Tera).
-  // This drives dunning detection so the ISF trial cascade isn't missed.
-  const curRetry = Number.isFinite(order?.transient?.sequenced?.retry) ? order.transient.sequenced.retry : nextRetry;
+  // Current retry attempt = schedule.data.retry — the AUTHORITATIVE counter for the pending charge. Verified
+  // live 2026-07-22 (godwill: schedule.retry=2 alongside two rejected S1 `sale` attempts, while
+  // transient.sequenced.retry read 0 — so sequenced.retry is NOT the retry count; use it only as a fallback).
+  const curRetry = nextRetry > 0
+    ? nextRetry
+    : (Number.isFinite(order?.transient?.sequenced?.retry) ? order.transient.sequenced.retry : 0);
 
   const card = cardProfile(order);
   const refunded = orderIsRefunded(order);

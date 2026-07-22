@@ -87,6 +87,27 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent.maxAttempts).toBeNull();   // "of N" gated until RETRY_RULES.confirmed (no live retry≥2 seen)
   });
 
+  test('LIVE godwill S1 dunning: captured trial, S1 failed twice (ISF), on retry 2 → S1.2 (schedule.data.retry)', () => {
+    const o = {
+      status: 'active',
+      commercePayments: [
+        { type: 'sale', status: 'rejected', sequence: 1, retry: 1, totalPrice: { amount: 49.98 } },
+        { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 } },
+        { type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1 } },
+      ],
+      transient: { sequenced: { sequence: 0, retry: 0 } }, // NOT the retry count (reads 0)
+      schedule: { dueTimestamp: 1784899800139, data: { sequence: 1, retry: 2, totalPrice: { amount: 49.98 } } },
+    };
+    const c = classifyBilling(o);
+    expect(c.sCode).toBe('S1.2');                  // schedule.data.retry=2, one trial captured
+    expect(c.phase).toBe('dunning');
+    expect(c.access).toBe('grace');
+    expect(c.phaseLabel).toMatch(/first monthly/i);
+    expect(c.nextEvent.isRetry).toBe(true);
+    expect(c.nextEvent.retry).toBe(2);
+    expect(c.nextEvent.cycle).toBe(1);
+  });
+
   test('godwill: trial overstayed — captured S0 but S1 charge date passed, still S0 → at-risk, not green', () => {
     const o = {
       status: 'active',

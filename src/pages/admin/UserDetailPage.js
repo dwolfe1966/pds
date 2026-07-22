@@ -124,6 +124,7 @@ function extractPayments(orders) {
           status: p?.status || '—',
           sequence: Number.isFinite(p?.sequence) ? p.sequence : null, // 0=trial(S0), 1=first bill(S1), …
           retry: Number.isFinite(p?.retry) ? p.retry : 0,
+          decline: p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || p?.subStatus || null, // e.g. "51:Insufficient Funds"
           date: p?.paymentTimestamp ? new Date(p.paymentTimestamp).toISOString() : (p?.createdAt || null),
           card,
           ip: p?.ipAddress || '—',
@@ -187,7 +188,8 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
       : kind === 'refund' ? `Refunded ${p.amount}`
       : kind === 'canceled' ? (t === 'void' ? `Voided ${p.amount}` : 'Subscription canceled')
       : `${chargeName} ${p.amount}${sTag ? ` · ${sTag}` : ''}`;
-    add(p.date, kind, label, `Order …${String(p.orderId || '').slice(-8)}${p.status ? ` · ${p.status}` : ''}`);
+    const detail = `Order …${String(p.orderId || '').slice(-8)}${p.status ? ` · ${p.status}` : ''}${kind === 'payment_failed' && p.decline ? ` · ${p.decline}` : ''}`;
+    add(p.date, kind, label, detail);
   }
   // Order status transitions (orderHistories) — the CANCEL / expire / refund-end events live HERE, not in
   // payments (cancel-at-period-end is a status change, not a payment — owner 2026-07-22). Dedup revisions.
