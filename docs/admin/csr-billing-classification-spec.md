@@ -43,14 +43,38 @@ Remaining Membership (still has access) → Expired (no access)`
 $39.97/mo) · **Retention**=% of trial members still paying each month (S1.0 + S1.x predict cohort revenue) ·
 Cancels · Refunds/Chargebacks (CS request OR bank chargeback).
 
-**Master P&L CSV** = weekly time-series **by Partner** (Campaign Group). Metric rows enumerate the full
-taxonomy we must support: `S0#`, `S1.0%`, `S1.x%`, `S2.x%`…`S9.x%` (retention by month/tier), `C0+C1%`,
-`casD%` / `S1.x casD%` / `S2.x casD%` (cascade decline), `cpd-C% / cpd-P% / cpd-D%` (chargeback/decline by
-**C/P/D** family) + `S1.x cpd-*`, `3ds%`, and financials (GSR, CPA, eCPA, EBITDA, Contribution Margin, Var
-Costs). This is also the **validation oracle** — our CSR rollups should reconcile to these definitions.
+**Master P&L CSV** = weekly time-series **by Partner** (Campaign Group). Metric rows enumerate the
+taxonomy: `S0#`, `S1.0%`, `S1.x%`, `S2.x%`…`S9.x%` (retention by cycle), `C0+C1%`, `casD%`, `cpd-C/P/D%`,
+`3ds%`, and financials (GSR, CPA, eCPA, EBITDA, Contribution Margin, Var Costs). Validation oracle for
+aggregate rollups.
 
-**Two grains this serves:** (a) **per-customer** CSR view (this doc's build) = one member's current S-code +
-next event; (b) **aggregate** KPI/P&L (the CSV) = partner cohort rollups. Same taxonomy, two grains.
+## 1c. ✅ DEFINITIVE DATA DICTIONARY (legacy CEO, `docs/legacy/data-dictionary.csv`, 2026-07-22) — CORRECTIONS
+This supersedes any inference above where they differ. Key definitions (with two I had **wrong**):
+- 🔴 **`cpd-C / cpd-P / cpd-D` = CARD TYPE, not failure codes** — **C**redit / **P**repaid / **D**ebit
+  (`data.cpd ∈ {credit,prepaid,debit} ÷ M0#`). This is the **payment-propensity** dimension (prepaid/debit
+  convert worse) — the read side of the BIN-risk gating. **Surface per-customer** (owner 2026-07-22).
+- 🔴 **`casD` = cascade rate** — payment routed through the card **cascade (retry across processors)**,
+  `transactionMeta.cascade==true`. **`CasA`** = cascade-approve (imputed). **`eCPA` = CPA×(1−casD−casA)**.
+  This is PROCESSOR cascade — distinct from the `Sn.x` *billing-retry* cascade (do not conflate).
+- **`C0` / `C1`** = early cancels — C0 = same period (day-1), C1 = first period (pre-first-charge).
+  **Surface per-customer** (owner 2026-07-22).
+- **M-notation = cohort/aggregate grain** (parallel to the deck's per-customer S-notation): **M0** = paid
+  members acquired that week (first payment); **M1.0%** = made first recurring bill (survived trial → cycle
+  1); **M1.x%…M9.x%** = retention curve, cohort still paying in cycle 1..9 (matured cohorts only).
+  `Sn` (customer sequence) ↔ `Mn` (cohort cycle) — same lifecycle, two grains.
+- **Unit economics:** `GSR/member = trial_fee + price × Σ(M1..M24 retention)`; `CM$/member = GSR − VarCosts
+  − eCPA`; `Contr Mgn% = CM$ ÷ GSR`; `CPA Target = GSR×(1−target margin) − VarCosts`.
+- **Funnel metrics** (site→signup→paid) are defined too (Visitors, Search%, CAPTCHA pass%, SRP View%,
+  Report Select%, Thin Match%, SUP PII/Billing/Attempt/CVR%, M0 records vs thin) — the ACQUISITION grain,
+  keyed on OUR events (landing_view, result_click, signup_complete, payment_start/paid). Relevant to
+  task (ii)/(iii), not the per-customer CSR view.
+
+⚠️ **Prices are LEGACY** (owner 2026-07-22): the `$1 trial / $39.97` figures are historical. **Read the
+live price + period from BC `commercePriceRules` (`_DESC_` S0 / S1+) at runtime — never hardcode.**
+
+**Three grains, one taxonomy:** (a) **per-customer** CSR view (THIS build) = current `S{seq}.{retry}` +
+next expected event + history + C0/C1 + cpd card-type; (b) **cohort retention** (C W, M-notation); (c)
+**acquisition funnel** (site→paid). CSR build = (a); (b)/(c) inform KPI dashboards (task ii/iii).
 
 ## 2. The classification scheme (S-codes) — mirror EXACTLY
 Owner's definitions (confirm the full enumerated list — this is the seed):
