@@ -256,6 +256,16 @@ describe('stateCode — definitive S{n}-paid / S{n}-unpaid[.retry] taxonomy (own
   test('subscriber, S2 renewal failing retry 1 → S2-unpaid.1 of 10', () => {
     expect(code({ status: 'active', commercePayments: [fsale(0, 1), fsale(1), { type: 'sale', status: 'rejected', sequence: 2 }], schedule: schedule(2, 1) })).toBe('S2-unpaid.1 of 10');
   });
+  test('never-captured S1-unpaid → High risk + neverCaptured; happy-path S1-unpaid → Medium', () => {
+    const never = classifyBilling({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }, { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) });
+    expect(never.stateCode).toBe('S1-unpaid.2 of 10');
+    expect(never.neverCaptured).toBe(true);
+    expect(never.risk).toEqual({ level: 'High', tone: 'red' });
+    const happy = classifyBilling({ status: 'active', commercePayments: [fsale(0, 1), { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) });
+    expect(happy.stateCode).toBe('S1-unpaid.2 of 10');
+    expect(happy.neverCaptured).toBe(false);
+    expect(happy.risk).toEqual({ level: 'Medium', tone: 'yellow' });
+  });
 });
 
 describe('money + expectation summary', () => {

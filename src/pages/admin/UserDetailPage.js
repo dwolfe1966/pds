@@ -1416,6 +1416,11 @@ const UserDetailPage = () => {
                     ⚠ {custStatus.renewalNote}
                   </div>
                 )}
+                {custStatus.neverCaptured && (
+                  <div style={{ marginBottom: 8, padding: '6px 10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#991b1b', fontWeight: 700, fontSize: '0.8rem' }}>
+                    ⚠ Never captured — $0 collected (CPA spent, no revenue)
+                  </div>
+                )}
                 {rows.map(([label, val]) => (
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', borderBottom: '1px solid #f3f4f6' }}>
                     <span style={{ width: 84, color: '#6b7280', fontWeight: 600, flexShrink: 0 }}>{label}</span>

@@ -313,9 +313,14 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const statusLine = `${accessLabel} · ${phaseLabel}${sCode !== '—' ? ` · ${sCode}` : ''}`;
 
   // Structured fields for the compact vCard (owner 2026-07-22): access | state | risk | event | next event.
+  // Risk: Low = healthy, High = no access. For an at-risk (grace) customer, one who has NEVER captured any
+  // cash ($0 collected — CPA spent, nothing back) is a distinctly higher-risk beast than a paying trial
+  // that's merely failing a renewal → mark it High/red, not Medium (owner 2026-07-22).
+  const neverCaptured = hasAccess && !money.capturedAny;
   const risk = access === 'yes' ? { level: 'Low', tone: 'green' }
-    : access === 'grace' ? { level: 'Medium', tone: 'yellow' }
-    : { level: 'High', tone: 'red' };
+    : access === 'no' ? { level: 'High', tone: 'red' }
+    : neverCaptured ? { level: 'High', tone: 'red' }
+    : { level: 'Medium', tone: 'yellow' };
   const STATE_NAME = { trial: 'Trial', subscriber: 'Subscriber', dunning: 'Retrying charge', cancelled_active: 'Cancelled', cancelled_ended: 'Cancelled', expired: 'Expired', refunded: 'Refunded', order_suspended: 'Suspended', payment_failed: 'Unpaid' };
   const stateName = fraudStop ? 'Fraud stop'
     : phase === 'dunning' ? 'Retrying payment capture'
@@ -351,7 +356,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     sCode, retrySeq, stateCode, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
-    nextEvent, expectation, declineReason, fraudStop, willRenew, renewalNote, money, memberDays, subscriberDays,
+    nextEvent, expectation, declineReason, fraudStop, willRenew, renewalNote, neverCaptured, money, memberDays, subscriberDays,
     risk, stateName, latestEvent, nextEventShort,
     raw: { status, subStatus: lc(order.subStatus), nextSeq, nextRetry, dueTs, nextAmount },
   };
@@ -389,7 +394,8 @@ export function getCustomerStatus(user, orders) {
     expectation: billing.expectation, money: billing.money, memberDays: billing.memberDays,
     subscriberDays: billing.subscriberDays,
     risk: billing.risk, stateName: billing.stateName, stateCode: billing.stateCode, latestEvent: billing.latestEvent, nextEventShort: billing.nextEventShort,
-    retrySeq: billing.retrySeq, fraudStop: billing.fraudStop, willRenew: billing.willRenew, renewalNote: billing.renewalNote, billing,
+    retrySeq: billing.retrySeq, fraudStop: billing.fraudStop, willRenew: billing.willRenew, renewalNote: billing.renewalNote,
+    neverCaptured: billing.neverCaptured, billing,
   };
 }
 
