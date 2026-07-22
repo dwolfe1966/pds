@@ -12,21 +12,20 @@ import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
+import { getLatestBillingZip, getLatestBillingState } from '../../utils/orderFinancials';
 
-// HP-4 (owner 2026-07-22): members with a CALIFORNIA billing address must cancel via Customer Support,
-// not online. The billing `state` field is often empty/bogus (verified live — Cassie's was ""), so key on
-// the billing ZIP (CA = 90001–96162) with state==='CA' as a backup.
-function billingAddrOf(order) {
-  return order?.billingAddress
-    || (Array.isArray(order?.commerceTokens) && order.commerceTokens[0]?.billingAddress)
-    || null;
-}
-function isCaBillingOrder(order) {
-  const a = billingAddrOf(order);
-  if (!a) return false;
-  if (String(a.state || '').trim().toUpperCase() === 'CA') return true;
-  const z = parseInt(String(a.zip || '').slice(0, 5), 10);
-  return Number.isFinite(z) && z >= 90001 && z <= 96162;
+// HP-4 (owner 2026-07-22): CA billing-address members must cancel via Customer Support, not online.
+// The billing `state` is often empty/bogus (verified live — Cassie's was ""), so the ZIP is the reliable
+// signal. Owner requirement: if we CAN'T determine the zip, route to CS (compliance-safe default).
+// Returns true = route to Contact Support; false = online cancel OK (confidently non-CA).
+function mustCancelViaCs(orders) {
+  const list = Array.isArray(orders) ? orders : (orders ? [orders] : []);
+  const state = String(getLatestBillingState(list) || '').trim().toUpperCase();
+  if (state === 'CA') return true;                                   // explicit CA
+  const zip = String(getLatestBillingZip(list) || '').replace(/\D/g, '').slice(0, 5);
+  if (zip.length < 5) return true;                                   // no reliable zip → CS (owner)
+  const z = parseInt(zip, 10);
+  return z >= 90001 && z <= 96162;                                   // CA zip → CS; else online cancel OK
 }
 import MyProfileModularLive from '../../components/MyProfileModularLive';
 import MyProfileSummary from '../../components/MyProfileSummary';

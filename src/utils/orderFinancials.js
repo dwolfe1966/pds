@@ -101,19 +101,30 @@ export function getLatestPaymentDeviceInfo(orders) {
  * Pure — safe to call during render.
  */
 export function getLatestBillingZip(orders) {
+  return getLatestBillingField(orders, 'zip');
+}
+
+// The billing STATE (often empty/bogus in BC — the ZIP is the reliable signal), same lookup path as the zip.
+export function getLatestBillingState(orders) {
+  return getLatestBillingField(orders, 'state');
+}
+
+function getLatestBillingField(orders, field) {
   if (!Array.isArray(orders) || orders.length === 0) return null;
   for (const order of orders) {
     const cpArray = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
     const sorted = [...cpArray].sort((a, b) => paymentEpoch(b) - paymentEpoch(a));
     for (const p of sorted) {
-      const zip = p?.commerceToken?.billingAddress?.zip;
-      if (zip) return String(zip);
+      const v = p?.commerceToken?.billingAddress?.[field];
+      if (v) return String(v);
     }
     const tokens = Array.isArray(order?.commerceTokens) ? order.commerceTokens : [];
     for (const t of tokens) {
-      const zip = t?.billingAddress?.zip;
-      if (zip) return String(zip);
+      const v = t?.billingAddress?.[field];
+      if (v) return String(v);
     }
+    const v = order?.billingAddress?.[field];
+    if (v) return String(v);
   }
   return null;
 }
