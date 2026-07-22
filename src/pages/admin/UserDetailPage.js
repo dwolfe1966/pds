@@ -1396,6 +1396,21 @@ const UserDetailPage = () => {
             })()}
           </div>
 
+          {/* One plain-English expectation + a compact money/tenure line — keep the vCard simple. */}
+          {custStatus && custStatus.expectation && (
+            <p style={{ fontSize: '0.82rem', color: custStatus.access === 'no' ? '#991b1b' : '#4b5563', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.35 }}>
+              {custStatus.expectation}
+            </p>
+          )}
+          {custStatus && custStatus.money && (
+            <p style={{ fontSize: '0.76rem', color: custStatus.money.capturedAny ? '#6b7280' : '#9a3412', margin: '4px 0 0', textAlign: 'center' }}>
+              💰 {custStatus.money.capturedAny ? `Captured $${custStatus.money.collected.toFixed(2)}` : 'No money captured'}
+              {custStatus.money.refunded > 0 ? ` · Refunded $${custStatus.money.refunded.toFixed(2)}` : ''}
+              {custStatus.memberDays != null ? ` · Member ${custStatus.memberDays}d` : ''}
+              {custStatus.subscriberDays > 0 ? ` · Paid ${custStatus.subscriberDays}d` : ''}
+            </p>
+          )}
+
           <div className={styles.metaTable}>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>User ID</span>

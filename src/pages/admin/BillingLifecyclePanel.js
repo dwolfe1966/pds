@@ -35,15 +35,15 @@ export default function BillingLifecyclePanel({ order }) {
   const ne = c.nextEvent;
   const timeline = billingTimeline(order);
 
-  const nextLine = ne
-    ? (ne.type === 'access-ends'
-        ? `No further charges — access continues until ${fmtDate(ne.date)}, then expires`
-        : ne.isRetry
-          ? `Retry ${ne.retry}${ne.maxAttempts ? ` of ${ne.maxAttempts}` : ''} of the ${ne.cycle === 0 ? 'trial/initial charge' : ne.cycle === 1 ? 'first monthly charge' : `cycle-${ne.cycle} charge`} on ${fmtDate(ne.date)}${ne.amount != null ? ` · ${fmtMoney(ne.amount)}` : ''}${ne.attemptsRemaining != null ? ` · ${ne.attemptsRemaining} left before auto-cancel` : ' · auto-cancels if retries exhaust'}`
-          : `${ne.type === 'trial-charge' ? 'Initial/trial charge' : ne.type === 'first-bill' ? 'First bill (converts to subscriber)' : 'Renewal'} ${fmtMoney(ne.amount)} on ${fmtDate(ne.date)}${ne.cycle != null ? ` · cycle ${ne.cycle}` : ''}`)
-    : (c.phase === 'cancelled_active'
-        ? 'No further charges — access continues until the period ends, then expires'
-        : 'No upcoming billing event');
+  // Plain-English, phase-aware "what to expect" (simpler for the CSR than a field dump).
+  const nextLine = c.expectation || 'No upcoming billing event';
+  const m = c.money || {};
+  const moneyLine = [
+    m.capturedAny ? `Captured ${fmtMoney(m.collected)}${m.saleCount ? ` (${m.saleCount} charge${m.saleCount === 1 ? '' : 's'})` : ''}` : 'No money captured yet',
+    m.refunded > 0 ? `Refunded ${fmtMoney(m.refunded)}` : null,
+    c.memberDays != null ? `Member ${c.memberDays}d` : null,
+    c.subscriberDays > 0 ? `Paid ${c.subscriberDays}d` : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '0.85rem 1rem', marginBottom: '0.75rem', background: '#fff' }}>
@@ -69,10 +69,15 @@ export default function BillingLifecyclePanel({ order }) {
         )}
       </div>
 
-      {/* What happens next */}
+      {/* What to expect — one plain-English sentence */}
       <div style={{ marginTop: 8, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', fontWeight: 700, whiteSpace: 'nowrap' }}>What happens next</span>
-        <span style={{ fontSize: '0.9rem', color: c.dunning ? '#991b1b' : '#111827', fontWeight: c.dunning ? 700 : 500 }}>{nextLine}</span>
+        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', fontWeight: 700, whiteSpace: 'nowrap' }}>What to expect</span>
+        <span style={{ fontSize: '0.9rem', color: c.dunning || c.phase === 'order_suspended' ? '#991b1b' : '#111827', fontWeight: c.dunning ? 700 : 500 }}>{nextLine}</span>
+      </div>
+
+      {/* Money captured + tenure — one compact line */}
+      <div style={{ marginTop: 6, fontSize: '0.82rem', color: c.money?.capturedAny ? '#374151' : '#9a3412' }}>
+        💰 {moneyLine}
       </div>
 
       {/* Billing history toggle */}

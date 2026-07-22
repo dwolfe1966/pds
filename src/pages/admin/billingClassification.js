@@ -218,6 +218,59 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   // that says access / no-access + why. 'grace' = has access but something is wrong/ending (dunning or
   // cancel-at-period-end). NOTE: account-level suspension (BC 'blocked') is NOT visible here (order-only) —
   // the caller must let a suspended account override this to no-access. See getCustomerStatus (planned).
+  // Money captured — the "have we actually made money from this customer" answer (fulfilled sales vs refunds).
+  const money = (() => {
+    let collected = 0, refunded = 0, saleCount = 0;
+    for (const p of (Array.isArray(order.commercePayments) ? order.commercePayments : [])) {
+      const st = lc(p?.status), ty = lc(p?.type);
+      const amt = Number(p?.totalPrice?.amount ?? p?.transient?.amount?.total ?? 0) || 0;
+      if (st === 'fulfilled' && ty === 'sale') { collected += amt; saleCount += 1; }
+      else if (st === 'fulfilled' && (ty === 'refund' || ty === 'void')) refunded += amt;
+    }
+    return { collected, refunded, net: collected - refunded, saleCount, capturedAny: collected > 0 };
+  })();
+
+  // Tenure: member since signup; paid-subscriber since the first captured S1+ (recurring) charge.
+  const orderTs = order.orderTimestamp || order.createdTimestamp || null;
+  const memberDays = Number.isFinite(orderTs) ? Math.max(0, Math.floor((now - orderTs) / 864e5)) : null;
+  const firstSub = settled
+    .filter((p) => Number(p?.sequence) >= 1)
+    .sort((a, b) => (a?.paymentTimestamp || a?.createdTimestamp || 0) - (b?.paymentTimestamp || b?.createdTimestamp || 0))[0];
+  const subSince = firstSub ? (firstSub.paymentTimestamp || firstSub.createdTimestamp) : null;
+  const subscriberDays = Number.isFinite(subSince) ? Math.max(0, Math.floor((now - subSince) / 864e5)) : 0;
+
+  // Decline reason (surfaced when it explains the state: dunning / suspended / overstayed).
+  const declineReason = (dunning || phase === 'order_suspended' || trialOverstayed) ? latestDecline(order) : null;
+
+  // Plain-English "what to expect next" — phase-aware, incorporating the decline type.
+  const $ = (a) => `$${Number(a || 0).toFixed(2)}`;
+  const dstr = (ms) => (Number.isFinite(ms) ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '');
+  let expectation;
+  if (phase === 'trial' && !hasSettled) {
+    expectation = `Initial charge not captured. BC will attempt ${$(nextEvent?.amount)} on ${dstr(nextEvent?.date)}${declineReason ? ` (last decline: ${declineReason})` : ''}.`;
+  } else if (phase === 'trial' && trialOverstayed) {
+    expectation = `First bill ${$(nextAmount)} is overdue / not succeeding${declineReason ? ` (${declineReason})` : ''}.`;
+  } else if (phase === 'trial') {
+    expectation = nextEvent ? `Converts to subscriber — first bill ${$(nextEvent.amount)} on ${dstr(nextEvent.date)}.` : 'In trial.';
+  } else if (phase === 'dunning') {
+    const which = failCycle === 0 ? 'initial/trial' : failCycle === 1 ? 'first monthly' : `cycle-${failCycle}`;
+    expectation = `The ${which} charge is failing${declineReason ? ` (${declineReason})` : ''} — retry ${curRetry}${nextEvent?.date ? ` on ${dstr(nextEvent.date)}` : ''}. Auto-cancels if retries exhaust.`;
+  } else if (phase === 'subscriber') {
+    expectation = nextEvent ? `Active subscriber — next renewal ${$(nextEvent.amount)} on ${dstr(nextEvent.date)}.` : 'Active subscriber.';
+  } else if (phase === 'cancelled_active') {
+    expectation = `Cancelled — access until ${dstr(nextEvent?.date)}, then ends. No further charges.`;
+  } else if (phase === 'order_suspended') {
+    expectation = `Order suspended${declineReason ? ` (${declineReason})` : ''} — no access, no further charges.`;
+  } else if (phase === 'refunded') {
+    expectation = 'Refunded — no access, no further charges.';
+  } else if (phase === 'payment_failed') {
+    expectation = 'No payment ever captured — not a paying customer.';
+  } else if (phase === 'cancelled_ended') {
+    expectation = 'Cancelled and ended — no access, no further charges.';
+  } else {
+    expectation = 'Ended — no access, no further charges.';
+  }
+
   // 'grace' = has access but at risk: dunning, cancel-at-period-end, OR a trial whose initial charge never
   // captured (the S0-failed cluster — kept around, BC about to attempt the full S1).
   const access = !hasAccess ? 'no'
@@ -230,7 +283,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     sCode, phase, phaseLabel, hasAccess, dunning, trialOverstayed, access, accessLabel, statusLine,
     cyclesBilled, currentCycle,
     card, earlyCancel, refunded,
-    nextEvent,
+    nextEvent, expectation, declineReason, money, memberDays, subscriberDays,
     raw: { status, subStatus: lc(order.subStatus), nextSeq, nextRetry, dueTs, nextAmount },
   };
 }
@@ -258,7 +311,9 @@ export function getCustomerStatus(user, orders) {
   }
   return {
     access: billing.access, tone: billing.phase, accessLabel: billing.accessLabel,
-    reason: billing.phaseLabel, sCode: billing.sCode, nextEvent: billing.nextEvent, billing,
+    reason: billing.phaseLabel, sCode: billing.sCode, nextEvent: billing.nextEvent,
+    expectation: billing.expectation, money: billing.money, memberDays: billing.memberDays,
+    subscriberDays: billing.subscriberDays, billing,
   };
 }
 

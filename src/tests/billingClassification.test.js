@@ -232,6 +232,29 @@ describe('classifyBilling — S-code lifecycle', () => {
   });
 });
 
+describe('money + expectation summary', () => {
+  test('captured $1 trial → money.collected 1, expectation says converts', () => {
+    const o = { status: 'active', orderTimestamp: Date.now() - 3 * 864e5, commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, totalPrice: { amount: 1 } }], schedule: schedule(1, 0) };
+    const c = classifyBilling(o);
+    expect(c.money.collected).toBe(1);
+    expect(c.money.capturedAny).toBe(true);
+    expect(c.memberDays).toBe(3);
+    expect(c.expectation).toMatch(/converts to subscriber/i);
+  });
+  test('no capture (validate only) → money.capturedAny false, expectation flags not captured', () => {
+    const o = { status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }], schedule: schedule(1, 0) };
+    const c = classifyBilling(o);
+    expect(c.money.capturedAny).toBe(false);
+    expect(c.expectation).toMatch(/not captured/i);
+  });
+  test('dunning expectation names the decline reason', () => {
+    const o = { status: 'active', commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, totalPrice: { amount: 1 } }, { type: 'sale', status: 'rejected', sequence: 1, retry: 0, requestResult: { primaryCodeMessage: '51:Insufficient Funds' } }], schedule: { dueTimestamp: Date.now() + 864e5, data: { sequence: 1, retry: 2, totalPrice: { amount: 49.98 } } } };
+    const c = classifyBilling(o);
+    expect(c.declineReason).toMatch(/insufficient/i);
+    expect(c.expectation).toMatch(/failing.*insufficient/i);
+  });
+});
+
 describe('getCustomerStatus — single access-first status', () => {
   const trialOrder = { status: 'active', commercePayments: [sale(1)], schedule: schedule(1, 0) };
   test('suspended account overrides billing → no access', () => {
