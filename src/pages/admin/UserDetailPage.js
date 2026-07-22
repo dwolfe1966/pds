@@ -8,6 +8,7 @@ import RefundEmailModal from './RefundEmailModal';
 import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, CSR_TERMS } from './userState';
 import { useZipCity } from './zipCity';
 import { useAuth } from '../../context/AuthContext';
+import BillingLifecyclePanel from './BillingLifecyclePanel';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -1575,6 +1576,8 @@ const UserDetailPage = () => {
 
                   return (
                     <div key={oid} className={styles.orderCard}>
+                      {/* Legacy S-code lifecycle classification + "what happens next" + history (Phase 1). */}
+                      <BillingLifecyclePanel order={o} />
                       {/* Order summary row */}
                       <div
                         className={styles.orderSummary}
