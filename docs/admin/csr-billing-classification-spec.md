@@ -42,7 +42,36 @@ S1.5 → "retry 6 of 10, cancels after 10". A rep should read the code and know 
    date, which retry number we're on and how many remain, when the trial converts, when it cancels if
    retries exhaust. So a rep sets correct expectations on a call.
 
-## 4. Mapping to BC data — what we likely have vs. need (to verify)
+## 3b. ✅ JSON INTERROGATION (2026-07-22) — BC already speaks S-codes
+Interrogated the BC API doc example responses (no live prod probe — see gap below). **The owner's
+intuition is confirmed: BC's billing response encodes the classification + rules natively.**
+
+- **BC uses the S-code labels itself.** `commercePriceRules[]._DESC_` literally reads **`"S0"`** and
+  **`"S1+"`** (csrApi/Api example responses), each with `conditions: [{ sequence: 0 }]` / `{ sequence:
+  "v > 0" }` and `candidates[].id.{ amount, period }`:
+  - **S0** → `sequence: 0` → $1.01 / **7 d** (the trial)
+  - **S1+** → `sequence: "v > 0"` → $39.01 / **30 d** (the subscription)
+  (Doc sample only shows S0 + S1+; the LIVE response likely carries the finer S1/S2/… + retry variants.)
+- **The live S-code coordinates are in `order.schedule.data`:**
+  - `schedule.data.sequence` = the **S-number** (0 = S0/trial, N = S{N})
+  - `schedule.data.retry` = the **`.m`** retry attempt
+  - `schedule.dueTimestamp` = **when the next event fires**
+  - `schedule.data.totalPrice.amount` = **next charge amount**
+  - `schedule.type: "commerceBillingRecur"`, `eventKey: CommerceBillingRecurScheduleEvent`
+- **Retry config** on the order + each payment: `immediateRetry`, `immediateRetryCount`.
+- **Per-attempt history:** `commercePayments[]` (each has `retry`, `commerceBillingRouting.billingSeriesId`
+  = `sale|…` / `correct|…`, decline info) + `orderHistories[]` (status transitions).
+- **Cascade/decline code vocabulary** (HowTo.csv): `processorDown, verifyRetry, dropCvv, dropCvvWFlag,
+  quadzero, superbad, autoExpire, declinerPassthru, declinerRetry, prepaidDecliner, gatewayPassthru,
+  gatewayConfigError, ineligible` — the source taxonomy the legacy **C/D** codes map onto.
+
+**⚠️ The one thing the DOCS can't settle:** the sample `schedule` is a **single next event**, not an array
+of all 10 future retries. So from docs alone I can't confirm "ALL future events pre-mapped" vs. "next
+event, recomputed per attempt (dynamic)." **Resolve by capturing a REAL response** — owner pull a live
+`findOrders`/`getOrder` JSON for an actual trial customer (CSR read, safe) and paste it; that shows the
+true production shape (finer S-labels + whether the full cascade schedule is listed).
+
+## 4. Mapping to BC data — CONFIRMED (was: to verify)
 | Need | Candidate BC source | Status |
 |---|---|---|
 | Subscriber month N (S1/S2/…) | count of settled `sale` payments (`commercePayments[].type=sale,status=fulfilled`) | ✅ derivable (this is also the fix for the "Trial never converts" bug — do NOT use `transient.amount.collected`) |
