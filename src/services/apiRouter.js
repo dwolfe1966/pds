@@ -272,6 +272,7 @@ async function _routeApiRequestInner(endpoint, params = {}) {
     // Admin (CSR) endpoints — BC only, no mock fallback
     'admin-users',
     'admin-user-detail',
+    'admin-auto-login-url',
     'admin-suspend-user',
     'admin-purchases',
     'admin-purchase-detail',
