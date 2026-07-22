@@ -209,6 +209,20 @@ Capture command (CSR console, viewing/for Tera):
 - ℹ️ **"Jump from never-capturing-trial to capturing a subscription is fine"** — don't over-engineer the
   S0→S1 transition; a customer can go from S0.x straight to a captured subscription without an intermediate.
 
+## 5e. ✅ Validated vs LIVE data (2026-07-22) + a BUSINESS finding
+- **Cassie (Happy Path S0):** $1 trial captured (`sale`/`fulfilled` seq 0), `schedule` seq1 $49.98 at
+  +7d → **S0 · Trial**, next = **first bill $49.98 (converts to subscriber)**. `transient.sequenced:{0,0}`.
+- **rakim (S0 FAILED initial $1):** only a **`type:"validate"` $0** payment (NO `sale` captured),
+  `transient.sequenced:{0,0}`, and **`schedule` seq1 $49.98 at +7d**. → **S0 · "Trial — initial charge NOT
+  captured" · access `grace`** · forecast = first bill $49.98.
+- 🔴 **BUSINESS FINDING (owner Q2, CONFIRMED):** BC schedules the **full $49.98 S1 charge ~7 days after the
+  initial attempt EVEN when the $1 trial never captured.** So a never-paid trial is set to be billed $49.98.
+  This is a **BC billing-rules decision, not our display bug** — owner to decide if that's intended (should a
+  non-paying trial be charged $49?) and raise with BC if not. Our CSR now shows it truthfully (at-risk +
+  "initial charge NOT captured" + the scheduled $49.98).
+- Card `cpd` also confirmed at `commercePayments[].data.cpd` (mirror of `transient.bin.extra.cpd`).
+- `transactionMeta.cascade` (per payment) = the casD signal, if we later surface cascade on the CSR.
+
 ## 6. Build shape (once unblocked) — proposed
 - A `classifyBilling(order, payments, histories)` pure function → `{ sCode, label, nextEvent: {type, date,
   attempt, maxAttempts, amount} }`, replacing the ambiguous plan labels for CSR surfaces.
