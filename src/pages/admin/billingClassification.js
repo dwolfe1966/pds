@@ -431,6 +431,31 @@ export function getCustomerStatus(user, orders) {
   };
 }
 
+// Short plain-English advisory per gateway decline code — the "another sentence" for the Notes column.
+const DECLINE_ADVICE = {
+  '05': 'Generic issuer decline (no reason given) — a retry or new card may work.',
+  '14': 'Invalid card number — unusable; needs a new card.',
+  '41': 'Card reported lost — needs a new card.',
+  '43': 'Card reported stolen — needs a new card.',
+  '51': 'Insufficient funds — a later retry often clears once the balance recovers.',
+  '54': 'Card expired — needs an updated card.',
+  '57': 'Transaction type not permitted on this card.',
+  '59': 'Issuer flagged suspected fraud — sequence is stopped (no retry).',
+  '61': 'Exceeds the card limit — a smaller/later attempt may work.',
+  '62': 'Restricted card — unlikely to clear on retry.',
+  '65': 'Card velocity limit (too many transactions) — a later retry may work.',
+  '82': 'CVV mismatch — needs a corrected card.',
+  '91': 'Issuer temporarily unavailable — retry likely to succeed.',
+  '96': 'Processor system error — retry likely to succeed.',
+};
+function declineNote(p) {
+  const raw = p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || p?.subStatus || 'Declined';
+  const code = (String(raw).match(/(\d{2,3})/) || [])[1];
+  const advice = code ? DECLINE_ADVICE[code] : null;
+  const attempt = Number.isFinite(Number(p?.retry)) ? ` · attempt ${Number(p.retry) + 1}` : '';
+  return `${raw}${advice ? ` — ${advice}` : ''}${attempt}`;
+}
+
 // Rich, newest-first billing EVENTS for the Orders & Payments table: { ts, amount, charge, outcome, tone,
 // notes }. Every charge attempt + every status transition (cancel/suspend/expire), methodically.
 export function billingEvents(order) {
@@ -454,7 +479,9 @@ export function billingEvents(order) {
     else if (st === 'fulfilled') { outcome = ty === 'validate' ? 'Validated' : 'Captured'; tone = ty === 'validate' ? 'gray' : 'green'; }
     else if (/reject|declin|fail|error|block/.test(st)) { outcome = 'Declined'; tone = 'red'; }
     else { outcome = st || '—'; tone = 'gray'; }
-    const notes = p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || (ty === 'validate' ? '$0 auth (no capture)' : '');
+    const notes = (outcome === 'Declined' && ty === 'sale')
+      ? declineNote(p)
+      : (p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || (ty === 'validate' ? '$0 auth (no capture)' : ''));
     rows.push({ ts, amount, charge, outcome, tone, notes });
   }
   const seen = new Set();

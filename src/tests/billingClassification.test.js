@@ -363,6 +363,8 @@ describe('helpers', () => {
     expect(ev[0].outcome).toBe('Declined');
     expect(ev[0].charge).toMatch(/First bill.*retry 1/);
     expect(ev[0].notes).toMatch(/insufficient/i);
+    expect(ev[0].notes).toMatch(/attempt 2/);        // retry 1 → attempt 2
+    expect(ev[0].notes).toMatch(/balance recovers/); // advisory gloss
     expect(ev[1].outcome).toBe('Captured');
     expect(ev[1].charge).toMatch(/Trial/);
   });
