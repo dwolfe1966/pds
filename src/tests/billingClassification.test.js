@@ -158,6 +158,23 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent.amount).toBeNull();     // no charge amount shown
   });
 
+  test('LIVE christenbury: S1 rejected 59:Suspected Fraud → order suspended, no access, reason shown', () => {
+    const o = {
+      status: 'inactive', subStatus: 'suspended',
+      commercePayments: [
+        { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: 2 },
+        { type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1 }, paymentTimestamp: 1 },
+      ],
+      transient: { sequenced: { sequence: 0, retry: 0 } },
+      schedule: null,
+    };
+    const c = classifyBilling(o);
+    expect(c.phase).toBe('order_suspended');
+    expect(c.access).toBe('no');
+    expect(c.phaseLabel).toMatch(/suspended.*fraud/i);
+    expect(c.nextEvent).toBeNull();              // no forecast — BC stopped (no retry on fraud)
+  });
+
   test('expired: inactive + subStatus expired', () => {
     const o = { status: 'inactive', subStatus: 'expired', commercePayments: [sale(1.01), sale()] };
     const c = classifyBilling(o);

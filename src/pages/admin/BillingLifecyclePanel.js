@@ -15,6 +15,7 @@ const PHASE_STYLE = {
   cancelled_active: { bg: '#ffedd5', fg: '#9a3412', dot: '#ea580c' },
   cancelled_ended:  { bg: '#e5e7eb', fg: '#374151', dot: '#6b7280' },
   expired:          { bg: '#fee2e2', fg: '#7f1d1d', dot: '#b91c1c' },
+  order_suspended:  { bg: '#fee2e2', fg: '#991b1b', dot: '#dc2626' },
   refunded:         { bg: '#ede9fe', fg: '#5b21b6', dot: '#7c3aed' },
   payment_failed:   { bg: '#fef2f2', fg: '#7c2d12', dot: '#dc2626' },
 };

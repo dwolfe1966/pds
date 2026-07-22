@@ -38,6 +38,17 @@ export function settledSales(order) {
   return cps.filter((p) => lc(p?.type) === 'sale' && lc(p?.status) === 'fulfilled');
 }
 
+// Most-recent decline reason from the order's rejected/failed payments (e.g. "59:Suspected Fraud",
+// "51:Insufficient Funds") — surfaced so a suspended/failed order says WHY.
+function latestDecline(order) {
+  const cps = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
+  const rejected = cps
+    .filter((p) => /reject|fail|declin|error|block/.test(lc(p?.status)))
+    .sort((a, b) => (b?.paymentTimestamp || b?.createdTimestamp || 0) - (a?.paymentTimestamp || a?.createdTimestamp || 0));
+  const p = rejected[0];
+  return p ? (p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || p?.subStatus || null) : null;
+}
+
 function isCanceled(order) {
   return !!(order?.transient?.canceled || lc(order?.subStatus) === 'canceled' || lc(order?.subStatus) === 'cancelled');
 }
@@ -165,6 +176,13 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     }
   } else if (!hasSettled) {
     phase = 'payment_failed'; phaseLabel = 'No settled payment'; sCode = '—';
+  } else if (lc(order.subStatus) === 'suspended') {
+    // Order-level suspend (distinct from account 'blocked'): BC suspended the order after a hard decline —
+    // e.g. S1 rejected '59:Suspected Fraud' → no retry, no schedule (christenbury 2026-07-22). Say WHY.
+    const why = latestDecline(order);
+    phase = 'order_suspended';
+    phaseLabel = why ? `Suspended — payment declined (${why})` : 'Suspended — payment declined';
+    sCode = `S${currentCycle}`;
   } else if (canceled) {
     phase = 'cancelled_ended'; phaseLabel = 'Cancelled — ended'; sCode = `S${currentCycle}`;
   } else {
