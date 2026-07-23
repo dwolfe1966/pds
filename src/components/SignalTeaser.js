@@ -13,12 +13,31 @@ import { cleanReleaseStatus } from '../services/incarcerationService';
  * ready; it's additive, below the CTA. The "also found" secondary can be disabled via REACT_APP_SIGNALS_AUGMENT=0
  * (engine kill-switch → lead-only).
  */
-const CAPABILITIES = [
-  ['🛡️', 'Sex-offender & criminal check'],
-  ['🪪', 'Identity, age & photo verification'],
-  ['💍', 'Relationship status'],
-  ['📍', 'Current location'],
-];
+// Intent-aware capability hook (the pre-pay tease). Keyed on funnel flow. `flag` flows render a prominent
+// warning-styled hook (the homefacts sex-offender experience — a POSSIBLE-match flag, framed to verify, never
+// an assertion; the corroborated record itself is revealed post-pay from our licensed source).
+const CAPABILITY_COPY = {
+  dating: {
+    header: (n) => `Before you meet ${n} — run a full safety check`,
+    items: [['🛡️', 'Sex-offender & criminal check'], ['🪪', 'Identity, age & photo verification'], ['💍', 'Relationship status'], ['📍', 'Current location']],
+  },
+  background: {
+    header: (n) => `Background check on ${n}`,
+    items: [['🚔', 'Arrest & criminal records'], ['🏛️', 'Court & case records'], ['🛡️', 'Sex-offender check'], ['🪪', 'Identity, age & photo']],
+  },
+  sexOffender: {
+    flag: true,
+    header: (n) => `Possible offender record for ${n} — unlock to verify`,
+    items: [['🚔', 'Full criminal & offender record'], ['🏛️', 'Court & case records'], ['📍', 'Registered address & aliases'], ['🪪', 'Identity & photo']],
+  },
+  publicRecords: {
+    header: (n) => `Public records for ${n}`,
+    items: [['📍', 'Addresses & phone numbers'], ['👪', 'Relatives & associates'], ['🚔', 'Criminal & court records'], ['💍', 'Marriage & divorce']],
+  },
+};
+const capabilityCopy = (flow) => CAPABILITY_COPY[flow] || CAPABILITY_COPY.dating;
+// Flows whose HOOK is the capability tease → render even with no pre-pay records (criminal/SO are post-pay).
+const CAPABILITY_FLOWS = new Set(['dating', 'background', 'sexOffender', 'publicRecords']);
 
 // No-mugshot placeholder colors, cycled per row so multiple no-photo records read as distinct people
 // (matches InmateBookingTeaser — the proven high-CVR inmate teaser).
@@ -43,16 +62,17 @@ export default function SignalTeaser({ subject, flow = 'general', viewerRelation
   if (!res || res.suppressed) return null;
   const { signals, lead, secondary } = res;
   const hasReal = ((signals.marriageDivorce && signals.marriageDivorce.count) || 0) + ((signals.booking && signals.booking.count) || 0) > 0;
-  if (!hasReal && flow !== 'dating') return null; // no hollow teaser (except dating, where capability IS the hook)
+  if (!hasReal && !CAPABILITY_FLOWS.has(flow)) return null; // no hollow teaser (except capability-hook flows)
 
   const fullName = [subject.firstName, subject.lastName].filter(Boolean).join(' ') || 'this person';
+  const isFlag = capabilityCopy(flow).flag && lead === 'capability';
 
   return (
-    <div style={{ marginTop: '1rem', border: `1px solid ${accent}33`, borderRadius: 12, background: '#f0fdf4', padding: '0.9rem 1rem' }}>
-      {renderSignal(lead, signals, { prominent: true, fullName, subject, dark, strict })}
+    <div style={{ marginTop: '1rem', border: `1px solid ${isFlag ? '#f59e0b' : `${accent}33`}`, borderRadius: 12, background: isFlag ? '#fffbeb' : '#f0fdf4', padding: '0.9rem 1rem' }}>
+      {renderSignal(lead, signals, { prominent: true, fullName, subject, dark, strict, flow })}
       {(secondary || []).map((k) => (
         <div key={k} style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #d1d5db' }}>
-          {renderSignal(k, signals, { prominent: false, fullName, subject, dark, strict })}
+          {renderSignal(k, signals, { prominent: false, fullName, subject, dark, strict, flow })}
         </div>
       ))}
       {/* The booking lead renders its own tailored unlock line (CVR parity); other leads get the generic CTA. */}
@@ -83,12 +103,20 @@ function Header({ children, dark }) {
   );
 }
 
-function Capability({ fullName, dark }) {
+function Capability({ fullName, dark, flow }) {
+  const copy = capabilityCopy(flow);
   return (
     <div>
-      <Header dark={dark}>Before you meet {fullName} — run a full safety check</Header>
+      {copy.flag ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span aria-hidden="true" style={{ fontSize: 18 }}>⚠️</span>
+          <span style={{ fontWeight: 800, color: '#92400e', fontSize: '0.95rem' }}>{copy.header(fullName)}</span>
+        </div>
+      ) : (
+        <Header dark={dark}>{copy.header(fullName)}</Header>
+      )}
       <div style={{ display: 'grid', gap: 5 }}>
-        {CAPABILITIES.map(([ic, label]) => (
+        {copy.items.map(([ic, label]) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.83rem', color: '#374151' }}>
             <span aria-hidden="true">{ic}</span><span>{label}</span><span style={{ marginLeft: 'auto', fontSize: 12 }}>🔒</span>
           </div>

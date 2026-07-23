@@ -69,6 +69,9 @@ const CASES = [
   { label: 'dating flow — Michael Johnson / NV', flow: 'dating', subject: { firstName: 'Michael', lastName: 'Johnson', state: 'NV', age: '' } },
   { label: 'inmate flow — James Smith / FL', flow: 'inmate', subject: { firstName: 'James', lastName: 'Smith', state: 'FL', age: '' } },
   { label: 'general flow — James Smith / FL', flow: 'general', subject: { firstName: 'James', lastName: 'Smith', state: 'FL', age: '' } },
+  { label: 'sexOffender flow (homefacts) — Robert Tapia / CA', flow: 'sexOffender', subject: { firstName: 'Robert Orlando', lastName: 'Tapia', state: 'California', age: '' } },
+  { label: 'background flow (homefacts) — James Smith / FL', flow: 'background', subject: { firstName: 'James', lastName: 'Smith', state: 'FL', age: '' } },
+  { label: 'publicRecords flow (homefacts) — James Smith / FL', flow: 'publicRecords', subject: { firstName: 'James', lastName: 'Smith', state: 'FL', age: '' } },
 ];
 
 export default function SignalTeaserDevPage() {

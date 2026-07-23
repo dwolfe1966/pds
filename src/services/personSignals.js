@@ -27,6 +27,12 @@ const FLOW_PRIORITY = {
   divorce: { lead: 'marriageDivorce', secondary: ['booking'] },
   dating:  { lead: 'capability',      secondary: ['marriageDivorce', 'booking'] },
   death:   { lead: 'marriageDivorce', secondary: [] },
+  // Homefacts records-intent flows (2026-07-23). Criminal + sex-offender are POST-PAY only (see shapeSignals),
+  // so pre-pay these lead with the compliance-safe capability tease; any pre-pay booking/marriage hits show as
+  // "also found". Post-pay, the real criminal/offender records surface in the report.
+  background:     { lead: 'capability', secondary: ['booking', 'marriageDivorce'] },
+  sexOffender:    { lead: 'capability', secondary: ['booking'] },
+  publicRecords:  { lead: 'capability', secondary: ['booking', 'marriageDivorce'] },
   general: { lead: '__strongest__',   secondary: ['__rest__'] },
 };
 const STRENGTH_ORDER = ['booking', 'sexOffender', 'marriageDivorce']; // for general '__strongest__'

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
@@ -89,6 +89,22 @@ const VerticalIntentLanding = ({ cfg }) => {
     if (city.trim()) params.set('city', city.trim());
     navigate(`/name/loader?${params.toString()}`);
   };
+
+  // AUTO-PRIME (homefacts partner traffic): when the landing arrives with the person pre-filled from the
+  // partner's outbound link (firstName+lastName in the query), skip the search box and go straight to the
+  // loader → SERP teaser (pays off the exact promise). No params → the normal cold-search wizard. Also
+  // captures the partner `type` placement label for attribution (per-placement cost-per-trial in the 70k test).
+  const primedRef = useRef(false);
+  useEffect(() => {
+    const sourceType = queryParams.get('type');
+    if (sourceType) track('partner_landing', { partner: 'homefacts', placement: sourceType, variant: V, primed: !!(firstName.trim() && lastName.trim()) });
+    if (cfg.autoPrime && !primedRef.current && firstName.trim() && lastName.trim()) {
+      primedRef.current = true;
+      track('primed_search', { search_type: 'name', variant: V, placement: sourceType || undefined });
+      runSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startSearch = (e) => {
     e.preventDefault();
