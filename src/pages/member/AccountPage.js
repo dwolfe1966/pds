@@ -855,7 +855,7 @@ const AccountPage = () => {
       return;
     }
     // HP-4 defensive guard: CA billing addresses must cancel via CS, not online.
-    if (isCaBillingOrder(activeOrder)) {
+    if (mustCancelViaCs(orders)) {
       setShowCancelModal(false);
       track('cancel_ca_redirect_cs', { orderId: activeOrder._id || activeOrder.id, via: 'confirm' });
       navigate('/contact?topic=cancel&reason=ca');
@@ -1723,7 +1723,7 @@ const AccountPage = () => {
                   <button className={styles.cancelBtn} onClick={() => {
                     // HP-4: CA billing addresses cancel via CS, not online.
                     const active = (orders || []).find((o) => o.status === 'active' && !o?.transient?.canceled);
-                    if (isCaBillingOrder(active)) {
+                    if (mustCancelViaCs(orders)) {
                       track('cancel_ca_redirect_cs', { orderId: active?._id || active?.id });
                       navigate('/contact?topic=cancel&reason=ca');
                       return;
