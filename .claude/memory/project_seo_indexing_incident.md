@@ -71,6 +71,44 @@ wants aren't in it); (3) URL-Inspect → Request Indexing on ~5 top pages. Recov
 re-crawls. **Phase 3 (the 13.8k never-indexed thin pages) = slow authority/content game** (consolidate
 duplicate URL patterns to one canonical + thicken pages via [[project_seo_content_augmentation]]).
 
+## 2026-07-23 UPDATE — live re-verify: Phase-1 technical fixes are HOLDING
+Owner asked again "still no traffic." Re-checked the live site from outside (no GSC access this session):
+- **robots** open (`Allow: /`, Host, 2 sitemaps); **sitemapv2.xml** valid flat urlset **1,052 URLs**;
+  **sitemap-directory.xml** live (200); old **sitemap.xml** index still resolves (200, unreferenced — fine).
+- **Deep leaves recovered from the 404 cascade:** `/people/ca/los-angeles/john-smith`, `/people/ca/los-angeles`,
+  `/ca/john-smith` all **HTTP 200 + `<meta robots=index,follow>` + self-canonical** (the churn 404s that
+  deindexed the set 7/12–7/15 are gone).
+- **Caching fix holding:** deep leaf + state hub both `x-vercel-cache: HIT` (age 69 / 213s) — ISR-cached,
+  not per-crawl no-store. The crawl-budget/404 amplifier is fixed.
+- Hero page `/people/ca` = SSR real content (cities+counties+incarceration). Technical health = GOOD.
+**Conclusion:** nothing new is broken; this is the expected *waiting-for-reindex* phase ~5–10 days after
+Phase-1/2 shipped. NO external tool can confirm Google's state — `site:` via WebSearch isn't Google and
+returned nothing (unreliable). **The only instrument is the owner's GSC.** What to read there decides the
+next move: (a) did the **Validate Fix** on "Not found(404)"+"Duplicate" PASS? (b) is the **indexed count**
+climbing back from the 7/15 deindex? (c) are **impressions off 0**? (d) confirm Phase-2 owner-actions were
+actually done (Request Indexing on ~5 top pages; submit a canonical NAME-URL sitemap — sitemapv2 is only the
+1,000 city/state, not the name pages Google wants). The 13.8k "discovered – not indexed" thin pile won't
+come back via resubmission — that's the slow authority + [[project_seo_content_augmentation]] game.
+
+## 2026-07-23 — GSC numbers in + sitemap now DELIBERATELY 2.3k (not 46k)
+Owner's GSC: (1) Validate-Fix on 404/Duplicate **still PENDING** (not passed → Google hasn't reprocessed the
+deindex reason, gates everything); (2) **indexed count FLAT**; (3) **17 impressions / 7 days, flat**; (4) only
+`sitemap-directory.xml` submitted (Jul 21, Success, **2,291 discovered**). **Bing: ZERO data.**
+- Live `sitemap-directory.xml` = **2,302 URLs** (52 states + 1,909 cities + 340 counties [CA/FL/GA/PA only];
+  **0 name pages, 0 name-in-state**). GSC's 2,291 ≈ this exactly → **Google reads the whole sitemap; it's just
+  small on purpose.** The 46k→2.3k drop is **owner-approved 7/20** (`maxNamePages:0` in the route): the ~41k thin
+  name-in-city pages now serve page-level `robots:noindex`; only ~980 unique-content ones stay indexable via
+  internal links. This is the CORRECT anti-thin-content cleanup — NOT a bug.
+- **VERDICT: "no traffic" is NOT a technical/sitemap problem.** Everything technical is correct and freshly
+  cleaned. It's a **domain-authority/trust** problem: a ~7-week-old STANDALONE domain that indexed ~13.5k then
+  took a deindex cascade (7/12–7/15) has no trust; GSC's 13k "discovered–not-indexed" = Google declined; **Bing
+  zero confirms it's authority, not a Google quirk.** Two owner-gated blockers: Validate-Fix pending (can't force);
+  and authority can't be sitemap'd. **Highest-leverage move = fold the CURATED 2,302-page directory into the
+  established `idlookup.ai/people`** (inherits real domain authority) — curated set ONLY (already = the current
+  sitemap), NEVER the thin tail, to avoid importing the trust problem onto the revenue domain (BC/Cloudflare).
+  Minor open Q: counties only for 4 states — confirm intentional (roster-coverage) vs truncated. See
+  [[project_seo_individual_profiles]], [[project_seo_content_augmentation]].
+
 ## Strategy going forward
 Don't advertise the 360k leaves until they carry REAL per-person content (the profile/lazy-pull
 work in [[project_seo_individual_profiles]]). Earn trust on ~1000 solid pages, then WIDEN
