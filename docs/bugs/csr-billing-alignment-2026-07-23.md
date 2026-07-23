@@ -80,14 +80,31 @@ BC's terminal (which cycle, which retry, paid vs unpaid) without contradicting i
 
 ---
 
-## 5. Live per-user validation (pending BC creds)
+## 5. Live per-user validation — DONE ✅ (2026-07-23, real BC data)
 
-`scripts/csr-billing-fetch.js` (read-only) logs into `admin.www.bytecrtrs.com`, pulls each of the 72 users'
-real orders + histories, and dumps them so we run **our** `classifyBilling` on the **same data** BC.admin
-used. That produces a definitive per-user diff (our state vs BC terminal) and confirms the §2 residuals.
+Pulled all 72 users' real orders from `admin.www.bytecrtrs.com` (read-only, `scripts/csr-billing-fetch.js`)
+and ran **our** classifier on the **same data** BC.admin used (`src/tests/csrBillingCompare.test.js`).
 
-**To run:** put CSR creds in `docs/BC_CREDS.local.md` (gitignored), then
-`node scripts/csr-billing-fetch.js` → `scripts/out/csr-orders-72.json` → per-user comparison appended here.
+**Result: access bucket matches BC.admin for 72/72 users. Zero mismatches.** 14 problematic-transaction
+warnings raised — all on BC=`[active]` customers (correctly staying active + flagged), incl. kingasyus &
+esteven. Per-user detail: `docs/bugs/csr-billing-peruser-2026-07-23.md` (gitignored — customer PII).
+
+**BC.admin terminal → our classification (live pairings):**
+
+| BC.admin terminal | → our classification | count | access match |
+|---|---|---|---|
+| `[active]` | `trial-S0-paid` | 18 | ✅ |
+| `[active]` | `trial-D1.2` (dunning, retry 2) | 16 | ✅ |
+| `[active]` | `trial-D1.1` (dunning, retry 1) | 13 | ✅ |
+| `[active]` | `trial-S0-unpaid` (validate-only / cascade) | 8 | ✅ |
+| `[canceled (pending period end)]` | `trial-S0-norenewal` | 7 | ✅ |
+| `[canceled→expired (voluntary)]` | `inactive` | 8 | ✅ |
+| `[expired (involuntary)]` | `inactive` | 2 | ✅ |
+
+Every BC terminal maps to a consistent CSR state; our S-code adds detail *beneath* BC's terminal without
+contradicting it. **The only intentional collapse:** BC's two no-access terminals (`canceled→expired` and
+`expired`) both map to our single **`inactive`** — that's the owner's chosen taxonomy (2026-07-22), not a
+defect; the phase/`stateName` still carries the finer reason (Cancelled vs Expired) if we ever want to split.
 
 ---
 

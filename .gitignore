@@ -73,3 +73,11 @@ docs/legacy/
 docs/BC_CREDS.local.md
 docs/*.local.md
 scripts/out/
+
+# Prod BC admin creds (RTF the owner dropped) — NEVER commit
+docs/admin/BC-ADMIN-CREDENTIALS.rtf
+docs/admin/*.rtf
+docs/**/*CRED*
+
+# Per-user billing comparison (customer PII) — regenerable, do not commit
+docs/bugs/csr-billing-peruser-*.md

@@ -21,19 +21,38 @@ const CREDS_FILE = path.join(ROOT, 'docs/BC_CREDS.local.md');
 const OUT = path.join(ROOT, 'scripts/out/csr-orders-72.json');
 const BASE = process.env.BC_BASE || 'https://admin.www.bytecrtrs.com';
 
+const RTF_CREDS = path.join(ROOT, 'docs/admin/BC-ADMIN-CREDENTIALS.rtf');
+
 function loadCreds() {
   let user = process.env.CSR_USER, pwd = process.env.CSR_PWD;
-  if ((!user || !pwd) && fs.existsSync(CREDS_FILE)) {
-    const t = fs.readFileSync(CREDS_FILE, 'utf8');
-    const grab = (labels) => {
+  const grabLabeled = (t) => {
+    const g = (labels) => {
       for (const l of labels) {
         const m = t.match(new RegExp(`${l}[^A-Za-z0-9]*[:=][^\\S\\r\\n]*\`?([^\`\\s]+)`, 'i'));
         if (m) return m[1];
       }
       return null;
     };
-    user = user || grab(['CSR_USER', 'Email', 'User', 'Username']);
-    pwd = pwd || grab(['CSR_PWD', 'Password', 'Pass', 'PWD']);
+    return { u: g(['CSR_USER', 'Email', 'User', 'Username']), p: g(['CSR_PWD', 'Password', 'Pass', 'PWD']) };
+  };
+  if ((!user || !pwd) && fs.existsSync(CREDS_FILE)) {
+    const { u, p } = grabLabeled(fs.readFileSync(CREDS_FILE, 'utf8'));
+    user = user || u; pwd = pwd || p;
+  }
+  // RTF the owner dropped: plain email + password, possibly soft-wrapped across lines.
+  if ((!user || !pwd) && fs.existsSync(RTF_CREDS)) {
+    let txt = '';
+    try { txt = require('child_process').execSync(`textutil -convert txt -stdout "${RTF_CREDS}"`, { encoding: 'utf8' }); }
+    catch { txt = fs.readFileSync(RTF_CREDS, 'utf8').replace(/\\[a-z]+\d* ?|[{}]/g, ' '); }
+    // Try labeled first, else treat blank-line-separated paragraphs (lines joined) as [user, pwd].
+    const lab = grabLabeled(txt);
+    if (lab.u && lab.p) { user = user || lab.u; pwd = pwd || lab.p; }
+    else {
+      const paras = txt.split(/\n\s*\n/).map((s) => s.replace(/\s+/g, '')).filter(Boolean);
+      const emailPara = paras.find((s) => /@/.test(s));
+      const pwdPara = paras.find((s) => s !== emailPara && s.length >= 6);
+      user = user || emailPara; pwd = pwd || pwdPara;
+    }
   }
   return { user, pwd };
 }
