@@ -131,6 +131,31 @@ export const CAMPAIGN_REGISTRY = {
     optOut:  true,                              // optout: yes
   },
 
+  // ── Homefacts partner traffic (records intent, 2026-07-23). One PLACEHOLDER shN per records experience so
+  // BC + GTM attribute each URL distinctly (partner=Homefacts, channel=the intent). The partner links go
+  // DIRECTLY to /records/* so landing.route stays null (no boot redirect). Finer placement within an intent
+  // (OffenderD_Text vs offender-details1, etc.) is carried by the `type` param → the partner_landing event.
+  // Swap these keys for real BC-provisioned shConIds when minted (like the Google tokens above); identity's
+  // partner/channel is what feeds reporting today. Hit as `?shn=homefacts-so` (no shl → resolves `…:*`).
+  'homefacts-so:*': {
+    identity: { shnName: 'Homefacts — Sex Offender', brand: 'IDL', partner: 'Homefacts', channel: 'Sex Offender',
+      purpose: 'Homefacts offender-detail traffic → criminal/offender report' },
+    landing: { route: null },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+  'homefacts-bg:*': {
+    identity: { shnName: 'Homefacts — Background Check', brand: 'IDL', partner: 'Homefacts', channel: 'Background Check',
+      purpose: 'Homefacts arrest/records traffic → background report' },
+    landing: { route: null },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+  'homefacts-pr:*': {
+    identity: { shnName: 'Homefacts — Public Records', brand: 'IDL', partner: 'Homefacts', channel: 'Public Records',
+      purpose: 'Homefacts general records traffic → public-records report' },
+    landing: { route: null },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+
   // ── Real shN tokens swapped in 2026-06-09 (owner provided the minted IDs). All
   // Upper/Lower pairs share the same landing + config — they differ only by ad
   // position (bid/reporting on the Google side), so they resolve to identical UX.
