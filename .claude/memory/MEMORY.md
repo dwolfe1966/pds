@@ -1,110 +1,97 @@
 - [User context & dual-machine setup](user_context.md) — Mac + Windows, sync via git
-- [Cross-machine memory sync](reference_memory_sync.md) — `.claude/memory/` is committed; symlink/junction the per-project memory path on each machine
-- [BC is internal, not third-party vendor](project_bc_org_relationship.md) — same company; frame as internal coordination, propose specific fixes, not vendor escalation
-- [ByteCrtrs API reference](bytecrtrs_api_reference.md) — full method signatures on `window.ApiWrapper`
-- [BC Admin API reference (csrWrapper)](bc_admin_api_reference.md) — admin-side endpoints for the separate Admin App build
-- [BC API docs CSV locations](reference_bc_api_docs_location.md) — `docs/new-api/bc client library - {Api,csrApi,HowTo}.csv` are the source of truth; grep these before guessing endpoints
-- [BC integration boundary](project_bc_integration_boundary.md) — IIFE only exposes auth/idLookup/optOut/billing; profile/sub/alerts/notif/pwd stay mock until BC expands
-- [BC consumer support model](project_bc_consumer_message_model.md) — enumeration via `message.contact.getUserContacts` (added 2026-05-28) + per-thread `histories(id, hash)`; localStorage is cache, BC is source of truth
-- [Architecture decisions](project_architecture_decisions.md) — finalized decisions for tracking, email, deployment
-- [Production deployment architecture](project_production_architecture.md) — production may ship as pure React SPA; `/server` is dev mock only
-- [BC hosting cert + URL quirks](project_bc_hosting_quirks.md) — cert only covers `dev.admin.www.bytecrtrs.com`/`dev.gwhubadmin.www.bytecrtrs.com`; use relative `/api`
-- [Local production-bundle test setup](reference_local_prod_bundle_test.md) — `node scripts/serve-prod.js` serves build/ on :3000, proxies /api → dev.www.idlookup.ai
-- [BC IIFE request body shapes](reference_bc_iife_request_shapes.md) — direct POST fallback must match per-endpoint shape; some need `{ input: payload }`
-- [Active backlog and known gaps](project_backlog.md) — BACKLOG-1..5 plus untracked gaps
-- [Production launch timeline](project_launch_timeline.md) — 5-10 day window from 2026-05-06; backlog arriving 2026-05-07
-- [Funnel UX research](project_funnel_ux_research.md) — designer competitor analysis (BeenVerified/TruthFinder/Spokeo/Intelius)
-- [Payment UX research](project_payment_ux_research.md) — designer competitor analysis for checkout/subscription
+- [Cross-machine memory sync](reference_memory_sync.md) — `.claude/memory/` committed; symlink the per-project memory path per machine
+- [BC is internal, not a vendor](project_bc_org_relationship.md) — same company; internal coordination, propose fixes not escalation
+- [ByteCrtrs API reference](bytecrtrs_api_reference.md) — method signatures on `window.ApiWrapper`
+- [BC Admin API reference (csrWrapper)](bc_admin_api_reference.md) — admin-side endpoints for the Admin App build
+- [BC API docs CSV locations](reference_bc_api_docs_location.md) — `docs/new-api/bc client library - {Api,csrApi,HowTo}.csv` = source of truth; grep before guessing
+- [BC integration boundary](project_bc_integration_boundary.md) — IIFE exposes only auth/idLookup/optOut/billing; profile/sub/alerts/notif/pwd stay mock
+- [BC consumer support model](project_bc_consumer_message_model.md) — enumerate via `message.contact.getUserContacts` + per-thread `histories(id,hash)`; BC is truth
+- [Architecture decisions](project_architecture_decisions.md) — finalized tracking/email/deployment decisions
+- [Production deployment architecture](project_production_architecture.md) — prod may ship pure React SPA; `/server` is dev mock only
+- [BC hosting cert + URL quirks](project_bc_hosting_quirks.md) — cert covers only dev.admin/dev.gwhubadmin bytecrtrs hosts; use relative `/api`
+- [Local prod-bundle test](reference_local_prod_bundle_test.md) — `node scripts/serve-prod.js` serves build/ on :3000, proxies /api → dev.www.idlookup.ai
+- [BC IIFE request body shapes](reference_bc_iife_request_shapes.md) — direct-POST fallback must match per-endpoint shape; some need `{ input: payload }`
+- [Active backlog and known gaps](project_backlog.md) — BACKLOG-1..5, HP-1..4, plus untracked gaps
+- [Funnel UX research](project_funnel_ux_research.md) — competitor analysis (BeenVerified/TruthFinder/Spokeo/Intelius)
+- [Payment UX research](project_payment_ux_research.md) — competitor analysis for checkout/subscription
 - [Member search result limit caveat](project_member_search_result_limit.md) — test BC >5 results before relying on it
 - [Team roles](team_roles.md) — Lead, Developer, Tester, Designer, Analyst/Report Developer
 - [Feedback: narrow paywall to /people/:id](feedback_narrow_paywall.md) — do NOT guard /search or /alerts
-- [Feedback: subscription state authority](feedback_subscription_state_authority.md) — member paid status derives from BC `billing.getOrders()` only; no local `isPaid` flag
-- [Feedback: BC is source of truth](feedback_bc_is_source_of_truth.md) — always go to BC for display state; localStorage may store refs but not content; no BFF/tracking-api before launch
-- [Feedback: innovate around BC, don't wait](feedback_innovate_dont_wait_for_bc.md) — owner 2026-05-29; file BC asks in parallel, ship client-side workaround now; time-box BC-blocked items
-- [Bug triage execution status 2026-05-29](project_bug_triage_status_2026_05_29.md) — live tracker for the bug-list run; what's shipped, what's next, current bundle hashes, BC asks in flight
-- [Feedback: autonomous mode for launch sprint](feedback_autonomous_mode.md) — proceed on agreed work without per-step confirmation; pause only for destructive or genuinely ambiguous actions
-- [Feedback: search contextKey/teaserInput require extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time
-- [Feedback: never bake the BC captcha password into a bundle](feedback_no_secrets_in_bundle.md) — `.env.production` ships with empty captcha pass; never override via `.env.production.local` or `.env.local`
-- [Feedback: console.* stripped in prod](feedback_console_stripped_in_prod.md) — babel-plugin-transform-remove-console wipes all console.* in prod; "look at console" doesn't work on deployed bundle
-- [Feedback: silent ReferenceError in runSearch](feedback_silent_referenceerror.md) — wizard "search failed" with no network call usually = missing import inside try block, masked by catch + console strip
-- [Feedback: NEVER suppress the BC captcha modal](feedback_never_block_bc_captcha_modal.md) — overriding executePasswordCaptcha/makeCaptchaRetryRequest unravels every downstream BC call; leave the IIFE alone
-- [BC contactMessage orderId required on general](reference_bc_contact_orderid_required.md) — must match `/^[a-zA-Z0-9]{8,24}$/`; consumer sends `NOORDERID0000` sentinel when no real order
-- [BC getUserOrders 403 = no orders](reference_bc_getuserorders_403.md) — treat 403 on this endpoint as "unpaid", not auth failure
-- [Jest static-asset imports](reference_jest_static_asset_imports.md) — moduleNameMapper + fileMock pattern for src files that import .png/.svg/etc.; don't reach for babel plugins
-- [AuthContext test pattern](reference_authcontext_test_pattern.md) — `AuthContext` object isn't exported, use `useAuth()`; `flushAsync` needs TWO promise ticks
-- [Feedback: never client-filter BC /database/search response](feedback_no_clientside_filter_on_bc_database_search.md) — displayFields trims the response; `docs.filter(d => d.xxxId === id)` wipes every row when the field isn't displayed. Trust `query.xxxId` server-side; regressed twice already.
-- [Queued CSR tasks (after SHN round)](project_next_csr_tasks.md) — messageCreate regression check, full CSR order data, pass address when filled
-- [Shn partner-attribution framework](project_shn_framework.md) — registry/resolver/data.refer/BC-driven pricing; real shN strings still to swap into placeholder keys
-- [Parcel .png import → {} (use data-URI logo)](reference_datauri_logo_gotcha.md) — importing a .png yields an empty object at runtime; inline as data URI
+- [Feedback: subscription state authority](feedback_subscription_state_authority.md) — paid status from BC `billing.getOrders()` only; no local `isPaid`
+- [Feedback: BC is source of truth](feedback_bc_is_source_of_truth.md) — always BC for display state; localStorage stores refs not content
+- [Feedback: innovate around BC, don't wait](feedback_innovate_dont_wait_for_bc.md) — file BC asks in parallel, ship client workaround now; time-box BC-blocked
+- [Feedback: autonomous mode for launch sprint](feedback_autonomous_mode.md) — proceed on agreed work; pause only for destructive/ambiguous
+- [Feedback: search contextKey/teaserInput = extreme caution](feedback_search_contextkey.md) — two days lost; one change at a time
+- [Feedback: never bake BC captcha password into a bundle](feedback_no_secrets_in_bundle.md) — `.env.production` empty captcha pass; never override via `.local`
+- [Feedback: console.* stripped in prod](feedback_console_stripped_in_prod.md) — babel wipes console.* in prod; "look at console" fails on deployed bundle
+- [Feedback: silent ReferenceError in runSearch](feedback_silent_referenceerror.md) — "search failed" w/ no network call = missing import in try, masked by catch+strip
+- [Feedback: NEVER suppress the BC captcha modal](feedback_never_block_bc_captcha_modal.md) — overriding executePasswordCaptcha unravels downstream BC calls
+- [Feedback: never client-filter BC /database/search](feedback_no_clientside_filter_on_bc_database_search.md) — displayFields trims response; trust `query.xxxId` server-side
+- [Feedback: EXPOSE ALL report data](feedback_expose_all_report_data.md) — report detail shows every BC field; don't cherry-pick
+- [Feedback: funnel design principles](feedback_funnel_design_principles.md) — sell benefits not features; consumer not SaaS; build/verify/confirm
+- [Feedback: always push to main](feedback_always_push_to_main.md) — after every commit, push origin main; don't gate on the push
+- [Feedback: map records to members/profiles](feedback_map_records_to_members.md) — every public-record source maps to a member+profile, never standalone
+- [Feedback: first-party data independence](feedback_first_party_data_independence.md) — return max data independent of any downstream provider status
+- [BC contactMessage orderId required](reference_bc_contact_orderid_required.md) — match `/^[a-zA-Z0-9]{8,24}$/`; send `NOORDERID0000` sentinel when none
+- [BC getUserOrders 403 = no orders](reference_bc_getuserorders_403.md) — treat 403 as "unpaid", not auth failure
+- [BC contactMessages link by email](reference_bc_contactmessage_email_link.md) — per-user endpoint 404s; CSR Messages tab = always email-merge
+- [BC CSR user object omits zip/card/phone](reference_bc_user_object_no_zip.md) — ZIP lives in order billingAddress; Users-list Zip/CC columns dead
+- [BC teaser identities nested in commerceContent.raws](reference_bc_teaser_response_shape.md) — phone SRP "no results" was adaptTeaserResponse missing the nesting
+- [BC ShapeCompiled comp.client.theme = per-shN config](reference_bc_shapecompiled_theme.md) — landing/sup/optout/thinmatch; drives optOut+zeroState
+- [BC billing.sale 406 = non-false sequenceOption](reference_bc_sale_sequenceoption_406.md) — thin-match sale sends all-false flags; readThinMatch() only for real unlock
+- [BC getOrder = definitive price](reference_bc_getorder_price.md) — CSR price from user.getOrder schedule.data.totalPrice + dueTimestamp, not offer
+- [BC user status enum — no 'suspended'](reference_bc_user_status_enum.md) — CSR suspend writes `status:'blocked'` (enum active/inactive/removed/blocked/banned)
+- [BC attachment.download is IIFE-managed](reference_bc_attachment_download.md) — `csrWrapper.api.attachment.download({attachmentId})`, await-only, self-triggers
+- [BC extId is ephemeral](reference_bc_extid_ephemeral.md) — obf1 extId re-encrypted every call; match on stable attrs (name+city+first-seen)
+- [BC report field map](bc_report_field_map.md) — packet path + criminal/property field inventory + charge-name bug; docs/BC_REPORT_FIELD_MAP.md
 - [Cancel-at-period-end order shape](reference_cancel_at_period_end.md) — check subStatus==canceled + dueTimestamp>now, not transient.canceled
-- [Live UAT via Playwright (Galaxy S5)](reference_live_uat_playwright.md) — real-browser testing; BC captcha gates searches; serve-admin Forbidden workaround; never save creds
-- [BC CSR user object omits zip/card/phone](reference_bc_user_object_no_zip.md) — search filters by them but doesn't return them; ZIP lives in order billingAddress; Users-list Zip/CC columns are dead
-- [CSR triage session 2026-06-04](project_csr_triage_2026_06_04.md) — live admin=ce2e8005, deployable=f80dd2d8; Notes row 38 resolved (deploy skew); CTO-list assessment + BC asks
-- [BC teaser identities nested in commerceContent.raws](reference_bc_teaser_response_shape.md) — phone SRP "no results" was adaptTeaserResponse missing the commerceContent.raws nesting; contextKey enum was fine
-- [Launch state 2026-06-06](project_launch_state_2026_06_06.md) — CURRENT: deployables (consumer 742dba2e / admin 7aa4d485), what shipped (phone fixes, CSR single-search, Shn 6a22ff83), open BC asks + decisions
-- [Ads/conversion audit 2026-06-07](project_ads_conversion_2026_06_07.md) — GTM double-load + conversion-gate (partnerName) fixed in code; bundle ee72ad75; owner TODO = re-point GTM tag to `purchase` + add `?shn=` to Ads URLs; probe scripts/live-uat-gtm-shn.js
-- [Report-breadth eval task](project_report_breadth_task.md) — NEXT: compare report detail vs old site (same BC API); gaps = per-address + financial (lien/bankruptcy); likely a display gap not data; O.J. Simpson comparison
-- [BC contactMessages link by email, not targetUserId](reference_bc_contactmessage_email_link.md) — per-user endpoint 404s on them; CSR user-detail Messages tab fix = always email-merge; per-endpoint apiId auth gotcha
-- [BC ShapeCompiled comp.client.theme = per-shN config](reference_bc_shapecompiled_theme.md) — landing/sup/optout/thinmatch live here; drives optOut + zeroState; resolver cache-key bug fixed; probe via network intercept
-- [BC billing.sale 406 = non-false sequenceOption](reference_bc_sale_sequenceoption_406.md) — promo/thin-match sale must send all-false thin-match flags; only send readThinMatch() for a real report unlock
-- [CSR library migration map](reference_csr_library_migration.md) — which csr* methods migrate to csrWrapper IIFE, which cant (BC gaps), 4 "fake lib-first" that silently hand-roll, stale envelope-comment trap
-- [Feedback: EXPOSE ALL report data](feedback_expose_all_report_data.md) — report detail must show every BC field; no attribute too minor; don't cherry-pick
-- [BC report field map](bc_report_field_map.md) — real packet path + criminal/property field inventory + charge-name bug; docs/BC_REPORT_FIELD_MAP.md
-- [Report-detail expose-all status](project_report_detail_expose_all.md) — verified lists + special cases done (bundle d57752b7 NOT deployed); unverified lists blocked (test21 can't create reports)
-- [BC PRODUCTION go-live 2026-06-23](project_bc_production_golive_2026_06_23.md) — BC now LIVE in prod; bugs/feedback are on PROD not dev; probes/demo are dev-only; NEVER persist prod creds; NO mutation probes on prod (real money/PII); live writes only owner-present
-- [CSR auth state 2026-06-16](project_csr_auth_state_2026_06_16.md) — csrManager role-gate FIXED; BC partially opened collections; 8 CSR reads migrated to lib-first (verified); BC ask doc complete (grants + 7 add + 2 fix + sample calls); admin `805fa86a` NOT deployed
-- [Security: open-redirect + deps 2026-06-16](project_security_open_redirect_2026_06_16.md) — RESOLVED 2026-06-22 (commit 6651702): react-router→6.30.4 + AdminLoginPage guard, shell-quote/form-data overrides; all 4 Dependabot alerts patched, bundles rebuilt (public.82f63273.js / admin.736a8551.js)
-- [BC getOrder = definitive price (Ask A resolved)](reference_bc_getorder_price.md) — Kwan 2026-06-23: CSR price from user.getOrder schedule.data.totalPrice + dueTimestamp, NOT offer endpoint; BC asks now 4 (B/C/D/E); doc BC_CSR_LIB_ONLY_ASKS.md
-- [CSR lib methods — LIVE evidence 2026-06-17](project_csr_lib_live_evidence_2026_06_17.md) — re-verified full csrWrapper surface; findAdmin/tracking.findUser lib-broken reproduced (lib 0 / direct 10 & 100); optOut+managedContact now readable; findUserContacts→contactMessage not userContact; doc BC_CSR_LIB_METHOD_LIVE_EVIDENCE.md
-- [BC consumer-feature asks (WISFY + Alerts)](project_bc_consumer_feature_asks.md) — both mock/coming-soon, BC-blocked; WISFY=1 capability (inbound-activity finder), Alerts=4 (CRUD/monitoring/feed/delivery); roadmap not launch-blocking; doc BC_CONSUMER_FEATURE_ASKS.md
-- [Session end 2026-07-02](project_session_end_2026_07_02.md) — pick-up state: inmate A/B set + full funnel theming + A/B wiring shipped (HEAD ac1840d, not deployed); next = deploy + BC must enable the split on prod
-- [A/B test theme wiring](project_ab_test_theme_wiring.md) — BC theme.landing/sup drive the arm (v3a+i vs v3b+j); theme-wins; `awaitTheme` boot-redirect gate; dev still returns the OLD theme
-- [Retire local shn registry (HELD)](project_retire_shn_registry.md) — drive campaign config from BC shape; blocked on BC populating `comp.tracking.partner.{name,channel}` + a shnName field; plan in docs/reporting/retire-shn-registry-plan.md
-- [Purchase conversion tracking LIVE (GA4 + Ads)](project_conversion_tracking_live.md) — verified end-to-end; ⚠️ GA4 drops headless/automated test hits as bots — verify with a REAL human purchase, not a probe
-- [Changelog → Google Sheet automation](project_changelog_automation.md) — 2x/day GitHub Action posts delivered commits to a team Sheet (de-dupes by hash); source = Conventional-Commit messages; don't break `type(scope): subject`
-- [BC user status enum — no 'suspended'](reference_bc_user_status_enum.md) — CSR suspend must write `status:'blocked'` (BC enum: active/inactive/removed/blocked/banned/…); writing 'suspended' 400s; fixed d51cd1d
-- [BC attachment.download is IIFE-managed](reference_bc_attachment_download.md) — CSR attachments download via `csrWrapper.api.attachment.download({attachmentId})`; await-only, IIFE self-triggers download; wired 958acb0 (EmailTicketsPage clickable attachments)
-- [Session end 2026-06-19](project_session_end_2026_06_19.md) — pick-up state: deploy candidate `admin.5613cbd9.js` (_viaCsr safety+shape-guard, product-quality A/B/C+🟡+polish/19.a, CS-reps, tickets user-mode); BC asks unchanged (A offer/B billing.sale/C commerceOrder + userContact confirm); demo `scripts/demo-bc-csr-asks.js`; docs BC_CSR_ASKS_PACKAGE.md / BC_CONSUMER_FEATURE_ASKS.md; deferred (#22 hex→tokens, live refund/sale test); cautions (no mutation probes, brandId trap, demo-gate); agents bc-asks-register + product-quality-reviewer native next session
-- [Consumer tracking architecture](project_tracking_architecture.md) — 3 surfaces; actor (visitor/member) dimension; client_ dataLayer namespace; PII boundary; docs/EVENTS_CATALOG.md is source of truth; variant→conversion gap is next enhancement
-- [Browser agent (Playwright MCP)](reference_browser_agent.md) — Claude can drive a real browser for E2E/online tasks after Claude Code restart; isolated/no-persisted-creds; prod search Turnstile-gated, no prod writes without owner
-- [Contact Us 412 diagnosis](project_contact_412_diagnosis.md) — prod 412 is TOPIC-specific: topic="Privacy" fails, "Other" works (NOT captcha). Need the 412 response body to find BC's precondition
-- [BC removed prod captcha 2026-06-24](project_bc_removed_prod_captcha.md) — password.v0 captcha is OFF on production; 412s are no longer captcha challenges
-- [BC email templates + tokens](reference_bc_email_templates.md) — BC ${...} token syntax, confirmed global tokens, signup-email findings (right template/raw values), our HTML in docs/email-templates/
-- [Ad-unit funnel review 2026-06-24](project_adunit_funnel_review.md) — name/phone/email V2-V6 review; FIXED: V2/V5 name + V2-V6 phone loader delegation (Ads-invisibility + phone dead-end); OUTSTANDING: promise→payoff mismatch, fake interstitials, discarded state step, etc.
-- [SEO concept model + locked decisions](project_seo_concept_decisions.md) — Spokeo playbook; 7 owner decisions 2026-07-02; exposed=search surface, gated=tease; next = BC probe + Phase 0
-- [Funnel design principles](feedback_funnel_design_principles.md) — sell benefits not features; serve the info-need; consumer not SaaS; clean IA; peoplefinders build/verify/confirm model
-- [Funnel redesign 2026-07-03](project_funnel_redesign_2026_07_03.md) — landings/home(/home A-B)/SRP/SUP(vCard, SupTeaserA)/payment redesigned; pending deploy + alt SUPs + #2 bug (davidtest-7-2 lookup) + live teaser payload
-- [Always push to main](feedback_always_push_to_main.md) — after every commit, push origin main; do not gate on the push
-- [SUP challenger variants](project_sup_challenger_variants.md) — one shared SupTeaserA, 3 axes (tone/layout/signup); variants a–j; real counts, no fabrication
-- [SEO: IDI licensed for public display + indexing](project_seo_idi_display_license.md) — data layer = BC/IDI; opt-out from index; only enumeration-for-common-names remains
-- [SEO Layer 1 built](project_seo_layer1_built.md) — name+location skeleton from Census; ~27M name hubs, ~214M profiles, 32k places; pipelines in seo/scripts
-- [BC extId is ephemeral](reference_bc_extid_ephemeral.md) — obf1 extId re-encrypted every call; match people on stable attributes (name+city+first-seen), never extId
-- [SEO LIVE on idlookup.me](project_seo_live_idlookup_me.md) — indexable people-search directory (Vercel + Neon); name×state beats TooManyMatches; sweep needs HEADED; prototype for idlookup.ai/people
-- [SEO content augmentation](project_seo_content_augmentation.md) — ACS demographics + name-facts LIVE on city/leaf pages; city-grain gate estInCity<750 (~866k); Wikidata/notable-people next; news skipped; DB build-resilience fix
-- [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on the SEO Vercel app; code done (30min + 1 follow-up, Name/Age/Location personalized, ASM unsubscribe); PAUSED pending owner SendGrid domain-auth (now e.idlookup.me, .ai DNS is BC-Cloudflare) + Vercel envs
-- [Session end 2026-07-14](project_session_end_2026_07_14.md) — pick-up: Identity Mgmt built; deploy candidate public.9779d7b5.js (not on BC); owner TODOs + queued next
-- [Session end 2026-07-15](project_session_end_2026_07_15.md) — pickup: profile-as-product built; bundle public.b550f47f.js (not on BC); next = fold reports into modular schema (#3)
-- [Modular Profile (profile-as-product)](project_modular_profile.md) — report→Profile; ProfileView + modular My Profile (Protect/Promote, paid tiers, View As, persistence); 3-tab My Identity IA
-- [Identity Management product](project_identity_management.md) — 3-state /my-identity (not-mapped/free/paid), exposure score, per-item suppression enforced in WSFY
-- [WSFY self-build](project_wsfy_self_build.md) — build Who's-Searching-For-You ourselves (BC has none); Phase 1 ingest + Phase 2 tiered reveal + Phase 2b affinity tease SHIPPED (bundle not yet on BC); open: enrichment pipeline (occupation), auth-harden, opt-out
-- [PersonSearch enrichment](project_personsearch_enrichment.md) — Enformion PersonSearch (enabled today, no criminal gate) → member_enrichment relatives/past_locations → lights up WSFY verified/shared_relative + past_local; corroboration+retention gated; ONE blocker = Enformion retention rights (owner)
-- [BC added city to teaser (2026-07-14)](project_bc_teaser_city_added.md) — reverses name+state-only assumption; AFTER WSFY: un-strip city in apiRouter + revisit SEO city-grain
-- [Master growth plan 2026-07-11](project_growth_plan_2026_07_11.md) — 5 areas as one Acquire→Convert→Retain lifecycle; waves + open questions (report COGS, backend location); docs/design/2026-07-11-master-growth-plan.md
-- [SEO individual profiles + data model](project_seo_individual_profiles.md) — per-individual profile leaves under name-in-city; bulk IDI OUT; geo-bug fixed; SEO-TEASER ask (Turnstile is the blocker); owner: canonical-page-listed-on-every-city; lazy-pull blocked on BC+IDI; loc_tokens WIP
-- [SEO indexing incident 7/13](project_seo_indexing_incident.md) — impressions dropped (360k thin pages on a new domain + 8-chunk sitemap index); fix = conservative flat sitemapv2.xml (~1000 top city/state URLs) + robots repointed; owner resubmits; caching-dynamic left as-is
-- [NORTH STAR: freemium identity community](project_freemium_identity_community.md) — pivot from transactional search → freemium community (see-others-by-exposure + manage-own-profile-anywhere); crux = two-class data problem (broker records of non-members); current modular-profile/identity/WSFY/SEO work are its first steps
-- [Session end 2026-07-16](project_session_end_2026_07_16.md) — pickup: SEO indexing rescue (resubmit sitemapv2.xml) + WSFY retroactive-match verified/3-tier identity/named callouts (bundle public.28de962a.js not on BC) + vCard-replace done + north-star captured; NEXT = WSFY auth-harden + verify identity-verification gate
-- [Inmate data layer (investment #1)](project_inmate_data_layer.md) — first-party incarceration/booking API on idlookup.me Vercel (JailBase + UCC); booking teaser on /name/landing/v3 (safe-by-default); activate w/ keys + UCC display permission; email = #2
-- [Incarceration data MOAT](project_incarceration_data_moat.md) — 2026-07-18 strategy: scrape ALL state/county inmate locators → first-party nationwide DB (zero-cost, display-control, SEO, freemium-enabling); named bulk rare (only FL); UCC verified spec; JailBase dropped; recon workflow on TX/CA/NY/IL/PA/NJ
-- [Map records to members/profiles](feedback_map_records_to_members.md) — every public-record source maps to a member+profile (4 surfaces), never a standalone lookup
-- [First-party data independence](feedback_first_party_data_independence.md) — return max data independent of any downstream provider status; first-party is the product
-- [Marriage/divorce + life-events data](../../../Documents/GitHub/pds/docs/marriage-divorce-data-research.md) — Enformion Divorce live ($0.05)/Marriage pending; Criminal V2 $2 → use scraped+IDI; sex-offender via NSOPW scrape
-- [Life events vertical (divorce/marriage/sex-offender)](project_life_events_vertical.md) — 2nd acquisition angle after inmate; Enformion Divorce live/Marriage pending + NSOPW sex-offender (location-based, not report-attributed); flow-aware teasers on v12/SERP/SUP; person-keyed cache; bundle public.3e9be099.js (not deployed)
-- [Address-history map on profile](reference_address_map.md) — Leaflet + OSM; report + My Identity; safe-by-default; ⚠️ CSP must allow *.tile.openstreetmap.org on BC or tiles blank; bundle public.956f8994.js
-- [Signals augmentation (universal enrichment, flow-prioritized)](project_signals_augmentation.md) — presence=data-driven/emphasis=flow-driven; 3 viewer-lenses (prospect/member/owner-self) on 1 subject-keyed signal set; getPersonSignals + 6-phase plan; awaiting owner Q1-Q4 + subject-opt-out verification
-- [SEO recovery brainstorm](project_seo_recovery.md) — SEO floundering (generic people-directory pages on a new domain); pivot to first-party data verticals (INMATE lead) + authority-building; prune thin pages; docs/seo/seo-recovery-brainstorm.md
-- [Thin-match → payment fix](project_thinmatch_payment_fix.md) — no email+password dead-end; unified CTA (bundle public.7e4ba4bb.js)
+- [CSR library migration map](reference_csr_library_migration.md) — which csr* methods migrate to csrWrapper IIFE, which can't; lib-only mandate (Kwan 6/22)
+- [CSR lib methods — LIVE evidence](project_csr_lib_live_evidence_2026_06_17.md) — full csrWrapper surface; findAdmin/tracking.findUser lib-broken; doc BC_CSR_LIB_METHOD_LIVE_EVIDENCE.md
+- [BC consumer-feature asks (WISFY + Alerts)](project_bc_consumer_feature_asks.md) — both BC-blocked/mock; WISFY=1 capability, Alerts=4; roadmap not launch-blocking
+- [Jest static-asset imports](reference_jest_static_asset_imports.md) — moduleNameMapper + fileMock; don't reach for babel plugins
+- [AuthContext test pattern](reference_authcontext_test_pattern.md) — use `useAuth()`; `flushAsync` needs TWO promise ticks
+- [Parcel .png import → {}](reference_datauri_logo_gotcha.md) — importing a .png yields empty object at runtime; inline as data URI
+- [Live UAT via Playwright](reference_live_uat_playwright.md) — real-browser testing; BC captcha gates searches; never save creds
+- [Browser agent (Playwright MCP)](reference_browser_agent.md) — drive a real browser after CC restart; prod search Turnstile-gated, no prod writes w/o owner
+- [BC email templates + tokens](reference_bc_email_templates.md) — BC ${...} token syntax; our HTML in docs/email-templates/
+- [Address-history map on profile](reference_address_map.md) — Leaflet+OSM; ⚠️ CSP must allow *.tile.openstreetmap.org on BC or tiles blank
+- [Shn partner-attribution framework](project_shn_framework.md) — registry/resolver/data.refer/BC-driven pricing; real shN strings still placeholder
+- [Retire local shn registry (HELD)](project_retire_shn_registry.md) — drive config from BC shape; blocked on BC populating comp.tracking.partner.*
+- [A/B test theme wiring](project_ab_test_theme_wiring.md) — BC theme.landing/sup drive the arm; `awaitTheme` boot-gate; dev returns OLD theme
+- [SUP challenger variants](project_sup_challenger_variants.md) — one shared SupTeaserA, 3 axes, variants a–j; real counts, no fabrication
+- [Funnel redesign 2026-07-03](project_funnel_redesign_2026_07_03.md) — landings/home/SRP/SUP/payment redesigned; pending deploy + alt SUPs
+- [Ad-unit funnel review](project_adunit_funnel_review.md) — name/phone/email V2-V6; fixed loader delegation; open: promise→payoff, fake interstitials
+- [BC ShapeCompiled prod go-live](project_bc_production_golive_2026_06_23.md) — BC LIVE in prod; NEVER persist prod creds; NO mutation probes on prod; writes only owner-present
+- [BC removed prod captcha](project_bc_removed_prod_captcha.md) — password.v0 captcha OFF on prod; 412s are not captcha
+- [Contact Us 412 diagnosis](project_contact_412_diagnosis.md) — prod 412 is TOPIC-specific (Privacy fails, Other works); need 412 body for BC precondition
+- [Report-detail expose-all](project_report_detail_expose_all.md) — verified lists + special cases done (bundle NOT deployed); unverified blocked
+- [Purchase conversion tracking LIVE](project_conversion_tracking_live.md) — GA4+Ads verified; ⚠️ GA4 drops headless test hits as bots — verify with a REAL purchase
+- [Consumer tracking architecture](project_tracking_architecture.md) — 3 surfaces; actor dimension; client_ dataLayer; docs/EVENTS_CATALOG.md is truth
+- [Changelog → Google Sheet automation](project_changelog_automation.md) — 2x/day GH Action posts delivered commits; don't break `type(scope): subject`
+- [Security: open-redirect + deps](project_security_open_redirect_2026_06_16.md) — RESOLVED 6/22 (react-router 6.30.4 + guard; 4 Dependabot alerts patched)
+- [NORTH STAR: freemium identity community](project_freemium_identity_community.md) — pivot search→community; crux = two-class data (broker records of non-members)
+- [Master growth plan 2026-07-11](project_growth_plan_2026_07_11.md) — 5 areas as one Acquire→Convert→Retain lifecycle; docs/design/2026-07-11-master-growth-plan.md
+- [Modular Profile (profile-as-product)](project_modular_profile.md) — report→Profile; modular My Profile (Protect/Promote, tiers, View As); 3-tab My Identity
+- [Identity Management product](project_identity_management.md) — 3-state /my-identity; exposure score; per-item suppression enforced in WSFY
+- [WSFY self-build](project_wsfy_self_build.md) — built Who's-Searching-For-You (BC has none); ingest+tiered reveal+affinity tease shipped; open: enrichment, auth-harden, opt-out
+- [PersonSearch enrichment](project_personsearch_enrichment.md) — Enformion PersonSearch → member_enrichment relatives/past_locations → lights WSFY; blocker = retention rights (owner)
 - [Social presence enrichment](project_social_presence.md) — PDL+Gravatar getSocialPresence + /api/social-presence; experimenting, legal flags
-- [Session end 2026-07-21](project_session_end_2026_07_21.md) — inmate moat scaled, SEO recovery complete, social-presence vertical, onboarding reveal; bundle public.dd976490.js
-- [CSR billing classification (S-code taxonomy)](project_csr_billing_classification.md) — trial-S0-*/subscriber-Sn.x-*/inactive; BC schedule.data.retry, cpd, ISF-vs-Fraud; admin.14ee842c.js
-- [Session end 2026-07-22](project_session_end_2026_07_22.md) — CSR billing classification overhaul (admin.14ee842c.js), impersonation done, onboarding fixes; NEXT=SEO traffic + HP-4 CA-cancel
+- [Signals augmentation](project_signals_augmentation.md) — presence=data-driven/emphasis=flow-driven; 3 viewer-lenses; getPersonSignals + 6-phase plan
+- [BC added city to teaser](project_bc_teaser_city_added.md) — reverses name+state-only; AFTER WSFY: un-strip city in apiRouter + revisit SEO city-grain
+- [Thin-match → payment fix](project_thinmatch_payment_fix.md) — no email+password dead-end; unified CTA
+- [Inmate data layer (investment #1)](project_inmate_data_layer.md) — first-party incarceration API on idlookup.me Vercel; booking teaser; activate w/ keys + UCC permission
+- [Incarceration data MOAT](project_incarceration_data_moat.md) — scrape ALL state/county locators → first-party nationwide DB; named bulk rare (FL only); UCC spec verified
+- [Marriage/divorce + life-events data](../../../Documents/GitHub/pds/docs/marriage-divorce-data-research.md) — Enformion Divorce live/Marriage pending; Criminal V2 → scraped+IDI; sex-offender via NSOPW
+- [Life events vertical](project_life_events_vertical.md) — 2nd acquisition angle; Enformion divorce/marriage + NSOPW; flow-aware teasers; person-keyed cache
+- [SEO: IDI licensed for display + indexing](project_seo_idi_display_license.md) — data layer = BC/IDI; opt-out from index
+- [SEO Layer 1 built](project_seo_layer1_built.md) — name+location skeleton from Census; ~27M name hubs, ~214M profiles; pipelines in seo/scripts
+- [SEO LIVE on idlookup.me](project_seo_live_idlookup_me.md) — indexable directory (Vercel+Neon); name×state beats TooManyMatches; prototype for idlookup.ai/people
+- [SEO content augmentation](project_seo_content_augmentation.md) — ACS demographics + name-facts LIVE on city/leaf; city-grain gate estInCity<750
+- [SEO individual profiles + data model](project_seo_individual_profiles.md) — per-individual leaves; SEO-TEASER ask (Turnstile blocker); lazy-pull blocked on BC+IDI
+- [SEO indexing incident](project_seo_indexing_incident.md) — deindex cascade on young domain; conservative sitemapv2 + Phase-1 fixes HOLDING; no-traffic=authority not tech; fold into idlookup.ai/people
+- [SEO recovery brainstorm](project_seo_recovery.md) — pivot to first-party verticals (INMATE lead) + authority; prune thin pages
+- [idlookup.ai/people migration scoping](project_seo_indexing_incident.md) — docs/seo/idlookup-ai-people-migration-scoping.md; subdomain people.idlookup.ai via 1 CNAME (grey-cloud DNS + /people/:id collision rule out subpath)
+- [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on SEO Vercel; PAUSED pending owner domain-auth + Vercel envs
+- [CSR billing classification](project_csr_billing_classification.md) — S-code taxonomy; schedule.data.retry authoritative; terminal-stop (fraud/suspend) wins over stale retry; admin.e7b514df.js
+- [3 new marketing angles + source-zip](project_marketing_angles.md) — marriage/divorce, WSFY, check-your-date funnels (docs/marketing); ⚠️ hardcoded creds in csrApiService.js flagged
+- [Session end 2026-07-22](project_session_end_2026_07_22.md) — latest pickup: CSR billing overhaul, impersonation done, onboarding fixes; then HP-4 CA-cancel + terminal-stop fix (this session)
