@@ -142,25 +142,24 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const canceled = isCanceled(order);
   const hasSettled = cyclesBilled > 0;
 
-  // TERMINAL STOP signals — the sequence has actually HALTED, even when BC leaves status='active' with a
-  // STALE schedule.retry pointing at a phantom future attempt (estevenjnordby 2026-07-23: 59:Suspected Fraud
-  // on the first bill Jul 7 + order suspended Jul 21, yet schedule.data.retry=1 @ Jul 24 → was mis-showing
-  // as a healthy yellow Trial-D1.1). Checked BEFORE the active/dunning branches so the stop wins.
-  //  • Fraud stop: the MOST RECENT sale attempt was declined for suspected fraud (code 59) → no retry (per our
-  //    own decline advice). Keyed on the latest sale (not "ever declined"), so a later success clears it.
-  //  • Suspended: subStatus is 'suspended' now, OR the most-recent status transition suspended the order.
-  const cpsAll = Array.isArray(order.commercePayments) ? order.commercePayments : [];
-  const tsOf = (p) => p?.paymentTimestamp || p?.createdTimestamp || (p?.createdAt ? Date.parse(p.createdAt) : 0) || 0;
-  const lastSale = cpsAll.filter((p) => lc(p?.type) === 'sale').sort((a, b) => tsOf(b) - tsOf(a))[0] || null;
-  const isFraudStopped = !!lastSale
-    && /reject|declin|fail|error|block/.test(lc(lastSale.status))
-    && /fraud/i.test(lastSale?.requestResult?.primaryCodeMessage || lastSale?.subStatus || lastSale?.gatewayTransactionSubStatus || '');
+  // TERMINAL STOP — an EXPLICIT order SUSPEND is the authoritative "no access" signal, whoever triggered it
+  // (BC, a CSR, or the customer). A decline code — INCLUDING 59:Suspected Fraud — is NOT terminal on its own
+  // (owner 2026-07-23: a suspected-fraud DECLINE should not by itself suspend a customer; kingasyus was
+  // suspended by an explicit action "by Asyus King" 17 days after the fraud decline, not by the decline).
+  // Checked BEFORE the active/dunning branches so a STALE schedule.retry can't paint a suspended order as a
+  // healthy yellow D-code (estevenjnordby/kingasyus were mis-showing as Trial-D1.1). Suspend = subStatus is
+  // 'suspended' now, OR the most-recent status transition suspended the order.
   const subStatusNow = lc(order.subStatus);
   const histByRecency = (Array.isArray(order.orderHistories) ? order.orderHistories : [])
     .filter((h) => h?.subStatus)
     .sort((a, b) => (Date.parse(b?.createdAt || 0) || 0) - (Date.parse(a?.createdAt || 0) || 0));
+  const suspendTransition = histByRecency.find((h) => lc(h?.subStatus) === 'suspended') || null;
   const isSuspended = subStatusNow === 'suspended' || (histByRecency[0] && lc(histByRecency[0].subStatus) === 'suspended');
-  const terminalStop = isSuspended || isFraudStopped;
+  // The suspend's OWN reason/actor (statusReason, else "by {updater}") — NOT the decline code.
+  const suspendReason = suspendTransition
+    ? (suspendTransition.statusReason || (suspendTransition.updaterName ? `by ${suspendTransition.updaterName}` : ''))
+    : '';
+  const terminalStop = isSuspended;
 
   // Current cycle REACHED = index of the last CAPTURED charge. A captured payment is ground truth, so the
   // settled-sale count is the authority; schedule.sequence can run AHEAD of reality (an uncaptured S0 whose
@@ -182,14 +181,10 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   let phase, phaseLabel, sCode, hasAccess = false, dunning = false, retrySeq = null;
 
   if (terminalStop) {
-    // Sequence HALTED (fraud stop or suspend) — authoritative over any lingering schedule.retry. No access,
-    // no retry projected. Fraud is called out distinctly (owner: "we have to note it").
-    const why = latestDecline(order);
-    const fraud = isFraudStopped || /fraud/i.test(why || '');
+    // Explicit suspend — authoritative over any lingering schedule.retry. No access, no retry projected.
+    // Label from the suspend's OWN reason/actor, NOT the decline (a fraud decline ≠ a fraud suspend).
     phase = 'order_suspended'; hasAccess = false;
-    phaseLabel = fraud
-      ? `Stopped — suspected fraud${why ? ` (${why})` : ''}`
-      : `Suspended — retries exhausted${why ? ` (${why})` : ''}`;
+    phaseLabel = `Suspended${suspendReason ? ` (${suspendReason})` : ''}`;
     sCode = `S${currentCycle}`;
   } else if (status === 'active' && canceled) {
     phase = 'cancelled_active'; phaseLabel = 'Cancelled — access remains'; hasAccess = true;
@@ -282,8 +277,10 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
 
   // Decline reason (surfaced when it explains the state: dunning / suspended / overstayed).
   const declineReason = (dunning || phase === 'order_suspended' || trialOverstayed) ? latestDecline(order) : null;
-  // Fraud stop — the sequence was halted for suspected fraud (owner: must be noted distinctly).
-  const fraudStop = phase === 'order_suspended' && (isFraudStopped || /fraud/i.test(declineReason || ''));
+  // Fraud stop — the SUSPEND itself was for fraud (not merely a fraud decline that no one acted on). Owner
+  // 2026-07-23: don't conflate a suspected-fraud DECLINE with a fraud suspend; note fraud only if the suspend
+  // reason says so. (The fraud decline still shows in the billing-events table regardless.)
+  const fraudStop = phase === 'order_suspended' && /fraud/i.test(suspendReason || '');
 
   // Plain-English "what to expect next" — phase-aware, incorporating the decline type.
   const $ = (a) => `$${Number(a || 0).toFixed(2)}`;
@@ -306,8 +303,8 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     expectation = `Cancelled — access until ${dstr(nextEvent?.date)}, then ends. No further charges.`;
   } else if (phase === 'order_suspended') {
     expectation = fraudStop
-      ? `Order stopped for suspected fraud${declineReason ? ` (${declineReason})` : ''} — no access, no retry, no further charges.`
-      : `Order suspended${declineReason ? ` (${declineReason})` : ''} — no access, no further charges.`;
+      ? `Order suspended for suspected fraud${suspendReason ? ` (${suspendReason})` : ''} — no access, no further charges.`
+      : `Order suspended${suspendReason ? ` (${suspendReason})` : ''} — no access, no further charges.`;
   } else if (phase === 'refunded') {
     expectation = 'Refunded — no access, no further charges.';
   } else if (phase === 'payment_failed') {
