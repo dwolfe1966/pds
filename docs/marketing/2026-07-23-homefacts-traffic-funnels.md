@@ -24,25 +24,26 @@ srch_state / srch_address / fulladdress`.
 
 ---
 
-## ⚠️ Gating items — surface BEFORE launch (not blockers to designing)
+## Gating items — RESOLVED (owner 2026-07-23)
 
-1. **Is homefacts a partner or are we buying/scraping the traffic?** If **partner**, they set the outbound
-   URL + params for us (the contract above holds — great). If we're **buying/redirecting**, confirm we can
-   preserve those params. This changes how reliable the pre-fill is. *(Owner to answer.)*
-2. **Sex-offender compliance (legal sign-off before the SO angle goes live).** NSOPW and many state
-   registries **restrict commercial use / soliciting money** off registry data. So the SO landing must **pay
-   off with our LICENSED criminal/public-records source (Enformion/IDI), NOT by re-serving scraped registry
-   data** — framing: *"you found them on a registry; here's their broader public & criminal record from our
-   sources."* And never **assert** someone is a current registered offender without a fresh, sourced basis
-   (homefacts' own disclaimer says its data may be stale). Intelius/TF run these funnels — doable *with* the
-   right framing + disclaimers, not a stop sign, but it needs owner/legal OK.
-3. **Payoff-data reality check (do before building the primed teaser).** Our thesis = "name+city+state → show
-   *this person's* record." Two known failure modes: common names → IDI **TooManyMatches** (see
-   [[project_backlog]] resilient-zero-result); **NSOPW is location-based, not person-keyed** (see
-   [[project_life_events_vertical]]) so we may not confirm *this individual*. **Action:** run 2–3 real
-   homefacts names through `getPersonSignals`/backend first. If resolution is flaky, the **location-framed
-   fallback** ("records found in Victorville, CA — unlock to see") becomes the primary teaser, not an
-   afterthought.
+1. **Partner traffic ✅.** homefacts is a **partner** — they set the outbound URL + params for us, so the
+   `firstName/lastName/city/state/type` pre-fill contract holds. Design around the params.
+2. **Sex-offender compliance ✅ sign-off complete.** SO angle can launch. Still honor the framing: pay off
+   from our **licensed** criminal/public-records source (Enformion/IDI), not by re-serving scraped registry
+   data; don't assert current-registered status without a fresh basis; keep the disclaimers.
+3. **Payoff-data reality check — understood.** Build the **location-framed fallback** as first-class; run
+   2–3 real homefacts names through `getPersonSignals` as a pre-launch check (TooManyMatches / NSOPW-location
+   caveats). Primed teaser degrades gracefully to "records found in {city}, {state}".
+
+## The 4 experiences to build (owner 2026-07-23)
+| # | Experience | Intent | Path | = design landing / path |
+|---|---|---|---|---|
+| **a** | Sex Offender — **person-primed** | offender record | primed (params) | (c) Sex Offender · primed |
+| **b** | Background Check — **person-primed** | arrests/criminal | primed (params) | (b) Background Check · primed |
+| **c** | Background Check — **not primed** | arrests/criminal | cold (search box) | (b) Background Check · cold |
+| **d** | Public Records — **not primed** | public records | cold (search box) | (a) Public Records · cold |
+
+(No public-records-primed or sex-offender-cold in scope for this test.)
 
 ---
 
