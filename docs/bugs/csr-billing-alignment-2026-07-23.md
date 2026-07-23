@@ -118,13 +118,14 @@ esteven. Per-user detail: `docs/bugs/csr-billing-peruser-2026-07-23.md` (gitigno
 | `[active]` | `trial-D1.1` (dunning, retry 1) | 13 | ✅ |
 | `[active]` | `trial-S0-unpaid` (validate-only / cascade) | 8 | ✅ |
 | `[canceled (pending period end)]` | `trial-S0-norenewal` | 7 | ✅ |
-| `[canceled→expired (voluntary)]` | `inactive` | 8 | ✅ |
-| `[expired (involuntary)]` | `inactive` | 2 | ✅ |
+| `[canceled→expired (voluntary)]` | `inactive-voluntary` → "Inactive (voluntary)" | 8 | ✅ |
+| `[expired (involuntary)]` | `inactive-involuntary` → "Inactive (involuntary)" | 2 | ✅ |
 
 Every BC terminal maps to a consistent CSR state; our S-code adds detail *beneath* BC's terminal without
-contradicting it. **The only intentional collapse:** BC's two no-access terminals (`canceled→expired` and
-`expired`) both map to our single **`inactive`** — that's the owner's chosen taxonomy (2026-07-22), not a
-defect; the phase/`stateName` still carries the finer reason (Cancelled vs Expired) if we ever want to split.
+contradicting it. **Inactive now splits voluntary vs involuntary to mirror BC** (owner 2026-07-23):
+a customer-initiated cancel (a `canceled` entry in the order history — even after the order later shows
+`expired`) → **Inactive (voluntary)**; an expiry/refund/charge-off with no voluntary cancel → **Inactive
+(involuntary)**. Verified live: 8/8 and 2/2 map exactly.
 
 ---
 

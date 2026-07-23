@@ -69,6 +69,16 @@ function isCanceled(order) {
   return !!(order?.transient?.canceled || lc(order?.subStatus) === 'canceled' || lc(order?.subStatus) === 'cancelled');
 }
 
+// Did the CUSTOMER voluntarily cancel? Distinguishes BC's `canceled→expired (voluntary)` from `expired
+// (involuntary)`. Verified live 2026-07-23: a voluntarily-canceled order that then expires has subStatus
+// 'expired' (so isCanceled misses it) but carries a 'canceled' entry in orderHistories; an involuntary
+// expiry (refund/charge-off) has NO cancel entry. So check the current state AND the history trail.
+function hadVoluntaryCancel(order) {
+  if (isCanceled(order)) return true;
+  return (Array.isArray(order?.orderHistories) ? order.orderHistories : [])
+    .some((h) => /cancel/i.test(lc(h?.subStatus)));
+}
+
 // cpd — card type (Credit / Prepaid / Debit): the payment-propensity signal (read side of BIN gating).
 // BC exposes it DEFINITIVELY at commerceTokens[0].transient.bin.extra.cpd ∈ {credit,prepaid,debit}
 // (verified live 2026-07-22 — Tera's prepaid-debit Sutton Bank card). Fall back to bin.type/level.
@@ -375,7 +385,10 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const bucket = isSubscriber ? 'subscriber' : 'trial';
   let classification;
   if (!hasAccess) {
-    classification = 'inactive';
+    // Split inactive to mirror BC.admin's voluntary/involuntary terminals (owner 2026-07-23):
+    // voluntary = the customer canceled (BC `canceled→expired`); involuntary = expiry/refund/charge-off/
+    // suspend with no voluntary cancel (BC `expired`).
+    classification = hadVoluntaryCancel(order) ? 'inactive-voluntary' : 'inactive-involuntary';
   } else if (dunning) {
     // declining the cycle-{n} charge, retry {x} → {bucket}-D{n}.{x} (still trial unless already a subscriber)
     const n = Number.isFinite(nextSeq) ? nextSeq : (highestCleared ?? 0) + 1;
@@ -387,7 +400,9 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   } else {
     classification = `subscriber-S${highestCleared}-paid`;
   }
-  const classificationLabel = classification.charAt(0).toUpperCase() + classification.slice(1);
+  const classificationLabel = classification.startsWith('inactive-')
+    ? `Inactive (${classification.slice('inactive-'.length)})`     // Inactive (voluntary) / Inactive (involuntary)
+    : classification.charAt(0).toUpperCase() + classification.slice(1);
   const latestEvent = latestChargeEvent(order);
   const nextEventShort = nextEvent
     ? (nextEvent.type === 'access-ends' ? `Access ends ${dstr(nextEvent.date)}`

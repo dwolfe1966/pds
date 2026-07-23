@@ -339,8 +339,20 @@ describe('classification — high-level bucket (owner 2026-07-22)', () => {
   test('subscriber cancelled → subscriber-S1-norenewal', () => {
     expect(cls({ status: 'active', subStatus: 'canceled', commercePayments: [fsale(0, 1), fsale(1)], schedule: { dueTimestamp: Date.now() + 5 * 864e5, data: { sequence: 2, retry: 0 } } })).toBe('subscriber-S1-norenewal');
   });
-  test('expired → inactive', () => {
-    expect(cls({ status: 'inactive', subStatus: 'expired', commercePayments: [fsale(0, 1)] })).toBe('inactive');
+  test('expired, no cancel trail → inactive-involuntary (BC "expired (involuntary)")', () => {
+    expect(cls({ status: 'inactive', subStatus: 'expired', commercePayments: [fsale(0, 1)] })).toBe('inactive-involuntary');
+  });
+  test('canceled→expired: subStatus expired but a cancel in orderHistories → inactive-voluntary (BC "canceled→expired (voluntary)")', () => {
+    const o = { status: 'inactive', subStatus: 'expired', commercePayments: [fsale(0, 1)],
+      orderHistories: [{ subStatus: 'canceled', createdAt: '2026-07-10T00:00:00Z' }, { subStatus: 'expired', createdAt: '2026-07-20T00:00:00Z' }] };
+    const c = classifyBilling(o);
+    expect(c.classification).toBe('inactive-voluntary');
+    expect(c.classificationLabel).toBe('Inactive (voluntary)');
+  });
+  test('refund, no cancel → inactive-involuntary + label', () => {
+    const c = classifyBilling({ status: 'inactive', subStatus: 'expired', statusReason: 'correct|refund', commercePayments: [fsale(0, 1)] });
+    expect(c.classification).toBe('inactive-involuntary');
+    expect(c.classificationLabel).toBe('Inactive (involuntary)');
   });
 });
 
