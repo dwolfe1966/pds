@@ -1,6 +1,7 @@
 - [User context & dual-machine setup](user_context.md) — Mac + Windows, sync via git
 - [Cross-machine memory sync](reference_memory_sync.md) — `.claude/memory/` committed; symlink the per-project memory path per machine
 - [BC is internal, not a vendor](project_bc_org_relationship.md) — same company; internal coordination, propose fixes not escalation
+- [Feedback: BC = same company, no adversarial framing](feedback_bc_same_company_language.md) — never "our CSR vs BC.admin"; use "current vs potential business logic", align/reconcile not vs/diverged
 - [ByteCrtrs API reference](bytecrtrs_api_reference.md) — method signatures on `window.ApiWrapper`
 - [BC Admin API reference (csrWrapper)](bc_admin_api_reference.md) — admin-side endpoints for the Admin App build
 - [BC API docs CSV locations](reference_bc_api_docs_location.md) — `docs/new-api/bc client library - {Api,csrApi,HowTo}.csv` = source of truth; grep before guessing
