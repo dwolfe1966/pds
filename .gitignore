@@ -81,3 +81,6 @@ docs/**/*CRED*
 
 # Per-user billing comparison (customer PII) — regenerable, do not commit
 docs/bugs/csr-billing-peruser-*.md
+
+# Owner-provided billing PII export (names/emails/tracking) — restrict access, do not commit
+docs/bugs/csr-admin-user-billing-state-*.csv
