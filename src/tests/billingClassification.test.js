@@ -159,85 +159,73 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent.amount).toBeNull();     // no charge amount shown
   });
 
-  test('LIVE christenbury: order suspended (subStatus) → no access, terminal; NOT auto-labeled fraud (suspend has no fraud reason)', () => {
-    const o = {
-      status: 'inactive', subStatus: 'suspended',
-      commercePayments: [
-        { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: 2 },
-        { type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1 }, paymentTimestamp: 1 },
-      ],
-      transient: { sequenced: { sequence: 0, retry: 0 } },
-      schedule: null,
-    };
-    const c = classifyBilling(o);
-    expect(c.phase).toBe('order_suspended');
-    expect(c.access).toBe('no');
-    expect(c.fraudStop).toBe(false);             // fraud is in the DECLINE, not the suspend reason (owner 2026-07-23)
-    expect(c.stateName).toBe('Suspended');
-    expect(c.nextEvent).toBeNull();              // no forecast — order is suspended
-  });
-
-  test('LIVE estevenjnordby/kingasyus: EXPLICIT suspend wins over a lingering schedule.retry → terminal, NOT a yellow D1.1', () => {
-    // The regression: BC left status='active' and a stale schedule.data.retry=1 @ a future date after the
-    // first bill fraud-declined (Jul 4/7) AND the order was later explicitly SUSPENDED (Jul 21). The dunning
-    // branch fired first → mis-showing "Trial-D1.1 / Has access (at risk) / Retry $49.98". The suspend — not
-    // the fraud decline — is the terminal signal. kingasyus was suspended "by Asyus King" (a person, 17 days
-    // after the decline), so the label reflects the suspend actor, NOT fraud.
+  test('LIVE kingasyus/estevenjnordby: fraud decline does NOT pause access → stays ACTIVE (dunning) to match BC.admin [active], with a problematic-transaction warning (owner 2026-07-23)', () => {
+    // BC.admin shows these as [active] despite a 59:Suspected Fraud first-bill decline. A payment error
+    // (fraud/stolen) does not pause access, so we must NOT mark inactive — keep the customer in their real
+    // state (dunning: order active + a retry scheduled) and surface a vCard WARNING flag instead.
     const jun27 = Date.parse('2026-06-27T23:11:00Z');
     const jul4 = Date.parse('2026-07-04T06:30:00Z');
     const o = {
-      status: 'active', subStatus: 'suspended', orderTimestamp: jun27,
+      status: 'active', orderTimestamp: jun27,
       commercePayments: [
         { type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1.0 }, paymentTimestamp: jun27 },
         { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: jul4 },
       ],
-      orderHistories: [{ subStatus: 'suspended', createdAt: '2026-07-21T17:54:00Z', updaterName: 'Asyus King' }],
       schedule: { dueTimestamp: Date.parse('2026-07-24T06:30:00Z'), data: { sequence: 1, retry: 1, totalPrice: { amount: 49.98 } } },
     };
     const c = classifyBilling(o, { now: Date.parse('2026-07-23T00:00:00Z') });
-    expect(c.phase).toBe('order_suspended');
-    expect(c.access).toBe('no');            // NOT 'grace'
-    expect(c.hasAccess).toBe(false);
-    expect(c.dunning).toBeFalsy();          // must not read as dunning
-    expect(c.fraudStop).toBe(false);        // suspend was by a person, NOT a fraud suspend
-    expect(c.phaseLabel).toMatch(/by Asyus King/); // label reflects the actual suspend actor
-    expect(c.risk.tone).toBe('red');        // NOT yellow
-    expect(c.stateName).toBe('Suspended');  // NOT 'Fraud stop'
-    expect(c.stateCode).toBe('Suspended');  // NOT 'D1.1 of 5'
-    expect(c.classification).toBe('inactive');
-    expect(c.nextEvent).toBeNull();         // NO phantom "Retry $49.98 @ Jul 24"
-    expect(c.nextEventShort).toBe('None');
+    expect(c.hasAccess).toBe(true);                        // NOT inactive — matches BC.admin [active]
+    expect(c.access).not.toBe('no');
+    expect(c.phase).not.toBe('order_suspended');
+    expect(c.problematicTransaction).toBeTruthy();         // the vCard warning
+    expect(c.problematicTransaction.isFraud).toBe(true);
+    expect(c.problematicTransaction.message).toMatch(/fraud/i);
   });
 
-  test('a 59:Suspected Fraud DECLINE alone (no explicit suspend) is NOT terminal — still has access (owner 2026-07-23)', () => {
-    // Owner correction: a suspected-fraud decline should not by itself suspend a customer. Without an explicit
-    // suspend event, a fraud-declined bill is just a failed charge — the customer keeps access (dunning).
+  test('a 59:Suspected Fraud decline keeps access AND raises the problematic-transaction flag (owner 2026-07-23)', () => {
     const o = {
       status: 'active', orderTimestamp: Date.now() - 20 * 864e5,
       commercePayments: [
         { type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1.0 }, paymentTimestamp: 1 },
         { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: 2 },
       ],
-      schedule: schedule(1, 1),   // a retry is scheduled; no suspend event exists
+      schedule: schedule(1, 1),
     };
     const c = classifyBilling(o);
-    expect(c.phase).not.toBe('order_suspended'); // fraud decline alone ≠ terminal
+    expect(c.phase).not.toBe('order_suspended');
+    expect(c.hasAccess).toBe(true);
+    expect(c.problematicTransaction.isFraud).toBe(true);
+    expect(c.fraudStop).toBe(true);   // back-compat alias = "recent fraud-flagged txn" (a warning, not access)
+  });
+
+  test('problematic-transaction flag CLEARS once a later sale succeeds', () => {
+    const o = {
+      status: 'active',
+      commercePayments: [
+        { type: 'sale', status: 'rejected', sequence: 1, retry: 0, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: 1 },
+        { type: 'sale', status: 'fulfilled', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, paymentTimestamp: 2 },
+      ],
+      schedule: schedule(2, 0),
+    };
+    const c = classifyBilling(o);
+    expect(c.problematicTransaction).toBeNull();  // most recent sale succeeded
     expect(c.hasAccess).toBe(true);
   });
 
-  test('BC-initiated fraud suspend (suspend reason says fraud) IS flagged fraudStop', () => {
+  test('a GENUINE deactivated suspend (order NOT active + subStatus suspended) IS no-access, matching BC.admin [suspended]', () => {
     const o = {
       status: 'inactive', subStatus: 'suspended',
       commercePayments: [
         { type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1.0 }, paymentTimestamp: 1 },
         { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: 2 },
       ],
-      orderHistories: [{ subStatus: 'suspended', createdAt: '2026-07-21T00:00:00Z', statusReason: 'suspected fraud' }],
+      schedule: null,
     };
     const c = classifyBilling(o);
     expect(c.phase).toBe('order_suspended');
-    expect(c.fraudStop).toBe(true);
-    expect(c.stateName).toBe('Fraud stop');
+    expect(c.access).toBe('no');
+    expect(c.stateName).toBe('Suspended');
+    expect(c.problematicTransaction).toBeTruthy();  // still surfaces the fraud warning even when suspended
   });
 
   test('expired: inactive + subStatus expired', () => {

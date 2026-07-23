@@ -19,14 +19,14 @@ export default function OrderBillingBadge({ order }) {
     c.nextEventShort && c.nextEventShort !== 'None' ? `Next: ${c.nextEventShort}` : null,
     c.renewalNote ? `⚠ ${c.renewalNote}` : null,
     c.neverCaptured ? '⚠ Never captured ($0)' : null,
-    c.fraudStop ? '🚫 Suspected fraud' : null,
+    c.problematicTransaction ? `⚠ Flagged txn: ${c.problematicTransaction.message}` : null,
   ].filter(Boolean).join(' · ');
   return (
     <span
       title={title}
       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: t.bg, color: t.fg, padding: '2px 9px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}
     >
-      {c.fraudStop ? '🚫 ' : ''}{c.stateCode}
+      {c.problematicTransaction ? '⚠ ' : ''}{c.stateCode}
     </span>
   );
 }

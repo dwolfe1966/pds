@@ -1412,9 +1412,10 @@ const UserDetailPage = () => {
                     {custStatus.classificationLabel}
                   </span>
                 </div>
-                {custStatus.fraudStop && (
+                {custStatus.problematicTransaction && (
                   <div style={{ marginBottom: 8, padding: '6px 10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#991b1b', fontWeight: 700, fontSize: '0.8rem' }}>
-                    🚫 Sequence stopped — suspected fraud{custStatus.billing?.declineReason ? ` (${custStatus.billing.declineReason})` : ''}
+                    ⚠ Recent transaction flagged — {custStatus.problematicTransaction.message}
+                    <span style={{ fontWeight: 500 }}> · access not affected</span>
                   </div>
                 )}
                 {custStatus.renewalNote && (

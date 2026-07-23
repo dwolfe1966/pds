@@ -68,3 +68,8 @@ server/leads.jsonl
 
 # Legacy business P&L + KPI images — sensitive partner revenue, keep local only
 docs/legacy/
+
+# Prod BC admin creds for live diagnosis — NEVER commit
+docs/BC_CREDS.local.md
+docs/*.local.md
+scripts/out/
