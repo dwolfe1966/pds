@@ -15,7 +15,7 @@ exact promise (primed path), not a cold search. `type` values (`OffenderD_Text`,
 `Offender_D`/`af_id=31`) = per-placement attribution keys → map to shN+UTM, grade cost-per-trial & trial→paid
 BY placement.
 
-**BUILT ✅ 2026-07-23 (bundle public.2954bca7.js, NOT deployed):** 3 config-driven routes on VerticalIntentLanding
+**BUILT ✅ 2026-07-23 (bundle public.87c0dbf7.js, NOT deployed):** 3 config-driven routes on VerticalIntentLanding
 — /records/sex-offender, /records/background-check, /records/public-records — each AUTO-PRIMES when firstName+lastName
 arrive (else cold-search). Teaser engine: FLOW_PRIORITY + SignalTeaser capability-hook flows (background/sexOffender/
 publicRecords) + intent-aware copy. **SO FLAG pre-pay** (owner decision): "⚠ Possible offender record for {name} —
@@ -35,3 +35,5 @@ first-class (common names → IDI TooManyMatches; NSOPW is location-keyed not pe
 
 Ties to [[project_life_events_vertical]] (NSOPW/criminal), [[project_signals_augmentation]] (getPersonSignals),
 [[project_adunit_funnel_review]] (promise→payoff), Check-Your-Date pilot (same safety report/teaser).
+
+**shN per URL (owner req, 2026-07-23):** placeholder registry keys in campaignRegistry.js — `homefacts-so` / `homefacts-bg` / `homefacts-pr` (partner=Homefacts, channel=the intent, landing.route null). Verified: ?shn=homefacts-so → attribution.partner=Homefacts + GTM partnerName/partnerChannel. Swap for real BC shConIds when minted. FINAL URLs carry both `type` (fine placement) + `shn` (experience). Teaser fixes 2026-07-23: split mashed firstName, city→teaser subject, teaser renders on ERROR (loader carries subject on error), background/publicRecords lead with real record when found.
