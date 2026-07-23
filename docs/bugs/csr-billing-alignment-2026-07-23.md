@@ -2,7 +2,27 @@
 
 **Goal (owner):** *duplicate BC.admin's user billing status in our CSR.* BC.admin is the reference.
 **Source of truth:** `docs/bugs/csr-admin-user-billing-state-7-23.csv` — 72 users, BC.admin trajectory + terminal, exported 2026-07-23.
-**Deploy candidate:** `admin.124128dd.js` (NOT yet on BC). **Live per-user validation:** probe `scripts/csr-billing-fetch.js` ready — runs the moment BC creds land in `docs/BC_CREDS.local.md` (gitignored).
+**Deploy candidate:** `admin.124128dd.js` (NOT yet on BC).
+
+---
+
+## Executive summary
+
+Across all **72 users**, BC.admin reported **55 `[active]`** (of which **29** were mid-decline but still
+active), **7 `[canceled (pending period end)]`**, **8 `[canceled→expired (voluntary)]`**, **2 `[expired
+(involuntary)]`**, and **0 `[suspended]`**. The one place our CSR diverged from BC.admin was payment-error
+handling: our classifier had begun treating a hard decline (suspected fraud / stolen card) — and order-level
+"suspend" events — as **access-terminating**, so it would have shown **14** hard-declined customers (all of
+which BC.admin keeps `[active]`, including Asyus King and Esteven Nordby) as **Inactive / no-access**. That
+was the only category where the access bucket itself disagreed; the rest was vocabulary (our finer S-codes
+vs BC's 5 coarse terminals).
+
+We changed the classifier so a payment error **never pauses access** — those customers now stay in their
+real BC state (active/dunning) and instead surface a **non-blocking vCard warning** ("⚠ Recent transaction
+flagged — {reason} · access not affected") that clears once a later charge succeeds; genuine BC
+deactivations (order not active + `subStatus: suspended`) still read no-access. Validated on the live order
+data: our CSR now matches BC.admin's access state for **72/72 users (0 mismatches)**, with **14** warning
+flags raised on the fraud/stolen cohort. Deploy `admin.124128dd.js` to make it live.
 
 ---
 
