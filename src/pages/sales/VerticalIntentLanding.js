@@ -44,6 +44,17 @@ import { useFunnelFlow } from '../../services/funnelFlow';
 const getStepIndex = (step) => ({ name: 1, location: 2, details: 3, confirm: 4 }[step] || 0);
 const TOTAL_STEPS = 4;
 
+// Partner links (homefacts) send FULL state names (`state=California`); the wizard + BC search use abbreviations
+// (the state-select values are 'CA', 'FL', …). Normalize on read so the primed search resolves. Already-abbr and
+// unknown values pass through unchanged.
+const STATE_ABBR = US_STATES.reduce((m, s) => { if (s.value) m[s.label.toLowerCase()] = s.value; return m; }, {});
+const normalizeState = (v) => {
+  const t = String(v || '').trim();
+  if (!t) return '';
+  if (t.length === 2) return t.toUpperCase();
+  return STATE_ABBR[t.toLowerCase()] || t;
+};
+
 const VerticalIntentLanding = ({ cfg }) => {
   const brand = useBrand();
   useLandingTrack('name', cfg.variant);
@@ -57,7 +68,7 @@ const VerticalIntentLanding = ({ cfg }) => {
   const [middleName, setMiddleName] = useState(queryParams.get('mn') || queryParams.get('middleName') || '');
   const [lastName, setLastName] = useState(queryParams.get('ln') || queryParams.get('lastName') || '');
   const [city, setCity] = useState(queryParams.get('city') || '');
-  const [state, setState] = useState(queryParams.get('state') || '');
+  const [state, setState] = useState(normalizeState(queryParams.get('state') || ''));
   const [age, setAge] = useState(queryParams.get('age') || '');
   const [step, setStep] = useState('name');
   const [agree, setAgree] = useState(false);

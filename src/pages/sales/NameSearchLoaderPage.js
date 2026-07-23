@@ -211,6 +211,12 @@ const NameSearchLoaderPage = () => {
             {state && <span style={{ color: '#6b7280', fontWeight: 400 }}> &bull; {state}</span>}
           </p>
         </div>
+        {/* FCRA notice — visible on every search loader (incl. the auto-primed records flows, which skip the
+            wizard's confirm step). The binding agreement is still enforced at /payment. */}
+        <p style={{ marginTop: 14, fontSize: '0.68rem', lineHeight: 1.5, color: '#9ca3af', maxWidth: 460, textAlign: 'center' }}>
+          IDLookup is not a consumer reporting agency. Results are for personal use only and may not be used for
+          employment, tenant, credit, or other decisions covered by the Fair Credit Reporting Act (FCRA).
+        </p>
       </div>
     </main>
   );
