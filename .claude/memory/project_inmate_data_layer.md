@@ -83,3 +83,6 @@ domain-auth. See [[project_email_recovery_pipeline]].
 Relates to [[project_growth_plan_2026_07_11]] (email = investment #2, the retention keystone),
 [[project_email_recovery_pipeline]] (abandoned-checkout exists, PAUSED on SendGrid domain-auth),
 [[project_seo_idi_display_license]].
+
+
+**⚠️ FRESHNESS CHECK 2026-07-23:** DB IS updating (`inmates` table = 544,846 rows; last_crawled max = seconds ago; 23,715 crawled in last 2 days) — but that's from LIVE/on-demand crawls (real searches), NOT the batch. The SCHEDULED daily refresh (`.github/workflows/crawl-inmates.yml`, cron 07:00 UTC) has been FAILING 7/22 + 7/23 (4s fails) — root cause = **GitHub Actions BILLING** ("job was not started because recent account payments have failed or your spending limit needs to be increased"). Last successful full crawl = 7/21 (manual dispatch). So most states are frozen at 7/21; only searched states stay fresh. **Sex-offender crawler (`crawl-sex-offenders.mjs`) has NO scheduled workflow** — manual/on-demand only. OWNER FIX: GitHub Settings → Billing & plans (resolve failed payment / raise Actions spend limit) → daily cron resumes. DB freshness query: `node --env-file=seo/.env.local` on the `inmates` table.
