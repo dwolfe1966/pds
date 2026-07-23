@@ -306,7 +306,7 @@ const PurchaseDetailPage = () => {
             </div>
           </div>
 
-          {/* Full S-code lifecycle: access/state/risk/event/next + what-to-expect + billing history. */}
+          {/* Full M-code lifecycle: access/state/risk/event/next + what-to-expect + billing history. */}
           <BillingLifecyclePanel order={order} />
 
           <div className={styles.layout}>

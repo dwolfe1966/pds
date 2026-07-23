@@ -37,7 +37,7 @@ function resolveStatus(u) {
 // Plan state (Free/Trial/Subscriber/Cancelled/Expired). The list user objects don't carry
 // order data, so this lazy-loads the user's orders on mount (throttled + cached in
 // userState.js) and derives the true plan — replacing the old always-"Pro" guess.
-// Single access-first billing status for the list (taxonomy redesign 2026-07-22): the S-code coloured by
+// Single access-first billing status for the list (taxonomy redesign 2026-07-22): the M-code coloured by
 // access (green=has / amber=at-risk / red=none), full "access · reason · Scode" in the tooltip. Folds
 // account suspension (blocked → no access). Lazy-loads the user's orders (throttled + cached in userState).
 function PlanBadge({ user }) {

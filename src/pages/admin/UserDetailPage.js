@@ -122,7 +122,7 @@ function extractPayments(orders) {
           amount: amt != null ? `$${Number(amt).toFixed(2)}` : '—',
           type: p?.type || 'sale',
           status: p?.status || '—',
-          sequence: Number.isFinite(p?.sequence) ? p.sequence : null, // 0=trial(S0), 1=first bill(S1), …
+          sequence: Number.isFinite(p?.sequence) ? p.sequence : null, // 0=trial(M0), 1=first bill(M1), …
           retry: Number.isFinite(p?.retry) ? p.retry : 0,
           decline: p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || p?.subStatus || null, // e.g. "51:Insufficient Funds"
           date: p?.paymentTimestamp ? new Date(p.paymentTimestamp).toISOString() : (p?.createdAt || null),
@@ -178,7 +178,7 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
       : t === 'void' ? 'canceled'
       : /fail|declin|reject|error|block/.test(s) ? 'payment_failed'
       : s === 'refunded' ? 'refund' : s === 'canceled' ? 'canceled' : 'payment';
-    // S-code context: seq 0 = trial (S0), 1 = first bill (S1), N = renewal (SN); retry M = dunning Sn.m.
+    // M-code context: seq 0 = trial (M0), 1 = first bill (M1), N = renewal (MN); retry M = dunning Mn.m.
     const sTag = p.sequence == null ? '' : `S${p.sequence}${p.retry > 0 ? `.${p.retry}` : ''}`;
     const chargeName = t === 'validate' ? 'Card validation'
       : p.sequence === 0 ? 'Trial charge'
@@ -1326,7 +1326,7 @@ const UserDetailPage = () => {
   const initials  = getInitials(user);
   const status    = getStatus(user);
   const plan      = ordersLoading ? null : getPlanState(orders);
-  // S-code for the header — from the primary (active, else most recent) order, so header/list/panel agree.
+  // M-code for the header — from the primary (active, else most recent) order, so header/list/panel agree.
   const headerBilling = ordersLoading ? null : classifyBilling(orders.find((o) => (o.status || '').toLowerCase() === 'active') || orders[0] || null);
   // Single access-first status (taxonomy redesign) — folds account suspension + billing into one.
   const custStatus = ordersLoading ? null : getCustomerStatus(user, orders);

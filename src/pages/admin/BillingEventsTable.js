@@ -36,7 +36,7 @@ export default function BillingEventsTable({ order, orders, userId }) {
   const nextCharge = ne
     ? (ne.type === 'access-ends' ? 'No further charges'
         : ne.isRetry ? `Retry ${ne.retry}${ne.maxAttempts ? ` of ${ne.maxAttempts}` : ''} ${fmtMoney(ne.amount)}`
-        : `${ne.type === 'trial-charge' ? 'Initial charge' : ne.type === 'first-bill' ? 'First bill (S1)' : 'Renewal'} ${fmtMoney(ne.amount)}`)
+        : `${ne.type === 'trial-charge' ? 'Initial charge' : ne.type === 'first-bill' ? 'First bill (M1)' : 'Renewal'} ${fmtMoney(ne.amount)}`)
     : '—';
 
   const linkTo = (oid) => (userId && oid ? `/purchases/${oid}?userId=${userId}` : null);

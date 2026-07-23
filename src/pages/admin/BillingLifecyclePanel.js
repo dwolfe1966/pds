@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { classifyBilling, billingTimeline } from './billingClassification';
 
 /**
- * BillingLifecyclePanel — the per-customer S-code lifecycle view for a single order (CSR).
- * Shows: current S-code + phase, card type (cpd), early-cancel flag, the NEXT expected event
+ * BillingLifecyclePanel — the per-customer M-code lifecycle view for a single order (CSR).
+ * Shows: current M-code + phase, card type (cpd), early-cancel flag, the NEXT expected event
  * ("what happens next" — the piece reps were missing), and the billing-event history.
  * Definitions: docs/admin/csr-billing-classification-spec.md.
  */

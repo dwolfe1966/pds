@@ -1,7 +1,7 @@
 import React from 'react';
 import { classifyBilling } from './billingClassification';
 
-// Compact per-ORDER billing status for Purchases/Orders list rows — the same S-code vocabulary as the
+// Compact per-ORDER billing status for Purchases/Orders list rows — the same M-code vocabulary as the
 // customer surfaces, but scoped to one order (classifyBilling, not the customer rollup). Risk-coloured
 // (green/yellow/red); short state on the chip, next-event + fraud in the tooltip.
 const TONE = {

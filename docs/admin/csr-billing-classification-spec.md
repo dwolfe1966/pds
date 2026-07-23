@@ -55,7 +55,7 @@ This supersedes any inference above where they differ. Key definitions (with two
   convert worse) — the read side of the BIN-risk gating. **Surface per-customer** (owner 2026-07-22).
 - 🔴 **`casD` = cascade rate** — payment routed through the card **cascade (retry across processors)**,
   `transactionMeta.cascade==true`. **`CasA`** = cascade-approve (imputed). **`eCPA` = CPA×(1−casD−casA)**.
-  This is PROCESSOR cascade — distinct from the `Sn.x` *billing-retry* cascade (do not conflate).
+  This is PROCESSOR cascade — distinct from the `Mn.x` *billing-retry* cascade (do not conflate).
 - **`C0` / `C1`** = early cancels — C0 = same period (day-1), C1 = first period (pre-first-charge).
   **Surface per-customer** (owner 2026-07-22).
 - **M-notation = cohort/aggregate grain** (parallel to the deck's per-customer S-notation): **M0** = paid
@@ -76,12 +76,12 @@ live price + period from BC `commercePriceRules` (`_DESC_` S0 / S1+) at runtime 
 next expected event + history + C0/C1 + cpd card-type; (b) **cohort retention** (C W, M-notation); (c)
 **acquisition funnel** (site→paid). CSR build = (a); (b)/(c) inform KPI dashboards (task ii/iii).
 
-## 2. The classification scheme (S-codes) — mirror EXACTLY
+## 2. The classification scheme (M-codes) — mirror EXACTLY
 Owner's definitions (confirm the full enumerated list — this is the seed):
 - **S0** = **Trial** (in the 7-day trial window).
 - **S1** = **Subscriber, month 1** (first successful monthly charge / first cycle billed).
 - **S2** = **Subscriber, month 2** … **Sn** = subscriber at month *n*.
-- **S{n}.{m}** = **retry attempt** *m* against the transition out of state *n*
+- **M{n}.{m}** = **retry attempt** *m* against the transition out of state *n*
   (e.g. **S0.1, S0.2, …** = retry attempts to convert the trial → subscriber;
   **S1.1, S1.2, …** = retry attempts on the month-1 → month-2 renewal). Up to **10** (`m ≤ 10`).
 - **C1, D1, …** = failure/decline codes attached to a failed attempt.
@@ -91,7 +91,7 @@ event** — S0 → "converts on day 7"; S0.3 → "retry 4 of 10 on \<date\>"; S1
 S1.5 → "retry 6 of 10, cancels after 10". A rep should read the code and know what happens next and when.
 
 ## 3. What the CSR must SHOW (three layers)
-1. **Current S-code** (the mirrored classification), replacing/augmenting today's Free/Trial/Subscriber/…
+1. **Current M-code** (the mirrored classification), replacing/augmenting today's Free/Trial/Subscriber/…
 2. **Billing event HISTORY** — the timeline of what happened (charges, declines w/ C/D codes, status
    transitions). BC's `orderHistories` + `commercePayments` are plumbed already (`csrFindOrderHistories`)
    but **rendered nowhere** — this is where they get surfaced.
@@ -99,17 +99,17 @@ S1.5 → "retry 6 of 10, cancels after 10". A rep should read the code and know 
    date, which retry number we're on and how many remain, when the trial converts, when it cancels if
    retries exhaust. So a rep sets correct expectations on a call.
 
-## 3b. ✅ JSON INTERROGATION (2026-07-22) — BC already speaks S-codes
+## 3b. ✅ JSON INTERROGATION (2026-07-22) — BC already speaks M-codes
 Interrogated the BC API doc example responses (no live prod probe — see gap below). **The owner's
 intuition is confirmed: BC's billing response encodes the classification + rules natively.**
 
-- **BC uses the S-code labels itself.** `commercePriceRules[]._DESC_` literally reads **`"S0"`** and
+- **BC uses the M-code labels itself.** `commercePriceRules[]._DESC_` literally reads **`"S0"`** and
   **`"S1+"`** (csrApi/Api example responses), each with `conditions: [{ sequence: 0 }]` / `{ sequence:
   "v > 0" }` and `candidates[].id.{ amount, period }`:
   - **S0** → `sequence: 0` → $1.01 / **7 d** (the trial)
   - **S1+** → `sequence: "v > 0"` → $39.01 / **30 d** (the subscription)
   (Doc sample only shows S0 + S1+; the LIVE response likely carries the finer S1/S2/… + retry variants.)
-- **The live S-code coordinates are in `order.schedule.data`:**
+- **The live M-code coordinates are in `order.schedule.data`:**
   - `schedule.data.sequence` = the **S-number** (0 = S0/trial, N = S{N})
   - `schedule.data.retry` = the **`.m`** retry attempt
   - `schedule.dueTimestamp` = **when the next event fires**
@@ -142,7 +142,7 @@ true production shape (finer S-labels + whether the full cascade schedule is lis
 
 ## 5. Open questions (BEFORE building)
 **For owner (legacy doc):**
-- The **complete S-code enumeration** + exact transition rules (what advances S0→S0.1→…→S1, and what
+- The **complete M-code enumeration** + exact transition rules (what advances S0→S0.1→…→S1, and what
   moves S1→cancel). Is `.m` keyed to the state you're LEAVING (my read) or entering?
 - The **full C/D failure-code list** and their meaning (C-series vs D-series distinction).
 - The **retry cascade schedule** — the 10 attempts over what cadence (daily? backoff?)? Same for the ISF
@@ -176,14 +176,14 @@ encode the same assumptions as the code). Three interpretations must be confirme
 (the impersonated **Tera Callan** trial/subscriber is a perfect subject) — each silently shifts what every
 rep sees if wrong:
 1. **Does the trial charge book as `commercePayments[] {type:'sale', status:'fulfilled'}`?** `currentCycle =
-   settledSales − 1` depends on it. If not, every S-code is off by one.
+   settledSales − 1` depends on it. If not, every M-code is off by one.
 2. **`schedule.data.sequence` numbering** — assumed trial=0, first recurring=1 (`SEQ_TRIAL`). One doc sample
    agrees (n=1); confirm on a known trial-only vs a known month-2 customer.
 3. **`schedule.data.retry` semantics** — is `retry:1` the *first retry* (→ S1.1, our assumption per the KPI
    deck) or the *first attempt*? If BC 1-indexes attempts, `.m` is off by one — the exact number reps read.
 Also: **prepaid (`cpd=P`) detection is a guess** (docs show no card-level prepaid field) — confirm from a
 real card's `transient.bin`. And **grain**: panel classifies per-order (a user with an old expired + a new
-active order shows two S-codes) — confirm CSR wants per-order vs one current-state rollup.
+active order shows two M-codes) — confirm CSR wants per-order vs one current-state rollup.
 
 Capture command (CSR console, viewing/for Tera): 
 `(async()=>{const w=window.CsrWrapper.getInstance({endpointUrl:'/api'});console.log(JSON.stringify((await w.api.user.findOrders({userId:'6a5df156fefbeeff9abd5b02'})).getData?.(),null,2));})();`
@@ -197,14 +197,14 @@ Capture command (CSR console, viewing/for Tera):
   order** (paste one of the 3 emails' compact findOrders).
 - ✅ **Cancel event in the Timeline** — was missing (cancel-at-period-end is a status change, not a
   payment); now emitted from `orderHistories` (+ expire/refund transitions).
-- ⏳ **TAXONOMY REDESIGN (big, owner wants deliberate):** the two-axis account-status + plan-status + S-code
+- ⏳ **TAXONOMY REDESIGN (big, owner wants deliberate):** the two-axis account-status + plan-status + M-code
   is "too complicated / not meaningful." Collapse to **ONE status that says ACCESS / NO-ACCESS + WHY.**
   Started: `classifyBilling` now returns `access` (`yes`/`grace`/`no`) + `statusLine`. To finish: a
   `getCustomerStatus(user, orders)` that (a) folds account **suspension** (BC 'blocked' → no-access
   override), (b) picks the authoritative order, (c) returns the single status; then replace the
   Trial/Subscriber/… plan badge + account chip everywhere with it.
-- ⏳ **Propagate the S-code / single-status to all surfaces (owner):** **Users page** (list), **UserDetail
-  vCard** (summary card), **UserDetail Timeline** (cancel done; consider S-code transitions), **UserDetail
+- ⏳ **Propagate the M-code / single-status to all surfaces (owner):** **Users page** (list), **UserDetail
+  vCard** (summary card), **UserDetail Timeline** (cancel done; consider M-code transitions), **UserDetail
   Orders** (panel done). vCard + Users-list still to do.
 - ℹ️ **"Jump from never-capturing-trial to capturing a subscription is fine"** — don't over-engineer the
   S0→S1 transition; a customer can go from S0.x straight to a captured subscription without an intermediate.

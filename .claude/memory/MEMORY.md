@@ -93,6 +93,6 @@
 - [SEO recovery brainstorm](project_seo_recovery.md) — pivot to first-party verticals (INMATE lead) + authority; prune thin pages
 - [idlookup.ai/people migration scoping](project_seo_indexing_incident.md) — docs/seo/idlookup-ai-people-migration-scoping.md; subdomain people.idlookup.ai via 1 CNAME (grey-cloud DNS + /people/:id collision rule out subpath)
 - [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on SEO Vercel; PAUSED pending owner domain-auth + Vercel envs
-- [CSR billing classification](project_csr_billing_classification.md) — S-code taxonomy; schedule.data.retry authoritative; terminal-stop (fraud/suspend) wins over stale retry; admin.e7b514df.js
+- [CSR billing classification](project_csr_billing_classification.md) — M-code taxonomy (M0/M{n}+D declines, owner/CEO 2026-07-23); fraud/stolen decline does NOT pause access (flag only); Inactive splits voluntary/involuntary; aligned to admin view 72/72 live; admin.40bd8cf3.js
 - [3 new marketing angles + source-zip](project_marketing_angles.md) — marriage/divorce, WSFY, check-your-date funnels (docs/marketing); ⚠️ hardcoded creds in csrApiService.js flagged
 - [Session end 2026-07-22](project_session_end_2026_07_22.md) — latest pickup: CSR billing overhaul, impersonation done, onboarding fixes; then HP-4 CA-cancel + terminal-stop fix (this session)

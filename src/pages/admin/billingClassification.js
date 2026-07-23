@@ -1,11 +1,11 @@
-// Legacy S-code billing-lifecycle classification for the CSR per-customer view.
+// Legacy M-code billing-lifecycle classification for the CSR per-customer view.
 // Definitions: docs/admin/csr-billing-classification-spec.md (legacy KPI deck + CEO data dictionary).
 //
-// Lifecycle:  Sale → Trial → Membership(S1,S2,S3+) → Cancel(remaining access → expired)
-//   S0        = signup/trial (card + trial fee)
-//   S1.0      = survived trial → first monthly bill charged
-//   S{n}      = subscriber, cycle n (n monthly bills settled)
-//   S{n}.{m}  = dunning: retry m on the cycle-n bill (auto-cancels once retries exhaust)
+// Lifecycle:  Sale → Trial → Membership(M1,M2,M3+) → Cancel(remaining access → expired)
+//   M0        = signup/trial (card + trial fee)
+//   M1.0      = survived trial → first monthly bill charged
+//   M{n}      = subscriber, cycle n (n monthly bills settled)
+//   M{n}.{m}  = dunning: retry m on the cycle-n bill (auto-cancels once retries exhaust)
 //   C0/C1     = early cancels (C0 = day-1, C1 = before the first monthly charge)
 //
 // BC field mapping (all live in the order the client already loads — §3b):
@@ -21,11 +21,11 @@
 import { getOrderCard } from '../../utils/orderCard';
 import { orderIsRefunded } from './userState';
 
-const SEQ_TRIAL = 0; // BC sequence value that represents the trial/S0 charge
+const SEQ_TRIAL = 0; // BC sequence value that represents the trial/M0 charge
 
 // Retry cascade rules (legacy business rules). BC's schedule.dueTimestamp overrides the NEXT attempt date;
 // these rules supply the "of N" total.
-// The retry attempt # is VALIDATED (2026-07-22, godwill: schedule.data.retry=2 alongside two rejected S1
+// The retry attempt # is VALIDATED (2026-07-22, godwill: schedule.data.retry=2 alongside two rejected M1
 // `sale` attempts). ⚠️ maxAttempts CONFLICT: KPI deck says "up to 10", CEO (2026-07-22) says "~5 times"
 // then suspend. Using 5 (the CEO is the legacy authority) — CONFIRM the exact cap with the owner; it's the
 // number where access is cut and the order goes suspended.
@@ -114,7 +114,7 @@ function cancelTimestamp(order) {
   return Number.isFinite(t) ? t : null;
 }
 
-// C0 = cancel within day 1 of signup; C1 = cancel before the first MONTHLY (S1) charge settled.
+// C0 = cancel within day 1 of signup; C1 = cancel before the first MONTHLY (M1) charge settled.
 // The trial charge counts as 1 settled sale, so "before the first monthly charge" = cyclesBilled < 2.
 function earlyCancelCode(order, cyclesBilled, nowMs) {
   if (!isCanceled(order)) return null;   // C0/C1 are cancels
@@ -141,7 +141,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const dueTs = Number.isFinite(sch?.dueTimestamp) ? sch.dueTimestamp : null;
   const nextAmount = sch?.data?.totalPrice?.amount ?? null;
   // Current retry attempt = schedule.data.retry — the AUTHORITATIVE counter for the pending charge. Verified
-  // live 2026-07-22 (godwill: schedule.retry=2 alongside two rejected S1 `sale` attempts, while
+  // live 2026-07-22 (godwill: schedule.retry=2 alongside two rejected M1 `sale` attempts, while
   // transient.sequenced.retry read 0 — so sequenced.retry is NOT the retry count; use it only as a fallback).
   const curRetry = nextRetry > 0
     ? nextRetry
@@ -170,19 +170,19 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   })();
 
   // Current cycle REACHED = index of the last CAPTURED charge. A captured payment is ground truth, so the
-  // settled-sale count is the authority; schedule.sequence can run AHEAD of reality (an uncaptured S0 whose
-  // schedule already points at S1 — the rakim/amyjo/moninoso cluster), so use it only as a fallback when
+  // settled-sale count is the authority; schedule.sequence can run AHEAD of reality (an uncaptured M0 whose
+  // schedule already points at M1 — the rakim/amyjo/moninoso cluster), so use it only as a fallback when
   // nothing has been captured.
   const currentCycle = hasSettled
     ? Math.max(0, cyclesBilled - 1)
     : (Number.isFinite(nextSeq) ? Math.max(0, nextSeq - 1) : 0);
   // The charge currently being ATTEMPTED = the next UNCAPTURED charge = settled count.
-  // 0 = trial/initial (S0), 1 = first monthly (S1), … — NOT schedule.sequence.
+  // 0 = trial/initial (M0), 1 = first monthly (M1), … — NOT schedule.sequence.
   const failCycle = cyclesBilled;
 
-  // Trial OVERSTAYED (owner 2026-07-22, godwill): a captured trial (S0) whose scheduled S1 charge date has
-  // already PASSED but is still S0 → the first bill isn't succeeding (past the trial window). Derivable
-  // now (dueTimestamp < now) even without the retry-attempt field. Flags it at-risk instead of green S0.
+  // Trial OVERSTAYED (owner 2026-07-22, godwill): a captured trial (M0) whose scheduled M1 charge date has
+  // already PASSED but is still M0 → the first bill isn't succeeding (past the trial window). Derivable
+  // now (dueTimestamp < now) even without the retry-attempt field. Flags it at-risk instead of green M0.
   const trialOverstayed = hasSettled && currentCycle === SEQ_TRIAL && status === 'active' && !canceled
     && Number.isFinite(dueTs) && now > dueTs;
 
@@ -190,34 +190,34 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
 
   if (status === 'active' && canceled) {
     phase = 'cancelled_active'; phaseLabel = 'Cancelled — access remains'; hasAccess = true;
-    sCode = currentCycle === SEQ_TRIAL ? 'S0' : `S${currentCycle}`;
+    sCode = currentCycle === SEQ_TRIAL ? 'M0' : `M${currentCycle}`;
   } else if (status === 'active' && curRetry > 0) {
     // DUNNING — checked BEFORE the no-settled case. The big cluster (owner 2026-07-22): an initial trial
-    // (S0) payment FAILED but we keep them and keep retrying (ISF cascade). No payment captured yet, but
-    // actively retrying the INITIAL charge → S0.x, and the next attempt is the trial/initial charge —
-    // never a "full S1 charge". Also covers S1.x+ renewal-bill retries.
+    // (M0) payment FAILED but we keep them and keep retrying (ISF cascade). No payment captured yet, but
+    // actively retrying the INITIAL charge → M0.x, and the next attempt is the trial/initial charge —
+    // never a "full M1 charge". Also covers M1.x+ renewal-bill retries.
     phase = 'dunning'; dunning = true; hasAccess = true;
-    // The customer is STILL at their achieved level (S{currentCycle}); the retry is the ATTEMPT to move to
-    // the next charge — NOT a level they've reached. Owner 2026-07-22: godwill is "still S0", we're rolling
-    // him into S1 — so lead with the membership level (S0), and keep the P&L retry code (S1.2) as detail.
-    sCode = `S${currentCycle}`;
-    retrySeq = `S${failCycle}.${curRetry}`;
+    // The customer is STILL at their achieved level (M{currentCycle}); the retry is the ATTEMPT to move to
+    // the next charge — NOT a level they've reached. Owner 2026-07-22: godwill is "still M0", we're rolling
+    // him into M1 — so lead with the membership level (M0), and keep the P&L retry code (M1.2) as detail.
+    sCode = `M${currentCycle}`;
+    retrySeq = `M${failCycle}.${curRetry}`;
     phaseLabel = `Retrying payment capture — attempt ${curRetry}`;
   } else if (refunded && status !== 'active') {
-    phase = 'refunded'; phaseLabel = 'Refunded'; sCode = hasSettled ? `S${currentCycle}` : '—';
+    phase = 'refunded'; phaseLabel = 'Refunded'; sCode = hasSettled ? `M${currentCycle}` : '—';
   } else if (status === 'active') {
     hasAccess = true;
     if (!hasSettled) {
-      // Active, NOTHING captured (only a $0 'validate', or a failed initial) — the S0-failed cluster.
-      // Kept around; BC has typically scheduled the full S1 ($49.98) next. Flag it as at-risk, not a clean
+      // Active, NOTHING captured (only a $0 'validate', or a failed initial) — the M0-failed cluster.
+      // Kept around; BC has typically scheduled the full M1 ($49.98) next. Flag it as at-risk, not a clean
       // paying trial. Verified live 2026-07-22 (rakim: validate $0, schedule seq1 $49.98).
-      phase = 'trial'; phaseLabel = 'Trial — initial charge NOT captured'; sCode = 'S0';
+      phase = 'trial'; phaseLabel = 'Trial — initial charge NOT captured'; sCode = 'M0';
     } else if (currentCycle === SEQ_TRIAL) {
       phase = 'trial';
-      phaseLabel = trialOverstayed ? 'Trial — first bill (S1) overdue / not succeeding' : 'Trial';
-      sCode = 'S0';
+      phaseLabel = trialOverstayed ? 'Trial — first bill (M1) overdue / not succeeding' : 'Trial';
+      sCode = 'M0';
     } else {
-      phase = 'subscriber'; phaseLabel = `Subscriber — cycle ${currentCycle}`; sCode = `S${currentCycle}`;
+      phase = 'subscriber'; phaseLabel = `Subscriber — cycle ${currentCycle}`; sCode = `M${currentCycle}`;
     }
   } else if (!hasSettled) {
     phase = 'payment_failed'; phaseLabel = 'No settled payment'; sCode = '—';
@@ -225,11 +225,11 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     // A GENUINE current BC order suspend (order.subStatus === 'suspended' → BC.admin's [suspended] terminal)
     // = no access. NOT triggered by a fraud/stolen decline (those keep access — see problematicTransaction);
     // only when BC itself has the order in the suspended state.
-    phase = 'order_suspended'; phaseLabel = 'Suspended'; hasAccess = false; sCode = `S${currentCycle}`;
+    phase = 'order_suspended'; phaseLabel = 'Suspended'; hasAccess = false; sCode = `M${currentCycle}`;
   } else if (canceled) {
-    phase = 'cancelled_ended'; phaseLabel = 'Cancelled — ended'; sCode = `S${currentCycle}`;
+    phase = 'cancelled_ended'; phaseLabel = 'Cancelled — ended'; sCode = `M${currentCycle}`;
   } else {
-    phase = 'expired'; phaseLabel = 'Expired'; sCode = `S${currentCycle}`;
+    phase = 'expired'; phaseLabel = 'Expired'; sCode = `M${currentCycle}`;
   }
 
   const earlyCancel = earlyCancelCode(order, cyclesBilled, now);
@@ -244,11 +244,11 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   } else if (canBill && dueTs) {
     const isRetry = curRetry > 0;
     // For a retry, the failing charge is the next UNCAPTURED one (failCycle) — NOT schedule.sequence, which
-    // may point ahead (an uncaptured S0 whose schedule reads S1). This is the rakim/amyjo fix.
+    // may point ahead (an uncaptured M0 whose schedule reads M1). This is the rakim/amyjo fix.
     const cyc = isRetry ? failCycle : (Number.isFinite(nextSeq) ? nextSeq : failCycle);
     nextEvent = {
       date: dueTs, amount: nextAmount, cycle: cyc, retry: curRetry, isRetry,
-      // cyc 0 = the trial/initial charge; cyc 1 = the S0→S1 first bill (converts to subscriber); ≥2 = renewal.
+      // cyc 0 = the trial/initial charge; cyc 1 = the M0→M1 first bill (converts to subscriber); ≥2 = renewal.
       type: isRetry ? 'retry' : (cyc === SEQ_TRIAL ? 'trial-charge' : cyc <= 1 ? 'first-bill' : 'renewal'),
       // "of N" from the rules; BC's dueTimestamp already gave the next date. (BC full-cascade override, when
       // it ever appears in the schedule, would replace maxAttempts/remaining here.)
@@ -273,7 +273,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     return { collected, refunded, net: collected - refunded, saleCount, capturedAny: collected > 0 };
   })();
 
-  // Tenure: member since signup; paid-subscriber since the first captured S1+ (recurring) charge.
+  // Tenure: member since signup; paid-subscriber since the first captured M1+ (recurring) charge.
   const orderTs = order.orderTimestamp || order.createdTimestamp || null;
   const memberDays = Number.isFinite(orderTs) ? Math.max(0, Math.floor((now - orderTs) / 864e5)) : null;
   const firstSub = settled
@@ -297,7 +297,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   let expectation;
   if (phase === 'trial' && !hasSettled) {
     // Business rule (owner 2026-07-22): once let in, the $1 trial fee is NOT retried — at ~day 7 we attempt
-    // the full membership charge (repeatedly). So the next event is the S1 amount, never a $1 retry.
+    // the full membership charge (repeatedly). So the next event is the M1 amount, never a $1 retry.
     expectation = `Trial fee not captured (not retried). First membership charge ${$(nextEvent?.amount)} attempts on ${dstr(nextEvent?.date)}${declineReason ? ` (last decline: ${declineReason})` : ''}.`;
   } else if (phase === 'trial' && trialOverstayed) {
     expectation = `First bill ${$(nextAmount)} is overdue / not succeeding${declineReason ? ` (${declineReason})` : ''}.`;
@@ -331,7 +331,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     : null;
 
   // 'grace' = has access but at risk: dunning, cancel-at-period-end, OR a trial whose initial charge never
-  // captured (the S0-failed cluster — kept around, BC about to attempt the full S1).
+  // captured (the M0-failed cluster — kept around, BC about to attempt the full M1).
   const access = !hasAccess ? 'no'
     : (dunning || phase === 'cancelled_active' || (phase === 'trial' && !hasSettled) || trialOverstayed) ? 'grace'
     : 'yes';
@@ -351,36 +351,36 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
   const stateName = phase === 'dunning' ? 'Retrying payment capture'
     : (STATE_NAME[phase] || phase);
 
-  // DEFINITIVE current-state code (owner 2026-07-22): S{n}-paid | S{n}-unpaid[.{retry}].
+  // DEFINITIVE current-state code (owner 2026-07-22): M{n}-paid | M{n}-unpaid[.{retry}].
   //   n = charge sequence: 0 = trial ($1), 1 = first subscription charge, 2 = second, …
-  //   -paid   = the S{n} charge CLEARED. 'S1' therefore means a subscriber who cleared S1.
-  //   -unpaid = not cleared. NO retry suffix on S0 — we don't retry the $1 trial (owner). Retries (.1,.2,…)
-  //             only exist for S1+ (the subscription charges).
+  //   -paid   = the M{n} charge CLEARED. 'M1' therefore means a subscriber who cleared M1.
+  //   -unpaid = not cleared. NO retry suffix on M0 — we don't retry the $1 trial (owner). Retries (.1,.2,…)
+  //             only exist for M1+ (the subscription charges).
   const clearedSeqs = settled.map((p) => Number(p?.sequence)).filter((n) => Number.isFinite(n));
   const highestCleared = clearedSeqs.length ? Math.max(...clearedSeqs) : (cyclesBilled > 0 ? cyclesBilled - 1 : null);
   const retryMax = RETRY_RULES.maxAttempts;
-  const isSubscriber = (highestCleared ?? -1) >= 1;            // billed at least the first MONTHLY charge (S1+)
+  const isSubscriber = (highestCleared ?? -1) >= 1;            // billed at least the first MONTHLY charge (M1+)
   let stateCode;
   if (phase === 'order_suspended') {
     stateCode = 'Suspended';
   } else if (status === 'active' && curRetry > 0 && Number.isFinite(nextSeq) && nextSeq >= 1) {
-    // CEO 2026-07-22: a retry is a DECLINE, and the customer is STILL S0 (trial) until a bill SUCCEEDS.
-    // So the detailed code is D{cycle}.{retry} (declining the cycle-N charge), NOT S{n}-unpaid.
+    // CEO 2026-07-22: a retry is a DECLINE, and the customer is STILL M0 (trial) until a bill SUCCEEDS.
+    // So the detailed code is D{cycle}.{retry} (declining the cycle-N charge), NOT M{n}-unpaid.
     stateCode = `D${nextSeq}.${curRetry} of ${retryMax}`;
   } else if (isSubscriber) {
-    stateCode = `S${highestCleared}-paid`;                     // billed month {highestCleared} (S1-paid, S2-paid…)
+    stateCode = `M${highestCleared}-paid`;                     // billed month {highestCleared} (M1-paid, M2-paid…)
   } else if (hasSettled) {
-    stateCode = 'S0-paid';                                     // trial, $1 captured
+    stateCode = 'M0-paid';                                     // trial, $1 captured
   } else {
-    stateCode = 'S0-unpaid';                                   // trial, $1 not captured
+    stateCode = 'M0-unpaid';                                   // trial, $1 not captured
   }
 
   // HIGH-LEVEL classification (owner 2026-07-22) — the coarse bucket for the customer list + detail header
-  // + order table, embedding the S-code:
-  //   trial-S0-paid | trial-S0-unpaid | trial-S0-norenewal
-  //   subscriber-S{n}-paid | subscriber-S{n}.{retry}-unpaid | subscriber-S{n}-norenewal
+  // + order table, embedding the M-code:
+  //   trial-M0-paid | trial-M0-unpaid | trial-M0-norenewal
+  //   subscriber-M{n}-paid | subscriber-M{n}.{retry}-unpaid | subscriber-M{n}-norenewal
   //   inactive (no access)
-  // Membership bucket (CEO 2026-07-22): 'subscriber' ONLY once a monthly charge has SUCCEEDED (S1+).
+  // Membership bucket (CEO 2026-07-22): 'subscriber' ONLY once a monthly charge has SUCCEEDED (M1+).
   // A customer in retry is still a 'trial' (they never cleared a monthly bill) — the retry is a Decline.
   const bucket = isSubscriber ? 'subscriber' : 'trial';
   let classification;
@@ -394,11 +394,11 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
     const n = Number.isFinite(nextSeq) ? nextSeq : (highestCleared ?? 0) + 1;
     classification = `${bucket}-D${n}.${curRetry}`;
   } else if (phase === 'cancelled_active') {
-    classification = isSubscriber ? `subscriber-S${highestCleared}-norenewal` : 'trial-S0-norenewal';
+    classification = isSubscriber ? `subscriber-M${highestCleared}-norenewal` : 'trial-M0-norenewal';
   } else if (!isSubscriber) {
-    classification = hasSettled ? 'trial-S0-paid' : 'trial-S0-unpaid';
+    classification = hasSettled ? 'trial-M0-paid' : 'trial-M0-unpaid';
   } else {
-    classification = `subscriber-S${highestCleared}-paid`;
+    classification = `subscriber-M${highestCleared}-paid`;
   }
   const classificationLabel = classification.startsWith('inactive-')
     ? `Inactive (${classification.slice('inactive-'.length)})`     // Inactive (voluntary) / Inactive (involuntary)
@@ -423,7 +423,7 @@ export function classifyBilling(order, { now = Date.now() } = {}) {
 // getCustomerStatus(user, orders) — the SINGLE access-first status (taxonomy redesign, owner 2026-07-22):
 // one answer to "does this customer have access, and why". Folds the account axis (BC 'blocked' → no
 // access, overrides billing) and picks the authoritative order (active, else most recent). Replaces the
-// old two-axis account-status + plan-status + loose S-code.
+// old two-axis account-status + plan-status + loose M-code.
 //   access: 'yes' (active/healthy) | 'grace' (has access but at-risk/ending) | 'no'
 export function getCustomerStatus(user, orders) {
   const list = Array.isArray(orders) ? orders : [];
@@ -437,14 +437,14 @@ export function getCustomerStatus(user, orders) {
   if (suspended) {
     return { access: 'no', tone: 'suspended', accessLabel: 'No access', reason: 'Suspended (account blocked)',
       classification: 'inactive', classificationLabel: 'Inactive',
-      sCode: billing?.sCode ?? null, stateCode: billing?.stateCode ?? 'S0-unpaid', nextEvent: null, expectation: 'Account blocked — no access, no further charges.',
+      sCode: billing?.sCode ?? null, stateCode: billing?.stateCode ?? 'M0-unpaid', nextEvent: null, expectation: 'Account blocked — no access, no further charges.',
       risk: highRisk, stateName: 'Blocked', latestEvent: billing?.latestEvent ?? '—', nextEventShort: 'None',
       money: billing?.money, memberDays: billing?.memberDays ?? null, subscriberDays: billing?.subscriberDays ?? 0, billing };
   }
   if (!billing) {
     return { access: 'no', tone: 'none', accessLabel: 'No access', reason: list.length ? 'No settled payment' : 'Signup only (no orders)',
       classification: 'inactive', classificationLabel: 'Inactive',
-      sCode: null, stateCode: list.length ? 'S0-unpaid' : 'Signup', nextEvent: null, expectation: 'No orders — signup only.',
+      sCode: null, stateCode: list.length ? 'M0-unpaid' : 'Signup', nextEvent: null, expectation: 'No orders — signup only.',
       risk: highRisk, stateName: list.length ? 'Unpaid' : 'Signup only', latestEvent: 'No charge attempted', nextEventShort: 'None',
       money: { collected: 0, refunded: 0, net: 0, saleCount: 0, capturedAny: false }, memberDays: null, subscriberDays: 0, billing: null };
   }
@@ -500,7 +500,7 @@ export function billingEvents(order) {
     else if (ty === 'refund') charge = 'Refund';
     else if (ty === 'void') charge = 'Void';
     else {
-      const name = seq === 0 ? 'Trial charge' : seq === 1 ? 'First bill (S1)' : Number.isFinite(seq) ? `Renewal (S${seq})` : 'Charge';
+      const name = seq === 0 ? 'Trial charge' : seq === 1 ? 'First bill (M1)' : Number.isFinite(seq) ? `Renewal (M${seq})` : 'Charge';
       charge = `${name}${retry > 0 ? ` · retry ${retry}` : ''}`;
     }
     let outcome, tone;

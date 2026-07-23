@@ -6,37 +6,37 @@ const schedule = (sequence, retry = 0, dueTimestamp = Date.now() + 7 * 864e5, am
 // Real shape (Tera Callan, 2026-07-22): BC exposes cpd at transient.bin.extra.cpd.
 const debitToken = () => ({ lastDigits: '9098', bin: '403163', expiration: { month: 9, year: 30 }, transient: { bin: { brand: 'VISA', type: 'DEBIT', level: 'PREPAID CLASSIC', extra: { cpd: 'prepaid' } } } });
 
-describe('classifyBilling — S-code lifecycle', () => {
-  test('S0 trial: one settled trial charge, active, next renewal pending', () => {
+describe('classifyBilling — M-code lifecycle', () => {
+  test('M0 trial: one settled trial charge, active, next renewal pending', () => {
     const o = { status: 'active', commercePayments: [sale(1.01)], schedule: schedule(1, 0) };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S0');
+    expect(c.sCode).toBe('M0');
     expect(c.phase).toBe('trial');
     expect(c.hasAccess).toBe(true);
-    expect(c.nextEvent.type).toBe('first-bill'); // S0→S1 first charge (converts to subscriber)
+    expect(c.nextEvent.type).toBe('first-bill'); // M0→M1 first charge (converts to subscriber)
     expect(c.nextEvent.isRetry).toBe(false);
   });
 
-  test('S2 subscriber: three settled charges (trial + 2 months), active', () => {
+  test('M2 subscriber: three settled charges (trial + 2 months), active', () => {
     const o = { status: 'active', commercePayments: [sale(1.01), sale(), sale()], schedule: schedule(3, 0) };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S2');
+    expect(c.sCode).toBe('M2');
     expect(c.phase).toBe('subscriber');
     expect(c.currentCycle).toBe(2);
   });
 
-  test('dunning: first bill failing, retry 2 → still S0, retrySeq S1.2', () => {
+  test('dunning: first bill failing, retry 2 → still M0, retrySeq M1.2', () => {
     const o = { status: 'active', commercePayments: [sale(1.01)], schedule: schedule(1, 2) };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S0');            // membership — rolling to subscription
-    expect(c.retrySeq).toBe('S1.2');       // P&L retry code
+    expect(c.sCode).toBe('M0');            // membership — rolling to subscription
+    expect(c.retrySeq).toBe('M1.2');       // P&L retry code
     expect(c.phase).toBe('dunning');
     expect(c.dunning).toBe(true);
     expect(c.nextEvent.isRetry).toBe(true);
     expect(c.nextEvent.retry).toBe(2);
   });
 
-  test('LIVE Cassie Happy Path S0: captured $1 trial, next is the first bill (converts), not a renewal', () => {
+  test('LIVE Cassie Happy Path M0: captured $1 trial, next is the first bill (converts), not a renewal', () => {
     const o = {
       status: 'active',
       commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1 }, createdTimestamp: Date.parse('2026-07-21T09:43:13Z') }],
@@ -46,7 +46,7 @@ describe('classifyBilling — S-code lifecycle', () => {
       orderHistories: [{ status: 'active', statusReason: 'SuccessfulTx', createdAt: '2026-07-21T09:43:15Z' }],
     };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S0');
+    expect(c.sCode).toBe('M0');
     expect(c.phase).toBe('trial');
     expect(c.access).toBe('yes');
     expect(c.card.cpd).toBe('D');                 // Green Dot debit
@@ -55,7 +55,7 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent.amount).toBe(49.98);
   });
 
-  test('LIVE rakim S0-failed: validate-only ($0), no capture, BC scheduled $49.98 → S0 at-risk, first-bill', () => {
+  test('LIVE rakim M0-failed: validate-only ($0), no capture, BC scheduled $49.98 → M0 at-risk, first-bill', () => {
     const o = {
       status: 'active',
       commercePayments: [{ type: 'validate', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 0 } }],
@@ -64,30 +64,30 @@ describe('classifyBilling — S-code lifecycle', () => {
       orderHistories: [{ status: 'active', statusReason: 'SuccessfulTx' }],
     };
     const c = classifyBilling(o);
-    expect(c.sCode).toBe('S0');
+    expect(c.sCode).toBe('M0');
     expect(c.phase).toBe('trial');
     expect(c.access).toBe('grace');            // at-risk: initial charge never captured
     expect(c.phaseLabel).toMatch(/not captured/i);
-    expect(c.nextEvent.type).toBe('first-bill'); // BC scheduled the $49.98 S1 charge
+    expect(c.nextEvent.type).toBe('first-bill'); // BC scheduled the $49.98 M1 charge
     expect(c.nextEvent.amount).toBe(49.98);
   });
 
-  test('S0-cluster: never captured but actively retrying S1 → S1-unpaid (rule: begun S1 retry → assume S1)', () => {
-    // Owner rule 2026-07-22: once the S1 retry process begins (and isn't paused), assume S1 — unpaid.
+  test('M0-cluster: never captured but actively retrying M1 → M1-unpaid (rule: begun M1 retry → assume M1)', () => {
+    // Owner rule 2026-07-22: once the M1 retry process begins (and isn't paused), assume M1 — unpaid.
     const o = {
       status: 'active',
-      commercePayments: [{ type: 'sale', status: 'declined', sequence: 1 }], // attempted S1, never fulfilled
+      commercePayments: [{ type: 'sale', status: 'declined', sequence: 1 }], // attempted M1, never fulfilled
       schedule: { dueTimestamp: Date.now() + 3 * 864e5, data: { sequence: 1, retry: 2, totalPrice: { amount: 49.98 } } },
     };
     const c = classifyBilling(o);
-    expect(c.stateCode).toBe('D1.2 of 5'); // in the S1 retry process, not-yet-paid
+    expect(c.stateCode).toBe('D1.2 of 5'); // in the M1 retry process, not-yet-paid
     expect(c.phase).toBe('dunning');
     expect(c.hasAccess).toBe(true);
     expect(c.access).toBe('grace');
     expect(c.nextEvent.maxAttempts).toBe(5);     // "of N" now shown (owner)
   });
 
-  test('LIVE godwill S1 dunning: captured trial, S1 failed twice (ISF), on retry 2 → S1-unpaid.2', () => {
+  test('LIVE godwill M1 dunning: captured trial, M1 failed twice (ISF), on retry 2 → M1-unpaid.2', () => {
     const o = {
       status: 'active',
       commercePayments: [
@@ -99,7 +99,7 @@ describe('classifyBilling — S-code lifecycle', () => {
       schedule: { dueTimestamp: 1784899800139, data: { sequence: 1, retry: 2, totalPrice: { amount: 49.98 } } },
     };
     const c = classifyBilling(o);
-    expect(c.stateCode).toBe('D1.2 of 5');  // in the S1 retry process, not-yet-paid
+    expect(c.stateCode).toBe('D1.2 of 5');  // in the M1 retry process, not-yet-paid
     expect(c.stateName).toBe('Retrying payment capture');
     expect(c.phase).toBe('dunning');
     expect(c.access).toBe('grace');
@@ -109,15 +109,15 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent.cycle).toBe(1);
   });
 
-  test('godwill: trial overstayed — captured S0 but S1 charge date passed, still S0 → at-risk, not green', () => {
+  test('godwill: trial overstayed — captured M0 but M1 charge date passed, still M0 → at-risk, not green', () => {
     const o = {
       status: 'active',
       commercePayments: [{ type: 'sale', status: 'fulfilled', sequence: 0, totalPrice: { amount: 1 } }],
       transient: { sequenced: { sequence: 0, retry: 0 } },
       schedule: { dueTimestamp: Date.parse('2026-07-14T00:00:00Z'), data: { sequence: 1, retry: 0, totalPrice: { amount: 49.98 } } },
     };
-    const c = classifyBilling(o, { now: Date.parse('2026-07-22T00:00:00Z') }); // 8 days later, still S0
-    expect(c.sCode).toBe('S0');
+    const c = classifyBilling(o, { now: Date.parse('2026-07-22T00:00:00Z') }); // 8 days later, still M0
+    expect(c.sCode).toBe('M0');
     expect(c.trialOverstayed).toBe(true);
     expect(c.access).toBe('grace');                 // NOT green
     expect(c.phaseLabel).toMatch(/overdue|not succeeding/i);
@@ -136,7 +136,7 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.hasAccess).toBe(true);
   });
 
-  test('LIVE Tera shape: cancelled trial → S0, C1, access-ends (no phantom renewal)', () => {
+  test('LIVE Tera shape: cancelled trial → M0, C1, access-ends (no phantom renewal)', () => {
     const signup = Date.parse('2026-07-20T09:58:47Z');
     const cancel = Date.parse('2026-07-22T09:08:43Z');
     const o = {
@@ -150,7 +150,7 @@ describe('classifyBilling — S-code lifecycle', () => {
       ],
     };
     const c = classifyBilling(o, { now: Date.parse('2026-07-23T00:00:00Z') });
-    expect(c.sCode).toBe('S0');
+    expect(c.sCode).toBe('M0');
     expect(c.phase).toBe('cancelled_active');
     expect(c.hasAccess).toBe(true);
     expect(c.earlyCancel).toBe('C1');          // cancelled 2 days in, before first monthly charge
@@ -285,28 +285,28 @@ describe('classifyBilling — S-code lifecycle', () => {
   });
 });
 
-describe('stateCode — definitive S{n}-paid / S{n}-unpaid[.retry] taxonomy (owner 2026-07-22)', () => {
+describe('stateCode — definitive M{n}-paid / M{n}-unpaid[.retry] taxonomy (owner 2026-07-22)', () => {
   const fsale = (seq, amt = 49.98) => ({ type: 'sale', status: 'fulfilled', sequence: seq, totalPrice: { amount: amt } });
   const code = (o) => classifyBilling(o).stateCode;
-  test('trial captured, S1 not yet attempted → S0-paid', () => {
-    expect(code({ status: 'active', commercePayments: [fsale(0, 1)], schedule: schedule(1, 0) })).toBe('S0-paid');
+  test('trial captured, M1 not yet attempted → M0-paid', () => {
+    expect(code({ status: 'active', commercePayments: [fsale(0, 1)], schedule: schedule(1, 0) })).toBe('M0-paid');
   });
-  test('never captured (validate only) → S0-unpaid (no retry on S0)', () => {
-    expect(code({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }], schedule: schedule(1, 0) })).toBe('S0-unpaid');
+  test('never captured (validate only) → M0-unpaid (no retry on M0)', () => {
+    expect(code({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }], schedule: schedule(1, 0) })).toBe('M0-unpaid');
   });
-  test('trial captured, S1 charge failing retry 2 → S1-unpaid.2 of 10 (godwill/lacanda12)', () => {
+  test('trial captured, M1 charge failing retry 2 → M1-unpaid.2 of 10 (godwill/lacanda12)', () => {
     expect(code({ status: 'active', commercePayments: [fsale(0, 1), { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) })).toBe('D1.2 of 5');
   });
-  test('never captured but actively retrying S1 → S1-unpaid.2 of 10 (rule: begun S1 retry → assume S1)', () => {
+  test('never captured but actively retrying M1 → M1-unpaid.2 of 10 (rule: begun M1 retry → assume M1)', () => {
     expect(code({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }, { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) })).toBe('D1.2 of 5');
   });
-  test('cleared trial + S1 → S1-paid (subscriber, cleared S1)', () => {
-    expect(code({ status: 'active', commercePayments: [fsale(0, 1), fsale(1)], schedule: schedule(2, 0) })).toBe('S1-paid');
+  test('cleared trial + M1 → M1-paid (subscriber, cleared M1)', () => {
+    expect(code({ status: 'active', commercePayments: [fsale(0, 1), fsale(1)], schedule: schedule(2, 0) })).toBe('M1-paid');
   });
-  test('subscriber, S2 renewal failing retry 1 → S2-unpaid.1 of 10', () => {
+  test('subscriber, M2 renewal failing retry 1 → M2-unpaid.1 of 10', () => {
     expect(code({ status: 'active', commercePayments: [fsale(0, 1), fsale(1), { type: 'sale', status: 'rejected', sequence: 2 }], schedule: schedule(2, 1) })).toBe('D2.1 of 5');
   });
-  test('never-captured S1-unpaid → High risk + neverCaptured; happy-path S1-unpaid → Medium', () => {
+  test('never-captured M1-unpaid → High risk + neverCaptured; happy-path M1-unpaid → Medium', () => {
     const never = classifyBilling({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }, { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) });
     expect(never.stateCode).toBe('D1.2 of 5');
     expect(never.neverCaptured).toBe(true);
@@ -321,23 +321,23 @@ describe('stateCode — definitive S{n}-paid / S{n}-unpaid[.retry] taxonomy (own
 describe('classification — high-level bucket (owner 2026-07-22)', () => {
   const fsale = (seq, amt = 49.98) => ({ type: 'sale', status: 'fulfilled', sequence: seq, totalPrice: { amount: amt } });
   const cls = (o, now) => classifyBilling(o, now ? { now } : undefined).classification;
-  test('trial captured → trial-S0-paid', () => {
-    expect(cls({ status: 'active', commercePayments: [fsale(0, 1)], schedule: schedule(1, 0) })).toBe('trial-S0-paid');
+  test('trial captured → trial-M0-paid', () => {
+    expect(cls({ status: 'active', commercePayments: [fsale(0, 1)], schedule: schedule(1, 0) })).toBe('trial-M0-paid');
   });
-  test('never captured, not retrying → trial-S0-unpaid', () => {
-    expect(cls({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }], schedule: schedule(1, 0) })).toBe('trial-S0-unpaid');
+  test('never captured, not retrying → trial-M0-unpaid', () => {
+    expect(cls({ status: 'active', commercePayments: [{ type: 'validate', status: 'fulfilled', totalPrice: { amount: 0 } }], schedule: schedule(1, 0) })).toBe('trial-M0-unpaid');
   });
-  test('cancelled trial, access remains → trial-S0-norenewal', () => {
-    expect(cls({ status: 'active', subStatus: 'canceled', commercePayments: [fsale(0, 1)], schedule: { dueTimestamp: Date.now() + 5 * 864e5, data: { sequence: 1, retry: 0 } } })).toBe('trial-S0-norenewal');
+  test('cancelled trial, access remains → trial-M0-norenewal', () => {
+    expect(cls({ status: 'active', subStatus: 'canceled', commercePayments: [fsale(0, 1)], schedule: { dueTimestamp: Date.now() + 5 * 864e5, data: { sequence: 1, retry: 0 } } })).toBe('trial-M0-norenewal');
   });
-  test('S1 charge failing retry 2 → subscriber-S1.2-unpaid', () => {
+  test('M1 charge failing retry 2 → subscriber-M1.2-unpaid', () => {
     expect(cls({ status: 'active', commercePayments: [fsale(0, 1), { type: 'sale', status: 'rejected', sequence: 1 }], schedule: schedule(1, 2) })).toBe('trial-D1.2');
   });
-  test('cleared trial + S1 → subscriber-S1-paid', () => {
-    expect(cls({ status: 'active', commercePayments: [fsale(0, 1), fsale(1)], schedule: schedule(2, 0) })).toBe('subscriber-S1-paid');
+  test('cleared trial + M1 → subscriber-M1-paid', () => {
+    expect(cls({ status: 'active', commercePayments: [fsale(0, 1), fsale(1)], schedule: schedule(2, 0) })).toBe('subscriber-M1-paid');
   });
-  test('subscriber cancelled → subscriber-S1-norenewal', () => {
-    expect(cls({ status: 'active', subStatus: 'canceled', commercePayments: [fsale(0, 1), fsale(1)], schedule: { dueTimestamp: Date.now() + 5 * 864e5, data: { sequence: 2, retry: 0 } } })).toBe('subscriber-S1-norenewal');
+  test('subscriber cancelled → subscriber-M1-norenewal', () => {
+    expect(cls({ status: 'active', subStatus: 'canceled', commercePayments: [fsale(0, 1), fsale(1)], schedule: { dueTimestamp: Date.now() + 5 * 864e5, data: { sequence: 2, retry: 0 } } })).toBe('subscriber-M1-norenewal');
   });
   test('expired, no cancel trail → inactive-involuntary (BC "expired (involuntary)")', () => {
     expect(cls({ status: 'inactive', subStatus: 'expired', commercePayments: [fsale(0, 1)] })).toBe('inactive-involuntary');
@@ -389,7 +389,7 @@ describe('getCustomerStatus — single access-first status', () => {
   test('active trial → has access', () => {
     const s = getCustomerStatus({ status: 'active' }, [trialOrder]);
     expect(s.access).toBe('yes');
-    expect(s.sCode).toBe('S0');
+    expect(s.sCode).toBe('M0');
   });
   test('no orders → no access, signup only', () => {
     const s = getCustomerStatus({ status: 'active' }, []);
