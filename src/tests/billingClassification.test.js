@@ -178,6 +178,49 @@ describe('classifyBilling — S-code lifecycle', () => {
     expect(c.nextEvent).toBeNull();              // no forecast — stopped (no retry on fraud)
   });
 
+  test('LIVE estevenjnordby/kingasyus: fraud stop + suspend BUT status active with a lingering schedule.retry → terminal, NOT a yellow D1.1', () => {
+    // The regression: BC left status='active' and a stale schedule.data.retry=1 @ a future date after it had
+    // already fraud-declined the first bill (Jul 7) and suspended the order (Jul 21). The dunning branch was
+    // firing first → mis-showing "Trial-D1.1 / Has access (at risk) / Medium / Retry $49.98 @ Jul 24".
+    const jun30 = Date.parse('2026-06-30T14:22:00Z');
+    const jul7 = Date.parse('2026-07-07T06:30:00Z');
+    const o = {
+      status: 'active', subStatus: 'suspended', orderTimestamp: jun30,
+      commercePayments: [
+        { type: 'sale', status: 'fulfilled', sequence: 0, retry: 0, totalPrice: { amount: 1.0 }, paymentTimestamp: jun30 },
+        { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: jul7 },
+      ],
+      orderHistories: [{ subStatus: 'suspended', createdAt: '2026-07-21T18:14:00Z' }],
+      schedule: { dueTimestamp: Date.parse('2026-07-24T06:30:00Z'), data: { sequence: 1, retry: 1, totalPrice: { amount: 49.98 } } },
+    };
+    const c = classifyBilling(o, { now: Date.parse('2026-07-23T00:00:00Z') });
+    expect(c.phase).toBe('order_suspended');
+    expect(c.access).toBe('no');            // NOT 'grace'
+    expect(c.hasAccess).toBe(false);
+    expect(c.dunning).toBeFalsy();          // must not read as dunning
+    expect(c.fraudStop).toBe(true);
+    expect(c.risk.tone).toBe('red');        // NOT yellow
+    expect(c.stateName).toBe('Fraud stop');
+    expect(c.stateCode).toBe('Fraud-stop'); // NOT 'D1.1 of 5'
+    expect(c.classification).toBe('inactive');
+    expect(c.nextEvent).toBeNull();         // NO phantom "Retry $49.98 @ Jul 24"
+    expect(c.nextEventShort).toBe('None');
+  });
+
+  test('fraud stop is keyed on the LATEST sale: an old fraud decline followed by a successful renewal is NOT terminal', () => {
+    const o = {
+      status: 'active',
+      commercePayments: [
+        { type: 'sale', status: 'rejected', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, requestResult: { primaryCodeMessage: '59:Suspected Fraud' }, paymentTimestamp: 1 },
+        { type: 'sale', status: 'fulfilled', sequence: 1, retry: 0, totalPrice: { amount: 49.98 }, paymentTimestamp: 2 },
+      ],
+      schedule: schedule(2, 0),
+    };
+    const c = classifyBilling(o);
+    expect(c.phase).not.toBe('order_suspended'); // later success clears the stop
+    expect(c.access).toBe('yes');
+  });
+
   test('expired: inactive + subStatus expired', () => {
     const o = { status: 'inactive', subStatus: 'expired', commercePayments: [sale(1.01), sale()] };
     const c = classifyBilling(o);
