@@ -55,6 +55,16 @@ const normalizeState = (v) => {
   return STATE_ABBR[t.toLowerCase()] || t;
 };
 
+// Partner links (homefacts) put first + middle in ONE field (firstName=`Robert Orlando`), which BC name
+// matching can't resolve. Split it: first token → firstName, the rest → middleName — but only when no
+// explicit middleName was provided.
+const splitFirstMiddle = (first, middle) => {
+  const f = String(first || '').trim(); const m = String(middle || '').trim();
+  if (m || !/\s/.test(f)) return [f, m];
+  const parts = f.split(/\s+/);
+  return [parts[0], parts.slice(1).join(' ')];
+};
+
 const VerticalIntentLanding = ({ cfg }) => {
   const brand = useBrand();
   useLandingTrack('name', cfg.variant);
@@ -64,8 +74,9 @@ const VerticalIntentLanding = ({ cfg }) => {
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const V = cfg.variant;
 
-  const [firstName, setFirstName] = useState(queryParams.get('fn') || queryParams.get('firstName') || '');
-  const [middleName, setMiddleName] = useState(queryParams.get('mn') || queryParams.get('middleName') || '');
+  const [pFirst, pMiddle] = splitFirstMiddle(queryParams.get('fn') || queryParams.get('firstName') || '', queryParams.get('mn') || queryParams.get('middleName') || '');
+  const [firstName, setFirstName] = useState(pFirst);
+  const [middleName, setMiddleName] = useState(pMiddle);
   const [lastName, setLastName] = useState(queryParams.get('ln') || queryParams.get('lastName') || '');
   const [city, setCity] = useState(queryParams.get('city') || '');
   const [state, setState] = useState(normalizeState(queryParams.get('state') || ''));
@@ -243,7 +254,7 @@ const VerticalIntentLanding = ({ cfg }) => {
                   NOTHING, not a mismatched general-augment teaser (e.g. incarceration mugshots on a death search).
                   General-funnel augmentation lives on the SERP/home, not here. */}
               {cfg.teaser && lastName && state && (
-                <SignalTeaser subject={{ firstName, lastName, state }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
+                <SignalTeaser subject={{ firstName, lastName, state, city, age }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
               )}
               <div className={s.field}>
                 <label className={s.label} htmlFor={id('age')}>Age (optional)</label>

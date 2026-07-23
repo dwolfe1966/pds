@@ -27,12 +27,13 @@ const FLOW_PRIORITY = {
   divorce: { lead: 'marriageDivorce', secondary: ['booking'] },
   dating:  { lead: 'capability',      secondary: ['marriageDivorce', 'booking'] },
   death:   { lead: 'marriageDivorce', secondary: [] },
-  // Homefacts records-intent flows (2026-07-23). Criminal + sex-offender are POST-PAY only (see shapeSignals),
-  // so pre-pay these lead with the compliance-safe capability tease; any pre-pay booking/marriage hits show as
-  // "also found". Post-pay, the real criminal/offender records surface in the report.
-  background:     { lead: 'capability', secondary: ['booking', 'marriageDivorce'] },
-  sexOffender:    { lead: 'capability', secondary: ['booking'] },
-  publicRecords:  { lead: 'capability', secondary: ['booking', 'marriageDivorce'] },
+  // Homefacts records-intent flows (2026-07-23). background/publicRecords AUGMENT with dynamic data (owner
+  // 2026-07-23): lead with the strongest REAL pre-pay record (booking/marriage) when we find one, else fall
+  // back to the capability hook. sexOffender keeps the capability FLAG lead (compliance framing). Criminal +
+  // sex-offender records themselves stay POST-PAY (see shapeSignals) and surface in the paid report.
+  background:     { lead: '__strongest__', secondary: ['__rest__'] },
+  sexOffender:    { lead: 'capability',    secondary: ['booking'] },
+  publicRecords:  { lead: '__strongest__', secondary: ['__rest__'] },
   general: { lead: '__strongest__',   secondary: ['__rest__'] },
 };
 const STRENGTH_ORDER = ['booking', 'sexOffender', 'marriageDivorce']; // for general '__strongest__'
@@ -49,7 +50,7 @@ const augmentOn = () => process.env.REACT_APP_SIGNALS_AUGMENT !== '0';
 const bookingPreSignupOn = () => process.env.REACT_APP_SIGNALS_BOOKING_PRESIGNUP !== '0';
 
 const norm = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, '');
-const subjectKey = (s) => [norm(s.firstName), norm(s.lastName), norm(s.state), norm(s.age)].join(':');
+const subjectKey = (s) => [norm(s.firstName), norm(s.lastName), norm(s.state), norm(s.city), norm(s.age)].join(':');
 
 // Memoize RAW signals per (subjectKey, stage) — NOT flow (a person's fetched records don't change with the
 // funnel intent). lead/secondary are resolved OUTSIDE the memo (they're flow-dependent). Stores the in-flight

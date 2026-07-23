@@ -175,7 +175,16 @@ const NameSearchLoaderPage = () => {
         // Generic message — never surface raw upstream errors to users.
         setStatus('Something went wrong. Redirecting...');
         setTimeout(() => {
-          navigate('/name/search-result?error=true');
+          // Carry the subject to the error SERP so the first-party teaser/rescue can still render (the
+          // homefacts records flows rely on the teaser even when BC errors, not just on zero results).
+          const ep = new URLSearchParams({ error: 'true' });
+          if (firstName) ep.set('firstName', firstName);
+          if (lastName) ep.set('lastName', lastName);
+          if (middleName) ep.set('middleName', middleName);
+          if (state) ep.set('state', state);
+          if (city) ep.set('city', city);
+          if (age) ep.set('age', age);
+          navigate(`/name/search-result?${ep.toString()}`);
         }, 2000);
       }
     };

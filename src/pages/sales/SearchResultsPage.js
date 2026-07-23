@@ -120,6 +120,10 @@ const SalesSearchResultsPage = () => {
 
       if (error) {
         setErrorMessage('An error occurred during the search. Please try again.');
+        // Still set the subject from the URL so the first-party teaser + rescue render on error (homefacts #2).
+        if (firstNameParam || lastNameParam) {
+          setSearchQuery({ firstName: firstNameParam.trim(), lastName: lastNameParam.trim(), state: state || '', city: cityParam, age: ageParam });
+        }
         return;
       }
 
@@ -404,7 +408,7 @@ const SalesSearchResultsPage = () => {
             {searchQuery.lastName && (
               <div style={{ marginBottom: 28, paddingBottom: 4 }}>
                 <SignalTeaser
-                  subject={{ firstName: searchQuery.firstName, lastName: searchQuery.lastName, state: searchQuery.state }}
+                  subject={{ firstName: searchQuery.firstName, lastName: searchQuery.lastName, state: searchQuery.state, city: searchQuery.city, age: searchQuery.age }}
                   flow={getFlow() || flow || 'general'}
                   viewerRelation="prospect"
                   stage="pre-signup"
@@ -499,16 +503,18 @@ const SalesSearchResultsPage = () => {
               </div>
             )}
           </div>
-        ) : !loading && !errorMessage ? (
+        ) : !loading ? (
           <>
-            {/* ZERO / THIN-MATCH RESCUE (owner VIP 2026-07-20): IDI returns TooManyMatches on common names (esp.
-                from the SEO/ads funnel), leaving this page empty. The engine teaser pulls FIRST-PARTY data
-                (incarceration/divorce, independent of IDI) — so it fills the dead-end with real records + a
-                conversion path exactly when BC found nothing. Self-gates to nothing when we have no data. */}
+            {/* ZERO / THIN-MATCH / ERROR RESCUE (owner VIP 2026-07-20; error case added 2026-07-23): IDI returns
+                TooManyMatches on common names (esp. from the SEO/ads/homefacts funnels), and BC can hard-error —
+                either way this page was empty (error fell through to null → no teaser, the homefacts #2 bug). The
+                engine teaser pulls FIRST-PARTY data (incarceration/divorce, independent of IDI) — so it fills the
+                dead-end with real records + a conversion path exactly when BC found nothing. The errorMessage
+                banner still shows above. Self-gates to nothing when we have no data. */}
             {searchQuery.lastName && (
               <div style={{ marginBottom: 28, paddingBottom: 4 }}>
                 <SignalTeaser
-                  subject={{ firstName: searchQuery.firstName, lastName: searchQuery.lastName, state: searchQuery.state }}
+                  subject={{ firstName: searchQuery.firstName, lastName: searchQuery.lastName, state: searchQuery.state, city: searchQuery.city, age: searchQuery.age }}
                   flow={getFlow() || flow || 'general'}
                   viewerRelation="prospect"
                   stage="pre-signup"

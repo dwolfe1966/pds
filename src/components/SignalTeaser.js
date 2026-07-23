@@ -57,7 +57,7 @@ export default function SignalTeaser({ subject, flow = 'general', viewerRelation
       .then((r) => { if (alive) setRes(r); })
       .catch(() => {});
     return () => { alive = false; };
-  }, [subject && subject.firstName, subject && subject.lastName, subject && subject.state, subject && subject.age, flow, viewerRelation, stage, strict]);
+  }, [subject && subject.firstName, subject && subject.lastName, subject && subject.state, subject && subject.city, subject && subject.age, flow, viewerRelation, stage, strict]);
 
   if (!res || res.suppressed) return null;
   const { signals, lead, secondary } = res;
