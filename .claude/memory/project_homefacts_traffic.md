@@ -15,7 +15,7 @@ exact promise (primed path), not a cold search. `type` values (`OffenderD_Text`,
 `Offender_D`/`af_id=31`) = per-placement attribution keys → map to shN+UTM, grade cost-per-trial & trial→paid
 BY placement.
 
-**BUILT ✅ 2026-07-23 (bundle public.5041b554.js, NOT deployed):** 3 config-driven routes on VerticalIntentLanding
+**BUILT ✅ 2026-07-23 (bundle public.2954bca7.js, NOT deployed):** 3 config-driven routes on VerticalIntentLanding
 — /records/sex-offender, /records/background-check, /records/public-records — each AUTO-PRIMES when firstName+lastName
 arrive (else cold-search). Teaser engine: FLOW_PRIORITY + SignalTeaser capability-hook flows (background/sexOffender/
 publicRecords) + intent-aware copy. **SO FLAG pre-pay** (owner decision): "⚠ Possible offender record for {name} —
