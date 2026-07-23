@@ -121,8 +121,24 @@ GA4 `purchase`).
    location-framed fallback).
 3. Confirm the param contract on a live homefacts→us handoff (name/city/state/type arrive intact).
 
-## Build checklist (once validated — small, mostly assembly)
-- New route(s) that read the params + branch primed/cold (clone an existing `/name/landing/vX`).
-- 3 per-intent teaser variants of `SupTeaserA` (public / background / offender) off `getPersonSignals`.
-- Location-framed fallback teaser.
-- shN/UTM + GA4 wiring per placement.
+## BUILT ✅ 2026-07-23 (bundle `public.5041b554.js`, not yet deployed)
+Three config-driven routes on `VerticalIntentLanding`: **`/records/sex-offender` · `/records/background-check`
+· `/records/public-records`**. Each **auto-primes** when `firstName`+`lastName` arrive (→ experiences a, b, d)
+and falls back to a cold-search wizard when not (→ c). Teaser engine extended (`FLOW_PRIORITY` +
+`SignalTeaser` capability-hook flows + intent-aware copy). **SO flag** pre-pay per owner ("⚠ Possible offender
+record for {name} — unlock to verify", amber, framed to verify not assert). Captures the homefacts `type`
+placement (`partner_landing`/`primed_search` events). Verified live: all 4 teasers render + auto-prime → loader.
+Partner link shape: `https://www.idlookup.ai/records/sex-offender?firstName=&lastName=&city=&state=&type=OffenderD_Text`.
+
+## Pre-launch checklist (before pointing the 70k)
+- **Deploy** `public.5041b554.js` to BC.
+- **Partner param map:** give homefacts the 3 URLs + which `type` → which route (OffenderD_* → sex-offender;
+  Offender_D → background-check; general → public-records). Confirm a live handoff preserves params.
+- **`getPersonSignals` reality check** — run 2–3 real homefacts names (post-pay) to confirm the offender/criminal
+  payoff resolves; where it doesn't, the pre-pay flag + capability hook still carry (location-framed).
+- **FCRA on the primed path:** auto-prime skips the wizard's FCRA-agree step → agreement is enforced at
+  `/payment` (existing). Confirm legal is OK with FCRA-at-payment for this traffic, or add a persistent landing
+  disclaimer.
+- **State normalization:** homefacts sends full state names (`California`); confirm the loader/BC search handles
+  them or add a name→abbr map.
+- shN/UTM: homefacts (as partner) can also set `?shn=` for BC-native attribution alongside `type`.

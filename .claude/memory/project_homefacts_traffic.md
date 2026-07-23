@@ -15,7 +15,15 @@ exact promise (primed path), not a cold search. `type` values (`OffenderD_Text`,
 `Offender_D`/`af_id=31`) = per-placement attribution keys → map to shN+UTM, grade cost-per-trial & trial→paid
 BY placement.
 
-**4 experiences to build:** (a) Sex-Offender person-primed, (b) Background-Check person-primed,
+**BUILT ✅ 2026-07-23 (bundle public.5041b554.js, NOT deployed):** 3 config-driven routes on VerticalIntentLanding
+— /records/sex-offender, /records/background-check, /records/public-records — each AUTO-PRIMES when firstName+lastName
+arrive (else cold-search). Teaser engine: FLOW_PRIORITY + SignalTeaser capability-hook flows (background/sexOffender/
+publicRecords) + intent-aware copy. **SO FLAG pre-pay** (owner decision): "⚠ Possible offender record for {name} —
+unlock to verify" (amber, framed to verify NOT assert); corroborated criminal/SO records stay POST-PAY from licensed
+source. Captures homefacts `type` (partner_landing/primed_search events). Verified live. Pre-launch: deploy, partner
+URL/type map, getPersonSignals reality check, FCRA-at-payment confirm, state full-name→abbr.
+
+**Original 4 experiences:** (a) Sex-Offender person-primed, (b) Background-Check person-primed,
 (c) Background-Check cold-search, (d) Public-Records cold-search. Each = existing landing infra
 (OnboardingReveal loader + SupTeaserA + $1→$49 billing); ONLY new work = 3 intent-specific teaser variants
 (off `getPersonSignals`) + primed/cold branch + param read + location-framed fallback.
