@@ -7,7 +7,17 @@ import { setSearchContext, setIdentityContext, getSearchContext } from '../../se
 import { track } from '../../services/trackingService';
 import { readThinMatch } from '../../services/thinMatch';
 import { useCampaign } from '../../context/CampaignContext';
+import SignalTeaser from '../../components/SignalTeaser';
 import styles from './PhoneSearchResultsPage.module.css';
+
+// Build a getPersonSignals subject (the person behind the number) so the reveal experience can enrich the
+// owner with records/relatives — the single-owner reveal used by /phone/landing/v1 (2026-07-24).
+function ownerSubject(r) {
+  const parts = String(r?.fullName || '').trim().split(/\s+/);
+  const loc = String(r?.location || '').split(',').map((s) => s.trim());
+  const age = (String(r?.ageRange || '').match(/\d+/) || [])[0];
+  return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || '', city: loc[0] || '', state: loc[1] || '', age };
+}
 
 // Partner bugs 15a/15b: phone SRP previously rendered unobscured owner details
 // via ResultCard and clicks led to a generic "signup free" preview. Phone
@@ -36,6 +46,8 @@ const PhoneSearchResultsPage = () => {
   const campaign = useCampaign(); // bug #51: shN drives thin-match vs no-records
   const params = new URLSearchParams(location.search);
   const phone = params.get('phone');
+  // v1 reverse-lookup experience: single-owner reveal + enrichment (set by PhoneSearchLandingV1Page).
+  const reveal = (() => { try { return sessionStorage.getItem('phoneReveal') === '1'; } catch { return false; } })();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,7 +65,8 @@ const PhoneSearchResultsPage = () => {
         try {
           const data = JSON.parse(storedResults);
           setResults(data.results || []);
-          sessionStorage.removeItem('phoneSearchResults');
+          // Don't remove: React Strict Mode double-mounts in dev, so a second mount would see empty storage
+          // and fall through to a fresh (possibly failing) fetch. The loader overwrites this on each search.
           setLoading(false);
           return;
         } catch (err) {
@@ -94,6 +107,21 @@ const PhoneSearchResultsPage = () => {
     const digits = p.replace(/\D/g, '');
     if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
     return p;
+  };
+
+  // Route a selected owner into the paid unlock flow (shared by the list + the single-owner reveal).
+  const unlock = (result) => {
+    if (!result) return;
+    track('result_click', { resultId: result.id, personName: 'masked', source: 'phone_srp' });
+    const extId = result.extId || result.id;
+    const ctx = getSearchContext();
+    if (extId && ctx) setIdentityContext({ ...result, extId }, ctx);
+    sessionStorage.setItem(`result_${result.id}`, JSON.stringify({
+      id: result.id, extId, fullName: result.fullName, location: result.location,
+      ageRange: result.ageRange, provider: result.provider, ...result,
+    }));
+    sessionStorage.setItem('selectedPersonId', result.id);
+    navigate(`/signup?selected=${encodeURIComponent(result.id)}&source=phone`);
   };
 
   return (
@@ -155,16 +183,42 @@ const PhoneSearchResultsPage = () => {
         )}
 
         {/* Results — obscured by design (bug 15a). Click routes to signup (15b). */}
-        {!loading && !error && results.length > 0 && (
+        {!loading && !error && results.length > 0 && (reveal ? (
+          /* ── v1 SINGLE-OWNER REVEAL: a phone maps to one owner, so give one confident answer + enrichment ── */
           <div>
-            <div style={{
-              marginTop: '1.5rem',
-              paddingTop: '1.5rem',
-              borderTop: '5px solid #0d5d2f',
-              color: '#6b7280',
-              fontSize: '1rem',
-              marginBottom: '1rem'
-            }}>
+            <div style={{ marginTop: '1rem', paddingTop: '1.25rem', borderTop: '3px solid #0d5d2f', color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
+              ✅ We identified the owner of this number.
+            </div>
+            <button type="button" onClick={() => unlock(results[0])}
+              style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: '#f0fdf4', border: '1px solid #0d5d2f55', borderRadius: '0.75rem', padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <span style={{ width: 48, height: 48, borderRadius: '50%', background: '#dcfce7', color: '#0d5d2f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>👤</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: '0.78rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>This number belongs to</span>
+                <span style={{ display: 'block', fontWeight: 800, fontSize: '1.15rem', color: '#111827', filter: 'blur(4px)', userSelect: 'none', marginTop: 2 }}>
+                  {maskName(results[0].fullName)}
+                </span>
+                <span style={{ display: 'block', fontSize: '0.85rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                  {maskLocation(results[0].location)}{results[0].ageRange ? ` · Age ${results[0].ageRange}` : ''}
+                </span>
+              </span>
+              <span style={{ flexShrink: 0, fontSize: '0.75rem', fontWeight: 700, background: '#0d5d2f', color: '#fff', padding: '0.4rem 0.8rem', borderRadius: '9999px' }}>🔒 Unlock</span>
+            </button>
+            {results.length > 1 && (
+              <p style={{ fontSize: '0.82rem', color: '#6b7280', margin: '0.6rem 0 0' }}>
+                + {results.length - 1} other record{results.length - 1 === 1 ? '' : 's'} linked to this number
+              </p>
+            )}
+            {/* Enrichment on the owner (records / relatives) — same engine the name funnel uses. */}
+            <SignalTeaser subject={ownerSubject(results[0])} flow="general" viewerRelation="prospect" stage="pre-signup" />
+            <button type="button" onClick={() => unlock(results[0])}
+              style={{ width: '100%', marginTop: '1rem', padding: '15px', fontSize: 16, fontWeight: 800, color: '#fff', background: '#0d5d2f', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
+              See the full report on this number →
+            </button>
+          </div>
+        ) : (
+          /* ── legacy match-list SRP (v2–v6) ── */
+          <div>
+            <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '5px solid #0d5d2f', color: '#6b7280', fontSize: '1rem', marginBottom: '1rem' }}>
               Found <strong style={{ color: '#0d5d2f' }}>{results.length}</strong> possible {results.length === 1 ? 'match' : 'matches'} — sign up to see owner details
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -172,18 +226,7 @@ const PhoneSearchResultsPage = () => {
                 <button
                   key={result.id}
                   type="button"
-                  onClick={() => {
-                    track('result_click', { resultId: result.id, personName: 'masked', source: 'phone_srp' });
-                    const extId = result.extId || result.id;
-                    const ctx = getSearchContext();
-                    if (extId && ctx) setIdentityContext({ ...result, extId }, ctx);
-                    sessionStorage.setItem(`result_${result.id}`, JSON.stringify({
-                      id: result.id, extId, fullName: result.fullName, location: result.location,
-                      ageRange: result.ageRange, provider: result.provider, ...result,
-                    }));
-                    sessionStorage.setItem('selectedPersonId', result.id);
-                    navigate(`/signup?selected=${encodeURIComponent(result.id)}&source=phone`);
-                  }}
+                  onClick={() => unlock(result)}
                   style={{
                     width: '100%', textAlign: 'left', cursor: 'pointer',
                     background: '#fff', border: '1px solid #e5e7eb',
@@ -219,7 +262,7 @@ const PhoneSearchResultsPage = () => {
               ))}
             </div>
           </div>
-        )}
+        ))}
 
         {/* No Results */}
         {!loading && !error && results.length === 0 && (

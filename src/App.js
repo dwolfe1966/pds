@@ -45,6 +45,7 @@ import SessionAdoptPage from './pages/sales/SessionAdoptPage';
 import ForgotPasswordPage from './pages/sales/ForgotPasswordPage';
 import PaymentPage from './pages/sales/PaymentPage';
 import PhoneLandingPage from './pages/sales/PhoneLandingPage';
+import PhoneLandingV1Page from './pages/sales/PhoneSearchLandingV1Page';
 import PhoneLandingV2Page from './pages/sales/PhoneSearchLandingV2Page';
 import PhoneLandingV3Page from './pages/sales/PhoneSearchLandingV3Page';
 import PhoneLandingV4Page from './pages/sales/PhoneSearchLandingV4Page';
@@ -224,6 +225,7 @@ const App = () => {
           <Route path="/paymentconfirm" element={<PaymentPage />} />
           {/* Phone search routes */}
           <Route path="/phone/landing" element={<PhoneLandingPage />} />
+          <Route path="/phone/landing/v1" element={<PhoneLandingV1Page />} />
           <Route path="/phone/landing/v2" element={<PhoneLandingV2Page />} />
           <Route path="/phone/landing/v3" element={<PhoneLandingV3Page />} />
           <Route path="/phone/landing/v4" element={<PhoneLandingV4Page />} />
