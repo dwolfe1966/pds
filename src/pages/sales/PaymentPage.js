@@ -224,6 +224,11 @@ const PaymentPage = () => {
   // userInfo is used for the JSX "Paying as" display — names shown from form at submit time.
   const userInfo = user ? { email: user.email } : null;
 
+  // Phone capture flow keeps the searched owner's NAME masked pre-pay (owner) — location/age stay for
+  // context. Mirrors the reveal's obfuscation (first initial + bullets). Non-phone flows show it plain.
+  const maskFullName = (name = '') => String(name).trim().split(/\s+/).map((p) => (p.length <= 1 ? p : `${p[0]}${'•'.repeat(Math.max(2, p.length - 1))}`)).join(' ');
+  const displayPersonName = (p) => (captureMode ? maskFullName(p?.fullName) : properCaseName(p?.fullName));
+
   // ── Email-on-payment capture (captureMode) ────────────────────────────────
   // Prefill from any email captured earlier in the funnel; create the account inline on Continue.
   const [captureEmailVal, setCaptureEmailVal] = useState('');
@@ -774,7 +779,7 @@ const PaymentPage = () => {
           {isSelfContext ? (
             <Link to={upgradeReason === 'wsfy' ? '/who-is-searching' : '/my-identity'} style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back</Link>
           ) : (
-            <Link to="/name/search-result" style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back to Results</Link>
+            <Link to={captureMode ? '/phone/search-result' : '/name/search-result'} style={{ color: 'rgba(255,255,255,0.85)', textDecoration: 'none' }}>← Back to Results</Link>
           )}
           <span style={{ fontWeight: 700, color: '#ffffff' }}>🔒 {brand.name}</span>
         </div>
@@ -794,7 +799,7 @@ const PaymentPage = () => {
           <div className={styles.mobileVcardBody}>
             <PersonAvatar person={selectedPerson} size={48} />
             <div className={styles.personPreviewInfo}>
-              <p className={styles.personPreviewName}>{properCaseName(selectedPerson.fullName)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}</p>
+              <p className={styles.personPreviewName}>{displayPersonName(selectedPerson)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}</p>
               {(() => {
                 const locs = (Array.isArray(selectedPerson.locations) && selectedPerson.locations.length) ? selectedPerson.locations : [selectedPerson.location].filter(Boolean);
                 if (!locs.length) return null;
@@ -817,7 +822,7 @@ const PaymentPage = () => {
             <PersonAvatar person={selectedPerson} size={48} />
             <div className={styles.personPreviewInfo}>
               <p className={styles.personPreviewName}>
-                {properCaseName(selectedPerson.fullName)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}
+                {displayPersonName(selectedPerson)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}
               </p>
               {(() => {
                 const locs = (Array.isArray(selectedPerson.locations) && selectedPerson.locations.length)
