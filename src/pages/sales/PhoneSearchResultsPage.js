@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
+import { useSignup, generatePassword } from '../../hooks/useSignup';
+import { getCapturedEmail } from '../../services/emailCapture';
 import { setSearchContext, setIdentityContext, getSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import { readThinMatch } from '../../services/thinMatch';
@@ -51,6 +53,12 @@ const PhoneSearchResultsPage = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // v1 reveal → email-only capture → payment (blessed thin-match pattern): one email field, auto-gen
+  // password, straight to /payment. No "Create Account" form on the phone unlock path.
+  const { submit: signupSubmit, loading: signupBusy, error: signupError } = useSignup();
+  const [capturing, setCapturing] = useState(false);
+  const [captureEmail, setCaptureEmailVal] = useState('');
+  const [captureErr, setCaptureErr] = useState('');
 
   useEffect(() => {
     track('results_view', { search_type: 'phone', query: phone || '' });
@@ -124,6 +132,39 @@ const PhoneSearchResultsPage = () => {
     navigate(`/signup?selected=${encodeURIComponent(result.id)}&source=phone`);
   };
 
+  // ── v1 single-owner reveal: email-only capture → payment (no "Create Account" form) ──
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const stashOwner = (result) => {
+    const extId = result.extId || result.id;
+    const ctx = getSearchContext();
+    if (extId && ctx) setIdentityContext({ ...result, extId }, ctx);
+    sessionStorage.setItem(`result_${result.id}`, JSON.stringify({
+      id: result.id, extId, fullName: result.fullName, location: result.location,
+      ageRange: result.ageRange, provider: result.provider, ...result,
+    }));
+    sessionStorage.setItem('selectedPersonId', result.id);
+  };
+  const startUnlock = (result) => {
+    if (!result) return;
+    track('result_click', { resultId: result.id, personName: 'masked', source: 'phone_reveal' });
+    stashOwner(result);
+    const known = getCapturedEmail();
+    if (known && EMAIL_RE.test(known)) {
+      // Email already known earlier in the funnel — skip the field, go straight to payment.
+      signupSubmit({ email: known, password: generatePassword(), optin: true, selectedPersonId: result.id, redirectParam: '/payment' });
+      return;
+    }
+    setCapturing(true);
+  };
+  const submitCaptureEmail = (e) => {
+    e.preventDefault();
+    const em = captureEmail.trim();
+    if (!EMAIL_RE.test(em)) { setCaptureErr('Please enter a valid email address.'); return; }
+    setCaptureErr('');
+    track('email_capture', { source: 'phone_reveal' });
+    signupSubmit({ email: em, password: generatePassword(), optin: true, selectedPersonId: results[0]?.id, redirectParam: '/payment' });
+  };
+
   return (
     <main className={styles.page}>
       <div className={styles.card}>
@@ -189,7 +230,7 @@ const PhoneSearchResultsPage = () => {
             <div style={{ marginTop: '1rem', paddingTop: '1.25rem', borderTop: '3px solid #0d5d2f', color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
               ✅ We identified the owner of this number.
             </div>
-            <button type="button" onClick={() => unlock(results[0])}
+            <button type="button" onClick={() => startUnlock(results[0])}
               style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: '#f0fdf4', border: '1px solid #0d5d2f55', borderRadius: '0.75rem', padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ width: 48, height: 48, borderRadius: '50%', background: '#dcfce7', color: '#0d5d2f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>👤</span>
               <span style={{ flex: 1, minWidth: 0 }}>
@@ -210,10 +251,35 @@ const PhoneSearchResultsPage = () => {
             )}
             {/* Enrichment on the owner (records / relatives) — same engine the name funnel uses. */}
             <SignalTeaser subject={ownerSubject(results[0])} flow="general" viewerRelation="prospect" stage="pre-signup" />
-            <button type="button" onClick={() => unlock(results[0])}
-              style={{ width: '100%', marginTop: '1rem', padding: '15px', fontSize: 16, fontWeight: 800, color: '#fff', background: '#0d5d2f', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
-              See the full report on this number →
-            </button>
+            {capturing ? (
+              /* Single email field → auto-signup (auto-gen password) → payment. No account form. */
+              <form onSubmit={submitCaptureEmail} style={{ marginTop: '1.25rem', background: '#f0fdf4', border: '1px solid #0d5d2f55', borderRadius: 12, padding: '1.15rem 1.2rem' }}>
+                <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#111827', marginBottom: 4 }}>
+                  Unlock the full report on this number
+                </div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.5 }}>
+                  Enter your email to continue — we'll set up your account and take you straight to unlock.
+                </p>
+                <input
+                  type="email" inputMode="email" autoFocus autoComplete="email"
+                  value={captureEmail}
+                  onChange={(e) => { setCaptureEmailVal(e.target.value); if (captureErr) setCaptureErr(''); }}
+                  placeholder="you@email.com"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '13px 15px', fontSize: 16, border: `1px solid ${captureErr ? '#dc2626' : '#d1d5db'}`, borderRadius: 10, outline: 'none' }}
+                />
+                {(captureErr || signupError) && <p style={{ color: '#dc2626', fontSize: 13, margin: '8px 0 0' }}>{captureErr || signupError}</p>}
+                <button type="submit" disabled={signupBusy}
+                  style={{ width: '100%', marginTop: 12, padding: '15px', fontSize: 16, fontWeight: 800, color: '#fff', background: '#0d5d2f', border: 'none', borderRadius: 10, cursor: signupBusy ? 'default' : 'pointer', opacity: signupBusy ? 0.7 : 1 }}>
+                  {signupBusy ? 'Setting up…' : 'Continue to unlock →'}
+                </button>
+                <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', margin: '10px 0 0' }}>🔒 Secure checkout · cancel anytime</p>
+              </form>
+            ) : (
+              <button type="button" onClick={() => startUnlock(results[0])}
+                style={{ width: '100%', marginTop: '1rem', padding: '15px', fontSize: 16, fontWeight: 800, color: '#fff', background: '#0d5d2f', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
+                See the full report on this number →
+              </button>
+            )}
           </div>
         ) : (
           /* ── legacy match-list SRP (v2–v6) ── */
