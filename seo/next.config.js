@@ -9,13 +9,9 @@ const nextConfig = {
   // The SEO tree is server-rendered HTML; no image optimization needed (and the
   // profile pages carry no <Image>). Left default; revisit if we add photos.
 
-  // Root → /people at the EDGE. A page-level redirect() in a statically-prerendered
-  // root page generates an `__next_error__` prerender (top-level browser hits follow
-  // the 307 header fine, but RSC prefetch / client-nav get the error component and
-  // see an error). An edge redirect happens before any render → no error document.
-  async redirects() {
-    return [{ source: '/', destination: '/people', permanent: false }];
-  },
+  // NOTE: the root `/` → `/people` redirect was REMOVED 2026-07-24. Bing + GSC won't index a home domain
+  // that is a 3xx redirect ("the home domain must have content and can't be a redirect"). `/` now serves a
+  // real, indexable homepage (app/page.js) that links into the /people directory.
 };
 
 module.exports = nextConfig;

@@ -16,11 +16,11 @@ export const revalidate = 86400; // 1d
 const TARGET = 1000;
 // Stable lastmod (a fixed date, not `now`): re-emitting a fresh timestamp every crawl trains
 // crawlers to distrust lastmod. Bump this only when the listed pages genuinely change.
-const LASTMOD = '2026-07-16';
+const LASTMOD = '2026-07-24'; // bumped: added the root homepage `/` (was a redirect; now real content)
 
 function buildUrls() {
   const states = getStateList(); // sorted by population desc
-  const out = ['/people'];
+  const out = ['/', '/people']; // root homepage first (now real content, not a redirect — 2026-07-24)
   for (const st of states) out.push(statePath(st.code));
 
   // Every city across all states, ranked by population; take the top N to fill to TARGET.
@@ -39,7 +39,7 @@ function buildUrls() {
 export async function GET() {
   const urls = buildUrls();
   const items = urls.map((path) => {
-    const priority = path === '/people' ? '1.0' : path.split('/').length === 3 ? '0.8' : '0.6';
+    const priority = (path === '/' || path === '/people') ? '1.0' : path.split('/').length === 3 ? '0.8' : '0.6';
     return `  <url><loc>${SITE}${path}</loc><lastmod>${LASTMOD}</lastmod>` +
       `<changefreq>weekly</changefreq><priority>${priority}</priority></url>`;
   }).join('\n');
