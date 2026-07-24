@@ -38,6 +38,13 @@ function resolveType(order) {
 }
 
 function resolveStatus(order) {
+  // Cancel-at-period-end + other terminal states persist as `subStatus` while BC leaves `order.status`
+  // = 'active' — so key off subStatus, or a cancelled/expired/suspended order reads "Active" (the
+  // cancelled-shows-active bug; ibarra690@gmail.com 2026-07-24: status active + subStatus canceled).
+  const sub = (order?.subStatus || '').toLowerCase();
+  if (order?.transient?.canceled || sub === 'canceled' || sub === 'cancelled') return 'canceled';
+  if (sub === 'expired') return 'expired';
+  if (sub === 'suspended') return 'suspended';
   if (order?.transient?.canceled) return 'canceled';
   return (order?.status || '').toLowerCase() || 'unknown';
 }

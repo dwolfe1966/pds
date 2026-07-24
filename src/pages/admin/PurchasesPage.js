@@ -50,7 +50,13 @@ function resolveOrderType(order) {
 }
 
 function resolveStatus(order) {
-  if (order?.transient?.canceled) return 'canceled';
+  // Cancel-at-period-end + terminal states persist as `subStatus` while BC leaves `order.status` = 'active'
+  // — key off subStatus too, else a cancelled/expired/suspended order reads "Active" (cancelled-shows-active;
+  // ibarra690@gmail.com 2026-07-24: status active + subStatus canceled, `transient.canceled` was not set).
+  const sub = (order?.subStatus || '').toLowerCase();
+  if (order?.transient?.canceled || sub === 'canceled' || sub === 'cancelled') return 'canceled';
+  if (sub === 'expired') return 'expired';
+  if (sub === 'suspended') return 'suspended';
   return (order?.status || '').toLowerCase() || 'unknown';
 }
 
