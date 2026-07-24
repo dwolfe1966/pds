@@ -115,3 +115,6 @@ work in [[project_seo_individual_profiles]]). Earn trust on ~1000 solid pages, t
 deliberately. If we later re-expand: keep flat urlsets, gate hard on content quality, grow
 gradually — never dump the full taxonomy on the domain again. Relates to
 [[project_seo_live_idlookup_me]], [[project_seo_content_augmentation]].
+
+## 2026-07-24 — ROOT REDIRECT FIX (Bing + GSC root cause)
+Bing Webmaster Tools: idlookup.me not indexed because the home domain `/` was a **307 redirect** to /people — "the home domain must have content and can't be a redirect." GSC implied the same. FIX (commit 1e6d042, auto-deploys on Vercel): removed the `next.config.js` `/`→/people redirect; added **`seo/app/page.js`** = a real indexable homepage (200) — distinct hub (intro + top-12 states + verticals) linking INTO /people, self-canonical `${SITE}/`, orgJsonLd. Added `/` to sitemapv2.xml (priority 1.0, LASTMOD bumped 2026-07-24). Verified local: `/`→200 w/ content, /people still 200, sitemap leads with root. OWNER: after Vercel deploy (confirm live `/`→200), RESUBMIT domain in Bing + Request Indexing on the homepage in GSC + re-submit sitemapv2.xml.
