@@ -20,8 +20,8 @@ export const revalidate = 86400; // 1d
 // FRESH one-time bump (owner + advisor 2026-07-18): the listed pages genuinely changed (fixed + made
 // cacheable), so a single new lastmod legitimately says "re-crawl these." Keep it STABLE afterward —
 // a per-crawl `now()` trains crawlers to distrust lastmod. Bump only on a real content change.
-const LASTMOD = '2026-07-20'; // bumped: county-hub taxonomy added + incarceration/SO enrichment across the
-                              // listed state/city/name pages — a genuine content change, so a legit re-crawl signal.
+const LASTMOD = '2026-07-24'; // bumped: added the root homepage `/` (was a 307 redirect Bing/GSC wouldn't
+                              // index; now real content). Genuine change → legit re-crawl signal.
 
 export async function GET() {
   // Step 2 (owner-approved 2026-07-20): DON'T list name-in-city here. Only ~980 of ~42k carry unique
@@ -33,7 +33,8 @@ export async function GET() {
   const { all } = getDirectoryUrls({ maxNamePages: 0 });
   // County hubs (/people/{state}/county/{slug}) — differentiated incarceration pages, one URL per county.
   const countyHubs = await allCountyHubUrls(COUNTY_STATES).catch(() => []);
-  const items = [...all, ...countyHubs].map((path) => {
+  // Root homepage first — it's now real indexable content (2026-07-24), so it belongs in the submitted sitemap.
+  const items = ['/', ...all, ...countyHubs].map((path) => {
     const depth = path.split('/').filter(Boolean).length; // /people=1, state=2, name-in-state/city=3, name-in-city=4
     const priority = depth <= 1 ? '1.0' : depth === 2 ? '0.9' : depth === 3 ? '0.8' : '0.6';
     return `  <url><loc>${SITE}${path}</loc><lastmod>${LASTMOD}</lastmod>` +
