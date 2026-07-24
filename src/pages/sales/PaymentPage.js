@@ -14,7 +14,7 @@ import { track, buildReferQueryString } from '../../services/trackingService';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
-import { readThinMatch, EMPTY_FLAGS } from '../../services/thinMatch';
+import { EMPTY_FLAGS } from '../../services/thinMatch';
 import { captureAbandonedCheckout, getCapturedEmail } from '../../services/emailCapture';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
@@ -419,12 +419,14 @@ const PaymentPage = () => {
           // default signup offer. Set per partner+page via campaignRegistry.
           { key: campaign?.offer?.shmName || 'comp.offer.signup.main', target: 'main', options: {} },
         ],
-        // Reflect BC's teaser-time thin-match signal ONLY when this purchase unlocks a
-        // specific teaser report (selectedPersonId present). A general/promo signup (e.g.
-        // the thin-match path, no target report) must send the all-false sequence BC's
-        // canonical sale uses — otherwise BC rejects the sale with 406. This also stops a
-        // stale sessionStorage thin flag from leaking into a normal purchase.
-        sequenceOption: selectedPersonId ? readThinMatch() : { ...EMPTY_FLAGS },
+        // A purchase always unlocks a FULL report — a specific teaser person, or a general signup — never a
+        // thin-match report, so it must send BC's canonical ALL-FALSE sequenceOption. Sending the teaser's
+        // SEARCH-level thin flags on a real person unlock is what broke this: a common name returns
+        // TooManyMatches, `persistThinMatch` saves thinMatchTooManyResults, and BC then rejects the real
+        // report unlock that carries it with 406 (the 7/7 failures 2026-07-24 on the new common-name records/
+        // ads traffic). The prior fix only covered the no-selectedPersonId promo path; this covers both. The
+        // thin-match search flags stay CLIENT-side (SRP thin-match UX only) and never go on the sale.
+        sequenceOption: { ...EMPTY_FLAGS },
         // BC uses queryString for campaign attribution → commerceorders.refer.
         // The acquisition refer_* params arrive on the LANDING url, are captured
         // into referralParams, and the url is stripped — so they are NOT on the
