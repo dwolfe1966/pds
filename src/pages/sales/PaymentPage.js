@@ -12,10 +12,11 @@ import { createReportForIdentity } from '../../services/reportService';
 import { saveIdentityFormInfo } from '../../services/memberEnrichment';
 import { track, buildReferQueryString } from '../../services/trackingService';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
-import { gtmEvent, gtmPurchase, gtmPaymentStart } from '../../services/gtm';
+import { gtmEvent, gtmPurchase, gtmPaymentStart, gtmSignUp } from '../../services/gtm';
 import { setTransaction as gtmSetTransaction } from '../../services/gtmContext';
 import { readThinMatch, EMPTY_FLAGS } from '../../services/thinMatch';
-import { captureAbandonedCheckout, getCapturedEmail } from '../../services/emailCapture';
+import { captureAbandonedCheckout, captureEmail, getCapturedEmail } from '../../services/emailCapture';
+import { generatePassword } from '../../hooks/useSignup';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 
@@ -178,6 +179,11 @@ const PaymentPage = () => {
   // vCard / report promo — the WSFY/identity teaser is the anchor.
   const upgradeReason = searchParams.get('reason');
   const isSelfContext = upgradeReason === 'wsfy' || upgradeReason === 'identity';
+  // Email-on-payment capture (phone reveal → /payment?capture=email). A no-account visitor lands
+  // here directly; instead of bouncing to /signup we render a single email field below the checkout
+  // header, create the account inline via the same api.signup call, then reveal the card section.
+  // Gated on the explicit param so no existing funnel's behavior changes.
+  const captureMode = searchParams.get('capture') === 'email';
   const cardType = detectCardType(form.cardNumber);
 
   // Track page entry (after auth resolves so we know if it's an upgrade)
@@ -196,14 +202,14 @@ const PaymentPage = () => {
   // Skip the isPaid redirect when success=true — payment just completed and we set
   // subscription immediately, so the guard would fire before the success screen shows.
   useEffect(() => {
-    if (!authLoading && !token) {
+    if (!authLoading && !token && !captureMode) {
       const redirect = `/payment${window.location.search || ''}`;
       navigate(`/signup?redirect=${encodeURIComponent(redirect)}`, { replace: true });
     }
     if (!authLoading && token && isPaid && !success && !paying) {
       navigate('/dashboard', { replace: true });
     }
-  }, [token, authLoading, isPaid, success, paying, navigate]);
+  }, [token, authLoading, isPaid, success, paying, navigate, captureMode]);
 
   // Load selected person from sessionStorage
   useEffect(() => {
@@ -217,6 +223,55 @@ const PaymentPage = () => {
 
   // userInfo is used for the JSX "Paying as" display — names shown from form at submit time.
   const userInfo = user ? { email: user.email } : null;
+
+  // ── Email-on-payment capture (captureMode) ────────────────────────────────
+  // Prefill from any email captured earlier in the funnel; create the account inline on Continue.
+  const [captureEmailVal, setCaptureEmailVal] = useState('');
+  const [creatingAccount, setCreatingAccount] = useState(false);
+  const [captureErr, setCaptureErr] = useState('');
+  const [existingAccount, setExistingAccount] = useState(false);
+  useEffect(() => {
+    if (captureMode) {
+      const known = getCapturedEmail();
+      if (known) setCaptureEmailVal(known);
+    }
+  }, [captureMode]);
+  // Same encoding useSignup uses, so handleSubmit's _pendingPw decode (atob→escape) round-trips.
+  const encodePendingPw = (pw) => { try { return btoa(unescape(encodeURIComponent(pw))); } catch { return btoa(pw); } };
+  const createAccount = async (e) => {
+    e.preventDefault();
+    const email = captureEmailVal.trim();
+    setCaptureErr(''); setExistingAccount(false);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setCaptureErr('Please enter a valid email address.'); return; }
+    setCreatingAccount(true);
+    try {
+      captureEmail(email, { source: 'payment_capture', selected: !!sessionStorage.getItem('selectedPersonId') });
+      const pw = generatePassword();
+      const queryString = buildReferQueryString() || undefined;
+      // Same api.signup call the signup page uses — seats a token + user; the password is stashed
+      // (encoded) for handleSubmit's billing.sale. No standalone-page navigation: the card section
+      // reveals in place once `user` populates. handleSubmit stays untouched.
+      const resp = await api.signup({ email, password: pw, optin: true, queryString });
+      if (resp.accessToken) {
+        const userData = resp.user || { email, role: 'member', emailVerified: false };
+        setToken(resp.accessToken);
+        setUser(userData);
+        localStorage.setItem('accessToken', resp.accessToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        if (resp.refreshToken) localStorage.setItem('refreshToken', resp.refreshToken);
+      }
+      sessionStorage.setItem('_pendingPw', encodePendingPw(pw));
+      sessionStorage.setItem('_signupOptin', '1');
+      track('signup_complete', { source: 'payment_capture', userId: resp.user?._id || resp.user?.id });
+      gtmSignUp({ method: 'email' });
+    } catch (err) {
+      // Returning visitor entered a known email — route to sign-in, preserving the payment context.
+      if (err.code === 'USER_ALREADY_EXISTS') setExistingAccount(true);
+      else setCaptureErr(err.message || 'Could not continue. Please try again.');
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -954,6 +1009,47 @@ const PaymentPage = () => {
               <div className={styles.formCard}>
                 <h2 className={styles.formCardTitle}>Secure Checkout</h2>
 
+                {/* Email-on-payment capture: single field below the header. On Continue we create the
+                    account inline (auto-generated password) and reveal the card section — no separate
+                    "Create Account" form. Only rendered when a no-account visitor arrived via
+                    ?capture=email (e.g. the phone reveal). */}
+                {captureMode && !user && (
+                  <form onSubmit={createAccount} noValidate style={{ marginBottom: '1.25rem' }}>
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.9rem', color: '#374151', lineHeight: 1.5 }}>
+                      Enter your email to unlock the full report — we'll set up your account and send your receipt here.
+                    </p>
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.label} htmlFor="pay-email">Email address</label>
+                      <input
+                        id="pay-email"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        autoFocus
+                        value={captureEmailVal}
+                        onChange={(e) => { setCaptureEmailVal(e.target.value); if (captureErr) setCaptureErr(''); if (existingAccount) setExistingAccount(false); }}
+                        placeholder="you@email.com"
+                        className={`${styles.input} ${captureErr ? styles.inputError : ''}`}
+                      />
+                    </div>
+                    {captureErr && <p style={{ color: '#dc2626', fontSize: '0.82rem', margin: '0.5rem 0 0' }}>{captureErr}</p>}
+                    {existingAccount && (
+                      <p style={{ color: '#92400e', fontSize: '0.85rem', margin: '0.5rem 0 0', lineHeight: 1.5 }}>
+                        That email already has an account.{' '}
+                        <Link to={`/login?redirect=${encodeURIComponent('/payment' + (window.location.search || ''))}`} style={{ color: '#0d5d2f', fontWeight: 700 }}>Sign in to continue →</Link>
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={creatingAccount}
+                      style={{ width: '100%', marginTop: '0.9rem', padding: '0.9rem', fontSize: '1rem', fontWeight: 800, color: '#fff', background: theme ? theme.button : '#0d5d2f', border: 'none', borderRadius: '0.5rem', cursor: creatingAccount ? 'default' : 'pointer', opacity: creatingAccount ? 0.7 : 1 }}
+                    >
+                      {creatingAccount ? 'Setting up…' : 'Continue to payment →'}
+                    </button>
+                  </form>
+                )}
+
+                {(!captureMode || user) && (
                 <form id="payForm" onSubmit={handleSubmit} noValidate>
                   {/* Cardholder name — always visible; used as userInfo.firstName/lastName for BC */}
                   <div className={styles.fieldRow}>
@@ -1201,6 +1297,7 @@ const PaymentPage = () => {
                     </p>
                   )}
                 </form>
+                )}
               </div>
 
               {/* Trust row */}
