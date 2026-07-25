@@ -7,7 +7,7 @@ import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
 import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel } from '../../services/memberEnrichment';
-import { fetchEmailExposure } from '../../services/emailExposureService';
+import { syncBreach } from '../../services/identityMonitorService';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
@@ -118,6 +118,19 @@ function savePitch(reasonId, phone) {
   }
 }
 
+// Compact relative time for the monitoring "last scan" line.
+function relTime(iso) {
+  try {
+    const then = new Date(iso).getTime();
+    if (!then) return '';
+    const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+    if (s < 90) return 'just now';
+    const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+    const d = Math.floor(h / 24); return d === 1 ? 'yesterday' : `${d}d ago`;
+  } catch { return ''; }
+}
+
 const AccountPage = () => {
   const brand = useBrand();
   const navigate = useNavigate();
@@ -144,6 +157,10 @@ const AccountPage = () => {
   const [suppressed, setSuppressed] = useState(false);
   const [hiddenFields, setHiddenFields] = useState([]); // per-item exposure hides (Identity Mgmt)
   const [breach, setBreach] = useState(null); // HIBP breach exposure for the member's own email
+  const [monitor, setMonitor] = useState(null); // { lastChecked, newBreaches[], firstScan } from the sync
+  const [heroDismissed, setHeroDismissed] = useState(() => { try { return localStorage.getItem('idMonitorHeroDismissed') === '1'; } catch { return false; } });
+  const dismissHero = () => { setHeroDismissed(true); try { localStorage.setItem('idMonitorHeroDismissed', '1'); } catch { /* ignore */ } };
+  const reopenHero = () => { setHeroDismissed(false); try { localStorage.removeItem('idMonitorHeroDismissed'); } catch { /* ignore */ } };
   const [pullingReport, setPullingReport] = useState(false); // "Pull my full report" in-progress (state c)
   const [identitySubTab, setIdentitySubTab] = useState('profile'); // My Identity command-center subnav
   // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
@@ -159,14 +176,18 @@ const AccountPage = () => {
     return () => { alive = false; };
   }, [activeTab]);
 
-  // HIBP breach exposure for THIS member (their own email). Cache-first server-side (owner 2026-07-25:
-  // store & reuse), so this is free after the first lookup — and reuses whatever the E3 teaser already
-  // stored for this email. Feeds the exposure score + the breach section on the identity view.
+  // Breach monitoring for THIS member: sync (cache-first) diffs against last-known, logs any NEW breach to
+  // the identity-event stream (→ My Activity), auto-enrolls them for the weekly cron, and returns the current
+  // exposure + monitoring status. Free after the first lookup; reuses whatever E3 already stored.
   useEffect(() => {
     let alive = true;
     const email = user && user.email;
     if (!email || activeTab !== 'identity') return undefined;
-    fetchEmailExposure(email).then((r) => { if (alive && r && r.available) setBreach(r); }).catch(() => {});
+    syncBreach(email).then((r) => {
+      if (!alive || !r) return;
+      if (r.available && r.exposure) setBreach(r.exposure);
+      setMonitor({ lastChecked: r.lastChecked || null, newBreaches: r.newBreaches || [], firstScan: !!r.firstScan });
+    }).catch(() => {});
     return () => { alive = false; };
   }, [activeTab, user && user.email]);
 
@@ -1155,6 +1176,31 @@ const AccountPage = () => {
       {/* ── MY IDENTITY TAB (WSFY mapped identity) ───────────────────────────── */}
       {activeTab === 'identity' && (
         <div className={styles.section}>
+          {/* Monitoring hero — pinned above the sub-tabs, prominent by default. Closable (×): when closed it
+              collapses to a compact rectangle in "What's public about you" on the Overview tab (owner 2026-07-25). */}
+          {!heroDismissed && (() => {
+            const hasNew = !!(monitor && monitor.newBreaches && monitor.newBreaches.length > 0);
+            return (
+              <div style={{ marginBottom: 18, border: `1px solid ${hasNew ? '#fecaca' : '#bbf7d0'}`, background: hasNew ? '#fef2f2' : '#f0fdf4', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span aria-hidden="true" style={{ fontSize: 22 }}>🛡️</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>Identity Monitoring <span style={{ fontSize: 12, fontWeight: 700, color: '#15803d' }}>● ON</span></div>
+                    <div style={{ fontSize: 12.5, color: '#6b7280' }}>
+                      {monitor && monitor.lastChecked ? `Last scan ${relTime(monitor.lastChecked)}` : 'Scanning your email…'}
+                      {breach && breach.breached ? ` · watching ${breach.count} known breach${breach.count === 1 ? '' : 'es'}` : (monitor ? ' · no known breaches' : '')}
+                    </div>
+                  </div>
+                  <button type="button" onClick={dismissHero} aria-label="Close monitoring card" style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: '0 4px' }}>×</button>
+                </div>
+                {hasNew && (
+                  <div style={{ marginTop: 10, padding: '8px 12px', background: '#fff', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>
+                    ⚠️ New: {monitor.newBreaches.slice(0, 3).join(', ')}{monitor.newBreaches.length > 3 ? ` +${monitor.newBreaches.length - 3} more` : ''} — see the breach list below.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {/* Subnav — My Identity is a command center: your profile + your footprint across the web
               (docs/design/profile-concept-model.md). */}
           {/* Desktop subnav — on mobile these tabs live in the hamburger menu instead. */}
@@ -1268,38 +1314,21 @@ const AccountPage = () => {
                       <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Your record is linked. We'll surface what's exposed here.</p>
                     )}
 
-                    {/* Data breaches (HIBP) — the payoff E3 teases. Count + exposed-data classes always show;
-                        the breach NAMES stay locked (blurred) on the free tier, clear once paid. */}
-                    {breach && breach.breached && breach.count > 0 && (
-                      <div style={{ marginTop: 16, padding: '14px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                          <span aria-hidden="true" style={{ fontSize: 18 }}>🔓</span>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: '#7f1d1d' }}>Found in {breach.count} data breach{breach.count === 1 ? '' : 'es'}</span>
-                          {breach.mostRecent && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9a3412' }}>most recent {String(breach.mostRecent).slice(0, 4)}</span>}
-                        </div>
-                        {Array.isArray(breach.topDataClasses) && breach.topDataClasses.length > 0 && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                            {breach.topDataClasses.slice(0, 6).map((c) => (
-                              <span key={c} style={{ fontSize: 11, fontWeight: 700, color: '#7f1d1d', background: '#fff', border: '1px solid #fecaca', borderRadius: 999, padding: '3px 9px' }}>{c}</span>
-                            ))}
-                          </div>
+                    {/* Collapsed monitoring rectangle — appears here (in "What's public about you") once the
+                        hero above is dismissed. Click to re-open the hero. The detailed breach LIST lives
+                        below the exposure score. */}
+                    {heroDismissed && (
+                      <button type="button" onClick={reopenHero}
+                        style={{ width: '100%', textAlign: 'left', marginTop: 12, border: `1px solid ${monitor && monitor.newBreaches && monitor.newBreaches.length ? '#fecaca' : '#bbf7d0'}`, background: monitor && monitor.newBreaches && monitor.newBreaches.length ? '#fef2f2' : '#f0fdf4', borderRadius: 8, padding: '9px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span aria-hidden="true">🛡️</span>
+                        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#166534' }}>
+                          Monitoring ON{monitor && monitor.lastChecked ? ` · scanned ${relTime(monitor.lastChecked)}` : ''}
+                        </span>
+                        {monitor && monitor.newBreaches && monitor.newBreaches.length > 0 && (
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c' }}>⚠️ {monitor.newBreaches.length} new</span>
                         )}
-                        <div style={{ display: 'grid', gap: 6 }}>
-                          {breach.breaches.slice(0, locked ? 3 : 30).map((b, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151' }}>
-                              <span aria-hidden="true">🔓</span>
-                              <span style={locked ? { filter: 'blur(5px)', userSelect: 'none', fontWeight: 700, color: '#111827' } : { fontWeight: 700, color: '#111827' }}>{b.name}</span>
-                              {b.date && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>{String(b.date).slice(0, 4)}</span>}
-                            </div>
-                          ))}
-                          {breach.count > (locked ? 3 : 30) && <div style={{ fontSize: 12, color: '#9a3412' }}>+ {breach.count - (locked ? 3 : 30)} more</div>}
-                        </div>
-                        <p style={{ margin: '10px 0 0', fontSize: 12, color: locked ? '#9a3412' : '#6b7280' }}>
-                          {locked
-                            ? '🔒 Upgrade to see which breaches and get a step-by-step removal plan.'
-                            : 'Change any reused passwords and turn on two-factor authentication where you can.'}
-                        </p>
-                      </div>
+                        <span style={{ marginLeft: 'auto', fontSize: 11, color: '#6b7280' }}>expand ▾</span>
+                      </button>
                     )}
 
                     {/* Exposure score — the Identity Management hook, with a substantiated breakdown. */}
@@ -1356,6 +1385,40 @@ const AccountPage = () => {
                           {isPaid
                             ? "Calculated from your confirmed public record. Hiding a driver above removes it from your exposure — and stops it being surfaced about you across IDLookup."
                             : 'Calculated from your confirmed public record. Reducing any of these — hiding your record here and opting out of data brokers — lowers your score.'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Data breaches (HIBP) — BELOW the exposure score (owner 2026-07-25). The payoff E3 teases:
+                        count + exposed-data classes always show; breach NAMES locked (blurred) free, clear once paid. */}
+                    {breach && breach.breached && breach.count > 0 && (
+                      <div style={{ marginTop: 16, padding: '14px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                          <span aria-hidden="true" style={{ fontSize: 18 }}>🔓</span>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: '#7f1d1d' }}>Found in {breach.count} data breach{breach.count === 1 ? '' : 'es'}</span>
+                          {breach.mostRecent && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9a3412' }}>most recent {String(breach.mostRecent).slice(0, 4)}</span>}
+                        </div>
+                        {Array.isArray(breach.topDataClasses) && breach.topDataClasses.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                            {breach.topDataClasses.slice(0, 6).map((c) => (
+                              <span key={c} style={{ fontSize: 11, fontWeight: 700, color: '#7f1d1d', background: '#fff', border: '1px solid #fecaca', borderRadius: 999, padding: '3px 9px' }}>{c}</span>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: 'grid', gap: 6 }}>
+                          {breach.breaches.slice(0, locked ? 3 : 30).map((b, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151' }}>
+                              <span aria-hidden="true">🔓</span>
+                              <span style={locked ? { filter: 'blur(5px)', userSelect: 'none', fontWeight: 700, color: '#111827' } : { fontWeight: 700, color: '#111827' }}>{b.name}</span>
+                              {b.date && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>{String(b.date).slice(0, 4)}</span>}
+                            </div>
+                          ))}
+                          {breach.count > (locked ? 3 : 30) && <div style={{ fontSize: 12, color: '#9a3412' }}>+ {breach.count - (locked ? 3 : 30)} more</div>}
+                        </div>
+                        <p style={{ margin: '10px 0 0', fontSize: 12, color: locked ? '#9a3412' : '#6b7280' }}>
+                          {locked
+                            ? '🔒 Upgrade to see which breaches and get a step-by-step removal plan.'
+                            : 'Change any reused passwords and turn on two-factor authentication where you can.'}
                         </p>
                       </div>
                     )}

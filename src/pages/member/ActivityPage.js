@@ -5,6 +5,7 @@ import PageHeader, { PageShell } from '../../components/PageHeader';
 import { getSearchHistory, deleteSearchHistoryItem } from '../../utils/searchHistory';
 import { fetchSearchHistory, deleteServerSearch } from '../../services/searchActivity';
 import { readLoginHistory } from '../../services/loginHistory';
+import { getIdentityEvents } from '../../services/identityMonitorService';
 import api from '../../api';
 
 /**
@@ -17,6 +18,7 @@ import api from '../../api';
 const KIND = {
   search: { icon: '🔍', label: 'Search' },
   login: { icon: '🔑', label: 'Login' },
+  exposure: { icon: '🛡️', label: 'Identity' },
   notification: { icon: '🔔', label: 'Notification' },
 };
 
@@ -40,7 +42,7 @@ function mergeSearches(server, local) {
 }
 
 const ActivityPage = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,34 +63,43 @@ const ActivityPage = () => {
       subtitle: [l.method, l.source].filter(Boolean).join(' · ') || 'password',
     }));
 
-    // Paint instantly from local sources, then reconcile searches with the server + notifications.
+    // Identity events (breach alerts now; more kinds later) from the server stream.
+    const exposureEvents = (evs) => (evs || []).map((e) => ({
+      id: `idev-${e.id}`, kind: 'exposure', timestamp: new Date(e.created_at || 0).getTime() || 0,
+      title: e.title || 'Identity update',
+      subtitle: e.detail || (e.type === 'breach_new' ? 'New data breach detected' : e.type === 'breach_found' ? 'Data breach exposure' : ''),
+    }));
+
+    // Paint instantly from local sources, then reconcile searches with the server + notifications + identity.
     const localSearches = getSearchHistory();
-    const rebuild = (searches, notifs) => {
+    const rebuild = (searches, notifs, exposures) => {
       const notifEvents = (notifs || []).map((n, i) => ({
         id: `notif-${n.id || i}`, kind: 'notification',
         timestamp: new Date(n.createdAt || n.timestamp || 0).getTime() || 0,
         title: n.title || 'Notification', subtitle: n.message || '',
       }));
-      return [...searchEvents(searches), ...loginEvents, ...notifEvents]
+      return [...searchEvents(searches), ...loginEvents, ...exposureEvents(exposures), ...notifEvents]
         .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     };
-    setEvents(rebuild(localSearches, []));
+    setEvents(rebuild(localSearches, [], []));
 
     Promise.allSettled([
       fetchSearchHistory(),
       api.get ? api.get('notifications').catch(() => null) : Promise.resolve(null),
-    ]).then(([sRes, nRes]) => {
+      user && user.email ? getIdentityEvents(user.email) : Promise.resolve([]),
+    ]).then(([sRes, nRes, eRes]) => {
       if (!alive) return;
       const server = sRes.status === 'fulfilled' && Array.isArray(sRes.value) ? sRes.value : [];
       const searches = mergeSearches(server, localSearches);
       const notifs = nRes.status === 'fulfilled' && nRes.value
         ? (Array.isArray(nRes.value) ? nRes.value : (nRes.value.notifications || nRes.value.data || []))
         : [];
-      setEvents(rebuild(searches, notifs));
+      const exposures = eRes.status === 'fulfilled' && Array.isArray(eRes.value) ? eRes.value : [];
+      setEvents(rebuild(searches, notifs, exposures));
       setLoading(false);
     });
     return () => { alive = false; };
-  }, [token]);
+  }, [token, user && user.email]);
 
   const handleDelete = (ev) => {
     if (ev.kind === 'search') { deleteSearchHistoryItem(ev.rawId); deleteServerSearch(ev.rawId); }

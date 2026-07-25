@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/cron/abandoned-recovery", "schedule": "*/15 * * * *" }
+    { "path": "/api/cron/abandoned-recovery", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/breach-monitor", "schedule": "*/30 * * * *" }
   ]
 }

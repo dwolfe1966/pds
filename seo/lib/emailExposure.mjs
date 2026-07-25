@@ -28,13 +28,17 @@ function summarize(breaches) {
   return { available: true, breached: list.length > 0, count: list.length, breaches: list, topDataClasses, mostRecent };
 }
 
-export async function getEmailExposure({ email } = {}) {
+export async function getEmailExposure({ email, forceRefresh = false } = {}) {
   const key = process.env.HIBP_API_KEY;
   const em = String(email || '').trim().toLowerCase();
   if (!key || !EMAIL_RE.test(em)) return EMPTY;
 
-  const cached = await getCachedExposure(em);
-  if (cached) return cached;
+  // forceRefresh (the monitoring cron) bypasses cache reuse to catch NEW breaches; the result still
+  // gets written back to the cache below, so the on-demand path stays free.
+  if (!forceRefresh) {
+    const cached = await getCachedExposure(em);
+    if (cached) return cached;
+  }
 
   try {
     const res = await fetch(`${HIBP_BASE}/${encodeURIComponent(em)}?truncateResponse=false`, {
