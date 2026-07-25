@@ -8,6 +8,7 @@ import { track } from '../../services/trackingService';
 import { readThinMatch } from '../../services/thinMatch';
 import { useCampaign } from '../../context/CampaignContext';
 import SignalTeaser from '../../components/SignalTeaser';
+import { fetchPhoneIntel, describeLine } from '../../services/phoneIntelService';
 import styles from './PhoneSearchResultsPage.module.css';
 
 // Build a getPersonSignals subject (the person behind the number) so the reveal experience can enrich the
@@ -48,9 +49,20 @@ const PhoneSearchResultsPage = () => {
   const phone = params.get('phone');
   // v1 reverse-lookup experience: single-owner reveal + enrichment (set by PhoneSearchLandingV1Page).
   const reveal = (() => { try { return sessionStorage.getItem('phoneReveal') === '1'; } catch { return false; } })();
+  // P2 "is this call safe?" — show the line-safety signal (line type/carrier/risk) FREE as the hook.
+  const safety = (() => { try { return sessionStorage.getItem('phoneSafety') === '1'; } catch { return false; } })();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [intel, setIntel] = useState(null);
+
+  // Fetch the Twilio line-safety signal once we have the number (safety funnel only, to bound cost).
+  useEffect(() => {
+    if (!safety || !phone) return;
+    let alive = true;
+    fetchPhoneIntel(phone).then((r) => { if (alive) setIntel(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, [safety, phone]);
 
   useEffect(() => {
     track('results_view', { search_type: 'phone', query: phone || '' });
@@ -202,6 +214,26 @@ const PhoneSearchResultsPage = () => {
         {!loading && !error && results.length > 0 && (reveal ? (
           /* ── v1 SINGLE-OWNER REVEAL: a phone maps to one owner, so give one confident answer + enrichment ── */
           <div>
+            {/* P2 line-safety panel — FREE hook (Twilio line type/carrier/descriptive risk). Owner stays gated. */}
+            {safety && intel && intel.available && (() => {
+              const d = describeLine(intel);
+              const tone = d.tone === 'warn' ? { bg: '#fffbeb', bd: '#fde68a', fg: '#b45309', ic: '⚠️' }
+                : d.tone === 'ok' ? { bg: '#f0fdf4', bd: '#bbf7d0', fg: '#15803d', ic: '✅' }
+                : { bg: '#f8fafc', bd: '#e2e8f0', fg: '#64748b', ic: 'ℹ️' };
+              return (
+                <div style={{ marginTop: '1rem', background: tone.bg, border: `1px solid ${tone.bd}`, borderRadius: 12, padding: '1rem 1.15rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span aria-hidden="true" style={{ fontSize: 22 }}>{tone.ic}</span>
+                    <span style={{ fontWeight: 800, fontSize: '1.05rem', color: tone.fg }}>{d.label}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', fontSize: '0.86rem', color: '#374151' }}>
+                    <span>📶 <strong>{d.typeLabel}</strong> line</span>
+                    {d.carrier && <span>🏢 {d.carrier}</span>}
+                  </div>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: '#6b7280', lineHeight: 1.45 }}>{d.note}</p>
+                </div>
+              );
+            })()}
             <div style={{ marginTop: '1rem', paddingTop: '1.25rem', borderTop: '3px solid #0d5d2f', color: '#6b7280', fontSize: '0.95rem', marginBottom: '1rem' }}>
               ✅ We identified the owner of this number.
             </div>

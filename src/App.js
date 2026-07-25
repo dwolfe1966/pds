@@ -47,6 +47,7 @@ import PaymentPage from './pages/sales/PaymentPage';
 import PhoneLandingPage from './pages/sales/PhoneLandingPage';
 import PhoneLandingV1Page from './pages/sales/PhoneSearchLandingV1Page';
 import PhoneExposureLandingPage from './pages/sales/PhoneExposureLandingPage';
+import PhoneSafetyLandingPage from './pages/sales/PhoneSafetyLandingPage';
 import PhoneLandingV2Page from './pages/sales/PhoneSearchLandingV2Page';
 import PhoneLandingV3Page from './pages/sales/PhoneSearchLandingV3Page';
 import PhoneLandingV4Page from './pages/sales/PhoneSearchLandingV4Page';
@@ -229,6 +230,8 @@ const App = () => {
           <Route path="/phone/landing/v1" element={<PhoneLandingV1Page />} />
           {/* P3 — reverse-your-own-number exposure funnel → WSFY convert engine (net-new angle). */}
           <Route path="/phone/exposure" element={<PhoneExposureLandingPage />} />
+          {/* P2 — "is this call safe?" — free line-safety hook (Twilio) + gated owner reveal. */}
+          <Route path="/phone/safe" element={<PhoneSafetyLandingPage />} />
           <Route path="/phone/landing/v2" element={<PhoneLandingV2Page />} />
           <Route path="/phone/landing/v3" element={<PhoneLandingV3Page />} />
           <Route path="/phone/landing/v4" element={<PhoneLandingV4Page />} />
