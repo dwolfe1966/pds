@@ -7,6 +7,7 @@ import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
 import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel } from '../../services/memberEnrichment';
+import { fetchEmailExposure } from '../../services/emailExposureService';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
@@ -142,6 +143,7 @@ const AccountPage = () => {
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [suppressed, setSuppressed] = useState(false);
   const [hiddenFields, setHiddenFields] = useState([]); // per-item exposure hides (Identity Mgmt)
+  const [breach, setBreach] = useState(null); // HIBP breach exposure for the member's own email
   const [pullingReport, setPullingReport] = useState(false); // "Pull my full report" in-progress (state c)
   const [identitySubTab, setIdentitySubTab] = useState('profile'); // My Identity command-center subnav
   // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
@@ -156,6 +158,17 @@ const AccountPage = () => {
     }
     return () => { alive = false; };
   }, [activeTab]);
+
+  // HIBP breach exposure for THIS member (their own email). Cache-first server-side (owner 2026-07-25:
+  // store & reuse), so this is free after the first lookup — and reuses whatever the E3 teaser already
+  // stored for this email. Feeds the exposure score + the breach section on the identity view.
+  useEffect(() => {
+    let alive = true;
+    const email = user && user.email;
+    if (!email || activeTab !== 'identity') return undefined;
+    fetchEmailExposure(email).then((r) => { if (alive && r && r.available) setBreach(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, [activeTab, user && user.email]);
 
   // /my-identity and /account render the SAME AccountPage component, so navigating between them does
   // NOT remount it — activeTab would stay stale and you'd see Account content on /my-identity (and
@@ -1208,7 +1221,7 @@ const AccountPage = () => {
                 identity.relativesCount != null ? { icon: '👥', text: `${identity.relativesCount} relatives on record`, sensitive: false } : null,
                 location ? { icon: '📍', text: location, sensitive: true } : null,
               ].filter(Boolean);
-              const exposure = computeExposure(identity, hiddenFields);
+              const exposure = computeExposure(identity, hiddenFields, breach);
               // Per-item hide handler (paid only) — optimistic, server-persisted, updates the score.
               const toggleHide = async (key, on) => {
                 setHiddenFields((prev) => on ? [...new Set([...prev, key])] : prev.filter((k) => k !== key));
@@ -1253,6 +1266,40 @@ const AccountPage = () => {
                       </div>
                     ) : (
                       <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Your record is linked. We'll surface what's exposed here.</p>
+                    )}
+
+                    {/* Data breaches (HIBP) — the payoff E3 teases. Count + exposed-data classes always show;
+                        the breach NAMES stay locked (blurred) on the free tier, clear once paid. */}
+                    {breach && breach.breached && breach.count > 0 && (
+                      <div style={{ marginTop: 16, padding: '14px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                          <span aria-hidden="true" style={{ fontSize: 18 }}>🔓</span>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: '#7f1d1d' }}>Found in {breach.count} data breach{breach.count === 1 ? '' : 'es'}</span>
+                          {breach.mostRecent && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9a3412' }}>most recent {String(breach.mostRecent).slice(0, 4)}</span>}
+                        </div>
+                        {Array.isArray(breach.topDataClasses) && breach.topDataClasses.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                            {breach.topDataClasses.slice(0, 6).map((c) => (
+                              <span key={c} style={{ fontSize: 11, fontWeight: 700, color: '#7f1d1d', background: '#fff', border: '1px solid #fecaca', borderRadius: 999, padding: '3px 9px' }}>{c}</span>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: 'grid', gap: 6 }}>
+                          {breach.breaches.slice(0, locked ? 3 : 30).map((b, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151' }}>
+                              <span aria-hidden="true">🔓</span>
+                              <span style={locked ? { filter: 'blur(5px)', userSelect: 'none', fontWeight: 700, color: '#111827' } : { fontWeight: 700, color: '#111827' }}>{b.name}</span>
+                              {b.date && <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6b7280' }}>{String(b.date).slice(0, 4)}</span>}
+                            </div>
+                          ))}
+                          {breach.count > (locked ? 3 : 30) && <div style={{ fontSize: 12, color: '#9a3412' }}>+ {breach.count - (locked ? 3 : 30)} more</div>}
+                        </div>
+                        <p style={{ margin: '10px 0 0', fontSize: 12, color: locked ? '#9a3412' : '#6b7280' }}>
+                          {locked
+                            ? '🔒 Upgrade to see which breaches and get a step-by-step removal plan.'
+                            : 'Change any reused passwords and turn on two-factor authentication where you can.'}
+                        </p>
+                      </div>
                     )}
 
                     {/* Exposure score — the Identity Management hook, with a substantiated breakdown. */}

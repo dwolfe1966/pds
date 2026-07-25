@@ -242,9 +242,11 @@ export function enrichFromReport(reportResult, selfPerson) {
  * Exposure score for the Identity Management product — how public the member's record is, computed
  * from the mapped identity. Higher score = more exposed. { score(0-100), level, count, items[] }.
  */
-export function computeExposure(id, hiddenKeys) {
+export function computeExposure(id, hiddenKeys, breach) {
   if (!id) return null;
   const hidden = new Set(hiddenKeys || []);
+  const breachCount = (breach && breach.count) || 0;
+  const breachClasses = (breach && (breach.topDataClasses || breach.topClasses)) || [];
   const rows = [
     { key: 'location', present: !!(id.city || id.state), points: 15, label: 'Current location',
       detail: `Your current area${id.city ? ` (${id.city}${id.state ? ', ' + id.state : ''})` : id.state ? ` (${id.state})` : ''} is publicly searchable.` },
@@ -258,6 +260,9 @@ export function computeExposure(id, hiddenKeys) {
       detail: `Your ${[id.highSchool && 'high school', id.college && 'college'].filter(Boolean).join(' and ')} is tied to your record.` },
     { key: 'report', present: !!id.hasReport, points: 25, label: 'Full public report',
       detail: 'A complete background report — addresses, phones, relatives, records — is available on you.' },
+    // Data breaches (HIBP) — the member's email in known breaches. High severity (leaked passwords/PII).
+    { key: 'breaches', present: breachCount > 0, points: Math.min(25, 8 + breachCount * 4), label: 'Data breaches',
+      detail: `Your email appears in ${breachCount} known breach${breachCount === 1 ? '' : 'es'}${breachClasses.length ? `, exposing ${breachClasses.slice(0, 2).join(' & ').toLowerCase()}` : ''}.` },
   ];
   const present = rows.filter((r) => r.present);
   const breakdown = present.filter((r) => !hidden.has(r.key)); // hidden drivers drop out of the score
