@@ -224,8 +224,17 @@ const PhoneSearchResultsPage = () => {
                 + {results.length - 1} other record{results.length - 1 === 1 ? '' : 's'} linked to this number
               </p>
             )}
-            {/* Enrichment on the owner (records / relatives) — same engine the name funnel uses. */}
-            <SignalTeaser subject={ownerSubject(results[0])} flow="general" viewerRelation="prospect" stage="pre-signup" />
+            {/* P1: name the incarceration moat — our first-party booking data is the differentiator competitors
+                lack. Capability claim (not a per-person assertion); the real per-owner record, when it exists,
+                is surfaced dynamically by the records-forward teaser below. */}
+            <div style={{ marginTop: '0.9rem', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '0.7rem 0.9rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span aria-hidden="true" style={{ fontSize: 18 }}>📋</span>
+              <span style={{ fontSize: '0.85rem', color: '#9a3412', fontWeight: 700, lineHeight: 1.4 }}>Includes booking &amp; incarceration records — data most people-search sites miss.</span>
+            </div>
+            {/* Records-forward enrichment: real booking teaser leads when the owner has one (the moat, proven
+                CVR); otherwise a public-records capability checklist. publicRecords (vs general) = always shows a
+                records value prop, and is the compliance-safe framing (not "background check"). */}
+            <SignalTeaser subject={ownerSubject(results[0])} flow="publicRecords" viewerRelation="prospect" stage="pre-signup" />
             <button type="button" onClick={() => startUnlock(results[0])}
               style={{ width: '100%', marginTop: '1rem', padding: '15px', fontSize: 16, fontWeight: 800, color: '#fff', background: '#0d5d2f', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
               See the full report on this number →

@@ -14,9 +14,9 @@ const GREEN = '#0d5d2f';
 
 const VALUE = [
   ['👤', "Owner's name & age"],
-  ['📍', 'Current & past addresses'],
+  ['📍', 'Address history'],
   ['👪', 'Relatives & associates'],
-  ['📋', 'Public records on file'],
+  ['⚖️', 'Booking & court records'],
 ];
 
 const formatPhone = (d) => {
