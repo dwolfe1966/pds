@@ -26,8 +26,10 @@ async function ensureTable() {
   } catch { /* leave unensured — getCached/setCached will just miss */ }
 }
 
-/** Cached exposure summary for an email, or null on miss/stale/error. @param maxAgeDays default 14. */
-export async function getCachedExposure(email, maxAgeDays = 14) {
+/** Cached exposure summary for an email, or null on miss/stale/error. @param maxAgeDays default 180 — breach
+ *  data is historical, so we reuse it for a long time to avoid re-paying HIBP (owner 2026-07-25: store & reuse).
+ *  A future monitoring job will force-refresh on its own cadence to catch NEW breaches. */
+export async function getCachedExposure(email, maxAgeDays = 180) {
   if (!sql || !email) return null;
   await ensureTable();
   try {

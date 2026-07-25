@@ -8,6 +8,10 @@
 //
 // Returns { available:false, ... } (never throws) when keys are unset or the number is invalid, so the funnel
 // degrades gracefully to the plain owner reveal.
+//
+// Cache-first (phoneIntelDb): a number's line type/carrier is stable, so the first lookup is stored in Neon
+// and reused for later checks (teaser retries, repeat searches) without re-incurring Twilio cost.
+import { getCachedPhoneIntel, setCachedPhoneIntel } from './phoneIntelDb.mjs';
 
 const LOOKUP_BASE = 'https://lookups.twilio.com/v2/PhoneNumbers';
 
@@ -38,6 +42,9 @@ export async function getPhoneIntel({ phone } = {}) {
   const e164 = toE164(phone);
   if (!sid || !token || !e164) return EMPTY;
 
+  const cached = await getCachedPhoneIntel(phone);
+  if (cached) return cached;
+
   const fields = ['line_type_intelligence'];
   if (process.env.TWILIO_SMS_PUMPING_RISK === '1') fields.push('sms_pumping_risk');
   const url = `${LOOKUP_BASE}/${encodeURIComponent(e164)}?Fields=${fields.join(',')}`;
@@ -51,13 +58,15 @@ export async function getPhoneIntel({ phone } = {}) {
     let riskLevel = riskFromType(type);
     const spr = d.sms_pumping_risk;
     if (spr && spr.carrier_risk_category === 'high') riskLevel = 'elevated';
-    return {
+    const result = {
       available: true,
       valid: d.valid !== false,
       lineType: type,                 // mobile | landline | voip | nonFixedVoip | tollFree | ...
       carrier: lti.carrier_name || null,
       riskLevel,                      // low | elevated | unknown  (descriptive)
     };
+    await setCachedPhoneIntel(phone, result);
+    return result;
   } catch {
     return EMPTY;
   }
