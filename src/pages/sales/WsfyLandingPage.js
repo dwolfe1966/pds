@@ -71,7 +71,9 @@ const WsfyLandingPage = () => {
   const [zip, setZip] = useState(q.get('zip') || '');
   const [age, setAge] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  // Phone prefill: the P3 exposure funnel (/phone/exposure) hands off with ?phone= so the number the
+  // visitor already entered seeds the exact-match (findMyRecord tries phone before name).
+  const [phone, setPhone] = useState(q.get('phone') || '');
   const [step, setStep] = useState('about');
   const [err, setErr] = useState('');
   const [vpIdx, setVpIdx] = useState(0); // rotating value-prop "carrot"
