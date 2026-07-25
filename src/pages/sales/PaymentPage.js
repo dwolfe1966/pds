@@ -882,7 +882,9 @@ const PaymentPage = () => {
         const pAge = selectedPerson.age || selectedPerson.ageRange;
         const pGender = selectedPerson.gender;
         // Unified engine teaser (specific person at payment → strict). Handles every flow incl. general.
-        const teaser = <SignalTeaser subject={{ firstName: first, lastName: last, state: st, age: pAge, gender: pGender }} flow={flow || 'general'} viewerRelation="prospect" stage="pre-signup" strict accent="#0d5d2f" dark="#0a4a25" />;
+        // Phone flow (captureMode): keep the owner's identity masked to match the masked vCard — identity is
+        // the paywalled prize on a phone search. Name funnel leaves it fully exposed (they searched the name).
+        const teaser = <SignalTeaser subject={{ firstName: first, lastName: last, state: st, age: pAge, gender: pGender }} flow={flow || 'general'} viewerRelation="prospect" stage="pre-signup" strict accent="#0d5d2f" dark="#0a4a25" anonymize={captureMode} subjectLabel={captureMode ? 'this number’s owner' : undefined} />;
         return (
           <div style={{ maxWidth: 960, margin: '0 auto 1.25rem' }}>{teaser}</div>
         );
