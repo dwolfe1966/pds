@@ -70,7 +70,9 @@ const WsfyLandingPage = () => {
   const [state, setState] = useState(q.get('state') || '');
   const [zip, setZip] = useState(q.get('zip') || '');
   const [age, setAge] = useState('');
-  const [email, setEmail] = useState('');
+  // Email prefill: the E3 exposure funnel (/email/exposure) hands off with ?email= — findMyRecord tries
+  // email FIRST (exact-first), so this seeds the strongest match.
+  const [email, setEmail] = useState(q.get('email') || '');
   // Phone prefill: the P3 exposure funnel (/phone/exposure) hands off with ?phone= so the number the
   // visitor already entered seeds the exact-match (findMyRecord tries phone before name).
   const [phone, setPhone] = useState(q.get('phone') || '');
