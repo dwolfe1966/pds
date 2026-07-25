@@ -1,8 +1,8 @@
 /**
  * v11 (BeenVerified-style) A/B split — owner decisions 2026-07-11 (confirmed).
  *
- *   • PAID / internal (inmate v3-family) — OVERRIDE the BC theme: 50% → v3, 50% → v11 (was 75/25; v11 wins on inmate traffic, owner 2026-07-19).
- *     This intentionally DROPS the v3a/v3b theme split (not enough volume for a 4-way).
+ *   • PAID / internal (inmate v3-family) — OVERRIDE the BC theme: 100% → v3 (owner 2026-07-25: pull all paid
+ *     search off v11; was 50/50 v3/v11). This intentionally DROPS the v3a/v3b theme split.
  *   • SEO / referral (from idlookup.me) — lands directly on /name/landing/v2 with
  *     ?utm_source=idlookup.me. Split 50% → v2, 50% → v11.
  *   • 50/50 & 75/25 are sticky per visitor (sessionStorage stores the chosen route).
@@ -61,10 +61,12 @@ function pickWeighted(arms, key) {
  */
 export function resolvePaidRoute(campaignRoute) {
   if (campaignRoute && V3_FAMILY.includes(campaignRoute)) {
-    // The v3 family IS the inmate campaign — tag the session flow so BOTH arms (v3 sets it itself; v11 is
-    // otherwise flow-agnostic) know the referral is inmate and can show the booking teaser (owner 2026-07-19).
+    // The v3 family IS the inmate campaign — tag the session flow so the arm knows the referral is inmate
+    // and can show the booking teaser.
     setFlow('inmate');
-    return pickWeighted([[V3, 0.5], [V11, 0.5]], 'split.paidv3');
+    // Owner 2026-07-25: send ALL paid-search traffic to v3 — no paid traffic to v11. (Was a sticky 50/50
+    // v3/v11 split: `return pickWeighted([[V3, 0.5], [V11, 0.5]], 'split.paidv3')` — restore that to re-test.)
+    return V3;
   }
   return null;
 }
