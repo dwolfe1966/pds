@@ -31,8 +31,10 @@ function riskFromType(type) {
 const EMPTY = { available: false, valid: null, lineType: null, carrier: null, riskLevel: 'unknown' };
 
 export async function getPhoneIntel({ phone } = {}) {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
+  // Auth accepts EITHER a Twilio API Key pair (SK… + secret) OR the account (AC… + auth token). Lookup v2
+  // isn't account-scoped in the URL, so API-Key Basic auth works without the Account SID. API Key preferred.
+  const sid = process.env.TWILIO_API_KEY || process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_API_SECRET || process.env.TWILIO_AUTH_TOKEN;
   const e164 = toE164(phone);
   if (!sid || !token || !e164) return EMPTY;
 
