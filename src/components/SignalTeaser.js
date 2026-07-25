@@ -47,7 +47,10 @@ const PLACEHOLDER_BG = [
   { bg: '#fde2e7', fg: '#c77a8c' },
 ];
 
-export default function SignalTeaser({ subject, flow = 'general', viewerRelation = 'prospect', stage = 'pre-signup', strict = false, accent = '#0d5d2f', dark = '#0a4a25' }) {
+// anonymize: hide the subject's IDENTITY (name in headers + mugshot faces) while still proving records exist —
+// for phone/email searches where the owner's identity IS the paywalled prize (a name search already knows it).
+// subjectLabel overrides the generic stand-in (e.g. "this number's owner").
+export default function SignalTeaser({ subject, flow = 'general', viewerRelation = 'prospect', stage = 'pre-signup', strict = false, accent = '#0d5d2f', dark = '#0a4a25', anonymize = false, subjectLabel }) {
   const [res, setRes] = useState(null);
 
   useEffect(() => {
@@ -64,15 +67,17 @@ export default function SignalTeaser({ subject, flow = 'general', viewerRelation
   const hasReal = ((signals.marriageDivorce && signals.marriageDivorce.count) || 0) + ((signals.booking && signals.booking.count) || 0) > 0;
   if (!hasReal && !CAPABILITY_FLOWS.has(flow)) return null; // no hollow teaser (except capability-hook flows)
 
-  const fullName = [subject.firstName, subject.lastName].filter(Boolean).join(' ') || 'this person';
+  const fullName = anonymize
+    ? (subjectLabel || 'this person')
+    : ([subject.firstName, subject.lastName].filter(Boolean).join(' ') || 'this person');
   const isFlag = capabilityCopy(flow).flag && lead === 'capability';
 
   return (
     <div style={{ marginTop: '1rem', border: `1px solid ${isFlag ? '#f59e0b' : `${accent}33`}`, borderRadius: 12, background: isFlag ? '#fffbeb' : '#f0fdf4', padding: '0.9rem 1rem' }}>
-      {renderSignal(lead, signals, { prominent: true, fullName, subject, dark, strict, flow })}
+      {renderSignal(lead, signals, { prominent: true, fullName, subject, dark, strict, flow, anonymize })}
       {(secondary || []).map((k) => (
         <div key={k} style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #d1d5db' }}>
-          {renderSignal(k, signals, { prominent: false, fullName, subject, dark, strict, flow })}
+          {renderSignal(k, signals, { prominent: false, fullName, subject, dark, strict, flow, anonymize })}
         </div>
       ))}
       {/* The booking lead renders its own tailored unlock line (CVR parity); other leads get the generic CTA. */}
@@ -157,7 +162,7 @@ function MarriageDivorce({ records, prominent, fullName, dark, strict }) {
 // Booking renderer at FULL parity with InmateBookingTeaser (the proven 7.15%-CVR inmate teaser): cycling
 // placeholder colors, charges preview, facility preview (loose only), and a tailored "unlock" line built from
 // what the matched records actually carry. Strict mode → "Possible … record — verify" (specific-person surfaces).
-function Booking({ records, prominent, fullName, dark, strict }) {
+function Booking({ records, prominent, fullName, dark, strict, anonymize }) {
   if (!records.length) return null;
   const inCustody = records.filter((r) => r.recordType !== 'court').length;
   const courtOnly = records.filter((r) => r.recordType === 'court').length;
@@ -181,7 +186,7 @@ function Booking({ records, prominent, fullName, dark, strict }) {
           return (
             <div key={i} style={{ flex: '0 0 auto', width: 60, textAlign: 'center' }}>
               <div style={{ width: 60, height: 60, borderRadius: 8, background: ph.bg, color: ph.fg, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>
-                👤{r.mugshotUrl && <img src={r.mugshotUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                👤{r.mugshotUrl && <img src={r.mugshotUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: anonymize ? 'blur(6px)' : undefined }} />}
               </div>
               <div style={{ fontSize: 10, color: r.recordType === 'court' ? '#b45309' : '#6b7280', marginTop: 3 }}>
                 {r.recordType === 'court' ? 'Court record' : ((r.charges && r.charges.length) ? `${r.charges.length} charge${r.charges.length === 1 ? '' : 's'}` : (cleanReleaseStatus(r.releaseStatus, r.recordType) || 'Record'))}

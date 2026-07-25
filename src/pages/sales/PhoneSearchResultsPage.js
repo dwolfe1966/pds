@@ -266,7 +266,7 @@ const PhoneSearchResultsPage = () => {
             {/* Records-forward enrichment: real booking teaser leads when the owner has one (the moat, proven
                 CVR); otherwise a public-records capability checklist. publicRecords (vs general) = always shows a
                 records value prop, and is the compliance-safe framing (not "background check"). */}
-            <SignalTeaser subject={ownerSubject(results[0])} flow="publicRecords" viewerRelation="prospect" stage="pre-signup" />
+            <SignalTeaser subject={ownerSubject(results[0])} flow="publicRecords" viewerRelation="prospect" stage="pre-signup" anonymize subjectLabel="this number’s owner" />
             <button type="button" onClick={() => startUnlock(results[0])}
               style={{ width: '100%', marginTop: '1rem', padding: '15px', fontSize: 16, fontWeight: 800, color: '#fff', background: '#0d5d2f', border: 'none', borderRadius: 10, cursor: 'pointer' }}>
               See the full report on this number →
