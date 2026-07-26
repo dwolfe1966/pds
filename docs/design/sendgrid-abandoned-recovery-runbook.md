@@ -1,8 +1,13 @@
 # Abandoned-checkout recovery email — setup runbook
 
 Built 2026-07-13. Everything in code is done and deployed (Vercel auto-deploys `seo/` from
-`main`). The pipeline **no-ops safely** until the two owner steps below are complete, so
+`main`). The pipeline **no-ops safely** until the owner activation steps are complete, so
 nothing sends prematurely.
+
+> **Provider update (2026-07-26):** SendGrid account access was blocked ("not authorized to
+> access this account"), so the send layer is now **provider-agnostic** (`emailProvider` in
+> `send.mjs`). **Resend is the chosen alternate** — see "Alternate ESP: Resend" at the bottom.
+> The SendGrid instructions below still work if that account is recovered; pick one provider.
 
 ## What's built (code — done)
 - **Signal (consumer):** `PaymentPage.fireAbandon` already POSTs to `/api/email/checkout-abandoned`
@@ -66,3 +71,41 @@ send time with a working per-recipient one-click unsubscribe, and enforces suppr
 so no `/unsubscribe` handler is needed on our side. Just create the Unsubscribe Group in SendGrid
 (Marketing → Suppressions → Unsubscribe Groups) and put its numeric ID in `EMAIL_ASM_GROUP_ID`.
 (Leaving it unset falls back to a `/unsubscribe?e=…` URL that would need a handler — avoid.)
+
+---
+
+## Alternate ESP: Resend (chosen 2026-07-26)
+
+The send layer (`seo/lib/email/send.mjs`) dispatches on `EMAIL_PROVIDER`. Setting it to `resend`
+routes every send (abandoned-recovery, welcome, lead-drip) through Resend's API instead of SendGrid —
+no template or cron changes. Unsubscribe is handled first-party (we already own the suppression list):
+Resend sends carry an RFC 8058 `List-Unsubscribe` one-click header pointing at
+`/api/email/unsubscribe`, which adds the address to `email_suppression`; `isSuppressed()` blocks it
+before every future send.
+
+### Owner step 1 — Resend account + domain auth
+1. Create an account at **resend.com** (free tier: 3,000 emails/mo, 100/day — enough to start).
+2. **Domains → Add Domain** → `e.idlookup.ai`. Resend outputs DNS records (SPF + DKIM, and a MX/return-path
+   for the subdomain). Add them to **idlookup.ai** DNS, then **Verify** (goes green). *(Domain auth is still
+   required — it's a deliverability precondition for any ESP, not a SendGrid-only step.)*
+3. **API Keys → Create** → a key with send permission.
+
+### Owner step 2 — Vercel env vars (SEO project → Settings → Environment Variables)
+| Var | Value | Required |
+|---|---|---|
+| `EMAIL_PROVIDER` | `resend` | ✅ (selects Resend over SendGrid) |
+| `RESEND_API_KEY` | the Resend API key | ✅ (sends no-op without it) |
+| `EMAIL_FROM` | `IDLookup <alerts@e.idlookup.ai>` (must be on the verified domain) | ✅ |
+| `CRON_SECRET` | any random string (secures the crons) | ✅ |
+| `EMAIL_UNSUBSCRIBE_URL` | `https://idlookup.me/api/email/unsubscribe` | optional (this is the default) |
+| `EMAIL_BASE_URL` / `EMAIL_BRAND_NAME` | `https://www.idlookup.ai` / `IDLookup` | optional (defaults) |
+
+Do **not** set `EMAIL_ASM_GROUP_ID` for Resend (that's SendGrid's server-side unsub; Resend uses our
+first-party endpoint instead). Redeploy the SEO app after setting envs.
+
+### Verify
+1. Confirm `EMAIL_PROVIDER=resend` + `RESEND_API_KEY` are set; redeploy.
+2. Trigger a send (abandon a checkout, or hit the cron route with the Bearer secret) → check Resend's
+   dashboard for the delivered event and `email_sends` for a logged row.
+3. Click the footer **Unsubscribe** → confirmation page; verify the address lands in `email_suppression`
+   and a subsequent send to it returns `status: 'suppressed'`.

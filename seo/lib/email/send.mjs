@@ -1,11 +1,15 @@
-// SendGrid send + template rendering for our own marketing emails (independent of BC).
+// Provider-agnostic transactional/marketing email send + template rendering (independent of BC).
+// PROVIDER is env-selected so we can swap ESPs without touching templates/crons.
 // Env (Vercel → SEO project):
-//   SENDGRID_API_KEY       required to actually send
-//   EMAIL_FROM             e.g. "IDLookup <alerts@e.idlookup.ai>"
+//   EMAIL_PROVIDER         'resend' | 'sendgrid' (default: auto — resend if RESEND_API_KEY set, else sendgrid)
+//   RESEND_API_KEY         required when provider = resend
+//   SENDGRID_API_KEY       required when provider = sendgrid
+//   EMAIL_FROM             e.g. "IDLookup <alerts@e.idlookup.ai>"  (from-domain must be authenticated in the ESP)
 //   EMAIL_BRAND_NAME       display name (default "IDLookup")
 //   EMAIL_BASE_URL         consumer base (default "https://www.idlookup.ai")
-//   EMAIL_ASM_GROUP_ID     optional SendGrid unsubscribe-group id (recommended for CAN-SPAM)
-//   EMAIL_UNSUBSCRIBE_URL  fallback unsubscribe link when no ASM group
+//   EMAIL_ASM_GROUP_ID     SendGrid-only unsubscribe-group id (server-side unsub). Ignored by Resend.
+//   EMAIL_UNSUBSCRIBE_URL  first-party unsubscribe endpoint (default idlookup.me/api/email/unsubscribe) — used
+//                          by Resend + any non-ASM provider, and for the List-Unsubscribe header.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,8 +20,13 @@ const DIR = path.dirname(fileURLToPath(import.meta.url));
 const BRAND = process.env.EMAIL_BRAND_NAME || 'IDLookup';
 const BASE = (process.env.EMAIL_BASE_URL || 'https://www.idlookup.ai').replace(/\/$/, '');
 
-export const hasSendgrid = !!process.env.SENDGRID_API_KEY;
-if (hasSendgrid) sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Provider selection: explicit EMAIL_PROVIDER wins; otherwise prefer whichever key is present (resend first).
+export const emailProvider = (process.env.EMAIL_PROVIDER || (process.env.RESEND_API_KEY ? 'resend' : 'sendgrid')).toLowerCase();
+// True when the selected provider has its key set. `hasSendgrid` kept as a back-compat alias (imported by the
+// abandoned-recovery cron + sendCampaign as the "email enabled" gate).
+export const hasEmail = emailProvider === 'resend' ? !!process.env.RESEND_API_KEY : !!process.env.SENDGRID_API_KEY;
+export const hasSendgrid = hasEmail;
+if (emailProvider === 'sendgrid' && process.env.SENDGRID_API_KEY) sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -48,11 +57,11 @@ function unlockUrl(personId, stage) {
 // group-aware one-click unsubscribe URL (and suppression is enforced server-side). The tag
 // must NOT be HTML-escaped, so callers insert it raw. Fallback = our own /unsubscribe URL.
 const ASM_UNSUB_TAG = '<%asm_group_unsubscribe_raw_url%>';
-function usingAsm() { return !!process.env.EMAIL_ASM_GROUP_ID; }
+// ASM is a SendGrid-only feature; ignore any stale EMAIL_ASM_GROUP_ID when the provider is Resend.
+function usingAsm() { return emailProvider === 'sendgrid' && !!process.env.EMAIL_ASM_GROUP_ID; }
 function unsubscribeUrl(email) {
   if (usingAsm()) return ASM_UNSUB_TAG;
-  const base = process.env.EMAIL_UNSUBSCRIBE_URL || `${BASE}/unsubscribe`;
-  return `${base}${base.includes('?') ? '&' : '?'}e=${encodeURIComponent(email || '')}`;
+  return unsubEndpoint(email); // real first-party endpoint (Resend / non-ASM)
 }
 
 /** Target person card (Name / Age / Location) — only when we know a name. */
@@ -147,10 +156,38 @@ export function renderCheckoutAbandoned(row, stage = 'first') {
   return { subject, html, text };
 }
 
-/** Send one email via SendGrid. Throws if no API key. Returns SendGrid response. */
+// Absolute first-party unsubscribe endpoint (SEO app) — real URL for the List-Unsubscribe header and for
+// non-ASM providers' visible link. Defaults to the SEO Vercel app where the suppression DB + handler live.
+function unsubEndpoint(email) {
+  const base = process.env.EMAIL_UNSUBSCRIBE_URL || 'https://idlookup.me/api/email/unsubscribe';
+  return `${base}${base.includes('?') ? '&' : '?'}e=${encodeURIComponent(email || '')}`;
+}
+
+/** Send one email via the selected provider. Throws if the provider key is missing. Returns a SendGrid-shaped
+ *  array ([{ headers: { 'x-message-id' } }]) so callers can extract a provider id uniformly. */
 export async function sendEmail({ to, subject, html, text }) {
-  if (!hasSendgrid) throw new Error('SENDGRID_API_KEY not set');
+  if (!hasEmail) throw new Error(`${emailProvider} not configured`);
   const from = process.env.EMAIL_FROM || `${BRAND} <alerts@e.idlookup.ai>`;
+
+  if (emailProvider === 'resend') {
+    // Resend has no ASM; add RFC 8058 one-click List-Unsubscribe (Gmail/Yahoo bulk requirement) pointing at
+    // our first-party endpoint. Suppression is enforced our side (isSuppressed) before every send.
+    const unsub = unsubEndpoint(to);
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from, to, subject, html, text,
+        headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+      }),
+    });
+    if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(`resend ${res.status}: ${String(t).slice(0, 200)}`); }
+    const d = await res.json().catch(() => ({}));
+    return [{ statusCode: res.status, headers: { 'x-message-id': (d && d.id) || null } }];
+  }
+
+  // sendgrid
+  if (!process.env.SENDGRID_API_KEY) throw new Error('SENDGRID_API_KEY not set');
   const msg = { to, from, subject, html, text };
   const asm = process.env.EMAIL_ASM_GROUP_ID;
   if (asm) msg.asm = { groupId: Number(asm) };
