@@ -40,7 +40,11 @@ async function processStage(rows, stage) {
       // email falls back to the prefilled resume link. Never blocks the send.
       let ctaUrl = null;
       if (hasBcAutoLogin()) {
-        const next = process.env.ABANDON_AUTOLOGIN_NEXT || '/dashboard';
+        // Land account holders on /payment, NOT /dashboard: a State-B abandoner (reached payment, declined/
+        // bailed) is UNPAID, so /dashboard is a paywalled dead-end. /payment stands alone (default signup
+        // offer, no target needed) and redirects paid users away — so it's a working resume-checkout, one
+        // step from done. Auth adopts on /auth/session first, so PaymentPage sees the token and won't bounce.
+        const next = process.env.ABANDON_AUTOLOGIN_NEXT || '/payment';
         const minted = await mintAutoLoginUrl(row.email, `/auth/session?next=${next}`).catch(() => null);
         if (minted && minted.url) ctaUrl = minted.url;
       }
