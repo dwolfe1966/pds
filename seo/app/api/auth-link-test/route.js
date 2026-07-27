@@ -18,7 +18,12 @@ export async function GET(req) {
   const url = new URL(req.url);
   if (!authorized(req, url)) return new Response('unauthorized', { status: 401 });
   const email = url.searchParams.get('e');
-  const redirect = url.searchParams.get('redirect') || '/dashboard';
+  // The SPA can't consume a bare protected path (it bounces to /login before adopting BC's cookie session).
+  // BC's loginLink must land on the PUBLIC /auth/session route, which calls adoptSession() then forwards to
+  // ?next=<clean path>. Default to that; allow ?next=/my-identity etc. (?redirect= still overrides for probing.)
+  const nextPath = url.searchParams.get('next') || '/dashboard';
+  const redirect = url.searchParams.get('redirect')
+    || `/auth/session?next=${nextPath}`;
   if (!email) return Response.json({ ok: false, error: '?e=<email> required' }, { status: 400 });
   if (!hasBcAutoLogin()) {
     // Report WHICH var the running function is missing (presence only — never the values).
