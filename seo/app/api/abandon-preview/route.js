@@ -49,8 +49,13 @@ export async function GET(req) {
   const send = url.searchParams.get('send') === '1';
   const to = (url.searchParams.get('to') || '').trim();
 
-  // Pull candidates (deduped by email, newest row per email carries the target).
-  const rows = await getPendingFirstEmail(DELAY_MIN, count);
+  // Pull candidates (deduped by email). Data-rich only by default: drop rows with no searched person (they'd
+  // render the weak generic "finish setting up" email). Override with &includeNoTarget=1. Pull extra then trim,
+  // so target-only filtering still yields ~count.
+  const includeNoTarget = url.searchParams.get('includeNoTarget') === '1';
+  const hasTarget = (r) => !!(r && r.meta && typeof r.meta === 'object' && r.meta.target && r.meta.target.name);
+  const raw = await getPendingFirstEmail(DELAY_MIN, count * 3);
+  const rows = (includeNoTarget ? raw : raw.filter(hasTarget)).slice(0, count);
 
   // Annotate each with whether it has a BC account (→ auto-login CTA) or not (→ prefill CTA).
   const canAuto = hasBcAutoLogin();

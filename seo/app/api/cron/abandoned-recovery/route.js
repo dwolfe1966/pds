@@ -84,7 +84,15 @@ export async function GET(req) {
   if (!enabled && !testEmail) {
     return json({ ...body, skipped: 'abandon recovery gated — set ABANDON_ENABLED=1 to launch, or ABANDON_TEST_EMAIL=you@example.com to test one inbox' });
   }
-  const scope = (rows) => (enabled ? rows : rows.filter((r) => String(r.email || '').toLowerCase() === testEmail));
+  // Data-rich only: recover ONLY abandoners who actually searched a person (we have a teaser hook). Rows with
+  // no target render the weak generic "finish setting up" email — off-strategy, and those abandoners belong to
+  // a cold-lead drip, not cart recovery. Override with ABANDON_INCLUDE_NO_TARGET=1.
+  const includeNoTarget = process.env.ABANDON_INCLUDE_NO_TARGET === '1';
+  const hasTarget = (r) => !!(r && r.meta && typeof r.meta === 'object' && r.meta.target && r.meta.target.name);
+  const scope = (rows) => {
+    const withTarget = includeNoTarget ? rows : rows.filter(hasTarget);
+    return enabled ? withTarget : withTarget.filter((r) => String(r.email || '').toLowerCase() === testEmail);
+  };
 
   try {
     const first = await processStage(scope(await getPendingFirstEmail(FIRST_DELAY_MIN)), 'first');
