@@ -27,3 +27,11 @@ Recovery/abandon emails can auto-log a user in (no password) using ONLY existing
 **No-account abandoner experience (owner 2026-07-27 "push deeper"):** prefill link lands them at the TOP of the v3 inmate search FORM (prefilled, but they re-click through). Deeper = land on their person's teaser/results. ⚠️ Two gates before repointing: (1) FCRA consent — v3 requires the agree checkbox (handleConfirm) BEFORE runSearch→/name/loader; a raw deep-link to /name/loader bypasses it. (2) search contextKey landmine [[feedback_search_contextkey]]. Safe design = prefill + auto-advance to the consent step (one click → /name/loader?firstName&lastName&state&flow=inmate → results).
 
 Test URL: `https://idlookup.me/api/auth-link-test?e=<email>&secret=<CRON_SECRET>` (mint), `&probe=1` (diagnose lookup), `&next=/my-identity` (set dest).
+
+**Controlled real send (wired 2026-07-27):** `abandoned-recovery` cron enforces a daily cap across runs. Go-live = `ABANDON_ENABLED=1` (+ redeploy). Knobs: `ABANDON_DAILY_CAP=N` (fixed, default 25), `ABANDON_RAMP=1` (auto-ramp 25→50→100→… by day off first send, schedule in emails-db `ABANDON_RAMP_SCHEDULE`), `ABANDON_MAX_AGE_DAYS` (recency, default off), `ABANDON_INCLUDE_NO_TARGET=1` (default OFF = data-rich only), `EMAIL_FIRST_DELAY_MIN`/`EMAIL_FOLLOWUP_DELAY_HOURS` (default 30/24). Batched suppression filter (CAN-SPAM) before slicing to budget; first-emails get budget priority over follow-ups.
+
+**Ops endpoints** (secret-gated, on idlookup.me):
+- `/api/abandon-status` — dashboard (live/paused, today sent/cap/remaining, queue, config, suppression, recentErrors, last 25 sends). `&pause=1` / `&resume=1` = INSTANT DB kill-switch (email_kv flag `abandon_paused`), no redeploy — cron checks it each run.
+- `/api/abandon-preview?send=1&to=<inbox>&sample=5&include=<email>` — send N real emails to a test inbox (marks nothing). `&count`, `&includeNoTarget=1`.
+
+**Resume deep-link (consumer):** no-account CTA → `/name/landing/v3?fn&ln&state&resume=1` → v3 lands on Confirm step (prefilled, personalized, FCRA consent + one "View Results" click → loader → teaser). Kept a real gesture so email scanners can't auto-fire BC searches / skip consent. ⚠️ Needs the consumer bundle uploaded to BC to activate; degrades to prefilled-top-of-form until then. Bundle built 2026-07-27: build/public.d5dc6dbd.js.
