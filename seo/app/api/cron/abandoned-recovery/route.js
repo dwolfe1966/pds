@@ -14,17 +14,30 @@ import {
 } from '../../../../lib/leads-db.mjs';
 import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
-import { logSend } from '../../../../lib/email/emails-db.mjs';
+import { logSend, countSentToday, daysSinceFirstSend, suppressedSet } from '../../../../lib/email/emails-db.mjs';
 import { mintAutoLoginUrl, hasBcAutoLogin } from '../../../../lib/bcAutoLogin.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// ⚠️ TEST TIMERS (2026-07-27) — short delays so email flows can be tested by just using the site. RATCHET
-// BACK UP before real launch: set env EMAIL_FIRST_DELAY_MIN=30 / EMAIL_FOLLOWUP_DELAY_HOURS=24 on Vercel, or
-// revert these defaults to 30 / 24.
-const FIRST_DELAY_MIN = Number(process.env.EMAIL_FIRST_DELAY_MIN || 2);
-const FOLLOWUP_DELAY_HOURS = Number(process.env.EMAIL_FOLLOWUP_DELAY_HOURS || 1);
+// Real timers (owner 2026-07-13): 1st email 30 min after abandonment, 1 follow-up 24h later. Env-overridable
+// (set EMAIL_FIRST_DELAY_MIN / EMAIL_FOLLOWUP_DELAY_HOURS smaller to fast-test the cron flow).
+const FIRST_DELAY_MIN = Number(process.env.EMAIL_FIRST_DELAY_MIN || 30);
+const FOLLOWUP_DELAY_HOURS = Number(process.env.EMAIL_FOLLOWUP_DELAY_HOURS || 24);
+
+// Domain warm-up ramp — the max NEW sends per UTC day. Owner: start at 25/day, ratchet up.
+//   - ABANDON_DAILY_CAP=N  → hard fixed cap (simple; owner bumps it to ratchet).
+//   - ABANDON_RAMP=1       → auto-ramp by day index off the first send (no hardcoded start date).
+//   - neither              → 25/day flat.
+const RAMP = [25, 25, 50, 50, 100, 100, 200, 300, 500, 750, 1000];
+async function dailyCap() {
+  if (process.env.ABANDON_DAILY_CAP) return Math.max(0, Number(process.env.ABANDON_DAILY_CAP) || 0);
+  if (process.env.ABANDON_RAMP === '1') {
+    const d = await daysSinceFirstSend('abandoned_%');
+    return d == null ? RAMP[0] : RAMP[Math.min(d, RAMP.length - 1)];
+  }
+  return 25;
+}
 
 async function processStage(rows, stage) {
   let sent = 0, failed = 0;
@@ -89,15 +102,46 @@ export async function GET(req) {
   // a cold-lead drip, not cart recovery. Override with ABANDON_INCLUDE_NO_TARGET=1.
   const includeNoTarget = process.env.ABANDON_INCLUDE_NO_TARGET === '1';
   const hasTarget = (r) => !!(r && r.meta && typeof r.meta === 'object' && r.meta.target && r.meta.target.name);
+  // Recency window: don't reach out to very old abandoners (stale intent + risky for a warming domain).
+  // ABANDON_MAX_AGE_DAYS=0 (default) → no age limit (work the whole backlog).
+  const maxAgeMs = Number(process.env.ABANDON_MAX_AGE_DAYS || 0) * 86400000;
+  const fresh = (r) => !maxAgeMs || (r.abandoned_at && (Date.now() - new Date(r.abandoned_at).getTime()) <= maxAgeMs);
   const scope = (rows) => {
-    const withTarget = includeNoTarget ? rows : rows.filter(hasTarget);
-    return enabled ? withTarget : withTarget.filter((r) => String(r.email || '').toLowerCase() === testEmail);
+    const filtered = (includeNoTarget ? rows : rows.filter(hasTarget)).filter(fresh);
+    return enabled ? filtered : filtered.filter((r) => String(r.email || '').toLowerCase() === testEmail);
   };
 
   try {
-    const first = await processStage(scope(await getPendingFirstEmail(FIRST_DELAY_MIN)), 'first');
-    const followup = await processStage(scope(await getPendingFollowup(FOLLOWUP_DELAY_HOURS)), 'followup');
-    return json({ ...body, mode: enabled ? 'all' : `test:${testEmail}`, first, followup });
+    // Daily send cap (warm-up ramp), enforced across every cron run in the day. Test mode (single inbox) is
+    // exempt from the cap so it always fires.
+    const cap = await dailyCap();
+    const already = enabled ? await countSentToday('abandoned_%') : 0;
+    let remaining = enabled ? Math.max(0, cap - already) : Number.MAX_SAFE_INTEGER;
+    if (enabled && remaining <= 0) {
+      return json({ ...body, mode: 'all', cap, sentToday: already, skipped: `daily cap reached (${already}/${cap})` });
+    }
+
+    // Pull candidates, drop suppressed (CAN-SPAM) in ONE batched query, then cap to the remaining budget.
+    // First-emails take priority over follow-ups for the day's budget.
+    const firstAll = scope(await getPendingFirstEmail(FIRST_DELAY_MIN));
+    const followAll = scope(await getPendingFollowup(FOLLOWUP_DELAY_HOURS));
+    const suppressed = await suppressedSet([...firstAll, ...followAll].map((r) => r.email));
+    const notSup = (rows) => rows.filter((r) => !suppressed.has(String(r.email || '').trim().toLowerCase()));
+
+    const firstRows = notSup(firstAll).slice(0, remaining);
+    const first = await processStage(firstRows, 'first');
+    remaining -= first.sent;
+    const followRows = remaining > 0 ? notSup(followAll).slice(0, remaining) : [];
+    const followup = await processStage(followRows, 'followup');
+
+    return json({
+      ...body,
+      mode: enabled ? 'all' : `test:${testEmail}`,
+      cap: enabled ? cap : null,
+      sentToday: enabled ? already + first.sent + followup.sent : undefined,
+      suppressedSkipped: suppressed.size || undefined,
+      first, followup,
+    });
   } catch (e) {
     return json({ ok: false, error: 'run failed' }, 500);
   }

@@ -45,6 +45,40 @@ export async function logSend({ email, campaign, subject, status, providerId, me
   } catch { /* best-effort */ }
 }
 
+/** How many sends of campaigns matching `like` went out today (UTC day)? Enforces the daily send cap
+ *  across the many cron runs in a day. */
+export async function countSentToday(like = 'abandoned_%') {
+  if (!sql) return 0;
+  try {
+    const rows = await sql`SELECT count(*)::int AS n FROM email_sends
+      WHERE campaign LIKE ${like} AND status = 'sent' AND sent_at >= date_trunc('day', now())`;
+    return (rows[0] && rows[0].n) || 0;
+  } catch { return 0; }
+}
+
+/** Whole days since the FIRST send of campaigns matching `like` (0 on the first day). null if none yet —
+ *  used to index the domain warm-up ramp without needing a hardcoded start date. */
+export async function daysSinceFirstSend(like = 'abandoned_%') {
+  if (!sql) return null;
+  try {
+    const rows = await sql`SELECT floor(extract(epoch from (now() - min(sent_at))) / 86400)::int AS d
+      FROM email_sends WHERE campaign LIKE ${like} AND status = 'sent'`;
+    return rows[0] && rows[0].d != null ? rows[0].d : null;
+  } catch { return null; }
+}
+
+/** Which of these addresses are suppressed? Batched (one query) so a send batch filters in O(1) round-trips. */
+export async function suppressedSet(emails = []) {
+  const set = new Set();
+  if (!sql || !emails.length) return set;
+  try {
+    const lowered = [...new Set(emails.map(norm).filter(Boolean))];
+    const rows = await sql`SELECT email FROM email_suppression WHERE email = ANY(${lowered})`;
+    for (const r of rows) set.add(r.email);
+    return set;
+  } catch { return set; }
+}
+
 /** Has this address already gotten this campaign (dedupe repeat sends)? Optional window in days. */
 export async function alreadySent(email, campaign, withinDays = null) {
   if (!sql) return false;
