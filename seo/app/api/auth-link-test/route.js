@@ -3,7 +3,7 @@
 // Returns { url, userId } so we can CLICK the link (verify auto-login + redirect) and re-click later to
 // MEASURE its TTL, before wiring it into the abandon cron. Secret-gated. Read-only-ish (mints a short-lived
 // login link; no data mutation). See lib/bcAutoLogin.mjs (SECURITY note: needs CSR admin creds).
-import { mintAutoLoginUrl, hasBcAutoLogin } from '../../../lib/bcAutoLogin.mjs';
+import { mintAutoLoginUrl, hasBcAutoLogin, probeUsers } from '../../../lib/bcAutoLogin.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,6 +32,11 @@ export async function GET(req) {
       },
       hint: 'All three must be true. If any is false: set it (Production scope) and REDEPLOY — env changes only apply to new deployments.',
     }, { status: 400 });
+  }
+
+  // ?probe=1 → diagnose the user lookup (does the session see users? does the email filter hit?) instead of minting.
+  if (url.searchParams.get('probe') === '1') {
+    return Response.json({ ok: true, probe: await probeUsers(email) });
   }
 
   const r = await mintAutoLoginUrl(email, redirect);

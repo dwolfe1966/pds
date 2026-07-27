@@ -91,6 +91,34 @@ function extractUrl(r) {
     || null;
 }
 
+// Diagnostic: does the CSR session see users at all, and does the exact-email filter work? Confirms the
+// pipeline before we conclude an address "has no BC account". Returns counts + field names, never PII.
+export async function probeUsers(email) {
+  if (!hasBcAutoLogin()) return { error: 'not configured' };
+  const brandId = process.env.BC_BRAND_ID || 'idlookup';
+  try {
+    const jar = await csrLogin();
+    const all = await csrPost('/database/search', { brandId, collectionName: 'users', perPage: 3 }, jar);
+    const allDocs = (all?.docs || all?.data || []);
+    const sampleKeys = allDocs[0] ? Object.keys(allDocs[0]).slice(0, 30) : [];
+    let filtered = null;
+    if (email) {
+      const em = String(email).trim();
+      // Try exact (as-typed), lowercased, and a substring — report which one hits.
+      const tries = [em, em.toLowerCase()];
+      const out = {};
+      for (const q of [...new Set(tries)]) {
+        const r = await csrPost('/database/search', { brandId, collectionName: 'users', query: { email: q } }, jar);
+        out[q] = (r?.docs || r?.data || []).length;
+      }
+      filtered = out;
+    }
+    return { brandId, unfilteredCount: allDocs.length, sampleKeys, filtered };
+  } catch (e) {
+    return { error: String((e && e.message) || e) };
+  }
+}
+
 /**
  * @param {string} email     the abandoner (consumer) whose session to mint
  * @param {string} redirect  post-login destination path (e.g. /name/landing/v3?fn=…)
