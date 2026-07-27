@@ -55,15 +55,22 @@ export async function insertAbandonedCheckout({ email, personId, offer, variant,
  */
 export async function getPendingFirstEmail(delayMinutes = 30, limit = 200) {
   if (!sql) throw new Error('no leads DB configured');
+  // Dedup to newest row per email (inner DISTINCT ON), THEN take the FRESHEST abandoners first (outer sort +
+  // limit). Freshest-first matters for domain warm-up: recent abandoners engage most and bounce least, so the
+  // first cohorts we send build the best reputation. (A bare `LIMIT` on the alphabetical dedup would pick
+  // `19gg@…` first and can't reorder afterwards.)
   return sql`
-    SELECT DISTINCT ON (lower(email)) id, email, person_id, offer, variant, meta, abandoned_at
-    FROM abandoned_checkouts
-    WHERE email IS NOT NULL
-      AND emailed_at IS NULL
-      AND recovered_at IS NULL
-      AND abandoned_at IS NOT NULL
-      AND abandoned_at <= now() - (${delayMinutes} * INTERVAL '1 minute')
-    ORDER BY lower(email), abandoned_at DESC
+    SELECT * FROM (
+      SELECT DISTINCT ON (lower(email)) id, email, person_id, offer, variant, meta, abandoned_at
+      FROM abandoned_checkouts
+      WHERE email IS NOT NULL
+        AND emailed_at IS NULL
+        AND recovered_at IS NULL
+        AND abandoned_at IS NOT NULL
+        AND abandoned_at <= now() - (${delayMinutes} * INTERVAL '1 minute')
+      ORDER BY lower(email), abandoned_at DESC
+    ) t
+    ORDER BY t.abandoned_at DESC
     LIMIT ${limit}
   `;
 }
@@ -75,14 +82,17 @@ export async function getPendingFirstEmail(delayMinutes = 30, limit = 200) {
 export async function getPendingFollowup(delayHours = 24, limit = 200) {
   if (!sql) throw new Error('no leads DB configured');
   return sql`
-    SELECT DISTINCT ON (lower(email)) id, email, person_id, offer, variant, meta, abandoned_at
-    FROM abandoned_checkouts
-    WHERE email IS NOT NULL
-      AND emailed_at IS NOT NULL
-      AND followup_at IS NULL
-      AND recovered_at IS NULL
-      AND emailed_at <= now() - (${delayHours} * INTERVAL '1 hour')
-    ORDER BY lower(email), emailed_at DESC
+    SELECT * FROM (
+      SELECT DISTINCT ON (lower(email)) id, email, person_id, offer, variant, meta, abandoned_at, emailed_at
+      FROM abandoned_checkouts
+      WHERE email IS NOT NULL
+        AND emailed_at IS NOT NULL
+        AND followup_at IS NULL
+        AND recovered_at IS NULL
+        AND emailed_at <= now() - (${delayHours} * INTERVAL '1 hour')
+      ORDER BY lower(email), emailed_at DESC
+    ) t
+    ORDER BY t.abandoned_at DESC
     LIMIT ${limit}
   `;
 }
