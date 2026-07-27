@@ -14,6 +14,7 @@ import {
 } from '../../../../lib/leads-db.mjs';
 import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
+import { logSend } from '../../../../lib/email/emails-db.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,9 +36,12 @@ async function processStage(rows, stage) {
       const { subject, html, text } = renderCheckoutAbandoned(row, stage, enrichment);
       await sendEmail({ to: row.email, subject, html, text });
       await markRecoveryEmailed(row.id, stage);
+      await logSend({ email: row.email, campaign: `abandoned_${stage}`, subject, status: 'sent' }).catch(() => {});
       sent++;
-    } catch {
-      failed++; // leave the row un-stamped so the next run retries it
+    } catch (err) {
+      // Log the failure so it's visible in email_sends (the row stays un-stamped → next run retries it).
+      await logSend({ email: row.email, campaign: `abandoned_${stage}`, status: 'error', meta: { error: String((err && err.message) || err) } }).catch(() => {});
+      failed++;
     }
   }
   return { sent, failed, eligible: rows.length };
