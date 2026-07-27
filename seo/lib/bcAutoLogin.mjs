@@ -91,6 +91,17 @@ function extractUrl(r) {
     || null;
 }
 
+// Does this email have a BC account? Lookup only — does NOT mint a credential (unlike mintAutoLoginUrl).
+// Used to know whether an abandoner gets the auto-login CTA or the prefill fallback.
+export async function hasBcAccount(email) {
+  if (!hasBcAutoLogin()) return false;
+  try {
+    const jar = await csrLogin();
+    const { userId } = await resolveUserId(email, jar);
+    return !!userId;
+  } catch { return false; }
+}
+
 // Diagnostic: does the CSR session see users at all, and does the exact-email filter work? Confirms the
 // pipeline before we conclude an address "has no BC account". Returns counts + field names, never PII.
 export async function probeUsers(email) {
