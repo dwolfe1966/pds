@@ -17,6 +17,16 @@ const BC = () => {
 };
 export const hasBcAutoLogin = () => !!(BC() && process.env.BC_CSR_USERNAME && process.env.BC_CSR_PASSWORD);
 
+// BC requires ?clientId=&apiId= on every request (see apiWrapper _loginDirectly / _generateRandomId):
+// 32-char alphanumeric. Missing them → 400 on /auth/login.
+const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+function randomId() {
+  const arr = new Uint32Array(32);
+  globalThis.crypto.getRandomValues(arr);
+  return Array.from(arr, (v) => CHARSET[v % CHARSET.length]).join('');
+}
+const withIds = (path) => `${BC()}${path}${path.includes('?') ? '&' : '?'}clientId=${randomId()}&apiId=${randomId()}`;
+
 let _session = null; // { jar, exp } — reuse the CSR session for a few minutes across mints.
 
 function cookieJar(res) {
@@ -29,7 +39,7 @@ function cookieJar(res) {
 
 async function csrLogin() {
   if (_session && _session.exp > Date.now() && _session.jar) return _session.jar;
-  const res = await fetch(`${BC()}/auth/login`, {
+  const res = await fetch(withIds('/auth/login'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: process.env.BC_CSR_USERNAME, password: process.env.BC_CSR_PASSWORD }),
@@ -42,7 +52,7 @@ async function csrLogin() {
 }
 
 async function csrPost(path, body, jar) {
-  const res = await fetch(`${BC()}${path}`, {
+  const res = await fetch(withIds(path), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: jar },
     body: JSON.stringify(body),
