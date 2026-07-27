@@ -8,7 +8,13 @@
 // Never returns creds to the client; only the short-lived login link. Degrades to null (never throws upstream)
 // when unconfigured or BC errors.
 
-const BC = () => (process.env.BC_CSR_API_URL || '').replace(/\/$/, '');
+// Tolerate a pasted-in slip: strip whitespace/table-border junk, repair a single-slash scheme, drop trailing /.
+const BC = () => {
+  let raw = (process.env.BC_CSR_API_URL || '').replace(/[│|\r\n\t"'<>]/g, ' ').trim();
+  raw = raw.replace(/(https?):\/(?!\/)/i, '$1://'); // https:/host → https://host
+  const m = raw.match(/https?:\/\/\S+/i);           // first clean http(s) token, if any survived
+  return (m ? m[0] : raw).replace(/\/+$/, '');
+};
 export const hasBcAutoLogin = () => !!(BC() && process.env.BC_CSR_USERNAME && process.env.BC_CSR_PASSWORD);
 
 let _session = null; // { jar, exp } — reuse the CSR session for a few minutes across mints.
