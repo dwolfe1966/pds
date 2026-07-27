@@ -16,6 +16,8 @@
  * must NEVER be put on the analytics `email_capture` event — see docs/EVENTS_CATALOG.md §2.
  */
 
+import { readLog } from './visitorSearchLog';
+
 const LS_LOG = 'capturedEmails';   // durable array of all captures on this device
 const LS_LATEST = 'capturedEmail'; // latest email, for signup pre-fill
 
@@ -32,6 +34,15 @@ function leadUrl() {
  */
 export function captureEmail(email, meta = {}) {
   if (!email || typeof email !== 'string') return;
+  // Enrich with the visitor's most recent search query so the re-engagement drip can PREFILL and resume
+  // their own search (the b/friction-reducer, owner 2026-07-27). Their own prior search — no new PII exposed.
+  if (!meta.query) {
+    try {
+      const items = (readLog() || {}).items || [];
+      const last = items[items.length - 1];
+      if (last && last.query) meta = { ...meta, query: last.query, searchType: last.type };
+    } catch { /* best-effort — capture works without it */ }
+  }
   const rec = { email, meta, ts: new Date().toISOString() };
 
   // 1) Durable local store (works with no backend) + latest-for-prefill.

@@ -237,12 +237,30 @@ export function renderWelcome({ firstName, email } = {}) {
 // Campaign registry — render(vars) → {subject,html,text}. Add lifecycle flows here.
 /** Lead-list re-engagement drip (4 steps) — the un-converted lead never subscribed; nudge them back into the
  *  name funnel. Escalates: results-ready → still-waiting → membership value → last-chance. CTA → /name/landing/v3. */
-export function renderRemarketing({ step = 1, firstName, email } = {}) {
+// Resume the lead's OWN search: name → prefill v3 (fn/ln/city/state; they still confirm FCRA on the landing);
+// phone/email → the matching vertical. Falls back to plain v3 when we have no captured query.
+function resumeCta(query, searchType, campaign) {
+  const utm = `utm_source=email&utm_medium=reengagement&utm_campaign=${campaign}`;
+  const q = query && typeof query === 'object' ? query : null;
+  if (q && (q.firstName || q.lastName)) {
+    const p = new URLSearchParams();
+    if (q.firstName) p.set('fn', q.firstName);
+    if (q.lastName) p.set('ln', q.lastName);
+    if (q.city) p.set('city', q.city);
+    if (q.state) p.set('state', q.state);
+    return `${BASE}/name/landing/v3?${p.toString()}&${utm}`;
+  }
+  if ((searchType === 'phone') || (q && q.phone)) return `${BASE}/phone/landing/v1?${utm}`;
+  if ((searchType === 'email') || (q && q.email)) return `${BASE}/email/landing/v2?${utm}`;
+  return `${BASE}/name/landing/v3?${utm}`;
+}
+
+export function renderRemarketing({ step = 1, firstName, email, query, searchType } = {}) {
   const name = (firstName || '').toString().trim();
   const unsub = unsubscribeUrl(email);
   const unsubHtml = usingAsm() ? unsub : esc(unsub);
   const campaign = `lead_remarketing_${step}`;
-  const cta = `${BASE}/name/landing/v3?utm_source=email&utm_medium=reengagement&utm_campaign=${campaign}`;
+  const cta = resumeCta(query, searchType, campaign);
   const STEPS = {
     1: { subject: 'Your search results are ready', pre: 'Pick up where you left off.',
          h: 'Your search results are ready', p: "You started looking someone up on IDLookup but didn't finish. Your results are compiled and waiting — pick up right where you left off.", c: 'See my results →' },

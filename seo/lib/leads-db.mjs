@@ -110,7 +110,13 @@ export async function getReengagementCandidates(limit = 1000) {
              (SELECT count(*) FROM email_sends s
                 WHERE s.email = lower(l.email) AND s.campaign LIKE 'lead_remarketing_%' AND s.status = 'sent') AS steps_sent,
              (SELECT max(s.sent_at) FROM email_sends s
-                WHERE s.email = lower(l.email) AND s.campaign LIKE 'lead_remarketing_%' AND s.status = 'sent') AS last_sent
+                WHERE s.email = lower(l.email) AND s.campaign LIKE 'lead_remarketing_%' AND s.status = 'sent') AS last_sent,
+             (SELECT l2.meta->'query' FROM leads l2
+                WHERE lower(l2.email) = lower(l.email) AND l2.meta->'query' IS NOT NULL
+                ORDER BY COALESCE(l2.captured_at, l2.received_at) DESC LIMIT 1) AS query,
+             (SELECT l2.meta->>'searchType' FROM leads l2
+                WHERE lower(l2.email) = lower(l.email) AND l2.meta->'query' IS NOT NULL
+                ORDER BY COALESCE(l2.captured_at, l2.received_at) DESC LIMIT 1) AS search_type
       FROM leads l
       WHERE l.email IS NOT NULL AND l.email <> ''
         AND lower(l.email) NOT IN (SELECT email FROM email_suppression)
@@ -121,6 +127,7 @@ export async function getReengagementCandidates(limit = 1000) {
       LIMIT ${Math.min(2000, Math.max(1, limit))}`;
     return (rows || []).map((r) => ({
       email: r.email, capturedAt: r.captured_at, stepsSent: Number(r.steps_sent) || 0, lastSentAt: r.last_sent,
+      query: (r.query && typeof r.query === 'object') ? r.query : null, searchType: r.search_type || null,
     }));
   } catch { return []; }
 }

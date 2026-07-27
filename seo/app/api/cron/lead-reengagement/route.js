@@ -47,7 +47,7 @@ export async function GET(req) {
   for (let i = 0; i < due.length; i++) {
     const { c, step } = due[i];
     try {
-      const r = await sendCampaign({ to: c.email, campaign: `lead_remarketing_${step}`, meta: { step } });
+      const r = await sendCampaign({ to: c.email, campaign: `lead_remarketing_${step}`, vars: { query: c.query, searchType: c.searchType }, meta: { step } });
       if (r.status === 'sent') sent += 1;
       else if (r.status === 'suppressed') suppressed += 1;
       else errors += 1;
