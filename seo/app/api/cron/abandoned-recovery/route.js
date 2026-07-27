@@ -15,6 +15,7 @@ import {
 import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
 import { logSend } from '../../../../lib/email/emails-db.mjs';
+import { mintAutoLoginUrl, hasBcAutoLogin } from '../../../../lib/bcAutoLogin.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,10 +34,20 @@ async function processStage(rows, stage) {
       // into data. Self-gating + never throws → falls back to the plain card.
       const target = row && row.meta && typeof row.meta === 'object' ? row.meta.target : null;
       const enrichment = target ? await enrichAbandonTarget(target).catch(() => null) : null;
-      const { subject, html, text } = renderCheckoutAbandoned(row, stage, enrichment);
+      // Mint a password-less auto-login link when this abandoner HAS a BC account (they reached the payment
+      // step). Minted at SEND time so it's freshest for the open. redirect routes through /auth/session so
+      // the SPA adopts the BC cookie before landing (project_autologin_abandon). No account → null → the
+      // email falls back to the prefilled resume link. Never blocks the send.
+      let ctaUrl = null;
+      if (hasBcAutoLogin()) {
+        const next = process.env.ABANDON_AUTOLOGIN_NEXT || '/dashboard';
+        const minted = await mintAutoLoginUrl(row.email, `/auth/session?next=${next}`).catch(() => null);
+        if (minted && minted.url) ctaUrl = minted.url;
+      }
+      const { subject, html, text } = renderCheckoutAbandoned(row, stage, enrichment, ctaUrl);
       await sendEmail({ to: row.email, subject, html, text });
       await markRecoveryEmailed(row.id, stage);
-      await logSend({ email: row.email, campaign: `abandoned_${stage}`, subject, status: 'sent' }).catch(() => {});
+      await logSend({ email: row.email, campaign: `abandoned_${stage}`, subject, status: 'sent', meta: { autoLogin: !!ctaUrl } }).catch(() => {});
       sent++;
     } catch (err) {
       // Log the failure so it's visible in email_sends (the row stays un-stamped → next run retries it).

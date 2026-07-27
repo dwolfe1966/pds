@@ -49,8 +49,9 @@ function template() {
 
 // Resume link — re-runs the recipient's OWN search on the v3 landing, prefilled with the target (stable +
 // FCRA-consent-preserving). NOT /people/<extId>: that person_id is BC's ephemeral obf1 extId, which
-// re-encrypts every call and won't resolve later. NOT auto-login: prod sessions are BC session cookies we
-// can't capture/replay from an email (see Path-B finding 2026-07-27) — true auto-login is a BC ask.
+// re-encrypts every call and won't resolve later. This is the FALLBACK CTA for abandoners with NO account;
+// account holders get a minted password-less auto-login link instead (project_autologin_abandon, proven
+// 2026-07-27 — no BC ask needed).
 function unlockUrl(target, stage) {
   const utm = `utm_source=email&utm_medium=abandoned_recovery&utm_campaign=${stage === 'followup' ? 'checkout_abandoned_followup' : 'checkout_abandoned'}`;
   const parts = String((target && target.name) || '').trim().split(/\s+/).filter(Boolean);
@@ -124,7 +125,7 @@ function targetCard(target, enr) {
  * @param {'first'|'followup'} stage
  * @returns {{ subject, html, text }}
  */
-export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null) {
+export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null, ctaUrl = null) {
   const meta = (row && row.meta && typeof row.meta === 'object') ? row.meta : {};
   const firstName = (meta.recipientName || '').toString().trim();
   const target = meta.target || null;
@@ -163,6 +164,12 @@ export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null)
   }
   subject = subject.charAt(0).toUpperCase() + subject.slice(1);
 
+  // CTA target: a minted password-less auto-login link (account holders — one click straight back in, no
+  // password) when the cron resolves one; otherwise the prefilled resume link (re-runs their search). See
+  // project_autologin_abandon: the minted link already routes through /auth/session so the SPA adopts the
+  // BC session before landing.
+  const cta = ctaUrl || unlockUrl(target, stage);
+
   // ASM tag must go in raw (it's a SendGrid token, not a literal URL); a real URL is escaped.
   const unsub = unsubscribeUrl(row.email);
   const unsubHtml = usingAsm() ? unsub : esc(unsub);
@@ -174,7 +181,7 @@ export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null)
     .replace(/\{\{bodyIntro\}\}/g, bodyIntro)
     .replace(/\{\{ctaLabel\}\}/g, esc(ctaLabel))
     .replace(/\{\{targetCard\}\}/g, targetCard(target, e))
-    .replace(/\{\{unlockUrl\}\}/g, esc(unlockUrl(target, stage)))
+    .replace(/\{\{unlockUrl\}\}/g, esc(cta))
     .replace(/\{\{unsubscribeUrl\}\}/g, unsubHtml);
 
   // Plaintext part mirrors the HTML copy (bodyIntro is HTML-escaped for the markup; unescape
@@ -202,7 +209,7 @@ export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null)
     ...(targetName ? enrLines.map((l) => `  • ${l}`) : []),
     targetName ? `\nRecords update continuously — there may be new details since you last looked.` : '',
     '',
-    `${targetName ? 'Unlock it here' : 'Finish here'}: ${unlockUrl(target, stage)}`,
+    `${targetName ? 'Unlock it here' : 'Finish here'}: ${cta}`,
     '',
     `Secure checkout · Cancel anytime · Instant access`,
     '',
