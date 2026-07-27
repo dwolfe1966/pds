@@ -31,9 +31,10 @@ export const CHECKOUT_ABANDONED_HTML = `<body style="margin:0;padding:0;backgrou
           <p style="margin:0 0 8px;color:#94a3b8;font-size:11px;line-height:1.6;">
             {{brandName}} is not a consumer reporting agency under the Fair Credit Reporting Act (FCRA). Do not use for employment, tenant screening, credit, or any FCRA-regulated purpose.
           </p>
-          <p style="margin:0;color:#94a3b8;font-size:11px;">
+          <p style="margin:0 0 6px;color:#94a3b8;font-size:11px;">
             <a href="{{unsubscribeUrl}}" style="color:#94a3b8;">Unsubscribe</a>
           </p>
+          <p style="margin:0;color:#b6bfc9;font-size:11px;line-height:1.5;">{{postalAddress}}</p>
         </td></tr>
       </table>
     </td></tr>

@@ -16,6 +16,11 @@ import { CHECKOUT_ABANDONED_HTML } from './checkoutAbandonedTemplate.mjs';
 
 const BRAND = process.env.EMAIL_BRAND_NAME || 'IDLookup';
 const BASE = (process.env.EMAIL_BASE_URL || 'https://www.idlookup.ai').replace(/\/$/, '');
+// CAN-SPAM §7704(a)(5): every commercial email MUST carry the sender's valid physical postal address
+// (a PO box registered with USPS qualifies). Set EMAIL_POSTAL_ADDRESS on the SEO project. The abandon cron
+// refuses to send when this is empty, so we can't ship a non-compliant blast.
+export const POSTAL_ADDRESS = (process.env.EMAIL_POSTAL_ADDRESS || '').trim();
+export const hasPostalAddress = !!POSTAL_ADDRESS;
 
 // Provider selection: explicit EMAIL_PROVIDER wins; otherwise prefer whichever key is present (resend first).
 export const emailProvider = (process.env.EMAIL_PROVIDER || (process.env.RESEND_API_KEY ? 'resend' : 'sendgrid')).toLowerCase();
@@ -183,7 +188,8 @@ export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null,
     .replace(/\{\{ctaLabel\}\}/g, esc(ctaLabel))
     .replace(/\{\{targetCard\}\}/g, targetCard(target, e))
     .replace(/\{\{unlockUrl\}\}/g, esc(cta))
-    .replace(/\{\{unsubscribeUrl\}\}/g, unsubHtml);
+    .replace(/\{\{unsubscribeUrl\}\}/g, unsubHtml)
+    .replace(/\{\{postalAddress\}\}/g, esc(POSTAL_ADDRESS));
 
   // Plaintext part mirrors the HTML copy (bodyIntro is HTML-escaped for the markup; unescape
   // the couple of entities we introduce so the text part reads clean).
@@ -215,6 +221,7 @@ export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null,
     `Secure checkout · Cancel anytime · Instant access`,
     '',
     `Unsubscribe: ${usingAsm() ? '(one-click link in the email)' : unsubscribeUrl(row.email)}`,
+    POSTAL_ADDRESS ? POSTAL_ADDRESS : '',
   ].filter((l) => l !== '').join('\n');
 
   return { subject, html, text };

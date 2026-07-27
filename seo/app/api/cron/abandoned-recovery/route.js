@@ -12,13 +12,16 @@ import {
   getPendingFollowup,
   markRecoveryEmailed,
 } from '../../../../lib/leads-db.mjs';
-import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../../lib/email/send.mjs';
+import { hasSendgrid, renderCheckoutAbandoned, sendEmail, hasPostalAddress } from '../../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
 import { logSend, countSentToday, abandonDailyCap, suppressedSet, getFlag } from '../../../../lib/email/emails-db.mjs';
 import { mintAutoLoginUrl, hasBcAutoLogin } from '../../../../lib/bcAutoLogin.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Each row does enrich (Enformion) + mint (BC) + send (Resend) sequentially — a few seconds each. Cap the
+// per-run batch (below) so this comfortably fits; raise the ceiling too in case a run is slow.
+export const maxDuration = 60;
 
 // Real timers (owner 2026-07-13): 1st email 30 min after abandonment, 1 follow-up 24h later. Env-overridable
 // (set EMAIL_FIRST_DELAY_MIN / EMAIL_FOLLOWUP_DELAY_HOURS smaller to fast-test the cron flow).
@@ -87,6 +90,11 @@ export async function GET(req) {
   if (enabled && (await getFlag('abandon_paused')) === '1') {
     return json({ ...body, mode: 'all', skipped: 'paused (kill-switch active — /api/abandon-status?resume=1 to resume)' });
   }
+  // CAN-SPAM hard gate: never blast without a physical postal address in the footer. Test-to-one-inbox is
+  // exempt (it's not a commercial mailing to strangers).
+  if (enabled && !hasPostalAddress) {
+    return json({ ...body, mode: 'all', skipped: 'blocked: set EMAIL_POSTAL_ADDRESS (CAN-SPAM requires a physical postal address in every commercial email)' });
+  }
   // Data-rich only: recover ONLY abandoners who actually searched a person (we have a teaser hook). Rows with
   // no target render the weak generic "finish setting up" email — off-strategy, and those abandoners belong to
   // a cold-lead drip, not cart recovery. Override with ABANDON_INCLUDE_NO_TARGET=1.
@@ -110,6 +118,9 @@ export async function GET(req) {
     if (enabled && remaining <= 0) {
       return json({ ...body, mode: 'all', cap, sentToday: already, skipped: `daily cap reached (${already}/${cap})` });
     }
+    // Per-run batch cap: keep each invocation well under maxDuration AND spread the daily cap across the
+    // */15 runs (gentler on a warming domain than one burst). e.g. 8/run × several runs → 25/day.
+    if (enabled) remaining = Math.min(remaining, Number(process.env.ABANDON_PER_RUN || 8));
 
     // Pull candidates, drop suppressed (CAN-SPAM) in ONE batched query, then cap to the remaining budget.
     // First-emails take priority over follow-ups for the day's budget.

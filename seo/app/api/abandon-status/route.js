@@ -5,7 +5,7 @@
 // One place to watch the abandon-recovery send during warm-up and stop it fast if anything looks wrong.
 // Read-only except the explicit pause/resume flag flip. Secret-gated.
 import { hasLeadsDb, getPendingFirstEmail, getPendingFollowup } from '../../../lib/leads-db.mjs';
-import { hasSendgrid } from '../../../lib/email/send.mjs';
+import { hasSendgrid, hasPostalAddress } from '../../../lib/email/send.mjs';
 import { hasBcAutoLogin } from '../../../lib/bcAutoLogin.mjs';
 import {
   countSentToday, abandonDailyCap, recentSends, getFlag, setFlag, listSuppression,
@@ -75,7 +75,15 @@ export async function GET(req) {
       includeNoTarget,
       autoLoginConfigured: hasBcAutoLogin(),
       emailProviderConfigured: hasSendgrid,
+      postalAddressSet: hasPostalAddress, // CAN-SPAM — cron refuses to send if false
+      perRun: Number(process.env.ABANDON_PER_RUN || 8),
     },
+    blockers: [
+      !hasSendgrid && 'no email provider (RESEND_API_KEY)',
+      !hasPostalAddress && 'EMAIL_POSTAL_ADDRESS unset (CAN-SPAM)',
+      !enabled && 'ABANDON_ENABLED != 1',
+      paused && 'paused (kill-switch)',
+    ].filter(Boolean),
     suppression: (await listSuppression(100000)).length,
     recentErrors: errors24,
     recent,
