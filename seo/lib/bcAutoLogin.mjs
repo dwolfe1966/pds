@@ -68,11 +68,18 @@ async function csrPost(path, body, jar) {
 
 async function resolveUserId(email, jar) {
   const em = String(email || '').trim().toLowerCase();
-  // user.find (api.user.find → /database/search). BC honors filters under `query`.
-  const r = await csrPost('/database/search', { collectionName: 'users', query: { email: em } }, jar);
-  const docs = (r && (r.docs || r.raws || r.data)) || (Array.isArray(r) ? r : []);
-  const hit = docs.find((d) => String(d.email || '').toLowerCase() === em) || docs[0];
-  return hit ? (hit._id || hit.id) : null;
+  // user.find (api.user.find → /database/search). BC honors filters ONLY under `query`, and REQUIRES
+  // brandId (an unbranded query returns nothing / the wrong brand's docs). See apiWrapperCsr csrFindUsers.
+  const brandId = process.env.BC_BRAND_ID || 'idlookup';
+  const r = await csrPost('/database/search', { brandId, collectionName: 'users', query: { email: em } }, jar);
+  const docs = (Array.isArray(r) && r)
+    || r?.docs || r?.data || r?.raws || r?.results || r?.users
+    || r?.data?.docs || [];
+  const list = Array.isArray(docs) ? docs : [];
+  const hit = list.find((d) => String(d.email || '').toLowerCase() === em) || list[0];
+  // Diagnostics (no PII): how many docs came back + the response's top-level keys, so a miss is debuggable.
+  const debug = { docCount: list.length, keys: r && typeof r === 'object' && !Array.isArray(r) ? Object.keys(r).slice(0, 12) : (Array.isArray(r) ? ['<array>'] : []) };
+  return { userId: hit ? (hit._id || hit.id) : null, debug };
 }
 
 function extractUrl(r) {
@@ -93,8 +100,8 @@ export async function mintAutoLoginUrl(email, redirect) {
   if (!hasBcAutoLogin()) return { url: null, userId: null, error: 'not configured' };
   try {
     const jar = await csrLogin();
-    const userId = await resolveUserId(email, jar);
-    if (!userId) return { url: null, userId: null, error: 'user not found' };
+    const { userId, debug } = await resolveUserId(email, jar);
+    if (!userId) return { url: null, userId: null, error: 'user not found', debug };
     const r = await csrPost('/user/management/getAutoLoginUrl', { userId, redirect }, jar);
     const url = extractUrl(r);
     return { url, userId, error: url ? undefined : 'no url in response', raw: url ? undefined : r };
