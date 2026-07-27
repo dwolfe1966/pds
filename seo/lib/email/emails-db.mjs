@@ -45,6 +45,47 @@ export async function logSend({ email, campaign, subject, status, providerId, me
   } catch { /* best-effort */ }
 }
 
+// Domain warm-up ramp — the max NEW abandon sends per UTC day. Single source of truth (cron enforces it, the
+// status endpoint reports it). ABANDON_DAILY_CAP=N → fixed; ABANDON_RAMP=1 → auto-ramp by day; else 25/day.
+export const ABANDON_RAMP_SCHEDULE = [25, 25, 50, 50, 100, 100, 200, 300, 500, 750, 1000];
+export async function abandonDailyCap() {
+  if (process.env.ABANDON_DAILY_CAP) return Math.max(0, Number(process.env.ABANDON_DAILY_CAP) || 0);
+  if (process.env.ABANDON_RAMP === '1') {
+    const d = await daysSinceFirstSend('abandoned_%');
+    return d == null ? ABANDON_RAMP_SCHEDULE[0] : ABANDON_RAMP_SCHEDULE[Math.min(d, ABANDON_RAMP_SCHEDULE.length - 1)];
+  }
+  return 25;
+}
+
+// Tiny KV for runtime flags (e.g. an instant pause kill-switch that doesn't need a redeploy). Self-creating.
+let _kvReady = false;
+async function kv() {
+  if (!sql) return null;
+  if (!_kvReady) {
+    try { await sql`CREATE TABLE IF NOT EXISTS email_kv (key text PRIMARY KEY, value text, updated_at timestamptz DEFAULT now())`; _kvReady = true; }
+    catch { return null; }
+  }
+  return sql;
+}
+export async function getFlag(key) {
+  const s = await kv(); if (!s) return null;
+  try { const r = await s`SELECT value FROM email_kv WHERE key = ${key} LIMIT 1`; return r[0] ? r[0].value : null; } catch { return null; }
+}
+export async function setFlag(key, value) {
+  const s = await kv(); if (!s) return;
+  try { await s`INSERT INTO email_kv (key, value, updated_at) VALUES (${key}, ${String(value)}, now())
+                 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`; } catch { /* best-effort */ }
+}
+
+/** Most recent sends (any status) for a campaign family — for the monitoring dashboard. */
+export async function recentSends(like = 'abandoned_%', limit = 25) {
+  if (!sql) return [];
+  try {
+    return await sql`SELECT to_char(sent_at, 'MM-DD HH24:MI') AS at, campaign, email, status, left(subject, 60) AS subject, meta
+      FROM email_sends WHERE campaign LIKE ${like} ORDER BY sent_at DESC LIMIT ${Math.min(limit, 200)}`;
+  } catch { return []; }
+}
+
 /** How many sends of campaigns matching `like` went out today (UTC day)? Enforces the daily send cap
  *  across the many cron runs in a day. */
 export async function countSentToday(like = 'abandoned_%') {

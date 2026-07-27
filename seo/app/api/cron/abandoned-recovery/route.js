@@ -14,7 +14,7 @@ import {
 } from '../../../../lib/leads-db.mjs';
 import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
-import { logSend, countSentToday, daysSinceFirstSend, suppressedSet } from '../../../../lib/email/emails-db.mjs';
+import { logSend, countSentToday, abandonDailyCap, suppressedSet, getFlag } from '../../../../lib/email/emails-db.mjs';
 import { mintAutoLoginUrl, hasBcAutoLogin } from '../../../../lib/bcAutoLogin.mjs';
 
 export const runtime = 'nodejs';
@@ -24,20 +24,6 @@ export const dynamic = 'force-dynamic';
 // (set EMAIL_FIRST_DELAY_MIN / EMAIL_FOLLOWUP_DELAY_HOURS smaller to fast-test the cron flow).
 const FIRST_DELAY_MIN = Number(process.env.EMAIL_FIRST_DELAY_MIN || 30);
 const FOLLOWUP_DELAY_HOURS = Number(process.env.EMAIL_FOLLOWUP_DELAY_HOURS || 24);
-
-// Domain warm-up ramp — the max NEW sends per UTC day. Owner: start at 25/day, ratchet up.
-//   - ABANDON_DAILY_CAP=N  → hard fixed cap (simple; owner bumps it to ratchet).
-//   - ABANDON_RAMP=1       → auto-ramp by day index off the first send (no hardcoded start date).
-//   - neither              → 25/day flat.
-const RAMP = [25, 25, 50, 50, 100, 100, 200, 300, 500, 750, 1000];
-async function dailyCap() {
-  if (process.env.ABANDON_DAILY_CAP) return Math.max(0, Number(process.env.ABANDON_DAILY_CAP) || 0);
-  if (process.env.ABANDON_RAMP === '1') {
-    const d = await daysSinceFirstSend('abandoned_%');
-    return d == null ? RAMP[0] : RAMP[Math.min(d, RAMP.length - 1)];
-  }
-  return 25;
-}
 
 async function processStage(rows, stage) {
   let sent = 0, failed = 0;
@@ -97,6 +83,10 @@ export async function GET(req) {
   if (!enabled && !testEmail) {
     return json({ ...body, skipped: 'abandon recovery gated — set ABANDON_ENABLED=1 to launch, or ABANDON_TEST_EMAIL=you@example.com to test one inbox' });
   }
+  // Instant kill-switch: a DB flag (set via /api/abandon-status?pause=1) halts sending with NO redeploy.
+  if (enabled && (await getFlag('abandon_paused')) === '1') {
+    return json({ ...body, mode: 'all', skipped: 'paused (kill-switch active — /api/abandon-status?resume=1 to resume)' });
+  }
   // Data-rich only: recover ONLY abandoners who actually searched a person (we have a teaser hook). Rows with
   // no target render the weak generic "finish setting up" email — off-strategy, and those abandoners belong to
   // a cold-lead drip, not cart recovery. Override with ABANDON_INCLUDE_NO_TARGET=1.
@@ -114,7 +104,7 @@ export async function GET(req) {
   try {
     // Daily send cap (warm-up ramp), enforced across every cron run in the day. Test mode (single inbox) is
     // exempt from the cap so it always fires.
-    const cap = await dailyCap();
+    const cap = await abandonDailyCap();
     const already = enabled ? await countSentToday('abandoned_%') : 0;
     let remaining = enabled ? Math.max(0, cap - already) : Number.MAX_SAFE_INTEGER;
     if (enabled && remaining <= 0) {
