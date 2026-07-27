@@ -20,7 +20,19 @@ export async function GET(req) {
   const email = url.searchParams.get('e');
   const redirect = url.searchParams.get('redirect') || '/dashboard';
   if (!email) return Response.json({ ok: false, error: '?e=<email> required' }, { status: 400 });
-  if (!hasBcAutoLogin()) return Response.json({ ok: false, error: 'BC CSR creds not set (BC_CSR_API_URL / BC_CSR_USERNAME / BC_CSR_PASSWORD)' }, { status: 400 });
+  if (!hasBcAutoLogin()) {
+    // Report WHICH var the running function is missing (presence only — never the values).
+    return Response.json({
+      ok: false,
+      error: 'BC CSR creds not visible to the deployed function',
+      present: {
+        BC_CSR_API_URL: !!process.env.BC_CSR_API_URL,
+        BC_CSR_USERNAME: !!process.env.BC_CSR_USERNAME,
+        BC_CSR_PASSWORD: !!process.env.BC_CSR_PASSWORD,
+      },
+      hint: 'All three must be true. If any is false: set it (Production scope) and REDEPLOY — env changes only apply to new deployments.',
+    }, { status: 400 });
+  }
 
   const r = await mintAutoLoginUrl(email, redirect);
   // Include the mint timestamp so we can compute the TTL when we re-test the link.
