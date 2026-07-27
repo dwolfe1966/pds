@@ -70,15 +70,29 @@ export async function GET(req) {
   if (!to) return Response.json({ ok: false, error: '&to=<inbox> required when send=1' }, { status: 400 });
   if (!hasSendgrid) return Response.json({ ok: false, error: 'no email provider configured' }, { status: 400 });
 
+  // Optional: force-include specific addresses (e.g. the owner's OWN account) so a login-link email is
+  // GUARANTEED in the test even if this batch has no account-holders. Synthesized as no-target rows → the
+  // account-activation variant, which still carries the auto-login CTA. Safe to click (their own account).
+  const includeEmails = (url.searchParams.get('include') || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const includeAnnotated = [];
+  for (const em of includeEmails) {
+    const account = canAuto ? await hasBcAccount(em).catch(() => false) : false;
+    includeAnnotated.push({ id: `include:${em}`, email: em, target: null, hasAccount: account, _synthetic: true });
+  }
+
   // Bias the sample to include account-holders (so the login-link CTA is testable) then fill the rest randomly.
   const withAcct = shuffle(annotated.filter((a) => a.hasAccount));
   const without = shuffle(annotated.filter((a) => !a.hasAccount));
   const wantAcct = Math.min(withAcct.length, Math.min(2, sample));
-  const picked = shuffle([...withAcct.slice(0, wantAcct), ...without, ...withAcct.slice(wantAcct)].slice(0, sample));
+  const fromBatch = shuffle([...withAcct.slice(0, wantAcct), ...without, ...withAcct.slice(wantAcct)])
+    .slice(0, Math.max(0, sample - includeAnnotated.length));
+  const picked = [...includeAnnotated, ...fromBatch];
 
   const sent = [];
   for (const a of picked) {
-    const row = rows.find((r) => r.id === a.id);
+    const row = a._synthetic
+      ? { id: a.id, email: a.email, person_id: null, meta: {} }
+      : rows.find((r) => r.id === a.id);
     try {
       const target = row.meta && typeof row.meta === 'object' ? row.meta.target : null;
       const enrichment = target ? await enrichAbandonTarget(target).catch(() => null) : null;
