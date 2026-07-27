@@ -293,8 +293,10 @@ export function renderRemarketing({ step = 1, firstName, email, query, searchTyp
   return { subject: s.subject, html, text };
 }
 
+// NOTE: `welcome` is intentionally NOT registered (owner VIP 2026-07-27): no account-created email pre-payment.
+// renderWelcome stays exported (for the test endpoint / a possible future POST-PAY welcome) but sendCampaign
+// can't trigger it, so even an old consumer bundle that still requests 'welcome' just no-ops server-side.
 const CAMPAIGNS = {
-  welcome: renderWelcome,
   lead_remarketing_1: (v) => renderRemarketing({ ...v, step: 1 }),
   lead_remarketing_2: (v) => renderRemarketing({ ...v, step: 2 }),
   lead_remarketing_3: (v) => renderRemarketing({ ...v, step: 3 }),
