@@ -235,7 +235,41 @@ export function renderWelcome({ firstName, email } = {}) {
 }
 
 // Campaign registry — render(vars) → {subject,html,text}. Add lifecycle flows here.
-const CAMPAIGNS = { welcome: renderWelcome };
+/** Lead-list re-engagement drip (4 steps) — the un-converted lead never subscribed; nudge them back into the
+ *  name funnel. Escalates: results-ready → still-waiting → membership value → last-chance. CTA → /name/landing/v3. */
+export function renderRemarketing({ step = 1, firstName, email } = {}) {
+  const name = (firstName || '').toString().trim();
+  const unsub = unsubscribeUrl(email);
+  const unsubHtml = usingAsm() ? unsub : esc(unsub);
+  const campaign = `lead_remarketing_${step}`;
+  const cta = `${BASE}/name/landing/v3?utm_source=email&utm_medium=reengagement&utm_campaign=${campaign}`;
+  const STEPS = {
+    1: { subject: 'Your search results are ready', pre: 'Pick up where you left off.',
+         h: 'Your search results are ready', p: "You started looking someone up on IDLookup but didn't finish. Your results are compiled and waiting — pick up right where you left off.", c: 'See my results →' },
+    2: { subject: 'Still want to see who you were looking up?', pre: 'Your report is still waiting.',
+         h: 'Your report is still waiting', p: 'Addresses, phone numbers, relatives, and public records — pull the full report anytime. It only takes a moment.', c: 'Finish my search →' },
+    3: { subject: 'One search is rarely enough', pre: 'Unlimited searches, one membership.',
+         h: 'One search is rarely enough', p: 'Members run unlimited people searches — check a date, an unknown caller, a new neighbor, or yourself. Cancel anytime.', c: 'Start searching →' },
+    4: { subject: 'Last chance — your results clear soon', pre: "Your compiled results won't stay ready forever.",
+         h: 'Before your results clear', p: 'This is the last reminder about the search you started. Pick it back up before it clears from our system.', c: 'See my results →' },
+  };
+  const s = STEPS[step] || STEPS[1];
+  const body = `
+    <h1 style="margin:0 0 12px;font-size:22px;color:#0f172a;">${esc(s.h)}${name ? `, ${esc(name)}` : ''}</h1>
+    <p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">${esc(s.p)}</p>
+    <a href="${esc(cta)}" style="display:inline-block;background:#0d5d2f;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:8px;font-size:15px;">${esc(s.c)}</a>`;
+  const html = renderLayout({ preheader: s.pre, bodyHtml: body, unsubHtml });
+  const text = [`${s.h}${name ? `, ${name}` : ''}`, '', s.p, '', `${s.c.replace(/\s*→\s*$/, '')}: ${cta}`].join('\n');
+  return { subject: s.subject, html, text };
+}
+
+const CAMPAIGNS = {
+  welcome: renderWelcome,
+  lead_remarketing_1: (v) => renderRemarketing({ ...v, step: 1 }),
+  lead_remarketing_2: (v) => renderRemarketing({ ...v, step: 2 }),
+  lead_remarketing_3: (v) => renderRemarketing({ ...v, step: 3 }),
+  lead_remarketing_4: (v) => renderRemarketing({ ...v, step: 4 }),
+};
 
 /**
  * Suppression-aware, logged send. Either pass a registered `campaign` + `vars` (rendered here), or a

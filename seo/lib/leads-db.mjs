@@ -96,3 +96,31 @@ export async function markRecoveryEmailed(id, stage) {
     await sql`UPDATE abandoned_checkouts SET emailed_at = now() WHERE id = ${id}`;
   }
 }
+
+// ── Lead-list re-engagement drip (read by the lead-reengagement cron) ────────
+// Unique, non-suppressed leads with their remarketing progress, so the cron can compute each lead's next
+// step. Progress is derived from the shared email_sends log (campaign like 'lead_remarketing_%'), so no new
+// per-lead state table is needed. Excludes anyone who finished all 4 steps.
+export async function getReengagementCandidates(limit = 1000) {
+  if (!sql) return [];
+  try {
+    const rows = await sql`
+      SELECT lower(l.email) AS email,
+             max(COALESCE(l.captured_at, l.received_at)) AS captured_at,
+             (SELECT count(*) FROM email_sends s
+                WHERE s.email = lower(l.email) AND s.campaign LIKE 'lead_remarketing_%' AND s.status = 'sent') AS steps_sent,
+             (SELECT max(s.sent_at) FROM email_sends s
+                WHERE s.email = lower(l.email) AND s.campaign LIKE 'lead_remarketing_%' AND s.status = 'sent') AS last_sent
+      FROM leads l
+      WHERE l.email IS NOT NULL AND l.email <> ''
+        AND lower(l.email) NOT IN (SELECT email FROM email_suppression)
+      GROUP BY lower(l.email)
+      HAVING (SELECT count(*) FROM email_sends s
+                WHERE s.email = lower(l.email) AND s.campaign LIKE 'lead_remarketing_%' AND s.status = 'sent') < 4
+      ORDER BY captured_at ASC
+      LIMIT ${Math.min(2000, Math.max(1, limit))}`;
+    return (rows || []).map((r) => ({
+      email: r.email, capturedAt: r.captured_at, stepsSent: Number(r.steps_sent) || 0, lastSentAt: r.last_sent,
+    }));
+  } catch { return []; }
+}

@@ -112,3 +112,25 @@ first-party endpoint instead). Redeploy the SEO app after setting envs.
    dashboard for the delivered event and `email_sends` for a logged row.
 3. Click the footer **Unsubscribe** → confirmation page; verify the address lands in `email_suppression`
    and a subsequent send to it returns `status: 'suppressed'`.
+
+---
+
+## Lead-list re-engagement drip (built 2026-07-27)
+
+Separate from abandoned-recovery: a 4-step remarketing series to the **internal lead list** (`leads` table —
+un-converted emails who never subscribed), nudging them back into the name funnel (`/name/landing/v3`).
+
+- **Templates:** `renderRemarketing(step)` in `send.mjs` (steps 1-4: results-ready → still-waiting →
+  membership-value → last-chance). Registered as campaigns `lead_remarketing_1..4`.
+- **Sequencing:** `getReengagementCandidates()` (leads-db) reads each unique, non-suppressed lead's progress
+  from the shared `email_sends` log — no new state table. `cron/lead-reengagement` computes each lead's due
+  step: step 1 after `LEAD_RM_FLOOR_HOURS` (default 12h, so we don't email a just-captured lead), then gaps of
+  `LEAD_RM_GAP_DAYS` (default 2,3,4 days) → a ~9-day drip. `sendCampaign` de-dupes + logs, so a lead never
+  gets a step twice and advances one step per eligible run.
+- **Schedule/cap:** `0 */6 * * *` × `LEAD_RM_BATCH` (default 20) = **~80 sends/day** — under Resend's free
+  100/day cap (shared with abandoned/welcome). Raise `LEAD_RM_BATCH` (and/or cadence) once on a paid plan.
+- **Suppression/unsubscribe:** every send honors `isSuppressed` + carries the one-click List-Unsubscribe.
+- **Known gap:** no clean "already converted" flag on `leads`, so the drip may reach a lead who since
+  subscribed — copy is "come back/finish" (harmless), and they can unsubscribe. Add a BC/customer exclusion
+  join later to tighten.
+- **Activation:** rides the same Resend setup — nothing extra. No-ops until `RESEND_API_KEY` is set.
