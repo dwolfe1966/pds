@@ -47,16 +47,23 @@ function template() {
   return CHECKOUT_ABANDONED_HTML;
 }
 
-/** Build the resume link back into the unlock flow (login → member person detail). */
-function unlockUrl(personId, stage) {
-  const redirect = personId ? `/people/${encodeURIComponent(personId)}` : '/dashboard';
-  const qs = new URLSearchParams({
-    redirect,
-    utm_source: 'email',
-    utm_medium: 'abandoned_recovery',
-    utm_campaign: stage === 'followup' ? 'checkout_abandoned_followup' : 'checkout_abandoned',
-  });
-  return `${BASE}/login?${qs.toString()}`;
+// Resume link — re-runs the recipient's OWN search on the v3 landing, prefilled with the target (stable +
+// FCRA-consent-preserving). NOT /people/<extId>: that person_id is BC's ephemeral obf1 extId, which
+// re-encrypts every call and won't resolve later. NOT auto-login: prod sessions are BC session cookies we
+// can't capture/replay from an email (see Path-B finding 2026-07-27) — true auto-login is a BC ask.
+function unlockUrl(target, stage) {
+  const utm = `utm_source=email&utm_medium=abandoned_recovery&utm_campaign=${stage === 'followup' ? 'checkout_abandoned_followup' : 'checkout_abandoned'}`;
+  const parts = String((target && target.name) || '').trim().split(/\s+/).filter(Boolean);
+  const st = (String((target && target.location) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1];
+  if (parts.length >= 2) {
+    const tc = (s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    const p = new URLSearchParams();
+    p.set('fn', tc(parts[0]));
+    p.set('ln', tc(parts[parts.length - 1]));
+    if (st) p.set('state', st.toUpperCase());
+    return `${BASE}/name/landing/v3?${p.toString()}&${utm}`;
+  }
+  return `${BASE}/name/landing/v3?${utm}`;
 }
 
 // Unsubscribe link. Preferred path is a SendGrid ASM group: when EMAIL_ASM_GROUP_ID is set,
@@ -167,7 +174,7 @@ export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null)
     .replace(/\{\{bodyIntro\}\}/g, bodyIntro)
     .replace(/\{\{ctaLabel\}\}/g, esc(ctaLabel))
     .replace(/\{\{targetCard\}\}/g, targetCard(target, e))
-    .replace(/\{\{unlockUrl\}\}/g, esc(unlockUrl(row.person_id, stage)))
+    .replace(/\{\{unlockUrl\}\}/g, esc(unlockUrl(target, stage)))
     .replace(/\{\{unsubscribeUrl\}\}/g, unsubHtml);
 
   // Plaintext part mirrors the HTML copy (bodyIntro is HTML-escaped for the markup; unescape
@@ -195,7 +202,7 @@ export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null)
     ...(targetName ? enrLines.map((l) => `  • ${l}`) : []),
     targetName ? `\nRecords update continuously — there may be new details since you last looked.` : '',
     '',
-    `${targetName ? 'Unlock it here' : 'Finish here'}: ${unlockUrl(row.person_id, stage)}`,
+    `${targetName ? 'Unlock it here' : 'Finish here'}: ${unlockUrl(target, stage)}`,
     '',
     `Secure checkout · Cancel anytime · Instant access`,
     '',
