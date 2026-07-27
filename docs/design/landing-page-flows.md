@@ -88,6 +88,29 @@ Auto-prime from URL params (person-primed) → loader → SERP; cold traffic (no
 | `/records/background-check` | **(b) primed + (c) cold** — background-check hook; arrest/booking pre-pay, full criminal post-pay |
 | `/records/public-records` | **(d) cold** — public-records hook + any pre-pay booking/marriage hits; full records post-pay |
 
+### Homefacts / partner URL structure
+
+Homefacts links go **directly** to `/records/*` — there is **no `/?shn=` boot redirect** (`landing.route` is null in the registry). Each link carries:
+
+- **Person params (primed):** `fn` / `firstName`, `ln` / `lastName`, `mn` / `middleName`, `city`, `state`, and `type` (drives the teaser subject). Present → **auto-prime → loader → SERP**. Absent → the **cold 4-step wizard**.
+- **Attribution:** `?shn=` with one token per experience so BC + GTM attribute each URL distinctly (`partner=Homefacts`, `channel=`the intent):
+  - `homefacts-so` → `/records/sex-offender`
+  - `homefacts-bg` → `/records/background-check`
+  - `homefacts-pr` → `/records/public-records`
+  - Optional `?shl=<shColId>` for finer placement within an intent. *(These are PLACEHOLDER shN tokens — swap for real BC-provisioned shConIds when minted.)*
+
+**Example homefacts URLs:**
+```text
+# Sex-offender, person-primed (arrives from an offender-detail page)
+https://www.idlookup.ai/records/sex-offender?shn=homefacts-so&fn=Robert&ln=Orlando&city=Miami&state=FL
+
+# Background-check, person-primed
+https://www.idlookup.ai/records/background-check?shn=homefacts-bg&fn=Jane&ln=Doe&city=Austin&state=TX
+
+# Public-records, cold (no person params → wizard)
+https://www.idlookup.ai/records/public-records?shn=homefacts-pr
+```
+
 ---
 
 ## Identity / self-check flows
@@ -95,6 +118,65 @@ Auto-prime from URL params (person-primed) → loader → SERP; cold traffic (no
 | Route | Headline | Angle / notes |
 |---|---|---|
 | **`/see-who`** | See Who's Searching For You | **WSFY** (`WsfyLandingPage`) — identity-confirm wizard (name+city+age+email/phone) → self-match → KBA/DL verify → silent account → `/payment?reason=wsfy`. The convert engine that `/phone/exposure` + `/email/exposure` hand off to. |
+
+---
+
+## Example URLs (copy-paste)
+
+Base domain = `https://www.idlookup.ai`. Name landings accept optional prefill (`fn`/`firstName`, `ln`/`lastName`, `city`, `state`). Paid Google traffic actually enters at `/?shn=<24-hex shConId>` and boot-redirects to the campaign's landing (v3) — the direct URLs below also work for testing.
+
+```text
+# ── Paid entry (redirects to the campaign landing, today v3) ──
+https://www.idlookup.ai/?shn=1a2b3c4d5e6f7a8b9c0d1e2f
+
+# ── Name ──
+https://www.idlookup.ai/name/landing
+https://www.idlookup.ai/name/landing/v2
+https://www.idlookup.ai/name/landing/v3?fn=John&ln=Smith&state=TX      # ⭐ paid workhorse (incarceration)
+https://www.idlookup.ai/name/landing/v3a
+https://www.idlookup.ai/name/landing/v3b
+https://www.idlookup.ai/name/landing/v4                                 # lost relatives
+https://www.idlookup.ai/name/landing/v5                                 # classmates/colleagues
+https://www.idlookup.ai/name/landing/v6                                 # date safely
+https://www.idlookup.ai/name/landing/v7                                 # design: Spokeo-blue
+https://www.idlookup.ai/name/landing/v8                                 # design: dark premium
+https://www.idlookup.ai/name/landing/v9                                 # design: minimal white
+https://www.idlookup.ai/name/landing/v10                                # design: warm safety
+https://www.idlookup.ai/name/landing/v11                                # BeenVerified-style flow
+https://www.idlookup.ai/name/landing/v12                                # divorce/marriage intent
+https://www.idlookup.ai/name/landing/v13                                # death/obituary intent
+https://www.idlookup.ai/name/landing/v14                                # dating verification
+
+# ── Phone ──
+https://www.idlookup.ai/phone/landing
+https://www.idlookup.ai/phone/landing/v1                                # ⭐ single-owner reveal (P1)
+https://www.idlookup.ai/phone/landing/v2                                # who owns this number
+https://www.idlookup.ai/phone/landing/v3                                # who called me
+https://www.idlookup.ai/phone/landing/v4                                # find a lost contact
+https://www.idlookup.ai/phone/landing/v5                                # legitimate business?
+https://www.idlookup.ai/phone/landing/v6                                # verify before you meet
+https://www.idlookup.ai/phone/safe                                      # P2 — is this call safe (Twilio)
+https://www.idlookup.ai/phone/exposure                                  # P3 — reverse your own number
+
+# ── Email ──
+https://www.idlookup.ai/email/landing
+https://www.idlookup.ai/email/landing/v2                                # who owns this email
+https://www.idlookup.ai/email/landing/v3                                # who sent this email
+https://www.idlookup.ai/email/landing/v4                                # reconnect
+https://www.idlookup.ai/email/landing/v5                                # verify a business contact
+https://www.idlookup.ai/email/landing/v6                                # verify before you trust
+https://www.idlookup.ai/email/exposure                                  # E3 — is your email exposed (HIBP)
+
+# ── Records (Homefacts) — see the structure above ──
+https://www.idlookup.ai/records/sex-offender?shn=homefacts-so&fn=Robert&ln=Orlando&city=Miami&state=FL
+https://www.idlookup.ai/records/background-check?shn=homefacts-bg&fn=Jane&ln=Doe&city=Austin&state=TX
+https://www.idlookup.ai/records/public-records?shn=homefacts-pr
+
+# ── Identity / self-check ──
+https://www.idlookup.ai/see-who                                         # WSFY convert engine
+https://www.idlookup.ai/see-who?email=jane@example.com                  # prefilled from E3
+https://www.idlookup.ai/see-who?phone=3105551234                        # prefilled from P3
+```
 
 ---
 
