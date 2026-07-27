@@ -93,7 +93,11 @@
 - [SEO recovery brainstorm](project_seo_recovery.md) — pivot to first-party verticals (INMATE lead) + authority; prune thin pages
 - [idlookup.ai/people migration scoping](project_seo_indexing_incident.md) — docs/seo/idlookup-ai-people-migration-scoping.md; subdomain people.idlookup.ai via 1 CNAME (grey-cloud DNS + /people/:id collision rule out subpath)
 - [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on SEO Vercel; PAUSED pending owner domain-auth + Vercel envs
+- [Auto-login for abandon emails](project_autologin_abandon.md) — WORKING e2e via existing BC methods (no ask); CSR login→userId→getAutoLoginUrl; redirect MUST be /auth/session?next=; TTL open
 - [CSR billing classification](project_csr_billing_classification.md) — M-code taxonomy (M0/M{n}+D declines, owner/CEO 2026-07-23); fraud/stolen decline does NOT pause access (flag only); Inactive splits voluntary/involuntary; aligned to admin view 72/72 live; admin.40bd8cf3.js
 - [3 new marketing angles + source-zip](project_marketing_angles.md) — marriage/divorce, WSFY, check-your-date funnels (docs/marketing); ⚠️ hardcoded creds in csrApiService.js flagged
 - [Homefacts 70k partner traffic test](project_homefacts_traffic.md) — 4 landing experiences (SO/background/public, primed+cold); params pre-fill; gates resolved
 - [Session end 2026-07-22](project_session_end_2026_07_22.md) — latest pickup: CSR billing overhaul, impersonation done, onboarding fixes; then HP-4 CA-cancel + terminal-stop fix (this session)
+- [Email-on-payment one-screen checkout](project_email_on_payment_flow.md) — phone reveal → /payment?capture=email; ensureAccount ordering (_pendingPw before sale or 401) + visitorSearchLog replay = Activity
+- [Phone/email flow roadmap + competitor synthesis](project_phone_email_flow_roadmap.md) — Twilio approved; P1/P2/P3 phone + E3 email; phone=safety-product, honest-loader, descriptive-spam-only
+- [Identity Control & Owner Voice (product thesis)](project_identity_control_owner_voice.md) — owner controls visibility of every facet + UGC comments on records; Hide enforcement is a STUB (isSuppressed→member_suppression); spec in docs/product
