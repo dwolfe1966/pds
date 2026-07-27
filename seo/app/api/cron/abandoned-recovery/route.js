@@ -17,8 +17,11 @@ import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../../lib
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const FIRST_DELAY_MIN = Number(process.env.EMAIL_FIRST_DELAY_MIN || 30);
-const FOLLOWUP_DELAY_HOURS = Number(process.env.EMAIL_FOLLOWUP_DELAY_HOURS || 24);
+// ⚠️ TEST TIMERS (2026-07-27) — short delays so email flows can be tested by just using the site. RATCHET
+// BACK UP before real launch: set env EMAIL_FIRST_DELAY_MIN=30 / EMAIL_FOLLOWUP_DELAY_HOURS=24 on Vercel, or
+// revert these defaults to 30 / 24.
+const FIRST_DELAY_MIN = Number(process.env.EMAIL_FIRST_DELAY_MIN || 2);
+const FOLLOWUP_DELAY_HOURS = Number(process.env.EMAIL_FOLLOWUP_DELAY_HOURS || 1);
 
 async function processStage(rows, stage) {
   let sent = 0, failed = 0;

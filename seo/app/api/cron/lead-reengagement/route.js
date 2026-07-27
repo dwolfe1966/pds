@@ -12,7 +12,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-const FLOOR_H = Number(process.env.LEAD_RM_FLOOR_HOURS || 12);            // don't email a just-captured lead
+// ⚠️ TEST TIMER (2026-07-27) — floor lowered to 0 so a fresh test signup is drip-eligible immediately.
+// RATCHET BACK UP before launch: set env LEAD_RM_FLOOR_HOURS=12 on Vercel, or revert this default to 12.
+const FLOOR_H = Number(process.env.LEAD_RM_FLOOR_HOURS || 0);             // don't email a just-captured lead
 const GAP_DAYS = (process.env.LEAD_RM_GAP_DAYS || '2,3,4').split(',').map((n) => Number(n) || 3); // gaps for steps 2/3/4
 const BATCH = Number(process.env.LEAD_RM_BATCH || 20);                    // sends per run (× runs/day ≤ ESP cap)
 const DELAY_MS = Number(process.env.LEAD_RM_DELAY_MS || 600);            // pacing between sends
@@ -38,6 +40,11 @@ function dueStep(c, now) {
 export async function GET(req) {
   if (!authorized(req)) return new Response('unauthorized', { status: 401 });
   if (!hasEmail) return Response.json({ ok: true, skipped: 'email provider not configured' });
+  // Safety gate: the drip stays OFF until explicitly launched, so a test session (or an early deploy) never
+  // blasts the real 325-lead list before deliverability is verified. Set LEAD_RM_ENABLED=1 on Vercel to launch.
+  if (process.env.LEAD_RM_ENABLED !== '1') {
+    return Response.json({ ok: true, skipped: 'lead drip disabled — set LEAD_RM_ENABLED=1 to launch' });
+  }
 
   const now = Date.now();
   const candidates = await getReengagementCandidates(2000);
