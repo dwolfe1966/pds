@@ -3,7 +3,7 @@
 // domain auth/deliverability, template render, from-address, unsubscribe). Renders our real templates to the
 // ONE specified recipient — does NOT touch the lead list or suppression. Guarded by CRON_SECRET (Bearer or
 // ?secret=). Remove or leave (harmless) after verifying.
-import { sendEmail, renderWelcome, renderRemarketing, hasEmail, emailProvider } from '../../../lib/email/send.mjs';
+import { sendEmail, renderWelcome, renderRemarketing, hasEmail, emailProvider } from '../../../../lib/email/send.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
