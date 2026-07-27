@@ -10,13 +10,10 @@
 //   EMAIL_ASM_GROUP_ID     SendGrid-only unsubscribe-group id (server-side unsub). Ignored by Resend.
 //   EMAIL_UNSUBSCRIBE_URL  first-party unsubscribe endpoint (default idlookup.me/api/email/unsubscribe) — used
 //                          by Resend + any non-ASM provider, and for the List-Unsubscribe header.
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import sgMail from '@sendgrid/mail';
 import { isSuppressed, logSend } from './emails-db.mjs';
+import { CHECKOUT_ABANDONED_HTML } from './checkoutAbandonedTemplate.mjs';
 
-const DIR = path.dirname(fileURLToPath(import.meta.url));
 const BRAND = process.env.EMAIL_BRAND_NAME || 'IDLookup';
 const BASE = (process.env.EMAIL_BASE_URL || 'https://www.idlookup.ai').replace(/\/$/, '');
 
@@ -46,10 +43,8 @@ function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-let _tpl = null;
 function template() {
-  if (_tpl == null) _tpl = fs.readFileSync(path.join(DIR, 'checkout-abandoned.html'), 'utf8');
-  return _tpl;
+  return CHECKOUT_ABANDONED_HTML;
 }
 
 /** Build the resume link back into the unlock flow (login → member person detail). */
