@@ -28,6 +28,18 @@ export const hasEmail = emailProvider === 'resend' ? !!process.env.RESEND_API_KE
 export const hasSendgrid = hasEmail;
 if (emailProvider === 'sendgrid' && process.env.SENDGRID_API_KEY) sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+// Resolve a provider-valid From. A malformed EMAIL_FROM must never nuke all email (Resend 422'd every send
+// on 2026-07-27 with "Invalid from field"). Extract the email; use bare `email` or normalize to `Name <email>`;
+// fall back to the default when EMAIL_FROM has no usable address.
+function resolveFrom() {
+  const raw = (process.env.EMAIL_FROM || '').trim();
+  const email = (raw.match(/[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+/) || [])[0];
+  if (!email) return `${BRAND} <alerts@idlookup.me>`;
+  if (raw === email) return email;
+  const name = raw.replace(email, '').replace(/[<>"']/g, '').trim() || BRAND;
+  return `${name} <${email}>`;
+}
+
 function esc(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -167,7 +179,7 @@ function unsubEndpoint(email) {
  *  array ([{ headers: { 'x-message-id' } }]) so callers can extract a provider id uniformly. */
 export async function sendEmail({ to, subject, html, text }) {
   if (!hasEmail) throw new Error(`${emailProvider} not configured`);
-  const from = process.env.EMAIL_FROM || `${BRAND} <alerts@idlookup.me>`;
+  const from = resolveFrom();
 
   if (emailProvider === 'resend') {
     // Resend has no ASM; add RFC 8058 one-click List-Unsubscribe (Gmail/Yahoo bulk requirement) pointing at

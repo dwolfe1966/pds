@@ -7,7 +7,6 @@ import { gtmEvent, gtmSignUp } from '../services/gtm';
 import { setUser as gtmSetUser } from '../services/gtmContext';
 import { recordLogin } from '../services/loginHistory';
 import { captureEmail } from '../services/emailCapture';
-import { sendCampaignEmail } from '../services/emailService';
 import { readLog as readVisitorSearchLog, clearLog as clearVisitorSearchLog } from '../services/visitorSearchLog';
 
 /**
@@ -139,8 +138,9 @@ export function useSignup() {
           phone: userData.phone || extraPayload?.phone,
           zip: userData.zip || extraPayload?.zip,
         });
-        // Welcome email via our own platform (fire-and-forget; no-op until SendGrid is live).
-        sendCampaignEmail({ to: email, campaign: 'welcome', vars: { firstName: userData.firstName || extraPayload?.firstName || '' }, meta: { source: 'signup' } });
+        // NO account-created/welcome email here (owner VIP 2026-07-27): signup is free/pre-payment, so we do
+        // NOT email until they pay. Transactional account emails post-payment are BC's job; our platform sends
+        // MARKETING only (abandoned-cart recovery + the lead drip).
       }
 
       // Store password (encoded) so PaymentPage can call changePassword after billing.sale.
