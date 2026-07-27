@@ -20,6 +20,10 @@ Recovery/abandon emails can auto-log a user in (no password) using ONLY existing
 
 **Security:** needs CSR ADMIN creds in the SEO/marketing backend (can impersonate anyone). Owner-accepted tradeoff 2026-07-27. Env on SEO Vercel: `BC_CSR_API_URL` (`https://admin.www.bytecrtrs.com/api`), `BC_CSR_USERNAME` (admin email), `BC_CSR_PASSWORD`, optional `BC_BRAND_ID`. Never returns creds to client; only the short-lived link.
 
-**OPEN: link TTL** — must survive the email-open delay (minutes → ~24h). Not yet measured. Test: mint, click now (works), re-click hours later. If short, mint at send-time (delivery is seconds; most opens < 1h) or file a BC ask to extend.
+**CONFIRMED working** 2026-07-27: fresh direct mint → /dashboard logged in; abandon-preview emails logged `cta:auto-login` for account holders (dwolfe66) and `cta:prefill` for no-account rows (correct split).
+
+**OPEN: emailed-link TTL** — a fresh mint works instantly, but an EMAILED auto-login link clicked later is not yet measured (the /v3 landing the owner saw was a PREFILL email, not an expired auto-login). Must survive the open delay (minutes → ~24h). We mint at send-time (delivery is seconds; most opens <1h). Still worth a click-hours-later test; if short, file a BC ask to extend.
+
+**No-account abandoner experience (owner 2026-07-27 "push deeper"):** prefill link lands them at the TOP of the v3 inmate search FORM (prefilled, but they re-click through). Deeper = land on their person's teaser/results. ⚠️ Two gates before repointing: (1) FCRA consent — v3 requires the agree checkbox (handleConfirm) BEFORE runSearch→/name/loader; a raw deep-link to /name/loader bypasses it. (2) search contextKey landmine [[feedback_search_contextkey]]. Safe design = prefill + auto-advance to the consent step (one click → /name/loader?firstName&lastName&state&flow=inmate → results).
 
 Test URL: `https://idlookup.me/api/auth-link-test?e=<email>&secret=<CRON_SECRET>` (mint), `&probe=1` (diagnose lookup), `&next=/my-identity` (set dest).
