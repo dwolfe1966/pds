@@ -13,6 +13,7 @@ import {
   markRecoveryEmailed,
 } from '../../../../lib/leads-db.mjs';
 import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../../lib/email/send.mjs';
+import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,11 @@ async function processStage(rows, stage) {
   let sent = 0, failed = 0;
   for (const row of rows) {
     try {
-      const { subject, html, text } = renderCheckoutAbandoned(row, stage);
+      // Enrich the target with real teaser data (locations + booking + life-events) so the email leans hard
+      // into data. Self-gating + never throws → falls back to the plain card.
+      const target = row && row.meta && typeof row.meta === 'object' ? row.meta.target : null;
+      const enrichment = target ? await enrichAbandonTarget(target).catch(() => null) : null;
+      const { subject, html, text } = renderCheckoutAbandoned(row, stage, enrichment);
       await sendEmail({ to: row.email, subject, html, text });
       await markRecoveryEmailed(row.id, stage);
       sent++;

@@ -77,20 +77,41 @@ function unsubscribeUrl(email) {
 }
 
 /** Target person card (Name / Age / Location) — only when we know a name. */
-function targetCard(target) {
+// Data-rich target card — lean HARD into whatever teaser data we have (owner 2026-07-27), + imply the report
+// has shifted since they saw it. Every line self-gates, so it shows only real data.
+function targetCard(target, enr) {
   const name = target && target.name ? String(target.name).trim() : '';
   if (!name) return '';
-  const bits = [];
-  if (target.age) bits.push(`Age ${esc(target.age)}`);
-  if (target.location) bits.push(esc(target.location));
-  const sub = bits.length
-    ? `<div style="font-size:14px;color:#475569;margin-top:4px;">${bits.join(' &nbsp;·&nbsp; ')}</div>`
-    : '';
+  const e = enr || {};
+  const rows = [];
+  if (e.cityCount > 0) {
+    const shown = (e.cities || []).slice(0, 3).join(', ');
+    const more = e.cityCount > 3 ? ` +${e.cityCount - 3} more` : '';
+    rows.push(`📍 <strong>${e.cityCount} known ${e.cityCount === 1 ? 'city' : 'cities'}</strong>: ${esc(shown)}${esc(more)}`);
+  } else if (target.location) {
+    rows.push(`📍 ${esc(String(target.location).split(';')[0].trim())}`);
+  }
+  if (e.bookingCount > 0 || e.courtCount > 0) {
+    const parts = [];
+    if (e.bookingCount) parts.push(`${e.bookingCount} booking record${e.bookingCount === 1 ? '' : 's'}`);
+    if (e.courtCount) parts.push(`${e.courtCount} court record${e.courtCount === 1 ? '' : 's'}`);
+    let line = `⚖️ <strong>${parts.join(' · ')}</strong>`;
+    if (e.charges && e.charges.length) line += ` — ${esc(e.charges.slice(0, 2).join(', '))}`;
+    rows.push(line);
+  }
+  const md = [];
+  if (e.marriageCount) md.push(`${e.marriageCount} marriage record${e.marriageCount === 1 ? '' : 's'}`);
+  if (e.divorceCount) md.push(`${e.divorceCount} divorce record${e.divorceCount === 1 ? '' : 's'}`);
+  if (md.length) rows.push(`💍 <strong>${esc(md.join(' · '))}</strong>`);
+
+  const detail = rows.map((r) => `<div style="font-size:14px;color:#334155;margin-top:6px;line-height:1.5;">${r}</div>`).join('');
+  const first = esc(name.split(/\s+/)[0] || 'this person');
   return `<table cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 20px;width:100%;">
             <tr><td style="border:1px solid #e5e7eb;border-radius:10px;padding:16px 18px;background:#f8fafc;">
               <div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Your report on</div>
-              <div style="font-size:18px;font-weight:700;color:#0f172a;">${esc(name)}</div>
-              ${sub}
+              <div style="font-size:19px;font-weight:800;color:#0f172a;">${esc(name)}${target.age ? `, ${esc(target.age)}` : ''}</div>
+              ${detail}
+              <div style="font-size:12.5px;color:#b45309;margin-top:12px;font-weight:600;">🔄 Records update continuously — ${first}'s report may have new details since you last looked.</div>
             </td></tr>
           </table>`;
 }
@@ -101,11 +122,16 @@ function targetCard(target) {
  * @param {'first'|'followup'} stage
  * @returns {{ subject, html, text }}
  */
-export function renderCheckoutAbandoned(row, stage = 'first') {
+export function renderCheckoutAbandoned(row, stage = 'first', enrichment = null) {
   const meta = (row && row.meta && typeof row.meta === 'object') ? row.meta : {};
   const firstName = (meta.recipientName || '').toString().trim();
   const target = meta.target || null;
   const targetName = target && target.name ? String(target.name).trim() : '';
+  const e = enrichment || {};
+  // Data hook for the subject line — the strongest thing we can lead with (records > addresses).
+  const recCount = (e.bookingCount || 0) + (e.courtCount || 0) + (e.marriageCount || 0) + (e.divorceCount || 0);
+  const dataHook = recCount > 0 ? `${recCount} record${recCount === 1 ? '' : 's'}`
+    : (e.cityCount > 1 ? `${e.cityCount} addresses` : '');
 
   // Copy branches on whether we know a target person. With a target it's a report-unlock
   // recovery ("unlock your report on John"); with no target (general/promo signup abandon,
@@ -116,11 +142,11 @@ export function renderCheckoutAbandoned(row, stage = 'first') {
     headline = `You're one step away on ${esc(targetName)}`;
     ctaLabel = 'Unlock My Report →';
     if (stage === 'followup') {
-      subject = `${namePrefix}${targetName}'s report is still waiting`;
-      bodyIntro = `your report on ${esc(targetName)} is still ready — you didn't finish checkout. Pick up right where you left off.`;
+      subject = dataHook ? `${namePrefix}${dataHook} on ${targetName} — still waiting` : `${namePrefix}${targetName}'s report is still waiting`;
+      bodyIntro = `your report on ${esc(targetName)} is still ready — and records update continuously, so there may be new details since you last looked. Pick up right where you left off.`;
     } else {
-      subject = `${namePrefix}unlock your report on ${targetName}`;
-      bodyIntro = `you started your report but didn't finish checkout. The results are compiled and ready — pick up right where you left off.`;
+      subject = dataHook ? `${namePrefix}${dataHook} found on ${targetName}` : `${namePrefix}unlock your report on ${targetName}`;
+      bodyIntro = `you started your report on ${esc(targetName)} but didn't finish checkout. Here's a snapshot of what's on file — the full report is ready to unlock.`;
     }
   } else {
     headline = "You're almost set up";
@@ -145,18 +171,34 @@ export function renderCheckoutAbandoned(row, stage = 'first') {
     .replace(/\{\{headline\}\}/g, headline)
     .replace(/\{\{bodyIntro\}\}/g, bodyIntro)
     .replace(/\{\{ctaLabel\}\}/g, esc(ctaLabel))
-    .replace(/\{\{targetCard\}\}/g, targetCard(target))
+    .replace(/\{\{targetCard\}\}/g, targetCard(target, e))
     .replace(/\{\{unlockUrl\}\}/g, esc(unlockUrl(row.person_id, stage)))
     .replace(/\{\{unsubscribeUrl\}\}/g, unsubHtml);
 
   // Plaintext part mirrors the HTML copy (bodyIntro is HTML-escaped for the markup; unescape
   // the couple of entities we introduce so the text part reads clean).
   const bodyIntroText = bodyIntro.replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  const enrLines = [];
+  if (e.cityCount > 0) enrLines.push(`${e.cityCount} known ${e.cityCount === 1 ? 'city' : 'cities'}: ${(e.cities || []).slice(0, 4).join(', ')}${e.cityCount > 4 ? ` +${e.cityCount - 4} more` : ''}`);
+  if (e.bookingCount || e.courtCount) {
+    const p = [];
+    if (e.bookingCount) p.push(`${e.bookingCount} booking record${e.bookingCount === 1 ? '' : 's'}`);
+    if (e.courtCount) p.push(`${e.courtCount} court record${e.courtCount === 1 ? '' : 's'}`);
+    enrLines.push(p.join(', ') + (e.charges && e.charges.length ? ` (${e.charges.slice(0, 2).join(', ')})` : ''));
+  }
+  if (e.marriageCount || e.divorceCount) {
+    const p = [];
+    if (e.marriageCount) p.push(`${e.marriageCount} marriage record${e.marriageCount === 1 ? '' : 's'}`);
+    if (e.divorceCount) p.push(`${e.divorceCount} divorce record${e.divorceCount === 1 ? '' : 's'}`);
+    enrLines.push(p.join(', '));
+  }
   const text = [
     `Hi ${firstName || 'there'},`,
     '',
     bodyIntroText,
-    targetName ? `\nYour report on: ${targetName}${target.age ? ` (Age ${target.age})` : ''}${target.location ? ` — ${target.location}` : ''}` : '',
+    targetName ? `\nYour report on: ${targetName}${target.age ? ` (Age ${target.age})` : ''}` : '',
+    ...(targetName ? enrLines.map((l) => `  • ${l}`) : []),
+    targetName ? `\nRecords update continuously — there may be new details since you last looked.` : '',
     '',
     `${targetName ? 'Unlock it here' : 'Finish here'}: ${unlockUrl(row.person_id, stage)}`,
     '',
