@@ -4,7 +4,7 @@
 //   EMAIL_PROVIDER         'resend' | 'sendgrid' (default: auto — resend if RESEND_API_KEY set, else sendgrid)
 //   RESEND_API_KEY         required when provider = resend
 //   SENDGRID_API_KEY       required when provider = sendgrid
-//   EMAIL_FROM             e.g. "IDLookup <alerts@e.idlookup.ai>"  (from-domain must be authenticated in the ESP)
+//   EMAIL_FROM             e.g. "IDLookup <alerts@idlookup.me>"  (from-domain must be authenticated in the ESP)
 //   EMAIL_BRAND_NAME       display name (default "IDLookup")
 //   EMAIL_BASE_URL         consumer base (default "https://www.idlookup.ai")
 //   EMAIL_ASM_GROUP_ID     SendGrid-only unsubscribe-group id (server-side unsub). Ignored by Resend.
@@ -167,7 +167,7 @@ function unsubEndpoint(email) {
  *  array ([{ headers: { 'x-message-id' } }]) so callers can extract a provider id uniformly. */
 export async function sendEmail({ to, subject, html, text }) {
   if (!hasEmail) throw new Error(`${emailProvider} not configured`);
-  const from = process.env.EMAIL_FROM || `${BRAND} <alerts@e.idlookup.ai>`;
+  const from = process.env.EMAIL_FROM || `${BRAND} <alerts@idlookup.me>`;
 
   if (emailProvider === 'resend') {
     // Resend has no ASM; add RFC 8058 one-click List-Unsubscribe (Gmail/Yahoo bulk requirement) pointing at

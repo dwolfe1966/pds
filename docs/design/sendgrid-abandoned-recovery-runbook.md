@@ -84,10 +84,13 @@ Resend sends carry an RFC 8058 `List-Unsubscribe` one-click header pointing at
 before every future send.
 
 ### Owner step 1 — Resend account + domain auth
+Sending domain FOR NOW = **`idlookup.me`** (owner 2026-07-27) — we already control its DNS (the SEO Vercel
+app), the unsubscribe endpoint already lives there, so it's the fastest path. (Can move to a dedicated
+`e.idlookup.ai` subdomain later to isolate marketing reputation.)
 1. Create an account at **resend.com** (free tier: 3,000 emails/mo, 100/day — enough to start).
-2. **Domains → Add Domain** → `e.idlookup.ai`. Resend outputs DNS records (SPF + DKIM, and a MX/return-path
-   for the subdomain). Add them to **idlookup.ai** DNS, then **Verify** (goes green). *(Domain auth is still
-   required — it's a deliverability precondition for any ESP, not a SendGrid-only step.)*
+2. **Domains → Add Domain** → `idlookup.me`. Resend outputs DNS records (SPF + DKIM + return-path). Add them
+   to **idlookup.me** DNS, then **Verify** (goes green). *(Domain auth is still required — a deliverability
+   precondition for any ESP.)* Default from-address is `IDLookup <alerts@idlookup.me>`.
 3. **API Keys → Create** → a key with send permission.
 
 ### Owner step 2 — Vercel env vars (SEO project → Settings → Environment Variables)
@@ -95,7 +98,7 @@ before every future send.
 |---|---|---|
 | `EMAIL_PROVIDER` | `resend` | ✅ (selects Resend over SendGrid) |
 | `RESEND_API_KEY` | the Resend API key | ✅ (sends no-op without it) |
-| `EMAIL_FROM` | `IDLookup <alerts@e.idlookup.ai>` (must be on the verified domain) | ✅ |
+| `EMAIL_FROM` | `IDLookup <alerts@idlookup.me>` (must be on the verified domain) | ✅ |
 | `CRON_SECRET` | any random string (secures the crons) | ✅ |
 | `EMAIL_UNSUBSCRIBE_URL` | `https://idlookup.me/api/email/unsubscribe` | optional (this is the default) |
 | `EMAIL_BASE_URL` / `EMAIL_BRAND_NAME` | `https://www.idlookup.ai` / `IDLookup` | optional (defaults) |
