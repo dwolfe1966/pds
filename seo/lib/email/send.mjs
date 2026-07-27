@@ -62,6 +62,7 @@ function unlockUrl(target, stage) {
     p.set('fn', tc(parts[0]));
     p.set('ln', tc(parts[parts.length - 1]));
     if (st) p.set('state', st.toUpperCase());
+    p.set('resume', '1'); // land on the Confirm step (prefilled + one-click "View Results"), not the top of the form
     return `${BASE}/name/landing/v3?${p.toString()}&${utm}`;
   }
   return `${BASE}/name/landing/v3?${utm}`;

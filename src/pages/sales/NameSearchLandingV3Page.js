@@ -105,6 +105,18 @@ const NameSearchLandingV3Page = () => {
   // Reset scroll to top when step (view) changes so each screen loads at top.
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
 
+  // Resume deep-link (?resume=1, from recovery emails): a returning searcher already gave us the name —
+  // drop them straight on the Confirm step (prefilled + FCRA consent + one "View Results" click) instead of
+  // re-walking the whole form. The click stays a real user gesture, so it doesn't (a) let email link-scanners
+  // auto-fire a BC search or (b) skip FCRA consent. Runs once on mount.
+  const isResume = queryParams.get('resume') === '1';
+  useEffect(() => {
+    if (isResume && (queryParams.get('fn') || queryParams.get('firstName')) && (queryParams.get('ln') || queryParams.get('lastName'))) {
+      track('resume_landing', { search_type: 'name', variant: 'v3' });
+      setStep('confirm');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     let timer;
     if (step === 'searching-one') {
@@ -311,7 +323,7 @@ const NameSearchLandingV3Page = () => {
           {/* Step 4: Confirm */}
           {step === 'confirm' && (
             <div className={s.form}>
-              <h2 className={s.sectionTitle}>Confirm to view inmate results</h2>
+              <h2 className={s.sectionTitle}>{isResume && firstName ? `Pick up where you left off — results for ${firstName}${lastName ? ` ${lastName}` : ''}` : 'Confirm to view inmate results'}</h2>
               <p className={s.helper}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
               <label className={s.checkboxRow}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
