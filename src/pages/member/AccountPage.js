@@ -15,18 +15,25 @@ import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
 import { getLatestBillingZip, getLatestBillingState } from '../../utils/orderFinancials';
 
-// HP-4 (owner 2026-07-22): CA billing-address members must cancel via Customer Support, not online.
-// The billing `state` is often empty/bogus (verified live — Cassie's was ""), so the ZIP is the reliable
-// signal. Owner requirement: if we CAN'T determine the zip, route to CS (compliance-safe default).
-// Returns true = route to Contact Support; false = online cancel OK (confidently non-CA).
+// Cancellation routing (owner 2026-07-28 — REVERSES HP-4). Default is Customer Support, but we FORCE ONLINE
+// self-serve cancel for CA, NY, or when we can't determine billing location:
+//   • CA (Automatic Renewal Law) and NY (auto-renewal law) require online cancellation as easy as signup.
+//   • No reliable location → force online too (compliance-safe carve-out: we can't rule out CA/NY).
+// The billing `state` is often empty/bogus in BC (verified live — one member's was ""), so ZIP is the
+// reliable signal; we check BOTH state and ZIP so either one flips a member to online. ZIP is REQUIRED at
+// our checkout, so "no location" is rare (only externally-created/legacy orders).
+// Returns true = route to Contact Support; false = force online cancel.
+const CA_ZIP = (z) => z >= 90001 && z <= 96162;
+const NY_ZIP = (z) => z >= 10001 && z <= 14975;
 function mustCancelViaCs(orders) {
   const list = Array.isArray(orders) ? orders : (orders ? [orders] : []);
   const state = String(getLatestBillingState(list) || '').trim().toUpperCase();
-  if (state === 'CA') return true;                                   // explicit CA
+  if (state === 'CA' || state === 'NY') return false;               // explicit CA/NY → online (legal)
   const zip = String(getLatestBillingZip(list) || '').replace(/\D/g, '').slice(0, 5);
-  if (zip.length < 5) return true;                                   // no reliable zip → CS (owner)
+  if (zip.length < 5) return false;                                 // no reliable location → online (safe)
   const z = parseInt(zip, 10);
-  return z >= 90001 && z <= 96162;                                   // CA zip → CS; else online cancel OK
+  if (CA_ZIP(z) || NY_ZIP(z)) return false;                         // CA/NY by ZIP → online (legal)
+  return true;                                                      // confident non-CA/NY → Customer Support
 }
 import MyProfileModularLive from '../../components/MyProfileModularLive';
 import MyProfileSummary from '../../components/MyProfileSummary';
@@ -888,11 +895,12 @@ const AccountPage = () => {
       setShowCancelModal(false);
       return;
     }
-    // HP-4 defensive guard: CA billing addresses must cancel via CS, not online.
+    // Cancellation routing (2026-07-28): confirmed non-CA/NY billing location → Customer Support; CA/NY/unknown
+    // are forced online above (mustCancelViaCs === false), so they never hit this branch.
     if (mustCancelViaCs(orders)) {
       setShowCancelModal(false);
-      track('cancel_ca_redirect_cs', { orderId: activeOrder._id || activeOrder.id, via: 'confirm' });
-      navigate('/contact?topic=cancel&reason=ca');
+      track('cancel_redirect_cs', { orderId: activeOrder._id || activeOrder.id, via: 'confirm' });
+      navigate('/contact?topic=cancel');
       return;
     }
     setShowCancelModal(false);
@@ -1831,11 +1839,11 @@ const AccountPage = () => {
                   </button>
                 ) : (
                   <button className={styles.cancelBtn} onClick={() => {
-                    // HP-4: CA billing addresses cancel via CS, not online.
+                    // 2026-07-28: non-CA/NY billing location → Customer Support; CA/NY/unknown cancel online.
                     const active = (orders || []).find((o) => o.status === 'active' && !o?.transient?.canceled);
                     if (mustCancelViaCs(orders)) {
-                      track('cancel_ca_redirect_cs', { orderId: active?._id || active?.id });
-                      navigate('/contact?topic=cancel&reason=ca');
+                      track('cancel_redirect_cs', { orderId: active?._id || active?.id });
+                      navigate('/contact?topic=cancel');
                       return;
                     }
                     track('cancel_lightbox_view', {}); setCancelStep(1); setCancelReason(''); setCancelReasonText(''); setShowCancelModal(true);
