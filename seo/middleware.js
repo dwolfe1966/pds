@@ -1,22 +1,46 @@
 import { NextResponse } from 'next/server';
 
-// Legacy URL recovery. The real-profile pages once lived at /people/<first-last>/<state>/<city>/<id>
-// (name-first). Then /people/ was taken over by the Census directory (state-first:
-// /people/<state>/<city>/<name>) and the profile pages moved to /profiles/<first-last>/... Google
-// still has the old name-first /people/<name>/... URLs → 404 (Search Console, 2026-07-14).
+// Legacy URL recovery (rewritten 2026-07-28). Profile pages went through THREE schemes:
+//   1. name-first   /people/<name>/<state>/<city>/<id>
+//   2. /profiles/   /profiles/<name>/<state>/<city>/<id>
+//   3. state-first  /people/<state>/<city>/<name>/<id>   ← CURRENT
+// The /profiles route was DELETED, but the old middleware still 301'd name-first /people/* → /profiles/* —
+// i.e. redirecting Google's old URLs straight into a 404 (GSC 2026-07-28: 1,423 "Not found" + "Page with
+// redirect"). Fix: remap BOTH /profiles/* and name-first /people/<name>/* to the CURRENT state-first /people
+// URL by REORDERING the path segments (301). Shapes with no valid state-first target (name-only or
+// name+state, no city) → 410 Gone, so Google drops them cleanly instead of chaining into another 404.
 //
-// Discriminator: the FIRST segment after /people/ is a hyphenated NAME (first-last), never a
-// 2-letter state — so redirect those, prefix-swapped, to their /profiles home (301). State-first
-// URLs (/people/<state>/..., seg1 = 2-letter code, no hyphen) are untouched and route normally.
+// Discriminator: current state-first URLs have seg1 = a 2-letter state (never hyphenated) and are left
+// untouched; legacy name-first /people URLs have seg1 = a hyphenated <first-last> name.
 export function middleware(req) {
   const { pathname } = req.nextUrl;
-  const m = pathname.match(/^\/people\/([^/]+)(\/.*)?$/);
-  if (m && m[1].includes('-')) {
-    const url = req.nextUrl.clone();
-    url.pathname = `/profiles/${m[1]}${m[2] || ''}`;
-    return NextResponse.redirect(url, 301);
+
+  // Identify a legacy URL and pull the <name> + the remaining tail (state/city/id).
+  let name = null, rest = null;
+  const prof = pathname.match(/^\/profiles\/([^/]+)(?:\/(.*))?$/);
+  if (prof) {
+    name = prof[1];
+    rest = prof[2];
+  } else {
+    const ppl = pathname.match(/^\/people\/([^/]+)(?:\/(.*))?$/);
+    if (ppl && ppl[1].includes('-')) { // hyphen in seg1 ⇒ legacy name-first (state codes have no hyphen)
+      name = ppl[1];
+      rest = ppl[2];
+    }
   }
-  return NextResponse.next();
+  if (name === null) return NextResponse.next(); // current state-first URL — route normally
+
+  const tail = (rest || '').split('/').filter(Boolean); // [state, city?, id?]
+  const [state, city, id] = tail;
+  const url = req.nextUrl.clone();
+  if (state && city && id) {
+    url.pathname = `/people/${state}/${city}/${name}/${id}`;      // full profile leaf
+  } else if (state && city) {
+    url.pathname = `/people/${state}/${city}/${name}`;            // name-in-city page
+  } else {
+    return new NextResponse(null, { status: 410 });              // name-only / name+state → no home → Gone
+  }
+  return NextResponse.redirect(url, 301);
 }
 
-export const config = { matcher: '/people/:path*' };
+export const config = { matcher: ['/people/:path*', '/profiles/:path*'] };
