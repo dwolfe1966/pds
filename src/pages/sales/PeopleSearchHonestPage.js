@@ -50,9 +50,8 @@ export default function PeopleSearchHonestPage() {
   // EXACT same hand-off as the V3 funnel — do not change (search contextKey is our documented landmine).
   const runSearch = () => {
     gtmSetSearchInput({ firstName: firstName.trim(), lastName: lastName.trim(), middleName: '', city: city.trim(), state: state.trim() });
-    // Honest-funnel marker — a clean side-channel read downstream (loader, checkout) for the honest
-    // experience, WITHOUT threading params through the search/contextKey core.
-    try { sessionStorage.setItem('honestFunnel', '1'); } catch { /* ignore */ }
+    // NOTE: the honest-funnel marker is set/cleared at the loader (the per-search chokepoint), keyed off the
+    // ?honest=1 param below — so it can't leak a stale honest state into a later non-honest checkout.
     try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());

@@ -66,6 +66,16 @@ const NameSearchLoaderPage = () => {
     track('loader_start', { search_type: 'name' });
   }, []);
 
+  // Scope the honest-funnel marker to THIS search (the loader is the chokepoint every name search passes
+  // through). Set it for the honest funnel, CLEAR it for any other — so the flag can't leak a stale honest
+  // state into a later v3/v6 checkout in the same tab (sessionStorage is sticky per-tab otherwise).
+  useEffect(() => {
+    try {
+      if (honest) sessionStorage.setItem('honestFunnel', '1');
+      else sessionStorage.removeItem('honestFunnel');
+    } catch { /* ignore */ }
+  }, [honest]);
+
   useEffect(() => {
     const performSearch = async () => {
       if (!firstName || !lastName) {
