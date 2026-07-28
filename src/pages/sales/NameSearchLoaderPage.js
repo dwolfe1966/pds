@@ -18,6 +18,16 @@ const SCAN_PHASES = [
   'Compiling your results\u2026',
 ];
 
+// Honest flow (?honest=1 from the honest landing) \u2014 narrate the REAL sources we check, no inflated
+// record-count theater. Display-only; the search itself is unchanged.
+const HONEST_PHASES = [
+  'Checking address history\u2026',
+  'Checking phone & email\u2026',
+  'Checking booking records \u2014 our own data\u2026',
+  'Checking marriage & divorce\u2026',
+];
+const HONEST_DATA_POINTS = ['Address history', 'Phone & email', 'Booking records', 'Marriage & divorce', 'Relatives'];
+
 /**
  * Name search loader page - Shows loading state while performing search.
  * Name loader flow with IDLookup design.
@@ -36,15 +46,17 @@ const NameSearchLoaderPage = () => {
   const city = params.get('city');
   const state = params.get('state');
   const flow = params.get('flow'); // 'inmate' → results page leads with the booking teaser
+  const honest = params.get('honest') === '1'; // DISPLAY-ONLY: honest loader copy for the honest funnel
+  const PHASES = honest ? HONEST_PHASES : SCAN_PHASES;
 
   const [status, setStatus] = useState('Initializing search...');
   const [progress, setProgress] = useState(0);
   const [phaseIndex, setPhaseIndex] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setPhaseIndex(i => (i + 1) % SCAN_PHASES.length), 800);
+    const id = setInterval(() => setPhaseIndex(i => (i + 1) % PHASES.length), 800);
     return () => clearInterval(id);
-  }, []);
+  }, [PHASES.length]);
 
   // Funnel step: user has entered the loader. Distinct from `search_submit`
   // (fired when the search API returns) — the gap between the two measures
@@ -200,16 +212,12 @@ const NameSearchLoaderPage = () => {
       <div className={styles.loaderCard}>
         <div className={styles.spinner} style={theme ? { borderTopColor: theme.accent } : undefined} />
         <h2 className={styles.heading} style={theme ? { color: theme.accentDark } : undefined}>Searching</h2>
-        <p className={styles.phaseMessage}>{SCAN_PHASES[phaseIndex]}</p>
+        <p className={styles.phaseMessage}>{PHASES[phaseIndex % PHASES.length]}</p>
         <div className={styles.progressBarWrap}>
           <span className={styles.progressBarFill} style={theme ? { background: theme.accent } : undefined} />
         </div>
         <div className={styles.dataPoints}>
-          <span>Possible relatives</span>
-          <span>Job &amp; education</span>
-          <span>Person information</span>
-          <span>Contact information</span>
-          <span>Social media profiles</span>
+          {(honest ? HONEST_DATA_POINTS : ['Possible relatives', 'Job & education', 'Person information', 'Contact information', 'Social media profiles']).map((d) => <span key={d}>{d}</span>)}
         </div>
         <div className={styles.queryCard}>
           <p className={styles.queryLabel}>Searching for</p>

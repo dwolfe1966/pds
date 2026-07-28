@@ -135,6 +135,9 @@ const PaymentPage = () => {
   const effectiveRecurringPrice = offerPricing?.recurringPrice ?? brand.recurringPrice;
   const trialPriceStr = `$${effectiveTrialPrice.toFixed(2)}`;
   const recurringPriceStr = `$${effectiveRecurringPrice.toFixed(2)}`;
+  // Honest funnel (set at the honest landing) → surface a prominent, plain-language restatement of the SAME
+  // terms right above the CTA. Display-only, no price/billing change; other funnels are unaffected.
+  const honestFunnel = (() => { try { return sessionStorage.getItem('honestFunnel') === '1'; } catch { return false; } })();
 
   const [form, setForm] = useState({
     cardNumber: '',
@@ -943,6 +946,25 @@ const PaymentPage = () => {
                 )}
               </div>
 
+              {/* Honest funnel payoff: the identity moment. Real owner control (member_suppression enforced
+                  in WSFY) — the honest opposite of a sham "Remove" button. */}
+              {honestFunnel && (
+                <div style={{
+                  margin: '1rem auto 0', maxWidth: 380, textAlign: 'left',
+                  background: '#e7f3ec', border: '1px dashed #0d5d2f', borderRadius: '0.6rem', padding: '0.95rem 1.1rem',
+                }}>
+                  <p style={{ margin: '0 0 0.35rem', fontWeight: 700, color: '#0a4d29', fontSize: '0.95rem' }}>Is this report about you?</p>
+                  <p style={{ margin: '0 0 0.7rem', color: '#3f6b50', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                    Claim your profile and decide what's public. When you hide something, it's actually hidden for
+                    everyone — not just faked from your own view.
+                  </p>
+                  <Link to="/my-identity" style={{
+                    display: 'inline-block', background: '#0d5d2f', color: '#fff', textDecoration: 'none',
+                    fontWeight: 700, fontSize: '0.88rem', padding: '0.6rem 1rem', borderRadius: '0.5rem',
+                  }}>Claim &amp; control my profile →</Link>
+                </div>
+              )}
+
               {/* Email-only signup: reveal the auto-generated login details so the
                   customer can sign in again later. They're signed in now (token in
                   localStorage), so this is a save-it-for-later backup. */}
@@ -1290,6 +1312,19 @@ const PaymentPage = () => {
                       any other eligibility determination subject to FCRA.
                     </p>
                   </div>
+
+                  {/* Honest funnel: plain-language restatement of the SAME terms, made prominent right above
+                      the CTA — the honest opposite of burying the recurring price in the fine print. */}
+                  {honestFunnel && (
+                    <div style={{
+                      margin: '0 0 1rem', background: '#e7f3ec', border: '1px solid #bfe0cb',
+                      borderRadius: '0.6rem', padding: '0.85rem 1rem', fontSize: '0.86rem', lineHeight: 1.55, color: '#14532d',
+                    }}>
+                      <strong>Before you agree — the whole deal, plainly:</strong> you pay <strong>{trialPriceStr} today</strong>.
+                      If you don't cancel before <strong>{trialEndDate}</strong>, it becomes <strong>{recurringPriceStr}/month</strong>,
+                      billed every 30 days until you cancel. No hidden add-ons — and you can cancel anytime.
+                    </div>
+                  )}
 
                   {/* CTA */}
                   <button
