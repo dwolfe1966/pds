@@ -8,7 +8,7 @@
 // Sampling is biased to INCLUDE account-holders when the batch has any, so the auto-login CTA is actually
 // testable (most abandoners never created an account → prefill CTA). Secret-gated. Never returns creds.
 import { hasLeadsDb, getPendingFirstEmail } from '../../../lib/leads-db.mjs';
-import { hasSendgrid, renderCheckoutAbandoned, sendEmail } from '../../../lib/email/send.mjs';
+import { hasSendgrid, renderCheckoutAbandoned, sendEmail, isBlockedRecipient } from '../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../lib/abandonEnrich.mjs';
 import { mintAutoLoginUrl, hasBcAutoLogin, hasBcAccount } from '../../../lib/bcAutoLogin.mjs';
 import { logSend } from '../../../lib/email/emails-db.mjs';
@@ -55,7 +55,9 @@ export async function GET(req) {
   const includeNoTarget = url.searchParams.get('includeNoTarget') === '1';
   const hasTarget = (r) => !!(r && r.meta && typeof r.meta === 'object' && r.meta.target && r.meta.target.name);
   const raw = await getPendingFirstEmail(DELAY_MIN, count * 3);
-  const rows = (includeNoTarget ? raw : raw.filter(hasTarget)).slice(0, count);
+  const rows = (includeNoTarget ? raw : raw.filter(hasTarget))
+    .filter((r) => !isBlockedRecipient(r.email)) // never surface/contact blocked domains (bytecrtrs.com)
+    .slice(0, count);
 
   // Annotate each with whether it has a BC account (→ auto-login CTA) or not (→ prefill CTA).
   const canAuto = hasBcAutoLogin();

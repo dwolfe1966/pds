@@ -12,7 +12,7 @@ import {
   getPendingFollowup,
   markRecoveryEmailed,
 } from '../../../../lib/leads-db.mjs';
-import { hasSendgrid, renderCheckoutAbandoned, sendEmail, hasPostalAddress } from '../../../../lib/email/send.mjs';
+import { hasSendgrid, renderCheckoutAbandoned, sendEmail, hasPostalAddress, isBlockedRecipient } from '../../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
 import { logSend, countSentToday, abandonDailyCap, suppressedSet, getFlag } from '../../../../lib/email/emails-db.mjs';
 import { mintAutoLoginUrl, hasBcAutoLogin } from '../../../../lib/bcAutoLogin.mjs';
@@ -105,7 +105,9 @@ export async function GET(req) {
   const maxAgeMs = Number(process.env.ABANDON_MAX_AGE_DAYS || 0) * 86400000;
   const fresh = (r) => !maxAgeMs || (r.abandoned_at && (Date.now() - new Date(r.abandoned_at).getTime()) <= maxAgeMs);
   const scope = (rows) => {
-    const filtered = (includeNoTarget ? rows : rows.filter(hasTarget)).filter(fresh);
+    const filtered = (includeNoTarget ? rows : rows.filter(hasTarget))
+      .filter(fresh)
+      .filter((r) => !isBlockedRecipient(r.email)); // never contact blocked domains (bytecrtrs.com)
     return enabled ? filtered : filtered.filter((r) => String(r.email || '').toLowerCase() === testEmail);
   };
 

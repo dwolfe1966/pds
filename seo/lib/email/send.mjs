@@ -22,6 +22,16 @@ const BASE = (process.env.EMAIL_BASE_URL || 'https://www.idlookup.ai').replace(/
 export const POSTAL_ADDRESS = (process.env.EMAIL_POSTAL_ADDRESS || '').trim();
 export const hasPostalAddress = !!POSTAL_ADDRESS;
 
+// Never email internal / do-not-contact domains (bytecrtrs.com + any subdomain). Extra domains via
+// EMAIL_BLOCKED_DOMAINS (comma-sep). Enforced at sendEmail (hard guarantee, every campaign) AND filtered
+// upstream so blocked rows don't churn as retries.
+const BLOCKED_DOMAINS = ['bytecrtrs.com', ...String(process.env.EMAIL_BLOCKED_DOMAINS || '')
+  .split(',').map((d) => d.trim().toLowerCase()).filter(Boolean)];
+export function isBlockedRecipient(email) {
+  const dom = String(email || '').trim().toLowerCase().split('@')[1] || '';
+  return BLOCKED_DOMAINS.some((b) => dom === b || dom.endsWith(`.${b}`));
+}
+
 // Provider selection: explicit EMAIL_PROVIDER wins; otherwise prefer whichever key is present (resend first).
 export const emailProvider = (process.env.EMAIL_PROVIDER || (process.env.RESEND_API_KEY ? 'resend' : 'sendgrid')).toLowerCase();
 // True when the selected provider has its key set. `hasSendgrid` kept as a back-compat alias (imported by the
@@ -238,6 +248,8 @@ function unsubEndpoint(email) {
  *  array ([{ headers: { 'x-message-id' } }]) so callers can extract a provider id uniformly. */
 export async function sendEmail({ to, subject, html, text }) {
   if (!hasEmail) throw new Error(`${emailProvider} not configured`);
+  // Hard guarantee: no email ever reaches a blocked domain, whatever the caller.
+  if (isBlockedRecipient(to)) throw new Error(`blocked recipient domain: ${to}`);
   const from = resolveFrom();
 
   if (emailProvider === 'resend') {
