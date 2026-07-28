@@ -8,7 +8,7 @@ CSR_USER='<csr account>' CSR_PWD='<pwd>' node scripts/demo-bc-csr-asks.js
 ```
 
 It prints, per ask: what we call → what BC returns → what we expected → verdict, plus a working
-contrast. **Seven open asks + one question**: A/B/C (in the demo script), D-residual (byte-verified, download-to-disk only), and E/F/G/H (registered 2026-07-02 from **production** evidence — BC is live on prod since 2026-06-23, and we do NOT run mutation probes on prod, so E–H are evidenced by prod payloads/screenshots + cited artifacts rather than the dev demo script; see each block). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
+contrast. **Eight open asks + one question** (ASK I — opt-out approve — added 2026-07-28 after reviewing the latest csrApi doc): A/B/C (in the demo script), D-residual (byte-verified, download-to-disk only), and E/F/G/H (registered 2026-07-02 from **production** evidence — BC is live on prod since 2026-06-23, and we do NOT run mutation probes on prod, so E–H are evidenced by prod payloads/screenshots + cited artifacts rather than the dev demo script; see each block). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
 credentials — the runner supplies their own CSR account via env). (A/B/C re-checked across `idlookup` / `bytecrtrs` / no-brand so a
 brand filter can't be the cause.)
 
@@ -63,14 +63,61 @@ Search Role."** for **every** brand. We fall back to a capped per-user fan-out (
 | **Function chain** | `api.adminListOrdersGlobal` → `apiWrapperCsr.csrFindOrders` → `POST /database/search {collectionName:'commerceOrder'}` (403) → fan-out fallback |
 | **Feature impacted** | True global order/purchase search |
 
-## ASK D — ✅ RESOLVED (no BC change) — live-call recordings play via `playAudioFlag`
+## ASK D — ⚠️ SPLIT — CSR-uploaded audio plays via `playAudioFlag` ✅; **telephony / live-call recordings ❌ (404, blocks BOTH play AND download)**
 
-**✅ RESOLUTION (live, 2026-06-26):** the 404 only occurs on **download** (no flag). Calling
+**🔁 RE-VERIFIED 2026-07-27 (deployed build `csrWrapper:develop_20260722`) — telephony recordings 404
+on BOTH paths; the ✅ playback resolution DOES NOT extend to them.**
+
+**Pure code-trace (this is the "not our bug" proof — read this before the error string):** in
+`EmailTicketsPage` a CSR clicks a live-call recording attachment (`liveCall_*.aac`, `audio/aac`). The
+page forwards `att.id` **UNMODIFIED** through: `api.adminDownloadAttachment(attId, {playAudioFlag:true})`
+→ apiRouterAdmin `admin-download-attachment` → `apiWrapperCsr.csrDownloadAttachment` →
+`_viaCsr('api.attachment.download', {attachmentId, playAudioFlag:true})` → BC IIFE. **BC's OWN IIFE**
+(not our code) then issued:
+`GET https://admin.www.bytecrtrs.com/api/attachment/download?attachmentId=6a6796c78fc146711b114553&clientId=…&apiId=…`
+→ **404 Not Found**, body **"Attachment file not found."** The captured GET's `attachmentId=6a6796c78fc146711b114553`
+is **exactly** what `att.id` resolved to — i.e. exactly the id BC's own find-response handed us, sent
+back unchanged by BC's own download code. Whether that id matches what BC's download endpoint expects is
+a question of **BC internal consistency**; we can only send what BC handed us. Repro ids:
+contactMessageId `6a6796cd8fc146711b11455c`, attachmentId `6a6796c78fc146711b114553`.
+
+**⚠️ Do NOT read the word "file" as record-vs-blob evidence.** The message is unreliable as a
+discriminator: the SAME telephony recording returned **"attachment not found"** (no "file") on
+2026-06-26 and **"Attachment file not found."** now — BC merely reworded it. It does NOT prove the DB
+record resolved but the blob is missing.
+
+**`playAudioFlag` mechanics (verified against `develop_20260722` download handler): it CANNOT rescue a
+404.** The flag is **stripped from the server GET params** (`const {playAudioFlag:n, ...o}=e; params:o`)
+but **retained to drive a CLIENT branch after the blob returns** (`if(n && isAudio) getAudioByBlob(blob)
+else <a download>`). So play and download hit the **IDENTICAL** server request — a 404 blocks BOTH.
+The ✅ "plays via `playAudioFlag`" resolution below therefore holds **only for CSR-uploaded audio that
+returns a blob**, NOT telephony recordings. **Telephony / live-call recordings = ❌ for BOTH play AND
+download.**
+
+> ↪ **Orthogonal, not a blocker:** the `userContact` `/database/search` 403 logged in the CONFIRM item
+> below does NOT block obtaining the attachmentId — we already have the id from
+> `findUserContactMessages`/histories; the failure is purely in BC's download-by-id retrieval.
+
+**Ask (now three parts):**
+- **(0) NEW — persistence / retention:** since we cannot confirm read-only whether the recording blob
+  even exists, please confirm **whether live-call recordings are persisted at all, and for how long**
+  (retention window / purge policy). A 404 may mean "never stored" or "already purged" rather than a
+  lookup bug — we can't tell from outside.
+- **(a) fix server-side retrieval** so `attachment.download` serves telephony / `brandId:'unknown'`
+  attachments (assuming they are persisted).
+- **(b) OR name the *actual* discriminating param/value** we should forward. **Note: `bucketName` +
+  `brandId` were empirically tried and BOTH still 404 — that path is dead.** The IIFE auto-forwards
+  unknown params as GET params, so (b) needs no IIFE change on our side.
+
+<details><summary>✅ Original playback resolution + download-path investigation (2026-06-26) — kept for record; applies to CSR-uploaded audio only</summary>
+
+**✅ RESOLUTION (live, 2026-06-26) — CSR-UPLOADED AUDIO ONLY:** for CSR-uploaded audio attachments the
+404 only occurs on **download** (no flag); calling
 `attachment.download({ attachmentId, playAudioFlag: true })` **SUCCEEDS** and plays the recording via
 BC's audio control — confirmed live (promise resolved `OK-PLAY` vs the download path's 404 AxiosError).
-So **no BC change is needed for playback.** Wired in commit `76b8536` (audio attachments → `playAudioFlag`,
-render ▶️). **Residual (low priority):** *downloading a recording to disk* (no flag) still 404s — only
-matters if a CSR needs to save vs. listen. Original download-path investigation kept below for record.
+Wired in commit `76b8536` (audio attachments → `playAudioFlag`, render ▶️). **This does NOT extend to
+telephony recordings** — see the 2026-07-27 re-verification above (`playAudioFlag` is stripped pre-GET,
+so it cannot rescue the shared 404). Download-path investigation kept below for record.
 
 **Demo (live, 2026-06-26):** `csrWrapper.api.attachment.download({ attachmentId })` → **"attachment
 not found"** for a **valid** attachmentId. Byte-verified: we sent `attachmentId:
@@ -94,11 +141,13 @@ telephony / `brandId:'unknown'` attachments; **or** (b) name the *actual* discri
 should forward (not `bucketName`/`brandId` — tested, still 404). The IIFE auto-forwards unknown params
 as GET params, so (b) needs **no IIFE change on our side**. (`playAudioFlag` is stripped pre-GET — not the fix.)
 
+</details>
+
 | | |
 |---|---|
-| **App / Page** | CSR/Admin — `UserDetailPage` (`/users/:id`) ticket/Messages view (call-recording attachment link) |
-| **Function chain** | clickable attachment → `csrWrapper.api.attachment.download({ attachmentId })` → `GET /attachment/download` → **"attachment not found"** |
-| **Feature impacted** | Listening to / downloading live-call recordings from the ticket view (link shipped: commits `958acb0` + `bd3b5e0`) |
+| **App / Page** | CSR/Admin — `EmailTicketsPage` + `UserDetailPage` (`/users/:id`) ticket/Messages view (call-recording attachment link) |
+| **Function chain** | click attachment → `api.adminDownloadAttachment(att.id,{playAudioFlag:true})` → apiRouterAdmin `admin-download-attachment` → `apiWrapperCsr.csrDownloadAttachment` → `_viaCsr('api.attachment.download',{attachmentId,playAudioFlag:true})` → BC IIFE `GET /attachment/download?attachmentId=6a6796c7…4553` → **404 "Attachment file not found."** |
+| **Feature impacted** | Both **listening to AND downloading** live-call / telephony recordings from the ticket view (link shipped: commits `958acb0` + `bd3b5e0`; play wired `76b8536`). CSR-uploaded audio ✅; telephony recordings ❌ both paths. |
 
 ## ASK E — voicemail contactMessages carry no caller ID and no transcription  (ADD)  ❌ open
 
@@ -204,6 +253,30 @@ data-exposure family as the earlier finding that search *filters* by zip/card/ph
 | **App / Page** | CSR/Admin — `UserDetailPage` customer profile card; `UsersPage` list columns |
 | **Evidence** | Prod screenshot https://nimb.ws/4GonfZU · owner bug list row "Customer Profile needs to display city and state" · prior finding: user object omits zip/card/phone (zip lives only in order `billingAddress`) |
 | **Feature impacted** | CSR seeing where a customer is — identity confirmation, tax/region questions, callback hours |
+
+## ASK I — no CSR method to APPROVE / fulfill a data-removal (opt-out) request  (ADD)  ❌ open
+
+**Evidence (latest csrApi doc, reviewed 2026-07-28):** the only opt-out method exposed is
+`csrWrapper.api.optOut.find` → `POST /api/database/search` — **read-only**. Its own `status` param
+enumerates **`requested` → `active`**, so the approval transition clearly exists inside BC, but **no CSR
+method performs it**. There is no `optOut.approve` / `optOut.updateStatus` / `optOut.fulfill`, no generic
+`database/update`, and nothing else in the doc mutates the `optOutRequest` collection (the only
+state-changers are order-, note-, attachment-, and managedContact-scoped — `managedContact.unsubscribe`
+is marketing unsub, a different collection). So our CSR "Approve" action on the Data-Removal Requests
+tab is **hard-disabled** ("Managed in BC admin panel") because we have nothing to call.
+**Ask:** add `csrWrapper.api.optOut.approve({ optOutId })` (or `optOut.updateStatus({ optOutId, status })`)
+that transitions `requested → active` **and** triggers the actual suppression, mirroring how BC's own admin
+panel completes it. Return the updated optOut doc.
+**Why it matters:** data-removal requests carry legal deadlines (CCPA/GDPR-style). Today a CSR can *see*
+them in our app but must switch to BC's admin panel to action them — and if that panel handoff isn't
+happening, requests silently age past their SLA.
+
+| | |
+|---|---|
+| **App / Page** | CSR/Admin — `DataRemovalPage` (`Opt-Outs → Data Removal Requests`), the per-row **Approve** action |
+| **Function chain** | `api.adminListDataRemoval` → `apiWrapperCsr.csrFindOptOuts` → `optOut.find` (read) ✅; **no** approve method to call → button `disabled` (`DataRemovalPage.js:290`) |
+| **Feature impacted** | CSR fulfilling consumer data-removal requests in-app (compliance SLA) |
+| **Interim** | Confirm where these are approved today (BC admin panel); until the method exists, the button stays disabled by design |
 
 ## CONFIRM — `userContact` data model (a question, not a defect)
 
