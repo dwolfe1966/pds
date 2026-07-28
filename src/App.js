@@ -16,6 +16,7 @@ import LandingPage from './pages/sales/LandingPage';
 import NameSearchLandingPage from './pages/sales/NameSearchLandingPage';
 import NameSearchLandingV2Page from './pages/sales/NameSearchLandingV2Page';
 import NameSearchLandingV3Page from './pages/sales/NameSearchLandingV3Page';
+import PeopleSearchHonestPage from './pages/sales/PeopleSearchHonestPage';
 import WsfyLandingPage from './pages/sales/WsfyLandingPage';
 import NameSearchLandingV4Page from './pages/sales/NameSearchLandingV4Page';
 import NameSearchLandingV5Page from './pages/sales/NameSearchLandingV5Page';
@@ -185,6 +186,9 @@ const App = () => {
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
           <Route path="/name/landing/v2" element={<V2LandingSplit />} />
           <Route path="/name/landing/v3" element={<NameSearchLandingV3Page />} />
+          {/* Honest people-search flow (2026-07-28) — same proven search hand-off, honest experience. */}
+          <Route path="/people-search" element={<PeopleSearchHonestPage />} />
+          <Route path="/name/landing/honest" element={<PeopleSearchHonestPage />} />
           {/* Visitor WSFY funnel — enter your info + confirm → see who's searching for you. */}
           <Route path="/see-who" element={<WsfyLandingPage />} />
           <Route path="/name/landing/v4" element={<NameSearchLandingV4Page />} />
