@@ -97,6 +97,25 @@ export async function getPendingFollowup(delayHours = 24, limit = 200) {
   `;
 }
 
+/** Atomically CLAIM a row for a stage BEFORE sending — the guard against double-sends when runs overlap (a
+ *  manual trigger while the scheduled cron is mid-run). The `WHERE …_at IS NULL` makes the stamp-and-claim a
+ *  single atomic UPDATE, so exactly one concurrent run wins each row. Returns true only if THIS caller claimed
+ *  it. On send failure, call releaseRecoveryClaim so a later run retries. */
+export async function claimRecoveryEmail(id, stage) {
+  if (!sql) return false;
+  const rows = stage === 'followup'
+    ? await sql`UPDATE abandoned_checkouts SET followup_at = now() WHERE id = ${id} AND followup_at IS NULL RETURNING id`
+    : await sql`UPDATE abandoned_checkouts SET emailed_at = now() WHERE id = ${id} AND emailed_at IS NULL RETURNING id`;
+  return rows.length > 0;
+}
+
+/** Undo a claim when the send failed, so the row is retried on a later run (at-most-once → back to eligible). */
+export async function releaseRecoveryClaim(id, stage) {
+  if (!sql) return;
+  if (stage === 'followup') await sql`UPDATE abandoned_checkouts SET followup_at = NULL WHERE id = ${id}`;
+  else await sql`UPDATE abandoned_checkouts SET emailed_at = NULL WHERE id = ${id}`;
+}
+
 /** Stamp a send. stage 'first' → emailed_at, stage 'followup' → followup_at. */
 export async function markRecoveryEmailed(id, stage) {
   if (!sql) throw new Error('no leads DB configured');

@@ -10,7 +10,8 @@ import {
   hasLeadsDb,
   getPendingFirstEmail,
   getPendingFollowup,
-  markRecoveryEmailed,
+  claimRecoveryEmail,
+  releaseRecoveryClaim,
 } from '../../../../lib/leads-db.mjs';
 import { hasSendgrid, renderCheckoutAbandoned, sendEmail, hasPostalAddress, isBlockedRecipient } from '../../../../lib/email/send.mjs';
 import { enrichAbandonTarget } from '../../../../lib/abandonEnrich.mjs';
@@ -29,8 +30,12 @@ const FIRST_DELAY_MIN = Number(process.env.EMAIL_FIRST_DELAY_MIN || 30);
 const FOLLOWUP_DELAY_HOURS = Number(process.env.EMAIL_FOLLOWUP_DELAY_HOURS || 24);
 
 async function processStage(rows, stage) {
-  let sent = 0, failed = 0;
+  let sent = 0, failed = 0, skipped = 0;
   for (const row of rows) {
+    // Atomic claim FIRST: if a concurrent run (e.g. a manual trigger overlapping the scheduled cron) already
+    // grabbed this row, skip it — this is what prevents the same person getting 2–4 copies.
+    const claimed = await claimRecoveryEmail(row.id, stage).catch(() => false);
+    if (!claimed) { skipped++; continue; }
     try {
       // Enrich the target with real teaser data (locations + booking + life-events) so the email leans hard
       // into data. Self-gating + never throws → falls back to the plain card.
@@ -52,23 +57,27 @@ async function processStage(rows, stage) {
       }
       const { subject, html, text } = renderCheckoutAbandoned(row, stage, enrichment, ctaUrl);
       await sendEmail({ to: row.email, subject, html, text });
-      await markRecoveryEmailed(row.id, stage);
+      // (row is already claimed above — no separate mark needed)
       await logSend({ email: row.email, campaign: `abandoned_${stage}`, subject, status: 'sent', meta: { autoLogin: !!ctaUrl } }).catch(() => {});
       sent++;
     } catch (err) {
-      // Log the failure so it's visible in email_sends (the row stays un-stamped → next run retries it).
+      // Send failed → release the claim so a later run retries it (at-most-once, not zero).
+      await releaseRecoveryClaim(row.id, stage).catch(() => {});
       await logSend({ email: row.email, campaign: `abandoned_${stage}`, status: 'error', meta: { error: String((err && err.message) || err) } }).catch(() => {});
       failed++;
     }
   }
-  return { sent, failed, eligible: rows.length };
+  return { sent, failed, skipped, eligible: rows.length };
 }
 
 export async function GET(req) {
   const secret = process.env.CRON_SECRET;
   if (secret) {
+    // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`. Also accept `?secret=` so the owner can
+    // manually fire a run from a browser to diagnose (returns the same JSON result).
+    const url = new URL(req.url);
     const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${secret}`) {
+    if (auth !== `Bearer ${secret}` && url.searchParams.get('secret') !== secret) {
       return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
   }
