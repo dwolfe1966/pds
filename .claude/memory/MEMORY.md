@@ -91,6 +91,7 @@
 - [SEO individual profiles + data model](project_seo_individual_profiles.md) — per-individual leaves; SEO-TEASER ask (Turnstile blocker); lazy-pull blocked on BC+IDI
 - [SEO indexing incident](project_seo_indexing_incident.md) — deindex cascade on young domain; conservative sitemapv2 + Phase-1 fixes HOLDING; no-traffic=authority not tech; fold into idlookup.ai/people
 - [SEO recovery brainstorm](project_seo_recovery.md) — pivot to first-party verticals (INMATE lead) + authority; prune thin pages
+- [SEO 404/sitemap fixes 2026-07-28](project_seo_404_sitemap_fix_2026_07_28.md) — index DROP = intentional 07-20 noindex pruning; middleware legacy→name-in-state 301; retired 360k chunked sitemap
 - [idlookup.ai/people migration scoping](project_seo_indexing_incident.md) — docs/seo/idlookup-ai-people-migration-scoping.md; subdomain people.idlookup.ai via 1 CNAME (grey-cloud DNS + /people/:id collision rule out subpath)
 - [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on SEO Vercel; PAUSED pending owner domain-auth + Vercel envs
 - [Auto-login for abandon emails](project_autologin_abandon.md) — WORKING e2e via existing BC methods (no ask); CSR login→userId→getAutoLoginUrl; redirect MUST be /auth/session?next=; TTL open
