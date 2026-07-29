@@ -46,6 +46,7 @@ route/sitemap level:
 - the submitted sitemap emphasizes root, state, and city pages; deeper record pages stay discoverable from hubs.
 
 Do not widen generic name/city URL volume until GSC shows the narrowed quality set is healthy.
+See `docs/gsc-recovery-checklist.md` for the current GSC submission and monitoring checklist.
 
 ## Run
 

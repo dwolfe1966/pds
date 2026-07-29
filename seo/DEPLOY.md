@@ -63,7 +63,7 @@ Submit/monitor in Google Search Console:
 
 Remove any old `sitemapv2.xml` submission after Google has seen the redirect. Watch indexing,
 excluded/noindex counts, crawled/discovered-not-indexed, and manual action status before increasing
-sitemap volume.
+sitemap volume. See `docs/gsc-recovery-checklist.md` for the active GSC monitoring checklist.
 
 ## Optional idlookup.ai Path Split
 
