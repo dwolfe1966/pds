@@ -156,6 +156,20 @@ export const CAMPAIGN_REGISTRY = {
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
   },
 
+  // ── Honest People-Search challenger (2026-07-29). The /people-search general-PS flow (honest landing +
+  // loader + real-signal teaser + honest zero-state + transparent checkout), built to A/B against the
+  // standard funnels. PLACEHOLDER shN so trials + trial→paid attribute distinctly (partner=Direct,
+  // channel=Honest PS); swap for a minted BC shConId (or a per-source token) when the campaign goes live.
+  // Tag campaign URLs `?shn=honest-ps` — boots to /people-search from any entry. zeroState 'noRecords' (never
+  // the fabricated thin-match cards — the challenger's whole promise).
+  'honest-ps:*': {
+    identity: { shnName: 'Honest People Search', brand: 'IDL', partner: 'Direct', channel: 'Honest PS',
+      purpose: 'Honest general people-search challenger → measure cost-per-trial + trial→paid vs standard funnels' },
+    landing: { route: '/people-search' },
+    search:  { type: 'name', perPage: 5, zeroState: 'noRecords' },
+    detail:  { variant: 'a' }, optOut: true,
+  },
+
   // ── Real shN tokens swapped in 2026-06-09 (owner provided the minted IDs). All
   // Upper/Lower pairs share the same landing + config — they differ only by ad
   // position (bid/reporting on the Google side), so they resolve to identical UX.
