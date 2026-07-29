@@ -64,18 +64,22 @@ export default async function StateLanding({ params }) {
       <JsonLd blocks={jsonLd} />
       <Breadcrumbs crumbs={crumbs} />
 
-      <h1 style={ui.h1}>People Search in {st.name}</h1>
-      <p style={{ ...ui.muted, margin: '0 0 18px', fontSize: 15 }}>
-        {st.name} has a population of about <strong>{num(st.pop)}</strong> across {st.cities.length}+ cities and towns.
-        Pick a city to browse people by name, or search directly.
-        {soCount > 0 && <> Our directory also indexes <strong>{num(soCount)}</strong> registered sex offenders and public incarceration records across {st.name} — see the city and name pages.</>}
-      </p>
+      <section style={ui.hero}>
+        <p style={ui.eyebrow}>People search by state</p>
+        <h1 style={ui.h1}>People Search in {st.name}</h1>
+        <p style={ui.lead}>
+          {st.name} has a population of about <strong>{num(st.pop)}</strong> across {st.cities.length}+ cities and towns.
+          Pick a city to browse people by name, or search directly.
+          {soCount > 0 && <> Our directory also indexes <strong>{num(soCount)}</strong> registered sex offenders and public incarceration records across {st.name} — see the city and name pages.</>}
+        </p>
+        <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${st.code}`} style={ui.cta}>Search people in {st.name} →</a>
+      </section>
 
       <StateMap cities={st.cities} name={st.name} />
 
       <section style={{ ...ui.card, marginTop: 16 }}>
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>Browse {st.name} by city</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '6px 16px' }}>
+        <h2 style={ui.h2}>Browse {st.name} by city</h2>
+        <div style={ui.linkGrid}>
           {cities.map((c) => (
             <a key={c.slug} href={cityPath(state, c.slug)} style={{ ...ui.link, fontSize: 14 }}>
               {c.city} <span style={ui.muted}>({num(c.pop)})</span>
@@ -86,12 +90,12 @@ export default async function StateLanding({ params }) {
 
       {topNames.length > 0 && (
         <section style={{ ...ui.card, marginTop: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Incarceration &amp; inmate records in {st.name}</h2>
-          <p style={{ ...ui.muted, margin: '0 0 10px', fontSize: 14 }}>
+          <h2 style={ui.h2}>Incarceration &amp; inmate records in {st.name}</h2>
+          <p style={{ ...ui.muted, margin: '0 0 12px', fontSize: 14, lineHeight: 1.65 }}>
             People with public booking, incarceration, and criminal records in {st.name} — from state and county
             correctional rosters. Pick a name to see matching records, or search directly.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+          <div style={ui.linkGrid}>
             {topNames.map((n) => (
               <a key={n.slug} href={`/people/${st.code.toLowerCase()}/${n.slug}`} style={{ ...ui.link, fontSize: 14 }}>
                 {n.name}{n.count ? <span style={ui.muted}> ({num(n.count)})</span> : null}
@@ -103,11 +107,11 @@ export default async function StateLanding({ params }) {
 
       {counties.length > 0 && (
         <section style={{ ...ui.card, marginTop: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Incarceration records by county in {st.name}</h2>
-          <p style={{ ...ui.muted, margin: '0 0 10px', fontSize: 14 }}>
+          <h2 style={ui.h2}>Incarceration records by county in {st.name}</h2>
+          <p style={{ ...ui.muted, margin: '0 0 12px', fontSize: 14, lineHeight: 1.65 }}>
             Browse booking &amp; incarceration records by county — ranked by number of records on file.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+          <div style={ui.linkGrid}>
             {counties.map((c) => (
               <a key={c.slug} href={`/people/${st.code.toLowerCase()}/county/${c.slug}`} style={{ ...ui.link, fontSize: 14 }}>
                 {c.name} County <span style={ui.muted}>({num(c.count)})</span>
@@ -117,7 +121,7 @@ export default async function StateLanding({ params }) {
         </section>
       )}
 
-      <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${st.code}`} style={ui.cta}>Search people in {st.name} →</a>
+      <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${st.code}`} style={ui.secondaryCta}>Search people in {st.name}</a>
 
       <FcraFooter />
     </main>
