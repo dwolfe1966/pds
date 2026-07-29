@@ -39,11 +39,11 @@ rather than blocking the static SEO pages.
 The current surface is indexable at the app level. Thin combinations are controlled at the
 route/sitemap level:
 
-- `robots.txt` lists `/sitemapv2.xml` and `/sitemap-directory.xml`.
-- `/sitemap.xml` redirects to `/sitemap-directory.xml`.
+- `robots.txt` lists only `/sitemap-directory.xml`.
+- `/sitemap.xml` and legacy `/sitemapv2.xml` redirect to `/sitemap-directory.xml`.
 - the full historical long-tail sitemap was retired.
 - name-in-city pages without captured people use `noindex,follow`.
-- sitemaps emphasize root, state, city, roster-state name pages, county hubs, and a limited quality set.
+- the submitted sitemap emphasizes root, state, and city pages; deeper record pages stay discoverable from hubs.
 
 Do not widen generic name/city URL volume until GSC shows the narrowed quality set is healthy.
 

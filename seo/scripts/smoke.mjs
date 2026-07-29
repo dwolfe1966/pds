@@ -12,6 +12,7 @@ const checks = [
   { path: '/people', expect: [200], contains: 'Browse people by state' },
   { path: '/robots.txt', expect: [200], contains: 'Sitemap: https://idlookup.me/sitemap-directory.xml' },
   { path: '/sitemap-directory.xml', expect: [200], contains: '<urlset' },
+  { path: '/sitemapv2.xml', expect: [301, 308], locationIncludes: '/sitemap-directory.xml' },
   { path: '/people/fl', expect: [200], contains: 'People Search in Florida' },
   { path: '/people/fl/miami', expect: [200], contains: 'People Search in Miami' },
   { path: '/people/fl/miami/michael-smith', expect: [200], contains: 'Michael Smith in Miami' },

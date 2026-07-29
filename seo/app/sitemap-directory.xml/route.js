@@ -5,7 +5,7 @@
 // state + city (ACS-rich) + the top ~45k name-in-city pages by population — with a FRESH lastmod so
 // Google re-fetches the now-fixed pages. Deliberately NOT the full ~335k taxonomy: the thin long-tail is
 // what tanked the domain and is "discovered – not indexed", so re-dumping it re-floods without helping.
-// One flat <urlset> (no index). Complements the conservative /sitemapv2.xml.
+// One flat <urlset> (no index). This is the only sitemap advertised in robots.txt.
 import { getDirectoryUrls } from '../../lib/directory';
 import { SITE } from '../../lib/site';
 

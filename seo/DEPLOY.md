@@ -46,10 +46,11 @@ Verify cron endpoints with `CRON_SECRET` before enabling send flags.
 After deployment:
 
 1. Confirm `https://idlookup.me/` returns `200` and is not a redirect.
-2. Confirm `https://idlookup.me/robots.txt` lists `sitemapv2.xml` and `sitemap-directory.xml`.
+2. Confirm `https://idlookup.me/robots.txt` lists only `sitemap-directory.xml`.
 3. Confirm `https://idlookup.me/sitemap.xml` redirects to `/sitemap-directory.xml`.
-4. View source on a state, city, name, county, and profile page to confirm server-rendered content.
-5. Run:
+4. Confirm `https://idlookup.me/sitemapv2.xml` redirects to `/sitemap-directory.xml`.
+5. View source on a state, city, name, county, and profile page to confirm server-rendered content.
+6. Run:
 
 ```bash
 npm run smoke:local
@@ -58,11 +59,11 @@ SEO_SMOKE_BASE=https://idlookup.me npm run smoke
 
 Submit/monitor in Google Search Console:
 
-- `https://idlookup.me/sitemapv2.xml`
 - `https://idlookup.me/sitemap-directory.xml`
 
-Watch indexing, excluded/noindex counts, crawled/discovered-not-indexed, and manual action status
-before increasing sitemap volume.
+Remove any old `sitemapv2.xml` submission after Google has seen the redirect. Watch indexing,
+excluded/noindex counts, crawled/discovered-not-indexed, and manual action status before increasing
+sitemap volume.
 
 ## Optional idlookup.ai Path Split
 
@@ -71,7 +72,7 @@ If/when that happens, route these paths to the Vercel SEO app:
 
 - `/people/*`
 - `/sitemap-directory.xml`
-- `/sitemapv2.xml`
+- `/sitemapv2.xml` only as a legacy redirect
 - `/sitemap.xml`
 
 The main app must own `idlookup.ai/robots.txt` and include the SEO sitemap URLs. Update
