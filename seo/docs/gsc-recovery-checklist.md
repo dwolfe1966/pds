@@ -37,6 +37,7 @@ npm run smoke:local
 SEO_SMOKE_BASE=https://idlookup.me npm run smoke
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:sitemaps
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:deep
+npm run audit:claims
 ```
 
 The smoke script should report:
@@ -51,6 +52,9 @@ empty titles, and missing canonicals.
 The deep audit should confirm sampled county pages remain indexable, sampled boilerplate name-in-city
 pages remain `noindex, follow`, stale profile tokens redirect to the name hub, and deleted `/profiles`
 URLs return `410`.
+
+The claims audit should pass before shipping SEO copy changes; it guards against privacy/confidentiality
+and absolute-accuracy claims that conflict with the product posture.
 
 ## GSC Monitoring
 

@@ -80,6 +80,12 @@ npm run audit:deep
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:deep
 ```
 
+Audit public SEO copy for prohibited privacy/guarantee claims:
+
+```bash
+npm run audit:claims
+```
+
 ## Local Artifacts
 
 Large raw data and local secrets are intentionally ignored: `obis/`, `scratchpad/`,
