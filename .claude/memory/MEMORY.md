@@ -102,6 +102,7 @@
 - [CSR billing classification](project_csr_billing_classification.md) — M-code taxonomy (M0/M{n}+D declines, owner/CEO 2026-07-23); fraud/stolen decline does NOT pause access (flag only); Inactive splits voluntary/involuntary; aligned to admin view 72/72 live; admin.40bd8cf3.js
 - [3 new marketing angles + source-zip](project_marketing_angles.md) — marriage/divorce, WSFY, check-your-date funnels (docs/marketing); ⚠️ hardcoded creds in csrApiService.js flagged
 - [Homefacts 70k partner traffic test](project_homefacts_traffic.md) — 4 landing experiences (SO/background/public, primed+cold); params pre-fill; gates resolved
+- [HomeFacts prototype (idlookup.me/homefacts)](project_homefacts_prototype.md) — working replacement built on SEO engine; 9 area-profile modules (5 live real-data/4 pending named-source); deployed; CEO deck collateral
 - [Session end 2026-07-22](project_session_end_2026_07_22.md) — latest pickup: CSR billing overhaul, impersonation done, onboarding fixes; then HP-4 CA-cancel + terminal-stop fix (this session)
 - [Email-on-payment one-screen checkout](project_email_on_payment_flow.md) — phone reveal → /payment?capture=email; ensureAccount ordering (_pendingPw before sale or 401) + visitorSearchLog replay = Activity
 - [Phone/email flow roadmap + competitor synthesis](project_phone_email_flow_roadmap.md) — Twilio approved; P1/P2/P3 phone + E3 email; phone=safety-product, honest-loader, descriptive-spam-only
