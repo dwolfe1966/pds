@@ -27,7 +27,7 @@ const CAPABILITY_COPY = {
   },
   sexOffender: {
     flag: true,
-    header: (n) => `Possible offender record for ${n} — unlock to verify`,
+    header: (n) => `Possible offender record for ${n}`,
     items: [['🚔', 'Full criminal & offender record'], ['🏛️', 'Court & case records'], ['📍', 'Registered address & aliases'], ['🪪', 'Identity & photo']],
   },
   publicRecords: {
