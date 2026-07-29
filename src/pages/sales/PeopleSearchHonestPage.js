@@ -37,7 +37,7 @@ export default function PeopleSearchHonestPage() {
   const brand = useBrand();
   const navigate = useNavigate();
   useLandingTrack('name', 'honest');
-  useFunnelFlow('inmate'); // session flow → results lead with the first-party booking teaser (our moat)
+  useFunnelFlow('general'); // general people-search intent (challenger; not V3's inmate traffic)
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -58,7 +58,7 @@ export default function PeopleSearchHonestPage() {
     params.set('lastName', lastName.trim());
     if (state.trim()) params.set('state', state.trim());
     if (city.trim()) params.set('city', city.trim());
-    params.set('flow', 'inmate');
+    params.set('flow', 'general'); // general people-search intent — teaser leads with the strongest REAL signal
     params.set('honest', '1'); // DISPLAY-ONLY flag → honest loader copy; the search ignores it entirely
     navigate(`/name/loader?${params.toString()}`);
   };
@@ -140,13 +140,13 @@ export default function PeopleSearchHonestPage() {
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', alignItems: 'center' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 650, color: GOLD, background: GOLD_SOFT, border: '1px solid #e6d4a6', padding: '6px 12px', borderRadius: 999 }}>
-            ★ First-party booking records — all 50 states
+            ★ Real results — no fabricated matches
           </span>
-          <span style={metric}><b style={{ color: INK, fontVariantNumeric: 'tabular-nums' }}>214M</b>&nbsp;profiles</span>
           <span style={metric}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-            Your search is private — the person is never notified
+            Private search — they&apos;re never notified
           </span>
+          <span style={metric}>✓&nbsp;Cancel anytime — no surprise subscriptions</span>
         </div>
 
       </div>
