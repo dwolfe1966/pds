@@ -523,6 +523,24 @@ const SalesSearchResultsPage = () => {
             )}
             {(() => {
               const flags = readThinMatch();
+              // Honest challenger (flow=general) — NEVER show fabricated thin-match cards; tell the truth
+              // (delivers the landing's "no fabricated matches" promise). We also don't over-promise "sign up
+              // to reveal hidden results" on a true zero — there's nothing to reveal, so that'd be its own lie.
+              // V3 / campaign flows keep their existing zero-state untouched.
+              if ((getFlow() || flow) === 'general') {
+                return (
+                  <div style={{ textAlign: 'center', padding: '2rem 1rem', maxWidth: 520, margin: '0 auto' }}>
+                    <div style={{ fontSize: '2.25rem', marginBottom: '0.75rem' }} aria-hidden="true">🔍</div>
+                    <h2 style={{ fontSize: '1.35rem', fontWeight: 750, color: theme ? theme.ink : '#14181d', margin: '0 0 0.5rem' }}>
+                      No confirmed match{searchQuery.firstName ? ` for ${searchQuery.firstName} ${searchQuery.lastName || ''}`.trimEnd() : ''}{searchQuery.state ? ` in ${searchQuery.state}` : ''}
+                    </h2>
+                    <p style={{ color: '#5b6672', fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>
+                      We&apos;d rather tell you straight than invent results. Try refining your search below — check
+                      the spelling, or add or adjust the location.
+                    </p>
+                  </div>
+                );
+              }
               return campaign?.search?.zeroState === 'thinMatch'
                 ? <ThinMatchPreview searchType="name" query={searchQuery} flags={flags} theme={theme} />
                 : <ZeroResultsPanel searchType="name" query={searchQuery} theme={theme} />;
