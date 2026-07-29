@@ -405,6 +405,9 @@ const SalesSearchResultsPage = () => {
             {/* Record teaser above the results — the payoff the vertical searcher came for. Loose (name-search
                 surface). Unified engine teaser: flow-prioritized lead + capped "also found"; self-gates to
                 nothing without matching records. */}
+            {getVariant() === 'self' && searchQuery.lastName && (
+              <SelfExposureIntro brand={brand} name={searchQuery.firstName} theme={theme} />
+            )}
             {searchQuery.lastName && (
               <div style={{ marginBottom: 28, paddingBottom: 4 }}>
                 <SignalTeaser
@@ -512,6 +515,9 @@ const SalesSearchResultsPage = () => {
                 engine teaser pulls FIRST-PARTY data (incarceration/divorce, independent of IDI) — so it fills the
                 dead-end with real records + a conversion path exactly when BC found nothing. The errorMessage
                 banner still shows above. Self-gates to nothing when we have no data. */}
+            {getVariant() === 'self' && searchQuery.lastName && (
+              <SelfExposureIntro brand={brand} name={searchQuery.firstName} theme={theme} />
+            )}
             {searchQuery.lastName && (
               <div style={{ marginBottom: 28, paddingBottom: 4 }}>
                 <SignalTeaser
@@ -610,5 +616,26 @@ const SalesSearchResultsPage = () => {
     </main>
   );
 };
+
+// Search-Yourself challenger (variant=self): reframe the SRP as the searcher's OWN exposure and tease the
+// standing service (claim + who's-searching alerts). HONEST — no fabricated "N people searched you" count (we
+// have no real pre-pay WSFY data for a non-member); it's a capability, stated as a capability. The real records
+// still render below in the standard teaser; this just changes the lens from "look someone up" to "this is you".
+function SelfExposureIntro({ brand, name, theme }) {
+  const accent = (theme && theme.accent) || '#1f4e79';
+  return (
+    <div style={{ border: `1px solid ${accent}33`, background: '#f2f7fc', borderRadius: 12, padding: '0.95rem 1.1rem', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <span aria-hidden="true" style={{ fontSize: 18 }}>👁️</span>
+        <strong style={{ color: '#14181d', fontSize: '1rem' }}>What&apos;s public about you{name ? `, ${name}` : ''}</strong>
+      </div>
+      <p style={{ margin: 0, fontSize: '0.9rem', color: '#3f4a54', lineHeight: 1.55 }}>
+        This is the kind of information anyone can pull up under your name. With {brand.name} you can claim your
+        profile, control what&apos;s shown, and get alerted when someone searches for you — an ongoing check, not a
+        one-time look-up.
+      </p>
+    </div>
+  );
+}
 
 export default SalesSearchResultsPage;
