@@ -6,6 +6,7 @@ const stateLimit = Number(process.env.SEO_AUDIT_STATE_LIMIT || 12);
 const countyLimit = Number(process.env.SEO_AUDIT_COUNTY_LIMIT || 40);
 const countyNameLimit = Number(process.env.SEO_AUDIT_COUNTY_NAME_LIMIT || 20);
 const concurrency = Number(process.env.SEO_AUDIT_CONCURRENCY || 6);
+const retries = Number(process.env.SEO_AUDIT_RETRIES || 1);
 const SITE = 'https://idlookup.me';
 const STATES_BY_POP = [
   'ca', 'tx', 'fl', 'ny', 'pa', 'il', 'oh', 'ga', 'nc', 'mi', 'nj', 'va',
@@ -61,12 +62,21 @@ const pathOnly = (href) => {
 };
 
 async function fetchBody(path) {
-  const { res, ms } = await fetchWithTimeout(`${base}${path}`, {
-    redirect: 'manual',
-    headers: { 'User-Agent': 'idlookup-county-audit/1.0' },
-  });
-  const body = res.status === 200 ? await res.text() : '';
-  return { status: res.status, location: res.headers.get('location') || '', body, ms };
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const { res, ms } = await fetchWithTimeout(`${base}${path}`, {
+        redirect: 'manual',
+        headers: { 'User-Agent': 'idlookup-county-audit/1.0' },
+      });
+      const body = res.status === 200 ? await res.text() : '';
+      return { status: res.status, location: res.headers.get('location') || '', xRobots: res.headers.get('x-robots-tag') || '', body, ms, attempt };
+    } catch (err) {
+      lastErr = err;
+      if (attempt < retries) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 async function discoverCountyHubs() {
@@ -87,7 +97,7 @@ async function discoverCountyHubs() {
 }
 
 async function auditCountyHub(path) {
-  const { status, location, body, ms } = await fetchBody(path);
+  const { status, location, xRobots, body, ms } = await fetchBody(path);
   const failures = [];
   const robots = body ? meta(body, 'robots') : '';
   const c = body ? canonical(body) : '';
@@ -98,6 +108,7 @@ async function auditCountyHub(path) {
     .filter((p) => new RegExp(`^${path}/[a-z]+(?:-[a-z]+)+$`).test(p));
 
   if (status !== 200) failures.push(`status=${status}${location ? ` location=${location}` : ''}`);
+  if (/noindex/i.test(xRobots)) failures.push(`x-robots=${xRobots}`);
   if (robots !== 'index, follow') failures.push(`robots=${robots || '-'}`);
   if (c !== `${SITE}${path}`) failures.push(`canonical=${c || '-'}`);
   if (!t || !t.includes('County')) failures.push(`title=${t || '-'}`);
@@ -108,7 +119,7 @@ async function auditCountyHub(path) {
 }
 
 async function auditCountyName(path) {
-  const { status, location, body, ms } = await fetchBody(path);
+  const { status, location, xRobots, body, ms } = await fetchBody(path);
   const failures = [];
   const robots = body ? meta(body, 'robots') : '';
   const c = body ? canonical(body) : '';
@@ -116,6 +127,7 @@ async function auditCountyName(path) {
   const hasRecords = /Incarceration records for/i.test(body);
 
   if (status !== 200) failures.push(`status=${status}${location ? ` location=${location}` : ''}`);
+  if (/noindex/i.test(xRobots)) failures.push(`x-robots=${xRobots}`);
   if (robots !== 'index, follow') failures.push(`robots=${robots || '-'}`);
   if (c !== `${SITE}${path}`) failures.push(`canonical=${c || '-'}`);
   if (!t || !t.includes('Incarceration Records')) failures.push(`title=${t || '-'}`);

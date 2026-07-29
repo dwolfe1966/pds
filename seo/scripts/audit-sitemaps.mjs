@@ -58,18 +58,19 @@ async function auditUrl(loc) {
   const res = await fetchWithTimeout(url, { redirect: 'manual', headers: { 'User-Agent': 'idlookup-seo-audit/1.0' } });
   const status = res.status;
   const location = res.headers.get('location') || '';
+  const xRobots = res.headers.get('x-robots-tag') || '';
   let noindex = false;
   let title = '';
   let canonical = '';
 
   if (status === 200) {
     const body = await res.text();
-    noindex = /<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex/i.test(body);
+    noindex = /noindex/i.test(xRobots) || /<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex/i.test(body);
     title = (body.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] || '').trim();
     canonical = (body.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1] || '').trim();
   }
 
-  return { loc, path: pathOf(loc), status, location, noindex, title, canonical };
+  return { loc, path: pathOf(loc), status, location, xRobots, noindex, title, canonical };
 }
 
 async function main() {
@@ -112,7 +113,7 @@ async function main() {
 
   sample('non-200 samples', badStatus, (r) => `${r.path} -> ${r.status}${r.location ? ` ${r.location}` : ''}`);
   sample('fetch error samples', failures, (r) => r.error);
-  sample('noindex samples', noindex, (r) => r.path);
+  sample('noindex samples', noindex, (r) => `${r.path}${r.xRobots ? ` x-robots=${r.xRobots}` : ''}`);
   sample('empty title samples', emptyTitle, (r) => r.path);
   sample('missing canonical samples', missingCanonical, (r) => r.path);
 

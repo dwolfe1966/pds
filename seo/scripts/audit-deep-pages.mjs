@@ -86,6 +86,7 @@ async function audit(check) {
   const got = {
     status: res.status,
     location: res.headers.get('location') || '',
+    xRobots: res.headers.get('x-robots-tag') || '',
     robots: body ? meta(body, 'robots') : '',
     canonical: body ? canonical(body) : '',
     title: body ? title(body) : '',
@@ -94,6 +95,7 @@ async function audit(check) {
   const failures = [];
   if (!check.expect.includes(got.status)) failures.push(`status=${got.status}`);
   if (check.locationIncludes && !got.location.includes(check.locationIncludes)) failures.push(`location=${got.location || '-'}`);
+  if (got.xRobots && /noindex/i.test(got.xRobots) && check.robots !== 'noindex, follow') failures.push(`x-robots=${got.xRobots}`);
   if (check.robots && got.robots !== check.robots) failures.push(`robots=${got.robots || '-'}`);
   if (check.canonical && got.canonical !== check.canonical) failures.push(`canonical=${got.canonical || '-'}`);
   if (check.titleIncludes && !got.title.includes(check.titleIncludes)) failures.push(`title=${got.title || '-'}`);

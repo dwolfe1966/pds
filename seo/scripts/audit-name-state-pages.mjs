@@ -57,11 +57,11 @@ async function fetchBody(path) {
     headers: { 'User-Agent': 'idlookup-name-state-audit/1.0' },
   });
   const body = res.status === 200 ? await res.text() : '';
-  return { status: res.status, location: res.headers.get('location') || '', body, ms };
+  return { status: res.status, location: res.headers.get('location') || '', xRobots: res.headers.get('x-robots-tag') || '', body, ms };
 }
 
 async function auditNameState(item) {
-  const { status, location, body, ms } = await fetchBody(item.path);
+  const { status, location, xRobots, body, ms } = await fetchBody(item.path);
   const failures = [];
   const robots = body ? meta(body, 'robots') : '';
   const c = body ? canonical(body) : '';
@@ -69,6 +69,7 @@ async function auditNameState(item) {
   const hasRecords = /Incarceration records for|Registered sex offenders named/i.test(body);
 
   if (status !== 200) failures.push(`status=${status}${location ? ` location=${location}` : ''}`);
+  if (/noindex/i.test(xRobots)) failures.push(`x-robots=${xRobots}`);
   if (robots !== 'index, follow') failures.push(`robots=${robots || '-'}`);
   if (c !== `${SITE}${item.path}`) failures.push(`canonical=${c || '-'}`);
   if (!t || !t.includes(`in ${item.stateName}`)) failures.push(`title=${t || '-'}`);
@@ -79,13 +80,14 @@ async function auditNameState(item) {
 
 async function auditRootAlias(item) {
   const aliasPath = item.path.replace(/^\/people/, '');
-  const { status, body, ms } = await fetchBody(aliasPath);
+  const { status, xRobots, body, ms } = await fetchBody(aliasPath);
   const failures = [];
   const robots = body ? meta(body, 'robots') : '';
   const c = body ? canonical(body) : '';
   const t = body ? title(body) : '';
 
   if (status !== 200) failures.push(`status=${status}`);
+  if (/noindex/i.test(xRobots)) failures.push(`x-robots=${xRobots}`);
   if (robots !== 'index, follow') failures.push(`robots=${robots || '-'}`);
   if (c !== `${SITE}${item.path}`) failures.push(`canonical=${c || '-'}`);
   if (!t || !t.includes(`in ${item.stateName}`)) failures.push(`title=${t || '-'}`);
