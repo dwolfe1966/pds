@@ -73,6 +73,13 @@ npm run audit:sitemaps
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:sitemaps
 ```
 
+Audit representative deep routes that stay discoverable but out of the submitted sitemap:
+
+```bash
+npm run audit:deep
+SEO_AUDIT_BASE=https://idlookup.me npm run audit:deep
+```
+
 ## Local Artifacts
 
 Large raw data and local secrets are intentionally ignored: `obis/`, `scratchpad/`,
