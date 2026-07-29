@@ -1,12 +1,10 @@
 // IndexNow submission — tell Bing (+ Yandex/Seznam via the shared endpoint) about our URLs.
 //
 // Usage:
-//   node scripts/indexnow-submit.mjs --scope=conservative        # the 1000 sitemapv2 URLs (default)
-//   node scripts/indexnow-submit.mjs --scope=directory           # the quality core: states+cities+name-in-
-//                                                                 # state+county hubs (sitemap-directory.xml)
-//   node scripts/indexnow-submit.mjs --scope=full                # every URL in the sitemap.xml index (~360k)
-//   node scripts/indexnow-submit.mjs --scope=full --dry          # count + preview only, no POST
-//   node scripts/indexnow-submit.mjs --scope=full --max=50000    # cap the number submitted
+//   node scripts/indexnow-submit.mjs                             # directory sitemap URLs (default)
+//   node scripts/indexnow-submit.mjs --scope=directory           # same as default
+//   node scripts/indexnow-submit.mjs --scope=directory --dry     # count + preview only, no POST
+//   node scripts/indexnow-submit.mjs --scope=directory --max=50000  # cap the number submitted
 //   node scripts/indexnow-submit.mjs --endpoint=https://www.bing.com/indexnow   # Bing-only endpoint
 //
 // The key file (app/<key>.txt/route.js) MUST be live at https://idlookup.me/<key>.txt first — the script
@@ -24,7 +22,7 @@ const PAUSE_MS = 1500;    // polite delay between batches
 const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const m = a.match(/^--([^=]+)(?:=(.*))?$/); return m ? [m[1], m[2] ?? true] : [a, true];
 }));
-const scope = args.scope || 'conservative';
+const scope = args.scope || 'directory';
 const endpoint = args.endpoint || DEFAULT_ENDPOINT;
 const dry = !!args.dry;
 const cap = args.max ? parseInt(args.max, 10) : Infinity;
@@ -39,27 +37,15 @@ async function fetchText(url) {
 }
 
 async function collectUrls() {
-  if (scope === 'conservative') {
-    return locs(await fetchText(`${SITE}/sitemapv2.xml`));
+  if (scope === 'conservative' || scope === 'full') {
+    console.warn(`  scope=${scope} is retired; using sitemap-directory.xml instead`);
   }
-  if (scope === 'directory') {
-    // The QUALITY core (states + cities + roster-state name-in-state + county hubs) — the set robots
-    // points at. This is what to ping after adding differentiated pages (county hubs, SO enrichment).
+  if (scope === 'directory' || scope === 'conservative' || scope === 'full') {
+    // The QUALITY core — the single sitemap robots.txt points at. This is what to ping after adding
+    // differentiated pages or refreshing the submitted directory set.
     return locs(await fetchText(`${SITE}/sitemap-directory.xml`));
   }
-  // full: the sitemap.xml index → chunk sitemaps → page URLs
-  const index = await fetchText(`${SITE}/sitemap.xml`);
-  const chunks = locs(index).filter((u) => /\/sitemap\/\d+\.xml$/.test(u));
-  if (!chunks.length) { // not an index (single flat sitemap) — treat index locs as page URLs
-    return locs(index);
-  }
-  const all = [];
-  for (let i = 0; i < chunks.length; i++) {
-    process.stdout.write(`\r  fetching chunk ${i + 1}/${chunks.length} …`);
-    try { all.push(...locs(await fetchText(chunks[i]))); } catch (e) { console.warn(`\n  chunk ${chunks[i]} failed: ${e.message}`); }
-  }
-  process.stdout.write('\n');
-  return all;
+  throw new Error(`Unknown scope "${scope}". Use --scope=directory.`);
 }
 
 async function verifyKeyLive() {
