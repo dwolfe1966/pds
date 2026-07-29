@@ -98,6 +98,12 @@ Audit a broader sample of discoverable county pages:
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:counties
 ```
 
+Audit roster-state name pages and their root recovery aliases:
+
+```bash
+SEO_AUDIT_BASE=https://idlookup.me npm run audit:name-states
+```
+
 Audit public SEO copy for prohibited privacy/guarantee claims:
 
 ```bash

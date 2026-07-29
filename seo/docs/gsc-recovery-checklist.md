@@ -53,6 +53,9 @@ URLs return `410`.
 The county audit is broader and intentionally separate from `verify:live`; run
 `SEO_AUDIT_BASE=https://idlookup.me npm run audit:counties` before considering any county sitemap expansion.
 
+The name-in-state audit checks roster-state name pages and root recovery aliases; run
+`SEO_AUDIT_BASE=https://idlookup.me npm run audit:name-states` before considering name-state sitemap expansion.
+
 The claims audit should pass before shipping SEO copy changes; it guards against privacy/confidentiality
 and absolute-accuracy claims that conflict with the product posture.
 
