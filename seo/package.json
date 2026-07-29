@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start -p 3005",
     "verify": "npm run audit:claims && npm run build && npm run smoke:local",
+    "verify:live": "npm run audit:claims && SEO_SMOKE_BASE=https://idlookup.me npm run smoke && SEO_AUDIT_BASE=https://idlookup.me npm run audit:sitemaps && SEO_AUDIT_BASE=https://idlookup.me SEO_AUDIT_TIMEOUT_MS=20000 npm run audit:deep",
     "smoke": "node scripts/smoke.mjs",
     "smoke:local": "bash scripts/smoke-local.sh",
     "audit:sitemaps": "node scripts/audit-sitemaps.mjs",

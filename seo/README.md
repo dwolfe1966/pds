@@ -64,6 +64,12 @@ Run the local pre-push verification suite:
 npm run verify
 ```
 
+Run the deployed verification suite:
+
+```bash
+npm run verify:live
+```
+
 Smoke test the production build locally, or test a running/deployed instance:
 
 ```bash
