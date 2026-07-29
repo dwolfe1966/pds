@@ -70,14 +70,17 @@ export default async function NameInCounty({ params }) {
       <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
       <Breadcrumbs crumbs={crumbs} />
 
-      <h1 style={ui.h1}>{full} in {c.name} County, {st.code}</h1>
-      <p style={{ margin: '0 0 20px', fontSize: 17, lineHeight: 1.6 }}>
-        {recs.length > 0
-          ? <><strong>{recs.length}</strong> public incarceration {recs.length === 1 ? 'record' : 'records'} matching {full} in {c.name} County, {st.name} — see below.</>
-          : <>Search for {full} in {c.name} County, {st.name}. Public booking and incarceration records from state and county correctional rosters.</>}
-      </p>
+      <section style={ui.hero}>
+        <p style={ui.eyebrow}>County name records</p>
+        <h1 style={ui.h1}>{full} in {c.name} County, {st.code}</h1>
+        <p style={ui.lead}>
+          {recs.length > 0
+            ? <><strong>{recs.length}</strong> public incarceration {recs.length === 1 ? 'record' : 'records'} matching {full} in {c.name} County, {st.name} — see below.</>
+            : <>Search for {full} in {c.name} County, {st.name}. Public booking and incarceration records from state and county correctional rosters.</>}
+        </p>
 
-      <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
+        <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
+      </section>
 
       <InmateRecordsSection
         records={recs}
@@ -86,7 +89,7 @@ export default async function NameInCounty({ params }) {
       />
 
       <p style={{ margin: '16px 0 0', fontSize: 13 }}>
-        <a href={`/people/${st.code.toLowerCase()}/county/${c.slug}`} style={ui.link}>← All records in {c.name} County</a>
+        <a href={`/people/${st.code.toLowerCase()}/county/${c.slug}`} style={ui.secondaryCta}>All records in {c.name} County</a>
       </p>
       <FcraFooter />
     </main>

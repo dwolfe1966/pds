@@ -35,6 +35,7 @@ Validate locally or live with:
 ```bash
 npm run smoke:local
 SEO_SMOKE_BASE=https://idlookup.me npm run smoke
+SEO_AUDIT_BASE=https://idlookup.me npm run audit:sitemaps
 ```
 
 The smoke script should report:
@@ -42,6 +43,9 @@ The smoke script should report:
 ```text
 OK   sitemap-directory shape -> 1563 unique root/state/city URLs
 ```
+
+The sitemap audit should report zero duplicates, redirects, 404/410 responses, `noindex` pages,
+empty titles, and missing canonicals.
 
 ## GSC Monitoring
 

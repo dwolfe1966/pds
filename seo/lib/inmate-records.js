@@ -41,15 +41,15 @@ export function InmateRecordCard({ rec }) {
     ? { backgroundColor: '#e5e7eb', backgroundImage: `url(${rec.mugshotUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : { backgroundColor: '#eef1f4' };
   return (
-    <div style={{ display: 'flex', gap: 12, border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
+    <div style={{ display: 'flex', gap: 12, border: `1px solid ${ui.color.softBorder}`, borderRadius: 8, padding: '12px 14px', background: '#fff' }}>
       <div aria-hidden="true" style={{ flexShrink: 0, width: 56, height: 68, borderRadius: 8, ...photo }} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 700, color: '#111827' }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
-        {loc && <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>📍 {loc}</div>}
-        {meta.length > 0 && <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 2 }}>{meta.join(' · ')}</div>}
+        <div style={{ fontWeight: 800, color: ui.color.ink }}>{rec.name}{rec.age ? `, ${rec.age}` : ''}</div>
+        {loc && <div style={{ fontSize: 13, color: ui.color.body, marginTop: 2 }}>{loc}</div>}
+        {meta.length > 0 && <div style={{ fontSize: 12.5, color: ui.color.muted, marginTop: 2 }}>{meta.join(' · ')}</div>}
         {cleaned.length > 0 && (
-          <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 3 }}>
-            ⚖️ {cleaned.slice(0, 4).join(' · ')}{cleaned.length > 4 ? ` +${cleaned.length - 4} more` : ''}
+          <div style={{ fontSize: 12.5, color: ui.color.muted, marginTop: 3 }}>
+            {cleaned.slice(0, 4).join(' · ')}{cleaned.length > 4 ? ` +${cleaned.length - 4} more` : ''}
           </div>
         )}
       </div>
@@ -62,12 +62,12 @@ export function InmateRecordsSection({ records, heading, blurb }) {
   if (!records || records.length === 0) return null;
   return (
     <section style={{ ...ui.card, marginTop: 20 }}>
-      <h2 style={{ marginTop: 0, fontSize: 18 }}>{heading}</h2>
-      {blurb && <p style={{ margin: '0 0 12px', fontSize: 13, color: '#6b7280' }}>{blurb}</p>}
+      <h2 style={ui.h2}>{heading}</h2>
+      {blurb && <p style={{ margin: '0 0 12px', fontSize: 13, color: ui.color.muted, lineHeight: 1.6 }}>{blurb}</p>}
       <div style={{ display: 'grid', gap: 8 }}>
         {records.map((rec, i) => <InmateRecordCard key={i} rec={rec} />)}
       </div>
-      <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>
+      <p style={ui.source}>
         Source: state DOC &amp; county correctional rosters. Public record, not a consumer report.
       </p>
     </section>

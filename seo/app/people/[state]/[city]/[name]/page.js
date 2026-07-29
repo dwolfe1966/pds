@@ -49,10 +49,10 @@ export async function generateMetadata({ params }) {
 
 const stat = {
   wrap: { display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 },
-  card: { flex: '1 1 200px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '16px 18px' },
-  label: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280', fontWeight: 700 },
-  big: { fontSize: 24, fontWeight: 800, color: '#0d5d2f', margin: '2px 0 4px' },
-  sub: { fontSize: 13, color: '#374151' },
+  card: { flex: '1 1 200px', background: '#fff', border: `1px solid ${ui.color.softBorder}`, borderRadius: 8, padding: '16px 18px', boxShadow: '0 1px 2px rgba(16, 24, 40, 0.04)' },
+  label: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: ui.color.muted, fontWeight: 800 },
+  big: { fontSize: 24, fontWeight: 800, color: ui.color.accent, margin: '2px 0 4px' },
+  sub: { fontSize: 13, color: ui.color.body },
 };
 
 export default async function NameInCity({ params }) {
@@ -88,26 +88,29 @@ export default async function NameInCity({ params }) {
       <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
       <Breadcrumbs crumbs={crumbs} />
 
-      <h1 style={ui.h1}>{full} in {d.city}, {d.state}</h1>
-      <p style={{ margin: '0 0 20px', fontSize: 17, lineHeight: 1.6 }}>
-        An estimated <strong>{num(d.estInCity)}</strong> people named {full} live in {d.city}, {d.stateName}.
-        Search below to find the specific {full} you're looking for in {d.city}.
-      </p>
+      <section style={ui.hero}>
+        <p style={ui.eyebrow}>Name directory</p>
+        <h1 style={ui.h1}>{full} in {d.city}, {d.state}</h1>
+        <p style={ui.lead}>
+          An estimated <strong>{num(d.estInCity)}</strong> people named {full} live in {d.city}, {d.stateName}.
+          Search below to find the specific {full} you're looking for in {d.city}.
+        </p>
 
-      <a href={serpHref(d.first, d.last, d.state, d.city)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {d.city} →</a>
+        <a href={serpHref(d.first, d.last, d.state, d.city)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {d.city} →</a>
+      </section>
 
       {people.length > 0 && (
         <section style={{ ...ui.card, marginTop: 20 }}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>{people.length} {people.length === 1 ? 'profile' : 'profiles'} for {full} in {d.city}</h2>
+          <h2 style={ui.h2}>{people.length} {people.length === 1 ? 'profile' : 'profiles'} for {full} in {d.city}</h2>
           <div style={{ display: 'grid', gap: 8 }}>
             {people.map((p) => (
               <a key={p.profile_id} href={`${cityNamePath(state, city, name)}/${ageToken(p.age)}`}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', textDecoration: 'none', color: '#111827' }}>
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, border: `1px solid ${ui.color.softBorder}`, borderRadius: 8, padding: '12px 14px', textDecoration: 'none', color: ui.color.ink }}>
                 <span style={{ minWidth: 0 }}>
                   <strong>{p.name}</strong>{p.age ? `, ${p.age}` : ''}
-                  <span style={{ color: '#6b7280' }}> · {[p.city, p.state].filter(Boolean).join(', ')}</span>
+                  <span style={ui.muted}> · {[p.city, p.state].filter(Boolean).join(', ')}</span>
                 </span>
-                <span style={{ color: '#0d5d2f', fontWeight: 700, whiteSpace: 'nowrap' }}>View profile →</span>
+                <span style={{ color: ui.color.accent, fontWeight: 800, whiteSpace: 'nowrap' }}>View profile →</span>
               </a>
             ))}
           </div>
@@ -135,28 +138,28 @@ export default async function NameInCity({ params }) {
       </div>
 
       {prose && (
-        <p style={{ margin: '4px 0 16px', fontSize: 15, lineHeight: 1.65, color: '#374151' }}>{prose}</p>
+        <p style={{ margin: '4px 0 16px', fontSize: 15, lineHeight: 1.65, color: ui.color.body }}>{prose}</p>
       )}
 
       {cityFacts.length > 0 && (
         <section style={ui.card}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>About {d.city}, {d.state}</h2>
+          <h2 style={ui.h2}>About {d.city}, {d.state}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
             {cityFacts.map((s) => (
-              <div key={s.label} style={{ background: '#f8faf9', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px' }}>
+              <div key={s.label} style={{ background: ui.color.soft, border: `1px solid ${ui.color.softBorder}`, borderRadius: 8, padding: '12px 14px' }}>
                 <div style={stat.label}>{s.label}</div>
                 <div style={{ ...stat.big, fontSize: 20 }}>{s.value}</div>
               </div>
             ))}
           </div>
-          <p style={{ margin: '10px 0 0', fontSize: 11, color: '#9ca3af' }}>Source: U.S. Census Bureau, American Community Survey (5-year).</p>
+          <p style={ui.source}>Source: U.S. Census Bureau, American Community Survey (5-year).</p>
         </section>
       )}
 
       {related.length > 0 && (
         <section style={ui.card}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Other names in {d.city}</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+          <h2 style={ui.h2}>Other names in {d.city}</h2>
+          <div style={ui.linkGrid}>
             {related.map((r) => (
               <a key={r.slug} href={cityNamePath(state, city, r.slug)} style={ui.link}>{r.name}</a>
             ))}

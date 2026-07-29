@@ -66,6 +66,13 @@ SEO_SMOKE_BASE=http://localhost:3005 npm run smoke
 SEO_SMOKE_BASE=https://idlookup.me npm run smoke
 ```
 
+Audit submitted sitemap health against a running instance:
+
+```bash
+npm run audit:sitemaps
+SEO_AUDIT_BASE=https://idlookup.me npm run audit:sitemaps
+```
+
 ## Local Artifacts
 
 Large raw data and local secrets are intentionally ignored: `obis/`, `scratchpad/`,

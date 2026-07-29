@@ -52,21 +52,24 @@ export default async function CountyHub({ params }) {
       <JsonLd blocks={jsonLd} />
       <Breadcrumbs crumbs={crumbs} />
 
-      <h1 style={ui.h1}>Incarceration Records in {c.name} County, {st.code}</h1>
-      <p style={{ margin: '0 0 20px', fontSize: 17, lineHeight: 1.6 }}>
-        <strong>{num(c.count)}</strong> public booking &amp; incarceration records in {c.name} County, {st.name},
-        from state and county correctional rosters. Browse by name below, or search directly.
-      </p>
+      <section style={ui.hero}>
+        <p style={ui.eyebrow}>County records</p>
+        <h1 style={ui.h1}>Incarceration Records in {c.name} County, {st.code}</h1>
+        <p style={ui.lead}>
+          <strong>{num(c.count)}</strong> public booking &amp; incarceration records in {c.name} County, {st.name},
+          from state and county correctional rosters. Browse by name below, or search directly.
+        </p>
 
-      <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${st.code}`} style={ui.cta}>
-        Search {c.name} County records →
-      </a>
+        <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=people-directory&state=${st.code}`} style={ui.cta}>
+          Search {c.name} County records →
+        </a>
+      </section>
 
       {names.length > 0 && (
         <section style={{ ...ui.card, marginTop: 20 }}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>People with records in {c.name} County</h2>
-          <p style={{ ...ui.muted, margin: '0 0 10px', fontSize: 14 }}>Ranked by number of matching records. Pick a name to see the records.</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+          <h2 style={ui.h2}>People with records in {c.name} County</h2>
+          <p style={{ ...ui.muted, margin: '0 0 12px', fontSize: 14, lineHeight: 1.6 }}>Ranked by number of matching records. Pick a name to see the records.</p>
+          <div style={ui.linkGrid}>
             {names.map((n) => (
               <a key={n.slug} href={countyNamePath(st.code, c.slug, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
                 {n.name}{n.count ? <span style={ui.muted}> ({num(n.count)})</span> : null}
@@ -77,7 +80,7 @@ export default async function CountyHub({ params }) {
       )}
 
       <p style={{ margin: '16px 0 0', fontSize: 13 }}>
-        <a href={statePath(state)} style={ui.link}>← All incarceration records in {st.name}</a>
+        <a href={statePath(state)} style={ui.secondaryCta}>All incarceration records in {st.name}</a>
       </p>
       <FcraFooter />
     </main>

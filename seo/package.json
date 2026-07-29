@@ -9,6 +9,7 @@
     "start": "next start -p 3005",
     "smoke": "node scripts/smoke.mjs",
     "smoke:local": "bash scripts/smoke-local.sh",
+    "audit:sitemaps": "node scripts/audit-sitemaps.mjs",
     "db:schema": "node scripts/apply-schema.mjs"
   },
   "dependencies": {

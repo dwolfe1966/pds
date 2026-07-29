@@ -88,34 +88,37 @@ export default async function ProfilePage({ params }) {
       <JsonLd blocks={[crumbsJsonLd(crumbs), personLd]} />
       <Breadcrumbs crumbs={crumbs} />
 
-      <h1 style={ui.h1}>{person.name}{person.age ? `, ${person.age}` : ''}</h1>
-      <p style={{ margin: '0 0 20px', fontSize: 16, color: '#374151' }}>Resides in {loc}</p>
+      <section style={ui.hero}>
+        <p style={ui.eyebrow}>Public profile</p>
+        <h1 style={ui.h1}>{person.name}{person.age ? `, ${person.age}` : ''}</h1>
+        <p style={ui.lead}>Resides in {loc}</p>
 
-      <a href={unlock} style={{ ...ui.cta, fontSize: 16 }}>Unlock full profile →</a>
+        <a href={unlock} style={{ ...ui.cta, fontSize: 16 }}>Unlock full profile →</a>
+      </section>
 
       <section style={{ ...ui.card, marginTop: 20 }}>
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>📍 Location history</h2>
-        <p style={{ margin: 0 }}>{loc} (current){priorLocations.map((l) => ` · ${l}`).join('')}</p>
+        <h2 style={ui.h2}>Location history</h2>
+        <p style={{ margin: 0, color: ui.color.body }}>{loc} (current){priorLocations.map((l) => ` · ${l}`).join('')}</p>
       </section>
 
       {relatives.length > 0 && (
         <section style={ui.card}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>👪 Relatives &amp; associates</h2>
-          <p style={{ margin: 0 }}>{relatives.join(' · ')}</p>
+          <h2 style={ui.h2}>Relatives &amp; associates</h2>
+          <p style={{ margin: 0, color: ui.color.body }}>{relatives.join(' · ')}</p>
         </section>
       )}
 
       <section style={ui.card}>
-        <h2 style={{ marginTop: 0, fontSize: 18 }}>Available in {person.name}&apos;s full report</h2>
+        <h2 style={ui.h2}>Available in {person.name}&apos;s full report</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
           {LOCKED.map((m) => (
-            <div key={m.key} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 600, fontSize: 14 }}>{m.label}</span>
-              <span style={{ color: '#0d5d2f', fontWeight: 700 }}>🔒</span>
+            <div key={m.key} style={{ border: `1px solid ${ui.color.softBorder}`, background: ui.color.soft, borderRadius: 8, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: ui.color.body }}>{m.label}</span>
+              <span style={{ color: ui.color.accent, fontWeight: 800, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Locked</span>
             </div>
           ))}
         </div>
-        <p style={{ margin: '12px 0 14px', fontSize: 13, color: '#6b7280' }}>
+        <p style={{ margin: '12px 0 14px', fontSize: 13, color: ui.color.muted, lineHeight: 1.6 }}>
           Unlock the full report to view phone numbers, addresses, and criminal, property, and financial records.
         </p>
         <a href={unlock} style={{ ...ui.cta, display: 'inline-block' }}>See {person.name}&apos;s full report →</a>
