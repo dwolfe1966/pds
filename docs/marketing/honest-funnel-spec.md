@@ -26,7 +26,7 @@ These are the promises the whole funnel is built to keep — and the marketing w
 - **Subhead:** "Contact info, addresses, and public records — sourced and current."
 - **Search box:** Name (+ optional city/state). Tabs: Name · Phone · Email · Address.
 - **Price bar (above the fold):** "Full report **$4.99**, or unlimited **$19/mo** — cancel in one click, we email before every charge."
-- **Trust row:** honest first-party counts (BC/IDI records + our inmate DB), "your search is private — the person is never notified," security badge.
+- **Trust row:** honest first-party signal ("real results — no fabricated matches"), "cancel anytime — no surprise subscriptions," security badge. **⚠️ NEVER claim searches are private/confidential/"they're never notified" — WSFY (Who's-Searching-For-You) surfaces searchers TO the subject; the claim contradicts our own product.**
 - **Events:** `landing_view {search_type, variant}`, `search_submit`.
 - **vs dark:** no fear headline, no pulsing "act now" CTA, price present.
 
@@ -66,7 +66,7 @@ The loader is honest *because* it narrates the actual backend calls, with real c
 - **Primary:** "John D. Smith — full report — **$4.99**." One charge, no subscription.
 - **Optional:** "Prefer unlimited? **$19/mo**" — clearly optional, no pre-check.
 - **Terms (plain, in-view):** "One charge of **$4.99**. No subscription, no auto-renew. If you choose monthly, we **email before every charge** and you cancel in one click."
-- **Reassurance:** "Secure checkout · you're never shown to the person you searched."
+- **Reassurance:** "Secure checkout · cancel anytime." (Do NOT use "you're never shown to the person you searched" — contradicts WSFY.)
 - **FCRA:** short, near the CTA — "Not a consumer reporting agency; don't use for employment, tenant, or credit decisions."
 - **Events:** `checkout_view {plan}`, `purchase {plan, amount}`.
 - **vs dark:** no "$1" anchor hiding $34.99/mo, no fake countdown, **no pre-checked add-ons**, no cancel-by-phone.

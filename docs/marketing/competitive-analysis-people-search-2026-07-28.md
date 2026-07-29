@@ -109,12 +109,12 @@ The persuasion *mechanics* work; the *deception* is what draws FTC actions and B
 1. **Intent-matched landing skins off one search box** (phone / email / address / background / self-search), each with its own H1, 3-step "how it works," and testimonials. Cheap, huge for paid-search Quality Score + ad-scent. → extends our existing per-type funnels + [[project_ab_test_theme_wiring]] / [[project_sup_challenger_variants]].
 2. **Refine-and-confirm identity step before results** — improves match quality AND commitment. Validates our build/verify/confirm pattern ([[feedback_funnel_design_principles]]).
 3. **A genuinely useful staged loader** — "Searching booking records… found 3… checking address history…" tied to *real* data pulls. Gets the anticipation/momentum benefit **without** the fake delay. → our honest-loader mandate ([[project_phone_email_flow_roadmap]]).
-4. **Anonymity reassurance at the paywall** — "your search is private; they're not notified." ⚠️ **Strategic fork:** this is in *tension* with our identity-community / owner-voice thesis where the *subject* gains visibility ([[project_identity_control_owner_voice]]). Decide deliberately which promise we make to whom.
+4. **Anonymity reassurance — DECIDED: DO NOT adopt.** Competitors say "your search is private; they're not notified," but that **directly contradicts our WSFY product** (Who's-Searching-For-You surfaces searchers *to* the subject). Never claim search privacy/confidentiality/anonymity anywhere. (Owner 2026-07-29.)
 5. **Phone spam-risk score + community reports** (Spokeo) — a first-party-able payoff that makes the phone funnel valuable even when identity is thin. → [[project_phone_email_flow_roadmap]] (phone = safety product, descriptive-spam-only).
 6. **Dark-web / identity-protection as a bundled trust feature** (TruthFinder) — maps directly onto our Identity Management / WSFY vertical; positive-framed, defensible.
 7. **A concrete "we have data they don't" asset** — their versions are the "court runner" and dark-web scan; **ours is the first-party inmate/incarceration data layer** ([[project_inmate_data_layer]], [[project_incarceration_data_moat]]). Lead with it.
 8. **Modular add-on SKUs + a real retention downsell** in the cancel flow — reduces involuntary churn (relevant to [[project_csr_billing_classification]] + the CA/NYC cancel work). Instant Checkmate's $16.95 downsell is the model — done honestly.
-9. **Trust-signal stacking above the fold + at the paywall** — honest first-party record counts (BC/IDI + inmate), reviews, security badge, anonymity. We under-use these.
+9. **Trust-signal stacking above the fold + at the paywall** — honest first-party record counts (BC/IDI + inmate), reviews, security badge. We under-use these. (NOT anonymity — see #4.)
 
 ## 7. Our wedge — the anti-dark-pattern brand
 
