@@ -12,6 +12,20 @@ const checks = [
     titleIncludes: 'Michael Smith in Miami',
   },
   {
+    path: '/people/fl/michael-smith',
+    expect: [200],
+    robots: 'index, follow',
+    canonical: 'https://idlookup.me/people/fl/michael-smith',
+    titleIncludes: 'Michael Smith in Florida',
+  },
+  {
+    path: '/fl/michael-smith',
+    expect: [200],
+    robots: 'index, follow',
+    canonical: 'https://idlookup.me/people/fl/michael-smith',
+    titleIncludes: 'Michael Smith in Florida',
+  },
+  {
     path: '/people/fl/county/miami-dade',
     expect: [200],
     robots: 'index, follow',

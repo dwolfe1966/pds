@@ -107,19 +107,22 @@ export async function NameInStateView({ state, name }) {
       <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
       <Breadcrumbs crumbs={crumbs} />
 
-      <h1 style={ui.h1}>{full} in {st.name}</h1>
-      {/* De-template (Step 4): lead with the records that actually DIFFER per page (incarceration / sex-offender
-          counts) instead of an identical "An estimated N people…" template, so no two name-in-state pages open
-          the same way. Falls back to the estimate only when there are no records. */}
-      <p style={{ margin: '0 0 20px', fontSize: 17, lineHeight: 1.6 }}>
-        {recordLead.length
-          ? <>Public records for <strong>{full}</strong> in {st.name}: {recordLead.join(' and ')} match this name{d?.estInState ? <>, among an estimated {num(d.estInState)} {full}s statewide</> : ''}. See the details below, or search to find the specific person.</>
-          : (d?.estInState
-            ? <>An estimated <strong>{num(d.estInState)}</strong> people named {full} live in {st.name}. Search by city, age, and relatives to find the specific {full} you're looking for.</>
-            : <>Find people named {full} across {st.name}. Search by city, age, and relatives to identify the right {full}.</>)}
-      </p>
+      <section style={ui.hero}>
+        <p style={ui.eyebrow}>Name records by state</p>
+        <h1 style={ui.h1}>{full} in {st.name}</h1>
+        {/* De-template (Step 4): lead with the records that actually DIFFER per page (incarceration / sex-offender
+            counts) instead of an identical "An estimated N people…" template, so no two name-in-state pages open
+            the same way. Falls back to the estimate only when there are no records. */}
+        <p style={ui.lead}>
+          {recordLead.length
+            ? <>Public records for <strong>{full}</strong> in {st.name}: {recordLead.join(' and ')} match this name{d?.estInState ? <>, among an estimated {num(d.estInState)} {full}s statewide</> : ''}. See the details below, or search to find the specific person.</>
+            : (d?.estInState
+              ? <>An estimated <strong>{num(d.estInState)}</strong> people named {full} live in {st.name}. Search by city, age, and relatives to find the specific {full} you're looking for.</>
+              : <>Find people named {full} across {st.name}. Search by city, age, and relatives to identify the right {full}.</>)}
+        </p>
 
-      <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
+        <a href={serpHref(first, last, st.code)} style={{ ...ui.cta, fontSize: 16 }}>Search {full} in {st.name} →</a>
+      </section>
 
       <InmateRecordsSection
         records={inmates}
@@ -137,27 +140,27 @@ export async function NameInStateView({ state, name }) {
           states for a given name (pure cross-page boilerplate). Demoted to one compact context line so the
           unique per-page content (records, above) dominates. */}
       {(ff || lf) && (
-        <p style={{ margin: '18px 0 0', fontSize: 13.5, color: '#6b7280', lineHeight: 1.6 }}>
+        <p style={{ margin: '18px 0', fontSize: 13.5, color: ui.color.muted, lineHeight: 1.6 }}>
           <strong>{first}</strong> {(d?.firstRank || ff?.rank) ? <>is the {ordinal(d?.firstRank || ff?.rank)} most common U.S. first name</> : 'is a U.S. given name'}{genderLabel ? ` (${genderLabel})` : ''}; <strong>{last}</strong> {(d?.lastRank || lf?.rank) ? <>the {ordinal(d?.lastRank || lf?.rank)} most common surname</> : 'a U.S. surname'}{topEth && topEth[1] >= 40 ? `, ${topEth[1]}% ${topEth[0]}` : ''}.
         </p>
       )}
 
       {cities.length > 0 && (
         <section style={ui.card}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Search {full} by city in {st.name}</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+          <h2 style={ui.h2}>Search {full} by city in {st.name}</h2>
+          <div style={ui.linkGrid}>
             {cities.map((c) => (<a key={c.slug} href={cityPath(state, c.slug)} style={ui.link}>{c.city}</a>))}
           </div>
-          <p style={{ margin: '10px 0 0', fontSize: 13 }}>
-            <a href={statePath(state)} style={ui.link}>Browse all cities in {st.name} →</a>
+          <p style={{ margin: '16px 0 0', fontSize: 13 }}>
+            <a href={statePath(state)} style={ui.secondaryCta}>Browse all cities in {st.name}</a>
           </p>
         </section>
       )}
 
       {related.length > 0 && (
         <section style={ui.card}>
-          <h2 style={{ marginTop: 0, fontSize: 18 }}>Other names in {st.name}</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+          <h2 style={ui.h2}>Other names in {st.name}</h2>
+          <div style={ui.linkGrid}>
             {related.map((rn) => (<a key={rn.slug} href={nameInStatePath(state, rn.slug)} style={ui.link}>{rn.name}</a>))}
           </div>
         </section>
