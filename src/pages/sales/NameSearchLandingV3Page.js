@@ -117,8 +117,16 @@ const NameSearchLandingV3Page = () => {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // (Removed the two fabricated 5s "Searching…" interstitials — honest-funnel audit 2026-07-29. Real search
-  // runs honestly at /name/loader; steps now advance directly.)
+  useEffect(() => {
+    let timer;
+    if (step === 'searching-one') {
+      timer = setTimeout(() => { track('search_step', { step: 'location', search_type: 'name', variant: 'v3' }); setStep('location'); }, 5000);
+    }
+    if (step === 'searching-two') {
+      timer = setTimeout(() => { track('search_step', { step: 'details', search_type: 'name', variant: 'v3' }); setStep('details'); }, 5000);
+    }
+    return () => { if (timer) clearTimeout(timer); };
+  }, [step]);
 
   // Search invoked directly from handleConfirm — NOT a useEffect. Effect-based
   // dispatch silently drops the search (see NameSearchLandingV5Page.js).
@@ -142,7 +150,6 @@ const NameSearchLandingV3Page = () => {
     if (age.trim()) params.set('age', age.trim());
     if (city.trim()) params.set('city', city.trim());
     params.set('flow', 'inmate'); // inmate flow → results page leads with the booking teaser
-    params.set('honest', '1'); // paid V3 → honest loader copy + (via loader→honestFunnel) transparent recurring-price disclosure + post-purchase identity moment. Display-only; the search ignores it.
     navigate(`/name/loader?${params.toString()}`);
   };
 
@@ -153,15 +160,15 @@ const NameSearchLandingV3Page = () => {
       setNameError('Please enter a first and last name to search.'); track('validation_error', { reason: 'name_required', step: 'name' });
       return;
     }
-    track('search_step', { step: 'location', search_type: 'name', variant: 'v3' });
-    setStep('location');
+    track('search_step', { step: 'searching-one', search_type: 'name', variant: 'v3' });
+    setStep('searching-one');
   };
 
   const continueFromLocation = () => {
     if (!state.trim()) { setLocationError('Please select a state before continuing.'); track('validation_error', { reason: 'state_required', step: 'location' }); return; }
     setLocationError('');
-    track('search_step', { step: 'details', search_type: 'name', variant: 'v3' });
-    setStep('details');
+    track('search_step', { step: 'searching-two', search_type: 'name', variant: 'v3' });
+    setStep('searching-two');
   };
   const continueFromDetails = () => { track('search_step', { step: 'confirm', search_type: 'name', variant: 'v3' }); setStep('confirm'); };
 
