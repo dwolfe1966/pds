@@ -234,12 +234,18 @@ function ProofPanel({ signals, fullName, accent, dark }) {
   let icon = '📄'; let label = 'record'; let bits = [];
   if (booking.length) {
     const r = booking[0];
-    const year = (String(r.bookingDate || '').match(/\d{4}/) || [])[0];
-    const status = cleanReleaseStatus(r.releaseStatus, r.recordType);
+    // Fields verified against live idlookup.me/api/incarceration rows (2026-07-29): facility/county/state +
+    // charges are the reliably-populated, checkable proof. bookingDate is ALWAYS null upstream (don't show it).
+    // releaseStatus is noisy (a clean label, OR a projected-release date, OR a custody CLASS like "MEDIUM") — so
+    // only surface it when cleanReleaseStatus resolves to a recognized status label; otherwise drop it.
+    const cleaned = cleanReleaseStatus(r.releaseStatus, r.recordType);
+    const KNOWN_STATUS = new Set(['In custody', 'Released', 'Life sentence', 'On parole', 'On probation']);
+    const status = KNOWN_STATUS.has(cleaned) ? cleaned : null;
     const where = r.facility || r.county || r.state || null;
+    const charge = (r.charges || []).find(Boolean);
     icon = r.recordType === 'court' ? '🏛️' : '⚖️';
     label = r.recordType === 'court' ? 'court record' : 'incarceration record';
-    bits = [where, status, year && `booked ${year}`].filter(Boolean);
+    bits = [where, status, charge].filter(Boolean);
   } else if (md.length) {
     const r = md[0];
     const isDiv = r.recordType === 'divorce';
