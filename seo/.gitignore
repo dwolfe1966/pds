@@ -3,8 +3,12 @@
 .next/
 data/name-pairs.ndjson
 node_modules/
+obis/
 out/
+scratchpad/
 scripts/.real-*.json
 scripts/.batch*.json
 bing-api-key.txt
 people-data-labs-key.rtf
+twilio_2FA_recovery_code.txt
+"$OUT"

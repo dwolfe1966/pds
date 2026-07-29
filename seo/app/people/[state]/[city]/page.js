@@ -21,6 +21,11 @@ export const revalidate = 5184000; // 60d
 export function generateStaticParams() { return []; }
 
 const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
+const withTimeout = (promise, fallback, ms = 1200) =>
+  Promise.race([
+    promise.catch(() => fallback),
+    new Promise((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
 
 const snap = {
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, margin: '4px 0 4px' },
@@ -56,7 +61,7 @@ export default async function CityLanding({ params }) {
   const names = getCityTopNames(state, city, 60);
   // Registered sex offenders in this city (location-native — SO records carry a real city, so this is
   // combo-unique per city, no cross-city dup). Owner-cleared display.
-  const offenders = await querySexOffenders({ state: c.stateCode, city: c.city, limit: 16 });
+  const offenders = await withTimeout(querySexOffenders({ state: c.stateCode, city: c.city, limit: 16 }), []);
   // City-native names are limited by the strict common-name gate — often a handful (small states
   // scale the ~200 in-state floor down to only the very top names). Top every city page up to a
   // healthy names surface with the next most common STATE names (linked to name-in-state pages,

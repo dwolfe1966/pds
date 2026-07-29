@@ -7,12 +7,7 @@
 // what tanked the domain and is "discovered – not indexed", so re-dumping it re-floods without helping.
 // One flat <urlset> (no index). Complements the conservative /sitemapv2.xml.
 import { getDirectoryUrls } from '../../lib/directory';
-import { allCountyHubUrls } from '../../lib/incarceration.mjs';
 import { SITE } from '../../lib/site';
-
-// States with a queryable county grain (fl_inmates backfilled county; inmates.county populated). County
-// hubs are differentiated indexable pages, so they belong in the sitemap. NC omitted (null county).
-const COUNTY_STATES = ['FL', 'PA', 'CA', 'GA', 'IL'];
 
 export const dynamic = 'force-static';
 export const revalidate = 86400; // 1d
@@ -27,12 +22,17 @@ export async function GET() {
   // Step 2 (owner-approved 2026-07-20): DON'T list name-in-city here. Only ~980 of ~42k carry unique
   // first-party content (a captured individual, person_profiles); the other ~41k now serve robots:noindex
   // (page-level, in the name-in-city route) as near-dup boilerplate. Listing 41k noindex URLs in the
-  // sitemap of a recovering domain is an anti-signal, so we emit ZERO name-in-city (maxNamePages: 0). The
-  // ~980 indexable ones stay discoverable via internal links (each city page links its top-60 names) and
-  // index fine since they're not noindexed. Sitemap = core + states + cities + roster-state name-in-state.
-  const { all } = getDirectoryUrls({ maxNamePages: 0 });
-  // County hubs (/people/{state}/county/{slug}) — differentiated incarceration pages, one URL per county.
-  const countyHubs = await allCountyHubUrls(COUNTY_STATES).catch(() => []);
+  // sitemap of a recovering domain is an anti-signal, so we emit ZERO name-in-city (maxNamePages: 0).
+  //
+  // Also don't list name-in-state candidates here. Census-derived candidates can return noindex when the
+  // exact name has no incarceration/sex-offender match, and DB-proven candidates make the sitemap route
+  // build/runtime dependent on live Neon. Keep the submitted sitemap DB-free and limited to fast, stable
+  // root/state/city pages; first-party name/county pages remain discoverable from those hubs.
+  const { all } = getDirectoryUrls({ maxNamePages: 0, includeNameStates: false });
+  // County hubs are differentiated pages, but they are DB-heavy and currently too slow/fragile under
+  // concurrent crawl. Keep them discoverable from state pages; leave them out of the submitted sitemap
+  // until they pass a full status/noindex walk.
+  const countyHubs = [];
   // Root homepage first — it's now real indexable content (2026-07-24), so it belongs in the submitted sitemap.
   const items = ['/', ...all, ...countyHubs].map((path) => {
     const depth = path.split('/').filter(Boolean).length; // /people=1, state=2, name-in-state/city=3, name-in-city=4

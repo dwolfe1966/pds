@@ -191,7 +191,7 @@ export function getTaxonomyUrls() {
 // every state + every city (real ACS content) + the top `maxNamePages` name-in-city pages (biggest cities
 // first). Stays under Google's 50k-URL/urlset limit and re-crawls the pages that can actually rank,
 // without re-flooding a recovering young domain. cityNameOk still gates each name page to content-bearing.
-export function getDirectoryUrls({ maxNamePages = 45000 } = {}) {
+export function getDirectoryUrls({ maxNamePages = 45000, includeNameStates = true } = {}) {
   const states = getStateList(); // population desc
   const core = ['/people'];
   const cityRefs = [];
@@ -210,10 +210,12 @@ export function getDirectoryUrls({ maxNamePages = 45000 } = {}) {
   // coverage — elsewhere the page is boilerplate and now serves robots:noindex (page-level, in
   // name-in-state.js), so listing it here would just mix a noindex URL into the sitemap. Grow this set
   // as more state rosters are bulk-ingested (fl_inmates=FL deep, inmates=NC deep + IL/PA light).
-  for (const st of states) {
-    if (!ROSTER_STATES.has(st.code.toLowerCase())) continue;
-    for (const n of getStateTopNames(st.code, 100)) {
-      nameStateUrls.push(`/people/${st.code.toLowerCase()}/${n.slug}`);
+  if (includeNameStates) {
+    for (const st of states) {
+      if (!ROSTER_STATES.has(st.code.toLowerCase())) continue;
+      for (const n of getStateTopNames(st.code, 100)) {
+        nameStateUrls.push(`/people/${st.code.toLowerCase()}/${n.slug}`);
+      }
     }
   }
   for (const { st, c } of cityRefs) {

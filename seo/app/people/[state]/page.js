@@ -18,6 +18,11 @@ export const revalidate = 5184000; // 60d
 export function generateStaticParams() { return []; }
 
 const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
+const withTimeout = (promise, fallback, ms = 1200) =>
+  Promise.race([
+    promise.catch(() => fallback),
+    new Promise((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
 
 export async function generateMetadata({ params }) {
   const { state } = await params;
@@ -39,9 +44,11 @@ export default async function StateLanding({ params }) {
   // Data-driven from our roster (not the est-capped name slice): names that actually have incarceration
   // records in this state, ranked by count. Self-gates to empty where we have no coverage; every link
   // lands on a name-in-state page that carries real records (→ indexable). Fixes the CA-empty bug.
-  const topNames = await rosterTopNamesByState({ state: st.code, limit: 30 });
-  const counties = await countiesByState({ state: st.code, limit: 60 });
-  const soCount = await countSexOffenders({ state: st.code });
+  const [topNames, counties, soCount] = await Promise.all([
+    withTimeout(rosterTopNamesByState({ state: st.code, limit: 30 }), []),
+    withTimeout(countiesByState({ state: st.code, limit: 60 }), []),
+    withTimeout(countSexOffenders({ state: st.code }), 0),
+  ]);
   const crumbs = [
     { name: 'People Search', path: '/people' },
     { name: st.name, path: statePath(state) },

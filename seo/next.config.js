@@ -4,6 +4,9 @@
 const nextConfig = {
   poweredByHeader: false,
   compress: true,
+  // This app has its own lockfile inside a larger multi-app repo. Pin tracing to
+  // this directory so Next/Vercel do not infer the repo root from the parent lockfile.
+  outputFileTracingRoot: __dirname,
   // Keep URLs canonical + trailing-slash-free (canonicals in metadata match).
   trailingSlash: false,
   // The SEO tree is server-rendered HTML; no image optimization needed (and the
