@@ -9,6 +9,7 @@ import { appendSearch } from '../../services/visitorSearchLog';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import styles from './LoaderPage.module.css';
 import { useBrand } from '../../services/brand';
+import { setVariant } from '../../services/funnelFlow';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 
@@ -28,6 +29,24 @@ const HONEST_PHASES = [
 ];
 const HONEST_DATA_POINTS = ['Address history', 'Phone & email', 'Booking records', 'Marriage & divorce', 'Relatives'];
 
+// Proof-first flow (?variant=proof) — narrate that we're verifying a concrete finding, not compiling a promise.
+const PROOF_PHASES = [
+  'Locating public records…',
+  'Verifying one finding you can check…',
+  'Preparing your proof…',
+];
+// Search-yourself flow (?variant=self) — narrate scanning the person's OWN exposure.
+const SELF_PHASES = [
+  'Scanning where your info is public…',
+  'Checking who’s been looking…',
+  'Building your exposure summary…',
+];
+const SELF_DATA_POINTS = ['Public listings', 'Address history', 'Phone & email', 'Records exposure', 'Searches for you'];
+
+// Variant → loader phases + data-point chips. Display-only; the search itself is identical for every variant.
+const PHASES_BY_VARIANT = { honest: HONEST_PHASES, proof: PROOF_PHASES, self: SELF_PHASES };
+const POINTS_BY_VARIANT = { honest: HONEST_DATA_POINTS, self: SELF_DATA_POINTS };
+
 /**
  * Name search loader page - Shows loading state while performing search.
  * Name loader flow with IDLookup design.
@@ -46,8 +65,10 @@ const NameSearchLoaderPage = () => {
   const city = params.get('city');
   const state = params.get('state');
   const flow = params.get('flow'); // 'inmate' → results page leads with the booking teaser
-  const honest = params.get('honest') === '1'; // DISPLAY-ONLY: honest loader copy for the honest funnel
-  const PHASES = honest ? HONEST_PHASES : SCAN_PHASES;
+  // Experience VARIANT (display-only). Back-compat: the honest landing passes ?honest=1; treat it as variant=honest.
+  const variant = params.get('variant') || (params.get('honest') === '1' ? 'honest' : '');
+  const PHASES = PHASES_BY_VARIANT[variant] || SCAN_PHASES;
+  const DATA_POINTS = POINTS_BY_VARIANT[variant];
 
   const [status, setStatus] = useState('Initializing search...');
   const [progress, setProgress] = useState(0);
@@ -66,15 +87,12 @@ const NameSearchLoaderPage = () => {
     track('loader_start', { search_type: 'name' });
   }, []);
 
-  // Scope the honest-funnel marker to THIS search (the loader is the chokepoint every name search passes
-  // through). Set it for the honest funnel, CLEAR it for any other — so the flag can't leak a stale honest
-  // state into a later v3/v6 checkout in the same tab (sessionStorage is sticky per-tab otherwise).
+  // Scope the funnel VARIANT to THIS search (the loader is the chokepoint every name search passes through).
+  // One slot: set it for a variant funnel, CLEAR it for a standard one — so no stale treatment (honest/proof/
+  // self) can leak into a later v3/v6 checkout in the same tab (sessionStorage is sticky per-tab otherwise).
   useEffect(() => {
-    try {
-      if (honest) sessionStorage.setItem('honestFunnel', '1');
-      else sessionStorage.removeItem('honestFunnel');
-    } catch { /* ignore */ }
-  }, [honest]);
+    setVariant(variant);
+  }, [variant]);
 
   useEffect(() => {
     const performSearch = async () => {
@@ -227,7 +245,7 @@ const NameSearchLoaderPage = () => {
           <span className={styles.progressBarFill} style={theme ? { background: theme.accent } : undefined} />
         </div>
         <div className={styles.dataPoints}>
-          {(honest ? HONEST_DATA_POINTS : ['Possible relatives', 'Job & education', 'Person information', 'Contact information', 'Social media profiles']).map((d) => <span key={d}>{d}</span>)}
+          {(DATA_POINTS || ['Possible relatives', 'Job & education', 'Person information', 'Contact information', 'Social media profiles']).map((d) => <span key={d}>{d}</span>)}
         </div>
         <div className={styles.queryCard}>
           <p className={styles.queryLabel}>Searching for</p>

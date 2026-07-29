@@ -30,6 +30,7 @@
 - [Feedback: never client-filter BC /database/search](feedback_no_clientside_filter_on_bc_database_search.md) — displayFields trims response; trust `query.xxxId` server-side
 - [Feedback: EXPOSE ALL report data](feedback_expose_all_report_data.md) — report detail shows every BC field; don't cherry-pick
 - [Honest PS challenger](project_honest_ps_challenger.md) — /people-search built e2e, flag-gated, shn=honest-ps; A/B for GENERAL PS (not V3); hypothesis: honesty→conv+retention
+- [PS challenger flows portfolio](project_ps_challenger_flows.md) — 3 isolated A/B flows: honest(/people-search) + proof-first(/proof-check) + self-check(/my-exposure); one funnelVariant slot; distinct hypotheses/metrics
 - [Feedback: never claim searches are private](feedback_no_private_search_claim.md) — no "confidential/anonymous/they're never notified"; contradicts WSFY
 - [Feedback: funnel design principles](feedback_funnel_design_principles.md) — sell benefits not features; consumer not SaaS; build/verify/confirm
 - [Feedback: always push to main](feedback_always_push_to_main.md) — after every commit, push origin main; don't gate on the push

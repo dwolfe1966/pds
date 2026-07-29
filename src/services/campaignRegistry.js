@@ -170,6 +170,28 @@ export const CAMPAIGN_REGISTRY = {
     detail:  { variant: 'a' }, optOut: true,
   },
 
+  // ── Proof-First challenger (Flow B, 2026-07-29). Reveals ONE real finding in the clear pre-paywall (never a
+  // fabricated card); checkout sells "unlock the rest". Hypothesis: concrete evidence beats promises/fear. Same
+  // general PS core; zeroState 'noRecords' (honest degrade when there's nothing real to prove). PLACEHOLDER shN.
+  'proof-first:*': {
+    identity: { shnName: 'Proof-First People Search', brand: 'IDL', partner: 'Direct', channel: 'Proof First',
+      purpose: 'Evidence-before-paywall challenger → measure SRP→pay CTR + refund rate vs standard/honest funnels' },
+    landing: { route: '/proof-check' },
+    search:  { type: 'name', perPage: 5, zeroState: 'noRecords' },
+    detail:  { variant: 'a' }, optOut: true,
+  },
+
+  // ── Search-Yourself challenger (Flow C, 2026-07-29). Self-exposure hook → standing protection subscription
+  // (claim + who's-searching monitoring). The one challenger that structurally targets RETENTION, not just
+  // conversion. Same general PS core; the 'self' treatment rides on ?variant=self. PLACEHOLDER shN.
+  'self-check:*': {
+    identity: { shnName: 'Search Yourself', brand: 'IDL', partner: 'Direct', channel: 'Self Check',
+      purpose: 'Self-exposure → protection-subscription challenger → measure month-2/3 retention + LTV vs lookup funnels' },
+    landing: { route: '/my-exposure' },
+    search:  { type: 'name', perPage: 5, zeroState: 'noRecords' },
+    detail:  { variant: 'a' }, optOut: true,
+  },
+
   // ── Real shN tokens swapped in 2026-06-09 (owner provided the minted IDs). All
   // Upper/Lower pairs share the same landing + config — they differ only by ad
   // position (bid/reporting on the Google side), so they resolve to identical UX.

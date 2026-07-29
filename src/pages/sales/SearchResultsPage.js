@@ -5,7 +5,7 @@ import ResultCard from '../../components/ResultCard';
 import SignalTeaser from '../../components/SignalTeaser';
 import SocialPresenceTeaser from '../../components/SocialPresenceTeaser';
 import OnboardingReveal from '../../components/OnboardingReveal';
-import { getFlow, onboardRevealOn } from '../../services/funnelFlow';
+import { getFlow, getVariant, onboardRevealOn } from '../../services/funnelFlow';
 import US_STATES from './usStates';
 import ZeroResultsPanel from '../../components/ZeroResultsPanel';
 import ThinMatchPreview from '../../components/ThinMatchPreview';
@@ -412,6 +412,7 @@ const SalesSearchResultsPage = () => {
                   flow={getFlow() || flow || 'general'}
                   viewerRelation="prospect"
                   stage="pre-signup"
+                  proof={getVariant() === 'proof'}
                 />
               </div>
             )}
@@ -518,6 +519,7 @@ const SalesSearchResultsPage = () => {
                   flow={getFlow() || flow || 'general'}
                   viewerRelation="prospect"
                   stage="pre-signup"
+                  proof={getVariant() === 'proof'}
                 />
               </div>
             )}

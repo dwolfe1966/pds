@@ -27,6 +27,23 @@ export function clearFlow() {
 
 export function isFlow(flow) { return getFlow() === flow; }
 
+/**
+ * Funnel VARIANT — the experience treatment layered on top of the search intent (`flow`). ONE slot, set at the
+ * loader chokepoint every name search passes through, so choosing one treatment implicitly clears the others
+ * (no sibling-boolean leak: an honest search followed by a proof search in the same tab can't carry both).
+ *
+ * Values: 'honest' | 'proof' | 'self' | '' (standard). Read downstream by PaymentPage (which disclosure/payoff
+ * to show) and SignalTeaser (proof reveals one real fact in the clear; self frames records as the viewer's own).
+ * Kept in sessionStorage (per-tab). Supersedes the old single 'honestFunnel' boolean.
+ */
+const VARIANT_KEY = 'funnelVariant';
+export function setVariant(v) {
+  try { if (v) sessionStorage.setItem(VARIANT_KEY, String(v)); else sessionStorage.removeItem(VARIANT_KEY); } catch { /* ignore */ }
+}
+export function getVariant() {
+  try { return sessionStorage.getItem(VARIANT_KEY) || ''; } catch { return ''; }
+}
+
 // Onboarding-reveal session flag. The ?onboard=1 test param is set on a LANDING, but the reveal fires on the
 // SERP — and the landing→loader→SERP hops rebuild query params, dropping it. So we PERSIST it to sessionStorage
 // on the landing (per-tab) and read it on the SERP. A real per-flow variant would set onboarding via its

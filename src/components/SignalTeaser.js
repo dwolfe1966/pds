@@ -50,7 +50,7 @@ const PLACEHOLDER_BG = [
 // anonymize: hide the subject's IDENTITY (name in headers + mugshot faces) while still proving records exist —
 // for phone/email searches where the owner's identity IS the paywalled prize (a name search already knows it).
 // subjectLabel overrides the generic stand-in (e.g. "this number's owner").
-export default function SignalTeaser({ subject, flow = 'general', viewerRelation = 'prospect', stage = 'pre-signup', strict = false, accent = '#0d5d2f', dark = '#0a4a25', anonymize = false, subjectLabel }) {
+export default function SignalTeaser({ subject, flow = 'general', viewerRelation = 'prospect', stage = 'pre-signup', strict = false, accent = '#0d5d2f', dark = '#0a4a25', anonymize = false, subjectLabel, proof = false }) {
   const [res, setRes] = useState(null);
 
   useEffect(() => {
@@ -70,6 +70,12 @@ export default function SignalTeaser({ subject, flow = 'general', viewerRelation
   const fullName = anonymize
     ? (subjectLabel || 'this person')
     : ([subject.firstName, subject.lastName].filter(Boolean).join(' ') || 'this person');
+
+  // Proof-first challenger (variant=proof): reveal ONE real, checkable finding fully in the clear — the opposite
+  // of a blurred "unlock to verify" tease. Only fires when a REAL record exists; otherwise render nothing and
+  // let the SRP show its standard/honest state (fabricating a "proof" would break the entire premise).
+  if (proof) return hasReal ? <ProofPanel signals={signals} fullName={fullName} accent={accent} dark={dark} /> : null;
+
   const isFlag = capabilityCopy(flow).flag && lead === 'capability';
 
   return (
@@ -206,6 +212,63 @@ function Booking({ records, prominent, fullName, dark, strict, anonymize }) {
         </p>
       )}
       <p style={{ margin: '8px 0 0', fontSize: '0.8rem', color: '#5b7484', lineHeight: 1.45 }}>Continue to unlock {unlockItems.join(', ')}.</p>
+    </div>
+  );
+}
+
+// Proof-First panel (variant=proof). Picks the single STRONGEST real record and shows its concrete,
+// sanity-checkable details in the clear — no blur, no "unlock to verify". Every field shown is one the record
+// actually carries (dropped if absent), so we never fabricate.
+//
+// CRITICAL FRAMING: at the SRP the teaser runs NON-strict, so these records are matched by NAME (+state), NOT
+// corroborated to this specific person (no age/gender check). So we assert about the RECORD UNDER THE NAME
+// ("a real record is on file under this name" — true), NEVER about the person ("{fullName} has a record" —
+// unproven, and a defamation posture for a same-name stranger's criminal record). Hence the honest badge
+// "Real record · match unconfirmed" and the "check it against what you know" ask — the proof is that the record
+// is real and specific, and the searcher confirms the identity, not us.
+function ProofPanel({ signals, fullName, accent, dark }) {
+  const booking = (signals.booking || {}).records || [];
+  const md = (signals.marriageDivorce || {}).records || [];
+  const total = booking.length + md.length;
+
+  let icon = '📄'; let label = 'record'; let bits = [];
+  if (booking.length) {
+    const r = booking[0];
+    const year = (String(r.bookingDate || '').match(/\d{4}/) || [])[0];
+    const status = cleanReleaseStatus(r.releaseStatus, r.recordType);
+    const where = r.facility || r.county || r.state || null;
+    icon = r.recordType === 'court' ? '🏛️' : '⚖️';
+    label = r.recordType === 'court' ? 'court record' : 'incarceration record';
+    bits = [where, status, year && `booked ${year}`].filter(Boolean);
+  } else if (md.length) {
+    const r = md[0];
+    const isDiv = r.recordType === 'divorce';
+    icon = isDiv ? '💔' : '💍';
+    label = isDiv ? 'divorce record' : 'marriage record';
+    bits = [r.county, r.state, (isDiv ? r.divorceDate : r.marriageDate)].filter(Boolean);
+  } else {
+    return null;
+  }
+
+  const rest = Math.max(0, total - 1);
+  return (
+    <div style={{ marginTop: '1rem', border: `1px solid ${accent}33`, borderRadius: 12, background: '#f0fdf4', padding: '0.95rem 1.05rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: '#92400e', background: '#fef3c7', border: '1px solid #fde68a', padding: '3px 8px', borderRadius: 999 }}>Real record · match unconfirmed</span>
+        <span style={{ fontSize: '0.8rem', color: '#5b7484' }}>Shown free — no blur</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+        <span aria-hidden="true" style={{ fontSize: 18 }}>{icon}</span>
+        <span style={{ fontWeight: 800, color: dark, fontSize: '0.98rem' }}>A real {label} is on file under this name</span>
+      </div>
+      {bits.length > 0 && (
+        <p style={{ margin: '6px 0 0', fontSize: '0.9rem', color: '#374151' }}>{bits.join(' · ')}</p>
+      )}
+      <p style={{ margin: '8px 0 0', fontSize: '0.82rem', color: '#3f6212', lineHeight: 1.5 }}>
+        Check it against what you already know about {fullName}. {rest > 0
+          ? <>Continue to confirm it's the right person and unlock the other <strong>{rest} record{rest === 1 ? '' : 's'}</strong> on file, in full.</>
+          : <>Continue to confirm it's the right person and unlock this record in full.</>}
+      </p>
     </div>
   );
 }

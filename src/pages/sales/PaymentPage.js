@@ -5,7 +5,7 @@ import { useCampaign } from '../../context/CampaignContext';
 import WsfyPaymentTeaser from '../../components/WsfyPaymentTeaser';
 import IdentityPaymentTeaser from '../../components/IdentityPaymentTeaser';
 import SignalTeaser from '../../components/SignalTeaser';
-import { getFlow } from '../../services/funnelFlow';
+import { getFlow, getVariant } from '../../services/funnelFlow';
 import { useOfferPricing } from '../../hooks/useOfferPricing';
 import api from '../../api';
 import { createReportForIdentity } from '../../services/reportService';
@@ -135,9 +135,15 @@ const PaymentPage = () => {
   const effectiveRecurringPrice = offerPricing?.recurringPrice ?? brand.recurringPrice;
   const trialPriceStr = `$${effectiveTrialPrice.toFixed(2)}`;
   const recurringPriceStr = `$${effectiveRecurringPrice.toFixed(2)}`;
-  // Honest funnel (set at the honest landing) → surface a prominent, plain-language restatement of the SAME
-  // terms right above the CTA. Display-only, no price/billing change; other funnels are unaffected.
-  const honestFunnel = (() => { try { return sessionStorage.getItem('honestFunnel') === '1'; } catch { return false; } })();
+  // Funnel VARIANT (set at the loader chokepoint) → which checkout framing to show. Display-only, no
+  // price/billing change; standard funnels ('') are unaffected. Single slot, so exactly one is ever true.
+  //   honest → plain-language restatement of the SAME terms + the "claim & control your profile" moment
+  //   proof  → "you saw a verified finding — unlock the rest" framing
+  //   self   → sell the standing service (monitor + claim), not a one-time peek
+  const funnelVariant = getVariant();
+  const honestFunnel = funnelVariant === 'honest';
+  const proofFunnel = funnelVariant === 'proof';
+  const selfFunnel = funnelVariant === 'self';
 
   const [form, setForm] = useState({
     cardNumber: '',
@@ -946,22 +952,27 @@ const PaymentPage = () => {
                 )}
               </div>
 
-              {/* Honest funnel payoff: the identity moment. Real owner control (member_suppression enforced
-                  in WSFY) — the honest opposite of a sham "Remove" button. */}
-              {honestFunnel && (
+              {/* Identity moment. Honest funnel: "is this you?" claim prompt. Self funnel: this IS the payoff —
+                  they searched themselves, so lead straight into claim + monitoring (the standing service they
+                  just bought). Copy stays inside what we can deliver — claim + who's-searching are built; we do
+                  NOT promise takedown/suppression here (WSFY Hide enforcement is still a stub). */}
+              {(honestFunnel || selfFunnel) && (
                 <div style={{
                   margin: '1rem auto 0', maxWidth: 380, textAlign: 'left',
                   background: '#e7f3ec', border: '1px dashed #0d5d2f', borderRadius: '0.6rem', padding: '0.95rem 1.1rem',
                 }}>
-                  <p style={{ margin: '0 0 0.35rem', fontWeight: 700, color: '#0a4d29', fontSize: '0.95rem' }}>Is this report about you?</p>
+                  <p style={{ margin: '0 0 0.35rem', fontWeight: 700, color: '#0a4d29', fontSize: '0.95rem' }}>
+                    {selfFunnel ? 'Now take control of your profile' : 'Is this report about you?'}
+                  </p>
                   <p style={{ margin: '0 0 0.7rem', color: '#3f6b50', fontSize: '0.85rem', lineHeight: 1.5 }}>
-                    Claim your profile and decide what's public. When you hide something, it's actually hidden for
-                    everyone — not just faked from your own view.
+                    {selfFunnel
+                      ? "Claim your profile, set up alerts for when someone searches you, and keep an eye on what's public about you."
+                      : "Claim your profile and see who's searching for you. This is your standing dashboard, not a one-time look-up."}
                   </p>
                   <Link to="/my-identity" style={{
                     display: 'inline-block', background: '#0d5d2f', color: '#fff', textDecoration: 'none',
                     fontWeight: 700, fontSize: '0.88rem', padding: '0.6rem 1rem', borderRadius: '0.5rem',
-                  }}>Claim &amp; control my profile →</Link>
+                  }}>{selfFunnel ? 'Go to my identity dashboard →' : 'Claim & control my profile →'}</Link>
                 </div>
               )}
 
@@ -1313,16 +1324,32 @@ const PaymentPage = () => {
                     </p>
                   </div>
 
-                  {/* Honest funnel: plain-language restatement of the SAME terms, made prominent right above
-                      the CTA — the honest opposite of burying the recurring price in the fine print. */}
-                  {honestFunnel && (
+                  {/* Transparent challengers (honest / proof / self): a plain-language restatement of the SAME
+                      terms, made prominent right above the CTA — the honest opposite of burying the recurring
+                      price in the fine print. A variant-specific lead line frames WHAT the $1 buys, then the
+                      identical price sentence for all three (single source of truth, no per-variant drift). */}
+                  {(honestFunnel || proofFunnel || selfFunnel) && (
                     <div style={{
                       margin: '0 0 1rem', background: '#e7f3ec', border: '1px solid #bfe0cb',
                       borderRadius: '0.6rem', padding: '0.85rem 1rem', fontSize: '0.86rem', lineHeight: 1.55, color: '#14532d',
                     }}>
-                      <strong>Before you agree — the whole deal, plainly:</strong> you pay <strong>{trialPriceStr} today</strong>.
-                      If you don't cancel before <strong>{trialEndDate}</strong>, it becomes <strong>{recurringPriceStr}/month</strong>,
-                      billed every 30 days until you cancel. No hidden add-ons — and you can cancel anytime.
+                      {proofFunnel && (
+                        <p style={{ margin: '0 0 0.5rem' }}>
+                          <strong>You already saw one verified finding — free.</strong> Your {trialPriceStr} unlocks the rest
+                          of the confirmed records, in the clear, with nothing fabricated to pad it out.
+                        </p>
+                      )}
+                      {selfFunnel && (
+                        <p style={{ margin: '0 0 0.5rem' }}>
+                          <strong>This isn't a one-time look-up.</strong> Your {trialPriceStr} starts an ongoing service:
+                          claim your profile, see who's searching for you, and keep watching what's public about you.
+                        </p>
+                      )}
+                      <span>
+                        <strong>The whole deal, plainly:</strong> you pay <strong>{trialPriceStr} today</strong>.
+                        If you don't cancel before <strong>{trialEndDate}</strong>, it becomes <strong>{recurringPriceStr}/month</strong>,
+                        billed every 30 days until you cancel. No hidden add-ons — and you can cancel anytime.
+                      </span>
                     </div>
                   )}
 
