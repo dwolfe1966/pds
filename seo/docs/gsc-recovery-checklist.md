@@ -50,6 +50,9 @@ The deep audit should confirm sampled county pages remain indexable, sampled boi
 pages remain `noindex, follow`, stale profile tokens redirect to the name hub, and deleted `/profiles`
 URLs return `410`.
 
+The county audit is broader and intentionally separate from `verify:live`; run
+`SEO_AUDIT_BASE=https://idlookup.me npm run audit:counties` before considering any county sitemap expansion.
+
 The claims audit should pass before shipping SEO copy changes; it guards against privacy/confidentiality
 and absolute-accuracy claims that conflict with the product posture.
 

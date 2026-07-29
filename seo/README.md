@@ -92,6 +92,12 @@ npm run audit:deep
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:deep
 ```
 
+Audit a broader sample of discoverable county pages:
+
+```bash
+SEO_AUDIT_BASE=https://idlookup.me npm run audit:counties
+```
+
 Audit public SEO copy for prohibited privacy/guarantee claims:
 
 ```bash

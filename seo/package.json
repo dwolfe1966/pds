@@ -13,6 +13,7 @@
     "smoke:local": "bash scripts/smoke-local.sh",
     "audit:sitemaps": "node scripts/audit-sitemaps.mjs",
     "audit:deep": "node scripts/audit-deep-pages.mjs",
+    "audit:counties": "node scripts/audit-county-pages.mjs",
     "audit:claims": "node scripts/audit-claims.mjs",
     "db:schema": "node scripts/apply-schema.mjs"
   },
