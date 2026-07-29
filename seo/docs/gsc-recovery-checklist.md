@@ -33,11 +33,10 @@ The submitted sitemap should stay narrow until GSC shows recovery:
 Validate locally or live with:
 
 ```bash
-npm run smoke:local
+npm run verify
 SEO_SMOKE_BASE=https://idlookup.me npm run smoke
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:sitemaps
 SEO_AUDIT_BASE=https://idlookup.me npm run audit:deep
-npm run audit:claims
 ```
 
 The smoke script should report:

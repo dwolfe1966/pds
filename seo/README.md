@@ -58,6 +58,12 @@ npm run build
 npm run start    # http://localhost:3005
 ```
 
+Run the local pre-push verification suite:
+
+```bash
+npm run verify
+```
+
 Smoke test the production build locally, or test a running/deployed instance:
 
 ```bash
