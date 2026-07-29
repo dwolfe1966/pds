@@ -8,6 +8,8 @@ out/
 scratchpad/
 scripts/.real-*.json
 scripts/.batch*.json
+run-coverage-sweeps.sh
+run-coverage-wave2.sh
 bing-api-key.txt
 people-data-labs-key.rtf
 twilio_2FA_recovery_code.txt
