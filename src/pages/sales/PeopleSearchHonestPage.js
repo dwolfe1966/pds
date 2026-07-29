@@ -142,10 +142,6 @@ export default function PeopleSearchHonestPage() {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 650, color: GOLD, background: GOLD_SOFT, border: '1px solid #e6d4a6', padding: '6px 12px', borderRadius: 999 }}>
             ★ Real results — no fabricated matches
           </span>
-          <span style={metric}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-            Private search — they&apos;re never notified
-          </span>
           <span style={metric}>✓&nbsp;Cancel anytime — no surprise subscriptions</span>
         </div>
 
