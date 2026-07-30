@@ -8,7 +8,7 @@ import {
   getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory,
   cityWikiChips, cityEthnicity, cityOccupations, cityProse,
 } from '../../../../lib/facts';
-import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, getCityFema, femaRatingColor, getCitySchools, getCityEpa } from '../../../../lib/homefacts';
+import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath, getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName } from '../../../../lib/homefacts';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd } from '../../../../lib/schema';
@@ -96,6 +96,7 @@ export default async function AreaProfile({ params }) {
   const fema = getCityFema(c.stateCode, city);
   const schools = getCitySchools(c.stateCode, city);
   const epa = getCityEpa(c.stateCode, city);
+  const county = countyForName(state, (fema && fema.county) || (wiki && wiki.county)); // city → county cross-link
 
   // Highlight snapshot for the summary (curated, not the full demographic set below).
   const highlight = [
@@ -282,6 +283,11 @@ export default async function AreaProfile({ params }) {
       {/* 8 · Neighborhood info */}
       <section id="neighborhood" style={ui.card}>
         <h2 style={ui.h2}>Neighborhood info</h2>
+        {county && (
+          <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body }}>
+            {c.city} is in <a href={hfCountyPath(state, county.slug)} style={ui.link}>{county.name} County</a> — see the county-wide disaster risk, demographics, and registry.
+          </p>
+        )}
         {wiki && (wiki.founded || wiki.county || wiki.elevationM != null || wiki.nickname) && (
           <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body, lineHeight: 1.65 }}>
             {c.city}

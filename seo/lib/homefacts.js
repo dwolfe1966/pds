@@ -8,6 +8,7 @@
 
 import { getCityAcs, getCityWiki } from './facts';
 import CITY_FEMA from '../data/city-fema.json';
+import COUNTIES from '../data/counties.json';
 import CITY_SCHOOLS from '../data/city-schools.json';
 import CITY_EPA from '../data/city-epa.json';
 
@@ -40,6 +41,45 @@ const commas = (n) => (n == null ? null : Number(n).toLocaleString('en-US'));
 // /people & /profiles, so /homefacts passes through untouched).
 export function hfCityPath(stateLc, slug) { return `/homefacts/${String(stateLc).toLowerCase()}/${slug}`; }
 export function hfStatePath(stateLc) { return `/homefacts/${String(stateLc).toLowerCase()}`; }
+export function hfCountyPath(stateLc, slug) { return `/homefacts/${String(stateLc).toLowerCase()}/county/${slug}`; }
+
+// ── County grain (data/counties.json — all US counties from FEMA NRI) ────────
+export function getCounties(stateLc) { return COUNTIES[String(stateLc).toLowerCase()] || []; }
+export function countyFromSlug(stateLc, slug) {
+  return getCounties(stateLc).find((c) => c.slug === String(slug).toLowerCase()) || null;
+}
+// Resolve a county by its plain NAME (e.g. "Travis County" or "Travis") → the county record, for city→county
+// cross-links. Matches the same slug rule used to build counties.json.
+export function countyForName(stateLc, countyName) {
+  if (!countyName) return null;
+  const slug = String(countyName).toLowerCase().replace(/\bcounty\b|\bparish\b|\bborough\b|\bcensus area\b/g, '').trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return countyFromSlug(stateLc, slug);
+}
+
+// ACS demographics/property for a county — FETCH-AT-GENERATION (ISR caches the result), gated on CENSUS_API_KEY.
+// Returns an ACS-shaped object (subset) so demographicStats()/propertyStats() render whatever is present, or
+// null (no key / fetch fails) so the page degrades gracefully. fips = 5-digit STCOFIPS.
+export async function getCountyAcs(fips, year = 2023) {
+  const key = process.env.CENSUS_API_KEY;
+  if (!key || !/^\d{5}$/.test(String(fips))) return null;
+  const st = String(fips).slice(0, 2), co = String(fips).slice(2);
+  const vars = ['B01003_001E', 'B01002_001E', 'B19013_001E', 'B19301_001E', 'B25077_001E', 'B25064_001E', 'B25003_001E', 'B25003_002E'];
+  const url = `https://api.census.gov/data/${year}/acs/acs5?get=${vars.join(',')}&for=county:${co}&in=state:${st}&key=${key}`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    const h = rows[0], v = rows[1];
+    const g = (code) => { const n = Number(v[h.indexOf(code)]); return Number.isFinite(n) && n > -1e6 ? n : null; };
+    const ownTot = g('B25003_001E'), ownOcc = g('B25003_002E');
+    return {
+      population: g('B01003_001E'), medianAge: g('B01002_001E'),
+      medianHouseholdIncome: g('B19013_001E'), perCapitaIncome: g('B19301_001E'),
+      medianHomeValue: g('B25077_001E'), medianGrossRent: g('B25064_001E'),
+      pctOwnerOccupied: ownTot && ownOcc != null ? Math.round((ownOcc / ownTot) * 100) : null,
+    };
+  } catch { return null; }
+}
 
 // ── Property report (ACS place-level) ────────────────────────────────────────
 export function propertyStats(a) {
