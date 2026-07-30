@@ -14,14 +14,17 @@ const OVERPASS = [
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
-// amenity/leisure tag → display category.
+// amenity/leisure/shop/transit tag → display category.
 const CATEGORY = {
   restaurant: 'Dining', cafe: 'Dining', fast_food: 'Dining', ice_cream: 'Dining', food_court: 'Dining',
   bar: 'Nightlife', pub: 'Nightlife', nightclub: 'Nightlife', biergarten: 'Nightlife',
-  cinema: 'Entertainment', theatre: 'Entertainment', arts_centre: 'Entertainment', nightclubs: 'Entertainment',
-  park: 'Parks & recreation', garden: 'Parks & recreation', fitness_centre: 'Parks & recreation', sports_centre: 'Parks & recreation', playground: 'Parks & recreation', pitch: 'Parks & recreation',
+  cinema: 'Entertainment', theatre: 'Entertainment', arts_centre: 'Entertainment',
+  park: 'Parks & recreation', garden: 'Parks & recreation', fitness_centre: 'Parks & recreation', sports_centre: 'Parks & recreation', playground: 'Parks & recreation',
+  pharmacy: 'Health', hospital: 'Health', clinic: 'Health', doctors: 'Health',
+  supermarket: 'Essentials', convenience: 'Essentials', mall: 'Essentials', bank: 'Essentials', fuel: 'Essentials', library: 'Essentials',
+  station: 'Getting around', bus_station: 'Getting around', subway: 'Getting around',
 };
-const CAT_ORDER = ['Dining', 'Nightlife', 'Entertainment', 'Parks & recreation'];
+const CAT_ORDER = ['Dining', 'Nightlife', 'Entertainment', 'Parks & recreation', 'Health', 'Essentials', 'Getting around'];
 
 function milesBetween(aLat, aLng, bLat, bLng) {
   const R = 3958.8, rad = (d) => (d * Math.PI) / 180;
@@ -31,7 +34,7 @@ function milesBetween(aLat, aLng, bLat, bLng) {
 }
 
 async function fetchNearby(lat, lng) {
-  const q = `[out:json][timeout:20];(node["amenity"~"restaurant|cafe|bar|pub|fast_food|nightclub|cinema|theatre|arts_centre|ice_cream|biergarten"](around:2400,${lat},${lng});node["leisure"~"park|garden|fitness_centre|sports_centre|playground"](around:2400,${lat},${lng}););out body 150;`;
+  const q = `[out:json][timeout:20];(node["amenity"~"restaurant|cafe|bar|pub|fast_food|nightclub|cinema|theatre|arts_centre|ice_cream|biergarten|pharmacy|hospital|clinic|doctors|bank|fuel|library|bus_station"](around:2400,${lat},${lng});node["leisure"~"park|garden|fitness_centre|sports_centre|playground"](around:2400,${lat},${lng});node["shop"~"supermarket|convenience|mall"](around:2400,${lat},${lng});node["railway"="station"](around:2400,${lat},${lng}););out body 220;`;
   for (const ep of OVERPASS) {
     try {
       const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: q, signal: AbortSignal.timeout(12000) });
@@ -64,7 +67,7 @@ export default function WhatsNearby() {
       for (const e of els) {
         const t = e.tags || {};
         const name = t.name;
-        const key = t.amenity || t.leisure;
+        const key = t.amenity || t.leisure || t.shop || (t.railway === 'station' ? 'station' : null);
         const cat = CATEGORY[key];
         if (!name || !cat || e.lat == null) continue;
         (g[cat] ||= []).push({ name, mi: milesBetween(origin.lat, origin.lng, e.lat, e.lon), kind: (key || '').replace(/_/g, ' ') });
