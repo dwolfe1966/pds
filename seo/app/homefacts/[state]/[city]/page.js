@@ -22,6 +22,8 @@ import NearestToAddress from '../../NearestToAddress';
 import AddressSafetySummary from '../../AddressSafetySummary';
 import WhatsNearby from '../../WhatsNearby';
 import RecentCrime from '../../RecentCrime';
+import Weather from '../../Weather';
+import Landmarks from '../../Landmarks';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd, faqJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -144,6 +146,8 @@ export default async function AreaProfile({ params }) {
         />
         <RecentCrime stateLc={state} citySlug={city} cityName={c.city} />
         <WhatsNearby />
+
+        {c.lat != null && <Weather center={{ lat: c.lat, lng: c.lng }} />}
 
         <SectionNav items={navItems} />
 
@@ -327,6 +331,11 @@ export default async function AreaProfile({ params }) {
                   </a>
                 ))}
               </div>
+            </div>
+          )}
+          {c.lat != null && (
+            <div style={{ marginBottom: 16 }}>
+              <Landmarks center={{ lat: c.lat, lng: c.lng }} />
             </div>
           )}
           {nearby.length > 0 && (

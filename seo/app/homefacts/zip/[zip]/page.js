@@ -15,6 +15,8 @@ import NearestToAddress from '../../NearestToAddress';
 import AddressSafetySummary from '../../AddressSafetySummary';
 import WhatsNearby from '../../WhatsNearby';
 import RecentCrime from '../../RecentCrime';
+import Weather from '../../Weather';
+import Landmarks from '../../Landmarks';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
@@ -140,6 +142,7 @@ export default async function ZipProfile({ params }) {
         />
         {geo && citySlug && <RecentCrime stateLc={stLc} citySlug={citySlug} cityName={geo.place} />}
         <WhatsNearby />
+        {geo && <Weather center={{ lat: geo.lat, lng: geo.lng }} />}
 
         <SectionNav items={nav} />
 
@@ -265,6 +268,12 @@ export default async function ZipProfile({ params }) {
                 </a>
               ))}
             </div>
+          </Section>
+        )}
+
+        {geo && (
+          <Section id="landmarks" icon="location" eyebrow="Context" title="Landmarks nearby">
+            <Landmarks center={{ lat: geo.lat, lng: geo.lng }} />
           </Section>
         )}
 
