@@ -10,6 +10,7 @@ import { getCityAcs, getCityWiki } from './facts';
 import CITY_FEMA from '../data/city-fema.json';
 import COUNTIES from '../data/counties.json';
 import CITY_ORI from '../data/city-ori.json';
+import COUNTY_ACS from '../data/county-acs.json';
 import CITY_SCHOOLS from '../data/city-schools.json';
 import CITY_EPA from '../data/city-epa.json';
 
@@ -146,8 +147,10 @@ export async function getZctaAcs(zip, year = 2023) {
 // null (no key / fetch fails) so the page degrades gracefully. fips = 5-digit STCOFIPS.
 export async function getCountyAcs(fips, year = 2023) {
   if (!/^\d{5}$/.test(String(fips))) return null;
+  // Pre-cached (scripts/fetch-county-acs.mjs) — no runtime Census call, no key needed at render.
+  if (COUNTY_ACS[String(fips)]) return COUNTY_ACS[String(fips)];
   const st = String(fips).slice(0, 2), co = String(fips).slice(2);
-  return fetchAcs(`for=county:${co}&in=state:${st}`, year);
+  return fetchAcs(`for=county:${co}&in=state:${st}`, year); // fallback if a county is missing from the cache
 }
 
 // ── Property report (ACS place-level) ────────────────────────────────────────
