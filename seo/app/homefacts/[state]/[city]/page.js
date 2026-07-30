@@ -8,7 +8,7 @@ import {
   getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory,
   cityWikiChips, cityEthnicity, cityOccupations, cityProse,
 } from '../../../../lib/facts';
-import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, getCityFema, femaRatingColor } from '../../../../lib/homefacts';
+import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, getCityFema, femaRatingColor, getCitySchools } from '../../../../lib/homefacts';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd } from '../../../../lib/schema';
@@ -94,6 +94,7 @@ export default async function AreaProfile({ params }) {
   const nearby = getNearbyCities(state, city, 6);
   const stateCities = getStateCities(state);
   const fema = getCityFema(c.stateCode, city);
+  const schools = getCitySchools(c.stateCode, city);
 
   // Highlight snapshot for the summary (curated, not the full demographic set below).
   const highlight = [
@@ -185,10 +186,37 @@ export default async function AreaProfile({ params }) {
         </section>
       )}
 
-      {/* 4 · Schools */}
-      <Pending id="schools" title="Schools"
-        source="U.S. Dept. of Education / NCES (public)"
-        blurb={`Public, private and charter schools serving ${c.city}, with enrollment and ratings.`} />
+      {/* 4 · Schools — NCES Common Core of Data via Urban Institute (live) */}
+      {schools ? (
+        <section id="schools" style={ui.card}>
+          <h2 style={ui.h2}>Schools</h2>
+          <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body, lineHeight: 1.65 }}>
+            {c.city} has <strong>{num(schools.count)}</strong> public school{schools.count === 1 ? '' : 's'}
+            {(() => {
+              const parts = ['Elementary', 'Middle', 'High'].map((k) => schools.byLevel[k] ? `${num(schools.byLevel[k])} ${k.toLowerCase()}` : null).filter(Boolean);
+              return parts.length ? <> — {parts.join(', ')}</> : null;
+            })()}.
+          </p>
+          {schools.sample.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {schools.sample.map((s, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 14, color: ui.color.body }}>
+                  <span style={{ fontWeight: 600 }}>{s.name}</span>
+                  {s.level && <span style={{ ...ui.chip, fontSize: 11, padding: '1px 8px' }}>{s.level}</span>}
+                  {s.lo && s.hi && <span style={ui.muted}>Grades {s.lo}–{s.hi}</span>}
+                  {s.charter && <span style={{ fontSize: 11, color: ui.color.blue }}>charter</span>}
+                  {s.magnet && <span style={{ fontSize: 11, color: ui.color.blue }}>magnet</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          <p style={ui.source}>Public schools. Source: U.S. Dept. of Education, NCES Common Core of Data (via Urban Institute).</p>
+        </section>
+      ) : (
+        <Pending id="schools" title="Schools"
+          source="U.S. Dept. of Education / NCES (public)"
+          blurb={`Public, private and charter schools serving ${c.city}.`} />
+      )}
 
       {/* 5 · Crime */}
       <Pending id="crime" title="Crime"
