@@ -27,6 +27,7 @@ import AirQuality from '../../AirQuality';
 import Landmarks from '../../Landmarks';
 import Earthquakes from '../../Earthquakes';
 import WeatherAlerts from '../../WeatherAlerts';
+import FloodRisk from '../../FloodRisk';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd, faqJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -265,6 +266,7 @@ export default async function AreaProfile({ params }) {
           <Pending id="environment" eyebrow="Environment" title="Environmental hazards" source="U.S. EPA — Toxics Release Inventory (public)" blurb={`Toxic-release sites and regulated facilities in and around ${c.city}.`} />
         )}
 
+        {c.lat != null && <FloodRisk center={{ lat: c.lat, lng: c.lng }} />}
         {c.lat != null && <Earthquakes center={{ lat: c.lat, lng: c.lng }} />}
 
         {/* 7 · Natural disasters */}
