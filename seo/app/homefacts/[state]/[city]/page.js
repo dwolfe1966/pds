@@ -2,7 +2,9 @@
 // Nine modules on real public + first-party data; the pending ones name their source (no fabrication).
 // Design system: lib/hf.js (Homefacts blue + report-card summary + sticky section nav).
 import { notFound } from 'next/navigation';
-import { getCitySlice, getStateCities, getNearbyCities } from '../../../../lib/directory';
+import { getCitySlice, getStateCities, getNearbyCities, getCityTopNames, getStateTopNames } from '../../../../lib/directory';
+import { cityNamePath } from '../../../../lib/ids';
+import { rosterTopNamesByCounty } from '../../../../lib/incarceration.mjs';
 import {
   getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory,
   cityWikiChips, cityEthnicity, cityOccupations, cityProse,
@@ -74,6 +76,15 @@ export default async function AreaProfile({ params }) {
   const schools = getCitySchools(c.stateCode, city);
   const epa = getCityEpa(c.stateCode, city);
   const county = countyForName(state, (fema && fema.county) || (wiki && wiki.county));
+  // Popular names — the place→person bridge (like /people). Links into the /people directory profiles, which
+  // lead to people-search. City-native names first, topped up with common state names.
+  let names = getCityTopNames(state, city, 40);
+  if (names.length < 24) {
+    const have = new Set(names.map((n) => n.slug));
+    names = names.concat(getStateTopNames(state, 40).filter((n) => !have.has(n.slug)).slice(0, 24 - names.length));
+  }
+  // Incarceration records carry county, so the city page uses the city's county roster.
+  const inmateNames = county ? await withTimeout(rosterTopNamesByCounty({ state: c.stateCode, county: county.slug, limit: 24 }), [], 5000) : [];
 
   // Report-card summary — the scannable headline metrics.
   const summary = [
@@ -89,7 +100,10 @@ export default async function AreaProfile({ params }) {
     { name: c.stateName, path: hfStatePath(state) },
     { name: c.city, path: hfCityPath(state, city) },
   ];
-  const navItems = HF_MODULES.map((m) => ({ id: m.id, label: m.label }));
+  const navItems = [
+    ...HF_MODULES.map((m) => ({ id: m.id, label: m.label })),
+    inmateNames.length > 0 && { id: 'incarceration', label: 'Incarceration records' },
+  ].filter(Boolean);
 
   return (
     <div style={hf.page}>
@@ -265,6 +279,18 @@ export default async function AreaProfile({ params }) {
               <div style={hf.linkGrid}>{people.slice(0, 10).map((p) => <a key={p.url} href={p.url} target="_blank" rel="noopener" style={{ ...hf.link, fontSize: 14 }}>{p.name}</a>)}</div>
             </div>
           )}
+          {names.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>People searches in {c.city}</div>
+              <div style={hf.linkGrid}>
+                {names.slice(0, 24).map((n) => (
+                  <a key={n.slug} href={cityNamePath(c.stateCode, city, n.slug)} style={{ ...hf.link, fontSize: 14 }}>
+                    {n.name}{n.estInCity ? <span style={{ color: hfColor.muted }}> ({num(n.estInCity)})</span> : null}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           {nearby.length > 0 && (
             <div>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Nearby cities</div>
@@ -272,6 +298,23 @@ export default async function AreaProfile({ params }) {
             </div>
           )}
         </Section>
+
+        {/* Incarceration — first-party public records (county grain; records carry county, not city) */}
+        {inmateNames.length > 0 && county && (
+          <Section id="incarceration" eyebrow="Public records" title={`Incarceration records — ${county.name} County`}
+            source="Names with the most public booking/incarceration records in the county. Source: state & county correctional rosters (first-party).">
+            <p style={{ margin: '0 0 12px', fontSize: 15, color: hfColor.body, lineHeight: 1.6 }}>
+              Most-recorded names in <a href={hfCountyPath(state, county.slug)} style={hf.link}>{county.name} County</a> booking &amp; incarceration records:
+            </p>
+            <div style={hf.linkGrid}>
+              {inmateNames.slice(0, 24).map((n) => (
+                <a key={n.slug} href={`/people/${c.stateCode.toLowerCase()}/county/${county.slug}/${n.slug}`} style={{ ...hf.link, fontSize: 14 }}>
+                  {n.name}{n.count ? <span style={{ color: hfColor.muted }}> ({num(n.count)})</span> : null}
+                </a>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* 9 · Sex offenders */}
         <div id="offenders" style={hf.card}>

@@ -10,6 +10,7 @@ import { FcraFooter, JsonLd } from '../../../../../lib/ui';
 import { SITE, MAIN } from '../../../../../lib/site';
 import { querySexOffenders } from '../../../../../lib/sexOffenderDb.mjs';
 import { SexOffenderSection } from '../../../../../lib/sex-offender-section';
+import { rosterTopNamesByCounty } from '../../../../../lib/incarceration.mjs';
 
 export const revalidate = 5184000; // 60d ISR
 export function generateStaticParams() { return []; }
@@ -36,9 +37,10 @@ export default async function CountyProfile({ params }) {
   const c = countyFromSlug(state, county);
   if (!st || !c) notFound();
 
-  const [offenders, acs] = await Promise.all([
+  const [offenders, acs, inmateNames] = await Promise.all([
     withTimeout(querySexOffenders({ state: st.code, county: c.name, limit: 16 }), []),
     withTimeout(getCountyAcs(c.fips), null, 6500),
+    withTimeout(rosterTopNamesByCounty({ state: st.code, county: c.slug, limit: 30 }), [], 5000),
   ]);
   const demo = demographicStats(acs);
   const prop = propertyStats(acs);
@@ -55,7 +57,13 @@ export default async function CountyProfile({ params }) {
     { name: st.name, path: hfStatePath(state) },
     { name: `${c.name} County`, path: hfCountyPath(state, c.slug) },
   ];
-  const nav = [demo.length > 0 && { id: 'demographics', label: 'Demographics' }, prop.length > 0 && { id: 'property', label: 'Property' }, { id: 'disasters', label: 'Natural disasters' }, { id: 'offenders', label: 'Sex offenders' }].filter(Boolean);
+  const nav = [
+    demo.length > 0 && { id: 'demographics', label: 'Demographics' },
+    prop.length > 0 && { id: 'property', label: 'Property' },
+    { id: 'disasters', label: 'Natural disasters' },
+    inmateNames.length > 0 && { id: 'incarceration', label: 'Incarceration records' },
+    { id: 'offenders', label: 'Sex offenders' },
+  ].filter(Boolean);
 
   return (
     <div style={hf.page}>
@@ -93,6 +101,19 @@ export default async function CountyProfile({ params }) {
             </>
           )}
         </Section>
+
+        {inmateNames.length > 0 && (
+          <Section id="incarceration" eyebrow="Public records" title="Incarceration records"
+            source="Names with the most public booking/incarceration records in the county. Source: state & county correctional rosters (first-party).">
+            <div style={hf.linkGrid}>
+              {inmateNames.slice(0, 30).map((n) => (
+                <a key={n.slug} href={`/people/${st.code.toLowerCase()}/county/${c.slug}/${n.slug}`} style={{ ...hf.link, fontSize: 14 }}>
+                  {n.name}{n.count ? <span style={{ color: hfColor.muted }}> ({num(n.count)})</span> : null}
+                </a>
+              ))}
+            </div>
+          </Section>
+        )}
 
         <div id="offenders" style={hf.card}>
           <SexOffenderSection records={offenders} heading={`Registered sex offenders in ${c.name} County, ${st.code} (${offenders.length})`} blurb={`Public sex-offender registry records for ${c.name} County, ${st.name}.`} />
