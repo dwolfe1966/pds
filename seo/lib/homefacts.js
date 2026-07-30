@@ -79,7 +79,9 @@ async function fetchAcs(geoClause, year) {
   if (!key) return null;
   const url = `https://api.census.gov/data/${year}/acs/acs5?get=${ACS_VARS.join(',')}&${geoClause}&key=${key}`;
   try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    // next.revalidate keeps the page ISR-cached (fetch result cached with the page) instead of flipping the
+    // route to dynamic — no live Census call per request.
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000), next: { revalidate: 5184000 } });
     if (!r.ok) return null;
     const rows = await r.json();
     return rows && rows[1] ? shapeAcsRow(rows[0], rows[1]) : null;

@@ -1,18 +1,21 @@
-// HomeFacts area profile — /homefacts/{state}/{city}, e.g. /homefacts/tx/austin. A place-centric neighborhood
-// report: nine modules (summary, demographics, property, schools, crime, environment, disasters, neighborhood,
-// sex offenders) on the same public-data engine as the /people directory. Live modules render real ACS /
-// Wikidata / first-party sex-offender data; pending modules name the public source being wired (no fabrication).
+// HomeFacts CITY area profile — /homefacts/{state}/{city}. Flagship of the four-grain area-profile model.
+// Nine modules on real public + first-party data; the pending ones name their source (no fabrication).
+// Design system: lib/hf.js (Homefacts blue + report-card summary + sticky section nav).
 import { notFound } from 'next/navigation';
 import { getCitySlice, getStateCities, getNearbyCities } from '../../../../lib/directory';
 import {
   getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory,
   cityWikiChips, cityEthnicity, cityOccupations, cityProse,
 } from '../../../../lib/facts';
-import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath, getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName } from '../../../../lib/homefacts';
+import {
+  propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
+  getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName,
+} from '../../../../lib/homefacts';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd } from '../../../../lib/schema';
-import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../lib/ui';
+import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
 import { querySexOffenders } from '../../../../lib/sexOffenderDb.mjs';
 import { SexOffenderSection } from '../../../../lib/sex-offender-section';
@@ -23,42 +26,13 @@ export function generateStaticParams() { return []; }
 
 const num = (n) => (n == null ? '' : Number(n).toLocaleString('en-US'));
 const money = (n) => (n == null ? null : '$' + Number(n).toLocaleString('en-US'));
-const withTimeout = (promise, fallback, ms = 1200) =>
-  Promise.race([promise.catch(() => fallback), new Promise((r) => setTimeout(() => r(fallback), ms))]);
+const withTimeout = (p, fb, ms = 1200) => Promise.race([p.catch(() => fb), new Promise((r) => setTimeout(() => r(fb), ms))]);
 
-const snap = {
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, margin: '4px 0' },
-  cell: { background: ui.color.soft, border: `1px solid ${ui.color.softBorder}`, borderRadius: 8, padding: '12px 14px' },
-  label: { fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: ui.color.muted, fontWeight: 800 },
-  value: { fontSize: 20, fontWeight: 800, color: ui.color.accent, marginTop: 2 },
-  barRow: { display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0', fontSize: 13 },
-  barTrack: { flex: 1, height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden' },
-  barFill: { height: '100%', background: ui.color.accent },
-};
-const jump = {
-  wrap: { display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  link: { fontSize: 13, fontWeight: 700, color: ui.color.body, background: ui.color.soft, border: `1px solid ${ui.color.softBorder}`, borderRadius: 999, padding: '6px 12px', textDecoration: 'none' },
-  soon: { fontSize: 9, fontWeight: 800, marginLeft: 6, color: '#8a6d3b' },
-};
-
-function StatGrid({ stats }) {
+function Pending({ id, eyebrow, title, source, blurb }) {
   return (
-    <div style={snap.grid}>
-      {stats.map((s) => (
-        <div key={s.label} style={snap.cell}><div style={snap.label}>{s.label}</div><div style={snap.value}>{s.value}</div></div>
-      ))}
-    </div>
-  );
-}
-
-// Honest placeholder for a module whose public source isn't ingested yet — names the real source, no fake data.
-function Pending({ id, title, source, blurb }) {
-  return (
-    <section id={id} style={ui.card}>
-      <h2 style={ui.h2}>{title}</h2>
-      <p style={{ margin: '0 0 8px', fontSize: 14, color: ui.color.body, lineHeight: 1.65 }}>{blurb}</p>
-      <p style={ui.source}>Data source being added: {source}. We show real, sourced figures only — never estimates.</p>
-    </section>
+    <Section id={id} eyebrow={eyebrow} title={title} source={`Data source being added: ${source}. We show real, sourced figures only — never estimates.`}>
+      <p style={{ margin: 0, fontSize: 14, color: hfColor.body, lineHeight: 1.65 }}>{blurb}</p>
+    </Section>
   );
 }
 
@@ -67,8 +41,8 @@ export async function generateMetadata({ params }) {
   const c = getCitySlice(state, city);
   if (!c) return {};
   return {
-    title: `${c.city}, ${c.stateCode} Neighborhood Report — Demographics, Property, Crime & Sex Offenders | HomeFacts`,
-    description: `Area profile for ${c.city}, ${c.stateName}: demographics, home values and rents, schools, crime, environmental and natural-disaster risk, neighborhood info, and the registered sex-offender registry.`,
+    title: `${c.city}, ${c.stateCode} Neighborhood Report — Demographics, Property, Schools, Crime & Sex Offenders | Homefacts`,
+    description: `Area profile for ${c.city}, ${c.stateName}: demographics, home values and rents, schools, natural-disaster risk, environmental hazards, neighborhood info, and the registered sex-offender registry.`,
     alternates: { canonical: `${SITE}${hfCityPath(state, city)}` },
   };
 }
@@ -96,287 +70,198 @@ export default async function AreaProfile({ params }) {
   const fema = getCityFema(c.stateCode, city);
   const schools = getCitySchools(c.stateCode, city);
   const epa = getCityEpa(c.stateCode, city);
-  const county = countyForName(state, (fema && fema.county) || (wiki && wiki.county)); // city → county cross-link
+  const county = countyForName(state, (fema && fema.county) || (wiki && wiki.county));
 
-  // Highlight snapshot for the summary (curated, not the full demographic set below).
-  const highlight = [
+  // Report-card summary — the scannable headline metrics.
+  const summary = [
     acs?.population != null && { label: 'Population', value: num(acs.population) },
-    acs?.medianAge != null && { label: 'Median age', value: `${acs.medianAge}` },
-    acs?.medianHouseholdIncome != null && { label: 'Median income', value: money(acs.medianHouseholdIncome) },
-    acs?.medianHomeValue != null && { label: 'Median home value', value: money(acs.medianHomeValue) },
+    acs?.medianHomeValue != null && { label: 'Median home', value: money(acs.medianHomeValue) },
+    fema?.rating && { label: 'Disaster risk', value: fema.rating, tone: femaRatingColor(fema.rating) },
+    schools?.count != null && { label: 'Public schools', value: num(schools.count) },
+    { label: 'Sex offenders', value: num(offenders.length) },
   ].filter(Boolean);
 
   const crumbs = [
-    { name: 'HomeFacts', path: '/homefacts' },
+    { name: 'Homefacts', path: '/homefacts' },
     { name: c.stateName, path: hfStatePath(state) },
     { name: c.city, path: hfCityPath(state, city) },
   ];
-  const jsonLd = [crumbsJsonLd(crumbs)];
+  const navItems = HF_MODULES.map((m) => ({ id: m.id, label: m.label }));
 
   return (
-    <main style={ui.main}>
-      <JsonLd blocks={jsonLd} />
-      <Breadcrumbs crumbs={crumbs} />
-      <FromBanner city={c.city} stateCode={c.stateCode} />
+    <div style={hf.page}>
+      <HfHeader />
+      <main style={hf.main}>
+        <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
+        <HfBreadcrumbs crumbs={crumbs} />
+        <FromBanner city={c.city} stateCode={c.stateCode} />
 
-      <section style={ui.hero}>
-        <p style={ui.eyebrow}>Neighborhood report</p>
-        <h1 style={ui.h1}>{c.city}, {c.stateCode} Area Profile</h1>
-        {chips.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '8px 0 4px' }}>
-            {chips.map((ch) => <span key={ch} style={ui.chip}>{ch}</span>)}
-          </div>
-        )}
-        {prose && <p style={{ ...ui.lead, marginTop: 12 }}>{prose}</p>}
-        <nav style={jump.wrap} aria-label="Report sections">
-          {HF_MODULES.map((m) => (
-            <a key={m.id} href={`#${m.id}`} style={jump.link}>
-              {m.label}{m.status !== 'live' && <span style={jump.soon}>soon</span>}
-            </a>
-          ))}
-        </nav>
-      </section>
-
-      {/* 1 · Neighborhood report & summary */}
-      {highlight.length > 0 && (
-        <section id="summary" style={ui.card}>
-          <h2 style={ui.h2}>{c.city} at a glance</h2>
-          <StatGrid stats={highlight} />
-          <p style={ui.source}>Source: U.S. Census Bureau, American Community Survey (5-year).</p>
-        </section>
-      )}
-
-      {/* 2 · Demographics */}
-      {demo.length > 0 && (
-        <section id="demographics" style={ui.card}>
-          <h2 style={ui.h2}>Demographics</h2>
-          <StatGrid stats={demo} />
-          {eth.length > 0 && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ ...snap.label, marginBottom: 4 }}>Residents by race &amp; ethnicity</div>
-              {eth.map((e) => (
-                <div key={e.label} style={snap.barRow}>
-                  <span style={{ width: 130, color: ui.color.body }}>{e.label}</span>
-                  <span style={snap.barTrack}><span style={{ ...snap.barFill, width: `${Math.min(100, e.value)}%` }} /></span>
-                  <span style={{ width: 44, textAlign: 'right', color: ui.color.muted }}>{e.value}%</span>
-                </div>
-              ))}
+        <section style={{ ...hf.card, marginBottom: 8 }}>
+          <p style={hf.eyebrow}>Neighborhood report</p>
+          <h1 style={hf.h1}>{c.city}, {c.stateCode}</h1>
+          {chips.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+              {chips.map((ch) => <span key={ch} style={hf.chip}>{ch}</span>)}
             </div>
           )}
-          {occupations.length > 0 && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ ...snap.label, marginBottom: 4 }}>Workforce by occupation</div>
-              {occupations.map((o) => (
-                <div key={o.label} style={snap.barRow}>
-                  <span style={{ width: 200, color: ui.color.body, fontSize: 12.5 }}>{o.label}</span>
-                  <span style={snap.barTrack}><span style={{ ...snap.barFill, width: `${Math.min(100, o.value)}%` }} /></span>
-                  <span style={{ width: 44, textAlign: 'right', color: ui.color.muted }}>{o.value}%</span>
-                </div>
-              ))}
-            </div>
-          )}
-          <p style={ui.source}>Source: U.S. Census Bureau, American Community Survey (5-year).</p>
+          <SummaryBand items={summary} />
         </section>
-      )}
 
-      {/* 3 · Property report */}
-      {prop.length > 0 && (
-        <section id="property" style={ui.card}>
-          <h2 style={ui.h2}>Property report</h2>
-          <StatGrid stats={prop} />
-          <p style={ui.source}>Area-level figures. Source: U.S. Census Bureau, ACS (5-year). Parcel-level records coming next.</p>
-        </section>
-      )}
+        <SectionNav items={navItems} />
 
-      {/* 4 · Schools — NCES Common Core of Data via Urban Institute (live) */}
-      {schools ? (
-        <section id="schools" style={ui.card}>
-          <h2 style={ui.h2}>Schools</h2>
-          <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body, lineHeight: 1.65 }}>
-            {c.city} has <strong>{num(schools.count)}</strong> public school{schools.count === 1 ? '' : 's'}
-            {(() => {
-              const parts = ['Elementary', 'Middle', 'High'].map((k) => schools.byLevel[k] ? `${num(schools.byLevel[k])} ${k.toLowerCase()}` : null).filter(Boolean);
-              return parts.length ? <> — {parts.join(', ')}</> : null;
-            })()}.
-          </p>
-          {schools.sample.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {schools.sample.map((s, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 14, color: ui.color.body }}>
-                  <span style={{ fontWeight: 600 }}>{s.name}</span>
-                  {s.level && <span style={{ ...ui.chip, fontSize: 11, padding: '1px 8px' }}>{s.level}</span>}
-                  {s.lo && s.hi && <span style={ui.muted}>Grades {s.lo}–{s.hi}</span>}
-                  {s.charter && <span style={{ fontSize: 11, color: ui.color.blue }}>charter</span>}
-                  {s.magnet && <span style={{ fontSize: 11, color: ui.color.blue }}>magnet</span>}
-                </div>
-              ))}
-            </div>
-          )}
-          <p style={ui.source}>Public schools. Source: U.S. Dept. of Education, NCES Common Core of Data (via Urban Institute).</p>
-        </section>
-      ) : (
-        <Pending id="schools" title="Schools"
-          source="U.S. Dept. of Education / NCES (public)"
-          blurb={`Public, private and charter schools serving ${c.city}.`} />
-      )}
-
-      {/* 5 · Crime */}
-      <Pending id="crime" title="Crime"
-        source="FBI Crime Data Explorer + local agencies (public)"
-        blurb={`Violent and property crime rates for ${c.city} and how they compare to ${c.stateName} and national averages.`} />
-
-      {/* 6 · Environmental hazards — EPA Toxics Release Inventory (live) */}
-      {epa && epa.count > 0 ? (
-        <section id="environment" style={ui.card}>
-          <h2 style={ui.h2}>Environmental hazards</h2>
-          <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body, lineHeight: 1.65 }}>
-            <strong>{num(epa.count)}</strong> {epa.count === 1 ? 'facility in' : 'facilities in'} {c.city} report releasing
-            toxic chemicals to the EPA under the Toxics Release Inventory (TRI).
-          </p>
-          {epa.sample.length > 0 && (
-            <div style={ui.linkGrid}>
-              {epa.sample.map((f, i) => (
-                <span key={i} style={{ fontSize: 14, color: ui.color.body }}>
-                  {f.name}{f.county ? <span style={ui.muted}> · {f.county} County</span> : null}
-                </span>
-              ))}
-            </div>
-          )}
-          <p style={ui.source}>Facilities reporting to the EPA Toxics Release Inventory. Source: U.S. EPA Envirofacts (TRI).</p>
-        </section>
-      ) : (
-        <Pending id="environment" title="Environmental hazards"
-          source="U.S. EPA — Toxics Release Inventory (public)"
-          blurb={`Toxic-release sites and regulated facilities in and around ${c.city}.`} />
-      )}
-
-      {/* 7 · Natural disasters — FEMA National Risk Index (live) */}
-      {fema ? (
-        <section id="disasters" style={ui.card}>
-          <h2 style={ui.h2}>Natural disaster risk</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '0 0 12px' }}>
-            <span style={{ fontSize: 13, color: ui.color.body }}>Overall risk for {fema.county || `${c.city}'s county`}:</span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', background: femaRatingColor(fema.rating), borderRadius: 999, padding: '4px 12px' }}>{fema.rating}</span>
-          </div>
-          {fema.hazards && fema.hazards.length > 0 && (
-            <>
-              <div style={{ ...snap.label, marginBottom: 4 }}>Top hazards</div>
-              {fema.hazards.map((h) => (
-                <div key={h.label} style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0', fontSize: 13 }}>
-                  <span style={{ width: 150, color: ui.color.body }}>{h.label}</span>
-                  <span style={{ flex: 1, height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden' }}>
-                    <span style={{ display: 'block', height: '100%', width: `${(h.sev / 5) * 100}%`, background: femaRatingColor(h.rating) }} />
-                  </span>
-                  <span style={{ width: 120, textAlign: 'right', color: femaRatingColor(h.rating), fontWeight: 700, fontSize: 12 }}>{h.rating}</span>
-                </div>
-              ))}
-            </>
-          )}
-          <p style={ui.source}>County-level natural-hazard risk. Source: FEMA National Risk Index.</p>
-        </section>
-      ) : (
-        <Pending id="disasters" title="Natural disaster risk"
-          source="FEMA National Risk Index (public)"
-          blurb={`Risk from flood, wildfire, tornado, earthquake, hurricane and other hazards for ${c.city}'s county.`} />
-      )}
-
-      {/* 8 · Neighborhood info */}
-      <section id="neighborhood" style={ui.card}>
-        <h2 style={ui.h2}>Neighborhood info</h2>
-        {county && (
-          <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body }}>
-            {c.city} is in <a href={hfCountyPath(state, county.slug)} style={ui.link}>{county.name} County</a> — see the county-wide disaster risk, demographics, and registry.
-          </p>
+        {/* 1 · Overview */}
+        {prose && (
+          <Section id="summary" eyebrow="Overview" title={`About ${c.city}`} source="Source: U.S. Census Bureau, American Community Survey (5-year).">
+            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: hfColor.body }}>{prose}</p>
+          </Section>
         )}
-        {wiki && (wiki.founded || wiki.county || wiki.elevationM != null || wiki.nickname) && (
-          <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body, lineHeight: 1.65 }}>
-            {c.city}
-            {wiki.founded ? ` was founded in ${wiki.founded}` : ''}
-            {wiki.county ? `${wiki.founded ? ' and' : ''} sits in ${wiki.county}` : ''}
-            {wiki.nickname ? `, nicknamed “${wiki.nickname}”` : ''}
-            {wiki.elevationM != null ? `. Elevation ~${num(wiki.elevationM)} m` : ''}.
-          </p>
+
+        {/* 2 · Demographics */}
+        {demo.length > 0 && (
+          <Section id="demographics" eyebrow="Who lives here" title="Demographics" source="Source: U.S. Census Bureau, American Community Survey (5-year).">
+            <StatGrid stats={demo} />
+            {eth.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Residents by race &amp; ethnicity</div>
+                {eth.map((e) => <Bar key={e.label} label={e.label} pct={e.value} right={`${e.value}%`} />)}
+              </div>
+            )}
+            {occupations.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Workforce by occupation</div>
+                {occupations.map((o) => <Bar key={o.label} label={o.label} pct={o.value} right={`${o.value}%`} />)}
+              </div>
+            )}
+          </Section>
         )}
-        {popPoints.length >= 4 && (
-          <>
-            <div style={{ ...snap.label, marginBottom: 6 }}>Population trend</div>
-            <PopChart points={popPoints} width={680} height={220} />
-            <p style={ui.source}>{popPoints[0].year}–{popPoints[popPoints.length - 1].year}. Sources: Wikidata (CC0); latest from U.S. Census ACS.</p>
-          </>
+
+        {/* 3 · Property */}
+        {prop.length > 0 && (
+          <Section id="property" eyebrow="Housing" title="Property report" source="Area-level figures. Source: U.S. Census Bureau, ACS (5-year). Parcel-level records coming next.">
+            <StatGrid stats={prop} />
+          </Section>
         )}
-        {stateCities.length >= 3 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ ...snap.label, marginBottom: 6 }}>Where {c.city} is</div>
-            <StateMap cities={stateCities} name={c.stateName} highlight={c.city} width={680} height={360} />
-          </div>
-        )}
-        {historic && historic.count > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ ...snap.label, marginBottom: 6 }}>Historic places</div>
-            <p style={{ margin: '0 0 8px', fontSize: 14, color: ui.color.body }}>
-              {num(historic.count)} on the National Register of Historic Places
-              {historic.nhl > 0 ? `, incl. ${historic.nhl} National Historic Landmark${historic.nhl === 1 ? '' : 's'}` : ''}.
+
+        {/* 4 · Schools */}
+        {schools ? (
+          <Section id="schools" eyebrow="Education" title="Schools" source="Public schools. Source: U.S. Dept. of Education, NCES Common Core of Data (via Urban Institute).">
+            <p style={{ margin: '0 0 14px', fontSize: 15, color: hfColor.body, lineHeight: 1.6 }}>
+              {c.city} has <strong>{num(schools.count)}</strong> public school{schools.count === 1 ? '' : 's'}
+              {(() => { const parts = ['Elementary', 'Middle', 'High'].map((k) => schools.byLevel[k] ? `${num(schools.byLevel[k])} ${k.toLowerCase()}` : null).filter(Boolean); return parts.length ? <> — {parts.join(', ')}</> : null; })()}.
             </p>
-            <div style={ui.linkGrid}>
-              {historic.places.slice(0, 12).map((p, i) => (
-                p.url
-                  ? <a key={i} href={p.url} target="_blank" rel="noopener" style={{ ...ui.link, fontSize: 14 }}>{p.name}</a>
-                  : <span key={i} style={{ fontSize: 14, color: ui.color.body }}>{p.name}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {schools.sample.map((s, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 14, color: hfColor.body }}>
+                  <span style={{ fontWeight: 600 }}>{s.name}</span>
+                  {s.level && <span style={{ ...hf.chip, fontSize: 11, padding: '1px 8px' }}>{s.level}</span>}
+                  {s.lo && s.hi && <span style={{ color: hfColor.muted }}>Grades {s.lo}–{s.hi}</span>}
+                  {s.charter && <span style={{ fontSize: 11, color: hfColor.accent }}>charter</span>}
+                  {s.magnet && <span style={{ fontSize: 11, color: hfColor.accent }}>magnet</span>}
+                </div>
               ))}
             </div>
-            <p style={ui.source}>Source: NPS National Register of Historic Places.</p>
-          </div>
+          </Section>
+        ) : (
+          <Pending id="schools" eyebrow="Education" title="Schools" source="U.S. Dept. of Education / NCES (public)" blurb={`Public, private and charter schools serving ${c.city}.`} />
         )}
-        {people && people.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ ...snap.label, marginBottom: 6 }}>Notable people from {c.city}</div>
-            <div style={ui.linkGrid}>
-              {people.slice(0, 10).map((p) => (
-                <a key={p.url} href={p.url} target="_blank" rel="noopener" style={{ ...ui.link, fontSize: 14 }}>{p.name}</a>
-              ))}
-            </div>
-            <p style={ui.source}>Source: Wikidata / Wikipedia (CC0).</p>
-          </div>
-        )}
-        {newspapers && newspapers.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ ...snap.label, marginBottom: 6 }}>Historic newspapers</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {newspapers.map((p, i) => (
-                <span key={i} style={{ fontSize: 14, color: ui.color.body }}>{p.name}{p.years ? <span style={ui.muted}> · {p.years}</span> : null}</span>
-              ))}
-            </div>
-            <p style={ui.source}>Source: Library of Congress, Chronicling America (public domain).</p>
-          </div>
-        )}
-        {nearby.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <div style={{ ...snap.label, marginBottom: 6 }}>Nearby cities</div>
-            <div style={ui.linkGrid}>
-              {nearby.map((n) => (
-                <a key={n.slug} href={hfCityPath(state, n.slug)} style={{ ...ui.link, fontSize: 14 }}>
-                  {n.city} <span style={ui.muted}>({num(n.miles)} mi)</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
 
-      {/* 9 · Sex offenders */}
-      <div id="offenders">
-        <SexOffenderSection
-          records={offenders}
-          heading={`Registered sex offenders in ${c.city}, ${c.stateCode} (${offenders.length})`}
-          blurb={`Public sex-offender registry records for ${c.city}, ${c.stateName}. Neighborhood-safety information from the public registry.`}
-        />
-      </div>
+        {/* 5 · Crime */}
+        <Pending id="crime" eyebrow="Safety" title="Crime" source="FBI Crime Data Explorer + local agencies (public)" blurb={`Violent and property crime rates for ${c.city} and how they compare to ${c.stateName} and national averages.`} />
 
-      <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=homefacts&state=${c.stateCode}`} style={ui.secondaryCta}>
-        Look up a person in {c.city} →
-      </a>
+        {/* 6 · Environment */}
+        {epa && epa.count > 0 ? (
+          <Section id="environment" eyebrow="Environment" title="Environmental hazards" source="Facilities reporting to the EPA Toxics Release Inventory. Source: U.S. EPA Envirofacts (TRI).">
+            <p style={{ margin: '0 0 12px', fontSize: 15, color: hfColor.body, lineHeight: 1.6 }}>
+              <strong>{num(epa.count)}</strong> {epa.count === 1 ? 'facility' : 'facilities'} in {c.city} report releasing toxic chemicals to the EPA under the Toxics Release Inventory (TRI).
+            </p>
+            <div style={hf.linkGrid}>
+              {epa.sample.map((f, i) => (
+                <span key={i} style={{ fontSize: 14, color: hfColor.body }}>{f.name}{f.county ? <span style={{ color: hfColor.muted }}> · {f.county} County</span> : null}</span>
+              ))}
+            </div>
+          </Section>
+        ) : (
+          <Pending id="environment" eyebrow="Environment" title="Environmental hazards" source="U.S. EPA — Toxics Release Inventory (public)" blurb={`Toxic-release sites and regulated facilities in and around ${c.city}.`} />
+        )}
 
-      <FcraFooter />
-    </main>
+        {/* 7 · Natural disasters */}
+        {fema ? (
+          <Section id="disasters" eyebrow="Risk" title="Natural disaster risk"
+            right={fema.rating ? <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', background: femaRatingColor(fema.rating), borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap' }}>{fema.rating}</span> : null}
+            source="County-level natural-hazard risk. Source: FEMA National Risk Index.">
+            {fema.hazards && fema.hazards.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Top hazards{fema.county ? ` · ${fema.county} County` : ''}</div>
+                {fema.hazards.map((h) => <Bar key={h.label} label={h.label} pct={(h.sev / 5) * 100} color={femaRatingColor(h.rating)} right={h.rating} />)}
+              </>
+            )}
+          </Section>
+        ) : (
+          <Pending id="disasters" eyebrow="Risk" title="Natural disaster risk" source="FEMA National Risk Index (public)" blurb={`Flood, wildfire, tornado, earthquake and other hazard risk for ${c.city}'s county.`} />
+        )}
+
+        {/* 8 · Neighborhood info */}
+        <Section id="neighborhood" eyebrow="Context" title="Neighborhood info">
+          {county && (
+            <p style={{ margin: '0 0 14px', fontSize: 15, color: hfColor.body }}>
+              {c.city} is in <a href={hfCountyPath(state, county.slug)} style={hf.link}>{county.name} County</a> — see county-wide risk, demographics, and registry.
+            </p>
+          )}
+          {wiki && (wiki.founded || wiki.county || wiki.elevationM != null || wiki.nickname) && (
+            <p style={{ margin: '0 0 14px', fontSize: 14, color: hfColor.body, lineHeight: 1.65 }}>
+              {c.city}{wiki.founded ? ` was founded in ${wiki.founded}` : ''}{wiki.county ? `${wiki.founded ? ' and' : ''} sits in ${wiki.county}` : ''}{wiki.nickname ? `, nicknamed “${wiki.nickname}”` : ''}{wiki.elevationM != null ? `. Elevation ~${num(wiki.elevationM)} m` : ''}.
+            </p>
+          )}
+          {popPoints.length >= 4 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Population trend</div>
+              <PopChart points={popPoints} width={680} height={220} />
+            </div>
+          )}
+          {stateCities.length >= 3 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Where {c.city} is</div>
+              <StateMap cities={stateCities} name={c.stateName} highlight={c.city} width={680} height={360} />
+            </div>
+          )}
+          {historic && historic.count > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Historic places</div>
+              <p style={{ margin: '0 0 8px', fontSize: 14, color: hfColor.body }}>{num(historic.count)} on the National Register of Historic Places{historic.nhl > 0 ? `, incl. ${historic.nhl} National Historic Landmark${historic.nhl === 1 ? '' : 's'}` : ''}.</p>
+              <div style={hf.linkGrid}>
+                {historic.places.slice(0, 12).map((p, i) => (p.url ? <a key={i} href={p.url} target="_blank" rel="noopener" style={{ ...hf.link, fontSize: 14 }}>{p.name}</a> : <span key={i} style={{ fontSize: 14, color: hfColor.body }}>{p.name}</span>))}
+              </div>
+            </div>
+          )}
+          {people && people.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Notable people from {c.city}</div>
+              <div style={hf.linkGrid}>{people.slice(0, 10).map((p) => <a key={p.url} href={p.url} target="_blank" rel="noopener" style={{ ...hf.link, fontSize: 14 }}>{p.name}</a>)}</div>
+            </div>
+          )}
+          {nearby.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Nearby cities</div>
+              <div style={hf.linkGrid}>{nearby.map((n) => <a key={n.slug} href={hfCityPath(state, n.slug)} style={{ ...hf.link, fontSize: 14 }}>{n.city} <span style={{ color: hfColor.muted }}>({num(n.miles)} mi)</span></a>)}</div>
+            </div>
+          )}
+        </Section>
+
+        {/* 9 · Sex offenders */}
+        <div id="offenders" style={hf.card}>
+          <SexOffenderSection
+            records={offenders}
+            heading={`Registered sex offenders in ${c.city}, ${c.stateCode} (${offenders.length})`}
+            blurb={`Public sex-offender registry records for ${c.city}, ${c.stateName}.`}
+          />
+        </div>
+
+        <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=homefacts&state=${c.stateCode}`} style={hf.secondaryCta}>
+          Look up a person in {c.city} →
+        </a>
+
+        <FcraFooter />
+      </main>
+    </div>
   );
 }

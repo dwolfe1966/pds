@@ -6,7 +6,7 @@
 
 import { useMemo, useState } from 'react';
 
-const C = { ink: '#172033', body: '#344054', muted: '#667085', border: '#d8e0ea', soft: '#f6f8fb', accent: '#0d5d2f' };
+const C = { ink: '#172033', body: '#344054', muted: '#667085', border: '#d8e0ea', soft: '#f6f8fb', accent: '#12507e' };
 
 export default function HomefactsSearch({ cities }) {
   const [q, setQ] = useState('');
