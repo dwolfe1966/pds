@@ -35,6 +35,7 @@ Validate locally or live with:
 ```bash
 npm run verify
 npm run verify:live
+npm run verify:live:expanded
 ```
 
 The smoke script should report:
@@ -50,11 +51,8 @@ The deep audit should confirm sampled county pages remain indexable, sampled boi
 pages remain `noindex, follow`, stale profile tokens redirect to the name hub, and deleted `/profiles`
 URLs return `410`.
 
-The county audit is broader and intentionally separate from `verify:live`; run
-`SEO_AUDIT_BASE=https://idlookup.me npm run audit:counties` before considering any county sitemap expansion.
-
-The name-in-state audit checks roster-state name pages and root recovery aliases; run
-`SEO_AUDIT_BASE=https://idlookup.me npm run audit:name-states` before considering name-state sitemap expansion.
+The expanded live verification runs the broader county and name-in-state audits. Run it before considering
+county or name-state sitemap expansion.
 
 The claims audit should pass before shipping SEO copy changes; it guards against privacy/confidentiality
 and absolute-accuracy claims that conflict with the product posture.

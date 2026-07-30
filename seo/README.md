@@ -70,6 +70,12 @@ Run the deployed verification suite:
 npm run verify:live
 ```
 
+Run the slower deployed verification suite before sitemap expansion work:
+
+```bash
+npm run verify:live:expanded
+```
+
 Smoke test the production build locally, or test a running/deployed instance:
 
 ```bash

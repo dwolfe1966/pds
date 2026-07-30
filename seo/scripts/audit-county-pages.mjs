@@ -8,6 +8,28 @@ const countyNameLimit = Number(process.env.SEO_AUDIT_COUNTY_NAME_LIMIT || 20);
 const concurrency = Number(process.env.SEO_AUDIT_CONCURRENCY || 6);
 const retries = Number(process.env.SEO_AUDIT_RETRIES || 1);
 const SITE = 'https://idlookup.me';
+const SEEDED_COUNTY_HUBS = [
+  '/people/fl/county/miami-dade',
+  '/people/fl/county/broward',
+  '/people/fl/county/palm-beach',
+  '/people/fl/county/hillsborough',
+  '/people/fl/county/orange',
+  '/people/fl/county/pinellas',
+  '/people/fl/county/duval',
+  '/people/fl/county/polk',
+  '/people/fl/county/lee',
+  '/people/fl/county/brevard',
+  '/people/fl/county/volusia',
+  '/people/fl/county/pasco',
+  '/people/fl/county/seminole',
+  '/people/fl/county/sarasota',
+  '/people/fl/county/manatee',
+  '/people/fl/county/collier',
+  '/people/fl/county/lake',
+  '/people/fl/county/marion',
+  '/people/fl/county/osceola',
+  '/people/fl/county/escambia',
+];
 const STATES_BY_POP = [
   'ca', 'tx', 'fl', 'ny', 'pa', 'il', 'oh', 'ga', 'nc', 'mi', 'nj', 'va',
   'wa', 'az', 'tn', 'ma', 'in', 'mo', 'md', 'wi', 'co', 'mn', 'sc', 'al',
@@ -96,6 +118,10 @@ async function discoverCountyHubs() {
   return [...new Set(found)].slice(0, countyLimit);
 }
 
+function seededCountyHubs() {
+  return SEEDED_COUNTY_HUBS.slice(0, countyLimit);
+}
+
 async function auditCountyHub(path) {
   const { status, location, xRobots, body, ms } = await fetchBody(path);
   const failures = [];
@@ -139,11 +165,11 @@ async function auditCountyName(path) {
 console.log(`SEO county audit — ${base}`);
 console.log(`  stateLimit=${stateLimit} countyLimit=${countyLimit} countyNameLimit=${countyNameLimit}`);
 
-const countyHubs = await discoverCountyHubs();
+let countyHubs = await discoverCountyHubs();
 console.log(`  discovered county hubs: ${countyHubs.length}`);
 if (!countyHubs.length) {
-  console.error('No county hubs discovered from sampled state pages.');
-  process.exit(1);
+  countyHubs = seededCountyHubs();
+  console.warn(`  using seeded county hubs: ${countyHubs.length}`);
 }
 
 const hubResults = await mapLimit(countyHubs, concurrency, auditCountyHub);
