@@ -23,6 +23,7 @@ import AddressSafetySummary from '../../AddressSafetySummary';
 import WhatsNearby from '../../WhatsNearby';
 import RecentCrime from '../../RecentCrime';
 import Weather from '../../Weather';
+import AirQuality from '../../AirQuality';
 import Landmarks from '../../Landmarks';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd, faqJsonLd } from '../../../../lib/schema';
@@ -148,6 +149,7 @@ export default async function AreaProfile({ params }) {
         <WhatsNearby />
 
         {c.lat != null && <Weather center={{ lat: c.lat, lng: c.lng }} />}
+        {c.lat != null && <AirQuality center={{ lat: c.lat, lng: c.lng }} />}
 
         <SectionNav items={navItems} />
 

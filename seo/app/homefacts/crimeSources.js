@@ -8,6 +8,8 @@ export const CRIME_SOURCES = {
   'ca/los-angeles':   { domain: 'data.lacity.org',        dataset: '2nrs-mtv8', lat: 'lat',      lng: 'lon',       date: 'date_occ',    type: 'crm_cd_desc',        label: 'LAPD' },
   'ny/new-york':      { domain: 'data.cityofnewyork.us',  dataset: '5uac-w243', lat: 'latitude', lng: 'longitude', date: 'cmplnt_fr_dt', type: 'ofns_desc',         label: 'NYPD' },
   'ca/san-francisco': { domain: 'data.sfgov.org',         dataset: 'wg3w-h783', lat: 'latitude', lng: 'longitude', date: 'incident_date', type: 'incident_category', label: 'San Francisco Police Department' },
+  'oh/cincinnati':    { domain: 'data.cincinnati-oh.gov', dataset: 'k59e-2pvf', lat: 'latitude_x', lng: 'longitude_x', date: 'date_reported', type: 'offense', label: 'Cincinnati Police Department' },
+  'wa/seattle':       { domain: 'data.seattle.gov',       dataset: 'tazs-3rd5', lat: 'latitude', lng: 'longitude', date: 'report_date_time', type: 'offense_category', label: 'Seattle Police Department' },
 };
 
 export function crimeSourceFor(stateLc, citySlug) {
