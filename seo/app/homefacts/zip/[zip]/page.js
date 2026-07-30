@@ -11,6 +11,7 @@ import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section,
 import { HfIcon } from '../../../../lib/HfIcon';
 import { AreaMap } from '../../../../lib/AreaMap';
 import OffenderMap from '../../OffenderMap';
+import NearestToAddress from '../../NearestToAddress';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
@@ -240,6 +241,8 @@ export default async function ZipProfile({ params }) {
               />
             </div>
           )}
+          <NearestToAddress title="Registered offenders nearest your address" accent="#b23a48"
+            items={offenders.map((o) => ({ lat: o.latitude, lng: o.longitude, label: o.name || 'Registered offender', sub: [o.city, o.absconder ? 'ABSCONDER' : null].filter(Boolean).join(' · ') }))} />
           <SexOffenderSection records={offenders} heading={`Registered sex offenders in ZIP ${zip} (${offenders.length})`} blurb={`Public sex-offender registry records for ZIP code ${zip}.`} />
         </div>
 

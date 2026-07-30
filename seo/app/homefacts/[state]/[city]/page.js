@@ -18,6 +18,7 @@ import { HfIcon } from '../../../../lib/HfIcon';
 import { StateMap } from '../../../../lib/statemap';
 import { AreaMap } from '../../../../lib/AreaMap';
 import OffenderMap from '../../OffenderMap';
+import NearestToAddress from '../../NearestToAddress';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd, faqJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -185,6 +186,8 @@ export default async function AreaProfile({ params }) {
                 />
               </div>
             )}
+            <NearestToAddress title="Schools nearest your address"
+              items={schools.sample.map((s) => ({ lat: s.lat, lng: s.lng, label: s.name, sub: s.level }))} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {schools.sample.map((s, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 14, color: hfColor.body }}>
@@ -352,6 +355,8 @@ export default async function AreaProfile({ params }) {
               />
             </div>
           )}
+          <NearestToAddress title="Registered offenders nearest your address" accent="#b23a48"
+            items={offenders.map((o) => ({ lat: o.latitude, lng: o.longitude, label: o.name || 'Registered offender', sub: [o.city, o.absconder ? 'ABSCONDER' : null].filter(Boolean).join(' · ') }))} />
           <SexOffenderSection
             records={offenders}
             heading={`Registered sex offenders in ${c.city}, ${c.stateCode} (${offenders.length})`}
