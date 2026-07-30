@@ -56,29 +56,49 @@ export function countyForName(stateLc, countyName) {
   return countyFromSlug(stateLc, slug);
 }
 
-// ACS demographics/property for a county — FETCH-AT-GENERATION (ISR caches the result), gated on CENSUS_API_KEY.
-// Returns an ACS-shaped object (subset) so demographicStats()/propertyStats() render whatever is present, or
-// null (no key / fetch fails) so the page degrades gracefully. fips = 5-digit STCOFIPS.
-export async function getCountyAcs(fips, year = 2023) {
+export function getCountyByFips(fips) {
+  const f = String(fips);
+  for (const st of Object.keys(COUNTIES)) { const hit = COUNTIES[st].find((c) => c.fips === f); if (hit) return { ...hit, stateLc: st }; }
+  return null;
+}
+
+// Shared ACS-row → stat-object shaper for county + ZCTA (both use the same variable set).
+const ACS_VARS = ['B01003_001E', 'B01002_001E', 'B19013_001E', 'B19301_001E', 'B25077_001E', 'B25064_001E', 'B25003_001E', 'B25003_002E'];
+function shapeAcsRow(header, row) {
+  const g = (code) => { const n = Number(row[header.indexOf(code)]); return Number.isFinite(n) && n > -1e6 ? n : null; };
+  const ownTot = g('B25003_001E'), ownOcc = g('B25003_002E');
+  return {
+    population: g('B01003_001E'), medianAge: g('B01002_001E'),
+    medianHouseholdIncome: g('B19013_001E'), perCapitaIncome: g('B19301_001E'),
+    medianHomeValue: g('B25077_001E'), medianGrossRent: g('B25064_001E'),
+    pctOwnerOccupied: ownTot && ownOcc != null ? Math.round((ownOcc / ownTot) * 100) : null,
+  };
+}
+async function fetchAcs(geoClause, year) {
   const key = process.env.CENSUS_API_KEY;
-  if (!key || !/^\d{5}$/.test(String(fips))) return null;
-  const st = String(fips).slice(0, 2), co = String(fips).slice(2);
-  const vars = ['B01003_001E', 'B01002_001E', 'B19013_001E', 'B19301_001E', 'B25077_001E', 'B25064_001E', 'B25003_001E', 'B25003_002E'];
-  const url = `https://api.census.gov/data/${year}/acs/acs5?get=${vars.join(',')}&for=county:${co}&in=state:${st}&key=${key}`;
+  if (!key) return null;
+  const url = `https://api.census.gov/data/${year}/acs/acs5?get=${ACS_VARS.join(',')}&${geoClause}&key=${key}`;
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (!r.ok) return null;
     const rows = await r.json();
-    const h = rows[0], v = rows[1];
-    const g = (code) => { const n = Number(v[h.indexOf(code)]); return Number.isFinite(n) && n > -1e6 ? n : null; };
-    const ownTot = g('B25003_001E'), ownOcc = g('B25003_002E');
-    return {
-      population: g('B01003_001E'), medianAge: g('B01002_001E'),
-      medianHouseholdIncome: g('B19013_001E'), perCapitaIncome: g('B19301_001E'),
-      medianHomeValue: g('B25077_001E'), medianGrossRent: g('B25064_001E'),
-      pctOwnerOccupied: ownTot && ownOcc != null ? Math.round((ownOcc / ownTot) * 100) : null,
-    };
+    return rows && rows[1] ? shapeAcsRow(rows[0], rows[1]) : null;
   } catch { return null; }
+}
+
+// ACS for a ZIP (ZCTA) — FETCH-AT-GENERATION, key-gated. Real ZIP-level demographics/property.
+export async function getZctaAcs(zip, year = 2023) {
+  if (!/^\d{5}$/.test(String(zip))) return null;
+  return fetchAcs(`for=zip%20code%20tabulation%20area:${zip}`, year);
+}
+
+// ACS demographics/property for a county — FETCH-AT-GENERATION (ISR caches the result), gated on CENSUS_API_KEY.
+// Returns an ACS-shaped object (subset) so demographicStats()/propertyStats() render whatever is present, or
+// null (no key / fetch fails) so the page degrades gracefully. fips = 5-digit STCOFIPS.
+export async function getCountyAcs(fips, year = 2023) {
+  if (!/^\d{5}$/.test(String(fips))) return null;
+  const st = String(fips).slice(0, 2), co = String(fips).slice(2);
+  return fetchAcs(`for=county:${co}&in=state:${st}`, year);
 }
 
 // ── Property report (ACS place-level) ────────────────────────────────────────

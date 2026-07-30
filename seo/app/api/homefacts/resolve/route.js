@@ -43,14 +43,6 @@ function coveredCity(stateLc, placeName) {
   return hit ? { lc: stateLc, city: hit.city, slug: hit.slug } : null;
 }
 
-async function fromZip(zip) {
-  const r = await fetch(`https://api.zippopotam.us/us/${zip}`, { signal: AbortSignal.timeout(8000) });
-  if (!r.ok) return null;
-  const d = await r.json();
-  const p = d.places && d.places[0];
-  if (!p) return null;
-  return { lat: +p.latitude, lng: +p.longitude, place: p['place name'], stateLc: String(p['state abbreviation']).toLowerCase(), what: `ZIP ${zip}` };
-}
 async function fromAddress(q) {
   const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(q)}&benchmark=Public_AR_Current&format=json`;
   const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
@@ -66,9 +58,12 @@ export async function GET(request) {
   const q = (new URL(request.url).searchParams.get('q') || '').trim();
   if (!q) return Response.json({ error: 'empty query' }, { status: 400 });
 
+  // Bare ZIP → the real ZIP area-profile page (ZCTA-grain).
+  if (/^\d{5}$/.test(q)) return Response.json({ url: `/homefacts/zip/${q}`, label: `ZIP ${q}`, exact: true });
+
+  // Street address → geocode → containing/nearest covered city profile (addresses aren't their own pages).
   let point = null;
-  if (/^\d{5}$/.test(q)) point = await fromZip(q).catch(() => null);
-  else if (/\d/.test(q) && /\s/.test(q)) point = await fromAddress(q).catch(() => null);
+  if (/\d/.test(q) && /\s/.test(q)) point = await fromAddress(q).catch(() => null);
   else return Response.json({ error: 'use a ZIP or a street address (city names use the list above)' }, { status: 422 });
 
   if (!point) return Response.json({ error: `couldn't locate “${q}”` }, { status: 404 });

@@ -14,3 +14,6 @@ bing-api-key.txt
 people-data-labs-key.rtf
 twilio_2FA_recovery_code.txt
 "$OUT"
+
+# secrets — never commit
+docs/credentials.rtf

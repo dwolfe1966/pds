@@ -27,13 +27,14 @@ const toOut = (r) => ({
 /** Flexible read: scope by any of state + name (last/first) + county + city. Optional-filter pattern
  *  (a null filter matches everything) so ONE function serves name-in-state, county-hub, and city pages.
  *  Excludes takedowns (`removed`). */
-export async function querySexOffenders({ state, firstName, lastName, county, city, limit = 20 } = {}) {
+export async function querySexOffenders({ state, firstName, lastName, county, city, zip, limit = 20 } = {}) {
   if (!sql || !state) return [];
   const st = String(state).toUpperCase();
   const ln = lastName ? norm(lastName) : null;
   const fnLike = firstName ? `${norm(firstName)}%` : null;
   const cty = county ? norm(String(county).replace(/\s+county$/i, '')) : null;
   const cityN = city ? norm(city) : null;
+  const zip5 = zip ? String(zip).trim().slice(0, 5) : null; // match on the raw 5-digit registry zip
   const lim = Math.min(Math.max(Number(limit) || 20, 1), 200);
   try {
     const rows = await sql`
@@ -43,6 +44,7 @@ export async function querySexOffenders({ state, firstName, lastName, county, ci
         AND (${fnLike}::text IS NULL OR first_norm LIKE ${fnLike})
         AND (${cty}::text    IS NULL OR county_norm = ${cty})
         AND (${cityN}::text  IS NULL OR city_norm = ${cityN})
+        AND (${zip5}::text   IS NULL OR left(zip, 5) = ${zip5})
       ORDER BY last_crawled DESC LIMIT ${lim}`;
     return rows.map(toOut);
   } catch { return []; }
