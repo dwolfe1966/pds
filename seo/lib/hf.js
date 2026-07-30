@@ -68,15 +68,33 @@ export function HfBreadcrumbs({ crumbs }) {
   );
 }
 
-// Scannable "report card" — headline metrics in a row. `tone` (a hex) tints a value (used for the risk rating).
+// Reusable topographic-contour motif (inline SVG, no raster). `color`/`opacity` let it sit on a dark gradient
+// (white, ~0.14) or a light card (accent, ~0.06).
+export function TopoMotif({ color = '#fff', opacity = 0.14 }) {
+  const rings = [0, 1, 2, 3, 4, 5];
+  return (
+    <svg aria-hidden="true" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice"
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity, pointerEvents: 'none' }}>
+      <g fill="none" stroke={color} strokeWidth="1.1">
+        {rings.map((i) => <path key={`a${i}`} d={`M ${-40 + i * 6} 60 Q 120 ${10 + i * 14} 250 ${70 + i * 8} T 460 ${40 + i * 10}`} />)}
+        {rings.map((i) => <path key={`b${i}`} d={`M ${-20 + i * 8} 210 Q 140 ${150 - i * 10} 300 ${200 - i * 12} T 470 ${170 - i * 8}`} />)}
+      </g>
+    </svg>
+  );
+}
+
+// Scannable "report card" — headline metrics, each with its module icon. `tone` (a hex) tints a value (risk
+// rating); `icon` (an HfIcon name) anchors the metric visually.
 export function SummaryBand({ items }) {
   if (!items || !items.length) return null;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))`, gap: 1, background: C.line, border: `1px solid ${C.line}`, borderRadius: 12, overflow: 'hidden', marginTop: 18 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(130px, 1fr))`, gap: 1, background: C.line, border: `1px solid ${C.line}`, borderRadius: 12, overflow: 'hidden', marginTop: 18 }}>
       {items.map((it) => (
         <div key={it.label} style={{ background: C.surface, padding: '13px 15px' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: C.muted }}>{it.label}</div>
-          <div style={{ fontSize: 19, fontWeight: 820, letterSpacing: '-.01em', marginTop: 3, color: it.tone || C.accent }}>{it.value}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: C.muted }}>
+            {it.icon && <HfIcon name={it.icon} size={13} color={C.muted} />}{it.label}
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 830, letterSpacing: '-.015em', marginTop: 4, color: it.tone || C.accent }}>{it.value}</div>
         </div>
       ))}
     </div>

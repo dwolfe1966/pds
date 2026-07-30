@@ -4,7 +4,8 @@
 import { notFound } from 'next/navigation';
 import { getStateSlice } from '../../../../../lib/directory';
 import { countyFromSlug, hfCountyPath, hfStatePath, hfCityPath, getCountyAcs, demographicStats, propertyStats, femaRatingColor, citiesInCounty } from '../../../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif } from '../../../../../lib/hf';
+import { HfIcon } from '../../../../../lib/HfIcon';
 import { crumbsJsonLd } from '../../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../../lib/ui';
 import { SITE, MAIN } from '../../../../../lib/site';
@@ -48,10 +49,10 @@ export default async function CountyProfile({ params }) {
   const cities = citiesInCounty(state, c.name);
 
   const summary = [
-    acs?.population != null && { label: 'Population', value: num(acs.population) },
-    acs?.medianHomeValue != null && { label: 'Median home', value: money(acs.medianHomeValue) },
-    c.rating && { label: 'Disaster risk', value: c.rating, tone: femaRatingColor(c.rating) },
-    { label: 'Sex offenders', value: num(offenders.length) },
+    acs?.population != null && { label: 'Population', value: num(acs.population), icon: 'demographics' },
+    acs?.medianHomeValue != null && { label: 'Median home', value: money(acs.medianHomeValue), icon: 'property' },
+    c.rating && { label: 'Disaster risk', value: c.rating, tone: femaRatingColor(c.rating), icon: 'disasters' },
+    { label: 'Sex offenders', value: num(offenders.length), icon: 'offenders' },
   ].filter(Boolean);
 
   const crumbs = [
@@ -74,10 +75,15 @@ export default async function CountyProfile({ params }) {
         <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
         <HfBreadcrumbs crumbs={crumbs} />
 
-        <section style={{ ...hf.card, marginBottom: 8 }}>
-          <p style={hf.eyebrow}>County neighborhood report</p>
-          <h1 style={hf.h1}>{c.name} County, {st.code}</h1>
-          <SummaryBand items={summary} />
+        <section style={{ ...hf.card, marginBottom: 8, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${hfColor.accentSoft} 0%, ${hfColor.surface} 62%)` }}>
+          <TopoMotif color={hfColor.accent} opacity={0.06} />
+          <div style={{ position: 'relative' }}>
+            <p style={{ ...hf.eyebrow, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <HfIcon name="neighborhood" size={14} color={hfColor.accent} /> County neighborhood report
+            </p>
+            <h1 style={hf.h1}>{c.name} County, {st.code}</h1>
+            <SummaryBand items={summary} />
+          </div>
         </section>
 
         <SectionNav items={nav} />

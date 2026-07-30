@@ -7,7 +7,8 @@ import { stateName } from '../../../../lib/states';
 import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
 import { cityNamePath } from '../../../../lib/ids';
 import { rosterTopNamesByCounty } from '../../../../lib/incarceration.mjs';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif } from '../../../../lib/hf';
+import { HfIcon } from '../../../../lib/HfIcon';
 import { AreaMap } from '../../../../lib/AreaMap';
 import OffenderMap from '../../OffenderMap';
 import { crumbsJsonLd } from '../../../../lib/schema';
@@ -82,10 +83,10 @@ export default async function ZipProfile({ params }) {
   const stLc = geo ? geo.stateAbbr.toLowerCase() : null;
 
   const summary = [
-    acs?.population != null && { label: 'Population', value: num(acs.population) },
-    acs?.medianHomeValue != null && { label: 'Median home', value: money(acs.medianHomeValue) },
-    fema?.rating && { label: 'Disaster risk', value: fema.rating, tone: femaRatingColor(fema.rating) },
-    { label: 'Sex offenders', value: num(offenders.length) },
+    acs?.population != null && { label: 'Population', value: num(acs.population), icon: 'demographics' },
+    acs?.medianHomeValue != null && { label: 'Median home', value: money(acs.medianHomeValue), icon: 'property' },
+    fema?.rating && { label: 'Disaster risk', value: fema.rating, tone: femaRatingColor(fema.rating), icon: 'disasters' },
+    { label: 'Sex offenders', value: num(offenders.length), icon: 'offenders' },
   ].filter(Boolean);
 
   const crumbs = [
@@ -111,8 +112,12 @@ export default async function ZipProfile({ params }) {
         <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
         <HfBreadcrumbs crumbs={crumbs} />
 
-        <section style={{ ...hf.card, marginBottom: 8 }}>
-          <p style={hf.eyebrow}>ZIP code neighborhood report</p>
+        <section style={{ ...hf.card, marginBottom: 8, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${hfColor.accentSoft} 0%, ${hfColor.surface} 62%)` }}>
+          <TopoMotif color={hfColor.accent} opacity={0.06} />
+          <div style={{ position: 'relative' }}>
+          <p style={{ ...hf.eyebrow, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            <HfIcon name="summary" size={14} color={hfColor.accent} /> ZIP code neighborhood report
+          </p>
           <h1 style={hf.h1}>ZIP {zip}{geo ? ` — ${geo.place}, ${geo.stateAbbr}` : ''}</h1>
           {geo && (
             <p style={{ ...hf.lead, fontSize: 15 }}>
@@ -121,6 +126,7 @@ export default async function ZipProfile({ params }) {
             </p>
           )}
           <SummaryBand items={summary} />
+          </div>
         </section>
 
         <SectionNav items={nav} />

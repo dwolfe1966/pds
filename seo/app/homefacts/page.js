@@ -1,34 +1,12 @@
 // HomeFacts landing — /homefacts. Search a city / ZIP / address → an area profile (city · county · zip · address).
 // Built on the same public-data engine as the /people directory. Server component; search is the one client island.
 import STATE_SLICE from '../../data/state-slice.json';
-import { hf, hfColor, BRAND, HfHeader } from '../../lib/hf';
+import { hf, hfColor, BRAND, HfHeader, TopoMotif } from '../../lib/hf';
 import { FcraFooter, JsonLd } from '../../lib/ui';
 import { SITE } from '../../lib/site';
 import { HF_MODULES, hfCityPath, getCounties } from '../../lib/homefacts';
 import { HfIcon } from '../../lib/HfIcon';
 import HomefactsSearch from './HomefactsSearch';
-
-// Subtle topographic-contour motif for the hero — inline SVG (no external request), evokes a map without a
-// raster image. White strokes at low opacity over the blue gradient.
-function TopoMotif() {
-  const rings = [0, 1, 2, 3, 4, 5];
-  return (
-    <svg aria-hidden="true" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice"
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.14, pointerEvents: 'none' }}>
-      <g fill="none" stroke="#fff" strokeWidth="1.1">
-        {rings.map((i) => (
-          <path key={`a${i}`} d={`M ${-40 + i * 6} 60 Q 120 ${10 + i * 14} 250 ${70 + i * 8} T 460 ${40 + i * 10}`} />
-        ))}
-        {rings.map((i) => (
-          <path key={`b${i}`} d={`M ${-20 + i * 8} 210 Q 140 ${150 - i * 10} 300 ${200 - i * 12} T 470 ${170 - i * 8}`} />
-        ))}
-      </g>
-      <g fill="#fff" opacity="0.5">
-        <circle cx="300" cy="70" r="3" /><circle cx="110" cy="150" r="3" /><circle cx="360" cy="150" r="2.5" />
-      </g>
-    </svg>
-  );
-}
 
 export const revalidate = 5184000; // 60d ISR
 export function generateStaticParams() { return []; }

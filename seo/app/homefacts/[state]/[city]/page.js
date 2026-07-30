@@ -13,7 +13,8 @@ import {
   propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
   getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime, cityFaqs,
 } from '../../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif } from '../../../../lib/hf';
+import { HfIcon } from '../../../../lib/HfIcon';
 import { StateMap } from '../../../../lib/statemap';
 import { AreaMap } from '../../../../lib/AreaMap';
 import OffenderMap from '../../OffenderMap';
@@ -88,13 +89,13 @@ export default async function AreaProfile({ params }) {
   // Incarceration records carry county, so the city page uses the city's county roster.
   const inmateNames = county ? await withTimeout(rosterTopNamesByCounty({ state: c.stateCode, county: county.slug, limit: 24 }), [], 5000) : [];
 
-  // Report-card summary — the scannable headline metrics.
+  // Report-card summary — the scannable headline metrics, each with its module icon.
   const summary = [
-    acs?.population != null && { label: 'Population', value: num(acs.population) },
-    acs?.medianHomeValue != null && { label: 'Median home', value: money(acs.medianHomeValue) },
-    fema?.rating && { label: 'Disaster risk', value: fema.rating, tone: femaRatingColor(fema.rating) },
-    schools?.count != null && { label: 'Public schools', value: num(schools.count) },
-    { label: 'Sex offenders', value: num(offenders.length) },
+    acs?.population != null && { label: 'Population', value: num(acs.population), icon: 'demographics' },
+    acs?.medianHomeValue != null && { label: 'Median home', value: money(acs.medianHomeValue), icon: 'property' },
+    fema?.rating && { label: 'Disaster risk', value: fema.rating, tone: femaRatingColor(fema.rating), icon: 'disasters' },
+    schools?.count != null && { label: 'Public schools', value: num(schools.count), icon: 'schools' },
+    { label: 'Sex offenders', value: num(offenders.length), icon: 'offenders' },
   ].filter(Boolean);
 
   const crumbs = [
@@ -117,15 +118,20 @@ export default async function AreaProfile({ params }) {
         <HfBreadcrumbs crumbs={crumbs} />
         <FromBanner city={c.city} stateCode={c.stateCode} />
 
-        <section style={{ ...hf.card, marginBottom: 8 }}>
-          <p style={hf.eyebrow}>Neighborhood report</p>
-          <h1 style={hf.h1}>{c.city}, {c.stateCode}</h1>
-          {chips.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-              {chips.map((ch) => <span key={ch} style={hf.chip}>{ch}</span>)}
-            </div>
-          )}
-          <SummaryBand items={summary} />
+        <section style={{ ...hf.card, marginBottom: 8, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${hfColor.accentSoft} 0%, ${hfColor.surface} 62%)` }}>
+          <TopoMotif color={hfColor.accent} opacity={0.06} />
+          <div style={{ position: 'relative' }}>
+            <p style={{ ...hf.eyebrow, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <HfIcon name="neighborhood" size={14} color={hfColor.accent} /> Neighborhood report
+            </p>
+            <h1 style={hf.h1}>{c.city}, {c.stateCode}</h1>
+            {chips.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                {chips.map((ch) => <span key={ch} style={hf.chip}>{ch}</span>)}
+              </div>
+            )}
+            <SummaryBand items={summary} />
+          </div>
         </section>
 
         <SectionNav items={navItems} />
