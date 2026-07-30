@@ -39,7 +39,11 @@ metadata:
 - `lib/homefacts.js`: getCounties/countyFromSlug/countyForName/getCountyByFips, shared `fetchAcs`+`shapeAcsRow`, getZctaAcs/getCountyAcs (ACS_VARS = pop/age/HHincome/percap/homeval/rent/ownership).
 - ⚠️ **PROD ACTION NEEDED:** ACS is fetch-at-generation reading `process.env.CENSUS_API_KEY` — **add CENSUS_API_KEY to the Vercel env** or ZIP/county ACS sections stay empty in prod (pages still render disasters+registry). Local works via .env.local.
 
-**Remaining:** Crime module (FBI CDE, needs api.data.gov key + ORI mapping). EPA coverage top-up (committed at 283 metros; sweep re-run pending). Better page IA (owner deferred). Optional: pre-cache ZCTA/county ACS to drop the runtime dependency.
+**IA REDESIGN — DONE 2026-07-29 (commit eb96294).** New design system `lib/hf.js`: sticky **Homefacts** header+wordmark, report-card `SummaryBand` (headline metrics), sticky `SectionNav`, clean `Section` modules (eyebrow+title+sourced footnote, NO emoji markers), FEMA risk ramp = the one semantic color. **Brand is ONE flip-able token block** (`BRAND`/`THEME` in hf.js) — defaults to evolved-**Homefacts blue #12507e** to match the CEO deck; `THEME='idlookup'` → site green. Applied to landing + city + county + zip + search box. ⚠️ open one-liner for owner: keep Homefacts-blue or reskin to idlookup-green?
+
+**Work queue (owner order 3→1→4→2→+5):** 3 IA ✅. Next: **#1 Crime** (FBI CDE — ⚠️ needs a free **api.data.gov key**, get at api.data.gov/signup; + hard ORI/agency→city mapping — recommend STATE-level crime v1, not fragile city-level). **#4** state hub `/homefacts/[state]` + add HomeFacts to sitemap (no key). **#2** pre-cache ZCTA/county ACS to drop the runtime Census dependency (uses the key I have). **#5** popular names per region on area pages (place→person bridge; reuse /people directory name data — no key).
+
+**Prod:** ⚠️ still need **CENSUS_API_KEY in Vercel env** for ZIP/county ACS to render in prod (works locally). EPA coverage committed at 283 metros (top-up sweep pending re-run).
 
 **Data-sweep gotchas (reusable):** (1) many gov APIs 403 node's default fetch UA — send a browser UA. (2) write the cache INCREMENTALLY (per-batch/per-state) — a single end-of-run write loses everything if the process is reaped. (3) background `nohup` sweeps can fire a premature "completed" notification while STILL running (`pgrep -f <script>` to check) — the DONE log line is the real signal.
 
