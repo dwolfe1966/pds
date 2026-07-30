@@ -14,6 +14,7 @@ import OffenderMap from '../../OffenderMap';
 import NearestToAddress from '../../NearestToAddress';
 import AddressSafetySummary from '../../AddressSafetySummary';
 import WhatsNearby from '../../WhatsNearby';
+import RecentCrime from '../../RecentCrime';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
@@ -137,6 +138,7 @@ export default async function ZipProfile({ params }) {
           offenders={offenders.map((o) => ({ lat: o.latitude, lng: o.longitude }))}
           schools={schools ? schools.sample.map((s) => ({ lat: s.lat, lng: s.lng })) : []}
         />
+        {geo && citySlug && <RecentCrime stateLc={stLc} citySlug={citySlug} cityName={geo.place} />}
         <WhatsNearby />
 
         <SectionNav items={nav} />

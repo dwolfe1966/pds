@@ -21,6 +21,7 @@ import OffenderMap from '../../OffenderMap';
 import NearestToAddress from '../../NearestToAddress';
 import AddressSafetySummary from '../../AddressSafetySummary';
 import WhatsNearby from '../../WhatsNearby';
+import RecentCrime from '../../RecentCrime';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd, faqJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -141,6 +142,7 @@ export default async function AreaProfile({ params }) {
           offenders={offenders.map((o) => ({ lat: o.latitude, lng: o.longitude }))}
           schools={schools ? schools.sample.map((s) => ({ lat: s.lat, lng: s.lng })) : []}
         />
+        <RecentCrime stateLc={state} citySlug={city} cityName={c.city} />
         <WhatsNearby />
 
         <SectionNav items={navItems} />
