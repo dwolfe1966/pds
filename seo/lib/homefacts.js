@@ -9,6 +9,7 @@
 import { getCityAcs, getCityWiki } from './facts';
 import CITY_FEMA from '../data/city-fema.json';
 import COUNTIES from '../data/counties.json';
+import CITY_ORI from '../data/city-ori.json';
 import CITY_SCHOOLS from '../data/city-schools.json';
 import CITY_EPA from '../data/city-epa.json';
 
@@ -19,6 +20,52 @@ export function getCitySchools(stateCode, citySlug) {
 // EPA Toxics Release Inventory facilities for a city — built by scripts/fetch-epa-tri.mjs.
 export function getCityEpa(stateCode, citySlug) {
   return CITY_EPA[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+// City → primary police-agency ORI (data/city-ori.json, from scripts/fetch-city-ori.mjs).
+export function getCityOri(stateCode, citySlug) {
+  return CITY_ORI[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+
+// Crime rates for a city's police agency vs its state + the U.S. — FETCH-AT-GENERATION (ISR-cached),
+// gated on FBI_CDE_KEY. Source: FBI UCR/NIBRS via the CDE "summarized/agency" endpoint, which returns the
+// agency + state + national series in one call. Rates are monthly per-100k; we annualize (avg×12) for the
+// latest full year. Returns { year, agency, violent:{place,state,us}, property:{...} } or null.
+async function fetchCrimeSeries(ori, offense) {
+  const key = process.env.FBI_CDE_KEY;
+  if (!key) return null;
+  const url = `https://api.usa.gov/crime/fbi/sapi/summarized/agency/${ori}/${offense}?from=01-2022&to=12-2023&api_key=${key}`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(7000), next: { revalidate: 5184000 } });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d.offenses && d.offenses.rates) || null;
+  } catch { return null; }
+}
+function annualize(series) {
+  if (!series) return null;
+  const years = [...new Set(Object.keys(series).map((k) => k.split('-')[1]))].sort();
+  const yr = years[years.length - 1];
+  const vals = Object.entries(series).filter(([k, v]) => k.endsWith(`-${yr}`) && v != null).map(([, v]) => v);
+  if (!vals.length) return null;
+  return { year: yr, rate: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 12) };
+}
+export async function getCityCrime(stateCode, citySlug) {
+  const m = getCityOri(stateCode, citySlug);
+  if (!m || !process.env.FBI_CDE_KEY) return null;
+  const [vRates, pRates] = await Promise.all([fetchCrimeSeries(m.ori, 'violent-crime'), fetchCrimeSeries(m.ori, 'property-crime')]);
+  if (!vRates && !pRates) return null;
+  const pick = (rates, kind) => {
+    if (!rates) return null;
+    const agencyKey = Object.keys(rates).find((k) => k.startsWith(m.agency) && k.endsWith('Offenses'));
+    const usKey = 'United States Offenses';
+    const stateKey = Object.keys(rates).find((k) => k.endsWith('Offenses') && k !== usKey && k !== agencyKey);
+    const a = agencyKey && annualize(rates[agencyKey]);
+    return a ? { kind, year: a.year, place: a.rate, state: (stateKey && annualize(rates[stateKey])?.rate) ?? null, us: annualize(rates[usKey])?.rate ?? null } : null;
+  };
+  const violent = pick(vRates, 'violent');
+  const property = pick(pRates, 'property');
+  if (!violent && !property) return null;
+  return { agency: m.agency, year: (violent || property).year, violent, property };
 }
 
 // FEMA National Risk Index (natural-disaster risk) for a city's county — built by scripts/fetch-fema-nri.mjs.
@@ -141,7 +188,7 @@ export const HF_MODULES = [
   { id: 'demographics', label: 'Demographics',          status: 'live' },
   { id: 'property',     label: 'Property report',       status: 'live' },
   { id: 'schools',      label: 'Schools',               status: 'live' },
-  { id: 'crime',        label: 'Crime',                 status: 'pending', source: 'FBI Crime Data Explorer + local agencies (public)' },
+  { id: 'crime',        label: 'Crime',                 status: 'live' },
   { id: 'environment',  label: 'Environmental hazards', status: 'live' },
   { id: 'disasters',    label: 'Natural disasters',     status: 'live' },
   { id: 'neighborhood', label: 'Neighborhood info',     status: 'live' },

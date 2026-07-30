@@ -9,7 +9,7 @@ import {
 } from '../../../../lib/facts';
 import {
   propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
-  getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName,
+  getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime,
 } from '../../../../lib/homefacts';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
 import { StateMap } from '../../../../lib/statemap';
@@ -54,7 +54,10 @@ export default async function AreaProfile({ params }) {
 
   const acs = getCityAcs(c.stateCode, city);
   const wiki = getCityWiki(c.stateCode, city);
-  const offenders = await withTimeout(querySexOffenders({ state: c.stateCode, city: c.city, limit: 16 }), []);
+  const [offenders, crime] = await Promise.all([
+    withTimeout(querySexOffenders({ state: c.stateCode, city: c.city, limit: 16 }), []),
+    withTimeout(getCityCrime(c.stateCode, city), null, 8000),
+  ]);
   const chips = cityWikiChips(wiki);
   const eth = cityEthnicity(acs);
   const occupations = cityOccupations(acs);
@@ -165,8 +168,31 @@ export default async function AreaProfile({ params }) {
           <Pending id="schools" eyebrow="Education" title="Schools" source="U.S. Dept. of Education / NCES (public)" blurb={`Public, private and charter schools serving ${c.city}.`} />
         )}
 
-        {/* 5 · Crime */}
-        <Pending id="crime" eyebrow="Safety" title="Crime" source="FBI Crime Data Explorer + local agencies (public)" blurb={`Violent and property crime rates for ${c.city} and how they compare to ${c.stateName} and national averages.`} />
+        {/* 5 · Crime — FBI UCR/NIBRS via CDE (live where the city's police agency reports) */}
+        {crime && (crime.violent || crime.property) ? (
+          <Section id="crime" eyebrow="Safety" title="Crime"
+            source={`Rate per 100,000 residents/year, ${crime.agency}, ${crime.year}. Source: FBI UCR/NIBRS (Crime Data Explorer).`}>
+            {[crime.violent, crime.property].filter(Boolean).map((row) => {
+              const max = Math.max(row.place || 0, row.state || 0, row.us || 0, 1);
+              const above = row.us != null && row.place != null && row.place > row.us;
+              const placeColor = above ? '#b23a48' : '#2e7d52';
+              const delta = row.us ? Math.round(((row.place - row.us) / row.us) * 100) : null;
+              return (
+                <div key={row.kind} style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: hfColor.ink, textTransform: 'capitalize' }}>{row.kind} crime</span>
+                    {delta != null && <span style={{ fontSize: 12.5, fontWeight: 700, color: placeColor }}>{Math.abs(delta)}% {delta >= 0 ? 'above' : 'below'} national</span>}
+                  </div>
+                  <Bar label={c.city} pct={(row.place / max) * 100} color={placeColor} right={`${num(row.place)}`} />
+                  {row.state != null && <Bar label={c.stateName} pct={(row.state / max) * 100} color={hfColor.muted} right={`${num(row.state)}`} />}
+                  {row.us != null && <Bar label="United States" pct={(row.us / max) * 100} color={hfColor.faint} right={`${num(row.us)}`} />}
+                </div>
+              );
+            })}
+          </Section>
+        ) : (
+          <Pending id="crime" eyebrow="Safety" title="Crime" source="FBI Crime Data Explorer (UCR/NIBRS, public)" blurb={`Violent and property crime rates for ${c.city} vs ${c.stateName} and national averages.`} />
+        )}
 
         {/* 6 · Environment */}
         {epa && epa.count > 0 ? (
