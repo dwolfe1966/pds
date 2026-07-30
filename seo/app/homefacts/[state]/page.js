@@ -6,7 +6,8 @@ import { getStateSlice, getStateCities, getStateTopNames } from '../../../lib/di
 import { nameInStatePath } from '../../../lib/name-in-state';
 import { rosterTopNamesByState } from '../../../lib/incarceration.mjs';
 import { getCounties, hfCityPath, hfCountyPath, hfStatePath } from '../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, Section } from '../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, Section, TopoMotif } from '../../../lib/hf';
+import { HfIcon } from '../../../lib/HfIcon';
 import { crumbsJsonLd, collectionJsonLd } from '../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../lib/ui';
 import { SITE } from '../../../lib/site';
@@ -58,17 +59,22 @@ export default async function StateHub({ params }) {
         <JsonLd blocks={jsonLd} />
         <HfBreadcrumbs crumbs={crumbs} />
 
-        <section style={{ ...hf.card, marginBottom: 8 }}>
-          <p style={hf.eyebrow}>State neighborhood reports</p>
-          <h1 style={hf.h1}>{st.name}</h1>
-          <p style={hf.lead}>
-            Neighborhood reports for {num(cities.length)} cities and {num(counties.length)} counties in {st.name} —
-            demographics, property, schools, crime, disaster &amp; environmental risk, and the sex-offender registry.
-          </p>
+        <section style={{ ...hf.card, marginBottom: 8, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${hfColor.accentSoft} 0%, ${hfColor.surface} 62%)` }}>
+          <TopoMotif color={hfColor.accent} opacity={0.06} />
+          <div style={{ position: 'relative' }}>
+            <p style={{ ...hf.eyebrow, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <HfIcon name="neighborhood" size={14} color={hfColor.accent} /> State neighborhood reports
+            </p>
+            <h1 style={hf.h1}>{st.name}</h1>
+            <p style={hf.lead}>
+              Neighborhood reports for {num(cities.length)} cities and {num(counties.length)} counties in {st.name} —
+              demographics, property, schools, crime, disaster &amp; environmental risk, and the sex-offender registry.
+            </p>
+          </div>
         </section>
 
         {cities.length > 0 && (
-          <Section id="cities" eyebrow="Browse" title={`Cities in ${st.name}`}>
+          <Section id="cities" icon="location" eyebrow="Browse" title={`Cities in ${st.name}`}>
             <div style={hf.linkGrid}>
               {cities.map((c) => (
                 <a key={c.slug} href={hfCityPath(state, c.slug)} style={{ ...hf.link, fontSize: 14 }}>
@@ -80,7 +86,7 @@ export default async function StateHub({ params }) {
         )}
 
         {counties.length > 0 && (
-          <Section id="counties" eyebrow="Browse" title={`Counties in ${st.name}`}>
+          <Section id="counties" icon="neighborhood" eyebrow="Browse" title={`Counties in ${st.name}`}>
             <div style={hf.linkGrid}>
               {counties.map((c) => (
                 <a key={c.slug} href={hfCountyPath(state, c.slug)} style={{ ...hf.link, fontSize: 14 }}>{c.name} County</a>

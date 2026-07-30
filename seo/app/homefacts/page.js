@@ -77,17 +77,16 @@ export default function HomefactsLanding() {
         <section style={hf.card}>
           <p style={hf.eyebrow}>What&apos;s in a report</p>
           <h2 style={hf.h2}>Nine modules for every area</h2>
-          <p style={{ margin: '10px 0 14px', color: hfColor.muted, fontSize: 14 }}>Built on public-domain and first-party data. Live now; the rest are being wired to their public sources (each named).</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+          <p style={{ margin: '10px 0 16px', color: hfColor.muted, fontSize: 14 }}>Built on public-domain and first-party data — each sourced, never estimated.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 12 }}>
             {HF_MODULES.map((m) => (
-              <div key={m.id} style={{ background: hfColor.soft, border: `1px solid ${hfColor.line2}`, borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: hfColor.ink }}>
-                    <HfIcon name={m.id} size={17} color={hfColor.accent} /> {m.label}
-                  </span>
-                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 6px', color: m.status === 'live' ? '#166534' : '#8a6d3b', background: m.status === 'live' ? '#e7f3ec' : '#fbf1e0', border: `1px solid ${m.status === 'live' ? '#c3dcec' : '#ecd6ac'}` }}>{m.status === 'live' ? 'Live' : 'Soon'}</span>
-                </div>
-                {m.source && <div style={{ fontSize: 11, color: hfColor.faint, marginTop: 4 }}>{m.source}</div>}
+              <div key={m.id} style={{ position: 'relative', background: hfColor.surface, border: `1px solid ${hfColor.line}`, borderRadius: 12, padding: '15px 16px' }}>
+                <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 9.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', borderRadius: 999, padding: '2px 7px', color: m.status === 'live' ? '#166534' : '#8a6d3b', background: m.status === 'live' ? '#e7f3ec' : '#fbf1e0', border: `1px solid ${m.status === 'live' ? '#c3dcec' : '#ecd6ac'}` }}>{m.status === 'live' ? 'Live' : 'Soon'}</span>
+                <span style={{ display: 'flex', width: 36, height: 36, borderRadius: 10, background: hfColor.accentSoft, border: `1px solid ${hfColor.accentLine}`, color: hfColor.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                  <HfIcon name={m.id} size={19} />
+                </span>
+                <div style={{ fontSize: 14.5, fontWeight: 750, color: hfColor.ink }}>{m.label}</div>
+                {m.source && <div style={{ fontSize: 11, color: hfColor.faint, marginTop: 3, lineHeight: 1.4 }}>{m.source}</div>}
               </div>
             ))}
           </div>

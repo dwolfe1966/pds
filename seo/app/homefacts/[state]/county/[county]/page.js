@@ -136,7 +136,7 @@ export default async function CountyProfile({ params }) {
         </div>
 
         {cities.length > 0 && (
-          <Section id="cities" eyebrow="Browse" title={`Cities in ${c.name} County`}>
+          <Section id="cities" icon="location" eyebrow="Browse" title={`Cities in ${c.name} County`}>
             <div style={hf.linkGrid}>
               {cities.map((ct) => (
                 <a key={ct.slug} href={hfCityPath(state, ct.slug)} style={{ ...hf.link, fontSize: 14 }}>{ct.city}</a>
