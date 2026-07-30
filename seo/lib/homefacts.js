@@ -11,6 +11,7 @@ import CITY_FEMA from '../data/city-fema.json';
 import COUNTIES from '../data/counties.json';
 import CITY_ORI from '../data/city-ori.json';
 import COUNTY_ACS from '../data/county-acs.json';
+import CITY_CRIME from '../data/city-crime.json';
 import CITY_SCHOOLS from '../data/city-schools.json';
 import CITY_EPA from '../data/city-epa.json';
 
@@ -51,6 +52,9 @@ function annualize(series) {
   return { year: yr, rate: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 12) };
 }
 export async function getCityCrime(stateCode, citySlug) {
+  // Pre-cached (scripts/fetch-city-crime.mjs) — no runtime FBI call, no key needed at render.
+  const cached = CITY_CRIME[`${String(stateCode).toUpperCase()}/${citySlug}`];
+  if (cached) return cached;
   const m = getCityOri(stateCode, citySlug);
   if (!m || !process.env.FBI_CDE_KEY) return null;
   const [vRates, pRates] = await Promise.all([fetchCrimeSeries(m.ori, 'violent-crime'), fetchCrimeSeries(m.ori, 'property-crime')]);
