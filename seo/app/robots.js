@@ -10,7 +10,9 @@ import { SITE } from '../lib/site';
 export default function robots() {
   return {
     rules: [{ userAgent: '*', allow: '/' }],
-    sitemap: `${SITE}/sitemap-directory.xml`,
+    // Two quality sitemaps: the /people directory core + the /homefacts area-profile core (rich, multi-source
+    // pages only — counties/zips stay crawl-discoverable, not mass-listed on a recovering domain).
+    sitemap: [`${SITE}/sitemap-directory.xml`, `${SITE}/sitemap-homefacts.xml`],
     host: SITE,
   };
 }
