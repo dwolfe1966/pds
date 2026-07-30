@@ -10,6 +10,7 @@ import { getCityAcs, getCityWiki } from './facts';
 import CITY_FEMA from '../data/city-fema.json';
 import COUNTIES from '../data/counties.json';
 import CITY_ORI from '../data/city-ori.json';
+import STATE_SLICE from '../data/state-slice.json';
 import COUNTY_ACS from '../data/county-acs.json';
 import CITY_CRIME from '../data/city-crime.json';
 import CITY_SCHOOLS from '../data/city-schools.json';
@@ -224,6 +225,20 @@ export function cityFaqs({ city, stateName, acs, fema, crime, schools, offenders
   if (offenders != null)
     out.push({ q: `How many registered sex offenders are in ${city}?`, a: `Public registry data lists ${commas(offenders)} registered sex offenders in or near ${city}. This is neighborhood-safety information from the public state registry.` });
   return out;
+}
+
+// Cities we cover that sit in a given county — for the county hub's internal links. Matches each city's FEMA
+// county (data/city-fema.json carries the resolved county name per city) against the target county name.
+export function citiesInCounty(stateLc, countyName) {
+  const target = String(countyName || '').toLowerCase().trim();
+  const slice = STATE_SLICE.states[String(stateLc).toLowerCase()];
+  if (!target || !slice) return [];
+  const out = [];
+  for (const c of slice.cities) {
+    const f = CITY_FEMA[`${slice.code}/${c.slug}`];
+    if (f && String(f.county || '').toLowerCase().trim() === target) out.push({ city: c.city, slug: c.slug, pop: c.pop });
+  }
+  return out.sort((a, b) => (b.pop || 0) - (a.pop || 0));
 }
 
 export function hasAreaData(stateCode, slug) { return !!getCityAcs(stateCode, slug); }

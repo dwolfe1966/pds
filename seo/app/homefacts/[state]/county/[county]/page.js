@@ -3,7 +3,7 @@
 // CENSUS_API_KEY is set (fetch-at-generation, ISR-cached). Design: lib/hf.js.
 import { notFound } from 'next/navigation';
 import { getStateSlice } from '../../../../../lib/directory';
-import { countyFromSlug, hfCountyPath, hfStatePath, getCountyAcs, demographicStats, propertyStats, femaRatingColor } from '../../../../../lib/homefacts';
+import { countyFromSlug, hfCountyPath, hfStatePath, hfCityPath, getCountyAcs, demographicStats, propertyStats, femaRatingColor, citiesInCounty } from '../../../../../lib/homefacts';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../../lib/hf';
 import { crumbsJsonLd } from '../../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../../lib/ui';
@@ -45,6 +45,7 @@ export default async function CountyProfile({ params }) {
   ]);
   const demo = demographicStats(acs);
   const prop = propertyStats(acs);
+  const cities = citiesInCounty(state, c.name);
 
   const summary = [
     acs?.population != null && { label: 'Population', value: num(acs.population) },
@@ -127,6 +128,16 @@ export default async function CountyProfile({ params }) {
           )}
           <SexOffenderSection records={offenders} heading={`Registered sex offenders in ${c.name} County, ${st.code} (${offenders.length})`} blurb={`Public sex-offender registry records for ${c.name} County, ${st.name}.`} />
         </div>
+
+        {cities.length > 0 && (
+          <Section id="cities" eyebrow="Browse" title={`Cities in ${c.name} County`}>
+            <div style={hf.linkGrid}>
+              {cities.map((ct) => (
+                <a key={ct.slug} href={hfCityPath(state, ct.slug)} style={{ ...hf.link, fontSize: 14 }}>{ct.city}</a>
+              ))}
+            </div>
+          </Section>
+        )}
 
         <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=homefacts&state=${st.code}`} style={hf.secondaryCta}>Look up a person in {c.name} County →</a>
         <FcraFooter />
