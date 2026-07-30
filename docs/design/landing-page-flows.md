@@ -1,8 +1,8 @@
 # Landing Page Flows — Catalog
 
-**Date:** 2026-07-27
+**Date:** 2026-07-30
 **Purpose:** Reference map of every consumer landing/funnel entry point, what each variant's angle is, and how the flows work. Useful for choosing ad destinations, email CTAs, and A/B decisions.
-**Source of truth:** `src/App.js` routes → `src/pages/sales/*` components (headlines/angles pulled from each component).
+**Source of truth:** `src/App.js` routes → `src/pages/sales/*` components (headlines/angles pulled from each component). HomeFacts pages: `seo/app/homefacts/*` (idlookup.me).
 
 ---
 
@@ -45,6 +45,20 @@ Almost every flow is: **Landing → Loader (fake-progress interstitial) → obfu
 | `v14` | *(dating copy)* | **Dating verification** ("safe, real, single?") — v3 flow + DatingTeaser (marriage/divorce reveal; SO check is post-pay only) | Intent/theme |
 
 **Reading it:** v2 = general/SEO · **v3 (+a/b) = incarceration, the paid workhorse** · v4/v5/v6/v12/v13/v14 = intent/theme skins on the same wizard · v7–v10 = pure design explorations (same flow, different look) · v11 = the BeenVerified-style alternate flow.
+
+---
+
+## People-Search challenger flows — isolated A/B experiments (2026-07-29)
+
+Three **separate, flag-gated** challenger funnels — NOT in-place edits to the paid V3 flow (which stays the control). Each tests a distinct hypothesis; same search core, same price ($1 → $49.98). One `funnelVariant` slot set at the loader chokepoint drives the treatment. Attributed via `?shn=` so cost-per-trial + trial→paid are measurable per arm. Built end-to-end; live. See `.claude/memory/project_ps_challenger_flows.md`.
+
+| Route | Name | Hypothesis | Treatment | `?shn=` |
+|---|---|---|---|---|
+| **`/people-search`** | **A · Honest** | Honesty → trust → conversion + retention | No fabricated matches, plain-language price disclosure at checkout, honest "no confirmed match" | `honest-ps` |
+| **`/proof-check`** | **B · Proof-First** | Concrete evidence beats promises/fear | Reveals ONE real, checkable record in the clear before the paywall (first-party moat) | `proof-first` |
+| **`/my-exposure`** | **C · Search-Yourself** | Self-exposure anxiety + ongoing job → retention | "See what strangers can find about you" → sells a standing monitoring service, not a one-time peek | `self-check` |
+
+Aliases: `/name/landing/honest` (=A), `/name/landing/proof` (=B), `/name/landing/self` (=C). Status: built + build-clean + attributed; live to real traffic.
 
 ---
 
@@ -113,6 +127,22 @@ https://www.idlookup.ai/records/public-records?shn=homefacts-pr
 
 ---
 
+## HomeFacts — neighborhood-data MVP (`idlookup.me/homefacts`)
+
+A working replacement for HomeFacts.com built on the SEO engine (`seo/app/homefacts/*`, Next.js/Vercel/Neon). Search a **city, county, ZIP, or address** → a neighborhood "area profile." The place→person bridge: every page folds in popular names + incarceration records that link into people-search. Domain = `https://idlookup.me` (CTAs link to the `idlookup.ai` funnel). See `.claude/memory/project_homefacts_prototype.md`.
+
+| Route | What it is |
+|---|---|
+| `/homefacts` | Landing + search (city / county / ZIP / address typeahead) |
+| `/homefacts/{state}` | State hub — cities, counties, incarceration & popular names |
+| `/homefacts/{state}/{city}` | **City area profile** — 9 modules + incarceration + names + location map + offender map |
+| `/homefacts/{state}/county/{county}` | County profile — ACS + FEMA + incarceration + offender map |
+| `/homefacts/zip/{zip}` | ZIP profile — real ZCTA Census + schools/crime/incarceration/names + maps |
+
+**Modules (all live on real data):** demographics, property, schools (NCES), crime (FBI UCR/NIBRS), environmental hazards (EPA TRI), natural-disaster risk (FEMA NRI), neighborhood info (Wikidata/NPS/LoC), sex-offender registry (first-party) + incarceration records (first-party). Interactive OSM location map + Leaflet sex-offender pin map. Sitemap: `/sitemap-homefacts.xml`.
+
+---
+
 ## Identity / self-check flows
 
 | Route | Headline | Angle / notes |
@@ -172,10 +202,23 @@ https://www.idlookup.ai/records/sex-offender?shn=homefacts-so&fn=Robert&ln=Orlan
 https://www.idlookup.ai/records/background-check?shn=homefacts-bg&fn=Jane&ln=Doe&city=Austin&state=TX
 https://www.idlookup.ai/records/public-records?shn=homefacts-pr
 
+# ── People-Search challengers (A/B experiments) ──
+https://www.idlookup.ai/people-search                                   # A · Honest        (?shn=honest-ps)
+https://www.idlookup.ai/proof-check                                     # B · Proof-First   (?shn=proof-first)
+https://www.idlookup.ai/my-exposure                                     # C · Search-Yourself (?shn=self-check)
+
 # ── Identity / self-check ──
 https://www.idlookup.ai/see-who                                         # WSFY convert engine
 https://www.idlookup.ai/see-who?email=jane@example.com                  # prefilled from E3
 https://www.idlookup.ai/see-who?phone=3105551234                        # prefilled from P3
+
+# ── HomeFacts (idlookup.me — neighborhood MVP) ──
+https://idlookup.me/homefacts                                           # landing + search
+https://idlookup.me/homefacts/tx                                        # state hub
+https://idlookup.me/homefacts/tx/austin                                 # city profile (9 modules + maps)
+https://idlookup.me/homefacts/fl/miami                                  # city w/ offender pin map
+https://idlookup.me/homefacts/fl/county/broward                         # county (incarceration + offender map)
+https://idlookup.me/homefacts/zip/78701                                 # ZIP profile (real ZCTA data)
 ```
 
 ---
