@@ -76,6 +76,7 @@ async function main() {
           level: LEVEL[String(s.school_level)] || null,
           lo: s.lowest_grade_offered || null, hi: s.highest_grade_offered || null,
           charter: s.charter === 1, magnet: s.magnet === 1,
+          lat: Number.isFinite(s.latitude) ? s.latitude : null, lng: Number.isFinite(s.longitude) ? s.longitude : null,
         }))
         .filter((s) => s.name);
       out[`${st.abbr}/${slug}`] = { count: schools.length, byLevel, sample };

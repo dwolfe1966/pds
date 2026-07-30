@@ -6,7 +6,7 @@
 // still shows the plain OSM AreaMap above/elsewhere.
 import { useEffect, useRef } from 'react';
 
-export default function OffenderMap({ points, center, height = 340 }) {
+export default function OffenderMap({ points, center, height = 340, color = '#b23a48' }) {
   const ref = useRef(null);
   const mapRef = useRef(null);
 
@@ -36,7 +36,7 @@ export default function OffenderMap({ points, center, height = 340 }) {
 
       const icon = L.divIcon({
         className: '',
-        html: '<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;background:#b23a48;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transform:rotate(-45deg)"></div>',
+        html: `<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);transform:rotate(-45deg)"></div>`,
         iconSize: [16, 16], iconAnchor: [8, 16],
       });
       const bounds = [];

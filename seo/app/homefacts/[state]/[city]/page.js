@@ -170,6 +170,15 @@ export default async function AreaProfile({ params }) {
               {c.city} has <strong>{num(schools.count)}</strong> public school{schools.count === 1 ? '' : 's'}
               {(() => { const parts = ['Elementary', 'Middle', 'High'].map((k) => schools.byLevel[k] ? `${num(schools.byLevel[k])} ${k.toLowerCase()}` : null).filter(Boolean); return parts.length ? <> — {parts.join(', ')}</> : null; })()}.
             </p>
+            {schools.sample.some((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng)) && (
+              <div style={{ marginBottom: 14 }}>
+                <OffenderMap
+                  center={c.lat != null ? { lat: c.lat, lng: c.lng } : null}
+                  points={schools.sample.map((s) => ({ lat: s.lat, lng: s.lng, label: s.name, sub: [s.level, s.lo && s.hi ? `Grades ${s.lo}–${s.hi}` : null].filter(Boolean).join(' · ') }))}
+                  color="#12507e" height={300}
+                />
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {schools.sample.map((s, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 14, color: hfColor.body }}>

@@ -6,6 +6,7 @@
 // pitch deck, so the live demo and the deck read as the same product. Set THEME to 'idlookup' to fall back to
 // the site green.
 import { MAIN } from './site';
+import { HfIcon } from './HfIcon';
 
 const THEME = 'homefacts';
 const BRANDS = {
@@ -82,25 +83,34 @@ export function SummaryBand({ items }) {
   );
 }
 
-// Sticky section nav (pills). `items` = [{id,label}].
+// Sticky section nav (pills, each with its module icon). `items` = [{id,label}]; icon keyed off id.
 export function SectionNav({ items }) {
   return (
     <nav aria-label="Report sections" style={{ position: 'sticky', top: 53, zIndex: 10, background: C.bg, padding: '12px 0 8px', margin: '2px 0 8px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
       {items.map((m) => (
-        <a key={m.id} href={`#${m.id}`} style={{ fontSize: 13, fontWeight: 700, color: C.body, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: '6px 13px', textDecoration: 'none' }}>{m.label}</a>
+        <a key={m.id} href={`#${m.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: C.body, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: '6px 13px 6px 10px', textDecoration: 'none' }}>
+          <HfIcon name={m.id} size={15} color={C.accent} />{m.label}
+        </a>
       ))}
     </nav>
   );
 }
 
-// A module block: eyebrow + title + body + optional source. No emoji markers — hierarchy carries it.
-export function Section({ id, eyebrow, title, source, children, right }) {
+// A module block: an icon chip + title (+ optional eyebrow) + body + optional source. The icon (keyed off the
+// section `id`, or an explicit `icon`) gives each module a consistent visual anchor without raster imagery.
+export function Section({ id, eyebrow, title, source, children, right, icon }) {
+  const ic = icon || id;
   return (
     <section id={id} style={hf.card}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-        <div>
-          {eyebrow && <p style={hf.eyebrow}>{eyebrow}</p>}
-          <h2 style={hf.h2}>{title}</h2>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <span style={{ flex: 'none', width: 38, height: 38, borderRadius: 10, background: C.accentSoft, border: `1px solid ${C.accentLine}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.accent, marginTop: 1 }}>
+            <HfIcon name={ic} size={20} />
+          </span>
+          <div>
+            {eyebrow && <p style={{ ...hf.eyebrow, margin: '2px 0 2px' }}>{eyebrow}</p>}
+            <h2 style={hf.h2}>{title}</h2>
+          </div>
         </div>
         {right}
       </div>
