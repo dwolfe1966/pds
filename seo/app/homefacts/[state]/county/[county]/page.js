@@ -11,6 +11,7 @@ import { SITE, MAIN } from '../../../../../lib/site';
 import { querySexOffenders } from '../../../../../lib/sexOffenderDb.mjs';
 import { SexOffenderSection } from '../../../../../lib/sex-offender-section';
 import { rosterTopNamesByCounty } from '../../../../../lib/incarceration.mjs';
+import OffenderMap from '../../../OffenderMap';
 
 export const revalidate = 5184000; // 60d ISR
 export function generateStaticParams() { return []; }
@@ -116,6 +117,14 @@ export default async function CountyProfile({ params }) {
         )}
 
         <div id="offenders" style={hf.card}>
+          {offenders.some((o) => Number.isFinite(o.latitude) && Number.isFinite(o.longitude)) && (
+            <div style={{ marginBottom: 16 }}>
+              <OffenderMap
+                points={offenders.map((o) => ({ lat: o.latitude, lng: o.longitude, label: o.name || 'Registered offender', sub: [o.city, o.absconder ? 'ABSCONDER' : null].filter(Boolean).join(' · ') }))}
+                height={340}
+              />
+            </div>
+          )}
           <SexOffenderSection records={offenders} heading={`Registered sex offenders in ${c.name} County, ${st.code} (${offenders.length})`} blurb={`Public sex-offender registry records for ${c.name} County, ${st.name}.`} />
         </div>
 

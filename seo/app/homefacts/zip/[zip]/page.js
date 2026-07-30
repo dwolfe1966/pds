@@ -9,6 +9,7 @@ import { cityNamePath } from '../../../../lib/ids';
 import { rosterTopNamesByCounty } from '../../../../lib/incarceration.mjs';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
 import { AreaMap } from '../../../../lib/AreaMap';
+import OffenderMap from '../../OffenderMap';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
@@ -210,6 +211,15 @@ export default async function ZipProfile({ params }) {
         )}
 
         <div id="offenders" style={hf.card}>
+          {offenders.some((o) => Number.isFinite(o.latitude) && Number.isFinite(o.longitude)) && (
+            <div style={{ marginBottom: 16 }}>
+              <OffenderMap
+                center={geo ? { lat: geo.lat, lng: geo.lng } : null}
+                points={offenders.map((o) => ({ lat: o.latitude, lng: o.longitude, label: o.name || 'Registered offender', sub: [o.city, o.absconder ? 'ABSCONDER' : null].filter(Boolean).join(' · ') }))}
+                height={320}
+              />
+            </div>
+          )}
           <SexOffenderSection records={offenders} heading={`Registered sex offenders in ZIP ${zip} (${offenders.length})`} blurb={`Public sex-offender registry records for ZIP code ${zip}.`} />
         </div>
 
