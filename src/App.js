@@ -151,6 +151,27 @@ const HomePageRedirect = () => {
   return <HomePage />;
 };
 
+// Support-reply email links (BC's `replyUrl` token) land on bare `/contact` carrying
+// `?type=contactCsrReply&hash=…&contactMessageId=…`. ContactPage (the Contact Us page)
+// ignores those params, so the CSR reply was never shown. ContactThreadPage
+// (`/contact/thread/:threadId`) is the hash-authed surface built to render exactly this
+// deep-link — it works without a session (the hash is the auth) and, when logged in,
+// backfills the thread ref into `accountThreads:<email>` so it also appears under
+// Account → Messages. Forward the deep-link there; otherwise render Contact Us as usual.
+// We only redirect when contactMessageId looks like a BC ObjectId (24-hex) AND a hash is
+// present, so ordinary /contact?topic=… links (e.g. HP-4 cancel) are untouched. The target
+// is a fixed internal route we construct — no open-redirect surface.
+const ContactRoute = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const contactMessageId = params.get('contactMessageId');
+  const hash = params.get('hash');
+  if (contactMessageId && hash && /^[a-f0-9]{24}$/i.test(contactMessageId)) {
+    return <Navigate to={`/contact/thread/${contactMessageId}${location.search}`} replace />;
+  }
+  return <ContactPage />;
+};
+
 // SEO/referral traffic from idlookup.me lands directly on /name/landing/v2 (with
 // ?utm_source=idlookup.me). Split it 50/50 v2|v11 (owner 2026-07-11). Non-SEO v2 traffic
 // (direct/organic) renders v2 unchanged.
@@ -179,7 +200,7 @@ const App = () => {
           {/* Home rebuild (search-first, benefit-led) — A/B at /home vs the SaaS-style / */}
           <Route path="/home" element={<HomeV2Page />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/contact" element={<ContactRoute />} />
           <Route path="/contact/thread/:threadId" element={<ContactThreadPage />} />
           <Route path="/search" element={<LandingPage />} />
           {/* General search page with tabs for name, phone, and email */}
