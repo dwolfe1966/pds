@@ -1,6 +1,8 @@
 // HomeFacts landing — /homefacts. Search a city / ZIP / address → an area profile (city · county · zip · address).
 // Built on the same public-data engine as the /people directory. Server component; search is the one client island.
 import STATE_SLICE from '../../data/state-slice.json';
+import CITY_SCHOOLS from '../../data/city-schools.json';
+import CITY_EPA from '../../data/city-epa.json';
 import { hf, hfColor, BRAND, HfHeader, TopoMotif } from '../../lib/hf';
 import { FcraFooter, JsonLd } from '../../lib/ui';
 import { SITE } from '../../lib/site';
@@ -42,6 +44,18 @@ export default function HomefactsLanding() {
   const countyIndex = buildCountyIndex();
   const popular = index.slice().sort((a, b) => (b.pop || 0) - (a.pop || 0)).slice(0, 24);
   const states = Object.keys(STATE_SLICE.states).map((lc) => ({ lc, name: STATE_SLICE.states[lc].name })).sort((a, b) => a.name.localeCompare(b.name));
+  // Real coverage aggregates (computed at generation from the cached data).
+  const schoolsTotal = Object.values(CITY_SCHOOLS).reduce((n, c) => n + (c.count || 0), 0);
+  const triTotal = Object.values(CITY_EPA).reduce((n, c) => n + (c.count || 0), 0);
+  const roundK = (n) => `${Math.round(n / 1000)}K+`;
+  const stats = [
+    { n: '50', l: 'States' },
+    { n: `${countyIndex.length.toLocaleString()}`, l: 'Counties, risk-rated' },
+    { n: 'Every', l: 'U.S. ZIP code' },
+    { n: roundK(schoolsTotal), l: 'Public schools' },
+    { n: roundK(triTotal), l: 'Environmental sites' },
+    { n: '9', l: 'Data modules' },
+  ];
   const jsonLd = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Homefacts by IDLookup', url: `${SITE}/homefacts`, description: 'Neighborhood reports for any U.S. city, county, or ZIP.' }];
 
   return (
@@ -100,6 +114,17 @@ export default function HomefactsLanding() {
               <div style={{ fontSize: 15, fontWeight: 750, color: hfColor.ink, marginBottom: 4 }}>Know who lives there</div>
               <p style={{ margin: 0, fontSize: 13, color: hfColor.body, lineHeight: 1.55 }}>Every area links to the people connected to it — popular names and public incarceration records — that lead straight into a full people search.</p>
             </div>
+          </div>
+        </section>
+
+        <section style={{ ...hf.card, padding: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(115px, 1fr))', gap: 1, background: hfColor.line }}>
+            {stats.map((s) => (
+              <div key={s.l} style={{ background: hfColor.surface, padding: '18px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 850, letterSpacing: '-.02em', color: hfColor.accent }}>{s.n}</div>
+                <div style={{ fontSize: 11.5, color: hfColor.muted, marginTop: 3, lineHeight: 1.3 }}>{s.l}</div>
+              </div>
+            ))}
           </div>
         </section>
 

@@ -2,7 +2,7 @@
 // (fetch-at-generation, ISR-cached) + county FEMA disaster risk + sex-offender registry scoped to the ZIP.
 // Place/state/county resolved at generation via Zippopotam + FCC. Design: lib/hf.js.
 import { notFound } from 'next/navigation';
-import { getZctaAcs, getCountyByFips, demographicStats, propertyStats, femaRatingColor, hfCityPath, hfCountyPath, hfStatePath, getCitySchools, getCityCrime } from '../../../../lib/homefacts';
+import { getZctaAcs, getCountyByFips, demographicStats, propertyStats, femaRatingColor, hfCityPath, hfCountyPath, hfStatePath, getCitySchools, getCityCrime, getCityEpa } from '../../../../lib/homefacts';
 import { stateName } from '../../../../lib/states';
 import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
 import { cityNamePath } from '../../../../lib/ids';
@@ -42,7 +42,7 @@ async function countyFipsFor(lat, lng) {
 }
 async function resolve(zip) {
   const [acs, geo] = await Promise.all([t(getZctaAcs(zip), null, 6500), t(geoForZip(zip), null, 6500)]);
-  let fema = null, offenders = [], city = null, citySlug = null, schools = null, crime = null, names = [], inmateNames = [];
+  let fema = null, offenders = [], city = null, citySlug = null, schools = null, crime = null, epa = null, names = [], inmateNames = [];
   if (geo) {
     const stLc = geo.stateAbbr.toLowerCase();
     citySlug = slugify(geo.place);
@@ -53,10 +53,10 @@ async function resolve(zip) {
       city ? t(getCityCrime(geo.stateAbbr, citySlug), null, 8000) : Promise.resolve(null),
     ]);
     fema = fips ? getCountyByFips(fips) : null; offenders = offs; crime = crm;
-    if (city) { schools = getCitySchools(geo.stateAbbr, citySlug); names = getCityTopNames(stLc, citySlug, 24); }
+    if (city) { schools = getCitySchools(geo.stateAbbr, citySlug); epa = getCityEpa(geo.stateAbbr, citySlug); names = getCityTopNames(stLc, citySlug, 24); }
     if (fema) inmateNames = await t(rosterTopNamesByCounty({ state: geo.stateAbbr, county: fema.slug, limit: 24 }), [], 5000);
   }
-  return { acs, geo, fema, offenders, city, citySlug, schools, crime, names, inmateNames };
+  return { acs, geo, fema, offenders, city, citySlug, schools, crime, epa, names, inmateNames };
 }
 
 export async function generateMetadata({ params }) {
@@ -74,7 +74,7 @@ export async function generateMetadata({ params }) {
 export default async function ZipProfile({ params }) {
   const { zip } = await params;
   if (!/^\d{5}$/.test(zip)) notFound();
-  const { acs, geo, fema, offenders, city, citySlug, schools, crime, names, inmateNames } = await resolve(zip);
+  const { acs, geo, fema, offenders, city, citySlug, schools, crime, epa, names, inmateNames } = await resolve(zip);
   if (!acs && !geo) notFound();
 
   const demo = demographicStats(acs);
@@ -99,6 +99,7 @@ export default async function ZipProfile({ params }) {
     prop.length > 0 && { id: 'property', label: 'Property' },
     schools && { id: 'schools', label: 'Schools' },
     crime && (crime.violent || crime.property) && { id: 'crime', label: 'Crime' },
+    epa && epa.count > 0 && { id: 'environment', label: 'Environment' },
     fema && { id: 'disasters', label: 'Natural disasters' },
     inmateNames.length > 0 && { id: 'incarceration', label: 'Incarceration records' },
     { id: 'offenders', label: 'Sex offenders' },
@@ -200,6 +201,19 @@ export default async function ZipProfile({ params }) {
                 </div>
               );
             })}
+          </Section>
+        )}
+
+        {epa && epa.count > 0 && (
+          <Section id="environment" eyebrow="Environment" title={`Environmental hazards in ${geo.place}`} source="Facilities reporting to the EPA Toxics Release Inventory. Source: U.S. EPA Envirofacts (TRI).">
+            <p style={{ margin: '0 0 12px', fontSize: 15, color: hfColor.body }}>
+              <strong>{num(epa.count)}</strong> {epa.count === 1 ? 'facility' : 'facilities'} in {geo.place} report releasing toxic chemicals to the EPA under the Toxics Release Inventory.
+            </p>
+            <div style={hf.linkGrid}>
+              {epa.sample.map((f, i) => (
+                <span key={i} style={{ fontSize: 14, color: hfColor.body }}>{f.name}{f.county ? <span style={{ color: hfColor.muted }}> · {f.county} County</span> : null}</span>
+              ))}
+            </div>
           </Section>
         )}
 
