@@ -8,6 +8,7 @@ import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
 import { cityNamePath } from '../../../../lib/ids';
 import { rosterTopNamesByCounty } from '../../../../lib/incarceration.mjs';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
+import { AreaMap } from '../../../../lib/AreaMap';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
@@ -122,6 +123,12 @@ export default async function ZipProfile({ params }) {
         </section>
 
         <SectionNav items={nav} />
+
+        {geo && (
+          <Section id="map" eyebrow="Location" title={`Map of ZIP ${zip}`}>
+            <AreaMap lat={geo.lat} lng={geo.lng} label={`ZIP ${zip}`} zoom={13} height={300} />
+          </Section>
+        )}
 
         {demo.length > 0 && (
           <Section id="demographics" eyebrow="Who lives here" title="Demographics" source="ZIP-level (ZCTA). Source: U.S. Census Bureau, American Community Survey (5-year).">

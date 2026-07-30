@@ -15,6 +15,7 @@ import {
 } from '../../../../lib/homefacts';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
 import { StateMap } from '../../../../lib/statemap';
+import { AreaMap } from '../../../../lib/AreaMap';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -256,6 +257,12 @@ export default async function AreaProfile({ params }) {
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Population trend</div>
               <PopChart points={popPoints} width={680} height={220} />
+            </div>
+          )}
+          {c.lat != null && c.lng != null && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Map of {c.city}</div>
+              <AreaMap lat={c.lat} lng={c.lng} label={`${c.city}, ${c.stateCode}`} zoom={12} height={320} />
             </div>
           )}
           {stateCities.length >= 3 && (
