@@ -18,6 +18,8 @@ import RecentCrime from '../../RecentCrime';
 import Weather from '../../Weather';
 import AirQuality from '../../AirQuality';
 import Landmarks from '../../Landmarks';
+import Earthquakes from '../../Earthquakes';
+import WeatherAlerts from '../../WeatherAlerts';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
@@ -143,8 +145,10 @@ export default async function ZipProfile({ params }) {
         />
         {geo && citySlug && <RecentCrime stateLc={stLc} citySlug={citySlug} cityName={geo.place} />}
         <WhatsNearby />
+        {geo && <WeatherAlerts center={{ lat: geo.lat, lng: geo.lng }} />}
         {geo && <Weather center={{ lat: geo.lat, lng: geo.lng }} />}
         {geo && <AirQuality center={{ lat: geo.lat, lng: geo.lng }} />}
+        {geo && <Earthquakes center={{ lat: geo.lat, lng: geo.lng }} />}
 
         <SectionNav items={nav} />
 
