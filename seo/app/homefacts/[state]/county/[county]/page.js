@@ -4,7 +4,7 @@
 import { notFound } from 'next/navigation';
 import { getStateSlice } from '../../../../../lib/directory';
 import { countyFromSlug, hfCountyPath, hfStatePath, hfCityPath, getCountyAcs, demographicStats, propertyStats, femaRatingColor, citiesInCounty } from '../../../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif } from '../../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter } from '../../../../../lib/hf';
 import { HfIcon } from '../../../../../lib/HfIcon';
 import { crumbsJsonLd } from '../../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../../lib/ui';
@@ -100,7 +100,7 @@ export default async function CountyProfile({ params }) {
         )}
 
         <Section id="disasters" eyebrow="Risk" title="Natural disaster risk"
-          right={<span style={{ fontSize: 13, fontWeight: 800, color: '#fff', background: femaRatingColor(c.rating), borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap' }}>{c.rating || 'Not rated'}</span>}
+          right={<RiskMeter rating={c.rating} />}
           source="County-level natural-hazard risk. Source: FEMA National Risk Index.">
           {c.hazards && c.hazards.length > 0 && (
             <>

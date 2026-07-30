@@ -13,7 +13,7 @@ import {
   propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
   getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime, cityFaqs,
 } from '../../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif } from '../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter } from '../../../../lib/hf';
 import { HfIcon } from '../../../../lib/HfIcon';
 import { StateMap } from '../../../../lib/statemap';
 import { AreaMap } from '../../../../lib/AreaMap';
@@ -149,13 +149,13 @@ export default async function AreaProfile({ params }) {
             <StatGrid stats={demo} />
             {eth.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Residents by race &amp; ethnicity</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Residents by race &amp; ethnicity</div>
                 {eth.map((e) => <Bar key={e.label} label={e.label} pct={e.value} right={`${e.value}%`} />)}
               </div>
             )}
             {occupations.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Workforce by occupation</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Workforce by occupation</div>
                 {occupations.map((o) => <Bar key={o.label} label={o.label} pct={o.value} right={`${o.value}%`} />)}
               </div>
             )}
@@ -246,11 +246,11 @@ export default async function AreaProfile({ params }) {
         {/* 7 · Natural disasters */}
         {fema ? (
           <Section id="disasters" eyebrow="Risk" title="Natural disaster risk"
-            right={fema.rating ? <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', background: femaRatingColor(fema.rating), borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap' }}>{fema.rating}</span> : null}
+            right={fema.rating ? <RiskMeter rating={fema.rating} /> : null}
             source="County-level natural-hazard risk. Source: FEMA National Risk Index.">
             {fema.hazards && fema.hazards.length > 0 && (
               <>
-                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Top hazards{fema.county ? ` · ${fema.county} County` : ''}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Top hazards{fema.county ? ` · ${fema.county} County` : ''}</div>
                 {fema.hazards.map((h) => <Bar key={h.label} label={h.label} pct={(h.sev / 5) * 100} color={femaRatingColor(h.rating)} right={h.rating} />)}
               </>
             )}
@@ -273,25 +273,25 @@ export default async function AreaProfile({ params }) {
           )}
           {popPoints.length >= 4 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Population trend</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Population trend</div>
               <PopChart points={popPoints} width={680} height={220} />
             </div>
           )}
           {c.lat != null && c.lng != null && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Map of {c.city}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Map of {c.city}</div>
               <AreaMap lat={c.lat} lng={c.lng} label={`${c.city}, ${c.stateCode}`} zoom={12} height={320} />
             </div>
           )}
           {stateCities.length >= 3 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Where {c.city} is</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Where {c.city} is</div>
               <StateMap cities={stateCities} name={c.stateName} highlight={c.city} width={680} height={360} />
             </div>
           )}
           {historic && historic.count > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Historic places</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Historic places</div>
               <p style={{ margin: '0 0 8px', fontSize: 14, color: hfColor.body }}>{num(historic.count)} on the National Register of Historic Places{historic.nhl > 0 ? `, incl. ${historic.nhl} National Historic Landmark${historic.nhl === 1 ? '' : 's'}` : ''}.</p>
               <div style={hf.linkGrid}>
                 {historic.places.slice(0, 12).map((p, i) => (p.url ? <a key={i} href={p.url} target="_blank" rel="noopener" style={{ ...hf.link, fontSize: 14 }}>{p.name}</a> : <span key={i} style={{ fontSize: 14, color: hfColor.body }}>{p.name}</span>))}
@@ -300,13 +300,13 @@ export default async function AreaProfile({ params }) {
           )}
           {people && people.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Notable people from {c.city}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Notable people from {c.city}</div>
               <div style={hf.linkGrid}>{people.slice(0, 10).map((p) => <a key={p.url} href={p.url} target="_blank" rel="noopener" style={{ ...hf.link, fontSize: 14 }}>{p.name}</a>)}</div>
             </div>
           )}
           {names.length > 0 && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>People searches in {c.city}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>People searches in {c.city}</div>
               <div style={hf.linkGrid}>
                 {names.slice(0, 24).map((n) => (
                   <a key={n.slug} href={cityNamePath(c.stateCode, city, n.slug)} style={{ ...hf.link, fontSize: 14 }}>
@@ -318,7 +318,7 @@ export default async function AreaProfile({ params }) {
           )}
           {nearby.length > 0 && (
             <div>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: hfColor.muted, marginBottom: 6 }}>Nearby cities</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 6 }}>Nearby cities</div>
               <div style={hf.linkGrid}>{nearby.map((n) => <a key={n.slug} href={hfCityPath(state, n.slug)} style={{ ...hf.link, fontSize: 14 }}>{n.city} <span style={{ color: hfColor.muted }}>({num(n.miles)} mi)</span></a>)}</div>
             </div>
           )}

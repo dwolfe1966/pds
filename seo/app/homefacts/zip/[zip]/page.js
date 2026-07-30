@@ -7,7 +7,7 @@ import { stateName } from '../../../../lib/states';
 import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
 import { cityNamePath } from '../../../../lib/ids';
 import { rosterTopNamesByCounty } from '../../../../lib/incarceration.mjs';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif } from '../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter } from '../../../../lib/hf';
 import { HfIcon } from '../../../../lib/HfIcon';
 import { AreaMap } from '../../../../lib/AreaMap';
 import OffenderMap from '../../OffenderMap';
@@ -155,7 +155,7 @@ export default async function ZipProfile({ params }) {
 
         {fema && (
           <Section id="disasters" eyebrow="Risk" title="Natural disaster risk"
-            right={<span style={{ fontSize: 13, fontWeight: 800, color: '#fff', background: femaRatingColor(fema.rating), borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap' }}>{fema.rating || 'Not rated'}</span>}
+            right={<RiskMeter rating={fema.rating} />}
             source={`County-level natural-hazard risk for the county covering ZIP ${zip}. Source: FEMA National Risk Index.`}>
             {fema.hazards && fema.hazards.length > 0 && (
               <>

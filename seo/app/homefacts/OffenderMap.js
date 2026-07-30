@@ -17,12 +17,12 @@ export default function OffenderMap({ points, center, height = 340, color = '#b2
 
     (async () => {
       const L = (await import('leaflet')).default;
-      // Inject Leaflet's CSS once (avoids a global-CSS import; CSP on idlookup.me is open).
+      // Inject Leaflet's CSS once — self-hosted (no third-party unpkg render dependency / CSP fragility).
       if (!document.getElementById('leaflet-css')) {
         const link = document.createElement('link');
         link.id = 'leaflet-css';
         link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.href = '/vendor/leaflet-1.9.4.css';
         document.head.appendChild(link);
       }
       if (cancelled || mapRef.current) return;

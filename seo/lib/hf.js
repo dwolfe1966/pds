@@ -38,14 +38,48 @@ export const hf = {
   linkGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '8px 18px' },
 };
 
-// Sticky top bar with the wordmark + a "New search" affordance. Consistent across all area profiles.
+// Brand mark — a house inside a locator pin (ties "home" + "find/verified"). Inline SVG, accent-colored,
+// reused in the header and available for the deck. size = pin height.
+export function HfLogo({ size = 22, color = C.accent }) {
+  return (
+    <svg width={size * 0.82} height={size} viewBox="0 0 20 24" fill="none" aria-hidden="true" style={{ display: 'block', flex: 'none' }}>
+      <path d="M10 23c5-5.5 8-9.4 8-13A8 8 0 1 0 2 10c0 3.6 3 7.5 8 13Z" fill={color} />
+      <path d="M6 10.2 10 7l4 3.2V14a.6.6 0 0 1-.6.6H6.6A.6.6 0 0 1 6 14v-3.8Z" fill="#fff" />
+      <path d="M9 14.6v-2.2h2v2.2" fill={color} />
+    </svg>
+  );
+}
+
+// Compact 5-segment risk meter (data-viz-as-imagery) for a FEMA rating. Segments light up to the rating's
+// severity level and take the rating color; empty segments are neutral. Inline SVG, no deps.
+const RATING_LEVEL = { 'Very Low': 1, 'Relatively Low': 2, 'Relatively Moderate': 3, 'Relatively High': 4, 'Very High': 5 };
+const RATING_COLOR = { 'Very Low': '#2e7d52', 'Relatively Low': '#6ba368', 'Relatively Moderate': '#c69a2e', 'Relatively High': '#d07d2e', 'Very High': '#b23a48' };
+export function RiskMeter({ rating, showLabel = true }) {
+  const level = RATING_LEVEL[rating] || 0;
+  const col = RATING_COLOR[rating] || C.muted;
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, whiteSpace: 'nowrap' }}>
+      <span style={{ display: 'inline-flex', gap: 3 }} aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span key={i} style={{ width: 9, height: 16, borderRadius: 3, background: i <= level ? col : '#e6ebf0' }} />
+        ))}
+      </span>
+      {showLabel && <span style={{ fontSize: 13, fontWeight: 800, color: col }}>{rating || 'Not rated'}</span>}
+    </span>
+  );
+}
+
+// Sticky top bar with the brand mark + wordmark + a "New search" affordance. Consistent across all area profiles.
 export function HfHeader() {
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.92)', backdropFilter: 'saturate(1.4) blur(8px)', borderBottom: `1px solid ${C.line}` }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <a href="/homefacts" style={{ textDecoration: 'none', display: 'flex', alignItems: 'baseline', gap: 7 }}>
-          <span style={{ fontSize: 20, fontWeight: 850, letterSpacing: '-.02em', color: C.accent }}>{BRAND.name}</span>
-          {BRAND.by && <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>{BRAND.by}</span>}
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <a href="/homefacts" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9 }}>
+          <HfLogo size={23} />
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
+            <span style={{ fontSize: 20, fontWeight: 850, letterSpacing: '-.02em', color: C.accent }}>{BRAND.name}</span>
+            {BRAND.by && <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>{BRAND.by}</span>}
+          </span>
         </a>
         <a href="/homefacts" style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: C.accent, textDecoration: 'none', border: `1px solid ${C.accentLine}`, borderRadius: 8, padding: '7px 14px' }}>
           New search
@@ -133,7 +167,14 @@ export function Section({ id, eyebrow, title, source, children, right, icon }) {
         {right}
       </div>
       {children}
-      {source && <p style={hf.source}>{source}</p>}
+      {source && (
+        <p style={{ ...hf.source, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.faint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: 'none', marginTop: 1 }}>
+            <circle cx="12" cy="12" r="9" /><path d="m8.5 12 2.5 2.5 4.5-5" />
+          </svg>
+          <span>{source}</span>
+        </p>
+      )}
     </section>
   );
 }
