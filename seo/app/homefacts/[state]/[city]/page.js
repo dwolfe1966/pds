@@ -16,6 +16,7 @@ import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
 import { querySexOffenders } from '../../../../lib/sexOffenderDb.mjs';
 import { SexOffenderSection } from '../../../../lib/sex-offender-section';
+import FromBanner from './FromBanner';
 
 export const revalidate = 5184000; // 60d ISR
 export function generateStaticParams() { return []; }
@@ -72,10 +73,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function AreaProfile({ params, searchParams }) {
+export default async function AreaProfile({ params }) {
   const { state, city } = await params;
-  const sp = searchParams ? await searchParams : {};
-  const from = typeof sp.from === 'string' ? sp.from : null; // set by the ZIP/address resolver
   const c = getCitySlice(state, city);
   if (!c) notFound();
 
@@ -115,12 +114,7 @@ export default async function AreaProfile({ params, searchParams }) {
     <main style={ui.main}>
       <JsonLd blocks={jsonLd} />
       <Breadcrumbs crumbs={crumbs} />
-
-      {from && (
-        <p style={{ margin: '0 0 14px', fontSize: 13.5, color: ui.color.body, background: ui.color.tint, border: '1px solid #d7e8dc', borderRadius: 8, padding: '9px 13px' }}>
-          Showing <strong>{c.city}, {c.stateCode}</strong> — the area we cover for <strong>{from}</strong>.
-        </p>
-      )}
+      <FromBanner city={c.city} stateCode={c.stateCode} />
 
       <section style={ui.hero}>
         <p style={ui.eyebrow}>Neighborhood report</p>
