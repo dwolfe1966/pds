@@ -9,10 +9,15 @@
 import { getCityAcs, getCityWiki } from './facts';
 import CITY_FEMA from '../data/city-fema.json';
 import CITY_SCHOOLS from '../data/city-schools.json';
+import CITY_EPA from '../data/city-epa.json';
 
 // Public schools for a city — built by scripts/fetch-schools.mjs (NCES CCD via Urban Institute).
 export function getCitySchools(stateCode, citySlug) {
   return CITY_SCHOOLS[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+// EPA Toxics Release Inventory facilities for a city — built by scripts/fetch-epa-tri.mjs.
+export function getCityEpa(stateCode, citySlug) {
+  return CITY_EPA[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
 }
 
 // FEMA National Risk Index (natural-disaster risk) for a city's county — built by scripts/fetch-fema-nri.mjs.
@@ -75,7 +80,7 @@ export const HF_MODULES = [
   { id: 'property',     label: 'Property report',       status: 'live' },
   { id: 'schools',      label: 'Schools',               status: 'live' },
   { id: 'crime',        label: 'Crime',                 status: 'pending', source: 'FBI Crime Data Explorer + local agencies (public)' },
-  { id: 'environment',  label: 'Environmental hazards', status: 'pending', source: 'U.S. EPA — EJScreen / ECHO (public)' },
+  { id: 'environment',  label: 'Environmental hazards', status: 'live' },
   { id: 'disasters',    label: 'Natural disasters',     status: 'live' },
   { id: 'neighborhood', label: 'Neighborhood info',     status: 'live' },
   { id: 'offenders',    label: 'Sex offenders',         status: 'live' },

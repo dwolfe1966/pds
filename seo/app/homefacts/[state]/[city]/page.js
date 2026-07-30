@@ -8,7 +8,7 @@ import {
   getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory,
   cityWikiChips, cityEthnicity, cityOccupations, cityProse,
 } from '../../../../lib/facts';
-import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, getCityFema, femaRatingColor, getCitySchools } from '../../../../lib/homefacts';
+import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, getCityFema, femaRatingColor, getCitySchools, getCityEpa } from '../../../../lib/homefacts';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd } from '../../../../lib/schema';
@@ -95,6 +95,7 @@ export default async function AreaProfile({ params }) {
   const stateCities = getStateCities(state);
   const fema = getCityFema(c.stateCode, city);
   const schools = getCitySchools(c.stateCode, city);
+  const epa = getCityEpa(c.stateCode, city);
 
   // Highlight snapshot for the summary (curated, not the full demographic set below).
   const highlight = [
@@ -223,10 +224,30 @@ export default async function AreaProfile({ params }) {
         source="FBI Crime Data Explorer + local agencies (public)"
         blurb={`Violent and property crime rates for ${c.city} and how they compare to ${c.stateName} and national averages.`} />
 
-      {/* 6 · Environmental hazards */}
-      <Pending id="environment" title="Environmental hazards"
-        source="U.S. EPA — EJScreen / ECHO (public)"
-        blurb={`Air quality, toxic-release sites, and regulated facilities in and around ${c.city}.`} />
+      {/* 6 · Environmental hazards — EPA Toxics Release Inventory (live) */}
+      {epa && epa.count > 0 ? (
+        <section id="environment" style={ui.card}>
+          <h2 style={ui.h2}>Environmental hazards</h2>
+          <p style={{ margin: '0 0 12px', fontSize: 14, color: ui.color.body, lineHeight: 1.65 }}>
+            <strong>{num(epa.count)}</strong> {epa.count === 1 ? 'facility in' : 'facilities in'} {c.city} report releasing
+            toxic chemicals to the EPA under the Toxics Release Inventory (TRI).
+          </p>
+          {epa.sample.length > 0 && (
+            <div style={ui.linkGrid}>
+              {epa.sample.map((f, i) => (
+                <span key={i} style={{ fontSize: 14, color: ui.color.body }}>
+                  {f.name}{f.county ? <span style={ui.muted}> · {f.county} County</span> : null}
+                </span>
+              ))}
+            </div>
+          )}
+          <p style={ui.source}>Facilities reporting to the EPA Toxics Release Inventory. Source: U.S. EPA Envirofacts (TRI).</p>
+        </section>
+      ) : (
+        <Pending id="environment" title="Environmental hazards"
+          source="U.S. EPA — Toxics Release Inventory (public)"
+          blurb={`Toxic-release sites and regulated facilities in and around ${c.city}.`} />
+      )}
 
       {/* 7 · Natural disasters — FEMA National Risk Index (live) */}
       {fema ? (
