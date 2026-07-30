@@ -22,6 +22,7 @@
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "@sendgrid/mail": "^8.1.6",
+    "leaflet": "^1.9.4",
     "next": "^15.5.21",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

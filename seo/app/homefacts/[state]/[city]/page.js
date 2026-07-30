@@ -16,6 +16,7 @@ import {
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
 import { StateMap } from '../../../../lib/statemap';
 import { AreaMap } from '../../../../lib/AreaMap';
+import OffenderMap from '../../OffenderMap';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -323,8 +324,17 @@ export default async function AreaProfile({ params }) {
           </Section>
         )}
 
-        {/* 9 · Sex offenders */}
+        {/* 9 · Sex offenders — map (pins) + list */}
         <div id="offenders" style={hf.card}>
+          {offenders.some((o) => Number.isFinite(o.latitude) && Number.isFinite(o.longitude)) && (
+            <div style={{ marginBottom: 16 }}>
+              <OffenderMap
+                center={c.lat != null ? { lat: c.lat, lng: c.lng } : null}
+                points={offenders.map((o) => ({ lat: o.latitude, lng: o.longitude, label: o.name || 'Registered offender', sub: [o.city, o.absconder ? 'ABSCONDER' : null].filter(Boolean).join(' · ') }))}
+                height={340}
+              />
+            </div>
+          )}
           <SexOffenderSection
             records={offenders}
             heading={`Registered sex offenders in ${c.city}, ${c.stateCode} (${offenders.length})`}
