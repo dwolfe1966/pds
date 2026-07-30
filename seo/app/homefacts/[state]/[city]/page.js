@@ -11,14 +11,14 @@ import {
 } from '../../../../lib/facts';
 import {
   propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
-  getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime,
+  getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime, cityFaqs,
 } from '../../../../lib/homefacts';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
 import { StateMap } from '../../../../lib/statemap';
 import { AreaMap } from '../../../../lib/AreaMap';
 import OffenderMap from '../../OffenderMap';
 import { PopChart } from '../../../../lib/popchart';
-import { crumbsJsonLd } from '../../../../lib/schema';
+import { crumbsJsonLd, faqJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
 import { SITE, MAIN } from '../../../../lib/site';
 import { querySexOffenders } from '../../../../lib/sexOffenderDb.mjs';
@@ -102,16 +102,18 @@ export default async function AreaProfile({ params }) {
     { name: c.stateName, path: hfStatePath(state) },
     { name: c.city, path: hfCityPath(state, city) },
   ];
+  const faqs = cityFaqs({ city: c.city, stateName: c.stateName, acs, fema, crime, schools, offenders: offenders.length, county });
   const navItems = [
     ...HF_MODULES.map((m) => ({ id: m.id, label: m.label })),
     inmateNames.length > 0 && { id: 'incarceration', label: 'Incarceration records' },
+    faqs.length > 0 && { id: 'faq', label: 'FAQ' },
   ].filter(Boolean);
 
   return (
     <div style={hf.page}>
       <HfHeader />
       <main style={hf.main}>
-        <JsonLd blocks={[crumbsJsonLd(crumbs)]} />
+        <JsonLd blocks={faqs.length > 0 ? [crumbsJsonLd(crumbs), faqJsonLd(faqs)] : [crumbsJsonLd(crumbs)]} />
         <HfBreadcrumbs crumbs={crumbs} />
         <FromBanner city={c.city} stateCode={c.stateCode} />
 
@@ -341,6 +343,19 @@ export default async function AreaProfile({ params }) {
             blurb={`Public sex-offender registry records for ${c.city}, ${c.stateName}.`}
           />
         </div>
+
+        {faqs.length > 0 && (
+          <Section id="faq" eyebrow="Common questions" title={`${c.city} — frequently asked`}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {faqs.map((f, i) => (
+                <div key={i}>
+                  <div style={{ fontSize: 15, fontWeight: 750, color: hfColor.ink, marginBottom: 4 }}>{f.q}</div>
+                  <div style={{ fontSize: 14, color: hfColor.body, lineHeight: 1.6 }}>{f.a}</div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=homefacts&state=${c.stateCode}`} style={hf.secondaryCta}>
           Look up a person in {c.city} →

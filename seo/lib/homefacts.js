@@ -203,5 +203,28 @@ export const HF_MODULES = [
 ];
 
 // Meta helpers for the profile page.
+// Build real, data-grounded FAQs for a city area profile → visible FAQ + FAQPage JSON-LD (SEO rich snippets /
+// "People Also Ask"). Only includes questions we can answer from live data — never a hollow/fabricated answer.
+export function cityFaqs({ city, stateName, acs, fema, crime, schools, offenders, county }) {
+  const money = (n) => (n == null ? null : '$' + Number(n).toLocaleString('en-US'));
+  const commas = (n) => (n == null ? null : Number(n).toLocaleString('en-US'));
+  const out = [];
+  if (acs?.population != null)
+    out.push({ q: `What is the population of ${city}, ${stateName}?`, a: `${city} has a population of about ${commas(acs.population)}, according to the U.S. Census Bureau's American Community Survey (5-year).` });
+  if (acs?.medianHomeValue != null)
+    out.push({ q: `What is the average home value in ${city}?`, a: `The median home value in ${city} is ${money(acs.medianHomeValue)}${acs.medianGrossRent != null ? `, and the median gross rent is ${money(acs.medianGrossRent)}/month` : ''} (U.S. Census ACS).` });
+  if (crime && crime.violent && crime.violent.us != null) {
+    const v = crime.violent; const cmp = v.place > v.us ? 'higher than' : v.place < v.us ? 'lower than' : 'about equal to';
+    out.push({ q: `Is ${city} safe? What is the crime rate?`, a: `${crime.agency} reported a violent-crime rate of about ${commas(v.place)} per 100,000 residents in ${crime.year} — ${cmp} the U.S. rate of ${commas(v.us)}. Source: FBI UCR/NIBRS.` });
+  }
+  if (fema?.rating)
+    out.push({ q: `What natural-disaster risks does ${city} face?`, a: `FEMA's National Risk Index rates ${fema.county ? `${fema.county} County` : `${city}'s county`} as "${fema.rating}" overall${fema.hazards && fema.hazards.length ? `, with top hazards including ${fema.hazards.slice(0, 3).map((h) => h.label.toLowerCase()).join(', ')}` : ''}.` });
+  if (schools?.count != null)
+    out.push({ q: `How many schools are in ${city}?`, a: `${city} has ${commas(schools.count)} public schools${schools.byLevel ? ` (${['Elementary', 'Middle', 'High'].map((k) => schools.byLevel[k] ? `${schools.byLevel[k]} ${k.toLowerCase()}` : null).filter(Boolean).join(', ')})` : ''}. Source: U.S. Dept. of Education, NCES.` });
+  if (offenders != null)
+    out.push({ q: `How many registered sex offenders are in ${city}?`, a: `Public registry data lists ${commas(offenders)} registered sex offenders in or near ${city}. This is neighborhood-safety information from the public state registry.` });
+  return out;
+}
+
 export function hasAreaData(stateCode, slug) { return !!getCityAcs(stateCode, slug); }
 export { getCityAcs, getCityWiki };
