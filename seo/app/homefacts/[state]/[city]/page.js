@@ -8,7 +8,7 @@ import {
   getCityAcs, getCityWiki, getCityPeople, getCityHistoric, getCityNewspapers, getPopHistory,
   cityWikiChips, cityEthnicity, cityOccupations, cityProse,
 } from '../../../../lib/facts';
-import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath } from '../../../../lib/homefacts';
+import { propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, getCityFema, femaRatingColor } from '../../../../lib/homefacts';
 import { StateMap } from '../../../../lib/statemap';
 import { PopChart } from '../../../../lib/popchart';
 import { crumbsJsonLd } from '../../../../lib/schema';
@@ -94,6 +94,7 @@ export default async function AreaProfile({ params, searchParams }) {
   const popPoints = getPopHistory(c.stateCode, city, acs?.population);
   const nearby = getNearbyCities(state, city, 6);
   const stateCities = getStateCities(state);
+  const fema = getCityFema(c.stateCode, city);
 
   // Highlight snapshot for the summary (curated, not the full demographic set below).
   const highlight = [
@@ -205,10 +206,35 @@ export default async function AreaProfile({ params, searchParams }) {
         source="U.S. EPA — EJScreen / ECHO (public)"
         blurb={`Air quality, toxic-release sites, and regulated facilities in and around ${c.city}.`} />
 
-      {/* 7 · Natural disasters */}
-      <Pending id="disasters" title="Natural disaster risk"
-        source="FEMA National Risk Index (public)"
-        blurb={`Risk from flood, wildfire, tornado, earthquake, hurricane and other hazards for ${c.city}'s county.`} />
+      {/* 7 · Natural disasters — FEMA National Risk Index (live) */}
+      {fema ? (
+        <section id="disasters" style={ui.card}>
+          <h2 style={ui.h2}>Natural disaster risk</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '0 0 12px' }}>
+            <span style={{ fontSize: 13, color: ui.color.body }}>Overall risk for {fema.county || `${c.city}'s county`}:</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', background: femaRatingColor(fema.rating), borderRadius: 999, padding: '4px 12px' }}>{fema.rating}</span>
+          </div>
+          {fema.hazards && fema.hazards.length > 0 && (
+            <>
+              <div style={{ ...snap.label, marginBottom: 4 }}>Top hazards</div>
+              {fema.hazards.map((h) => (
+                <div key={h.label} style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0', fontSize: 13 }}>
+                  <span style={{ width: 150, color: ui.color.body }}>{h.label}</span>
+                  <span style={{ flex: 1, height: 8, background: '#eef2f0', borderRadius: 999, overflow: 'hidden' }}>
+                    <span style={{ display: 'block', height: '100%', width: `${(h.sev / 5) * 100}%`, background: femaRatingColor(h.rating) }} />
+                  </span>
+                  <span style={{ width: 120, textAlign: 'right', color: femaRatingColor(h.rating), fontWeight: 700, fontSize: 12 }}>{h.rating}</span>
+                </div>
+              ))}
+            </>
+          )}
+          <p style={ui.source}>County-level natural-hazard risk. Source: FEMA National Risk Index.</p>
+        </section>
+      ) : (
+        <Pending id="disasters" title="Natural disaster risk"
+          source="FEMA National Risk Index (public)"
+          blurb={`Risk from flood, wildfire, tornado, earthquake, hurricane and other hazards for ${c.city}'s county.`} />
+      )}
 
       {/* 8 · Neighborhood info */}
       <section id="neighborhood" style={ui.card}>

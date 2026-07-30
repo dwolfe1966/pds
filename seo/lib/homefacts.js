@@ -7,6 +7,19 @@
 // — we show the section + the source we're wiring, never a fabricated number.
 
 import { getCityAcs, getCityWiki } from './facts';
+import CITY_FEMA from '../data/city-fema.json';
+
+// FEMA National Risk Index (natural-disaster risk) for a city's county — built by scripts/fetch-fema-nri.mjs.
+export function getCityFema(stateCode, citySlug) {
+  return CITY_FEMA[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+// Color for an NRI rating band (Very Low → Very High), for the risk bars/pills.
+export function femaRatingColor(rating) {
+  return {
+    'Very Low': '#2e7d52', 'Relatively Low': '#6ba368', 'Relatively Moderate': '#c69a2e',
+    'Relatively High': '#d07d2e', 'Very High': '#b23a48',
+  }[rating] || '#8a94a6';
+}
 
 const money = (n) => (n == null ? null : '$' + Number(n).toLocaleString('en-US'));
 const pct = (n) => (n == null ? null : `${n}%`);
@@ -57,7 +70,7 @@ export const HF_MODULES = [
   { id: 'schools',      label: 'Schools',               status: 'pending', source: 'U.S. Dept. of Education / NCES (public)' },
   { id: 'crime',        label: 'Crime',                 status: 'pending', source: 'FBI Crime Data Explorer + local agencies (public)' },
   { id: 'environment',  label: 'Environmental hazards', status: 'pending', source: 'U.S. EPA — EJScreen / ECHO (public)' },
-  { id: 'disasters',    label: 'Natural disasters',     status: 'pending', source: 'FEMA National Risk Index (public)' },
+  { id: 'disasters',    label: 'Natural disasters',     status: 'live' },
   { id: 'neighborhood', label: 'Neighborhood info',     status: 'live' },
   { id: 'offenders',    label: 'Sex offenders',         status: 'live' },
 ];
