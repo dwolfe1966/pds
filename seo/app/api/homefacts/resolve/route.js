@@ -73,7 +73,9 @@ export async function GET(request) {
   const target = exact || nearestCity(point.lat, point.lng, point.stateLc) || nearestCity(point.lat, point.lng);
   if (!target) return Response.json({ error: 'no covered area found' }, { status: 404 });
 
-  const url = `/homefacts/${target.lc}/${target.slug}?from=${encodeURIComponent(point.what)}`;
+  // Carry the geocoded address point (alat/alng) so the profile's maps can position the address + orient
+  // offender/school distances to it (read client-side — ISR pages can't read query params server-side).
+  const url = `/homefacts/${target.lc}/${target.slug}?from=${encodeURIComponent(point.what)}&alat=${point.lat.toFixed(5)}&alng=${point.lng.toFixed(5)}`;
   const label = exact
     ? `${target.city}, ${target.lc.toUpperCase()}`
     : `${target.city}, ${target.lc.toUpperCase()} — the nearest area we cover for ${point.what}`;
