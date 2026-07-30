@@ -4,7 +4,7 @@ import STATE_SLICE from '../../data/state-slice.json';
 import { hf, hfColor, BRAND, HfHeader } from '../../lib/hf';
 import { FcraFooter, JsonLd } from '../../lib/ui';
 import { SITE } from '../../lib/site';
-import { HF_MODULES, hfCityPath } from '../../lib/homefacts';
+import { HF_MODULES, hfCityPath, getCounties } from '../../lib/homefacts';
 import HomefactsSearch from './HomefactsSearch';
 
 export const revalidate = 5184000; // 60d ISR
@@ -28,8 +28,17 @@ function buildIndex() {
 }
 const num = (v) => (v == null ? '' : Number(v).toLocaleString('en-US'));
 
+function buildCountyIndex() {
+  const out = [];
+  for (const lc of Object.keys(STATE_SLICE.states)) {
+    for (const c of getCounties(lc)) out.push({ n: c.name, s: lc, slug: c.slug });
+  }
+  return out;
+}
+
 export default function HomefactsLanding() {
   const index = buildIndex();
+  const countyIndex = buildCountyIndex();
   const popular = index.slice().sort((a, b) => (b.pop || 0) - (a.pop || 0)).slice(0, 24);
   const jsonLd = [{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Homefacts by IDLookup', url: `${SITE}/homefacts`, description: 'Neighborhood reports for any U.S. city, county, or ZIP.' }];
 
@@ -46,7 +55,7 @@ export default function HomefactsLanding() {
             Demographics, property values, schools, natural-disaster &amp; environmental risk, and the registered
             sex-offender registry for any U.S. city, county, or ZIP — free.
           </p>
-          <HomefactsSearch cities={index} />
+          <HomefactsSearch cities={index} counties={countyIndex} />
         </section>
 
         <section style={hf.card}>

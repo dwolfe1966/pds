@@ -8,14 +8,16 @@ import { useMemo, useState } from 'react';
 
 const C = { ink: '#172033', body: '#344054', muted: '#667085', border: '#d8e0ea', soft: '#f6f8fb', accent: '#12507e' };
 
-export default function HomefactsSearch({ cities }) {
+export default function HomefactsSearch({ cities, counties = [] }) {
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
 
   const matches = useMemo(() => {
     if (query.length < 2) return [];
-    // Rank: prefix match on city name first, then substring; cap at 10.
+    // Query without a trailing "county" so "travis county" still matches the county entry.
+    const qCounty = query.replace(/\s*county$/, '');
     const scored = [];
+    // Cities.
     for (const c of cities) {
       const name = c.c.toLowerCase();
       const combo = `${name}, ${c.s}`;
@@ -23,11 +25,19 @@ export default function HomefactsSearch({ cities }) {
       if (name.startsWith(query)) score = 0;
       else if (combo.startsWith(query)) score = 1;
       else if (name.includes(query)) score = 2;
-      if (score >= 0) scored.push([score, c.pop || 0, c]);
+      if (score >= 0) scored.push([score, c.pop || 0, { ...c, kind: 'city' }]);
+    }
+    // Counties (ranked just after the equivalent city match).
+    for (const c of counties) {
+      const name = c.n.toLowerCase();
+      let score = -1;
+      if (name.startsWith(qCounty)) score = 0.5;
+      else if (name.includes(qCounty)) score = 2.5;
+      if (score >= 0) scored.push([score, 0, { ...c, kind: 'county' }]);
     }
     scored.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
     return scored.slice(0, 10).map((x) => x[2]);
-  }, [query, cities]);
+  }, [query, cities, counties]);
 
   // ZIP (5 digits) or street-address (has a digit and a space) → resolve via the keyless API to a profile URL.
   const isZip = /^\d{5}$/.test(query);
@@ -67,13 +77,17 @@ export default function HomefactsSearch({ cities }) {
 
       {matches.length > 0 && (
         <div style={{ position: 'absolute', zIndex: 5, left: 0, right: 0, marginTop: 6, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: '0 12px 32px rgba(16,24,40,.16)', textAlign: 'left' }}>
-          {matches.map((c) => (
-            <a key={`${c.s}/${c.slug}`} href={`/homefacts/${c.s}/${c.slug}`}
-              style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '11px 15px', textDecoration: 'none', color: C.ink, fontSize: 15, borderTop: `1px solid ${C.soft}` }}>
-              <span><strong>{c.c}</strong>, {c.s.toUpperCase()}</span>
-              <span style={{ color: C.muted, fontSize: 13 }}>{c.n}</span>
-            </a>
-          ))}
+          {matches.map((c) => {
+            const isCounty = c.kind === 'county';
+            const href = isCounty ? `/homefacts/${c.s}/county/${c.slug}` : `/homefacts/${c.s}/${c.slug}`;
+            return (
+              <a key={`${c.kind}/${c.s}/${c.slug}`} href={href}
+                style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '11px 15px', textDecoration: 'none', color: C.ink, fontSize: 15, borderTop: `1px solid ${C.soft}` }}>
+                <span><strong>{isCounty ? `${c.n} County` : c.c}</strong>, {c.s.toUpperCase()}</span>
+                <span style={{ color: C.muted, fontSize: 13 }}>{isCounty ? 'County' : c.n}</span>
+              </a>
+            );
+          })}
         </div>
       )}
 
