@@ -2,8 +2,11 @@
 // (fetch-at-generation, ISR-cached) + county FEMA disaster risk + sex-offender registry scoped to the ZIP.
 // Place/state/county resolved at generation via Zippopotam + FCC. Design: lib/hf.js.
 import { notFound } from 'next/navigation';
-import { getZctaAcs, getCountyByFips, demographicStats, propertyStats, femaRatingColor, hfCityPath, hfCountyPath, hfStatePath } from '../../../../lib/homefacts';
+import { getZctaAcs, getCountyByFips, demographicStats, propertyStats, femaRatingColor, hfCityPath, hfCountyPath, hfStatePath, getCitySchools, getCityCrime } from '../../../../lib/homefacts';
 import { stateName } from '../../../../lib/states';
+import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
+import { cityNamePath } from '../../../../lib/ids';
+import { rosterTopNamesByCounty } from '../../../../lib/incarceration.mjs';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar } from '../../../../lib/hf';
 import { crumbsJsonLd } from '../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../lib/ui';
@@ -36,12 +39,21 @@ async function countyFipsFor(lat, lng) {
 }
 async function resolve(zip) {
   const [acs, geo] = await Promise.all([t(getZctaAcs(zip), null, 6500), t(geoForZip(zip), null, 6500)]);
-  let fema = null, offenders = [];
+  let fema = null, offenders = [], city = null, citySlug = null, schools = null, crime = null, names = [], inmateNames = [];
   if (geo) {
-    const [fips, offs] = await Promise.all([t(countyFipsFor(geo.lat, geo.lng), null, 6500), t(querySexOffenders({ state: geo.stateAbbr, zip, limit: 16 }), [])]);
-    fema = fips ? getCountyByFips(fips) : null; offenders = offs;
+    const stLc = geo.stateAbbr.toLowerCase();
+    citySlug = slugify(geo.place);
+    city = getCitySlice(stLc, citySlug); // the ZIP's city, if we cover it → unlocks city-grain modules
+    const [fips, offs, crm] = await Promise.all([
+      t(countyFipsFor(geo.lat, geo.lng), null, 6500),
+      t(querySexOffenders({ state: geo.stateAbbr, zip, limit: 16 }), []),
+      city ? t(getCityCrime(geo.stateAbbr, citySlug), null, 8000) : Promise.resolve(null),
+    ]);
+    fema = fips ? getCountyByFips(fips) : null; offenders = offs; crime = crm;
+    if (city) { schools = getCitySchools(geo.stateAbbr, citySlug); names = getCityTopNames(stLc, citySlug, 24); }
+    if (fema) inmateNames = await t(rosterTopNamesByCounty({ state: geo.stateAbbr, county: fema.slug, limit: 24 }), [], 5000);
   }
-  return { acs, geo, fema, offenders };
+  return { acs, geo, fema, offenders, city, citySlug, schools, crime, names, inmateNames };
 }
 
 export async function generateMetadata({ params }) {
@@ -59,7 +71,7 @@ export async function generateMetadata({ params }) {
 export default async function ZipProfile({ params }) {
   const { zip } = await params;
   if (!/^\d{5}$/.test(zip)) notFound();
-  const { acs, geo, fema, offenders } = await resolve(zip);
+  const { acs, geo, fema, offenders, city, citySlug, schools, crime, names, inmateNames } = await resolve(zip);
   if (!acs && !geo) notFound();
 
   const demo = demographicStats(acs);
@@ -79,7 +91,16 @@ export default async function ZipProfile({ params }) {
     ...(stName ? [{ name: stName, path: hfStatePath(stLc) }] : []),
     { name: `ZIP ${zip}`, path: `/homefacts/zip/${zip}` },
   ];
-  const nav = [demo.length > 0 && { id: 'demographics', label: 'Demographics' }, prop.length > 0 && { id: 'property', label: 'Property' }, fema && { id: 'disasters', label: 'Natural disasters' }, { id: 'offenders', label: 'Sex offenders' }].filter(Boolean);
+  const nav = [
+    demo.length > 0 && { id: 'demographics', label: 'Demographics' },
+    prop.length > 0 && { id: 'property', label: 'Property' },
+    schools && { id: 'schools', label: 'Schools' },
+    crime && (crime.violent || crime.property) && { id: 'crime', label: 'Crime' },
+    fema && { id: 'disasters', label: 'Natural disasters' },
+    inmateNames.length > 0 && { id: 'incarceration', label: 'Incarceration records' },
+    { id: 'offenders', label: 'Sex offenders' },
+    names.length > 0 && { id: 'names', label: 'People search' },
+  ].filter(Boolean);
 
   return (
     <div style={hf.page}>
@@ -131,9 +152,71 @@ export default async function ZipProfile({ params }) {
           </Section>
         )}
 
+        {schools && (
+          <Section id="schools" eyebrow="Education" title={`Schools in ${geo.place}`} source="Public schools serving the city. Source: NCES Common Core of Data (via Urban Institute).">
+            <p style={{ margin: '0 0 12px', fontSize: 15, color: hfColor.body }}>
+              {geo.place} has <strong>{num(schools.count)}</strong> public school{schools.count === 1 ? '' : 's'}
+              {(() => { const parts = ['Elementary', 'Middle', 'High'].map((k) => schools.byLevel[k] ? `${num(schools.byLevel[k])} ${k.toLowerCase()}` : null).filter(Boolean); return parts.length ? <> — {parts.join(', ')}</> : null; })()}.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {schools.sample.slice(0, 10).map((s, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 14, color: hfColor.body }}>
+                  <span style={{ fontWeight: 600 }}>{s.name}</span>
+                  {s.level && <span style={{ ...hf.chip, fontSize: 11, padding: '1px 8px' }}>{s.level}</span>}
+                  {s.lo && s.hi && <span style={{ color: hfColor.muted }}>Grades {s.lo}–{s.hi}</span>}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {crime && (crime.violent || crime.property) && (
+          <Section id="crime" eyebrow="Safety" title={`Crime in ${geo.place}`}
+            source={`Rate per 100,000 residents/year, ${crime.agency}, ${crime.year}. Source: FBI UCR/NIBRS (Crime Data Explorer).`}>
+            {[crime.violent, crime.property].filter(Boolean).map((row) => {
+              const max = Math.max(row.place || 0, row.state || 0, row.us || 0, 1);
+              const above = row.us != null && row.place != null && row.place > row.us;
+              const placeColor = above ? '#b23a48' : '#2e7d52';
+              return (
+                <div key={row.kind} style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: hfColor.ink, textTransform: 'capitalize', marginBottom: 6 }}>{row.kind} crime</div>
+                  <Bar label={geo.place} pct={(row.place / max) * 100} color={placeColor} right={`${num(row.place)}`} />
+                  {row.state != null && <Bar label={stName} pct={(row.state / max) * 100} color={hfColor.muted} right={`${num(row.state)}`} />}
+                  {row.us != null && <Bar label="United States" pct={(row.us / max) * 100} color={hfColor.faint} right={`${num(row.us)}`} />}
+                </div>
+              );
+            })}
+          </Section>
+        )}
+
+        {inmateNames.length > 0 && fema && (
+          <Section id="incarceration" eyebrow="Public records" title={`Incarceration records — ${fema.name} County`}
+            source="Names with the most public booking/incarceration records in the county. Source: state & county correctional rosters (first-party).">
+            <div style={hf.linkGrid}>
+              {inmateNames.slice(0, 24).map((n) => (
+                <a key={n.slug} href={`/people/${stLc}/county/${fema.slug}/${n.slug}`} style={{ ...hf.link, fontSize: 14 }}>
+                  {n.name}{n.count ? <span style={{ color: hfColor.muted }}> ({num(n.count)})</span> : null}
+                </a>
+              ))}
+            </div>
+          </Section>
+        )}
+
         <div id="offenders" style={hf.card}>
           <SexOffenderSection records={offenders} heading={`Registered sex offenders in ZIP ${zip} (${offenders.length})`} blurb={`Public sex-offender registry records for ZIP code ${zip}.`} />
         </div>
+
+        {names.length > 0 && city && (
+          <Section id="names" eyebrow="People search" title={`Popular names in ${geo.place}`} source="Common names in the city — search any by age, address, and relatives.">
+            <div style={hf.linkGrid}>
+              {names.map((n) => (
+                <a key={n.slug} href={cityNamePath(geo.stateAbbr, citySlug, n.slug)} style={{ ...hf.link, fontSize: 14 }}>
+                  {n.name}{n.estInCity ? <span style={{ color: hfColor.muted }}> ({num(n.estInCity)})</span> : null}
+                </a>
+              ))}
+            </div>
+          </Section>
+        )}
 
         <a href={`${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=homefacts${stLc ? `&state=${geo.stateAbbr}` : ''}`} style={hf.secondaryCta}>Look up a person in ZIP {zip} →</a>
         <FcraFooter />
