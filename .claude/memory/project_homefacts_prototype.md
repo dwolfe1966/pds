@@ -31,7 +31,15 @@ metadata:
 **Environment — LIVE 2026-07-29 (8th module, commit 6af5daf).** `scripts/fetch-epa-tri.mjs`: EPA **Toxics Release Inventory** via **Envirofacts efservice** (`data.epa.gov/efservice/TRI_FACILITY/STATE_ABBR/=/XX/rows/a:b/JSON`, KEYLESS, browser UA; fields LOWERCASE; filter format is `/COL/=/VAL/`, JSON suffix LAST). TRI = the meaningful hazard signal (Austin 89) vs all-registered FRS (8,131). Per-state sweep bucketed into city slugs → `data/city-epa.json` (count + sample names w/ county). ECHO REST was a dead end (ignores city param → counts all 344k; two-step QID API). ⚠️ **coverage still filling** — committed at 283 metros, sweep resumed to top up; **top up `data/city-epa.json` with a final commit when done**. Modules now **8 live / 1 soon**.
 
 **Last module — Crime (FBI CDE):** needs a free **api.data.gov key** + agency/ORI→city mapping (hardest of the 9). Deferred.
-**4-grain data (real ZIP+county ACS):** blocked on **CENSUS_API_KEY** (owner getting it from api.census.gov/data/key_signup.html) → then build /homefacts/zip/[zip] + county pages via fetch-at-generation.
+**4-GRAIN MODEL — city + county + ZIP LIVE 2026-07-29 (commits 11e56e9 county, 6be303c zip).** Owner delivered the CENSUS_API_KEY (in seo/docs/credentials.rtf — gitignored; installed to seo/.env.local, also gitignored; NEVER commit either).
+- **County** `/homefacts/[state]/county/[county]`: all-US via `data/counties.json` (3,232 counties from FEMA NRI; `scripts/fetch-nri-counties.mjs`). Live w/o key: FEMA disasters + sex offenders (Neon by county). ACS county via `getCountyAcs(fips)` fetch-at-gen.
+- **ZIP** `/homefacts/zip/[zip]`: REAL ZCTA demographics+property via `getZctaAcs(zip)` (fetch-at-gen) + county FEMA (zip→latlng Zippopotam→county FCC→counties.json) + sex offenders by zip (added optional `zip` filter to `querySexOffenders`). Verified 78701 = $653,600 median home.
+- **Address** = search input only (resolver → city profile); bare ZIP in resolver → `/homefacts/zip/{zip}`.
+- City→county and zip→city/county cross-links wired.
+- `lib/homefacts.js`: getCounties/countyFromSlug/countyForName/getCountyByFips, shared `fetchAcs`+`shapeAcsRow`, getZctaAcs/getCountyAcs (ACS_VARS = pop/age/HHincome/percap/homeval/rent/ownership).
+- ⚠️ **PROD ACTION NEEDED:** ACS is fetch-at-generation reading `process.env.CENSUS_API_KEY` — **add CENSUS_API_KEY to the Vercel env** or ZIP/county ACS sections stay empty in prod (pages still render disasters+registry). Local works via .env.local.
+
+**Remaining:** Crime module (FBI CDE, needs api.data.gov key + ORI mapping). EPA coverage top-up (committed at 283 metros; sweep re-run pending). Better page IA (owner deferred). Optional: pre-cache ZCTA/county ACS to drop the runtime dependency.
 
 **Data-sweep gotchas (reusable):** (1) many gov APIs 403 node's default fetch UA — send a browser UA. (2) write the cache INCREMENTALLY (per-batch/per-state) — a single end-of-run write loses everything if the process is reaped. (3) background `nohup` sweeps can fire a premature "completed" notification while STILL running (`pgrep -f <script>` to check) — the DONE log line is the real signal.
 
