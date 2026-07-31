@@ -36,6 +36,7 @@ import { querySexOffenders } from '../../../../lib/sexOffenderDb.mjs';
 import { SexOffenderSection } from '../../../../lib/sex-offender-section';
 import FromBanner from './FromBanner';
 import WhoLivesHere from '../../WhoLivesHere';
+import AddressMap from '../../AddressMap';
 
 export const revalidate = 5184000; // 60d ISR
 export function generateStaticParams() { return []; }
@@ -130,6 +131,7 @@ export default async function AreaProfile({ params }) {
         <HfBreadcrumbs crumbs={crumbs} />
         <FromBanner city={c.city} stateCode={c.stateCode} />
         <WhoLivesHere />
+        <AddressMap />
 
         <section style={{ ...hf.card, marginBottom: 8, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${hfColor.accentSoft} 0%, ${hfColor.surface} 62%)` }}>
           <TopoMotif color={hfColor.accent} opacity={0.06} />
