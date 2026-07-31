@@ -3,7 +3,7 @@
 // data: a count and per-resident masked initials + age band. NEVER returns full names / PII — the real reveal
 // happens in the gated people-search funnel (FCRA permission). Opted-out records are dropped entirely. Runs
 // server-side, user-initiated (an address search), budget-guarded — never on a crawl.
-import { tryConsumeEnformion } from '../../../../lib/enformionBudget';
+import { tryConsumeEnformionLane } from '../../../../lib/enformionBudget';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,8 +31,10 @@ export async function GET(request) {
   const APN = process.env.ENFORMION_AP_NAME, APP = process.env.ENFORMION_AP_PASSWORD;
   if (!APN || !APP) return Response.json({ count: 0, residents: [], unconfigured: true });
 
-  // Budget guard — cap daily spend; degrade to no-teaser rather than blowing the Enformion budget.
-  if (!(await tryConsumeEnformion())) return Response.json({ count: 0, residents: [], budget: true });
+  // Budget guard — its OWN daily lane, isolated from the shared divorce/marriage cap so a burst of those can
+  // never starve this teaser. Default 300/day if ENFORMION_WLH_DAILY_CAP is unset (demo-proof + cost-safe).
+  const wlhCap = parseInt(process.env.ENFORMION_WLH_DAILY_CAP || '300', 10);
+  if (!(await tryConsumeEnformionLane('wlh', wlhCap))) return Response.json({ count: 0, residents: [], budget: true });
 
   const base = (process.env.ENFORMION_API_URL || 'https://devapi.endato.com').replace(/\/$/, '');
   let data;

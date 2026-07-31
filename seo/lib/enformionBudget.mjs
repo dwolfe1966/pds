@@ -50,3 +50,34 @@ export async function enformionUsageToday(env = process.env) {
     return rows && rows[0] ? rows[0].count : 0;
   } catch { return null; }
 }
+
+// ── Per-channel lanes ────────────────────────────────────────────────────────
+// A SEPARATE daily counter per named channel (its own table row), so one feature's usage can't starve
+// another's. Used to isolate 'who lives here' (address→resident teaser) from the shared divorce/marriage cap —
+// a burst of one can never blank the demo of the other. Own counter, own cap. Fail-OPEN (cost backstop, not a
+// hard gate), same as the shared cap.
+let _laneEnsured = false;
+async function ensureLaneTable() {
+  if (_laneEnsured || !sql) return;
+  try {
+    await sql`CREATE TABLE IF NOT EXISTS enformion_usage_lane (day date, channel text, count int NOT NULL DEFAULT 0, PRIMARY KEY (day, channel))`;
+    _laneEnsured = true;
+  } catch { /* leave unensured — tryConsume fails open */ }
+}
+
+/**
+ * Atomically consume one call for a named lane today. `cap` ≤ 0 / non-finite → no cap (allow all).
+ * @returns {Promise<boolean>} true if allowed (under cap and incremented), false if the lane's cap is reached.
+ */
+export async function tryConsumeEnformionLane(channel, cap) {
+  if (!sql || !Number.isFinite(cap) || cap <= 0) return true;
+  await ensureLaneTable();
+  try {
+    const rows = await sql`
+      INSERT INTO enformion_usage_lane (day, channel, count) VALUES (CURRENT_DATE, ${channel}, 1)
+      ON CONFLICT (day, channel) DO UPDATE SET count = enformion_usage_lane.count + 1
+      WHERE enformion_usage_lane.count < ${cap}
+      RETURNING count`;
+    return rows.length > 0;
+  } catch { return true; } // fail-open
+}
