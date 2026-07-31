@@ -4,7 +4,7 @@
 import { notFound } from 'next/navigation';
 import { getStateSlice } from '../../../../../lib/directory';
 import { countyFromSlug, hfCountyPath, hfStatePath, hfCityPath, getCountyAcs, demographicStats, propertyStats, femaRatingColor, citiesInCounty } from '../../../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter } from '../../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter, PersonSearchCTA } from '../../../../../lib/hf';
 import { HfIcon } from '../../../../../lib/HfIcon';
 import { crumbsJsonLd } from '../../../../../lib/schema';
 import { FcraFooter, JsonLd } from '../../../../../lib/ui';
@@ -88,6 +88,9 @@ export default async function CountyProfile({ params }) {
         </section>
 
         <SectionNav items={nav} />
+
+        <PersonSearchCTA area={`${c.name} County`} stateCode={st.code}
+          sub={`Search ${c.name} County residents by name — addresses, phone numbers, relatives, criminal & public records.`} />
 
         {demo.length > 0 && (
           <Section id="demographics" eyebrow="Who lives here" title="Demographics" source="County-level. Source: U.S. Census Bureau, American Community Survey (5-year).">

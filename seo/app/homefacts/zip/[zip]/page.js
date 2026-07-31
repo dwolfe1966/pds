@@ -7,7 +7,7 @@ import { stateName } from '../../../../lib/states';
 import { getCitySlice, getCityTopNames } from '../../../../lib/directory';
 import { cityNamePath } from '../../../../lib/ids';
 import { rosterTopNamesByCounty } from '../../../../lib/incarceration.mjs';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter } from '../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter, PersonSearchCTA } from '../../../../lib/hf';
 import { HfIcon } from '../../../../lib/HfIcon';
 import { AreaMap } from '../../../../lib/AreaMap';
 import OffenderMap from '../../OffenderMap';
@@ -153,6 +153,9 @@ export default async function ZipProfile({ params }) {
         {geo && <Earthquakes center={{ lat: geo.lat, lng: geo.lng }} />}
 
         <SectionNav items={nav} />
+
+        {geo && <PersonSearchCTA area={`ZIP ${zip}`} stateCode={geo.stateAbbr}
+          sub={`Search residents of ${geo.place || `ZIP ${zip}`} by name — addresses, phone numbers, relatives, criminal & public records.`} />}
 
         {geo && (
           <Section id="map" eyebrow="Location" title={`Map of ZIP ${zip}`}>

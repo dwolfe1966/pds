@@ -206,4 +206,28 @@ export function Bar({ label, pct, color, right }) {
   );
 }
 
+// The conversion moment — the place→person bridge. A prominent, contextual card that turns neighborhood
+// traffic into a people-search. `area` = "Austin, TX" / "Travis County" / "ZIP 78701". This is HomeFacts' job:
+// free neighborhood data → owned people-search funnel.
+export function PersonSearchCTA({ area, stateCode, sub }) {
+  const href = `${MAIN}/name/landing/v2?utm_source=idlookup.me&utm_medium=referral&utm_campaign=homefacts${stateCode ? `&state=${stateCode}` : ''}`;
+  return (
+    <a href={href} style={{ display: 'block', textDecoration: 'none', marginBottom: 16 }}>
+      <div style={{ position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${C.accent} 0%, ${C.accentDark} 100%)`, color: '#fff', borderRadius: 14, padding: 'clamp(18px,2.6vw,26px)', boxShadow: '0 1px 2px rgba(15,34,51,.06), 0 10px 30px rgba(18,80,126,.25)' }}>
+        <TopoMotif color="#fff" opacity={0.1} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+          <span style={{ flex: 'none', width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,.15)', border: '1px solid rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <HfIcon name="names" size={26} color="#fff" />
+          </span>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 'clamp(18px,2.2vw,22px)', fontWeight: 820, letterSpacing: '-.02em' }}>Look up anyone in {area}</div>
+            <div style={{ fontSize: 14, opacity: 0.92, marginTop: 3, lineHeight: 1.5 }}>{sub || 'Search by name for addresses, phone numbers, relatives, and public records.'}</div>
+          </div>
+          <span style={{ flex: 'none', background: '#fff', color: C.accentDark, fontWeight: 800, fontSize: 15, padding: '12px 22px', borderRadius: 10, whiteSpace: 'nowrap' }}>Search people →</span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
 export const hfSecondaryLink = `${MAIN}`;

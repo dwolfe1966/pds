@@ -131,7 +131,7 @@ export default function HomefactsLanding() {
         <section style={hf.card}>
           <p style={hf.eyebrow}>What&apos;s in a report</p>
           <h2 style={hf.h2}>Nine modules for every area</h2>
-          <p style={{ margin: '10px 0 16px', color: hfColor.muted, fontSize: 14 }}>Built on public-domain and first-party data — each sourced, never estimated.</p>
+          <p style={{ margin: '10px 0 16px', color: hfColor.muted, fontSize: 14 }}>Built on public-domain and first-party data — each sourced, never estimated. <a href="/homefacts/about" style={{ ...hf.link, fontSize: 14 }}>See our data &amp; methodology →</a></p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 12 }}>
             {HF_MODULES.map((m) => (
               <div key={m.id} style={{ position: 'relative', background: hfColor.surface, border: `1px solid ${hfColor.line}`, borderRadius: 12, padding: '15px 16px' }}>

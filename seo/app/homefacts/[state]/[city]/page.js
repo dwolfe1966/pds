@@ -13,7 +13,7 @@ import {
   propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
   getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime, cityFaqs,
 } from '../../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter } from '../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter, PersonSearchCTA } from '../../../../lib/hf';
 import { HfIcon } from '../../../../lib/HfIcon';
 import { StateMap } from '../../../../lib/statemap';
 import { AreaMap } from '../../../../lib/AreaMap';
@@ -163,6 +163,10 @@ export default async function AreaProfile({ params }) {
             <p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, color: hfColor.body }}>{prose}</p>
           </Section>
         )}
+
+        {/* Conversion moment — the place→person bridge */}
+        <PersonSearchCTA area={`${c.city}, ${c.stateCode}`} stateCode={c.stateCode}
+          sub={`Search ${c.city} residents by name — addresses, phone numbers, relatives, criminal & public records.`} />
 
         {/* 2 · Demographics */}
         {demo.length > 0 && (
