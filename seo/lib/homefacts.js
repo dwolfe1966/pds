@@ -14,11 +14,28 @@ import STATE_SLICE from '../data/state-slice.json';
 import COUNTY_ACS from '../data/county-acs.json';
 import CITY_CRIME from '../data/city-crime.json';
 import CITY_SCHOOLS from '../data/city-schools.json';
+import CITY_SCHOOL_RATINGS from '../data/city-school-ratings.json';
 import CITY_EPA from '../data/city-epa.json';
 
 // Public schools for a city — built by scripts/fetch-schools.mjs (NCES CCD via Urban Institute).
 export function getCitySchools(stateCode, citySlug) {
   return CITY_SCHOOLS[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+// City school proficiency rating (grade-8 % at/above proficient, reading & math) — scripts/fetch-school-ratings.mjs.
+export function getCitySchoolRating(stateCode, citySlug) {
+  return CITY_SCHOOL_RATINGS[`${String(stateCode).toUpperCase()}/${citySlug}`] || null;
+}
+// Overall proficiency band (avg of reading + math) → { label, color, score }.
+export function schoolRatingBand(r) {
+  if (!r) return null;
+  const parts = [r.readPct, r.mathPct].filter((n) => n != null);
+  if (!parts.length) return null;
+  const score = Math.round(parts.reduce((a, b) => a + b, 0) / parts.length);
+  const band = score >= 70 ? { label: 'Above average', color: '#2e7d52' }
+    : score >= 55 ? { label: 'Average', color: '#6ba368' }
+      : score >= 40 ? { label: 'Mixed', color: '#c69a2e' }
+        : { label: 'Below average', color: '#d07d2e' };
+  return { ...band, score };
 }
 // EPA Toxics Release Inventory facilities for a city — built by scripts/fetch-epa-tri.mjs.
 export function getCityEpa(stateCode, citySlug) {

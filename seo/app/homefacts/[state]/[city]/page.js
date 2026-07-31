@@ -11,7 +11,7 @@ import {
 } from '../../../../lib/facts';
 import {
   propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
-  getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime, cityFaqs,
+  getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime, cityFaqs, getCitySchoolRating, schoolRatingBand,
 } from '../../../../lib/homefacts';
 import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter, PersonSearchCTA, Sparkline, trendDelta } from '../../../../lib/hf';
 import { HfIcon } from '../../../../lib/HfIcon';
@@ -88,6 +88,7 @@ export default async function AreaProfile({ params }) {
   const stateCities = getStateCities(state);
   const fema = getCityFema(c.stateCode, city);
   const schools = getCitySchools(c.stateCode, city);
+  const schoolRating = getCitySchoolRating(c.stateCode, city);
   const epa = getCityEpa(c.stateCode, city);
   const county = countyForName(state, (fema && fema.county) || (wiki && wiki.county));
   // Popular names — the place→person bridge (like /people). Links into the /people directory profiles, which
@@ -198,11 +199,21 @@ export default async function AreaProfile({ params }) {
 
         {/* 4 · Schools */}
         {schools ? (
-          <Section id="schools" eyebrow="Education" title="Schools" source="Public schools. Source: U.S. Dept. of Education, NCES Common Core of Data (via Urban Institute).">
+          <Section id="schools" eyebrow="Education" title="Schools"
+            right={(() => { const b = schoolRatingBand(schoolRating); return b ? <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', background: b.color, borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap' }}>Schools: {b.label}</span> : null; })()}
+            source="Public schools + grade-8 proficiency. Source: U.S. Dept. of Education (NCES directory + EDFacts assessments), via Urban Institute.">
             <p style={{ margin: '0 0 14px', fontSize: 15, color: hfColor.body, lineHeight: 1.6 }}>
               {c.city} has <strong>{num(schools.count)}</strong> public school{schools.count === 1 ? '' : 's'}
               {(() => { const parts = ['Elementary', 'Middle', 'High'].map((k) => schools.byLevel[k] ? `${num(schools.byLevel[k])} ${k.toLowerCase()}` : null).filter(Boolean); return parts.length ? <> — {parts.join(', ')}</> : null; })()}.
             </p>
+            {schoolRating && (schoolRating.readPct != null || schoolRating.mathPct != null) && (
+              <div style={{ marginBottom: 16, padding: '14px 16px', background: hfColor.soft, border: `1px solid ${hfColor.line2}`, borderRadius: 10 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: hfColor.body, marginBottom: 8 }}>Student proficiency <span style={{ color: hfColor.muted, fontWeight: 400 }}>· grade 8, {schoolRating.schoolsRated} school{schoolRating.schoolsRated === 1 ? '' : 's'}</span></div>
+                {schoolRating.readPct != null && <Bar label="Reading" pct={schoolRating.readPct} color={schoolRatingBand(schoolRating).color} right={`${schoolRating.readPct}%`} />}
+                {schoolRating.mathPct != null && <Bar label="Math" pct={schoolRating.mathPct} color={schoolRatingBand(schoolRating).color} right={`${schoolRating.mathPct}%`} />}
+                <p style={{ margin: '8px 0 0', fontSize: 11.5, color: hfColor.faint }}>% of students at or above proficient on state assessments.</p>
+              </div>
+            )}
             {schools.sample.some((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng)) && (
               <div style={{ marginBottom: 14 }}>
                 <OffenderMap
