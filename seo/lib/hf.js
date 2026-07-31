@@ -193,6 +193,34 @@ export function StatGrid({ stats }) {
   );
 }
 
+// Sparkline for a small time series — inline SVG, no deps. `points` = [{year, rate}] (ascending). Draws the
+// line + an emphasized endpoint dot; `color` tints both. Used for the multi-year crime trend.
+export function Sparkline({ points, color = C.accent, width = 132, height = 34 }) {
+  if (!points || points.length < 2) return null;
+  const rates = points.map((p) => p.rate);
+  const min = Math.min(...rates), max = Math.max(...rates), range = (max - min) || 1;
+  const x = (i) => (i / (points.length - 1)) * (width - 6) + 3;
+  const y = (r) => (height - 4) - ((r - min) / range) * (height - 10);
+  const d = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(p.rate).toFixed(1)}`).join(' ');
+  const lastX = x(points.length - 1), lastY = y(points[points.length - 1].rate);
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" style={{ display: 'block', flex: 'none' }}>
+      <path d={`${d} L ${lastX.toFixed(1)} ${height} L ${x(0).toFixed(1)} ${height} Z`} fill={color} opacity="0.08" />
+      <path d={d} fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={lastX} cy={lastY} r="2.6" fill={color} />
+    </svg>
+  );
+}
+
+// Trend delta between the first and last points → { pct, dir }.
+export function trendDelta(points) {
+  if (!points || points.length < 2) return null;
+  const first = points[0].rate, last = points[points.length - 1].rate;
+  if (!first) return null;
+  const pct = Math.round(((last - first) / first) * 100);
+  return { pct: Math.abs(pct), dir: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat', fromYear: points[0].year, toYear: points[points.length - 1].year };
+}
+
 // Horizontal severity bar (label · bar · rating), colored by `color`.
 export function Bar({ label, pct, color, right }) {
   return (

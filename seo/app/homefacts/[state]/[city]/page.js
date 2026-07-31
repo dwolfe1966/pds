@@ -13,7 +13,7 @@ import {
   propertyStats, demographicStats, HF_MODULES, hfCityPath, hfStatePath, hfCountyPath,
   getCityFema, femaRatingColor, getCitySchools, getCityEpa, countyForName, getCityCrime, cityFaqs,
 } from '../../../../lib/homefacts';
-import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter, PersonSearchCTA } from '../../../../lib/hf';
+import { hf, hfColor, HfHeader, HfBreadcrumbs, SummaryBand, SectionNav, Section, StatGrid, Bar, TopoMotif, RiskMeter, PersonSearchCTA, Sparkline, trendDelta } from '../../../../lib/hf';
 import { HfIcon } from '../../../../lib/HfIcon';
 import { StateMap } from '../../../../lib/statemap';
 import { AreaMap } from '../../../../lib/AreaMap';
@@ -239,8 +239,9 @@ export default async function AreaProfile({ params }) {
               const above = row.us != null && row.place != null && row.place > row.us;
               const placeColor = above ? '#b23a48' : '#2e7d52';
               const delta = row.us ? Math.round(((row.place - row.us) / row.us) * 100) : null;
+              const td = trendDelta(row.trend);
               return (
-                <div key={row.kind} style={{ marginBottom: 16 }}>
+                <div key={row.kind} style={{ marginBottom: 18 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: hfColor.ink, textTransform: 'capitalize' }}>{row.kind} crime</span>
                     {delta != null && <span style={{ fontSize: 12.5, fontWeight: 700, color: placeColor }}>{Math.abs(delta)}% {delta >= 0 ? 'above' : 'below'} national</span>}
@@ -248,6 +249,17 @@ export default async function AreaProfile({ params }) {
                   <Bar label={c.city} pct={(row.place / max) * 100} color={placeColor} right={`${num(row.place)}`} />
                   {row.state != null && <Bar label={c.stateName} pct={(row.state / max) * 100} color={hfColor.muted} right={`${num(row.state)}`} />}
                   {row.us != null && <Bar label="United States" pct={(row.us / max) * 100} color={hfColor.faint} right={`${num(row.us)}`} />}
+                  {row.trend && row.trend.length >= 2 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${hfColor.line2}` }}>
+                      <Sparkline points={row.trend} color={placeColor} />
+                      <div style={{ fontSize: 12.5, color: hfColor.muted, lineHeight: 1.4 }}>
+                        {td ? (
+                          <><strong style={{ color: td.dir === 'up' ? '#b23a48' : td.dir === 'down' ? '#2e7d52' : hfColor.body }}>{td.dir === 'up' ? '↑' : td.dir === 'down' ? '↓' : '→'} {td.pct}%</strong> {td.dir === 'flat' ? 'unchanged' : td.dir === 'up' ? 'higher' : 'lower'} than {td.fromYear}</>
+                        ) : 'Trend'}
+                        <div style={{ fontSize: 11, color: hfColor.faint }}>{row.trend[0].year}–{row.trend[row.trend.length - 1].year}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

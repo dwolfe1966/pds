@@ -30,8 +30,19 @@ function annualize(series) {
   if (!vals.length) return null;
   return { year: yr, rate: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 12) };
 }
+// 5-year yearly trend (per-100k/yr) from a monthly-rate series → [{year, rate}] sorted ascending.
+function yearlyTrend(series) {
+  if (!series) return [];
+  const byYear = {};
+  for (const [mk, v] of Object.entries(series)) {
+    if (v == null) continue;
+    const y = mk.split('-')[1];
+    (byYear[y] ||= []).push(v);
+  }
+  return Object.entries(byYear).map(([year, vs]) => ({ year, rate: Math.round((vs.reduce((a, b) => a + b, 0) / vs.length) * 12) })).sort((a, b) => a.year.localeCompare(b.year));
+}
 async function series(ori, offense) {
-  const d = await getJson(`https://api.usa.gov/crime/fbi/sapi/summarized/agency/${ori}/${offense}?from=01-2022&to=12-2023&api_key=${KEY}`);
+  const d = await getJson(`https://api.usa.gov/crime/fbi/sapi/summarized/agency/${ori}/${offense}?from=01-2019&to=12-2023&api_key=${KEY}`);
   return (d && d.offenses && d.offenses.rates) || null;
 }
 function pick(rates, agency, kind) {
@@ -40,7 +51,7 @@ function pick(rates, agency, kind) {
   const usKey = 'United States Offenses';
   const stateKey = Object.keys(rates).find((k) => k.endsWith('Offenses') && k !== usKey && k !== agencyKey);
   const a = agencyKey && annualize(rates[agencyKey]);
-  return a ? { kind, year: a.year, place: a.rate, state: (stateKey && annualize(rates[stateKey])?.rate) ?? null, us: annualize(rates[usKey])?.rate ?? null } : null;
+  return a ? { kind, year: a.year, place: a.rate, state: (stateKey && annualize(rates[stateKey])?.rate) ?? null, us: annualize(rates[usKey])?.rate ?? null, trend: yearlyTrend(rates[agencyKey]) } : null;
 }
 
 async function main() {
@@ -57,7 +68,8 @@ async function main() {
   const out = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
   let done = 0;
   for (const c of work) {
-    if (out[c.key]) { done++; continue; } // resume-friendly
+    // resume-friendly — but re-fetch entries that predate the yearly trend so a re-run backfills it.
+    if (out[c.key] && out[c.key].violent && Array.isArray(out[c.key].violent.trend)) { done++; continue; }
     const [vR, pR] = await Promise.all([series(c.ori, 'violent-crime'), series(c.ori, 'property-crime')]);
     const violent = pick(vR, c.agency, 'violent');
     const property = pick(pR, c.agency, 'property');
