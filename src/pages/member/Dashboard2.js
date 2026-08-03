@@ -226,7 +226,9 @@ function InlineNameSearch({ navigate }) {
     if (!/^[A-Z]{2}$/.test(st)) { setError('Enter a 2-letter state (e.g., CA).'); return; }
     track('dashboard_inline_search_submit', {});
     const qs = new URLSearchParams({ firstName: fn, lastName: ln, state: st });
-    navigate(`/people-search?${qs.toString()}`);
+    // Go straight to results (executes the search) rather than /people-search (which only pre-fills the
+    // form). Same destination + params as the main search form's handleNameSubmit → /people-results.
+    navigate(`/people-results?${qs.toString()}`);
   };
 
   return (

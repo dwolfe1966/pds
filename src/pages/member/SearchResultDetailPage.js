@@ -415,9 +415,11 @@ const SearchResultDetailPage = () => {
           </div>
         </div>
         <div style={styles.headerActions}>
-          {/* Profile (modular) vs Full details (exhaustive grid) — profile is the default presentation. */}
+          {/* Overview (curated ProfileView) vs Full details (exhaustive grid) — overview is the default. Label
+              is "Overview" (not "Profile") to avoid colliding with the member's own "My Profile". Internal key
+              stays 'profile' so render logic is unchanged. */}
           <div style={{ display: 'inline-flex', border: '1px solid #d1d5db', borderRadius: 8, overflow: 'hidden' }}>
-            {[{ k: 'profile', label: 'Profile' }, { k: 'details', label: 'Full details' }].map((t) => (
+            {[{ k: 'profile', label: 'Overview' }, { k: 'details', label: 'Full details' }].map((t) => (
               <button key={t.k} type="button" onClick={() => setReportView(t.k)}
                 style={{ border: 'none', background: reportView === t.k ? '#0d5d2f' : '#fff', color: reportView === t.k ? '#fff' : '#374151', fontSize: 13, fontWeight: 700, padding: '8px 14px', cursor: 'pointer' }}>
                 {t.label}
@@ -489,6 +491,13 @@ const SearchResultDetailPage = () => {
           (via mergedData.criminalRecords) — no separate top block. */}
       {/* Local boundary: a render throw anywhere in the report body (bad BC shape, new field type) degrades to
           a small in-place notice instead of blanking the entire app via the top-level ErrorBoundary. */}
+      {/* Helper line: disambiguate the Overview vs Full details views for users (and testers) — explains the
+          current view and points to the other. */}
+      <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 14px' }}>
+        {reportView === 'profile'
+          ? 'Overview — the key facts at a glance. Switch to Full details for every record we found.'
+          : 'Full details — every record we found for this person. Switch to Overview for the key facts.'}
+      </p>
       <ErrorBoundary>
         {reportView === 'profile' ? (
           <MyProfileModular
