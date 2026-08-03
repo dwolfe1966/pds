@@ -71,7 +71,7 @@ const LandingPage = () => {
           }}>
             <span>🔍 2,400+ searches in the last hour</span>
             <span>👥 Trusted by 3M+ members</span>
-            <span>🔒 100% confidential</span>
+            <span>🔒 Secure &amp; encrypted</span>
           </div>
           {/* Trust signal */}
           <p style={{
@@ -81,7 +81,7 @@ const LandingPage = () => {
             letterSpacing: '0.05em',
             marginTop: '1rem'
           }}>
-            Your search is confidential and secure
+            Secure &amp; encrypted connection
           </p>
         </div>
       </section>

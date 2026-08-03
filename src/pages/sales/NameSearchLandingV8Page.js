@@ -112,7 +112,7 @@ const NameSearchLandingV8Page = () => {
               <input style={{ ...input, marginBottom: '1rem' }} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" required />
               {nameError && <p style={{ color: '#fca5a5', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{nameError}</p>}
               <button type="submit" style={btnPrimary}>Search Records →</button>
-              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: P.mut, margin: '0.75rem 0 0' }}>🔒 256-bit SSL · Confidential · Instant</p>
+              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: P.mut, margin: '0.75rem 0 0' }}>🔒 256-bit SSL · Secure · Instant</p>
             </form>
           )}
 

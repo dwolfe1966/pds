@@ -87,7 +87,7 @@ const NameSearchLandingV9Page = () => {
 
         {/* Trust band FIRST */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem 1rem', margin: '1rem 0', fontSize: '0.78rem', color: P.mut }}>
-          <span>🔒 256-bit SSL</span><span>📋 Billions of records</span><span>🛡️ Confidential</span><span>🇺🇸 All 50 states</span>
+          <span>🔒 256-bit SSL</span><span>📋 Billions of records</span><span>🛡️ Secure</span><span>🇺🇸 All 50 states</span>
         </div>
 
         <h1 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1.7rem', fontWeight: 800, color: P.ink, lineHeight: 1.15 }}>Search public records.</h1>

@@ -101,7 +101,7 @@ export default function PhoneSearchLandingV1Page() {
         </div>
 
         <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 16, lineHeight: 1.5 }}>
-          🔒 Private search — the number's owner is never notified. All data from publicly available sources.
+          🔒 Secure &amp; encrypted. All data from publicly available sources.
         </p>
       </div>
     </main>

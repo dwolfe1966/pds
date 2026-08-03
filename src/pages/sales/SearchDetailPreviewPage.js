@@ -495,13 +495,13 @@ const SearchDetailPreviewPage = () => {
         </ul>
       </section>
 
-      {/* ── Confidentiality reassurance — placed immediately above the form so
-           it's the last thing the visitor reads before committing. ── */}
+      {/* ── Data-security reassurance above the form. Data-security only — do NOT claim the search is
+           confidential / the person isn't notified (contradicts WSFY; feedback_no_private_search_claim). ── */}
       <div className={styles.confidentialityBanner}>
         <span className={styles.confidentialityIcon} aria-hidden="true">🔒</span>
         <span>
-          <span className={styles.confidentialityHeadline}>Your search is 100% confidential.</span>
-          We never notify the person you searched, and we never share your activity.
+          <span className={styles.confidentialityHeadline}>Secure &amp; encrypted.</span>
+          We use encrypted connections and never sell your personal information.
         </span>
       </div>
 

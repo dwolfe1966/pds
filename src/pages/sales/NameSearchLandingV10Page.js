@@ -125,7 +125,7 @@ const NameSearchLandingV10Page = () => {
               <input style={{ ...input, marginBottom: '1.1rem' }} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" required />
               {nameError && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{nameError}</p>}
               <button type="submit" style={btn}>Search Now →</button>
-              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: P.mut, margin: '0.75rem 0 0' }}>🔒 Confidential · Secure · Cancel anytime</p>
+              <p style={{ textAlign: 'center', fontSize: '0.72rem', color: P.mut, margin: '0.75rem 0 0' }}>🔒 Secure · Encrypted · Cancel anytime</p>
             </form>
           )}
           {step === 'searching-one' && <Searching title="Searching public records…" P={P} />}

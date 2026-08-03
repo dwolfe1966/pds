@@ -406,7 +406,7 @@ const GeneralSearchPage = () => {
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
-                Your search is confidential and secure
+                Secure &amp; encrypted connection
               </p>
             </form>
           )}
@@ -451,7 +451,7 @@ const GeneralSearchPage = () => {
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
-                Your search is confidential and secure
+                Secure &amp; encrypted connection
               </p>
             </form>
           )}
@@ -506,7 +506,7 @@ const GeneralSearchPage = () => {
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em'
               }}>
-                Your search is confidential and secure
+                Secure &amp; encrypted connection
               </p>
             </form>
           )}

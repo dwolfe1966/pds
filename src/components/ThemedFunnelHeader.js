@@ -24,7 +24,7 @@ const ThemedFunnelHeader = ({ theme }) => {
         <span style={{ opacity: 0.9 }}> · {theme.heroLabel}</span>
       </div>
       <div style={{ fontSize: '0.7rem', opacity: 0.82, marginTop: 3 }}>
-        🔒 Secure &amp; confidential · Jails, prisons &amp; facilities nationwide
+        🔒 Secure &amp; encrypted · Jails, prisons &amp; facilities nationwide
       </div>
     </div>
   );

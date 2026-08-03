@@ -90,7 +90,7 @@ const NameSearchLandingV7Page = () => {
         <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, opacity: 0.85, letterSpacing: '0.04em' }}>🔍 {brand.name.toUpperCase()} PEOPLE SEARCH</p>
         <h1 style={{ margin: '0.5rem 0 0.3rem', fontSize: '1.9rem', fontWeight: 800, lineHeight: 1.1, color: '#ffffff' }}>Find Anyone. Know More.</h1>
         <p style={{ margin: 0, fontSize: '0.95rem', opacity: 0.92, maxWidth: 480, marginInline: 'auto' }}>
-          Confidentially look up yourself, family, an old classmate, or an unknown caller.
+          Look up yourself, family, an old classmate, or an unknown caller.
         </p>
       </div>
 
@@ -121,7 +121,7 @@ const NameSearchLandingV7Page = () => {
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.9rem', fontSize: '0.72rem', color: P.mut }}>
-                <span>🔒 256-bit SSL</span><span>🛡️ Confidential</span><span>⚡ Instant</span>
+                <span>🔒 256-bit SSL</span><span>🛡️ Secure</span><span>⚡ Instant</span>
               </div>
             </form>
           )}

@@ -61,7 +61,7 @@ const COPY = {
     hook: (n) => `Here's everything we found on ${n}`,
     formTitle: (n) => `Get the Full Story on ${n}`,
     emailNote: '— where we send your report, instantly.',
-    pwNote: '— keeps your searches 100% private.',
+    pwNote: '— to secure your account.',
     cta: 'Show Me Everything →',
     ctaLoading: 'Pulling the full report…',
     stickyCta: '🚨 Show Me Everything →',
@@ -387,7 +387,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
 
               {aggressive && (
                 <p style={{ textAlign: 'center', margin: '0.8rem 0 0', fontSize: '0.82rem', fontWeight: 600, color: P.accent }}>
-                  🕵️ 100% confidential — {person.fullName} will never know you searched.
+                  🔒 Secure checkout · cancel anytime.
                 </p>
               )}
 

@@ -105,9 +105,10 @@ const ZeroResultsPanel = ({ searchType = 'name', query = {} }) => {
           ))}
         </ul>
 
-        {/* Trust badge */}
+        {/* Trust badge — data-security only. NEVER claim the search is confidential / the person isn't
+            notified (contradicts the two-sided WSFY model; see feedback_no_private_search_claim). */}
         <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-          🔒 Your search is 100% confidential — we never notify the person you searched
+          🔒 Secure &amp; encrypted — all data from public records
         </div>
       </div>
 
@@ -190,6 +191,17 @@ const ZeroResultsPanel = ({ searchType = 'name', query = {} }) => {
             </form>
           )}
         </div>
+      </div>
+
+      {/* WSFY two-sided seed — pure-upside pivot on a dead-end search: turn "no results" into curiosity
+          about who's searching for THEM. Honest curiosity benefit (no privacy claim); links to the self-check. */}
+      <div style={{ marginTop: '0.25rem', padding: '1rem 1.25rem', background: '#eef6f1', border: '1px solid #cfe6da', borderRadius: '0.75rem', textAlign: 'center' }}>
+        <p style={{ margin: '0 0 0.4rem', fontSize: '0.95rem', fontWeight: 700, color: '#0d5d2f' }}>People search for you, too.</p>
+        <p style={{ margin: '0 0 0.85rem', fontSize: '0.85rem', color: '#3a4a43', lineHeight: 1.5 }}>Find out who&apos;s been searching for you and looking you up.</p>
+        <button type="button" onClick={() => navigate('/my-exposure')}
+          style={{ border: 'none', background: '#0d5d2f', color: '#fff', fontSize: '0.9rem', fontWeight: 700, padding: '0.6rem 1.3rem', borderRadius: '0.5rem', cursor: 'pointer' }}>
+          See who&apos;s searching for you →
+        </button>
       </div>
     </div>
   );

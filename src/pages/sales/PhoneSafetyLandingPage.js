@@ -100,7 +100,7 @@ export default function PhoneSafetyLandingPage() {
         </div>
 
         <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 16, lineHeight: 1.5 }}>
-          🔒 Private — the number&apos;s owner is never notified. Risk signals are descriptive, from line-type data.
+          🔒 Secure &amp; encrypted. Risk signals are descriptive, from line-type data.
         </p>
       </div>
     </main>
