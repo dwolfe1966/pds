@@ -5,6 +5,7 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { track } from '../../services/trackingService';
 import { useBrand } from '../../services/brand';
 import { useFunnelFlow } from '../../services/funnelFlow';
+import { saveDeclaredIdentity } from '../../services/identityProfile';
 
 // Search-Yourself challenger (Flow C, 2026-07-29). Hypothesis: the strongest, most REPEATABLE emotion in this
 // category isn't curiosity about others — it's anxiety about your OWN exposure. A self-search hook converts on a
@@ -62,6 +63,9 @@ export default function MyExposurePage() {
         city: city.trim() || undefined, state: state.trim() || undefined,
       }));
     } catch { /* ignore */ }
+    // Durable first-party identity (owner 2026-08-03: this data IS the user's identity). Survives the session
+    // and populates /my-identity whether or not they pay. Middle name is added later on the results refine.
+    saveDeclaredIdentity({ firstName: firstName.trim(), lastName: lastName.trim(), city: city.trim(), state: state.trim() });
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
     params.set('lastName', lastName.trim());

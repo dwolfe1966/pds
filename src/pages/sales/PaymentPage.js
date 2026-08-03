@@ -144,6 +144,11 @@ const PaymentPage = () => {
   const honestFunnel = funnelVariant === 'honest';
   const proofFunnel = funnelVariant === 'proof';
   const selfFunnel = funnelVariant === 'self';
+  // WSFY/self flow: the person card IS the visitor's own record (they typed the name — keep it visible,
+  // owner 2026-08-03). Self-frame it with an "Is this you?" badge so it doesn't read like someone they searched.
+  const selfBadge = selfFunnel ? (
+    <span style={{ display: 'inline-flex', alignSelf: 'flex-start', marginBottom: 5, fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#0d5d2f', background: '#e7f3ec', border: '1px solid #cfe6d6', padding: '2px 8px', borderRadius: 999 }}>Is this you?</span>
+  ) : null;
 
   const [form, setForm] = useState({
     cardNumber: '',
@@ -832,6 +837,7 @@ const PaymentPage = () => {
           <div className={styles.mobileVcardBody}>
             <PersonAvatar person={selectedPerson} size={48} />
             <div className={styles.personPreviewInfo}>
+              {selfBadge}
               <p className={styles.personPreviewName}>{displayPersonName(selectedPerson)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}</p>
               {(() => {
                 const locs = (Array.isArray(selectedPerson.locations) && selectedPerson.locations.length) ? selectedPerson.locations : [selectedPerson.location].filter(Boolean);
@@ -854,6 +860,7 @@ const PaymentPage = () => {
           <div className={styles.personPreviewLeft}>
             <PersonAvatar person={selectedPerson} size={48} />
             <div className={styles.personPreviewInfo}>
+              {selfBadge}
               <p className={styles.personPreviewName}>
                 {displayPersonName(selectedPerson)}{(selectedPerson.age || selectedPerson.ageRange) ? `, ${selectedPerson.age || selectedPerson.ageRange}` : ''}
               </p>

@@ -65,7 +65,7 @@ export default function SelfIdentifyCard({ forceShow = false, onComplete, prefil
       const parts = String(prefill.name || '').trim().split(/\s+/).filter(Boolean);
       return {
         firstName: prefill.firstName || parts[0] || user?.firstName || '',
-        middleName: parts.length > 2 ? parts.slice(1, -1).join(' ') : '',
+        middleName: prefill.middleName || (parts.length > 2 ? parts.slice(1, -1).join(' ') : ''),
         lastName: prefill.lastName || (parts.length > 1 ? parts[parts.length - 1] : '') || user?.lastName || '',
         city: prefill.city || user?.city || '',
         state: prefill.state || user?.state || '',

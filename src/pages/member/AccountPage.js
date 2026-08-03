@@ -7,6 +7,7 @@ import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
 import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel } from '../../services/memberEnrichment';
+import { getDeclaredIdentity } from '../../services/identityProfile';
 import { syncBreach } from '../../services/identityMonitorService';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
@@ -1524,7 +1525,9 @@ const AccountPage = () => {
                   <li>Take control — hide what you don't want exposed</li>
                 </ul>
               </div>
-              <SelfIdentifyCard forceShow onComplete={(id) => { setIdentity(id || getMappedIdentity()); setEditingIdentity(false); }} />
+              {/* Pre-fill from the user's OWN declared identity (self flow / refine → identityProfile) so what
+                  they already told us about themselves is here waiting, not lost (owner 2026-08-03). */}
+              <SelfIdentifyCard forceShow prefill={getDeclaredIdentity()} onComplete={(id) => { setIdentity(id || getMappedIdentity()); setEditingIdentity(false); }} />
             </>
           )}
 

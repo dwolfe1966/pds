@@ -13,6 +13,7 @@ import { setSearchContext } from '../../services/searchContext';
 import { track } from '../../services/trackingService';
 import { readThinMatch } from '../../services/thinMatch';
 import { getCapturedEmail } from '../../services/emailCapture';
+import { saveDeclaredIdentity } from '../../services/identityProfile';
 import { useCampaign } from '../../context/CampaignContext';
 import styles from './SearchResultsPage.module.css';
 import { useBrand } from '../../services/brand';
@@ -317,13 +318,20 @@ const SalesSearchResultsPage = () => {
     if (refine.city.trim()) p.set('city', refine.city.trim());
     if (refine.age.trim()) p.set('age', refine.age.trim());
     try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
-    // Self flow: a middle name added on the refine sharpens the user's captured identity (WSFY). Only
-    // touches the stash if it already exists (i.e. they came from /my-exposure) — no-op otherwise.
-    if (refine.middleName.trim()) {
-      try {
-        const s = JSON.parse(sessionStorage.getItem('selfIdentity') || 'null');
-        if (s && typeof s === 'object') { s.middleName = refine.middleName.trim(); sessionStorage.setItem('selfIdentity', JSON.stringify(s)); }
-      } catch { /* ignore */ }
+    // Self flow ONLY: the refine edits are the user refining THEIR OWN identity — persist them (middle name,
+    // corrected city/state/age) durably + into the WSFY stash. Gated on variant=self so a normal search (refining
+    // to find SOMEONE ELSE) never captures that person as the user's identity.
+    if (getVariant() === 'self') {
+      if (refine.middleName.trim()) {
+        try {
+          const s = JSON.parse(sessionStorage.getItem('selfIdentity') || 'null');
+          if (s && typeof s === 'object') { s.middleName = refine.middleName.trim(); sessionStorage.setItem('selfIdentity', JSON.stringify(s)); }
+        } catch { /* ignore */ }
+      }
+      saveDeclaredIdentity({
+        firstName: refine.firstName.trim(), middleName: refine.middleName.trim(), lastName: refine.lastName.trim(),
+        city: refine.city.trim(), state: refine.state.trim(), age: refine.age.trim(),
+      });
     }
     track('refine_search', { has_middle: !!refine.middleName.trim(), has_city: !!refine.city.trim(), has_age: !!refine.age.trim() });
     navigate(`/name/search-result?${p.toString()}`);
