@@ -29,8 +29,8 @@ const US_STATES = [
   ['WA', 'Washington'], ['WV', 'West Virginia'], ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
 ];
 
-const BLUE = '#1f4e79';
-const BLUE_SOFT = '#e8f0f8';
+const BLUE = '#0d5d2f';       // IDLookup brand green (was an off-brand navy #1f4e79)
+const BLUE_SOFT = '#e7f3ec';  // green-soft to match
 const AMBER = '#a9781f';
 const AMBER_SOFT = '#f6edda';
 const INK = '#14181d';
@@ -53,6 +53,15 @@ export default function MyExposurePage() {
   const runSearch = () => {
     gtmSetSearchInput({ firstName: firstName.trim(), lastName: lastName.trim(), middleName: '', city: city.trim(), state: state.trim() });
     try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
+    // WSFY/self flow: the data entered here IS the user's OWN identity (owner 2026-08-03: assume self-flow data
+    // is the user's identity). Stash it so email capture links it to their lead for WSFY. (Middle name is asked
+    // PROGRESSIVELY on the results refine, not here.)
+    try {
+      sessionStorage.setItem('selfIdentity', JSON.stringify({
+        firstName: firstName.trim(), lastName: lastName.trim(),
+        city: city.trim() || undefined, state: state.trim() || undefined,
+      }));
+    } catch { /* ignore */ }
     const params = new URLSearchParams();
     params.set('firstName', firstName.trim());
     params.set('lastName', lastName.trim());

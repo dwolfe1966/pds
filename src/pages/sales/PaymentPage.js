@@ -1328,7 +1328,9 @@ const PaymentPage = () => {
                       terms, made prominent right above the CTA — the honest opposite of burying the recurring
                       price in the fine print. A variant-specific lead line frames WHAT the $1 buys, then the
                       identical price sentence for all three (single source of truth, no per-variant drift). */}
-                  {(honestFunnel || proofFunnel || selfFunnel) && (
+                  {/* Green plain-terms box — HONEST people-search flow ONLY (owner 2026-08-03: suppress on all
+                      other flows, incl. proof/self). Proof/self lead lines below stay dead unless honest. */}
+                  {honestFunnel && (
                     <div style={{
                       margin: '0 0 1rem', background: '#e7f3ec', border: '1px solid #bfe0cb',
                       borderRadius: '0.6rem', padding: '0.85rem 1rem', fontSize: '0.86rem', lineHeight: 1.55, color: '#14532d',

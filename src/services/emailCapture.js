@@ -49,13 +49,20 @@ export function captureEmail(email, meta = {}) {
   // self + selfName so the WSFY "who searched YOU" email can reverse-join for this lead (REAL signal, not just
   // the general offer). No new PII — meta.query is already their own search. See project_wsfy_self_build.
   try {
-    if (!meta.self && getVariant() === 'self' && meta.query && typeof meta.query === 'object') {
-      const sn = [meta.query.firstName, meta.query.lastName].filter(Boolean).join(' ').trim();
+    if (!meta.self && getVariant() === 'self') {
+      // Prefer the explicit self-identity stash (MyExposurePage) — the data the user declared as THEIR OWN.
+      // Fall back to the last search. Capture ALL of it as their identity (owner 2026-08-03).
+      let ident = null;
+      try { ident = JSON.parse(sessionStorage.getItem('selfIdentity') || 'null'); } catch { ident = null; }
+      const q = (ident && typeof ident === 'object') ? ident : (meta.query && typeof meta.query === 'object' ? meta.query : null);
+      const sn = q ? [q.firstName, q.lastName].filter(Boolean).join(' ').trim() : '';
       if (sn) {
-        // Also stamp the lead's OWN searcher ids so WSFY excludes their self-check searches from their count
-        // (else "N searched for you" would count themselves). Anon → session; member → userId.
+        // Also stamp the lead's OWN searcher ids so WSFY excludes their self-check searches from their count.
         const { searcherUserId, searcherSession } = currentSearcherIds();
-        meta = { ...meta, self: true, selfName: sn, selfState: meta.query.state || undefined,
+        meta = { ...meta, self: true, selfName: sn,
+          selfIdentity: { firstName: q.firstName || undefined, middleName: q.middleName || undefined,
+            lastName: q.lastName || undefined, city: q.city || undefined, state: q.state || undefined, age: q.age || undefined },
+          selfState: q.state || undefined,
           searcherUserId: searcherUserId || undefined, searcherSession: searcherSession || undefined };
       }
     }

@@ -33,6 +33,7 @@ const SalesSearchResultsPage = () => {
   const query = params.get('q');
   // SearchBar emits firstName + lastName directly; legacy callers still send `q`.
   const firstNameParam = params.get('firstName') || '';
+  const middleNameParam = params.get('middleName') || ''; // progressive refine — narrows via BC mName (like the loader)
   const lastNameParam = params.get('lastName') || '';
   const state = params.get('state');
   const cityParam = params.get('city') || '';
@@ -152,6 +153,9 @@ const SalesSearchResultsPage = () => {
           lastName,
           type: 'name'
         };
+        // Progressive middle-name refine: send to BC as mName (server-side narrow — same as the loader,
+        // NOT stripped like city/age). If BC ignores it the result set is unchanged (no worse).
+        if (middleNameParam && middleNameParam.trim()) searchParams.middleName = middleNameParam.trim();
         if (state && state.trim()) {
           searchParams.state = state.trim();
         }
@@ -292,10 +296,11 @@ const SalesSearchResultsPage = () => {
 
   // Refine search — editable first/last/state/city/age (previously name-only).
   // Submitting re-runs the search and narrows by city/age (narrowedResults).
-  const [refine, setRefine] = useState({ firstName: '', lastName: '', state: '', city: '', age: '' });
+  const [refine, setRefine] = useState({ firstName: '', middleName: '', lastName: '', state: '', city: '', age: '' });
   useEffect(() => {
     setRefine({
       firstName: searchQuery.firstName || firstNameParam || '',
+      middleName: middleNameParam || '',
       lastName: searchQuery.lastName || lastNameParam || '',
       state: searchQuery.state || state || '',
       city: searchQuery.city || cityParam || '',
@@ -306,12 +311,21 @@ const SalesSearchResultsPage = () => {
     e.preventDefault();
     const p = new URLSearchParams();
     if (refine.firstName.trim()) p.set('firstName', refine.firstName.trim());
+    if (refine.middleName.trim()) p.set('middleName', refine.middleName.trim());
     if (refine.lastName.trim()) p.set('lastName', refine.lastName.trim());
     if (refine.state.trim()) p.set('state', refine.state.trim());
     if (refine.city.trim()) p.set('city', refine.city.trim());
     if (refine.age.trim()) p.set('age', refine.age.trim());
     try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
-    track('refine_search', { has_city: !!refine.city.trim(), has_age: !!refine.age.trim() });
+    // Self flow: a middle name added on the refine sharpens the user's captured identity (WSFY). Only
+    // touches the stash if it already exists (i.e. they came from /my-exposure) — no-op otherwise.
+    if (refine.middleName.trim()) {
+      try {
+        const s = JSON.parse(sessionStorage.getItem('selfIdentity') || 'null');
+        if (s && typeof s === 'object') { s.middleName = refine.middleName.trim(); sessionStorage.setItem('selfIdentity', JSON.stringify(s)); }
+      } catch { /* ignore */ }
+    }
+    track('refine_search', { has_middle: !!refine.middleName.trim(), has_city: !!refine.city.trim(), has_age: !!refine.age.trim() });
     navigate(`/name/search-result?${p.toString()}`);
   };
   const rInput = { width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.7rem', fontSize: '0.95rem', border: `1.5px solid ${theme ? theme.line : '#d1d5db'}`, borderRadius: 8, outline: 'none', background: theme && theme.onDark ? 'rgba(255,255,255,0.06)' : '#fff', color: theme ? theme.ink : '#111827' };
@@ -592,6 +606,7 @@ const SalesSearchResultsPage = () => {
             <form onSubmit={submitRefine} style={{ maxWidth: '640px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div><label style={rLabel}>First name</label><input style={rInput} value={refine.firstName} onChange={(e) => setRefine((r) => ({ ...r, firstName: e.target.value }))} placeholder="First name" /></div>
+                <div><label style={rLabel}>Middle name <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: theme ? theme.mut : '#9aa4ad' }}>— narrows a common name</span></label><input style={rInput} value={refine.middleName} onChange={(e) => setRefine((r) => ({ ...r, middleName: e.target.value }))} placeholder="Middle name or initial (optional)" /></div>
                 <div><label style={rLabel}>Last name</label><input style={rInput} value={refine.lastName} onChange={(e) => setRefine((r) => ({ ...r, lastName: e.target.value }))} placeholder="Last name" /></div>
                 <div><label style={rLabel}>State</label><select style={rInput} value={refine.state} onChange={(e) => setRefine((r) => ({ ...r, state: e.target.value }))}>{US_STATES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
                 <div><label style={rLabel}>City</label><input style={rInput} value={refine.city} onChange={(e) => setRefine((r) => ({ ...r, city: e.target.value }))} placeholder="City (optional)" /></div>
