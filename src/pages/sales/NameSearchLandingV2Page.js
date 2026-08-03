@@ -178,7 +178,10 @@ const NameSearchLandingV2Page = () => {
         {/* HERO — trust-first, on the entry step */}
         {step === 'name' && (
           <div className={s.hero}>
-            <h1 className={s.headline}>Find Anyone Fast</h1>
+            <h1 className={s.headline}>Search People Free</h1>
+            {/* Honest message-match for the "free" ad: searching IS free; the full report is a paid membership.
+                Keep this disclosure so the "Free" headline is truthful, not bait-and-switch. */}
+            <p className={s.subtitle}>Free to search billions of public records. Full reports available with membership.</p>
           </div>
         )}
 

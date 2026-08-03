@@ -101,6 +101,16 @@ function resolveSearcher() {
   return { type: 'anon', sessionId: getOrCreateAnonId() };
 }
 
+/**
+ * The current searcher's ids, for WSFY self-exclusion — so a lead's OWN self-check searches don't get
+ * counted as "someone searched for you". Member → userId (search_activity.searcher_user_id); anon → session
+ * (search_activity.session_id, since anon searcher_user_id is null). Stamped onto a self-check lead at capture.
+ */
+export function currentSearcherIds() {
+  const s = resolveSearcher();
+  return { searcherUserId: s.userId || null, searcherSession: s.sessionId || null };
+}
+
 /** Drop heavy nested payloads (raw BC blobs) so the POST body stays small. */
 function trimResult(r) {
   if (!r || typeof r !== 'object') return {};

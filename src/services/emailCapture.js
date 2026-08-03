@@ -17,6 +17,8 @@
  */
 
 import { readLog } from './visitorSearchLog';
+import { getVariant } from './funnelFlow';
+import { currentSearcherIds } from './searchActivity';
 
 const LS_LOG = 'capturedEmails';   // durable array of all captures on this device
 const LS_LATEST = 'capturedEmail'; // latest email, for signup pre-fill
@@ -43,6 +45,21 @@ export function captureEmail(email, meta = {}) {
       if (last && last.query) meta = { ...meta, query: last.query, searchType: last.type };
     } catch { /* best-effort — capture works without it */ }
   }
+  // Self-check flow (variant 'self', e.g. /my-exposure): the searched name IS the lead's OWN name. Stamp
+  // self + selfName so the WSFY "who searched YOU" email can reverse-join for this lead (REAL signal, not just
+  // the general offer). No new PII — meta.query is already their own search. See project_wsfy_self_build.
+  try {
+    if (!meta.self && getVariant() === 'self' && meta.query && typeof meta.query === 'object') {
+      const sn = [meta.query.firstName, meta.query.lastName].filter(Boolean).join(' ').trim();
+      if (sn) {
+        // Also stamp the lead's OWN searcher ids so WSFY excludes their self-check searches from their count
+        // (else "N searched for you" would count themselves). Anon → session; member → userId.
+        const { searcherUserId, searcherSession } = currentSearcherIds();
+        meta = { ...meta, self: true, selfName: sn, selfState: meta.query.state || undefined,
+          searcherUserId: searcherUserId || undefined, searcherSession: searcherSession || undefined };
+      }
+    }
+  } catch { /* best-effort — capture works without the self stamp */ }
   const rec = { email, meta, ts: new Date().toISOString() };
 
   // 1) Durable local store (works with no backend) + latest-for-prefill.

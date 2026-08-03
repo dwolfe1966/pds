@@ -231,4 +231,26 @@ export const CAMPAIGN_REGISTRY = {
     landing: { route: '/name/landing/v6' },
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
   },
+
+  // People Search & Background Check — "people search free" ad units. Real BC token (owner 2026-08-03).
+  // Ad lands directly on /name/landing/v2 (?intent=people_search&adgroup=people_search_free); landing.route here
+  // mirrors that so any /?shn= boot traffic also routes to v2. Google Ads (adgroup=…). Standard name funnel:
+  // thinmatch upsell, sup variant a, optout compliant. v2's search is fixed (delegates to /name/loader).
+  // NOTE: the ad URL must carry ?shn=6a70dee8368ec934bb214554 for this entry (and its attribution) to apply.
+  '6a70dee8368ec934bb214554:*': {
+    identity: { shnName: 'People Search & Background Check', brand: 'IDL', partner: 'Google', channel: 'Background Check',
+      purpose: 'People-search-free ad units → free-to-search v2 funnel → capture trials' },
+    landing: { route: '/name/landing/v2' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+
+  // ── "Who's Looking For You" WSFY display campaign (2026-08-03). Reverse angle — discover who's searching
+  // for YOU → boots to the self-check funnel (/my-exposure). PLACEHOLDER shN; swap for the minted BC token
+  // when the display campaign is provisioned (as with the v2 token above). Tag URLs ?shn=wsfy-display.
+  'wsfy-display:*': {
+    identity: { shnName: "Who's Looking For You", brand: 'IDL', partner: 'Google', channel: 'WSFY',
+      purpose: 'WSFY "who searched you" display ads → self-check funnel → trials + retention' },
+    landing: { route: '/my-exposure' },
+    search:  { type: 'name', perPage: 5, zeroState: 'noRecords' }, detail: { variant: 'a' }, optOut: true,
+  },
 };
