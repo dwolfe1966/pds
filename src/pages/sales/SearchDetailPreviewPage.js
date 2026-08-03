@@ -20,6 +20,7 @@ import SearchDetailPreviewVariantI from './SearchDetailPreviewVariantI';
 import SearchDetailPreviewVariantJ from './SearchDetailPreviewVariantJ';
 import styles from './SearchDetailPreviewPage.module.css';
 import { useBrand } from '../../services/brand';
+import { getVariant } from '../../services/funnelFlow';
 
 /**
  * Items included in the paid full report. Kept honest: no fake counts, no
@@ -438,8 +439,19 @@ const SearchDetailPreviewPage = () => {
 
       {/* ── Hero: just the real fields we actually have ── */}
       <section className={styles.heroSection}>
+        {/* Self flow (/my-exposure → variant=self): frame this as the visitor's OWN record, not someone they searched. */}
+        {getVariant() === 'self' && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, alignSelf: 'center', marginBottom: 12, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#0d5d2f', background: '#e7f3ec', border: '1px solid #cfe6d6', padding: '6px 13px', borderRadius: 999 }}>
+            Is this you?
+          </div>
+        )}
         <div className={styles.personAvatar} aria-hidden="true">{getInitials(person.fullName)}</div>
         <h1 className={styles.personName}>{person.fullName}</h1>
+        {getVariant() === 'self' && (
+          <p style={{ margin: '6px 0 0', maxWidth: '46ch', color: '#5b6672', fontSize: 15, lineHeight: 1.5, textAlign: 'center' }}>
+            This is the public record under your name. Here's what anyone searching for you can see.
+          </p>
+        )}
         {(person.ageRange || person.location) && (
           <p className={styles.personMeta}>
             {person.ageRange ? `Age ${person.ageRange}` : ''}
