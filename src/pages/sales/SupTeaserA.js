@@ -360,7 +360,7 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
         <div id="signup-form" style={{ background: P.onDark ? P.formBg : '#e9edf3', border: P.onDark ? `1px solid ${P.formBorder}` : '1px solid rgba(17,24,39,0.06)', borderRadius: '1.125rem', padding: '2rem 1.75rem', marginBottom: '1rem', boxShadow: P.onDark ? '0 8px 30px rgba(0,0,0,0.35)' : '0 1px 2px rgba(17,24,39,0.04)' }}>
           <div style={{ textAlign: 'center', fontSize: '1.7rem', marginBottom: '0.25rem' }} aria-hidden="true">🔍</div>
           <h2 style={{ margin: '0 0 1.1rem', textAlign: 'center', fontSize: '1.35rem', fontWeight: 800, color: P.ink }}>
-            {T.formTitle(person.fullName)}
+            {getVariant() === 'self' ? 'View your full report' : T.formTitle(person.fullName)}
           </h2>
 
           {success ? (
