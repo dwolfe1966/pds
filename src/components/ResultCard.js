@@ -10,7 +10,7 @@ import { getCapturedEmail } from '../services/emailCapture';
 import styles from './ResultCard.module.css';
 import { PersonAvatar, properCaseName } from './PersonAvatar';
 
-const ResultCard = ({ result, onClick, isMember = false, theme = null, index = 0 }) => {
+const ResultCard = ({ result, onClick, isMember = false, theme = null, index = 0, ctaLabel = 'View Details →' }) => {
   const navigate = useNavigate();
   const { token, isPaid } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -203,7 +203,7 @@ const ResultCard = ({ result, onClick, isMember = false, theme = null, index = 0
             disabled={loading}
             style={theme ? { background: theme.button, borderColor: 'transparent' } : undefined}
           >
-            {loading ? 'Loading...' : 'View Details →'}
+            {loading ? 'Loading...' : ctaLabel}
           </button>
         </div>
         {createError && (

@@ -4,7 +4,7 @@ import { useSignup, generatePassword } from '../../hooks/useSignup';
 import { useBrand } from '../../services/brand';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import SignalTeaser from '../../components/SignalTeaser';
-import { getFlow } from '../../services/funnelFlow';
+import { getFlow, getVariant } from '../../services/funnelFlow';
 
 /**
  * Shared "default SUP" teaser (the variant-A design), driven by a `palette` so
@@ -216,6 +216,12 @@ const SupTeaserA = ({ person, id, palette: P, tone, layout, signup, showHook = f
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
             <PersonAvatar person={person} size={72} />
             <div style={{ minWidth: 0 }}>
+              {/* Self flow (/my-exposure): frame this as the visitor's OWN record — name KEPT (owner 2026-08-03). */}
+              {getVariant() === 'self' && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: '0.7rem', fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: P.accent, background: P.verifiedBg, border: `1px solid ${P.verifiedBorder}`, padding: '3px 9px', borderRadius: 999 }}>
+                  Is this you?
+                </span>
+              )}
               <h1 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800, color: P.ink, lineHeight: 1.1 }}>
                 {properCaseName(person.fullName)}{(person.age || person.ageRange) ? `, ${person.age || person.ageRange}` : ''}
               </h1>

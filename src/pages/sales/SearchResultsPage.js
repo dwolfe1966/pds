@@ -351,7 +351,9 @@ const SalesSearchResultsPage = () => {
         <div className={styles.header} style={theme ? { borderBottomColor: theme.line } : undefined}>
           <h1 className={styles.title} style={theme ? { color: theme.ink } : undefined}>
             {results.length > 0 && countLabel
-              ? `We found ${countLabel} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`
+              ? (getVariant() === 'self'
+                  ? `We found ${countLabel} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'you')}" — which one is you?`
+                  : `We found ${countLabel} for "${searchQuery.firstName ? `${searchQuery.firstName} ${searchQuery.lastName}`.trim() : (query || 'your search')}"`)
               : 'Search Results'}
           </h1>
           {/* Context line only when the title is the generic "Search Results" — when results
@@ -464,7 +466,7 @@ const SalesSearchResultsPage = () => {
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <ResultCard result={result} theme={theme} index={index} onClick={handleResultClick} />
+                    <ResultCard result={result} theme={theme} index={index} onClick={handleResultClick} ctaLabel={getVariant() === 'self' ? 'View your record →' : undefined} />
                   </div>
                   {index === 2 && sortedResults.length > 3 && (
                     <div style={{
