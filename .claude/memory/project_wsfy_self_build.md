@@ -142,4 +142,20 @@ WsfyPaymentTeaser could also consume keySignals/profileViews (currently uses hig
 **NOT built (no data source at all):** "just got married" — no marital/life-event field (per bc_report_field_map).
 "Went to high school" now DOES work via user-provided profile. Never fabricate.
 
-**Phase 3:** "someone searched for you" alert emails, reusing the SendGrid platform ([[project_email_recovery_pipeline]]).
+**Phase 3 — alert / re-engagement emails: v1 BUILT 2026-08-03 (seo/, gated OFF).** Goal = WSFY as a
+top-of-funnel conversion hook (paid campaign + free lead re-engagement). `renderWsfyAlert` template +
+`wsfy_alert` campaign in `seo/lib/email/send.mjs` (TWO honest modes: realCount>0 → "N searched for you";
+realCount=0 → general "who's searching for you?" offer, NEVER fabricated). `getWsfyAlertCandidates`
+(leads-db.mjs) de-dupes via email_sends. Cron `seo/app/api/cron/wsfy-alerts/route.js` (every 8h in
+vercel.json) — v1 sends the general-offer hook to the un-converted lead list → /my-exposure. OFF until
+`WSFY_ALERTS_ENABLED=1` + `EMAIL_POSTAL_ADDRESS` (CAN-SPAM). Depends on Resend domain-auth (owner) — same as
+[[project_email_recovery_pipeline]]. Test mode: `WSFY_ALERTS_TEST_EMAIL` (+ `WSFY_ALERTS_TEST_REALCOUNT`) → one inbox.
+**LEAD real-signal LOOP CLOSED 2026-08-03:** self-check leads (`variant='self'`, e.g. /my-exposure) → `captureEmail`
+stamps `meta.self`+`selfName` (src/services/emailCapture.js, reuses their own search, no new PII); cron Pass 1
+`getWsfySelfLeads` → `buildWsfySummary(selfName)` → REAL "N searched for you"; Pass 2 = general offer. Flywheel:
+general-offer email → /my-exposure self-map → real-signal thereafter. (Member real-signal via BC userId still a follow-up.)
+This session also added: WSFY zero-state pivot in `ZeroResultsPanel` → /my-exposure; `wsfy-display:*` campaign
+registry entry (placeholder shN → /my-exposure); removed 16 confidentiality/"never notify" funnel claims
+(contradicted WSFY). See [[project_marketing_angles]] + the WSFY campaign brief.
+
+**Legal — right to reveal searcher identity CONFIRMED (owner 2026-08-03).** We have the right to reveal the searcher's identity to the searched-for person. Resolves the "reveal parked on privacy posture" open question → the built posture (free=masked tease, paid=full searcher names) is cleared, and the "Who's Looking For You" campaign payoff can promise the FULL identity reveal (paid), not just masked city/count teasers. TWO constraints still apply and are INDEPENDENT of this: (1) only REAL searchers — never fabricate an alert (FTC fined competitors $5.8M for fabricated/exaggerated notifications); (2) the AD CREATIVE must still follow Google's personalized-ads policy — the ad is a GENERAL offer ("find out who's looking for you"), it must NOT imply we know who searched THIS specific viewer. Product-can-reveal (yes) ≠ ad-can-claim-personal-knowledge (no). See [[project_marketing_angles]].
