@@ -364,6 +364,36 @@ export function renderRemarketing({ step = 1, firstName, email, query, searchTyp
   return { subject: s.subject, html, text };
 }
 
+// WSFY "who's searching for you" alert / re-engagement email (owner 2026-08-03) — WSFY as a top-of-funnel
+// conversion hook. TWO honest modes, decided by the caller (never fabricated):
+//   - realCount > 0  → we have REAL searchers for this recipient's claimed identity: "N people searched for you".
+//   - realCount == 0 → general curiosity offer (a lead whose own identity we don't know): "who's searching for
+//                      you?" — an invitation to find out, NOT a claim that someone specific searched them.
+// Links to /my-exposure (the self-check reveal). Same compliance line as the ads: real signal → real claim;
+// no signal → general offer only. Never claim confidentiality (contradicts WSFY).
+export function renderWsfyAlert({ email, realCount = 0, firstName } = {}) {
+  const name = (firstName || '').toString().trim();
+  const unsub = unsubscribeUrl(email);
+  const unsubHtml = usingAsm() ? unsub : esc(unsub);
+  const real = Number(realCount) > 0;
+  const n = Number(realCount) || 0;
+  const ctaUrl = `${BASE}/my-exposure?utm_source=wsfy_alert&utm_medium=email`;
+  const subject = real ? `${n} ${n === 1 ? 'person' : 'people'} searched for you` : "Who's searching for you?";
+  const pre = 'Find out who’s been looking you up.';
+  const h = real ? `${n} ${n === 1 ? 'person has' : 'people have'} searched for you` : 'Who’s searching for you?';
+  const p = real
+    ? 'People have been searching for you on IDLookup. See who’s been looking you up, and stay aware of your online presence.'
+    : 'People look each other up every day — and they may be searching for you. Find out who’s been looking you up, and take control of your online presence.';
+  const c = real ? 'See who searched for me →' : 'Find out who’s searching for me →';
+  const body = `
+    <h1 style="margin:0 0 12px;font-size:22px;color:#0f172a;">${esc(h)}${name ? `, ${esc(name)}` : ''}</h1>
+    <p style="margin:0 0 18px;color:#334155;font-size:15px;line-height:1.6;">${esc(p)}</p>
+    <a href="${esc(ctaUrl)}" style="display:inline-block;background:#0d5d2f;color:#fff;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:8px;font-size:15px;">${esc(c)}</a>`;
+  const html = renderLayout({ preheader: pre, bodyHtml: body, unsubHtml });
+  const text = [`${h}${name ? `, ${name}` : ''}`, '', p, '', `${c.replace(/\s*→\s*$/, '')}: ${ctaUrl}`].join('\n');
+  return { subject, html, text };
+}
+
 // NOTE: `welcome` is intentionally NOT registered (owner VIP 2026-07-27): no account-created email pre-payment.
 // renderWelcome stays exported (for the test endpoint / a possible future POST-PAY welcome) but sendCampaign
 // can't trigger it, so even an old consumer bundle that still requests 'welcome' just no-ops server-side.
@@ -372,6 +402,7 @@ const CAMPAIGNS = {
   lead_remarketing_2: (v) => renderRemarketing({ ...v, step: 2 }),
   lead_remarketing_3: (v) => renderRemarketing({ ...v, step: 3 }),
   lead_remarketing_4: (v) => renderRemarketing({ ...v, step: 4 }),
+  wsfy_alert: (v) => renderWsfyAlert(v),
 };
 
 /**

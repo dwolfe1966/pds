@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/cron/abandoned-recovery", "schedule": "*/15 * * * *" },
     { "path": "/api/cron/breach-monitor", "schedule": "*/30 * * * *" },
-    { "path": "/api/cron/lead-reengagement", "schedule": "0 */6 * * *" }
+    { "path": "/api/cron/lead-reengagement", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/wsfy-alerts", "schedule": "0 */8 * * *" }
   ]
 }

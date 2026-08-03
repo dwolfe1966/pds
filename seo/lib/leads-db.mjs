@@ -160,3 +160,49 @@ export async function getReengagementCandidates(limit = 1000) {
     }));
   } catch { return []; }
 }
+
+// Leads eligible for a WSFY "who's searching for you" alert: unique, non-suppressed, and NOT yet sent a
+// 'wsfy_alert' (de-dupe via the shared email_sends log — no new state table). v1 = a one-shot TOF hook.
+export async function getWsfyAlertCandidates(limit = 1000) {
+  if (!sql) return [];
+  try {
+    const rows = await sql`
+      SELECT lower(l.email) AS email,
+             max(COALESCE(l.captured_at, l.received_at)) AS captured_at
+      FROM leads l
+      WHERE l.email IS NOT NULL AND l.email <> ''
+        AND lower(l.email) NOT IN (SELECT email FROM email_suppression)
+      GROUP BY lower(l.email)
+      HAVING (SELECT count(*) FROM email_sends s
+                WHERE s.email = lower(l.email) AND s.campaign = 'wsfy_alert' AND s.status = 'sent') = 0
+      ORDER BY captured_at ASC
+      LIMIT ${Math.min(2000, Math.max(1, limit))}`;
+    return (rows || []).map((r) => ({ email: r.email, capturedAt: r.captured_at }));
+  } catch { return []; }
+}
+
+// Leads who SELF-IDENTIFIED (self-check flow → meta.self + selfName): we know their OWN name, so they're
+// eligible for the REAL-signal WSFY email ("N people searched for you"). Not yet sent 'wsfy_alert'; de-dupe
+// via email_sends. selfName/selfState feed the reverse-join (buildWsfySummary) in the cron.
+export async function getWsfySelfLeads(limit = 500) {
+  if (!sql) return [];
+  try {
+    const rows = await sql`
+      SELECT lower(l.email) AS email,
+             (array_agg(l.meta->>'selfName'        ORDER BY COALESCE(l.captured_at, l.received_at) DESC))[1] AS self_name,
+             (array_agg(l.meta->>'selfState'       ORDER BY COALESCE(l.captured_at, l.received_at) DESC))[1] AS self_state,
+             (array_agg(l.meta->>'searcherUserId'  ORDER BY COALESCE(l.captured_at, l.received_at) DESC))[1] AS searcher_user_id,
+             (array_agg(l.meta->>'searcherSession' ORDER BY COALESCE(l.captured_at, l.received_at) DESC))[1] AS searcher_session
+      FROM leads l
+      WHERE l.email IS NOT NULL AND l.email <> ''
+        AND (l.meta->>'self') = 'true' AND l.meta->>'selfName' IS NOT NULL AND l.meta->>'selfName' <> ''
+        AND lower(l.email) NOT IN (SELECT email FROM email_suppression)
+      GROUP BY lower(l.email)
+      HAVING (SELECT count(*) FROM email_sends s
+                WHERE s.email = lower(l.email) AND s.campaign = 'wsfy_alert' AND s.status = 'sent') = 0
+      ORDER BY max(COALESCE(l.captured_at, l.received_at)) DESC
+      LIMIT ${Math.min(2000, Math.max(1, limit))}`;
+    return (rows || []).map((r) => ({ email: r.email, selfName: r.self_name, selfState: r.self_state || null,
+      searcherUserId: r.searcher_user_id || null, searcherSession: r.searcher_session || null }));
+  } catch { return []; }
+}

@@ -226,6 +226,9 @@ export async function buildWsfySummary(identity, opts = {}) {
 
   const state = subj.state ? String(subj.state).trim().toUpperCase() : null;
   const selfUserId = subj.selfUserId || null;
+  // Also exclude the subject's OWN anon self-check searches — anon searchers store their id in session_id
+  // (searcher_user_id + searcher_name_norm are both null for anon), so selfUserId/name exclusion misses them.
+  const selfSession = identity.selfSession || null;
 
   // REVEAL GATE (owner 2026-07-16): real searcher/viewer names + exact PII are unmasked only when the
   // member has CLAIMED this identity (mapped_identity → required KBA at mapping). Paid-but-unmapped
@@ -267,6 +270,7 @@ export async function buildWsfySummary(identity, opts = {}) {
                    AND (${state}::text IS NULL OR sr.state = ${state} OR sr.state IS NULL)))
           )
       AND (${selfUserId}::text IS NULL OR sa.searcher_user_id IS DISTINCT FROM ${selfUserId})
+      AND (${selfSession}::text IS NULL OR sa.session_id IS DISTINCT FROM ${selfSession})
       AND (sa.searcher_name_norm IS DISTINCT FROM ${subjNorm})
     ORDER BY sa.received_at DESC
     LIMIT 4000
