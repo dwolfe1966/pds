@@ -82,8 +82,12 @@ export async function POST(req) {
   const headers = { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' };
   if (!checkAppKey(req)) return unauthorized(headers);
   let body; try { body = await req.json(); } catch { body = null; }
-  if (!body || !body.userId || !body.nodeId || !body.controlStatus) {
-    return new Response(JSON.stringify({ error: 'userId, nodeId, controlStatus required' }), { status: 400, headers });
+  // Act on an existing node (nodeId) OR on a catalog source with no node yet (sourceKey+surfaceType —
+  // e.g. the member clicked "Remove" on Spokeo before any scan; we create + mark the node so their
+  // manual opt-out is tracked in the graph).
+  const hasTarget = body && body.userId && body.controlStatus && (body.nodeId || (body.sourceKey && body.surfaceType));
+  if (!hasTarget) {
+    return new Response(JSON.stringify({ error: 'userId, controlStatus, and (nodeId | sourceKey+surfaceType) required' }), { status: 400, headers });
   }
   if (!hasExposureDb) return new Response(JSON.stringify({ ok: true, persisted: false }), { status: 200, headers });
   // Same gate as suppression: you can only act on YOUR OWN footprint (claimed + verified identity).
@@ -92,11 +96,21 @@ export async function POST(req) {
     return new Response(JSON.stringify({ error: 'identity_unverified', message: 'Claim and verify your identity to control your exposure.' }), { status: 403, headers });
   }
   try {
-    const ok = await setNodeControl(body.nodeId, {
-      subjectKey: String(body.userId), controlStatus: String(body.controlStatus),
-      controlMethod: body.controlMethod || null, externalRef: body.externalRef || null,
-      eventType: body.eventType || 'control_changed', detail: body.detail || null,
-    });
+    let ok = false;
+    if (body.nodeId) {
+      ok = await setNodeControl(body.nodeId, {
+        subjectKey: String(body.userId), controlStatus: String(body.controlStatus),
+        controlMethod: body.controlMethod || null, externalRef: body.externalRef || null,
+        eventType: body.eventType || 'control_changed', detail: body.detail || null,
+      });
+    } else {
+      const id = await upsertNode({
+        subjectKey: String(body.userId), surfaceType: String(body.surfaceType), sourceKey: String(body.sourceKey),
+        foundStatus: 'found', severity: body.severity ?? 2, controlStatus: String(body.controlStatus),
+        controlMethod: body.controlMethod || 'manual', syncControl: true,
+      });
+      if (id) { await setNodeControl(id, { subjectKey: String(body.userId), controlStatus: String(body.controlStatus), controlMethod: body.controlMethod || 'manual', eventType: body.eventType || 'optout_submitted' }); ok = true; }
+    }
     const nodes = await getNodesForSubject(String(body.userId));
     return new Response(JSON.stringify({ ok, nodes, summary: summarizeNodes(nodes) }), { status: 200, headers });
   } catch {

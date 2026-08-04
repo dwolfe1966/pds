@@ -328,6 +328,44 @@ export function linkSelfReport(commerceContentId, selfPerson) {
 
 // ── Suppression ("Hide me" — Identity Management) ────────────────────────────
 function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'suppression'); }
+function exposureUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'exposure'); }
+
+const EMPTY_GRAPH = { nodes: [], registry: [], summary: { score: 0, found: 0, controlled: 0, inProgress: 0, exposed: 0 } };
+
+/** Fetch the member's Exposure Graph — { nodes, registry, summary }. The spine of the "footprint across
+ *  the web" view. Federates our owned surfaces server-side (IDLookup suppression + breach monitor).
+ *  Safe empty shape on any failure. See docs/product/exposure-graph-spine.md. */
+export async function fetchExposureGraph() {
+  const userId = currentUserId();
+  if (!userId) return EMPTY_GRAPH;
+  let email = '';
+  try { const u = JSON.parse(localStorage.getItem('user') || 'null'); email = (u && u.email) || ''; } catch { /* ignore */ }
+  try {
+    const qs = new URLSearchParams({ userId });
+    if (email) qs.set('email', email);
+    const res = await fetch(`${exposureUrl()}?${qs.toString()}`, { headers: { ...appKeyHeaders() } });
+    if (!res.ok) return EMPTY_GRAPH;
+    const data = await res.json();
+    return { nodes: data.nodes || [], registry: data.registry || [], summary: data.summary || EMPTY_GRAPH.summary };
+  } catch { return EMPTY_GRAPH; }
+}
+
+/** Record a per-node control change. Target either an existing node (nodeId) OR a catalog source with
+ *  no node yet (sourceKey + surfaceType — e.g. the member clicked "Remove" on Spokeo before any scan;
+ *  the backend creates + marks the node so their manual opt-out is tracked). Returns the updated graph. */
+export async function setExposureControl({ nodeId, sourceKey, surfaceType, controlStatus, controlMethod }) {
+  const userId = currentUserId();
+  if (!userId || !controlStatus || !(nodeId || (sourceKey && surfaceType))) return null;
+  try {
+    const res = await fetch(exposureUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, nodeId, sourceKey, surfaceType, controlStatus, controlMethod: controlMethod || null }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
 
 export async function fetchSuppression() {
   const userId = currentUserId();
