@@ -1650,6 +1650,39 @@ const UserDetailPage = () => {
                         <Item label="Last event">{custStatus.latestEvent}</Item>
                         <Item label="Anticipated next event">{custStatus.nextEventShort}</Item>
                       </div>
+                      {/* Contextual billing actions for the PRIMARY order — Cancel/Reactivate right where the
+                          subscription state shows (owner 2026-08-04). Per-order edge cases still use the
+                          "View / act →" links in the table below. */}
+                      {(() => {
+                        const activeOrder = findActiveOrder(orders);
+                        const primary = activeOrder || orders[0];
+                        const oid = primary ? (primary._id || primary.id) : null;
+                        const norm = (s) => String(s || '').toLowerCase();
+                        const canceled = !!primary && (primary.transient?.canceled || norm(primary.subStatus) === 'canceled' || norm(primary.subStatus) === 'cancelled');
+                        const busy = !!oid && cancelProcessing === oid;
+                        const btn = { padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 700, borderRadius: 8, cursor: 'pointer', border: '1px solid' };
+                        return (
+                          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+                            {activeOrder && !canceled && (
+                              <button title={CSR_TERMS.cancel} disabled={busy} onClick={() => handleCancelOrder(oid, true)}
+                                style={{ ...btn, background: '#fff7ed', color: '#c2410c', borderColor: '#fed7aa' }}>
+                                {busy ? 'Cancelling…' : '⊗ Cancel Subscription'}
+                              </button>
+                            )}
+                            {canceled && (
+                              <button title="Resume billing on the normal schedule." disabled={busy} onClick={() => handleCancelOrder(oid, false)}
+                                style={{ ...btn, background: '#f0fdf4', color: '#059669', borderColor: '#a7f3d0' }}>
+                                {busy ? 'Reactivating…' : '↺ Reactivate Subscription'}
+                              </button>
+                            )}
+                            {oid && (
+                              <Link to={`/purchases/${oid}?userId=${id}`} style={{ fontSize: '0.82rem', fontWeight: 600, color: '#4338ca', textDecoration: 'none' }}>
+                                Refund / manage this order →
+                              </Link>
+                            )}
+                          </div>
+                        );
+                      })()}
                       {/* (2) Billing events — consolidated, descending; actionable orders link out to detail. */}
                       <BillingEventsTable orders={orders} userId={id} />
                     </>
@@ -1661,6 +1694,18 @@ const UserDetailPage = () => {
             {/* ── Tab: Logins ──────────────────────────────── */}
             {activeTab === 'Logins' && (
               <>
+                {/* Log in as user lives here too — you're looking at their sessions (owner 2026-08-04).
+                    Also on the left rail (primary action). */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <button
+                    onClick={handleImpersonate}
+                    disabled={impersonating}
+                    title="Generate a one-click link to log in as this customer and troubleshoot. The action is logged."
+                    style={{ padding: '0.55rem 1.1rem', fontSize: '0.85rem', fontWeight: 700, borderRadius: 8, cursor: impersonating ? 'default' : 'pointer', background: '#eef2ff', color: '#4338ca', border: '1px solid #c7d2fe' }}
+                  >
+                    {impersonating ? 'Generating…' : '⇄ Log in as user'}
+                  </button>
+                </div>
                 {loginsLoading && logins.length === 0 && (
                   <div className={styles.loadingState}>Loading login history...</div>
                 )}
@@ -2260,6 +2305,9 @@ const UserDetailPage = () => {
 
                 {/* ── Billing & Subscription ──────────────────── */}
                 <div className={styles.actionSectionLabel}>Billing &amp; Subscription</div>
+                <p style={{ margin: '-0.35rem 0 0.6rem', fontSize: '0.72rem', color: '#9ca3af', lineHeight: 1.4 }}>
+                  Shortcuts for the primary order. For a specific order, use the <strong>Orders &amp; Payments</strong> tab.
+                </p>
                 <div className={styles.actionsList}>
                   {(() => {
                     // Mirrors the left-rail Cancel Subscription (owner 2026-08-04) — same active-order target.
