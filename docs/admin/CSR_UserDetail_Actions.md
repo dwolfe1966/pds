@@ -13,12 +13,14 @@ Source: `src/pages/admin/UserDetailPage.js` (+ `userState.js`, `RefundEmailModal
 
 ## Where the actions live
 
-Actions are in **two places** on the page:
+Actions live in a few places — a stable **hub** plus **contextual** entry points where the CSR is already working (added 2026-08-04). Redundancy across surfaces is intentional; each is the same action.
 
-1. **Left action rail** (always visible beside the profile) — the high-frequency account actions.
-2. **"Actions" tab** (right panel) — a "Recommended Actions" list with everything else.
-
-Some actions appear in **both** (e.g. Suspend). They're the same action.
+1. **Left action rail** (always visible) — the primary trio: **Suspend · Cancel Subscription · Log in as user**.
+2. **"Actions" tab** — the complete hub, grouped Account / Billing / Privacy.
+3. **Contextual, in other tabs:**
+   - **Orders & Payments** → action bar for the primary order (Cancel/Reactivate + "Refund / manage this order →"); per-order links in the event table.
+   - **Logins** → "Log in as user" beside the session history.
+   - **Notes & Messages** → Add Note.
 
 ---
 
