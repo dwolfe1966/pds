@@ -2243,16 +2243,101 @@ const UserDetailPage = () => {
             {/* ── Tab: Actions ───────────────────────────── */}
             {activeTab === 'Actions' && (
               <>
-                <h3 className={styles.actionsTitle}>Recommended Actions</h3>
+                <h3 className={styles.actionsTitle}>Account Actions</h3>
+
+                {/* ── Account ─────────────────────────────────── */}
+                <div className={styles.actionSectionLabel}>Account</div>
                 <div className={styles.actionsList}>
-                  <button
-                    className={styles.actionBtnGreen}
-                    onClick={openEditUser}
-                  >
+                  <button className={styles.actionBtnGray} onClick={openEditUser}>
                     <span>✎</span>
                     Edit User Profile
                   </button>
 
+                  <div>
+                    <button
+                      className={styles.actionBtnRed}
+                      onClick={handleSuspendFromActions}
+                      disabled={suspending}
+                      title={CSR_TERMS.suspend}
+                    >
+                      <span>{isSuspended ? '✓' : '⊘'}</span>
+                      {suspending
+                        ? (isSuspended ? 'Unsuspending…' : 'Suspending…')
+                        : (isSuspended ? 'Unsuspend Account' : 'Suspend Account')}
+                    </button>
+                    <p className={styles.actionHint}>Blocks login only — <strong>does not stop billing</strong>.</p>
+                  </div>
+                </div>
+
+                {/* ── Billing & Subscription ──────────────────── */}
+                <div className={styles.actionSectionLabel}>Billing &amp; Subscription</div>
+                <div className={styles.actionsList}>
+                  {(() => {
+                    // Mirrors the left-rail Cancel Subscription (owner 2026-08-04) — same active-order target.
+                    const activeOrder = findActiveOrder(orders);
+                    const oid = activeOrder ? (activeOrder._id || activeOrder.id) : null;
+                    const busy = !!oid && cancelProcessing === oid;
+                    const canCancel = !!oid && !ordersLoading;
+                    return (
+                      <div>
+                        <button
+                          className={styles.actionBtnOrange}
+                          onClick={() => canCancel && handleCancelOrder(oid, true)}
+                          disabled={!canCancel || busy}
+                          title={CSR_TERMS.cancel}
+                        >
+                          <span>⊗</span>
+                          {busy ? 'Cancelling…' : 'Cancel Subscription'}
+                        </button>
+                        <p className={styles.actionHint}>
+                          {ordersLoading
+                            ? 'Checking subscription…'
+                            : canCancel
+                              ? 'Stops future billing. Access continues until the paid period ends.'
+                              : 'No active subscription to cancel.'}
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  <div>
+                    <button className={styles.actionBtnOrange} onClick={handleIssueRefund} disabled={ordersLoading}>
+                      <span>↩</span>
+                      Refund an Order →
+                    </button>
+                    <p className={styles.actionHint}>Opens the order on the Purchase page to refund a settled charge.</p>
+                  </div>
+
+                  <div>
+                    <button className={styles.actionBtnGray} onClick={() => setShowRefundEmail(true)}>
+                      <span>✉</span>
+                      Request Billing Action
+                    </button>
+                    <p className={styles.actionHint}>Emails the finance team (~1 business day) for a change you can't make directly.</p>
+                  </div>
+
+                  <button
+                    className={styles.actionBtnGray}
+                    onClick={() => {
+                      setAgentOrderOffer('comp.offer.agent.retention');
+                      setAgentOrderReason('');
+                      setAgentOrderError('');
+                      setShowAgentOrder(true);
+                    }}
+                  >
+                    <span>+</span>
+                    Create Order (Agent)
+                  </button>
+
+                  <button className={styles.actionBtnGray} onClick={handleViewAllOrders}>
+                    <span>☰</span>
+                    View All Orders
+                  </button>
+                </div>
+
+                {/* ── Privacy & Communication ─────────────────── */}
+                <div className={styles.actionSectionLabel}>Privacy &amp; Communication</div>
+                <div className={styles.actionsList}>
                   <button
                     className={styles.actionBtnGray}
                     onClick={handleOptOutEmail}
@@ -2273,63 +2358,16 @@ const UserDetailPage = () => {
                     {optOutBusy === 'phone' ? 'Opting out…' : 'Opt out of SMS'}
                   </button>
 
-                  <button
-                    className={styles.actionBtnRed}
-                    onClick={() => { setDataRemovalReason(''); setShowDataRemoval(true); }}
-                  >
-                    <span>🗑</span>
-                    Request Data Removal
-                  </button>
-
-                  {/* "Send Password Reset Email" removed — no CSR-side reset endpoint exists yet
-                      (it was a dead 'coming soon' toast). Re-add when BC exposes one. */}
-
-                  <button
-                    className={styles.actionBtnRed}
-                    onClick={handleSuspendFromActions}
-                    disabled={suspending}
-                  >
-                    <span>{isSuspended ? '✓' : '⊘'}</span>
-                    {isSuspended ? 'Unsuspend Account' : 'Suspend Account'}
-                  </button>
-
-                  <button
-                    className={styles.actionBtnOrange}
-                    onClick={handleIssueRefund}
-                    disabled={ordersLoading}
-                  >
-                    <span>↩</span>
-                    Issue Refund (Most Recent Order)
-                  </button>
-
-                  <button
-                    className={styles.actionBtnGreen}
-                    onClick={() => setShowRefundEmail(true)}
-                  >
-                    <span>✉</span>
-                    Request Billing Action
-                  </button>
-
-                  <button
-                    className={styles.actionBtnGreen}
-                    onClick={handleViewAllOrders}
-                  >
-                    <span>☰</span>
-                    View All Orders
-                  </button>
-
-                  <button
-                    className={styles.actionBtnGreen}
-                    onClick={() => {
-                      setAgentOrderOffer('comp.offer.agent.retention');
-                      setAgentOrderReason('');
-                      setAgentOrderError('');
-                      setShowAgentOrder(true);
-                    }}
-                  >
-                    <span>+</span>
-                    Create Order (Agent)
-                  </button>
+                  <div>
+                    <button
+                      className={styles.actionBtnRed}
+                      onClick={() => { setDataRemovalReason(''); setShowDataRemoval(true); }}
+                    >
+                      <span>🗑</span>
+                      Request Data Removal
+                    </button>
+                    <p className={styles.actionHint}>Files a request — actual removal happens off-platform per SOP.</p>
+                  </div>
                 </div>
               </>
             )}
