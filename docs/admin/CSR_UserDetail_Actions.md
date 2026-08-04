@@ -37,7 +37,13 @@ Some actions appear in **both** (e.g. Suspend). They're the same action.
 
 ---
 
-## 2) "Actions" tab — Recommended Actions
+## 2) "Actions" tab — Account Actions
+
+Reorganized 2026-08-04 into three purpose groups with semantic colors (🟥 destructive · 🟧 billing · ⬜ neutral). Per-action hints live in **hover tooltips + an ⓘ affordance**, not inline text. Group order:
+
+- **Account** — Edit User Profile, Suspend/Unsuspend 🟥
+- **Billing & Subscription** — Cancel Subscription 🟧, Refund an Order → 🟧, Request Billing Action, Create Order (Agent), View All Orders
+- **Privacy & Communication** — Opt out of Email, Opt out of SMS, Request Data Removal 🟥
 
 | Action | What it does | Under the hood | Notes |
 |---|---|---|---|
@@ -69,12 +75,12 @@ There are **four** billing-related tools and they are easy to confuse:
 
 ## ⚠️ Known sources of confusion (flagged for cleanup)
 
-1. **Suspend ≠ Cancel** — the historical trap. CSRs suspended thinking it cancels billing; it doesn't (customer stays charged while locked out). *Mitigated 2026-08-04:* the Suspend dialog and an inline helper now spell this out, and a Cancel Subscription button was added to the left rail.
-2. **Suspend appears twice** (left rail + Actions tab) — same action, two entry points. Harmless but redundant.
-3. **Cancel Subscription is only on the left rail**, not in the Actions tab — inconsistent with Suspend. *Candidate:* mirror it into the Actions tab so both live together.
-4. **"Issue Refund" doesn't refund on this page** — it navigates to Purchase Detail. The label reads like a one-click action.
-5. **"Issue Refund" vs "Request Billing Action"** — both are refund-adjacent: the first is *do it now* (direct), the second is *ask finance*. The labels don't make that distinction obvious.
-6. **"Request Data Removal" doesn't remove data** — it files a request; removal is off-platform.
+1. **Suspend ≠ Cancel** — the historical trap. CSRs suspended thinking it cancels billing; it doesn't (customer stays charged while locked out). ✅ *Fixed 2026-08-04:* the Suspend **confirm dialog** spells it out at click-time (the real guardrail), the hover tooltip repeats it, and a **Cancel Subscription** button now sits on both the left rail and the Actions tab.
+2. **Suspend appears twice** (left rail + Actions tab) — same action, two entry points. **Intentional** (owner) — kept in both.
+3. ✅ *Fixed 2026-08-04:* **Cancel Subscription mirrored** into the Actions tab (Billing group), so it lives beside Suspend in both surfaces.
+4. ✅ *Fixed 2026-08-04:* **"Issue Refund" → "Refund an Order →"** — the arrow + tooltip signal it navigates to Purchase Detail rather than refunding in place.
+5. **"Refund an Order" vs "Request Billing Action"** — both are refund-adjacent: the first is *do it now* (direct), the second is *ask finance*. Tooltips now distinguish them, but the two-tools split remains inherent.
+6. **"Request Data Removal" doesn't remove data** — it files a request; removal is off-platform. (Tooltip now says so.)
 
 ---
 
