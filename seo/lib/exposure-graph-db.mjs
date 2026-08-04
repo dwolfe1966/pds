@@ -44,9 +44,11 @@ async function ensureTables() {
       category TEXT, opt_out_url TEXT, removal_method TEXT, relist_days INT, weight INT NOT NULL DEFAULT 1
     )`;
     await sql`CREATE TABLE IF NOT EXISTS owner_annotation (
-      id BIGSERIAL PRIMARY KEY, subject_key TEXT NOT NULL, node_id BIGINT, note TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'pending', created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      id BIGSERIAL PRIMARY KEY, subject_key TEXT NOT NULL, node_id BIGINT, record_key TEXT, label TEXT,
+      note TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
+    await sql`ALTER TABLE owner_annotation ADD COLUMN IF NOT EXISTS record_key TEXT`;
+    await sql`ALTER TABLE owner_annotation ADD COLUMN IF NOT EXISTS label TEXT`;
     _ensured = true;
   } catch { /* leave unensured — reads/writes will just miss/no-op */ }
 }
@@ -163,6 +165,34 @@ export async function logExposureEvent(e) {
       VALUES (${e.nodeId || null}, ${e.subjectKey}, ${e.eventType}, ${e.method || null},
         ${e.detail ? JSON.stringify(e.detail) : null}, ${e.screenshotUrl || null})`;
   } catch { /* ignore */ }
+}
+
+// ── Owner Voice (annotations) ───────────────────────────────────────────────
+// The identity owner's context on a record/exposure ("DUI 1996" → "went to rehab in 1997, sober since").
+// Confirmed-owner-gated at the route. status: pending → (moderation) → approved, gates public display later.
+export async function addAnnotation({ subjectKey, nodeId, recordKey, label, note }) {
+  if (!sql || !subjectKey || !note) return null;
+  await ensureTables();
+  try {
+    const rows = await sql`INSERT INTO owner_annotation (subject_key, node_id, record_key, label, note, status)
+      VALUES (${subjectKey}, ${nodeId || null}, ${recordKey || null}, ${label || null}, ${String(note).slice(0, 1000)}, 'pending')
+      RETURNING id`;
+    return rows && rows[0] ? rows[0].id : null;
+  } catch { return null; }
+}
+
+export async function getAnnotationsForSubject(subjectKey) {
+  if (!sql || !subjectKey) return [];
+  await ensureTables();
+  try { return await sql`SELECT id, node_id, record_key, label, note, status, created_at FROM owner_annotation WHERE subject_key = ${subjectKey} ORDER BY created_at DESC`; }
+  catch { return []; }
+}
+
+export async function deleteAnnotation({ subjectKey, id }) {
+  if (!sql || !subjectKey || !id) return false;
+  await ensureTables();
+  try { await sql`DELETE FROM owner_annotation WHERE id = ${id} AND subject_key = ${subjectKey}`; return true; }
+  catch { return false; }
 }
 
 // ── Score ─────────────────────────────────────────────────────────────────

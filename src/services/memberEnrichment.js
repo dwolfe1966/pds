@@ -330,7 +330,7 @@ export function linkSelfReport(commerceContentId, selfPerson) {
 function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'suppression'); }
 function exposureUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'exposure'); }
 
-const EMPTY_GRAPH = { nodes: [], registry: [], summary: { score: 0, found: 0, controlled: 0, inProgress: 0, exposed: 0 } };
+const EMPTY_GRAPH = { nodes: [], registry: [], annotations: [], summary: { score: 0, found: 0, controlled: 0, inProgress: 0, exposed: 0 } };
 
 /** Fetch the member's Exposure Graph — { nodes, registry, summary }. The spine of the "footprint across
  *  the web" view. Federates our owned surfaces server-side (IDLookup suppression + breach monitor).
@@ -346,8 +346,37 @@ export async function fetchExposureGraph() {
     const res = await fetch(`${exposureUrl()}?${qs.toString()}`, { headers: { ...appKeyHeaders() } });
     if (!res.ok) return EMPTY_GRAPH;
     const data = await res.json();
-    return { nodes: data.nodes || [], registry: data.registry || [], summary: data.summary || EMPTY_GRAPH.summary };
+    return { nodes: data.nodes || [], registry: data.registry || [], annotations: data.annotations || [], summary: data.summary || EMPTY_GRAPH.summary };
   } catch { return EMPTY_GRAPH; }
+}
+
+/** Owner Voice — add the owner's context to a record/exposure. Confirmed-owner-gated server-side.
+ *  Target is flexible: a graph node (nodeId), a report record (recordKey), or a free label. */
+export async function addOwnerNote({ nodeId, recordKey, label, note }) {
+  const userId = currentUserId();
+  if (!userId || !note) return null;
+  try {
+    const res = await fetch(exposureUrl(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, action: 'annotate', nodeId, recordKey, label, note }),
+    });
+    if (!res.ok) return null;
+    return await res.json(); // { ok, annotations }
+  } catch { return null; }
+}
+
+/** Delete one of the owner's own notes. */
+export async function deleteOwnerNote(id) {
+  const userId = currentUserId();
+  if (!userId || !id) return null;
+  try {
+    const res = await fetch(exposureUrl(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, action: 'delete_annotation', id }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
 }
 
 /** Record a per-node control change. Target either an existing node (nodeId) OR a catalog source with

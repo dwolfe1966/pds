@@ -8,6 +8,7 @@
 import {
   hasExposureDb, seedSourceRegistry, getSourceRegistry, getNodesForSubject,
   upsertNode, setNodeControl, summarizeNodes,
+  addAnnotation, getAnnotationsForSubject, deleteAnnotation,
 } from '../../../lib/exposure-graph-db.mjs';
 import { getSuppressionState, hasMappedIdentity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { getMonitorState } from '../../../lib/breachMonitorDb.mjs';
@@ -71,8 +72,8 @@ export async function GET(req) {
   try {
     await seedSourceRegistry();
     await federateOwned({ userId, email });
-    const [nodes, registry] = await Promise.all([getNodesForSubject(userId), getSourceRegistry()]);
-    return new Response(JSON.stringify({ ok: true, nodes, registry, summary: summarizeNodes(nodes) }), { status: 200, headers });
+    const [nodes, registry, annotations] = await Promise.all([getNodesForSubject(userId), getSourceRegistry(), getAnnotationsForSubject(userId)]);
+    return new Response(JSON.stringify({ ok: true, nodes, registry, annotations, summary: summarizeNodes(nodes) }), { status: 200, headers });
   } catch {
     return new Response(JSON.stringify({ error: 'read failed' }), { status: 500, headers });
   }
@@ -82,20 +83,33 @@ export async function POST(req) {
   const headers = { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' };
   if (!checkAppKey(req)) return unauthorized(headers);
   let body; try { body = await req.json(); } catch { body = null; }
-  // Act on an existing node (nodeId) OR on a catalog source with no node yet (sourceKey+surfaceType —
-  // e.g. the member clicked "Remove" on Spokeo before any scan; we create + mark the node so their
-  // manual opt-out is tracked in the graph).
-  const hasTarget = body && body.userId && body.controlStatus && (body.nodeId || (body.sourceKey && body.surfaceType));
-  if (!hasTarget) {
-    return new Response(JSON.stringify({ error: 'userId, controlStatus, and (nodeId | sourceKey+surfaceType) required' }), { status: 400, headers });
-  }
+  if (!body || !body.userId) return new Response(JSON.stringify({ error: 'userId required' }), { status: 400, headers });
   if (!hasExposureDb) return new Response(JSON.stringify({ ok: true, persisted: false }), { status: 200, headers });
-  // Same gate as suppression: you can only act on YOUR OWN footprint (claimed + verified identity).
+  // Same gate as suppression: you can only act on YOUR OWN footprint/records (claimed + verified identity).
   // CEILING: userId is client-asserted (app-key only) until WSFY auth-hardening.
   if (hasSearchDb && !(await hasMappedIdentity(String(body.userId)))) {
     return new Response(JSON.stringify({ error: 'identity_unverified', message: 'Claim and verify your identity to control your exposure.' }), { status: 403, headers });
   }
+  const userId = String(body.userId);
   try {
+    // Owner Voice — add/remove the owner's context on a record/exposure.
+    if (body.action === 'annotate') {
+      if (!body.note) return new Response(JSON.stringify({ error: 'note required' }), { status: 400, headers });
+      await addAnnotation({ subjectKey: userId, nodeId: body.nodeId || null, recordKey: body.recordKey || null, label: body.label || null, note: String(body.note) });
+      const annotations = await getAnnotationsForSubject(userId);
+      return new Response(JSON.stringify({ ok: true, annotations }), { status: 200, headers });
+    }
+    if (body.action === 'delete_annotation') {
+      if (!body.id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400, headers });
+      await deleteAnnotation({ subjectKey: userId, id: body.id });
+      const annotations = await getAnnotationsForSubject(userId);
+      return new Response(JSON.stringify({ ok: true, annotations }), { status: 200, headers });
+    }
+    // Control change — act on an existing node (nodeId) OR a catalog source with no node yet
+    // (sourceKey+surfaceType — e.g. clicked "Remove" on Spokeo before any scan → create + mark it).
+    if (!body.controlStatus || !(body.nodeId || (body.sourceKey && body.surfaceType))) {
+      return new Response(JSON.stringify({ error: 'controlStatus and (nodeId | sourceKey+surfaceType) required' }), { status: 400, headers });
+    }
     let ok = false;
     if (body.nodeId) {
       ok = await setNodeControl(body.nodeId, {
