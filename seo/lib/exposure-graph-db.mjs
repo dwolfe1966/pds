@@ -169,16 +169,35 @@ export async function logExposureEvent(e) {
 
 // ── Owner Voice (annotations) ───────────────────────────────────────────────
 // The identity owner's context on a record/exposure ("DUI 1996" → "went to rehab in 1997, sober since").
-// Confirmed-owner-gated at the route. status: pending → (moderation) → approved, gates public display later.
+// Confirmed-owner-gated at the route.
+
+// Auto-moderation — the mechanical guardrails from the spec (no links, no third-party contact info, no
+// slurs, length bounds). Hard violations are REJECTED (never stored). Clean notes pass to 'approved' so
+// the owner can use them now; when we surface notes to VIEWERS we'll add human review on top of this.
+const SLURS = /\b(fuck|shit|bitch|cunt|nigger|faggot|retard|whore)\w*\b/i;
+export function moderateNote(note) {
+  const t = String(note || '').trim();
+  if (t.length < 3) return { status: 'rejected', reason: 'Too short.' };
+  if (t.length > 1000) return { status: 'rejected', reason: 'Too long — keep it under 1000 characters.' };
+  if (/https?:\/\/|\bwww\./i.test(t)) return { status: 'rejected', reason: 'Links aren’t allowed in notes.' };
+  if (/[\w.+-]+@[\w-]+\.[\w.-]+/.test(t)) return { status: 'rejected', reason: 'Please don’t include email addresses.' };
+  if (/(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/.test(t)) return { status: 'rejected', reason: 'Please don’t include phone numbers.' };
+  if (SLURS.test(t)) return { status: 'rejected', reason: 'Keep it civil — no slurs or profanity.' };
+  return { status: 'approved', reason: null };
+}
+
+/** Add an owner note. Auto-moderates first; rejected notes are NOT stored. Returns { id, status, reason }. */
 export async function addAnnotation({ subjectKey, nodeId, recordKey, label, note }) {
-  if (!sql || !subjectKey || !note) return null;
+  if (!sql || !subjectKey || !note) return { id: null, status: 'rejected', reason: 'Empty note.' };
+  const mod = moderateNote(note);
+  if (mod.status === 'rejected') return { id: null, status: 'rejected', reason: mod.reason };
   await ensureTables();
   try {
     const rows = await sql`INSERT INTO owner_annotation (subject_key, node_id, record_key, label, note, status)
-      VALUES (${subjectKey}, ${nodeId || null}, ${recordKey || null}, ${label || null}, ${String(note).slice(0, 1000)}, 'pending')
+      VALUES (${subjectKey}, ${nodeId || null}, ${recordKey || null}, ${label || null}, ${String(note).slice(0, 1000)}, ${mod.status})
       RETURNING id`;
-    return rows && rows[0] ? rows[0].id : null;
-  } catch { return null; }
+    return { id: rows && rows[0] ? rows[0].id : null, status: mod.status, reason: null };
+  } catch { return { id: null, status: 'error', reason: 'Could not save. Try again.' }; }
 }
 
 export async function getAnnotationsForSubject(subjectKey) {

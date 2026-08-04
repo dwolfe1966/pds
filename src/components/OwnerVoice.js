@@ -30,6 +30,12 @@ export default function OwnerVoice() {
     setBusy(true); setErr('');
     const res = await addOwnerNote({ label: label.trim() || undefined, note: note.trim() });
     setBusy(false);
+    if (res && res.moderation && res.moderation.status === 'rejected') {
+      // Auto-moderation blocked it (links / contact info / slurs) — tell the owner why, keep the draft.
+      setErr(res.moderation.reason || 'That note couldn’t be posted.');
+      if (res.annotations) setNotes(res.annotations);
+      return;
+    }
     if (res && res.annotations) { setNotes(res.annotations); setNote(''); setLabel(''); setOpen(false); }
     else setErr('Couldn’t save. Claim & verify your identity to add your context.');
   };

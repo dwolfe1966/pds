@@ -95,9 +95,9 @@ export async function POST(req) {
     // Owner Voice — add/remove the owner's context on a record/exposure.
     if (body.action === 'annotate') {
       if (!body.note) return new Response(JSON.stringify({ error: 'note required' }), { status: 400, headers });
-      await addAnnotation({ subjectKey: userId, nodeId: body.nodeId || null, recordKey: body.recordKey || null, label: body.label || null, note: String(body.note) });
+      const result = await addAnnotation({ subjectKey: userId, nodeId: body.nodeId || null, recordKey: body.recordKey || null, label: body.label || null, note: String(body.note) });
       const annotations = await getAnnotationsForSubject(userId);
-      return new Response(JSON.stringify({ ok: true, annotations }), { status: 200, headers });
+      return new Response(JSON.stringify({ ok: result.status !== 'rejected' && result.status !== 'error', moderation: { status: result.status, reason: result.reason }, annotations }), { status: 200, headers });
     }
     if (body.action === 'delete_annotation') {
       if (!body.id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400, headers });
