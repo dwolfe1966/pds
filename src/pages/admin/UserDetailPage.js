@@ -5,7 +5,7 @@ import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } fr
 import { getOrderCard } from '../../utils/orderCard';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
-import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, CSR_TERMS } from './userState';
+import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, findActiveOrder, CSR_TERMS } from './userState';
 import { useZipCity } from './zipCity';
 import { useAuth } from '../../context/AuthContext';
 import BillingEventsTable from './BillingEventsTable';
@@ -701,8 +701,8 @@ const UserDetailPage = () => {
     const isSuspended = isSuspendedStatus(getStatus(user));
     const action = isSuspended ? 'unsuspend' : 'suspend';
     const confirmMsg = isSuspended
-      ? `Unsuspend account for ${getFullName(user)}?`
-      : `Suspend account for ${getFullName(user)}? They will lose access immediately.`;
+      ? `Unsuspend account for ${getFullName(user)}?\n\nThis restores their login. It does NOT change billing.`
+      : `Suspend account for ${getFullName(user)}?\n\n⚠️ Suspend ONLY blocks their login. It does NOT cancel their subscription and does NOT stop billing — they will keep getting charged.\n\nTo stop future charges, close this and use "Cancel Subscription" instead.`;
 
     if (!window.confirm(confirmMsg)) return;
 
@@ -1034,7 +1034,10 @@ const UserDetailPage = () => {
   // Cancel or reactivate an order
   const handleCancelOrder = async (orderId, shouldCancel) => {
     const action = shouldCancel ? 'cancel' : 'reactivate';
-    if (!window.confirm(`Are you sure you want to ${action} this order?`)) return;
+    const confirmMsg = shouldCancel
+      ? `Cancel this subscription?\n\nThis STOPS future billing. The customer keeps access until the current paid period ends, then it expires. Reversible via Reactivate.`
+      : `Reactivate this subscription?\n\nBilling resumes on the normal schedule and access continues.`;
+    if (!window.confirm(confirmMsg)) return;
     setCancelProcessing(orderId);
     try {
       await api.adminCancelOrder(orderId, shouldCancel);
@@ -1528,6 +1531,33 @@ const UserDetailPage = () => {
               ? (isSuspended ? 'Unsuspending…' : 'Suspending…')
               : (isSuspended ? 'Unsuspend Account' : 'Suspend Account')}
           </button>
+          {/* Suspend ≠ Cancel. CSRs were suspending believing it cancels the subscription — it does NOT
+              (owner 2026-08-04). State the distinction inline, not just in the hover tooltip. */}
+          <p style={{ margin: '4px 2px 0', fontSize: '11.5px', lineHeight: 1.45, color: '#6b7280' }}>
+            Blocks login only — <strong style={{ color: '#b91c1c' }}>does not stop billing</strong>. To end charges, use Cancel Subscription.
+          </p>
+
+          {(() => {
+            const activeOrder = findActiveOrder(orders);
+            if (!activeOrder) return null;
+            const oid = activeOrder._id || activeOrder.id;
+            return (
+              <>
+                <button
+                  title={CSR_TERMS.cancel}
+                  className={styles.suspendBtn}
+                  style={{ marginTop: 12, background: '#b45309', color: '#fff', borderColor: '#b45309' }}
+                  onClick={() => handleCancelOrder(oid, true)}
+                  disabled={cancelProcessing === oid}
+                >
+                  {cancelProcessing === oid ? 'Cancelling…' : 'Cancel Subscription'}
+                </button>
+                <p style={{ margin: '4px 2px 0', fontSize: '11.5px', lineHeight: 1.45, color: '#6b7280' }}>
+                  Stops future billing. Access continues until the paid period ends.
+                </p>
+              </>
+            );
+          })()}
 
           <button
             title="Generate a one-click link to log in as this customer and troubleshoot their account. The action is logged."

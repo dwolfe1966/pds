@@ -94,6 +94,17 @@ export function getPlanState(orders) {
   return PLAN_STATES.expired; // paid before, no active order
 }
 
+// The single active, cancelable subscription order — SAME predicate as getPlanState's `isActive`
+// (paid + status active + not canceled + not expired). Used by the account-page "Cancel Subscription"
+// action so it targets the right order. Returns null when there's nothing to cancel.
+export function findActiveOrder(orders) {
+  const list = Array.isArray(orders) ? orders : [];
+  const norm = (s) => (s || '').toLowerCase();
+  const isCanceled = (o) => o?.transient?.canceled || norm(o?.subStatus) === 'canceled' || norm(o?.subStatus) === 'cancelled';
+  const isExpired = (o) => norm(o?.subStatus) === 'expired';
+  return list.filter(orderIsPaid).find((o) => norm(o?.status) === 'active' && !isCanceled(o) && !isExpired(o)) || null;
+}
+
 // BC suspends via status='blocked' (no 'suspended' in its enum). Treat 'suspended' too.
 export function isSuspendedStatus(status) {
   const s = (status || '').toLowerCase();
