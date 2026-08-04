@@ -1607,16 +1607,28 @@ const UserDetailPage = () => {
                     </p>
                   ) : (
                     <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderLeft: '2px solid #e5e7eb', marginLeft: '160px' }}>
-                      {events.map((e, i) => (
-                        <li key={i} style={{ position: 'relative', padding: '0.45rem 0 0.45rem 1.25rem', minHeight: 28 }}>
+                      {events.map((e, i) => {
+                        // Billing events click through to the Orders & Payments tab (where the actions live) —
+                        // a NAVIGATION aid, not an action button, so the timeline stays a clean history
+                        // (owner 2026-08-04). Non-billing events are unchanged/read-only.
+                        const isBilling = e.kind === 'payment' || e.kind === 'payment_failed' || e.kind === 'refund' || e.kind === 'canceled';
+                        return (
+                        <li key={i}
+                          onClick={isBilling ? () => setActiveTab('Orders & Payments') : undefined}
+                          title={isBilling ? 'View in Orders & Payments →' : undefined}
+                          style={{ position: 'relative', padding: '0.45rem 0 0.45rem 1.25rem', minHeight: 28, cursor: isBilling ? 'pointer' : 'default' }}>
                           <span style={{ position: 'absolute', left: '-180px', top: '0.55rem', width: 150, textAlign: 'right', fontSize: '0.76rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
                             {formatDateTime(e.iso)}
                           </span>
                           <span style={{ position: 'absolute', left: -7, top: '0.6rem', width: 12, height: 12, borderRadius: '50%', background: COLORS[e.kind] || '#9ca3af', border: '2px solid #fff' }} />
-                          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827' }}>{e.label}</div>
+                          <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#111827' }}>
+                            {e.label}
+                            {isBilling && <span style={{ marginLeft: 8, fontSize: '0.72rem', fontWeight: 600, color: '#4338ca' }}>Orders →</span>}
+                          </div>
                           {e.detail && <div style={{ fontSize: '0.8rem', color: '#6b7280', wordBreak: 'break-word' }}>{e.detail}</div>}
                         </li>
-                      ))}
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
