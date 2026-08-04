@@ -1538,22 +1538,29 @@ const UserDetailPage = () => {
           </p>
 
           {(() => {
+            // Always show Cancel Subscription directly under Suspend so CSRs always know where it lives
+            // (owner 2026-08-04). Disabled with a reason when there's no active order to cancel.
             const activeOrder = findActiveOrder(orders);
-            if (!activeOrder) return null;
-            const oid = activeOrder._id || activeOrder.id;
+            const oid = activeOrder ? (activeOrder._id || activeOrder.id) : null;
+            const busy = !!oid && cancelProcessing === oid;
+            const canCancel = !!oid && !ordersLoading;
             return (
               <>
                 <button
                   title={CSR_TERMS.cancel}
                   className={styles.suspendBtn}
-                  style={{ marginTop: 12, background: '#b45309', color: '#fff', borderColor: '#b45309' }}
-                  onClick={() => handleCancelOrder(oid, true)}
-                  disabled={cancelProcessing === oid}
+                  style={{ marginTop: 12, background: canCancel ? '#b45309' : '#e5e7eb', color: canCancel ? '#fff' : '#9ca3af', borderColor: canCancel ? '#b45309' : '#e5e7eb', cursor: canCancel ? 'pointer' : 'not-allowed' }}
+                  onClick={() => canCancel && handleCancelOrder(oid, true)}
+                  disabled={!canCancel || busy}
                 >
-                  {cancelProcessing === oid ? 'Cancelling…' : 'Cancel Subscription'}
+                  {busy ? 'Cancelling…' : 'Cancel Subscription'}
                 </button>
                 <p style={{ margin: '4px 2px 0', fontSize: '11.5px', lineHeight: 1.45, color: '#6b7280' }}>
-                  Stops future billing. Access continues until the paid period ends.
+                  {ordersLoading
+                    ? 'Checking subscription…'
+                    : canCancel
+                      ? 'Stops future billing. Access continues until the paid period ends.'
+                      : 'No active subscription to cancel.'}
                 </p>
               </>
             );
