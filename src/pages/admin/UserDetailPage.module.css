@@ -807,11 +807,12 @@
   margin-top: 0.25rem;
 }
 
-.actionHint {
-  font-size: 0.72rem;
-  line-height: 1.45;
-  color: #6b7280;
-  margin: 0.35rem 0.15rem 0;
+/* Subtle "hover for info" affordance on actions that carry a tooltip hint */
+.actionInfo {
+  margin-left: auto;
+  opacity: 0.4;
+  font-size: 0.95em;
+  cursor: help;
 }
 
 /* ============================================================

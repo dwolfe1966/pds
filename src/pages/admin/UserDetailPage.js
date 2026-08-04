@@ -1531,38 +1531,25 @@ const UserDetailPage = () => {
               ? (isSuspended ? 'Unsuspending…' : 'Suspending…')
               : (isSuspended ? 'Unsuspend Account' : 'Suspend Account')}
           </button>
-          {/* Suspend ≠ Cancel. CSRs were suspending believing it cancels the subscription — it does NOT
-              (owner 2026-08-04). State the distinction inline, not just in the hover tooltip. */}
-          <p style={{ margin: '4px 2px 0', fontSize: '11.5px', lineHeight: 1.45, color: '#6b7280' }}>
-            Blocks login only — <strong style={{ color: '#b91c1c' }}>does not stop billing</strong>. To end charges, use Cancel Subscription.
-          </p>
 
+          {/* Cancel Subscription — always here so CSRs know where it lives (owner 2026-08-04); disabled with
+              a reason when there's no active order. The suspend≠cancel warning lives in the confirm dialog +
+              hover tooltip (owner 2026-08-04: keep the surface clean). */}
           {(() => {
-            // Always show Cancel Subscription directly under Suspend so CSRs always know where it lives
-            // (owner 2026-08-04). Disabled with a reason when there's no active order to cancel.
             const activeOrder = findActiveOrder(orders);
             const oid = activeOrder ? (activeOrder._id || activeOrder.id) : null;
             const busy = !!oid && cancelProcessing === oid;
             const canCancel = !!oid && !ordersLoading;
             return (
-              <>
-                <button
-                  title={CSR_TERMS.cancel}
-                  className={styles.suspendBtn}
-                  style={{ marginTop: 12, background: canCancel ? '#b45309' : '#e5e7eb', color: canCancel ? '#fff' : '#9ca3af', borderColor: canCancel ? '#b45309' : '#e5e7eb', cursor: canCancel ? 'pointer' : 'not-allowed' }}
-                  onClick={() => canCancel && handleCancelOrder(oid, true)}
-                  disabled={!canCancel || busy}
-                >
-                  {busy ? 'Cancelling…' : 'Cancel Subscription'}
-                </button>
-                <p style={{ margin: '4px 2px 0', fontSize: '11.5px', lineHeight: 1.45, color: '#6b7280' }}>
-                  {ordersLoading
-                    ? 'Checking subscription…'
-                    : canCancel
-                      ? 'Stops future billing. Access continues until the paid period ends.'
-                      : 'No active subscription to cancel.'}
-                </p>
-              </>
+              <button
+                title={ordersLoading ? 'Checking subscription…' : canCancel ? CSR_TERMS.cancel : 'No active subscription to cancel.'}
+                className={styles.suspendBtn}
+                style={{ marginTop: 12, background: canCancel ? '#b45309' : '#e5e7eb', color: canCancel ? '#fff' : '#9ca3af', borderColor: canCancel ? '#b45309' : '#e5e7eb', cursor: canCancel ? 'pointer' : 'not-allowed' }}
+                onClick={() => canCancel && handleCancelOrder(oid, true)}
+                disabled={!canCancel || busy}
+              >
+                {busy ? 'Cancelling…' : 'Cancel Subscription'}
+              </button>
             );
           })()}
 
@@ -2245,6 +2232,10 @@ const UserDetailPage = () => {
               <>
                 <h3 className={styles.actionsTitle}>Account Actions</h3>
 
+                {/* Hints live in hover tooltips (title) + the ⓘ affordance, not inline text, to keep the
+                    surface clean (owner 2026-08-04). The suspend≠cancel warning ALSO fires in the confirm
+                    dialog on click — that's the real guardrail. */}
+
                 {/* ── Account ─────────────────────────────────── */}
                 <div className={styles.actionSectionLabel}>Account</div>
                 <div className={styles.actionsList}>
@@ -2253,20 +2244,18 @@ const UserDetailPage = () => {
                     Edit User Profile
                   </button>
 
-                  <div>
-                    <button
-                      className={styles.actionBtnRed}
-                      onClick={handleSuspendFromActions}
-                      disabled={suspending}
-                      title={CSR_TERMS.suspend}
-                    >
-                      <span>{isSuspended ? '✓' : '⊘'}</span>
-                      {suspending
-                        ? (isSuspended ? 'Unsuspending…' : 'Suspending…')
-                        : (isSuspended ? 'Unsuspend Account' : 'Suspend Account')}
-                    </button>
-                    <p className={styles.actionHint}>Blocks login only — <strong>does not stop billing</strong>.</p>
-                  </div>
+                  <button
+                    className={styles.actionBtnRed}
+                    onClick={handleSuspendFromActions}
+                    disabled={suspending}
+                    title={CSR_TERMS.suspend}
+                  >
+                    <span>{isSuspended ? '✓' : '⊘'}</span>
+                    {suspending
+                      ? (isSuspended ? 'Unsuspending…' : 'Suspending…')
+                      : (isSuspended ? 'Unsuspend Account' : 'Suspend Account')}
+                    <span className={styles.actionInfo} aria-hidden="true">ⓘ</span>
+                  </button>
                 </div>
 
                 {/* ── Billing & Subscription ──────────────────── */}
@@ -2279,42 +2268,39 @@ const UserDetailPage = () => {
                     const busy = !!oid && cancelProcessing === oid;
                     const canCancel = !!oid && !ordersLoading;
                     return (
-                      <div>
-                        <button
-                          className={styles.actionBtnOrange}
-                          onClick={() => canCancel && handleCancelOrder(oid, true)}
-                          disabled={!canCancel || busy}
-                          title={CSR_TERMS.cancel}
-                        >
-                          <span>⊗</span>
-                          {busy ? 'Cancelling…' : 'Cancel Subscription'}
-                        </button>
-                        <p className={styles.actionHint}>
-                          {ordersLoading
-                            ? 'Checking subscription…'
-                            : canCancel
-                              ? 'Stops future billing. Access continues until the paid period ends.'
-                              : 'No active subscription to cancel.'}
-                        </p>
-                      </div>
+                      <button
+                        className={styles.actionBtnOrange}
+                        onClick={() => canCancel && handleCancelOrder(oid, true)}
+                        disabled={!canCancel || busy}
+                        title={ordersLoading ? 'Checking subscription…' : canCancel ? CSR_TERMS.cancel : 'No active subscription to cancel.'}
+                      >
+                        <span>⊗</span>
+                        {busy ? 'Cancelling…' : 'Cancel Subscription'}
+                        <span className={styles.actionInfo} aria-hidden="true">ⓘ</span>
+                      </button>
                     );
                   })()}
 
-                  <div>
-                    <button className={styles.actionBtnOrange} onClick={handleIssueRefund} disabled={ordersLoading}>
-                      <span>↩</span>
-                      Refund an Order →
-                    </button>
-                    <p className={styles.actionHint}>Opens the order on the Purchase page to refund a settled charge.</p>
-                  </div>
+                  <button
+                    className={styles.actionBtnOrange}
+                    onClick={handleIssueRefund}
+                    disabled={ordersLoading}
+                    title="Opens the order on the Purchase page to refund a settled charge."
+                  >
+                    <span>↩</span>
+                    Refund an Order →
+                    <span className={styles.actionInfo} aria-hidden="true">ⓘ</span>
+                  </button>
 
-                  <div>
-                    <button className={styles.actionBtnGray} onClick={() => setShowRefundEmail(true)}>
-                      <span>✉</span>
-                      Request Billing Action
-                    </button>
-                    <p className={styles.actionHint}>Emails the finance team (~1 business day) for a change you can't make directly.</p>
-                  </div>
+                  <button
+                    className={styles.actionBtnGray}
+                    onClick={() => setShowRefundEmail(true)}
+                    title="Emails the finance team (~1 business day) for a billing change you can't make directly."
+                  >
+                    <span>✉</span>
+                    Request Billing Action
+                    <span className={styles.actionInfo} aria-hidden="true">ⓘ</span>
+                  </button>
 
                   <button
                     className={styles.actionBtnGray}
@@ -2342,7 +2328,7 @@ const UserDetailPage = () => {
                     className={styles.actionBtnGray}
                     onClick={handleOptOutEmail}
                     disabled={optOutBusy === 'email'}
-                    title={user?.email ? `Unsubscribe ${user.email}` : 'No email on file'}
+                    title={user?.email ? `Unsubscribe ${user.email} from marketing email` : 'No email on file'}
                   >
                     <span>✉</span>
                     {optOutBusy === 'email' ? 'Opting out…' : 'Opt out of Email'}
@@ -2352,22 +2338,21 @@ const UserDetailPage = () => {
                     className={styles.actionBtnGray}
                     onClick={handleOptOutPhone}
                     disabled={optOutBusy === 'phone'}
-                    title={user?.phone ? `Unsubscribe ${user.phone}` : 'No phone on file'}
+                    title={user?.phone ? `Unsubscribe ${user.phone} from SMS marketing` : 'No phone on file'}
                   >
                     <span>📱</span>
                     {optOutBusy === 'phone' ? 'Opting out…' : 'Opt out of SMS'}
                   </button>
 
-                  <div>
-                    <button
-                      className={styles.actionBtnRed}
-                      onClick={() => { setDataRemovalReason(''); setShowDataRemoval(true); }}
-                    >
-                      <span>🗑</span>
-                      Request Data Removal
-                    </button>
-                    <p className={styles.actionHint}>Files a request — actual removal happens off-platform per SOP.</p>
-                  </div>
+                  <button
+                    className={styles.actionBtnRed}
+                    onClick={() => { setDataRemovalReason(''); setShowDataRemoval(true); }}
+                    title="Files a data-removal request — actual removal happens off-platform per SOP."
+                  >
+                    <span>🗑</span>
+                    Request Data Removal
+                    <span className={styles.actionInfo} aria-hidden="true">ⓘ</span>
+                  </button>
                 </div>
               </>
             )}
