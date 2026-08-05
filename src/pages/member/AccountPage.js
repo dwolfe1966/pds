@@ -7,7 +7,6 @@ import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
 import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel } from '../../services/memberEnrichment';
-import OwnerVoiceAreas from '../../components/OwnerVoiceAreas';
 import { getDeclaredIdentity } from '../../services/identityProfile';
 import { syncBreach } from '../../services/identityMonitorService';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
@@ -1260,7 +1259,6 @@ const AccountPage = () => {
           {identitySubTab === 'footprint' && (
             <>
               <DigitalFootprint onManage={() => setIdentitySubTab('profile')} />
-              <OwnerVoiceAreas />
               <div style={{ marginTop: 16 }}>
                 <ProtectionScoreRing />
               </div>

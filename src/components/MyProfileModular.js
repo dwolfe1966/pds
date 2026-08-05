@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import InlineOwnerNote from './InlineOwnerNote';
+import { fetchExposureGraph } from '../services/memberEnrichment';
 import AddressMap from './AddressMap';
 import { fetchSocialPresence } from '../services/socialPresenceService';
 
@@ -152,6 +154,16 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
   // Update local state AND persist (when a handler is wired — dev preview leaves it local).
   const set = (id, v) => { setDisp((s) => ({ ...s, [id]: v })); if (onDispositionChange) onDispositionChange(id, v); };
   const d = data || {};
+
+  // Owner Voice — the owner's "add your side" per module/area (owner 2026-08-05: belongs on My Profile).
+  // Only fetched in owner mode; each note is keyed by area:<moduleId> and surfaces on the public record.
+  const [ownerNotes, setOwnerNotes] = useState([]);
+  useEffect(() => {
+    if (!ownerMode) return;
+    let alive = true;
+    fetchExposureGraph().then((g) => { if (alive) setOwnerNotes(g.annotations || []); });
+    return () => { alive = false; };
+  }, [ownerMode]);
 
   // Social-presence enrichment — key on the subject's EMAIL (rich, unlike the spotty name-key teaser) and
   // merge into the "Online presence" module below. Self-gating (no match → nothing added).
@@ -508,6 +520,11 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
                 tier={paid ? 'paid' : 'free'} count={COUNT[m.id]} disposition={disp[m.id]}
                 setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner} locked={locked} blurLocked={ownerMode}>
                 {detailed && m.full ? m.full() : m.body()}
+                {isOwner && (
+                  <InlineOwnerNote recordKey={`area:${m.id}`} label={m.title}
+                    notes={ownerNotes.filter((a) => a.record_key === `area:${m.id}`)}
+                    onChanged={setOwnerNotes} indent={0} />
+                )}
               </Module>
             );
           })}
