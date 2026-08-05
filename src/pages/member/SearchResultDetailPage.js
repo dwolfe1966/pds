@@ -8,6 +8,7 @@ import { extractAll, formatDateRange, fmtPhone, residenceDuration } from '../../
 import ProfileView, { styles } from '../../components/ProfileView';
 import MyProfileModular from '../../components/MyProfileModular';
 import ErrorBoundary from '../../components/ErrorBoundary';
+import OwnerNotesOnRecord from '../../components/OwnerNotesOnRecord';
 import { corroboratePerson, cleanReleaseStatus } from '../../services/incarcerationService';
 import MarriageDivorceSection from '../../components/MarriageDivorceSection';
 import SexOffenderSection from '../../components/SexOffenderSection';
@@ -440,6 +441,12 @@ const SearchResultDetailPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Owner Voice — the subject's own approved context on their public record (small universe: only
+          claimed members who added UGC). Renders nothing otherwise. */}
+      <OwnerNotesOnRecord name={data.fullName}
+        state={(Array.isArray(data.addresses) && data.addresses[0] && data.addresses[0].state) || ''}
+        subjectLabel={(String(data.fullName || '').trim().split(/\s+/)[0]) || 'This person'} />
 
       {pdfError && (
         <div style={styles.pdfErrorBanner}>

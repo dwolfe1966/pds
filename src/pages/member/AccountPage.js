@@ -6,8 +6,8 @@ import { getReportList } from '../../services/reportService';
 import Skeleton from '../../components/Skeleton';
 import { setUser as gtmSetUser } from '../../services/gtmContext';
 import { track } from '../../services/trackingService';
-import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel, fetchExposureGraph } from '../../services/memberEnrichment';
-import InlineOwnerNote from '../../components/InlineOwnerNote';
+import { getMappedIdentity, fetchMappedIdentity, computeExposure, fetchSuppression, setSuppression, setFieldSuppression, setVerifiedLevel } from '../../services/memberEnrichment';
+import OwnerVoiceAreas from '../../components/OwnerVoiceAreas';
 import { getDeclaredIdentity } from '../../services/identityProfile';
 import { syncBreach } from '../../services/identityMonitorService';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
@@ -182,7 +182,6 @@ const AccountPage = () => {
   const reopenHero = () => { setHeroDismissed(false); try { localStorage.removeItem('idMonitorHeroDismissed'); } catch { /* ignore */ } };
   const [pullingReport, setPullingReport] = useState(false); // "Pull my full report" in-progress (state c)
   const [identitySubTab, setIdentitySubTab] = useState('profile'); // My Identity command-center subnav
-  const [ownerNotes, setOwnerNotes] = useState([]); // Owner Voice annotations, attached per attribute/record
   // Re-read the mapped identity on mount AND whenever a tab is opened, so a confirmation done on
   // the dashboard (or another device) is reflected here. Local mirror first, then the server copy.
   useEffect(() => {
@@ -192,7 +191,6 @@ const AccountPage = () => {
     if (activeTab === 'identity') {
       fetchMappedIdentity().then((srv) => { if (alive && srv) setIdentity(srv); });
       fetchSuppression().then((s) => { if (alive) { setSuppressed(s.activityHidden); setHiddenFields(s.hiddenFields || []); } });
-      fetchExposureGraph().then((g) => { if (alive) setOwnerNotes(g.annotations || []); });
     }
     return () => { alive = false; };
   }, [activeTab]);
@@ -1262,6 +1260,7 @@ const AccountPage = () => {
           {identitySubTab === 'footprint' && (
             <>
               <DigitalFootprint onManage={() => setIdentitySubTab('profile')} />
+              <OwnerVoiceAreas />
               <div style={{ marginTop: 16 }}>
                 <ProtectionScoreRing />
               </div>
@@ -1366,8 +1365,7 @@ const AccountPage = () => {
                         {/* Backed-up breakdown: what's driving the score, from your actual record. */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                           {exposure.breakdown.map((b) => (
-                            <React.Fragment key={b.key}>
-                            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            <div key={b.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                               <span style={{ marginTop: 2, width: 8, height: 8, borderRadius: '50%', background: expColor, flexShrink: 0 }} aria-hidden="true" />
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{b.label} <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>+{b.points}</span></div>
@@ -1385,11 +1383,6 @@ const AccountPage = () => {
                                 </Link>
                               )}
                             </div>
-                            {/* Owner Voice on THIS record/attribute — add your side of the story, inline. */}
-                            <InlineOwnerNote recordKey={`attr:${b.key}`} label={b.label}
-                              notes={ownerNotes.filter((a) => a.record_key === `attr:${b.key}`)}
-                              onChanged={setOwnerNotes} indent={18} />
-                            </React.Fragment>
                           ))}
                         </div>
                         {/* Per-item hides — struck through, with an Unhide affordance. Paid only. */}

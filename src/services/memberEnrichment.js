@@ -355,14 +355,34 @@ export async function fetchExposureGraph() {
 export async function addOwnerNote({ nodeId, recordKey, label, note }) {
   const userId = currentUserId();
   if (!userId || !note) return null;
+  // Attach the owner's own identity so the note can be found on their PUBLIC record by a viewer.
+  let name = '', state = '';
+  try {
+    const id = getMappedIdentity();
+    if (id) { name = id.name || [id.firstName, id.lastName].filter(Boolean).join(' ').trim(); state = id.state || ''; }
+  } catch { /* ignore */ }
   try {
     const res = await fetch(exposureUrl(), {
       method: 'POST', headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
-      body: JSON.stringify({ userId, action: 'annotate', nodeId, recordKey, label, note }),
+      body: JSON.stringify({ userId, action: 'annotate', nodeId, recordKey, label, note, name, state }),
     });
     if (!res.ok) return null;
-    return await res.json(); // { ok, annotations }
+    return await res.json(); // { ok, moderation, annotations }
   } catch { return null; }
+}
+
+/** PUBLIC read: approved owner notes to display on a SEARCHED person's record/report. Keyed by the
+ *  subject's identity (name + optional state). Empty for the vast majority (only claimed+UGC records). */
+export async function fetchApprovedNotes({ name, state }) {
+  if (!name) return [];
+  try {
+    const qs = new URLSearchParams({ notesForName: name });
+    if (state) qs.set('notesForState', state);
+    const res = await fetch(`${exposureUrl()}?${qs.toString()}`, { headers: { ...appKeyHeaders() } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.notes || [];
+  } catch { return []; }
 }
 
 /** Delete one of the owner's own notes. */

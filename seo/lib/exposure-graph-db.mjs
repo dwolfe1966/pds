@@ -45,10 +45,14 @@ async function ensureTables() {
     )`;
     await sql`CREATE TABLE IF NOT EXISTS owner_annotation (
       id BIGSERIAL PRIMARY KEY, subject_key TEXT NOT NULL, node_id BIGINT, record_key TEXT, label TEXT,
-      note TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      note TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
+      subject_name_norm TEXT, subject_state TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
     await sql`ALTER TABLE owner_annotation ADD COLUMN IF NOT EXISTS record_key TEXT`;
     await sql`ALTER TABLE owner_annotation ADD COLUMN IF NOT EXISTS label TEXT`;
+    await sql`ALTER TABLE owner_annotation ADD COLUMN IF NOT EXISTS subject_name_norm TEXT`;
+    await sql`ALTER TABLE owner_annotation ADD COLUMN IF NOT EXISTS subject_state TEXT`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_ann_subject_name ON owner_annotation(subject_name_norm)`;
     _ensured = true;
   } catch { /* leave unensured — reads/writes will just miss/no-op */ }
 }
@@ -186,18 +190,38 @@ export function moderateNote(note) {
   return { status: 'approved', reason: null };
 }
 
-/** Add an owner note. Auto-moderates first; rejected notes are NOT stored. Returns { id, status, reason }. */
-export async function addAnnotation({ subjectKey, nodeId, recordKey, label, note }) {
+const normName = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** Add an owner note. Auto-moderates first; rejected notes are NOT stored. The owner's own identity
+ *  (name/state) is denormalized on the row so a VIEWER can look the note up on the public record.
+ *  Returns { id, status, reason }. */
+export async function addAnnotation({ subjectKey, nodeId, recordKey, label, note, name, state }) {
   if (!sql || !subjectKey || !note) return { id: null, status: 'rejected', reason: 'Empty note.' };
   const mod = moderateNote(note);
   if (mod.status === 'rejected') return { id: null, status: 'rejected', reason: mod.reason };
   await ensureTables();
   try {
-    const rows = await sql`INSERT INTO owner_annotation (subject_key, node_id, record_key, label, note, status)
-      VALUES (${subjectKey}, ${nodeId || null}, ${recordKey || null}, ${label || null}, ${String(note).slice(0, 1000)}, ${mod.status})
+    const rows = await sql`INSERT INTO owner_annotation (subject_key, node_id, record_key, label, note, status, subject_name_norm, subject_state)
+      VALUES (${subjectKey}, ${nodeId || null}, ${recordKey || null}, ${label || null}, ${String(note).slice(0, 1000)}, ${mod.status}, ${normName(name) || null}, ${(state || '').toUpperCase().trim() || null})
       RETURNING id`;
     return { id: rows && rows[0] ? rows[0].id : null, status: mod.status, reason: null };
   } catch { return { id: null, status: 'error', reason: 'Could not save. Try again.' }; }
+}
+
+/** PUBLIC read: approved owner notes for a subject IDENTITY (name + optional state) — what a VIEWER sees
+ *  on the person's record. Small universe: only claimed members who added (auto-approved) UGC appear. */
+export async function getApprovedNotesForIdentity({ name, state }) {
+  if (!sql || !name) return [];
+  await ensureTables();
+  const nn = normName(name);
+  if (!nn) return [];
+  const st = (state || '').toUpperCase().trim();
+  try {
+    return await sql`SELECT id, record_key, label, note, created_at FROM owner_annotation
+      WHERE status = 'approved' AND subject_name_norm = ${nn}
+      AND (subject_state IS NULL OR ${st} = '' OR upper(subject_state) = ${st})
+      ORDER BY created_at DESC`;
+  } catch { return []; }
 }
 
 export async function getAnnotationsForSubject(subjectKey) {

@@ -8,7 +8,7 @@
 import {
   hasExposureDb, seedSourceRegistry, getSourceRegistry, getNodesForSubject,
   upsertNode, setNodeControl, summarizeNodes,
-  addAnnotation, getAnnotationsForSubject, deleteAnnotation,
+  addAnnotation, getAnnotationsForSubject, deleteAnnotation, getApprovedNotesForIdentity,
 } from '../../../lib/exposure-graph-db.mjs';
 import { getSuppressionState, hasMappedIdentity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { getMonitorState } from '../../../lib/breachMonitorDb.mjs';
@@ -65,6 +65,16 @@ export async function GET(req) {
   const headers = { ...corsHeaders(req.headers.get('origin')), 'Content-Type': 'application/json' };
   if (!checkAppKey(req)) return unauthorized(headers);
   const params = new URL(req.url).searchParams;
+  // PUBLIC viewer read — approved owner notes for a subject IDENTITY (name+state), to render on that
+  // person's record/report. No userId needed (it's about a searched person, not the caller).
+  const notesForName = params.get('notesForName');
+  if (notesForName) {
+    if (!hasExposureDb) return new Response(JSON.stringify({ ok: true, notes: [] }), { status: 200, headers });
+    try {
+      const notes = await getApprovedNotesForIdentity({ name: notesForName, state: params.get('notesForState') || '' });
+      return new Response(JSON.stringify({ ok: true, notes }), { status: 200, headers });
+    } catch { return new Response(JSON.stringify({ ok: true, notes: [] }), { status: 200, headers }); }
+  }
   const userId = params.get('userId');
   const email = params.get('email');
   if (!userId) return new Response(JSON.stringify({ error: 'userId required' }), { status: 400, headers });
@@ -95,7 +105,7 @@ export async function POST(req) {
     // Owner Voice — add/remove the owner's context on a record/exposure.
     if (body.action === 'annotate') {
       if (!body.note) return new Response(JSON.stringify({ error: 'note required' }), { status: 400, headers });
-      const result = await addAnnotation({ subjectKey: userId, nodeId: body.nodeId || null, recordKey: body.recordKey || null, label: body.label || null, note: String(body.note) });
+      const result = await addAnnotation({ subjectKey: userId, nodeId: body.nodeId || null, recordKey: body.recordKey || null, label: body.label || null, note: String(body.note), name: body.name || null, state: body.state || null });
       const annotations = await getAnnotationsForSubject(userId);
       return new Response(JSON.stringify({ ok: result.status !== 'rejected' && result.status !== 'error', moderation: { status: result.status, reason: result.reason }, annotations }), { status: 200, headers });
     }
