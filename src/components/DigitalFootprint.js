@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl } from '../services/memberEnrichment';
+import InlineOwnerNote from './InlineOwnerNote';
 
 /**
  * "Your Digital Footprint" — the Transparency + Control panel, now rendered off the Exposure Graph
@@ -106,9 +107,15 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const controlledCount = graph.summary?.controlled ?? 0;
   const catalogSize = items.filter((it) => it.surfaceType !== 'idlookup').length;
 
-  // Remove click: open the site's opt-out page AND mark the node requested (tracked in the graph).
-  const onRemove = (it) => {
-    if (it.url) { try { window.open(it.url, '_blank', 'noopener,noreferrer'); } catch { /* ignore */ } }
+  // Group the owner's notes by the item they're attached to (record_key).
+  const annsBySource = useMemo(() => {
+    const m = {}; (graph.annotations || []).forEach((a) => { const k = a.record_key || ''; (m[k] = m[k] || []).push(a); }); return m;
+  }, [graph.annotations]);
+  const onAnnotationsChanged = (annotations) => setGraph((g) => ({ ...g, annotations }));
+
+  // Mark the node opt-out-requested (tracked in the graph). The OPEN is the anchor's own navigation —
+  // a real <a> reliably opens the opt-out page (window.open was getting popup-blocked; owner 2026-08-04).
+  const markRequested = (it) => {
     setOverrides((o) => ({ ...o, [it.sourceKey]: 'optout_requested' }));
     setExposureControl({
       nodeId: it.node && it.node.id, sourceKey: it.sourceKey, surfaceType: it.surfaceType,
@@ -117,10 +124,10 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   };
 
   const removeBtn = (it) => (
-    <button type="button" onClick={() => onRemove(it)}
-      style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: GREEN, background: 'none', border: '1px solid #bbf7d0', borderRadius: 999, padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+    <a href={it.url} target="_blank" rel="noopener noreferrer" onClick={() => markRequested(it)}
+      style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: GREEN, textDecoration: 'none', background: 'none', border: '1px solid #bbf7d0', borderRadius: 999, padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
       Remove →
-    </button>
+    </a>
   );
 
   // ── Compact (Dashboard) ────────────────────────────────────────────────────
@@ -169,16 +176,20 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         <div key={surface} style={{ marginTop: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9ca3af' }}>{SURFACE_LABEL[surface] || surface}</div>
           {bySurface[surface].map((it) => (
-            <Row key={it.sourceKey} name={it.name}
-              statusNode={surface === 'idlookup' && !mapped
-                ? <span style={{ fontSize: 12.5, color: '#6b7280' }}>Claim your record to see &amp; control this</span>
-                : statusFor(it.node, overrides[it.sourceKey], !!it.url)}
-              action={
-                surface === 'idlookup'
-                  ? <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '5px 14px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{mapped ? 'Manage' : 'Claim'}</button>
-                  : it.url ? removeBtn(it) : null
-              }
-            />
+            <React.Fragment key={it.sourceKey}>
+              <Row name={it.name}
+                statusNode={surface === 'idlookup' && !mapped
+                  ? <span style={{ fontSize: 12.5, color: '#6b7280' }}>Claim your record to see &amp; control this</span>
+                  : statusFor(it.node, overrides[it.sourceKey], !!it.url)}
+                action={
+                  surface === 'idlookup'
+                    ? <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '5px 14px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{mapped ? 'Manage' : 'Claim'}</button>
+                    : it.url ? removeBtn(it) : null
+                }
+              />
+              {/* Owner Voice attached to THIS provider/record — your context, inline (owner 2026-08-04). */}
+              <InlineOwnerNote recordKey={it.sourceKey} label={it.name} notes={annsBySource[it.sourceKey] || []} onChanged={onAnnotationsChanged} />
+            </React.Fragment>
           ))}
         </div>
       ))}

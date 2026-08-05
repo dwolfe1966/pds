@@ -12,7 +12,6 @@ import { syncBreach } from '../../services/identityMonitorService';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
-import OwnerVoice from '../../components/OwnerVoice';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
 import { getLatestBillingZip, getLatestBillingState } from '../../utils/orderFinancials';
@@ -1260,7 +1259,6 @@ const AccountPage = () => {
           {identitySubTab === 'footprint' && (
             <>
               <DigitalFootprint onManage={() => setIdentitySubTab('profile')} />
-              <OwnerVoice />
               <div style={{ marginTop: 16 }}>
                 <ProtectionScoreRing />
               </div>
