@@ -74,6 +74,25 @@ const SEED_SOURCES = [
   { k: 'facebook', t: 'social_profile', n: 'Facebook', c: 'social', u: null, m: 'owner', r: null, w: 1 },
   { k: 'instagram', t: 'social_profile', n: 'Instagram', c: 'social', u: null, m: 'owner', r: null, w: 1 },
   { k: 'twitter', t: 'social_profile', n: 'X / Twitter', c: 'social', u: null, m: 'owner', r: null, w: 1 },
+  { k: 'tiktok', t: 'social_profile', n: 'TikTok', c: 'social', u: null, m: 'owner', r: null, w: 1 },
+  // ── Expanded catalog — the "map of everywhere your data lives" (shows breadth before any scan;
+  //    a scan/vendor later marks which you're actually found on). opt_out_url only where confident. ──
+  { k: 'truepeoplesearch', t: 'data_broker', n: 'TruePeopleSearch', c: 'people_search', u: 'https://www.truepeoplesearch.com/removal', m: 'manual', r: 90, w: 2 },
+  { k: 'fastpeoplesearch', t: 'data_broker', n: 'FastPeopleSearch', c: 'people_search', u: 'https://www.fastpeoplesearch.com/removal', m: 'manual', r: 90, w: 2 },
+  { k: 'instantcheckmate', t: 'data_broker', n: 'Instant Checkmate', c: 'people_search', u: 'https://www.instantcheckmate.com/opt-out/', m: 'manual', r: 90, w: 2 },
+  { k: 'truthfinder', t: 'data_broker', n: 'TruthFinder', c: 'people_search', u: 'https://www.truthfinder.com/opt-out/', m: 'manual', r: 90, w: 2 },
+  { k: 'peekyou', t: 'data_broker', n: 'PeekYou', c: 'people_search', u: 'https://www.peekyou.com/about/contact/optout/', m: 'manual', r: 120, w: 1 },
+  { k: 'ussearch', t: 'data_broker', n: 'US Search', c: 'people_search', u: 'https://www.ussearch.com/opt-out/submit/', m: 'manual', r: 120, w: 1 },
+  { k: 'nuwber', t: 'data_broker', n: 'Nuwber', c: 'people_search', u: 'https://nuwber.com/removal/link', m: 'manual', r: 120, w: 1 },
+  { k: 'checkpeople', t: 'data_broker', n: 'CheckPeople', c: 'people_search', u: 'https://www.checkpeople.com/opt-out', m: 'manual', r: 120, w: 1 },
+  { k: 'lexisnexis', t: 'data_broker', n: 'LexisNexis', c: 'marketing', u: 'https://optout.lexisnexis.com/', m: 'manual', r: 180, w: 2 },
+  { k: 'acxiom', t: 'data_broker', n: 'Acxiom', c: 'marketing', u: 'https://isapps.acxiom.com/optout/optout.aspx', m: 'manual', r: 180, w: 1 },
+  { k: 'oracle', t: 'data_broker', n: 'Oracle Data Cloud', c: 'marketing', u: null, m: 'manual', r: 180, w: 1 },
+  { k: 'epsilon', t: 'data_broker', n: 'Epsilon', c: 'marketing', u: null, m: 'manual', r: 180, w: 1 },
+  { k: 'bing', t: 'search_result', n: 'Bing', c: 'search', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'county_court', t: 'public_record', n: 'County court records', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'property_records', t: 'public_record', n: 'County property records', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'voter_records', t: 'public_record', n: 'Voter registration', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
 ];
 
 export async function seedSourceRegistry() {

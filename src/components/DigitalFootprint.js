@@ -30,10 +30,24 @@ const FALLBACK = [
   { source_key: 'google', surface_type: 'search_result', display_name: 'Google Search results', opt_out_url: 'https://myactivity.google.com/results-about-you' },
 ];
 
-const SURFACE_ORDER = ['idlookup', 'breach', 'data_broker', 'search_result', 'social_profile', 'public_record'];
-const SURFACE_LABEL = {
-  idlookup: 'IDLookup — our search', breach: 'Data breaches', data_broker: 'People-search sites',
-  search_result: 'Search engines', social_profile: 'Social profiles', public_record: 'Public records',
+// The "map" is grouped by CATEGORY — every place your data may live, across the web.
+const CATS = [
+  { key: 'ours', label: 'IDLookup — our search', icon: '🏠' },
+  { key: 'people_search', label: 'People-search sites', icon: '🔍' },
+  { key: 'marketing', label: 'Marketing & data brokers', icon: '📣' },
+  { key: 'search', label: 'Search engines', icon: '🌐' },
+  { key: 'social', label: 'Social profiles', icon: '👥' },
+  { key: 'public_record', label: 'Public records', icon: '🏛️' },
+  { key: 'breach', label: 'Data breaches', icon: '🔓' },
+];
+const catOf = (it) => it.surfaceType === 'idlookup' ? 'ours' : it.surfaceType === 'breach' ? 'breach'
+  : (it.category || (it.surfaceType === 'search_result' ? 'search' : it.surfaceType === 'social_profile' ? 'social' : 'people_search'));
+const dotColor = (node, override) => {
+  const cs = override || (node && node.control_status);
+  if (cs === 'hidden' || cs === 'removed' || cs === 'optout_confirmed') return GREEN;
+  if (cs === 'optout_requested') return '#d97706';
+  if (node && node.found_status === 'found') return '#dc2626';
+  return '#d1d5db';
 };
 
 function Badge({ label, color, bg }) {
@@ -91,15 +105,15 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   // Build the itemized list: registry catalog (or fallback) overlaid with node status, plus dynamic breach nodes.
   const items = useMemo(() => {
     const catalog = (graph.registry && graph.registry.length) ? graph.registry : FALLBACK;
-    const list = catalog.map((r) => ({ sourceKey: r.source_key, surfaceType: r.surface_type, name: r.display_name, url: r.opt_out_url, node: nodesBySource[r.source_key] }));
+    const list = catalog.map((r) => ({ sourceKey: r.source_key, surfaceType: r.surface_type, category: r.category, name: r.display_name, url: r.opt_out_url, node: nodesBySource[r.source_key] }));
     (graph.nodes || []).filter((n) => n.surface_type === 'breach').forEach((n) => {
-      list.push({ sourceKey: n.source_key, surfaceType: 'breach', name: (n.exposure_detail && n.exposure_detail.breach) || n.source_key.replace('breach:', ''), url: null, node: n });
+      list.push({ sourceKey: n.source_key, surfaceType: 'breach', category: 'breach', name: (n.exposure_detail && n.exposure_detail.breach) || n.source_key.replace('breach:', ''), url: null, node: n });
     });
     return list;
   }, [graph.registry, graph.nodes, nodesBySource]);
 
-  const bySurface = useMemo(() => {
-    const g = {}; items.forEach((it) => { (g[it.surfaceType] = g[it.surfaceType] || []).push(it); }); return g;
+  const byCategory = useMemo(() => {
+    const g = {}; items.forEach((it) => { const c = catOf(it); (g[c] = g[c] || []).push(it); }); return g;
   }, [items]);
 
   const exposedCount = graph.summary?.exposed ?? 0;
@@ -146,47 +160,67 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     );
   }
 
-  // ── Full (top of My Identity) ──────────────────────────────────────────────
+  // ── Full (My Identity → Digital Footprint) — the MAP of everywhere your data lives ──────────────
+  const cats = CATS.filter((c) => byCategory[c.key] && byCategory[c.key].length);
   return (
     <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, padding: '20px 22px', background: '#fff', boxShadow: '0 2px 10px rgba(13,93,47,0.06)' }}>
-      <div style={{ fontSize: 18, fontWeight: 800, color: '#111827' }}>Your Digital Footprint</div>
-      <p style={{ margin: '4px 0 0', fontSize: 13, color: '#9ca3af', fontWeight: 600 }}>Where you're represented across the web</p>
+      <div style={{ fontSize: 18, fontWeight: 800, color: '#111827' }}>Your Digital Footprint <span style={{ fontWeight: 600, fontSize: 12.5, color: '#9ca3af' }}>· a map of where your data lives</span></div>
 
-      {/* Summary — real counts from the graph */}
-      {(exposedCount + controlledCount) > 0 && (
-        <div style={{ display: 'flex', gap: 22, marginTop: 14, marginBottom: 4 }}>
-          <div><div style={{ fontSize: 26, fontWeight: 800, color: '#b91c1c' }}>{exposedCount}</div><div style={{ fontSize: 11.5, color: '#6b7280', fontWeight: 600 }}>Exposed</div></div>
-          <div><div style={{ fontSize: 26, fontWeight: 800, color: GREEN }}>{controlledCount}</div><div style={{ fontSize: 11.5, color: '#6b7280', fontWeight: 600 }}>Under control</div></div>
-        </div>
-      )}
+      {/* Summary — breadth + control, from the graph */}
+      <div style={{ display: 'flex', gap: 24, marginTop: 14, flexWrap: 'wrap' }}>
+        <div><div style={{ fontSize: 26, fontWeight: 800, color: '#111827' }}>{items.length}</div><div style={{ fontSize: 11.5, color: '#6b7280', fontWeight: 600 }}>Sources tracked</div></div>
+        <div><div style={{ fontSize: 26, fontWeight: 800, color: exposedCount ? '#b91c1c' : '#9ca3af' }}>{exposedCount}</div><div style={{ fontSize: 11.5, color: '#6b7280', fontWeight: 600 }}>Exposed</div></div>
+        <div><div style={{ fontSize: 26, fontWeight: 800, color: GREEN }}>{controlledCount}</div><div style={{ fontSize: 11.5, color: '#6b7280', fontWeight: 600 }}>Under control</div></div>
+        <div><div style={{ fontSize: 26, fontWeight: 800, color: '#111827' }}>{cats.length}</div><div style={{ fontSize: 11.5, color: '#6b7280', fontWeight: 600 }}>Categories</div></div>
+      </div>
 
-      <p style={{ margin: '12px 0 12px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.55 }}>
-        <strong>You can't delete yourself from the internet</strong> — data re-lists and re-appears. But you
-        <strong> can take control</strong>: hide it where we can, and remove it site by site. Here's where you stand.
+      <p style={{ margin: '12px 0 8px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.55 }}>
+        Every place across the web we track that may hold your data — brokers, search, social, public records,
+        and breaches. <strong>You can't delete yourself from the internet</strong>, but you can see it all and take control.
       </p>
 
-      {SURFACE_ORDER.filter((s) => bySurface[s] && bySurface[s].length).map((surface) => (
-        <div key={surface} style={{ marginTop: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9ca3af' }}>{SURFACE_LABEL[surface] || surface}</div>
-          {bySurface[surface].map((it) => (
-            <Row key={it.sourceKey} name={it.name}
-              statusNode={surface === 'idlookup' && !mapped
-                ? <span style={{ fontSize: 12.5, color: '#6b7280' }}>Claim your record to see &amp; control this</span>
-                : statusFor(it.node, overrides[it.sourceKey], !!it.url)}
-              action={
-                surface === 'idlookup'
-                  ? <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '5px 14px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{mapped ? 'Manage' : 'Claim'}</button>
-                  : it.url ? removeBtn(it) : null
-              }
-            />
-          ))}
-        </div>
-      ))}
+      {/* The map — category cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 14, marginTop: 8 }}>
+        {cats.map((c) => {
+          const list = byCategory[c.key];
+          const exposedIn = list.filter((it) => it.node && it.node.found_status === 'found' && !['hidden', 'removed', 'optout_confirmed'].includes(overrides[it.sourceKey] || it.node.control_status)).length;
+          return (
+            <div key={c.key} style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: '12px 14px', background: '#fdfdfc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span aria-hidden="true">{c.icon}</span>
+                <span style={{ flex: 1, fontSize: 13.5, fontWeight: 800, color: '#111827' }}>{c.label}</span>
+                {exposedIn > 0
+                  ? <span style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', borderRadius: 999, padding: '1px 8px' }}>{exposedIn} exposed</span>
+                  : <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>{list.length}</span>}
+              </div>
+              {list.map((it) => (
+                <div key={it.sourceKey} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #f3f4f6' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor(it.node, overrides[it.sourceKey]), flexShrink: 0 }} aria-hidden="true" />
+                  <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#374151', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={it.name}>{it.name}</span>
+                  {c.key === 'ours'
+                    ? <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>{mapped ? 'Manage' : 'Claim'}</button>
+                    : it.url
+                      ? <a href={it.url} target="_blank" rel="noopener noreferrer" onClick={() => markRequested(it)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, textDecoration: 'none' }}>Remove →</a>
+                      : null}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
 
-      <p style={{ margin: '16px 0 0', fontSize: 11.5, color: '#9ca3af', lineHeight: 1.5 }}>
-        Opt-out links open each site's own removal form. Clicking Remove tracks the request here. Removals can take
-        days and data can re-list — we keep monitoring and will flag re-appearances. Automated removal across sites is coming.
+      {/* Legend */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', margin: '14px 0 0', fontSize: 11, color: '#6b7280' }}>
+        <Dot c="#dc2626" /> Exposed <Dot c="#d97706" /> Removal requested <Dot c={GREEN} /> Removed / hidden <Dot c="#d1d5db" /> Not yet detected
+      </div>
+      <p style={{ margin: '10px 0 0', fontSize: 11.5, color: '#9ca3af', lineHeight: 1.5 }}>
+        Remove opens each site's own opt-out form and tracks the request here. Data can re-list — we keep monitoring
+        and flag re-appearances. Coverage grows as we scan more sources; automated removal is coming.
       </p>
     </div>
   );
+}
+
+function Dot({ c }) {
+  return <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: c, marginRight: 2, verticalAlign: 'middle' }} aria-hidden="true" />;
 }
