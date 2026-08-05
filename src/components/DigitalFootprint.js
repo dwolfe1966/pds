@@ -34,10 +34,18 @@ const FALLBACK = [
 const CATS = [
   { key: 'ours', label: 'IDLookup — our search', icon: '🏠' },
   { key: 'people_search', label: 'People-search sites', icon: '🔍' },
+  { key: 'background_check', label: 'Background-check sites', icon: '🪪' },
   { key: 'marketing', label: 'Marketing & data brokers', icon: '📣' },
+  { key: 'b2b_data', label: 'Business & professional data', icon: '🏢' },
   { key: 'search', label: 'Search engines', icon: '🌐' },
   { key: 'social', label: 'Social profiles', icon: '👥' },
+  { key: 'genealogy', label: 'Genealogy & family history', icon: '🌳' },
+  { key: 'property', label: 'Property & real estate', icon: '🏡' },
+  { key: 'credit', label: 'Credit bureaus', icon: '💳' },
+  { key: 'location', label: 'Location data brokers', icon: '📡' },
   { key: 'public_record', label: 'Public records', icon: '🏛️' },
+  { key: 'ai', label: 'AI & chatbots', icon: '🤖' },
+  { key: 'images', label: 'Face & image search', icon: '📸' },
   { key: 'breach', label: 'Data breaches', icon: '🔓' },
 ];
 const catOf = (it) => it.surfaceType === 'idlookup' ? 'ours' : it.surfaceType === 'breach' ? 'breach'

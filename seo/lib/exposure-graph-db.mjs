@@ -93,6 +93,40 @@ const SEED_SOURCES = [
   { k: 'county_court', t: 'public_record', n: 'County court records', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
   { k: 'property_records', t: 'public_record', n: 'County property records', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
   { k: 'voter_records', t: 'public_record', n: 'Voter registration', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
+  // ── Background-check sites ──
+  { k: 'goodhire', t: 'data_broker', n: 'GoodHire', c: 'background_check', u: null, m: 'manual', r: null, w: 2 },
+  { k: 'checkr', t: 'data_broker', n: 'Checkr', c: 'background_check', u: null, m: 'manual', r: null, w: 2 },
+  { k: 'hireright', t: 'data_broker', n: 'HireRight', c: 'background_check', u: null, m: 'manual', r: null, w: 2 },
+  { k: 'peoplelooker', t: 'data_broker', n: 'PeopleLooker', c: 'background_check', u: 'https://www.peoplelooker.com/opt-out/', m: 'manual', r: 90, w: 2 },
+  // ── Business & professional data (B2B) ──
+  { k: 'zoominfo', t: 'data_broker', n: 'ZoomInfo', c: 'b2b_data', u: 'https://www.zoominfo.com/update/remove', m: 'manual', r: 180, w: 1 },
+  { k: 'apollo', t: 'data_broker', n: 'Apollo.io', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
+  { k: 'rocketreach', t: 'data_broker', n: 'RocketReach', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
+  { k: 'lusha', t: 'data_broker', n: 'Lusha', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
+  { k: 'clearbit', t: 'data_broker', n: 'Clearbit', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
+  // ── Genealogy & family history ──
+  { k: 'ancestry', t: 'data_broker', n: 'Ancestry', c: 'genealogy', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'myheritage', t: 'data_broker', n: 'MyHeritage', c: 'genealogy', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'familysearch', t: 'data_broker', n: 'FamilySearch', c: 'genealogy', u: null, m: 'manual', r: null, w: 1 },
+  // ── Property & real estate ──
+  { k: 'zillow', t: 'data_broker', n: 'Zillow', c: 'property', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'realtor', t: 'data_broker', n: 'Realtor.com', c: 'property', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'propertyshark', t: 'data_broker', n: 'PropertyShark', c: 'property', u: null, m: 'manual', r: null, w: 1 },
+  // ── Credit bureaus ──
+  { k: 'experian', t: 'data_broker', n: 'Experian', c: 'credit', u: 'https://www.experian.com/privacy/opting_out', m: 'manual', r: null, w: 2 },
+  { k: 'equifax', t: 'data_broker', n: 'Equifax', c: 'credit', u: null, m: 'manual', r: null, w: 2 },
+  { k: 'transunion', t: 'data_broker', n: 'TransUnion', c: 'credit', u: null, m: 'manual', r: null, w: 2 },
+  // ── Location data brokers ──
+  { k: 'safegraph', t: 'data_broker', n: 'SafeGraph', c: 'location', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'cuebiq', t: 'data_broker', n: 'Cuebiq', c: 'location', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'foursquare', t: 'data_broker', n: 'Foursquare', c: 'location', u: null, m: 'manual', r: null, w: 1 },
+  // ── AI & chatbots (the frontier: what AI says about you) ──
+  { k: 'openai', t: 'ai_answer', n: 'ChatGPT (OpenAI)', c: 'ai', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'gemini', t: 'ai_answer', n: 'Google Gemini', c: 'ai', u: null, m: 'manual', r: null, w: 1 },
+  { k: 'perplexity', t: 'ai_answer', n: 'Perplexity', c: 'ai', u: null, m: 'manual', r: null, w: 1 },
+  // ── Face & image search ──
+  { k: 'pimeyes', t: 'image', n: 'PimEyes', c: 'images', u: 'https://pimeyes.com/en/opt-out-request-form', m: 'manual', r: null, w: 2 },
+  { k: 'clearview', t: 'image', n: 'Clearview AI', c: 'images', u: null, m: 'manual', r: null, w: 2 },
 ];
 
 export async function seedSourceRegistry() {
