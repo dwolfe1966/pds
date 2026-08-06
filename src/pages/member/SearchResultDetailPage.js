@@ -416,17 +416,8 @@ const SearchResultDetailPage = () => {
           </div>
         </div>
         <div style={styles.headerActions}>
-          {/* Overview (curated ProfileView) vs Full details (exhaustive grid) — overview is the default. Label
-              is "Overview" (not "Profile") to avoid colliding with the member's own "My Profile". Internal key
-              stays 'profile' so render logic is unchanged. */}
-          <div style={{ display: 'inline-flex', border: '1px solid #d1d5db', borderRadius: 8, overflow: 'hidden' }}>
-            {[{ k: 'profile', label: 'Overview' }, { k: 'details', label: 'Full details' }].map((t) => (
-              <button key={t.k} type="button" onClick={() => setReportView(t.k)}
-                style={{ border: 'none', background: reportView === t.k ? '#0d5d2f' : '#fff', color: reportView === t.k ? '#fff' : '#374151', fontSize: 13, fontWeight: 700, padding: '8px 14px', cursor: 'pointer' }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+          {/* View toggle moved OUT of this utility row into its own prominent tab bar above the
+              report body (was too easy to miss next to PDF / New Search). */}
           {commerceContentId && (
             <button
               onClick={handleDownloadPdf}
@@ -498,21 +489,58 @@ const SearchResultDetailPage = () => {
           (via mergedData.criminalRecords) — no separate top block. */}
       {/* Local boundary: a render throw anywhere in the report body (bad BC shape, new field type) degrades to
           a small in-place notice instead of blanking the entire app via the top-level ErrorBoundary. */}
-      {/* Helper line: disambiguate the Overview vs Full details views for users (and testers) — explains the
-          current view and points to the other. */}
-      <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 14px' }}>
-        {reportView === 'profile'
-          ? 'Overview — the key facts at a glance. Switch to Full details for every record we found.'
-          : 'Full details — every record we found for this person. Switch to Overview for the key facts.'}
-      </p>
+      {/* Prominent view switcher — the primary way to move between the curated Overview and the
+          exhaustive Full details grid. Promoted out of the header utility row (was too hidden) into a
+          full-width tab bar directly above the report so it reads as the main control. */}
+      <div style={{ marginBottom: 14 }}>
+        <div role="tablist" aria-label="Report view"
+          style={{ display: 'flex', gap: 6, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 12, padding: 5 }}>
+          {[
+            { k: 'profile', label: 'Overview', sub: 'Key facts at a glance' },
+            { k: 'details', label: 'Full details', sub: 'Every record we found' },
+          ].map((t) => {
+            const active = reportView === t.k;
+            return (
+              <button key={t.k} type="button" role="tab" aria-selected={active} onClick={() => setReportView(t.k)}
+                style={{
+                  flex: 1, border: 'none', cursor: 'pointer', borderRadius: 9, padding: '10px 14px',
+                  background: active ? '#0d5d2f' : 'transparent',
+                  color: active ? '#fff' : '#334155',
+                  boxShadow: active ? '0 1px 3px rgba(13,93,47,0.35)' : 'none',
+                  textAlign: 'center', transition: 'background 0.12s',
+                }}>
+                <span style={{ display: 'block', fontSize: 15, fontWeight: 800 }}>{t.label}</span>
+                <span style={{ display: 'block', fontSize: 11.5, fontWeight: 600, marginTop: 1, color: active ? 'rgba(255,255,255,0.85)' : '#64748b' }}>{t.sub}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <ErrorBoundary>
         {reportView === 'profile' ? (
-          <MyProfileModular
-            data={mergedData}
-            hero={{ name: data.fullName, age: data.age, location: data.currentLocation }}
-            mode="others"
-            viewerTier="paid"
-          />
+          <>
+            <MyProfileModular
+              data={mergedData}
+              hero={{ name: data.fullName, age: data.age, location: data.currentLocation }}
+              mode="others"
+              viewerTier="paid"
+            />
+            {/* In-context path from the Overview into the exhaustive grid — so a member reading the
+                summary can open everything without hunting for the tab. */}
+            <button type="button"
+              onClick={() => { setReportView('details'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%',
+                marginTop: 16, padding: '16px 18px', cursor: 'pointer', textAlign: 'left',
+                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12,
+              }}>
+              <span>
+                <span style={{ display: 'block', fontSize: 15, fontWeight: 800, color: '#0d5d2f' }}>See the full detailed report</span>
+                <span style={{ display: 'block', fontSize: 12.5, color: '#15803d', marginTop: 2 }}>Every address, phone, relative, and record we found — laid out in full.</span>
+              </span>
+              <span style={{ flexShrink: 0, fontSize: 15, fontWeight: 800, color: '#fff', background: '#0d5d2f', borderRadius: 8, padding: '9px 16px' }}>Open full details →</span>
+            </button>
+          </>
         ) : (
           <ProfileView data={mergedData} viewer="paid" />
         )}
