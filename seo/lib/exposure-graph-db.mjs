@@ -41,8 +41,11 @@ async function ensureTables() {
     )`;
     await sql`CREATE TABLE IF NOT EXISTS source_registry (
       source_key TEXT PRIMARY KEY, surface_type TEXT NOT NULL, display_name TEXT NOT NULL,
-      category TEXT, opt_out_url TEXT, removal_method TEXT, relist_days INT, weight INT NOT NULL DEFAULT 1
+      category TEXT, opt_out_url TEXT, removal_method TEXT, relist_days INT, weight INT NOT NULL DEFAULT 1,
+      nature TEXT
     )`;
+    // nature = honest opt-out label (true_removal|suppression|file_access_only|account_deletion|search_delist|no_optout).
+    await sql`ALTER TABLE source_registry ADD COLUMN IF NOT EXISTS nature TEXT`;
     await sql`CREATE TABLE IF NOT EXISTS owner_annotation (
       id BIGSERIAL PRIMARY KEY, subject_key TEXT NOT NULL, node_id BIGINT, record_key TEXT, label TEXT,
       note TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
@@ -60,85 +63,114 @@ async function ensureTables() {
 // ── Provider catalog ────────────────────────────────────────────────────────
 // Seeded from the brokers already curated in the consumer DigitalFootprint component + Google + our
 // own surfaces + the major social nets. removal_method routes an action to the right engine later.
+// Fields: k=key t=surface_type n=name c=category u=opt_out_url m=removal_method r=relist_days w=weight
+// x=NATURE (honesty label: true_removal|suppression|file_access_only|account_deletion|search_delist|no_optout).
+// URLs + methods + nature verified per-vendor 2026-08-06 — see docs/product/broker-optout-automation-matrix.md.
+// NO vendor offers a removal API; m is the realistic automation path (browser|email|form_post|manual).
 const SEED_SOURCES = [
-  { k: 'idlookup', t: 'idlookup', n: 'IDLookup', c: 'people_search', u: null, m: 'our_suppression', r: null, w: 3 },
-  { k: 'spokeo', t: 'data_broker', n: 'Spokeo', c: 'people_search', u: 'https://www.spokeo.com/optout', m: 'manual', r: 90, w: 2 },
-  { k: 'beenverified', t: 'data_broker', n: 'BeenVerified', c: 'people_search', u: 'https://www.beenverified.com/app/optout/search', m: 'manual', r: 90, w: 2 },
-  { k: 'peoplefinders', t: 'data_broker', n: 'PeopleFinders', c: 'people_search', u: 'https://www.peoplefinders.com/opt-out', m: 'manual', r: 90, w: 2 },
-  { k: 'whitepages', t: 'data_broker', n: 'Whitepages', c: 'people_search', u: 'https://www.whitepages.com/suppression-requests', m: 'manual', r: 120, w: 2 },
-  { k: 'intelius', t: 'data_broker', n: 'Intelius', c: 'people_search', u: 'https://www.intelius.com/opt-out/', m: 'manual', r: 90, w: 2 },
-  { k: 'radaris', t: 'data_broker', n: 'Radaris', c: 'people_search', u: 'https://radaris.com/control/privacy', m: 'manual', r: 120, w: 2 },
-  { k: 'mylife', t: 'data_broker', n: 'MyLife', c: 'people_search', u: 'https://www.mylife.com/ccpa/index.pubview', m: 'manual', r: 120, w: 2 },
-  { k: 'google', t: 'search_result', n: 'Google Search results', c: 'search', u: 'https://myactivity.google.com/results-about-you', m: 'google_rar', r: null, w: 3 },
-  { k: 'linkedin', t: 'social_profile', n: 'LinkedIn', c: 'social', u: null, m: 'owner', r: null, w: 1 },
-  { k: 'facebook', t: 'social_profile', n: 'Facebook', c: 'social', u: null, m: 'owner', r: null, w: 1 },
-  { k: 'instagram', t: 'social_profile', n: 'Instagram', c: 'social', u: null, m: 'owner', r: null, w: 1 },
-  { k: 'twitter', t: 'social_profile', n: 'X / Twitter', c: 'social', u: null, m: 'owner', r: null, w: 1 },
-  { k: 'tiktok', t: 'social_profile', n: 'TikTok', c: 'social', u: null, m: 'owner', r: null, w: 1 },
-  // ── Expanded catalog — the "map of everywhere your data lives" (shows breadth before any scan;
-  //    a scan/vendor later marks which you're actually found on). opt_out_url only where confident. ──
-  { k: 'truepeoplesearch', t: 'data_broker', n: 'TruePeopleSearch', c: 'people_search', u: 'https://www.truepeoplesearch.com/removal', m: 'manual', r: 90, w: 2 },
-  { k: 'fastpeoplesearch', t: 'data_broker', n: 'FastPeopleSearch', c: 'people_search', u: 'https://www.fastpeoplesearch.com/removal', m: 'manual', r: 90, w: 2 },
-  { k: 'instantcheckmate', t: 'data_broker', n: 'Instant Checkmate', c: 'people_search', u: 'https://www.instantcheckmate.com/opt-out/', m: 'manual', r: 90, w: 2 },
-  { k: 'truthfinder', t: 'data_broker', n: 'TruthFinder', c: 'people_search', u: 'https://www.truthfinder.com/opt-out/', m: 'manual', r: 90, w: 2 },
-  { k: 'peekyou', t: 'data_broker', n: 'PeekYou', c: 'people_search', u: 'https://www.peekyou.com/about/contact/optout/', m: 'manual', r: 120, w: 1 },
-  { k: 'ussearch', t: 'data_broker', n: 'US Search', c: 'people_search', u: 'https://www.ussearch.com/opt-out/submit/', m: 'manual', r: 120, w: 1 },
-  { k: 'nuwber', t: 'data_broker', n: 'Nuwber', c: 'people_search', u: 'https://nuwber.com/removal/link', m: 'manual', r: 120, w: 1 },
-  { k: 'checkpeople', t: 'data_broker', n: 'CheckPeople', c: 'people_search', u: 'https://www.checkpeople.com/opt-out', m: 'manual', r: 120, w: 1 },
-  { k: 'lexisnexis', t: 'data_broker', n: 'LexisNexis', c: 'marketing', u: 'https://optout.lexisnexis.com/', m: 'manual', r: 180, w: 2 },
-  { k: 'acxiom', t: 'data_broker', n: 'Acxiom', c: 'marketing', u: 'https://isapps.acxiom.com/optout/optout.aspx', m: 'manual', r: 180, w: 1 },
-  { k: 'oracle', t: 'data_broker', n: 'Oracle Data Cloud', c: 'marketing', u: null, m: 'manual', r: 180, w: 1 },
-  { k: 'epsilon', t: 'data_broker', n: 'Epsilon', c: 'marketing', u: null, m: 'manual', r: 180, w: 1 },
-  { k: 'bing', t: 'search_result', n: 'Bing', c: 'search', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'county_court', t: 'public_record', n: 'County court records', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'property_records', t: 'public_record', n: 'County property records', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'voter_records', t: 'public_record', n: 'Voter registration', c: 'public_record', u: null, m: 'manual', r: null, w: 1 },
-  // ── Background-check sites ──
-  { k: 'goodhire', t: 'data_broker', n: 'GoodHire', c: 'background_check', u: null, m: 'manual', r: null, w: 2 },
-  { k: 'checkr', t: 'data_broker', n: 'Checkr', c: 'background_check', u: null, m: 'manual', r: null, w: 2 },
-  { k: 'hireright', t: 'data_broker', n: 'HireRight', c: 'background_check', u: null, m: 'manual', r: null, w: 2 },
-  { k: 'peoplelooker', t: 'data_broker', n: 'PeopleLooker', c: 'background_check', u: 'https://www.peoplelooker.com/opt-out/', m: 'manual', r: 90, w: 2 },
-  // ── Business & professional data (B2B) ──
-  { k: 'zoominfo', t: 'data_broker', n: 'ZoomInfo', c: 'b2b_data', u: 'https://www.zoominfo.com/update/remove', m: 'manual', r: 180, w: 1 },
-  { k: 'apollo', t: 'data_broker', n: 'Apollo.io', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
-  { k: 'rocketreach', t: 'data_broker', n: 'RocketReach', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
-  { k: 'lusha', t: 'data_broker', n: 'Lusha', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
-  { k: 'clearbit', t: 'data_broker', n: 'Clearbit', c: 'b2b_data', u: null, m: 'manual', r: 180, w: 1 },
-  // ── Genealogy & family history ──
-  { k: 'ancestry', t: 'data_broker', n: 'Ancestry', c: 'genealogy', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'myheritage', t: 'data_broker', n: 'MyHeritage', c: 'genealogy', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'familysearch', t: 'data_broker', n: 'FamilySearch', c: 'genealogy', u: null, m: 'manual', r: null, w: 1 },
-  // ── Property & real estate ──
-  { k: 'zillow', t: 'data_broker', n: 'Zillow', c: 'property', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'realtor', t: 'data_broker', n: 'Realtor.com', c: 'property', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'propertyshark', t: 'data_broker', n: 'PropertyShark', c: 'property', u: null, m: 'manual', r: null, w: 1 },
-  // ── Credit bureaus ──
-  { k: 'experian', t: 'data_broker', n: 'Experian', c: 'credit', u: 'https://www.experian.com/privacy/opting_out', m: 'manual', r: null, w: 2 },
-  { k: 'equifax', t: 'data_broker', n: 'Equifax', c: 'credit', u: null, m: 'manual', r: null, w: 2 },
-  { k: 'transunion', t: 'data_broker', n: 'TransUnion', c: 'credit', u: null, m: 'manual', r: null, w: 2 },
-  // ── Location data brokers ──
-  { k: 'safegraph', t: 'data_broker', n: 'SafeGraph', c: 'location', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'cuebiq', t: 'data_broker', n: 'Cuebiq', c: 'location', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'foursquare', t: 'data_broker', n: 'Foursquare', c: 'location', u: null, m: 'manual', r: null, w: 1 },
-  // ── AI & chatbots (the frontier: what AI says about you) ──
-  { k: 'openai', t: 'ai_answer', n: 'ChatGPT (OpenAI)', c: 'ai', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'gemini', t: 'ai_answer', n: 'Google Gemini', c: 'ai', u: null, m: 'manual', r: null, w: 1 },
-  { k: 'perplexity', t: 'ai_answer', n: 'Perplexity', c: 'ai', u: null, m: 'manual', r: null, w: 1 },
-  // ── Face & image search ──
-  { k: 'pimeyes', t: 'image', n: 'PimEyes', c: 'images', u: 'https://pimeyes.com/en/opt-out-request-form', m: 'manual', r: null, w: 2 },
-  { k: 'clearview', t: 'image', n: 'Clearview AI', c: 'images', u: null, m: 'manual', r: null, w: 2 },
+  { k: 'idlookup', t: 'idlookup', n: 'IDLookup', c: 'people_search', u: null, m: 'our_suppression', r: null, w: 3, x: 'suppression' },
+  // ── People-search brokers — browser tier (CAPTCHA + find-your-listing + out-of-band email/phone verify) ──
+  { k: 'spokeo', t: 'data_broker', n: 'Spokeo', c: 'people_search', u: 'https://www.spokeo.com/optout', m: 'browser', r: 90, w: 2, x: 'suppression' },
+  { k: 'beenverified', t: 'data_broker', n: 'BeenVerified', c: 'people_search', u: 'https://www.beenverified.com/app/optout/search', m: 'browser', r: null, w: 2, x: 'suppression' },
+  { k: 'peoplefinders', t: 'data_broker', n: 'PeopleFinders', c: 'people_search', u: 'https://www.peoplefinders.com/opt-out', m: 'browser', r: null, w: 2, x: 'suppression' },
+  { k: 'whitepages', t: 'data_broker', n: 'Whitepages', c: 'people_search', u: 'https://www.whitepages.com/suppression-requests', m: 'manual', r: 30, w: 2, x: 'suppression' }, // phone-call code verify → not auto
+  { k: 'intelius', t: 'data_broker', n: 'Intelius', c: 'people_search', u: 'https://suppression.peopleconnect.us/login', m: 'browser', r: null, w: 2, x: 'suppression' }, // PeopleConnect: also covers TruthFinder/InstantCheckmate/USSearch
+  { k: 'radaris', t: 'data_broker', n: 'Radaris', c: 'people_search', u: 'https://radaris.com/control/privacy', m: 'browser', r: null, w: 2, x: 'suppression' },
+  { k: 'mylife', t: 'data_broker', n: 'MyLife', c: 'people_search', u: null, m: 'email', r: null, w: 2, x: 'suppression' }, // membersupport@mylife.com (no stable deep-link)
+  { k: 'truepeoplesearch', t: 'data_broker', n: 'TruePeopleSearch', c: 'people_search', u: 'https://www.truepeoplesearch.com/removal', m: 'browser', r: null, w: 2, x: 'suppression' },
+  { k: 'fastpeoplesearch', t: 'data_broker', n: 'FastPeopleSearch', c: 'people_search', u: 'https://www.fastpeoplesearch.com/removal', m: 'browser', r: null, w: 2, x: 'suppression' },
+  { k: 'instantcheckmate', t: 'data_broker', n: 'Instant Checkmate', c: 'people_search', u: 'https://www.instantcheckmate.com/opt-out/', m: 'browser', r: null, w: 2, x: 'suppression' },
+  { k: 'truthfinder', t: 'data_broker', n: 'TruthFinder', c: 'people_search', u: 'https://www.truthfinder.com/opt-out/', m: 'browser', r: null, w: 2, x: 'suppression' },
+  { k: 'peekyou', t: 'data_broker', n: 'PeekYou', c: 'people_search', u: 'https://www.peekyou.com/about/contact/optout/', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'ussearch', t: 'data_broker', n: 'US Search', c: 'people_search', u: 'https://www.ussearch.com/opt-out/', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'nuwber', t: 'data_broker', n: 'Nuwber', c: 'people_search', u: 'https://nuwber.com/removal/link', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'checkpeople', t: 'data_broker', n: 'CheckPeople', c: 'people_search', u: 'https://checkpeople.com/opt-out', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'thatsthem', t: 'data_broker', n: "That'sThem", c: 'people_search', u: 'https://thatsthem.com/optout', m: 'browser', r: null, w: 1, x: 'suppression' }, // ⭐ cleanly automatable (no CAPTCHA, email-click only)
+  { k: 'clustrmaps', t: 'data_broker', n: 'ClustrMaps', c: 'people_search', u: 'https://clustrmaps.com/bl/opt-out', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'searchpeoplefree', t: 'data_broker', n: 'SearchPeopleFree', c: 'people_search', u: 'https://www.searchpeoplefree.com/opt-out', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'advancedbackgroundchecks', t: 'data_broker', n: 'Advanced Background Checks', c: 'people_search', u: 'https://www.advancedbackgroundchecks.com/removal', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'cyberbackgroundchecks', t: 'data_broker', n: 'Cyber Background Checks', c: 'people_search', u: 'https://www.cyberbackgroundchecks.com/removal', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'usphonebook', t: 'data_broker', n: 'USPhoneBook', c: 'people_search', u: 'https://www.usphonebook.com/opt-out', m: 'browser', r: null, w: 1, x: 'suppression' },
+  // ── Search engines (our own Google RAR + Bing) — delist from results, not source removal ──
+  { k: 'google', t: 'search_result', n: 'Google Search results', c: 'search', u: 'https://myactivity.google.com/results-about-you', m: 'google_rar', r: null, w: 3, x: 'search_delist' },
+  { k: 'bing', t: 'search_result', n: 'Bing', c: 'search', u: 'https://www.microsoft.com/en-us/concern/bing', m: 'manual', r: null, w: 1, x: 'search_delist' },
+  // ── Social profiles — you control the account ──
+  { k: 'linkedin', t: 'social_profile', n: 'LinkedIn', c: 'social', u: null, m: 'owner', r: null, w: 1, x: 'account_deletion' },
+  { k: 'facebook', t: 'social_profile', n: 'Facebook', c: 'social', u: null, m: 'owner', r: null, w: 1, x: 'account_deletion' },
+  { k: 'instagram', t: 'social_profile', n: 'Instagram', c: 'social', u: null, m: 'owner', r: null, w: 1, x: 'account_deletion' },
+  { k: 'twitter', t: 'social_profile', n: 'X / Twitter', c: 'social', u: null, m: 'owner', r: null, w: 1, x: 'account_deletion' },
+  { k: 'tiktok', t: 'social_profile', n: 'TikTok', c: 'social', u: null, m: 'owner', r: null, w: 1, x: 'account_deletion' },
+  // ── Marketing data brokers — form/email tier ──
+  { k: 'lexisnexis', t: 'data_broker', n: 'LexisNexis', c: 'marketing', u: 'https://consumer.risk.lexisnexis.com/optrequest', m: 'form_post', r: null, w: 2, x: 'suppression' },
+  { k: 'acxiom', t: 'data_broker', n: 'Acxiom', c: 'marketing', u: 'https://www.acxiom.com/optout/', m: 'form_post', r: null, w: 1, x: 'suppression' },
+  { k: 'oracle', t: 'data_broker', n: 'Oracle Data Cloud', c: 'marketing', u: null, m: 'manual', r: null, w: 1, x: 'no_optout' }, // consumer opt-out portal defunct (EOL)
+  { k: 'epsilon', t: 'data_broker', n: 'Epsilon', c: 'marketing', u: 'https://legal.epsilon.com/dsr/', m: 'form_post', r: null, w: 1, x: 'suppression' },
+  { k: 'dataaxle', t: 'data_broker', n: 'Data Axle', c: 'marketing', u: 'https://www.data-axle.com/do-not-sell-my-data/', m: 'email', r: null, w: 1, x: 'suppression' }, // privacyteam@data-axle.com
+  { k: 'experian_marketing', t: 'data_broker', n: 'Experian Marketing Services', c: 'marketing', u: 'https://www.experianmarketingservices.digital/OptOut', m: 'form_post', r: null, w: 1, x: 'suppression' },
+  { k: 'atdata', t: 'data_broker', n: 'AtData (ex-TowerData)', c: 'marketing', u: 'https://www.atdata.com/ccpa-form', m: 'email', r: null, w: 1, x: 'suppression' }, // privacy@atdata.com
+  // ── Public records — inherently public; reduce/redact via the county, no broker opt-out ──
+  { k: 'county_court', t: 'public_record', n: 'County court records', c: 'public_record', u: null, m: 'manual', r: null, w: 1, x: 'no_optout' },
+  { k: 'property_records', t: 'public_record', n: 'County property records', c: 'public_record', u: null, m: 'manual', r: null, w: 1, x: 'no_optout' },
+  { k: 'voter_records', t: 'public_record', n: 'Voter registration', c: 'public_record', u: null, m: 'manual', r: null, w: 1, x: 'no_optout' },
+  // ── Background-check sites — FCRA CRAs: file-access/dispute only, NOT removal (except PeopleLooker) ──
+  { k: 'goodhire', t: 'data_broker', n: 'GoodHire', c: 'background_check', u: null, m: 'manual', r: null, w: 2, x: 'file_access_only' }, // privacy@goodhire.com
+  { k: 'checkr', t: 'data_broker', n: 'Checkr', c: 'background_check', u: 'https://help.checkr.com/s/article/11280401834903-How-do-I-delete-my-personal-information-from-Checkr', m: 'email', r: null, w: 2, x: 'file_access_only' },
+  { k: 'hireright', t: 'data_broker', n: 'HireRight', c: 'background_check', u: 'https://www.hireright.com/legal/do-not-sell-my-personal-information', m: 'form_post', r: null, w: 2, x: 'file_access_only' },
+  { k: 'peoplelooker', t: 'data_broker', n: 'PeopleLooker', c: 'background_check', u: 'https://www.peoplelooker.com/f/optout/search', m: 'browser', r: null, w: 2, x: 'suppression' },
+  // ── Business & professional data (B2B) — email tier is the automation win; a few need a browser + inbox code ──
+  { k: 'zoominfo', t: 'data_broker', n: 'ZoomInfo', c: 'b2b_data', u: 'https://privacy.zoominfo.com', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'apollo', t: 'data_broker', n: 'Apollo.io', c: 'b2b_data', u: 'https://www.apollo.io/privacy-policy/remove', m: 'email', r: null, w: 1, x: 'suppression' }, // privacy@apollo.io
+  { k: 'rocketreach', t: 'data_broker', n: 'RocketReach', c: 'b2b_data', u: 'https://rocketreach.co/claim-profile', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'lusha', t: 'data_broker', n: 'Lusha', c: 'b2b_data', u: 'https://www.lusha.com/privacy-center/request-removal/', m: 'email', r: null, w: 1, x: 'suppression' }, // privacy@lusha.com
+  { k: 'clearbit', t: 'data_broker', n: 'Clearbit', c: 'b2b_data', u: 'https://preferences.clearbit.com/privacy', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'seamless', t: 'data_broker', n: 'Seamless.AI', c: 'b2b_data', u: 'https://login.seamless.ai/personalDataRequest', m: 'browser', r: null, w: 1, x: 'suppression' },
+  { k: 'cognism', t: 'data_broker', n: 'Cognism', c: 'b2b_data', u: 'https://www.cognism.com/data-opt-out', m: 'email', r: null, w: 1, x: 'suppression' }, // privacy@cognism.com
+  // ── Genealogy & family history — remove = delete your OWN account; others' trees via privacy request ──
+  { k: 'ancestry', t: 'data_broker', n: 'Ancestry', c: 'genealogy', u: 'https://www.ancestry.com/c/privacy-center', m: 'manual', r: null, w: 1, x: 'account_deletion' },
+  { k: 'myheritage', t: 'data_broker', n: 'MyHeritage', c: 'genealogy', u: 'https://www.myheritage.com/privacy-policy', m: 'manual', r: null, w: 1, x: 'account_deletion' },
+  { k: 'familysearch', t: 'data_broker', n: 'FamilySearch', c: 'genealogy', u: 'https://www.familysearch.org/en/help/helpcenter/article/can-i-request-to-remove-the-name-of-a-living-person-from-historical-records', m: 'form_post', r: null, w: 1, x: 'suppression' },
+  // ── Property & real estate — public-record-backed; reduce identifiers, can't erase ──
+  { k: 'zillow', t: 'data_broker', n: 'Zillow', c: 'property', u: 'https://zillow.zendesk.com/hc/en-us/articles/213217797-How-do-I-remove-my-home-from-Zillow', m: 'manual', r: null, w: 1, x: 'suppression' },
+  { k: 'realtor', t: 'data_broker', n: 'Realtor.com', c: 'property', u: null, m: 'email', r: null, w: 1, x: 'suppression' }, // privacy team, "Data Deletion Request" (no dedicated URL)
+  { k: 'propertyshark', t: 'data_broker', n: 'PropertyShark', c: 'property', u: 'https://www.propertyshark.com/mason/Help/Privacy', m: 'email', r: null, w: 1, x: 'suppression' },
+  // ── Credit bureaus — regulated file NOT deletable; opt-out = prescreen/marketing suppression only ──
+  { k: 'experian', t: 'data_broker', n: 'Experian', c: 'credit', u: 'https://consumerprivacy.experian.com/request', m: 'form_post', r: null, w: 2, x: 'suppression' },
+  { k: 'equifax', t: 'data_broker', n: 'Equifax', c: 'credit', u: 'https://myprivacy.equifax.com/opt-in-opt-out/personal-info', m: 'form_post', r: null, w: 2, x: 'suppression' },
+  { k: 'transunion', t: 'data_broker', n: 'TransUnion', c: 'credit', u: 'https://www.transunion.com/consumer-privacy', m: 'form_post', r: null, w: 2, x: 'suppression' },
+  { k: 'optoutprescreen', t: 'data_broker', n: 'Prescreened offers (OptOutPrescreen)', c: 'credit', u: 'https://www.optoutprescreen.com/', m: 'form_post', r: 1825, w: 1, x: 'suppression' }, // shared bureau prescreen opt-out (5-yr online)
+  // ── Location data brokers — device-ad-ID / cookie suppression ──
+  { k: 'safegraph', t: 'data_broker', n: 'SafeGraph', c: 'location', u: 'https://www.safegraph.com/do-not-sell-my-info/', m: 'browser', r: null, w: 1, x: 'suppression' }, // ⭐ bare email form, no CAPTCHA
+  { k: 'cuebiq', t: 'data_broker', n: 'Cuebiq', c: 'location', u: 'https://cuebiq.com/privacy-request/', m: 'browser', r: null, w: 1, x: 'true_removal' },
+  { k: 'foursquare', t: 'data_broker', n: 'Foursquare', c: 'location', u: 'https://foursquare.com/legal/privacy-center/', m: 'browser', r: null, w: 1, x: 'true_removal' },
+  { k: 'daa_webchoices', t: 'data_broker', n: 'Ad networks (DAA WebChoices)', c: 'location', u: 'https://optout.aboutads.info/', m: 'browser', r: null, w: 1, x: 'suppression' }, // cookie opt-out, per-device
+  { k: 'nai', t: 'data_broker', n: 'Ad networks (NAI)', c: 'location', u: 'https://optout.networkadvertising.org/', m: 'browser', r: null, w: 1, x: 'suppression' }, // cookie opt-out, per-device
+  // ── AI & chatbots — NO true per-person removal; training-opt-out / suppression only (never promise deletion) ──
+  { k: 'openai', t: 'ai_answer', n: 'ChatGPT (OpenAI)', c: 'ai', u: 'https://privacy.openai.com/', m: 'manual', r: null, w: 1, x: 'suppression' },
+  { k: 'gemini', t: 'ai_answer', n: 'Google Gemini', c: 'ai', u: 'https://myactivity.google.com/product/gemini', m: 'manual', r: null, w: 1, x: 'suppression' },
+  { k: 'perplexity', t: 'ai_answer', n: 'Perplexity', c: 'ai', u: 'https://www.perplexity.ai/help-center/en/articles/11564562-self-serve-data-deletion', m: 'manual', r: null, w: 1, x: 'suppression' },
+  // ── Face & image search — true removal but selfie / gov-ID upload required → human-in-the-loop ──
+  { k: 'pimeyes', t: 'image', n: 'PimEyes', c: 'images', u: 'https://pimeyes.com/en/opt-out-request-form', m: 'form_post', r: 90, w: 2, x: 'true_removal' },
+  { k: 'clearview', t: 'image', n: 'Clearview AI', c: 'images', u: 'https://www.clearview.ai/privacy-and-requests', m: 'form_post', r: null, w: 2, x: 'true_removal' },
+  { k: 'facecheck', t: 'image', n: 'FaceCheck.ID', c: 'images', u: 'https://facecheck.id/en/RemoveMyPhotos', m: 'form_post', r: null, w: 2, x: 'true_removal' },
 ];
 
+let _seeded = false;
 export async function seedSourceRegistry() {
-  if (!sql) return;
+  if (!sql || _seeded) return;   // once per process — DO UPDATE refresh runs on cold start, not every request
   await ensureTables();
   for (const s of SEED_SOURCES) {
     try {
-      await sql`INSERT INTO source_registry (source_key, surface_type, display_name, category, opt_out_url, removal_method, relist_days, weight)
-        VALUES (${s.k}, ${s.t}, ${s.n}, ${s.c}, ${s.u}, ${s.m}, ${s.r}, ${s.w})
-        ON CONFLICT (source_key) DO NOTHING`;
+      // DO UPDATE (was DO NOTHING) so SEED_SOURCES is authoritative — re-seed refreshes verified URLs /
+      // methods / nature onto existing rows (2026-08-06 catalog refresh).
+      await sql`INSERT INTO source_registry (source_key, surface_type, display_name, category, opt_out_url, removal_method, relist_days, weight, nature)
+        VALUES (${s.k}, ${s.t}, ${s.n}, ${s.c}, ${s.u}, ${s.m}, ${s.r}, ${s.w}, ${s.x || null})
+        ON CONFLICT (source_key) DO UPDATE SET
+          surface_type = EXCLUDED.surface_type, display_name = EXCLUDED.display_name, category = EXCLUDED.category,
+          opt_out_url = EXCLUDED.opt_out_url, removal_method = EXCLUDED.removal_method,
+          relist_days = EXCLUDED.relist_days, weight = EXCLUDED.weight, nature = EXCLUDED.nature`;
     } catch { /* ignore */ }
   }
+  _seeded = true;
 }
 
 export async function getSourceRegistry() {
