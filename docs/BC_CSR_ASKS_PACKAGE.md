@@ -8,7 +8,7 @@ CSR_USER='<csr account>' CSR_PWD='<pwd>' node scripts/demo-bc-csr-asks.js
 ```
 
 It prints, per ask: what we call → what BC returns → what we expected → verdict, plus a working
-contrast. **Nine open asks + one question** (ASK I — opt-out approve — added 2026-07-28 after reviewing the latest csrApi doc; ASK J — CSR message-size cap — added 2026-08-06 from a full send-path code trace): A/B/C (in the demo script), D-residual (byte-verified, download-to-disk only), and E/F/G/H (registered 2026-07-02 from **production** evidence — BC is live on prod since 2026-06-23, and we do NOT run mutation probes on prod, so E–H are evidenced by prod payloads/screenshots + cited artifacts rather than the dev demo script; see each block). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
+contrast. **Eight open asks + one question** (ASK I — opt-out approve — added 2026-07-28 after reviewing the latest csrApi doc). **ASK J (CSR message-size cap) is ⏸ PARKED, not sendable** — owner says no DB limit and our stack + BC's lib show no cap; surface unconfirmed (see ASK J): A/B/C (in the demo script), D-residual (byte-verified, download-to-disk only), and E/F/G/H (registered 2026-07-02 from **production** evidence — BC is live on prod since 2026-06-23, and we do NOT run mutation probes on prod, so E–H are evidenced by prod payloads/screenshots + cited artifacts rather than the dev demo script; see each block). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
 credentials — the runner supplies their own CSR account via env). (A/B/C re-checked across `idlookup` / `bytecrtrs` / no-brand so a
 brand filter can't be the cause.)
 
@@ -278,23 +278,29 @@ happening, requests silently age past their SLA.
 | **Feature impacted** | CSR fulfilling consumer data-removal requests in-app (compliance SLA) |
 | **Interim** | Confirm where these are approved today (BC admin panel); until the method exists, the button stays disabled by design |
 
-## ASK J — CSR reply/email body is capped at ~1000 characters server-side  (RAISE + CONFIRM)  ❌ open
+## ASK J — CSR message ~1000-char limit  (⏸ PARKED — DO NOT SEND — surface not yet confirmed)
 
-**Evidence (code trace, 2026-08-06):** a CSR reply longer than ~1000 characters is rejected when sent.
-We traced the **entire** send path and confirmed **our stack imposes no cap** — the body flows untouched:
-textarea (`EmailTicketsPage` — no `maxLength`) → `api.adminCreateCsrReply` → `apiRouterAdmin` (passes
-`body` through) → `apiWrapperCsr.csrCreateCsrReply` → `POST /contactMessage/admin/csrReply` with the full
-`message`. (Same for CSR compose: `csrCreateCsrMail` → `csrCreateCsrReply`.) The only `maxLength={1000}` in
-our codebase is an **unrelated** consumer owner-note widget (`InlineOwnerNote.js`); the CSR composer has
-**none**. So the ~1000-char limit is a **BC server-side validation on the `csrReply` `message` field**, and
-today it surfaces to the CSR only as a generic "Failed to send" (silent) — we've since added a live char
-counter as interim relief, but that only warns, it can't raise the ceiling.
-**Ask:** (a) **raise** the server-side length limit on the `csrReply` `message` field (real support replies
-routinely exceed 1000 chars — order histories, cancellation explanations, multi-step instructions);
-(b) **confirm the exact field + current limit** (is it 1000 on `message` specifically? does the same
-validator cap `contactMessage.create` `description` / admin notes?); and (c) if there's a hard reason for a
-ceiling, return a **specific, catchable error** (field + limit) instead of a generic failure so we can show
-the CSR an accurate message.
+**Status 2026-08-06: DO NOT batch this to BC yet.** An earlier draft asserted a "BC server-side
+validation." The owner then stated **there is no limit on the database side** and asked us to fix it on the
+front end — which contradicts that draft. We have NOT confirmed where the cap actually lives, so this ask
+is parked until we identify the surface. **Nothing here should go to BC as a claim until the source is pinned.**
+
+**What we HAVE ruled out (code trace + live fetch, 2026-08-06):**
+- **Our CSR composer** (`EmailTicketsPage` reply + compose) — no `maxLength` (source, git history, fresh build).
+- **Our API/router/wrapper** (`api.adminCreateCsrReply` → `apiRouterAdmin` → `apiWrapperCsr.csrCreateCsrReply`
+  → `POST /contactMessage/admin/csrReply`) — passes `message` through untouched, no cap.
+- **BC's `csr-wrapper` IIFE** (fetched live, 25,747 B from `dev.www.idlookup.ai/libs/csr-wrapper/index.iife.js`)
+  — no `1000`, no message-length validation (only attachment/JSON checks).
+- Only `maxLength={1000}` in the whole codebase = the **consumer** owner-note widget (`InlineOwnerNote.js`,
+  used solely on `MyProfileModular`) — never rendered in the CSR app.
+
+**So:** with no DB limit (per owner) and no cap in our stack or BC's lib, a >1000-char CSR reply *should*
+already send. Remaining candidate surfaces to check before any ask: **(1)** a stale *deployed* admin bundle
+(current source has no cap — redeploy + verify a >1000 send); **(2)** BC's own **gwhubadmin admin panel** UI
+(a separate BC front end CSRs may use directly — if the cap is there, it's a BC *front-end* fix, not a DB one).
+**Open question to owner (asked 2026-08-06):** which surface shows the 1000, and is it a hard typing cap vs.
+a reject-on-send. Once answered, either delete this ask (our-app redeploy fixes it) or reframe it as a BC
+**front-end** ask against the correct panel.
 
 | | |
 |---|---|
