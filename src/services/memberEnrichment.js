@@ -479,7 +479,9 @@ export async function setSuppression(on, meta = {}) {
     const res = await fetch(suppressionUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
-      body: JSON.stringify({ userId, on: !!on, name: meta.name, state: meta.state }),
+      // age (from the claimed identity) lets the server suppress the member's PUBLIC record precisely
+      // (name+state+age±1) — without it, "Hide me" stays WSFY-only (never over-suppresses a same-name stranger).
+      body: JSON.stringify({ userId, on: !!on, name: meta.name, state: meta.state, age: meta.age }),
     });
     return res.ok;
   } catch { return false; }

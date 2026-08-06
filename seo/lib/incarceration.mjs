@@ -11,6 +11,7 @@
 import { neon } from '@neondatabase/serverless';
 import { findStateInmates, STATE_ADAPTERS } from './stateInmates.mjs';
 import { queryInmates, upsertInmates, hasInmatesDb } from './inmatesDb.mjs';
+import { suppressPublicRecords } from './search-activity-db.mjs';
 
 const num = (v) => { const n = parseInt(String(v ?? '').replace(/\D/g, ''), 10); return Number.isNaN(n) ? null : n; };
 const clean = (s) => (s == null ? '' : String(s).trim());
@@ -116,7 +117,10 @@ export async function rosterByNameState({ state, firstName, lastName, limit = 12
     seen.add(k);
     out.push(r);
   }
-  return out.slice(0, limit);
+  // Identity Management "Hide me": drop records a claimed member has suppressed from OUR public directory
+  // (matched name+state+age±1). Applied at the roster source so both generateMetadata (robots) and the page
+  // body see the filtered set — a fully-suppressed name auto-noindexes via the existing recs.length check.
+  return (await suppressPublicRecords(out, { firstName, lastName, state })).slice(0, limit);
 }
 
 // County-hub taxonomy (/people/{state}/county/{county}/...) — incarceration data's natural finest grain
@@ -152,7 +156,10 @@ export async function rosterByNameCounty({ state, county, firstName, lastName, l
     seen.add(k);
     out.push(r);
   }
-  return out.slice(0, limit);
+  // Identity Management "Hide me": drop records a claimed member has suppressed from OUR public directory
+  // (matched name+state+age±1). Applied at the roster source so both generateMetadata (robots) and the page
+  // body see the filtered set — a fully-suppressed name auto-noindexes via the existing recs.length check.
+  return (await suppressPublicRecords(out, { firstName, lastName, state })).slice(0, limit);
 }
 
 /** Counties in a state that actually have incarceration records, ranked by count (county-hub index +

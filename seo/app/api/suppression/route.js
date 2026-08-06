@@ -54,7 +54,7 @@ export async function POST(req) {
     } else if (body.key) {
       await setFieldSuppression({ userId: String(body.userId), name: body.name, state: body.state, key: String(body.key), on: !!body.on });
     } else {
-      await setSuppression({ userId: String(body.userId), name: body.name, state: body.state, on: !!body.on });
+      await setSuppression({ userId: String(body.userId), name: body.name, state: body.state, age: body.age, on: !!body.on });
     }
     const s = await getSuppressionState(String(body.userId));
     return new Response(JSON.stringify({ ok: true, suppressed: s.activityHidden, hiddenFields: s.hiddenFields, dispositions: s.dispositions }), { status: 200, headers });

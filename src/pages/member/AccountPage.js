@@ -1541,7 +1541,7 @@ const AccountPage = () => {
                   <p style={{ margin: '3px 0 0', color: '#6b7280', fontSize: 13 }}>When on, others won't see that you've searched for them.</p>
                 </div>
                 <button type="button" role="switch" aria-checked={suppressed}
-                  onClick={async () => { const next = !suppressed; setSuppressed(next); await setSuppression(next, { name: identity.name, state: identity.state }); }}
+                  onClick={async () => { const next = !suppressed; setSuppressed(next); await setSuppression(next, { name: identity.name, state: identity.state, age: identity.age }); }}
                   style={{ width: 50, height: 28, borderRadius: 999, border: 'none', cursor: 'pointer', background: suppressed ? '#0d5d2f' : '#d1d5db', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
                   <span style={{ position: 'absolute', top: 3, left: suppressed ? 25 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
                 </button>

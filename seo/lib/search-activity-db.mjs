@@ -59,20 +59,69 @@ export async function hasMappedIdentity(userId) {
 // ── Member suppression (Identity Management "Hide me") ───────────────────────
 // Global "Hide my activity" flag. Keeps the row when turning off if the member still has per-field
 // hides; only removes it when nothing is suppressed anymore.
-export async function setSuppression({ userId, name, state, on }) {
+// Lazy-add the `age` column (captured from the member's claimed identity at hide time) so we can match a
+// PUBLIC record to the member precisely — see suppressPublicRecords. Mirrors the codebase's ADD COLUMN
+// IF NOT EXISTS pattern so no separate migration run is required on deploy.
+let _ensuredSuppAge = false;
+async function ensureSuppAge() {
+  if (_ensuredSuppAge || !sql) return;
+  try { await sql`ALTER TABLE member_suppression ADD COLUMN IF NOT EXISTS age INT`; } catch { /* best-effort */ }
+  _ensuredSuppAge = true;
+}
+
+export async function setSuppression({ userId, name, state, age, on }) {
   if (!sql) throw new Error('no DB configured');
   if (!userId) throw new Error('userId required');
+  await ensureSuppAge();
+  const ageInt = age != null && String(age).trim() !== '' ? parseInt(String(age), 10) : null;
   await sql`
-    INSERT INTO member_suppression (user_id, name_norm, state, activity_hidden)
-    VALUES (${userId}, ${name ? norm(name) : null}, ${state ? String(state).toUpperCase() : null}, ${!!on})
+    INSERT INTO member_suppression (user_id, name_norm, state, activity_hidden, age)
+    VALUES (${userId}, ${name ? norm(name) : null}, ${state ? String(state).toUpperCase() : null}, ${!!on}, ${Number.isNaN(ageInt) ? null : ageInt})
     ON CONFLICT (user_id) DO UPDATE SET
       activity_hidden = ${!!on},
       name_norm = COALESCE(EXCLUDED.name_norm, member_suppression.name_norm),
-      state = COALESCE(EXCLUDED.state, member_suppression.state)`;
+      state = COALESCE(EXCLUDED.state, member_suppression.state),
+      age = COALESCE(EXCLUDED.age, member_suppression.age)`;
   if (!on) {
     await sql`DELETE FROM member_suppression WHERE user_id = ${userId}
       AND activity_hidden = false AND (hidden_fields IS NULL OR cardinality(hidden_fields) = 0)`;
   }
+}
+
+// ── Public-record suppression: "Hide me" enforced on OUR public people directory ──────────────────
+// A member who claimed their identity and set "Hide me" (activity_hidden) is removed from our public
+// incarceration leaf pages too, not just WSFY. We match a public record to the member by
+// name_norm + state + AGE (±1). Age corroboration is REQUIRED so we NEVER over-suppress a same-name
+// stranger's legitimate public record (a real fairness + SEO concern for common names). Members whose
+// claim carried no age keep WSFY-only hiding until they confirm it.
+
+// Active "hide me" suppressions for a name+state that carry an age (age required for public removal).
+export async function getActivePublicSuppressions({ name, state }) {
+  if (!hasSearchDb || !name) return [];
+  await ensureSuppAge();
+  const nn = norm(name);
+  const st = state ? String(state).toUpperCase() : null;
+  try {
+    const rows = await sql`SELECT age FROM member_suppression
+      WHERE name_norm = ${nn} AND activity_hidden = true AND age IS NOT NULL
+        AND (${st}::text IS NULL OR state = ${st} OR state IS NULL)`;
+    return rows.map((r) => ({ age: r.age }));
+  } catch { return []; }
+}
+
+// Filter a public roster: drop records that match an active member suppression on age (±1). Records with
+// no age — or when no matching suppression carries an age — are NEVER dropped (precision over coverage).
+export async function suppressPublicRecords(records, { firstName, lastName, state } = {}) {
+  if (!hasSearchDb || !Array.isArray(records) || records.length === 0) return records;
+  const name = [firstName, lastName].filter(Boolean).join(' ');
+  if (!name) return records;
+  const supps = await getActivePublicSuppressions({ name, state });
+  if (!supps.length) return records;
+  return records.filter((rec) => {
+    const a = rec && rec.age != null ? Number(rec.age) : null;
+    if (a == null || Number.isNaN(a)) return true; // can't corroborate → keep (never over-suppress)
+    return !supps.some((s) => Math.abs(a - Number(s.age)) <= 1);
+  });
 }
 
 // Per-item ("hide this") suppression of a single exposure driver (location/past/relatives/
