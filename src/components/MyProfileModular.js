@@ -63,7 +63,7 @@ function DispositionToggle({ value, onChange, protectOnly }) {
   );
 }
 
-function Module({ id, icon, title, source = 'observed', tier = 'free', count, disposition, setDisposition, protectOnly, isOwner = true, locked, blurLocked, children }) {
+function Module({ id, icon, title, source = 'observed', tier = 'free', count, disposition, setDisposition, protectOnly, isOwner = true, locked, blurLocked, canExpand = false, expanded = false, onToggleExpand, children }) {
   const promoted = disposition === 'promote';
   const protectedOn = disposition === 'protect';
   const s = SOURCE[source] || SOURCE.observed;
@@ -90,7 +90,17 @@ function Module({ id, icon, title, source = 'observed', tier = 'free', count, di
             </span>
           </span>
         </div>
-        {isOwner && <DispositionToggle value={disposition} onChange={(v) => setDisposition(id, v)} protectOnly={protectOnly} />}
+        {isOwner
+          ? <DispositionToggle value={disposition} onChange={(v) => setDisposition(id, v)} protectOnly={protectOnly} />
+          : canExpand && (
+            <button type="button" onClick={onToggleExpand} aria-expanded={expanded}
+              style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 5, border: `1px solid ${s.color}55`,
+                background: expanded ? s.color : '#fff', color: expanded ? '#fff' : s.color, borderRadius: 999,
+                padding: '5px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+              {expanded ? 'Hide detail' : 'View detail'}
+              <span aria-hidden="true" style={{ display: 'inline-block', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>⌄</span>
+            </button>
+          )}
       </header>
       <div style={{ padding: '14px 16px' }}>
         {locked ? (
@@ -151,6 +161,9 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
   // subject hasn't protected anything) overlaid with the subject's stored dispositions if claimed.
   const [disp, setDisp] = useState(() => (ownerMode ? { ...DEFAULT_DISP, ...(dispositions || {}) } : { ...(dispositions || {}) }));
   const [viewAs, setViewAs] = useState('you'); // owner-mode preview switcher only
+  // Others/report view only: which areas the viewer has expanded from concise summary → full detail
+  // (progressive disclosure). Keyed by module id. Owner/My-Profile ignores this (uses `detailed`).
+  const [expandedAreas, setExpandedAreas] = useState({});
   // Update local state AND persist (when a handler is wired — dev preview leaves it local).
   const set = (id, v) => { setDisp((s) => ({ ...s, [id]: v })); if (onDispositionChange) onDispositionChange(id, v); };
   const d = data || {};
@@ -515,11 +528,18 @@ export default function MyProfileModular({ data, hero = {}, dispositions, onDisp
             const paid = PAID.has(m.id);
             // Paid-tier data is locked (teased) for non-paid viewers — unless the owner PROMOTED it public.
             const locked = !isOwner && paid && disp[m.id] !== 'promote' && view !== 'paid';
+            // Report/others view = concise summary by default; a per-area "View detail" expands THIS area
+            // to its full rich detail inline. Owner/My-Profile keeps its existing `detailed` behavior.
+            const canExpand = !ownerMode && !locked && !!m.full && COUNT[m.id] > 0;
+            const areaExpanded = !!expandedAreas[m.id];
+            const showFull = ownerMode ? (detailed && m.full) : (areaExpanded && m.full);
             return (
               <Module key={m.id} id={m.id} icon={m.icon} title={m.title} source={m.source}
                 tier={paid ? 'paid' : 'free'} count={COUNT[m.id]} disposition={disp[m.id]}
-                setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner} locked={locked} blurLocked={ownerMode}>
-                {detailed && m.full ? m.full() : m.body()}
+                setDisposition={set} protectOnly={m.protectOnly} isOwner={isOwner} locked={locked} blurLocked={ownerMode}
+                canExpand={canExpand} expanded={areaExpanded}
+                onToggleExpand={() => setExpandedAreas((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}>
+                {showFull ? m.full() : m.body()}
                 {isOwner && (
                   <InlineOwnerNote recordKey={`area:${m.id}`} label={m.title}
                     notes={ownerNotes.filter((a) => a.record_key === `area:${m.id}`)}
