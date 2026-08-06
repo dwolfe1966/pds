@@ -232,16 +232,46 @@ export const CAMPAIGN_REGISTRY = {
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
   },
 
-  // People Search & Background Check — "people search free" ad units. Real BC token (owner 2026-08-03).
-  // Ad lands directly on /name/landing/v2 (?intent=people_search&adgroup=people_search_free); landing.route here
-  // mirrors that so any /?shn= boot traffic also routes to v2. Google Ads (adgroup=…). Standard name funnel:
-  // thinmatch upsell, sup variant a, optout compliant. v2's search is fixed (delegates to /name/loader).
+  // PeopleSearch Free — free-to-search Google paid-search ad units. Real BC token (owner 2026-08-03).
+  // (Renamed 2026-08-06 from "People Search & Background Check"/channel "Background Check" → the free-search
+  // framing this funnel actually runs.) Ad lands directly on /name/landing/v2
+  // (?intent=people_search&adgroup=people_search_free); landing.route here mirrors that so any /?shn= boot
+  // traffic also routes to v2. Standard name funnel: thinmatch upsell, sup variant a, optout compliant. v2's
+  // search is fixed (delegates to /name/loader).
   // NOTE: the ad URL must carry ?shn=6a70dee8368ec934bb214554 for this entry (and its attribution) to apply.
+  // BC-side: this shn's own channel should be updated in BC (from "Background Check") so BC's authoritative
+  // data.tracking.partner.channel matches this label — a parallel BC config tweak, tracked as a BC ask.
   '6a70dee8368ec934bb214554:*': {
-    identity: { shnName: 'People Search & Background Check', brand: 'IDL', partner: 'Google', channel: 'Background Check',
-      purpose: 'People-search-free ad units → free-to-search v2 funnel → capture trials' },
+    identity: { shnName: 'PeopleSearch Free', brand: 'IDL', partner: 'Google', channel: 'People Search',
+      purpose: 'Free-to-search people-search ad units → free-to-search v2 funnel → capture trials' },
     landing: { route: '/name/landing/v2' },
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+
+  // PeopleSearch — new Google paid-search Ad campaign (2026-08-06). Same free-to-search v2 funnel as
+  // "PeopleSearch Free" above; a distinct shn so its spend/creative attribute separately. PLACEHOLDER shN
+  // (owner: placeholders now, swap the minted BC shConId in later — 1-line key swap). Tag ad URLs
+  // ?shn=peoplesearch (no shl → resolves the `…:*` partner-wide entry).
+  'peoplesearch:*': {
+    identity: { shnName: 'PeopleSearch', brand: 'IDL', partner: 'Google', channel: 'People Search',
+      purpose: 'PeopleSearch ad campaign → free-to-search v2 funnel → capture trials' },
+    landing: { route: '/name/landing/v2' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, detail: { variant: 'a' }, optOut: true,
+  },
+
+  // Inmate-Affiliate — new affiliate PARTNER campaign (2026-08-06). Inmate funnel (v3), affiliate-style
+  // relaxations: hide + don't-require the SUP terms checkbox (requireTermsCheckbox:false) and hide the opt-out
+  // consent block (optOut:false) — matches how affiliate shNs run (bugs #34/#51). PLACEHOLDER shN (swap the
+  // minted BC shConId in later). Tag partner URLs ?shn=inmate-affiliate. BC-side: mint the shn + set
+  // partner/channel + the offer/cascade/risk for this affiliate; our registry only carries landing + labels.
+  'inmate-affiliate:*': {
+    identity: { shnName: 'Inmate-Affiliate', brand: 'IDL', partner: 'Inmate-Affiliate', channel: 'Inmate',
+      purpose: 'Inmate-search affiliate partner → v3 inmate funnel → capture trials' },
+    landing: { route: '/name/landing/v3' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },
+    detail:  { variant: 'a' },
+    payment: { methods: ['card'], requireTermsCheckbox: false },
+    optOut:  false,
   },
 
   // ── "Who's Looking For You" WSFY display campaign (2026-08-03). Reverse angle — discover who's searching
