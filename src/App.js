@@ -79,7 +79,7 @@ import ContactThreadPage from './pages/sales/ContactThreadPage';
 import Dashboard2 from './pages/member/Dashboard2';
 // DashboardHome (the original monitoring-framed dashboard) is parked. Kept in
 // the repo for reference but no longer routed anywhere on the consumer SPA.
-import MemberGeneralSearchPage from './pages/member/MemberGeneralSearchPage';
+import PeopleSearchEntry from './pages/PeopleSearchEntry';
 import MemberSearchResultsPage from './pages/member/SearchResultsPage';
 import SearchResultDetailPage from './pages/member/SearchResultDetailPage';
 import WhoIsSearchingPage from './pages/member/WhoIsSearchingPage';
@@ -209,8 +209,11 @@ const App = () => {
           <Route path="/name/landing" element={<NameSearchLandingPage />} />
           <Route path="/name/landing/v2" element={<V2LandingSplit />} />
           <Route path="/name/landing/v3" element={<NameSearchLandingV3Page />} />
-          {/* Honest people-search flow (2026-07-28) — same proven search hand-off, honest experience. */}
-          <Route path="/people-search" element={<PeopleSearchHonestPage />} />
+          {/* `/people-search` is BOTH the member search AND the anonymous honest landing.
+              PeopleSearchEntry branches on auth so members keep Name/Phone/Email search while
+              anonymous funnel traffic still gets the honest challenger. (Two Route entries used
+              to share this path; the public one shadowed the member one → phone/email lost.) */}
+          <Route path="/people-search" element={<PeopleSearchEntry />} />
           <Route path="/name/landing/honest" element={<PeopleSearchHonestPage />} />
           {/* Proof-First challenger (Flow B, 2026-07-29) — reveal one real finding free before the paywall. */}
           <Route path="/proof-check" element={<ProofCheckPage />} />
@@ -324,14 +327,8 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/people-search"
-            element={
-              <ProtectedRoute>
-                <MemberGeneralSearchPage />
-              </ProtectedRoute>
-            }
-          />
+          {/* Member `/people-search` is handled by PeopleSearchEntry above (auth-branched)
+              so it no longer collides with the public honest landing on the same path. */}
           <Route
             path="/people-results"
             element={
