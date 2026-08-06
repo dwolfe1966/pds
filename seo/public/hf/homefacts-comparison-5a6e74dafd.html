@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>HomeFacts.com vs. HomeFacts by IDLookup</title>
+<style>
+  :root{
+    --bg:#f4f7fa; --panel:#fff; --ink:#0e2233; --body:#3a4a5c; --muted:#6a7887; --faint:#93a0ad;
+    --line:#dbe4ec; --line2:#eef2f6; --soft:#f6f9fc;
+    --hf:#12507e; --hf-deep:#0c3a5c; --hf-soft:#e9f1f8; --hf-line:#cadff0;
+    --good:#2e7d52; --good-soft:#e4f3ea; --warn:#b26a12; --warn-soft:#f7efd9; --crit:#b23a48;
+    --gold:#a9781f;
+    --shadow:0 1px 2px rgba(14,34,51,.05),0 12px 34px rgba(14,34,51,.08);
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --bg:#0b1119; --panel:#141d26; --ink:#e9eef3; --body:#b3bfca; --muted:#8b98a6; --faint:#63707d;
+    --line:#24303a; --line2:#1a232c; --soft:#101922;
+    --hf:#57a3d8; --hf-deep:#2d6c9e; --hf-soft:#112838; --hf-line:#204a66;
+    --good:#5fbd8b; --good-soft:#123020; --warn:#d6a84e; --warn-soft:#2a2310; --crit:#e07683; --gold:#d6a84e;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 40px rgba(0,0,0,.5);
+  }}
+  :root[data-theme="light"]{--bg:#f4f7fa;--panel:#fff;--ink:#0e2233;--body:#3a4a5c;--muted:#6a7887;--faint:#93a0ad;--line:#dbe4ec;--line2:#eef2f6;--soft:#f6f9fc;--hf:#12507e;--hf-deep:#0c3a5c;--hf-soft:#e9f1f8;--hf-line:#cadff0;--good:#2e7d52;--good-soft:#e4f3ea;--warn:#b26a12;--warn-soft:#f7efd9;--crit:#b23a48;--gold:#a9781f;}
+  :root[data-theme="dark"]{--bg:#0b1119;--panel:#141d26;--ink:#e9eef3;--body:#b3bfca;--muted:#8b98a6;--faint:#63707d;--line:#24303a;--line2:#1a232c;--soft:#101922;--hf:#57a3d8;--hf-deep:#2d6c9e;--hf-soft:#112838;--hf-line:#204a66;--good:#5fbd8b;--good-soft:#123020;--warn:#d6a84e;--warn-soft:#2a2310;--crit:#e07683;--gold:#d6a84e;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(22px,4vw,48px) clamp(14px,3vw,26px) 72px;}
+  .eyebrow{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--hf);}
+  h1{margin:10px 0 6px;font-size:clamp(27px,4.4vw,40px);font-weight:840;letter-spacing:-.03em;line-height:1.06;text-wrap:balance;}
+  .lede{margin:0;max-width:74ch;color:var(--body);font-size:clamp(15px,1.7vw,17px);}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:24px 0 0;}
+  @media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);}
+  .kpi .n{font-size:24px;font-weight:850;letter-spacing:-.02em;color:var(--hf);}
+  .kpi .l{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3;}
+  section.blk{margin-top:34px;}
+  .blk-h{display:flex;align-items:baseline;gap:11px;margin-bottom:12px;flex-wrap:wrap;}
+  .blk-h h2{margin:0;font-size:clamp(19px,2.5vw,25px);font-weight:820;letter-spacing:-.02em;}
+  .blk-h .tag{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:3px 11px;}
+  .tag.win{color:var(--good);background:var(--good-soft);border:1px solid color-mix(in srgb,var(--good) 35%,transparent);}
+  .tag.moat{color:var(--hf);background:var(--hf-soft);border:1px solid var(--hf-line);}
+  .tag.gap{color:var(--warn);background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);}
+  .blk-sub{margin:0 0 14px;color:var(--muted);font-size:14px;max-width:74ch;}
+  .matrix{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);}
+  .matrix th,.matrix td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line2);vertical-align:top;font-size:14px;}
+  .matrix thead th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800;background:var(--soft);}
+  .matrix col.feat{width:30%;} .matrix col.them{width:32%;} .matrix col.us{width:38%;}
+  .matrix td.feat{font-weight:750;color:var(--ink);}
+  .matrix tr:last-child td{border-bottom:0;}
+  .yes{color:var(--good);font-weight:800;} .no{color:var(--faint);} .deep{color:var(--hf);font-weight:750;}
+  .cell-note{color:var(--body);}
+  .cell-sub{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .pill{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;border-radius:5px;padding:1px 6px;margin-left:6px;}
+  .pill.deeper{color:var(--hf);background:var(--hf-soft);border:1px solid var(--hf-line);}
+  .callout{margin-top:16px;border-radius:12px;padding:15px 18px;font-size:14px;line-height:1.55;}
+  .callout.moat{background:var(--hf-soft);border:1px solid var(--hf-line);}
+  .callout.moat b{color:var(--hf);}
+  .callout.gap{background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);}
+  .callout.gap b{color:var(--warn);}
+  .foot{margin-top:34px;font-size:11.5px;color:var(--faint);line-height:1.6;text-align:center;}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Competitive comparison</p>
+    <h1>HomeFacts.com — today vs. rebuilt on IDLookup</h1>
+    <p class="lede">A module-by-module comparison of the current HomeFacts.com against the working prototype at <b>idlookup.me/homefacts</b>. Same neighborhood-report concept — but the rebuilt version matches or deepens nearly every module, adds a dozen it doesn&apos;t have, and delivers the one thing a place-data site structurally cannot: the <b>people</b>.</p>
+    <div class="kpis">
+      <div class="kpi"><div class="n">14 / 14</div><div class="l">of their modules matched</div></div>
+      <div class="kpi"><div class="n">+12</div><div class="l">modules only we have</div></div>
+      <div class="kpi"><div class="n">The "Who"</div><div class="l">their structural gap, our moat</div></div>
+      <div class="kpi"><div class="n">1</div><div class="l">gap left — a partnership hook</div></div>
+    </div>
+  </header>
+
+  <!-- MATCH + DEEPER -->
+  <section class="blk">
+    <div class="blk-h"><h2>Where we match — and go deeper</h2><span class="tag win">Parity+</span></div>
+    <p class="blk-sub">Every module HomeFacts.com offers, the rebuild has — usually with more depth, fresher data, or a map.</p>
+    <table class="matrix">
+      <colgroup><col class="feat"><col class="them"><col class="us"></colgroup>
+      <thead><tr><th>Module</th><th>HomeFacts.com</th><th>HomeFacts by IDLookup</th></tr></thead>
+      <tbody>
+        <tr><td class="feat">Area overview</td><td class="cell-note"><span class="yes">✓</span> Neighborhood summary</td><td class="cell-note"><span class="yes">✓</span> Summary + report-card metrics<span class="pill deeper">deeper</span></td></tr>
+        <tr><td class="feat">Demographics</td><td class="cell-note"><span class="yes">✓</span> Basic</td><td class="cell-note"><span class="deep">✓</span> Income, education, occupation, ethnicity, population trend<span class="pill deeper">deeper</span></td></tr>
+        <tr><td class="feat">Crime</td><td class="cell-note"><span class="yes">✓</span> Stats + ratings</td><td class="cell-note"><span class="deep">✓</span> FBI rates vs. state &amp; U.S. + <b>5-yr trend</b> + <b>incident-level</b> for metros<span class="pill deeper">deeper</span></td></tr>
+        <tr><td class="feat">Sex offenders</td><td class="cell-note"><span class="yes">✓</span> Registry + map</td><td class="cell-note"><span class="deep">✓</span> Registry + pin map + <b>distance from your address</b> + first-party<span class="pill deeper">deeper</span></td></tr>
+        <tr><td class="feat">Schools + ratings</td><td class="cell-note"><span class="yes">✓</span> Directory + ratings</td><td class="cell-note"><span class="deep">✓</span> NCES directory + map + <b>grade-8 reading/math proficiency rating</b> (EDFacts)<span class="pill deeper">now matched</span></td></tr>
+        <tr><td class="feat">Environmental hazards</td><td class="cell-note"><span class="yes">✓</span></td><td class="cell-note"><span class="yes">✓</span> EPA Toxics Release Inventory</td></tr>
+        <tr><td class="feat">Demographics · Unemployment</td><td class="cell-note"><span class="yes">✓</span></td><td class="cell-note"><span class="yes">✓</span> Census ACS</td></tr>
+        <tr><td class="feat">Air quality</td><td class="cell-note"><span class="yes">✓</span></td><td class="cell-note"><span class="deep">✓</span> Real-time US AQI + PM2.5 / ozone<span class="pill deeper">live</span></td></tr>
+        <tr><td class="feat">Weather</td><td class="cell-note"><span class="yes">✓</span></td><td class="cell-note"><span class="deep">✓</span> Real-time conditions<span class="pill deeper">live</span></td></tr>
+        <tr><td class="feat">Earthquakes</td><td class="cell-note"><span class="yes">✓</span></td><td class="cell-note"><span class="deep">✓</span> USGS recent quakes, self-gating to seismic areas</td></tr>
+        <tr><td class="feat">Property</td><td class="cell-note"><span class="yes">✓</span> Property reports (parcel)</td><td class="cell-note"><span class="no">~</span> Area medians today <span class="cell-sub">(parcel-level = a gap to close, below)</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ONLY US -->
+  <section class="blk">
+    <div class="blk-h"><h2>Modules only the rebuild has</h2><span class="tag win">+12 net-new</span></div>
+    <p class="blk-sub">A dozen neighborhood signals HomeFacts.com doesn&apos;t offer at all — all live on the prototype, all from free public sources.</p>
+    <table class="matrix">
+      <colgroup><col class="feat"><col class="them"><col class="us"></colgroup>
+      <thead><tr><th>Module</th><th>HomeFacts.com</th><th>HomeFacts by IDLookup</th></tr></thead>
+      <tbody>
+        <tr><td class="feat">Natural-disaster risk</td><td class="no">—</td><td><span class="yes">✓</span> FEMA National Risk Index (per-hazard ratings)</td></tr>
+        <tr><td class="feat">Flood risk at a point</td><td class="no">—</td><td><span class="yes">✓</span> FEMA flood zone at the exact address</td></tr>
+        <tr><td class="feat">Active weather alerts</td><td class="no">—</td><td><span class="yes">✓</span> NWS warnings (tornado / flood / heat)</td></tr>
+        <tr><td class="feat">Recent incident crime</td><td class="no">—</td><td><span class="yes">✓</span> Real incidents near an address (major metros)</td></tr>
+        <tr><td class="feat">What&apos;s nearby</td><td class="no">—</td><td><span class="yes">✓</span> Dining, entertainment, essentials, health, transit</td></tr>
+        <tr><td class="feat">Landmarks</td><td class="no">—</td><td><span class="yes">✓</span> Nearby notable places</td></tr>
+        <tr><td class="feat">Four grains</td><td class="cell-note"><span class="no">—</span> City / ZIP</td><td><span class="yes">✓</span> City · county · ZIP · <b>address</b></td></tr>
+        <tr><td class="feat">Address orientation</td><td class="no">—</td><td><span class="yes">✓</span> Every map + distance keyed to the searched address</td></tr>
+        <tr><td class="feat">Address safety summary</td><td class="no">—</td><td><span class="yes">✓</span> Offenders within 1 / 3 mi, nearest school</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- THE MOAT -->
+  <section class="blk">
+    <div class="blk-h"><h2>The moat — the "Who"</h2><span class="tag moat">structural</span></div>
+    <p class="blk-sub">This is the category HomeFacts.com cannot enter with property data. IDLookup is a real people-search operator — so the neighborhood page connects to the <b>people</b>, and to a funnel that keeps the customer.</p>
+    <table class="matrix">
+      <colgroup><col class="feat"><col class="them"><col class="us"></colgroup>
+      <thead><tr><th>Capability</th><th>HomeFacts.com</th><th>HomeFacts by IDLookup</th></tr></thead>
+      <tbody>
+        <tr><td class="feat">Who lives here</td><td class="no">— can&apos;t</td><td><span class="deep">✓</span> Address → residents (privacy-masked teaser → full report)</td></tr>
+        <tr><td class="feat">Incarceration records</td><td class="no">—</td><td><span class="yes">✓</span> First-party booking / roster data by county</td></tr>
+        <tr><td class="feat">People search from every page</td><td class="cell-note"><span class="no">—</span> a third-party service</td><td><span class="yes">✓</span> Owned funnel — names &amp; records link straight in</td></tr>
+      </tbody>
+    </table>
+    <div class="callout moat"><b>The strategic point:</b> HomeFacts.com&apos;s most valuable clicks — its people searches — already flow to a third-party people-search service. The rebuild makes IDLookup <i>that</i> service, on HomeFacts&apos; own pages: same traffic, with the <b>lifetime value shared back</b>.</div>
+  </section>
+
+  <!-- GAPS -->
+  <section class="blk">
+    <div class="blk-h"><h2>Where they still lead — and how we close it</h2><span class="tag gap">1 real gap</span></div>
+    <table class="matrix">
+      <colgroup><col class="feat"><col class="them"><col class="us"></colgroup>
+      <thead><tr><th>Their edge</th><th>Status</th><th>The path</th></tr></thead>
+      <tbody>
+        <tr><td class="feat">Parcel property records</td><td class="cell-note"><b style="color:var(--warn)">The one real gap</b> — owner, sale history, characteristics.</td><td class="cell-note">A parcel-data feed. <b>ATTOM is NIC&apos;s own lineage</b> — a natural partnership, not a build.</td></tr>
+        <tr><td class="feat">School ratings</td><td class="cell-note"><b style="color:var(--good)">Closed.</b></td><td class="cell-note">Now live — grade-8 reading/math proficiency (U.S. Dept. of Education EDFacts).</td></tr>
+        <tr><td class="feat">Meth-lab locations</td><td class="cell-note">Niche. Their own source is historical &amp; self-described as unverified.</td><td class="cell-note">Available if wanted, but low value — not prioritized.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout gap"><b>One gap left that matters — parcel property — and it&apos;s a reason to partner, not a weakness.</b> Closing it with NIC&apos;s ATTOM lineage completes a neighborhood product that has <i>both</i> the place and the people. That combination doesn&apos;t exist anywhere today.</div>
+  </section>
+
+  <p class="foot">Comparison of HomeFacts.com (public site, module nav) vs. the idlookup.me/homefacts prototype (MVP, live). Prototype is a proof of concept, not design-final. HomeFacts identity and ownership remain with Nations Info Corp; reports powered by IDLookup.</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>HomeFacts Transition Plan</title>
+<style>
+  :root{
+    --bg:#f4f7fa; --panel:#fff; --ink:#0e2233; --body:#39485a; --muted:#66757f; --muted:#667482; --faint:#93a0ad;
+    --line:#dbe4ec; --line2:#eef2f6; --soft:#f6f9fc;
+    --hf:#12507e; --hf-deep:#0c3a5c; --hf-soft:#e9f1f8; --hf-line:#cadff0;
+    --good:#2e7d52; --good-soft:#e4f3ea; --good-line:#bfe0cb; --gold:#a9781f; --gold-soft:#f7efd9; --gold-line:#ead9a8;
+    --shadow:0 1px 2px rgba(14,34,51,.05),0 12px 32px rgba(14,34,51,.07);
+    --shadow-sm:0 1px 2px rgba(14,34,51,.05),0 5px 16px rgba(14,34,51,.05);
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --bg:#0b1119; --panel:#141d26; --ink:#e9eef3; --body:#b3bfca; --muted:#8b98a6; --faint:#63707d;
+    --line:#24303a; --line2:#1a232c; --soft:#101922;
+    --hf:#57a3d8; --hf-deep:#2d6c9e; --hf-soft:#112838; --hf-line:#204a66; --good:#5fbd8b; --good-soft:#123020; --good-line:#1e5537; --gold:#d6a84e; --gold-soft:#2a2310; --gold-line:#524013;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 14px 36px rgba(0,0,0,.5); --shadow-sm:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.4);
+  }}
+  :root[data-theme="light"]{--bg:#f4f7fa;--panel:#fff;--ink:#0e2233;--body:#39485a;--muted:#667482;--faint:#93a0ad;--line:#dbe4ec;--line2:#eef2f6;--soft:#f6f9fc;--hf:#12507e;--hf-deep:#0c3a5c;--hf-soft:#e9f1f8;--hf-line:#cadff0;--good:#2e7d52;--good-soft:#e4f3ea;--good-line:#bfe0cb;--gold:#a9781f;--gold-soft:#f7efd9;--gold-line:#ead9a8;}
+  :root[data-theme="dark"]{--bg:#0b1119;--panel:#141d26;--ink:#e9eef3;--body:#b3bfca;--muted:#8b98a6;--faint:#63707d;--line:#24303a;--line2:#1a232c;--soft:#101922;--hf:#57a3d8;--hf-deep:#2d6c9e;--hf-soft:#112838;--hf-line:#204a66;--good:#5fbd8b;--good-soft:#123020;--good-line:#1e5537;--gold:#d6a84e;--gold-soft:#2a2310;--gold-line:#524013;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;}
+  .sheet{max-width:900px;margin:0 auto;padding:clamp(24px,3.5vw,42px) clamp(16px,3vw,34px) 48px;}
+  a{color:var(--hf-deep);}
+  .top{border-bottom:2px solid var(--hf);padding-bottom:16px;}
+  .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--hf);}
+  h1{margin:8px 0 6px;font-size:clamp(24px,3.6vw,34px);font-weight:840;letter-spacing:-.025em;line-height:1.06;}
+  .tagline{margin:0;color:var(--body);font-size:15.5px;max-width:64ch;}
+  .tagline b{color:var(--ink);}
+
+  .rule-card{margin-top:20px;background:linear-gradient(145deg,var(--hf) 0%,var(--hf-deep) 100%);color:#fff;border-radius:14px;padding:18px 22px;box-shadow:var(--shadow);}
+  .rule-card .lab{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8);}
+  .rule-card .big{font-size:clamp(18px,2.4vw,23px);font-weight:840;letter-spacing:-.02em;margin:5px 0 6px;}
+  .rule-card p{margin:0;font-size:13.5px;color:rgba(255,255,255,.92);line-height:1.55;max-width:70ch;}
+
+  .sec{margin-top:30px;}
+  .sec-h{display:flex;align-items:baseline;gap:11px;margin-bottom:14px;}
+  .sec-h h2{margin:0;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--hf);}
+  .sec-h .n{width:20px;height:20px;border-radius:6px;background:var(--hf);color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+  .sec-h .rl{flex:1;height:1px;background:var(--line);}
+
+  /* the core move — browser frame */
+  .move{display:grid;grid-template-columns:1fr;gap:0;}
+  .browser{border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow-sm);background:var(--panel);}
+  .chrome{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--soft);border-bottom:1px solid var(--line);}
+  .dots{display:flex;gap:5px;flex:none;} .dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block;}
+  .addr{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--hf-deep);background:var(--panel);border:1px solid var(--hf-line);border-radius:7px;padding:5px 11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .addr .keep{background:var(--gold-soft);color:var(--gold);font-weight:800;padding:1px 5px;border-radius:4px;font-size:10px;margin-left:8px;}
+  .ba{display:grid;grid-template-columns:1fr 1fr;}
+  @media(max-width:560px){.ba{grid-template-columns:1fr;}}
+  .ba .col{padding:16px 18px;}
+  .ba .before{background:var(--soft);border-right:1px solid var(--line);}
+  @media(max-width:560px){.ba .before{border-right:0;border-bottom:1px solid var(--line);}}
+  .ba .after{background:var(--hf-soft);}
+  .ba .t{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+  .ba .before .t{color:var(--muted);} .ba .after .t{color:var(--hf);}
+  .ba ul{margin:0;padding-left:16px;} .ba li{font-size:12.5px;color:var(--body);margin-bottom:4px;line-height:1.4;}
+  .move-note{margin-top:12px;font-size:13px;color:var(--body);border-left:3px solid var(--hf);padding-left:13px;line-height:1.5;}
+  .move-note b{color:var(--ink);}
+
+  /* taxonomy grid */
+  .tax{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:620px){.tax{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow-sm);}
+  .card .ct{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+  .card.keepc .ct{color:var(--gold);} .card.ourc .ct{color:var(--hf);}
+  .card .ct .pill{font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px;letter-spacing:.04em;}
+  .card.keepc .ct .pill{color:var(--gold);background:var(--gold-soft);border:1px solid var(--gold-line);}
+  .card.ourc .ct .pill{color:var(--hf);background:var(--hf-soft);border:1px solid var(--hf-line);}
+  .urlrow{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--body);padding:5px 0;border-bottom:1px solid var(--line2);line-height:1.4;}
+  .urlrow:last-child{border-bottom:0;} .urlrow b{color:var(--ink);}
+  .adapter{margin-top:14px;background:var(--hf-soft);border:1px solid var(--hf-line);border-radius:11px;padding:13px 16px;font-size:13px;color:var(--body);line-height:1.5;}
+  .adapter b{color:var(--hf-deep);}
+  .steps{margin-top:14px;background:var(--hf-soft);border:1px solid var(--hf-line);border-radius:12px;padding:16px 18px;}
+  .steps .sh{font-size:14px;font-weight:840;color:var(--hf-deep);letter-spacing:-.01em;}
+  .steps .si{font-size:12.5px;color:var(--body);margin:5px 0 13px;line-height:1.5;}
+  .steps ol{list-style:none;margin:0;padding:0;counter-reset:st;display:flex;flex-direction:column;gap:10px;}
+  .steps ol li{display:flex;gap:12px;align-items:flex-start;counter-increment:st;font-size:13px;color:var(--body);line-height:1.5;}
+  .steps ol li::before{content:counter(st);flex:none;width:22px;height:22px;border-radius:50%;background:var(--hf);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .steps ol li b{color:var(--ink);}
+  .steps .foot{margin:13px 0 0;padding-top:11px;border-top:1px solid var(--hf-line);font-size:11.5px;color:var(--muted);line-height:1.5;}
+
+  /* phases timeline */
+  .phases{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media(max-width:720px){.phases{grid-template-columns:1fr 1fr;}}
+  @media(max-width:440px){.phases{grid-template-columns:1fr;}}
+  .phase{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow-sm);position:relative;}
+  .phase .p{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--hf);}
+  .phase h3{margin:4px 0 7px;font-size:15px;font-weight:820;letter-spacing:-.01em;color:var(--ink);}
+  .phase p{margin:0;font-size:12.5px;color:var(--body);line-height:1.45;}
+  .phase.opt{border-style:dashed;}
+  .phase.opt .p{color:var(--muted);}
+
+  /* risk controls */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:620px){.grid2{grid-template-columns:1fr;}}
+  .ctrl{display:flex;gap:10px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow-sm);}
+  .ctrl .ck{flex:none;width:20px;height:20px;border-radius:6px;background:var(--good-soft);border:1px solid var(--good-line);color:var(--good);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;}
+  .ctrl .tx{font-size:12.5px;color:var(--body);line-height:1.45;} .ctrl .tx b{color:var(--ink);}
+
+  .ask{margin-top:14px;background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:12px;padding:16px 18px;}
+  .ask .h{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:6px;}
+  .ask p{margin:0;font-size:13.5px;color:var(--body);line-height:1.55;} .ask b{color:var(--ink);}
+
+  footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;}
+  .fnote{font-size:14px;color:var(--ink);font-weight:750;line-height:1.5;}
+  .disc{margin-top:8px;font-size:11px;color:var(--faint);line-height:1.5;}
+</style>
+</head>
+<body>
+
+
+<div class="sheet">
+  <div class="top">
+    <p class="eyebrow">HomeFacts × IDLookup · transition plan</p>
+    <h1>Take HomeFacts modern — without losing a dollar of its search equity.</h1>
+    <p class="tagline">HomeFacts' value is the ranking equity bound to its <b>existing URLs</b>. The strategy: <b>our app fully replaces the 2013 site and answers those same URLs</b> — NIC's codebase is never touched. We change what's <em>behind</em> each page, not its address.</p>
+  </div>
+
+  <div class="rule-card">
+    <div class="lab">The cardinal rule</div>
+    <div class="big">Keep the URLs. Change what's behind them.</div>
+    <p>Rankings and backlinks accrue to specific URLs, not to "the site." So the migration's first job is to <b style="color:#fff">not move the URLs that hold equity.</b> <b style="color:#fff">Our app fully replaces the 2013 site</b> and serves those same addresses — the old PHP codebase is retired, not rewired. URL cleanup, if ever, comes later — carefully, and only once the domain is stable.</p>
+  </div>
+
+  <!-- 1 · the core move -->
+  <section class="sec">
+    <div class="sec-h"><span class="n">1</span><h2>The core move</h2><span class="rl"></span></div>
+    <div class="move">
+      <div class="browser">
+        <div class="chrome"><span class="dots"><i></i><i></i><i></i></span>
+          <span class="addr">homefacts.com/city/California/Los-Angeles-County/Los-Angeles.html<span class="keep">URL UNCHANGED</span></span>
+        </div>
+        <div class="ba">
+          <div class="col before">
+            <div class="t">Before — 2013 stack</div>
+            <ul><li>Dated Bootstrap page</li><li>No modern mobile / speed</li><li>Person traffic given to an affiliate</li></ul>
+          </div>
+          <div class="col after">
+            <div class="t">After — rebuilt engine, same URL</div>
+            <ul><li>Modern area profile, all modules</li><li>Interactive map + "who lives here"</li><li>Converts through our people-search funnel</li></ul>
+          </div>
+        </div>
+      </div>
+      <p class="move-note"><b>Same address, new experience.</b> Google keeps crediting the URL it already ranks; the visitor gets a modern page. No redirect, no equity hop, no ranking reset.</p>
+    </div>
+  </section>
+
+  <!-- 2 · taxonomies + adapter -->
+  <section class="sec">
+    <div class="sec-h"><span class="n">2</span><h2>Our app answers their URLs</h2><span class="rl"></span></div>
+    <div class="tax">
+      <div class="card keepc">
+        <div class="ct">HomeFacts URLs <span class="pill">KEPT — the equity</span></div>
+        <div class="urlrow"><b>/city/</b>{State}/{County}-County/{City}<b>.html</b></div>
+        <div class="urlrow"><b>/</b>{topic}<b>/</b>{State}<b>.html</b> &nbsp;<span style="color:var(--faint)">offenders · properties · schools · crime</span></div>
+        <div class="urlrow"><b>/</b>{topic}<b>.html</b> &nbsp;<span style="color:var(--faint)">national hubs</span></div>
+        <div class="urlrow">Property-by-address · offender detail</div>
+      </div>
+      <div class="card ourc">
+        <div class="ct">Our engine <span class="pill">RENDERS BEHIND THEM</span></div>
+        <div class="urlrow">Area profile — demographics, crime, schools, hazards, offenders…</div>
+        <div class="urlrow">Interactive maps · address orientation</div>
+        <div class="urlrow">"Who lives here" — the people layer</div>
+        <div class="urlrow">People-search funnel (the monetization)</div>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="sh">We replace the site — we don't rewire it</div>
+      <p class="si">No one edits a line of HomeFacts' old code. Here's the whole switchover, in plain terms:</p>
+      <ol>
+        <li><b>We rebuild HomeFacts in our app</b> — every page recreated at its exact existing web address.</li>
+        <li><b>We test it side-by-side</b> on a private preview until each page matches, at the same addresses.</li>
+        <li><b>We point the domain at the new app.</b> "homefacts.com" is just a name; today that name is wired to the old server. We change one setting so the name is wired to our app instead — same street address, but the mail now arrives at a new, modern building.</li>
+        <li><b>The old 2013 site is switched off</b> — retired, never edited. NIC's team touches nothing.</li>
+        <li><b>Visitors and Google see the same web addresses</b> — the pages behind them are simply modern now.</li>
+      </ol>
+      <p class="foot"><b>Under the hood:</b> our app reproduces HomeFacts' addresses byte-for-byte (built from their own page list, so nothing breaks), and our preview addresses redirect into the live domain.</p>
+    </div>
+  </section>
+
+  <!-- 3 · phased rollout -->
+  <section class="sec">
+    <div class="sec-h"><span class="n">3</span><h2>Phased rollout</h2><span class="rl"></span></div>
+    <div class="phases">
+      <div class="phase"><div class="p">Phase 0 · days</div><h3>Inventory</h3><p>Pull HomeFacts' real URL list + per-URL traffic (GSC / logs). Baseline rankings. <b>This list is the migration spec.</b></p></div>
+      <div class="phase"><div class="p">Phase 1</div><h3>Parity</h3><p>Serve modern content at the top incumbent URLs, at their exact addresses. Self-canonical. No URL changes.</p></div>
+      <div class="phase"><div class="p">Phase 2</div><h3>Consolidate</h3><p>301 the idlookup.me prototype into homefacts.com. One clean home for the traffic; prototype becomes staging.</p></div>
+      <div class="phase opt"><div class="p">Phase 3 · optional</div><h3>Modernize URLs</h3><p>Only once stable, <em>if</em> worthwhile: clean up legacy .html URLs — high-traffic-first, monitored. Not required to succeed.</p></div>
+    </div>
+  </section>
+
+  <!-- 4 · risk controls -->
+  <section class="sec">
+    <div class="sec-h"><span class="n">4</span><h2>How the equity is protected</h2><span class="rl"></span></div>
+    <div class="grid2">
+      <div class="ctrl"><span class="ck">✓</span><span class="tx"><b>Zero changes to the 2013 app.</b> The domain is pointed at our app; the old PHP stack is retired, not rewired. NIC engineering: none.</span></div>
+      <div class="ctrl"><span class="ck">✓</span><span class="tx"><b>No URL restructuring.</b> The content behind each page changes; the URL itself doesn't. Nothing is moved onto a new structure at takeover.</span></div>
+      <div class="ctrl"><span class="ck">✓</span><span class="tx"><b>No mass redirects.</b> Incumbent URLs stay live and self-canonical — only the prototype 301s, single-hop.</span></div>
+      <div class="ctrl"><span class="ck">✓</span><span class="tx"><b>Byte-exact URLs.</b> Generated from HomeFacts' own crawl, not guessed — so no mismatch 404s.</span></div>
+      <div class="ctrl"><span class="ck">✓</span><span class="tx"><b>Sitemap discipline.</b> High-value core submitted first; thin pages held — no crawl-flood indexing risk.</span></div>
+      <div class="ctrl"><span class="ck">✓</span><span class="tx"><b>Coverage gate.</b> Every top URL round-trip-verified (URL → render → identical canonical) before cutover.</span></div>
+      <div class="ctrl"><span class="ck">✓</span><span class="tx"><b>Parity-first &amp; reversible.</b> We match before we improve; nothing destructive, staged behind a flag.</span></div>
+    </div>
+  </section>
+
+  <!-- 5 · what we need -->
+  <section class="sec">
+    <div class="sec-h"><span class="n">5</span><h2>The one thing we need from NIC</h2><span class="rl"></span></div>
+    <div class="ask">
+      <div class="h">Low-commitment first step</div>
+      <p><b>A Search Console export (or server-log URL list) with per-URL traffic.</b> That single file is the migration spec — it tells us exactly which URLs to preserve and prioritize. No access to the codebase, no commitment beyond sharing data. It's also the fastest way to size the opportunity together.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p class="fnote">We change what's behind each page, not its address. Equity preserved, experience modernized.</p>
+    <p class="disc">Illustrative transition plan. Incumbent URL patterns confirmed from HomeFacts' live pages; the full URL inventory (incl. property-by-address and offender-detail patterns) is pulled from NIC's Search Console / logs in Phase 0. HomeFacts identity and ownership remain with Nations Info Corp.</p>
+  </footer>
+</div>
+
+</body>
+</html>

@@ -9,7 +9,8 @@ import { SITE } from '../lib/site';
 
 export default function robots() {
   return {
-    rules: [{ userAgent: '*', allow: '/' }],
+    // /hf/ holds private partnership docs (noindex meta too) — keep crawlers out belt-and-suspenders.
+    rules: [{ userAgent: '*', allow: '/', disallow: '/hf/' }],
     // Two quality sitemaps: the /people directory core + the /homefacts area-profile core (rich, multi-source
     // pages only — counties/zips stay crawl-discoverable, not mass-listed on a recovering domain).
     sitemap: [`${SITE}/sitemap-directory.xml`, `${SITE}/sitemap-homefacts.xml`],

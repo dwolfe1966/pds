@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>HomeFacts × IDLookup — Pilot Proposal</title>
+<style>
+  :root{
+    --bg:#f6f8f6; --panel:#ffffff; --ink:#161f1a; --body:#3a4740; --mut:#61726a;
+    --line:#e2e8e3; --accent:#0d5d2f; --accent-soft:#e7f1ea; --amber:#a35a12; --amber-soft:#f6ecdd;
+    --red:#a12b20; --red-soft:#f7e7e4;
+    --shadow:0 1px 2px rgba(20,30,24,.04),0 12px 30px rgba(20,30,24,.06);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0e1411; --panel:#131b16; --ink:#eaf1ec; --body:#c3cec7; --mut:#8b998f;
+    --line:#243029; --accent:#5cc98a; --accent-soft:#16241b; --amber:#d69a5a; --amber-soft:#241a10;
+    --red:#e08476; --red-soft:#2a1512;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px rgba(0,0,0,.4);
+  }}
+  :root[data-theme="light"]{
+    --bg:#f6f8f6; --panel:#ffffff; --ink:#161f1a; --body:#3a4740; --mut:#61726a;
+    --line:#e2e8e3; --accent:#0d5d2f; --accent-soft:#e7f1ea; --amber:#a35a12; --amber-soft:#f6ecdd;
+    --red:#a12b20; --red-soft:#f7e7e4;
+    --shadow:0 1px 2px rgba(20,30,24,.04),0 12px 30px rgba(20,30,24,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1411; --panel:#131b16; --ink:#eaf1ec; --body:#c3cec7; --mut:#8b998f;
+    --line:#243029; --accent:#5cc98a; --accent-soft:#16241b; --amber:#d69a5a; --amber-soft:#241a10;
+    --red:#e08476; --red-soft:#2a1512;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 14px 34px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--body);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;font-size:15px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:840px;margin:0 auto;padding:clamp(20px,4vw,44px) clamp(16px,4vw,32px);}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);}
+  h1{font-size:clamp(28px,4.6vw,40px);line-height:1.06;letter-spacing:-.02em;color:var(--ink);
+    margin:.35rem 0 .3rem;font-weight:800;text-wrap:balance;}
+  .lede{font-size:clamp(16px,2.2vw,18px);color:var(--body);max-width:62ch;margin:0;}
+  .rule{height:1px;background:var(--line);border:0;margin:26px 0;}
+  h2{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:0 0 12px;}
+  h3{font-size:16px;font-weight:750;color:var(--ink);margin:0 0 6px;letter-spacing:-.01em;}
+  p{margin:0 0 11px;} strong{color:var(--ink);font-weight:700;}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+    background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:22px;}
+  .metric{background:var(--panel);padding:16px 18px;}
+  .metric .n{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05;}
+  .metric .l{font-size:12px;color:var(--mut);margin-top:6px;line-height:1.35;}
+  .metric .n.go{color:var(--accent);}
+  section{margin-top:30px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:640px){.grid2{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);}
+  .card.flag{border-color:color-mix(in srgb,var(--red) 30%,transparent);background:var(--red-soft);}
+  .card.win{border-color:color-mix(in srgb,var(--accent) 26%,transparent);background:var(--accent-soft);}
+  ul{margin:0;padding-left:0;list-style:none;}
+  li{position:relative;padding-left:20px;margin-bottom:8px;font-size:14.5px;}
+  li::before{content:"";position:absolute;left:2px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--accent);}
+  li.red::before{background:var(--red);}
+  li.amber::before{background:var(--amber);}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;
+    background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);}
+  .tag.red{background:var(--red-soft);color:var(--red);border-color:color-mix(in srgb,var(--red) 26%,transparent);}
+  .callout{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);
+    border-radius:12px;padding:16px 20px;box-shadow:var(--shadow);}
+  .callout .q{font-size:16.5px;color:var(--ink);font-weight:650;line-height:1.5;}
+  .flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  .node{flex:1;min-width:130px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);}
+  .node .t{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);}
+  .node .d{font-size:13.5px;color:var(--ink);font-weight:650;margin-top:3px;}
+  .arrow{align-self:center;color:var(--mut);font-weight:800;font-size:18px;}
+  .kv{display:flex;gap:10px;align-items:baseline;margin-bottom:7px;}
+  .kv .k{flex:0 0 96px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);}
+  .kv .v{font-size:14.5px;color:var(--body);}
+  .foot{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--mut);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+  em{color:var(--ink);font-style:normal;font-weight:650;}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Pilot proposal · HomeFacts × IDLookup</div>
+    <h1>Find out what your person-intent is really worth</h1>
+    <p class="lede">When someone lands on a HomeFacts record page looking up a <em>person</em>, that's your highest-value intent — monetized today as display advertising. A <strong>purpose-built people-search funnel is designed to convert that same intent</strong>, and may be worth more per visitor. This pilot measures which wins, head-to-head on your pages — <strong>with a floor so you can't lose.</strong> Zero cost. Fully reversible.</p>
+
+    <div class="metrics">
+      <div class="metric"><div class="n">30–60</div><div class="l">Day test window</div></div>
+      <div class="metric"><div class="n go">$0</div><div class="l">Cost to HomeFacts · fully reversible</div></div>
+      <div class="metric"><div class="n">A/B</div><div class="l">Measured against today's baseline</div></div>
+      <div class="metric"><div class="n go">0</div><div class="l">Change to your display-ad business</div></div>
+    </div>
+  </header>
+
+  <hr class="rule">
+
+  <section>
+    <h2>Why we're here</h2>
+    <div class="callout">
+      <div class="q">We're not here to buy traffic. We believe <strong>"where" and "who" are a stronger product together</strong> — HomeFacts explains places, we explain people, and the address joins them. This pilot is the low-risk first step of a partnership built on that idea: <strong>shared lifetime value</strong> and a combined experience neither of us can build alone.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The question worth testing</h2>
+    <div class="card">
+      <span class="tag">Hypothesis</span>
+      <h3 style="margin-top:12px;">Is your person-intent worth more than a display impression?</h3>
+      <p style="margin:0 0 8px;">When someone looks up a <em>person</em> on your pages, that's your highest-intent, most convertible visitor. Today it earns display-ad rates. A funnel built specifically for that intent may earn more — but assumptions don't pay; a measured test does.</p>
+      <ul>
+        <li>Person-name and record searches are your <strong>highest-value</strong> traffic.</li>
+        <li>Display and a dedicated funnel monetize that intent differently — <strong>the only way to know which wins on your pages is to run both, side by side.</strong></li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>The pilot — one slice, redirected</h2>
+    <div class="flow">
+      <div class="node"><div class="t">Visitor</div><div class="d">Person / record page on HomeFacts</div></div>
+      <div class="arrow">→</div>
+      <div class="node" style="border-color:color-mix(in srgb,var(--accent) 40%,transparent);"><div class="t">Instead of an ad</div><div class="d">Into the IDLookup people-search funnel</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">Result</div><div class="d">A conversion — measured &amp; shared back</div></div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="kv"><div class="k">Scope</div><div class="v">A <strong>defined slice</strong> of person-intent pages (e.g. offender / person-name / record pages) — you pick it, we don't touch the rest.</div></div>
+      <div class="kv"><div class="k">Measure</div><div class="v">Apples-to-apples against the current monetization on the same pages — real revenue-per-visitor, not a projection.</div></div>
+      <div class="kv"><div class="k">Duration</div><div class="v">30–60 days, then we compare and decide together.</div></div>
+      <div class="kv"><div class="k">Risk</div><div class="v"><strong>Reversible on day one</strong>, no engineering on your side, no change to your ad inventory or contracts.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why it's worth running</h2>
+    <div class="grid2">
+      <div class="card win">
+        <h3>Upside if it wins</h3>
+        <p style="margin:0;">A funnel built for this intent is designed to convert it. If it earns more per visitor than today's monetization — and the test shows, page by page — <strong>that difference is yours.</strong></p>
+      </div>
+      <div class="card win">
+        <h3>A real number, either way</h3>
+        <p style="margin:0;">Whatever you decide next, you walk away with a <strong>measured figure</strong> for what your person-intent is worth through a dedicated funnel — not an estimate, not a pitch.</p>
+      </div>
+    </div>
+    <ul style="margin-top:14px;">
+      <li><strong>Your display business is untouched.</strong> Place-intent inventory (neighborhood, property, safety) keeps running exactly as it does now — this is a <em>different intent on the same page.</em></li>
+      <li class="amber"><strong>You stay in control.</strong> You pick the pages, keep the rest unchanged, and can switch it off any day.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>How you get paid — we share the lifetime value</h2>
+    <div class="grid2">
+      <div class="card win">
+        <span class="tag">No downside</span>
+        <h3 style="margin-top:12px;">A floor at today's number</h3>
+        <p style="margin:0;">For the pilot we <strong>guarantee your revenue-per-visitor on the included pages is at least what they earn today.</strong> If the funnel ever underperforms, we make up the difference — you can't lose money on this test.</p>
+      </div>
+      <div class="card win">
+        <span class="tag">Shared upside</span>
+        <h3 style="margin-top:12px;">A share of lifetime value — not a one-time click</h3>
+        <p style="margin:0;">A person-search visitor who converts often becomes a subscriber. You share in the <strong>ongoing lifetime value</strong> of every customer your traffic brings us — a real partnership stake, agreed up front, not a one-time payout.</p>
+      </div>
+    </div>
+    <p style="margin:14px 0 0;font-size:14.5px;color:var(--body);"><strong>Transparent, by the visitor.</strong> You see exactly what your person-intent produces, reported openly for the whole window. Floor plus shared LTV means one thing: <em>you can only come out ahead.</em></p>
+  </section>
+
+  <section>
+    <h2>What we need to start</h2>
+    <div class="card">
+      <ul>
+        <li>Agreement on the <strong>slice of pages</strong> to include and the baseline to measure against.</li>
+        <li>A simple redirect on those pages into the funnel — <strong>no development on your end.</strong></li>
+        <li>A shared readout at the end of the window. That's it.</li>
+      </ul>
+    </div>
+    <p style="margin:14px 0 0;font-size:14px;color:var(--mut);">The experience is already live at <strong>idlookup.me/homefacts</strong>. We can start the test in days.</p>
+  </section>
+
+  <div class="foot">
+    <span>Pilot proposal · zero-cost · fully reversible</span>
+    <span>IDLookup / People Data Systems</span>
+  </div>
+</div>
+
+</body>
+</html>
