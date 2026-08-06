@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl } from '../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut } from '../services/memberEnrichment';
+import { useBrand } from '../services/brand';
 
 /**
  * "Your Digital Footprint" — the Transparency + Control panel, now rendered off the Exposure Graph
@@ -91,12 +92,19 @@ function statusFor(node, override, hasUrl) {
   return <span style={{ fontSize: 12.5, color: '#6b7280' }}>{hasUrl ? 'Opt-out available' : 'Not detected'}</span>;
 }
 
+const CONSENT_KEY = 'optoutAgentConsent';
+
 export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const navigate = useNavigate();
+  const brand = useBrand();
   const manage = onManage || (() => navigate('/my-identity'));
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [graph, setGraph] = useState({ nodes: [], registry: [], summary: { score: 0, found: 0, controlled: 0, exposed: 0 } });
   const [overrides, setOverrides] = useState({}); // optimistic per-source control after a Remove click
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [flash, setFlash] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -145,6 +153,35 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     </a>
   );
 
+  // "Remove for me" — the done-for-you path. Targets removable sources (brokers + search) not already
+  // handled; requires authorized-agent consent (captured once) + a claimed identity (backend-gated).
+  const CONTROLLED = ['hidden', 'removed', 'optout_confirmed', 'optout_requested'];
+  const removableKeys = useMemo(() => items
+    .filter((it) => (it.surfaceType === 'data_broker' || it.surfaceType === 'search_result')
+      && !CONTROLLED.includes(overrides[it.sourceKey] || (it.node && it.node.control_status)))
+    .map((it) => it.sourceKey), [items, overrides]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const startRemoveForMe = () => {
+    setFlash('');
+    if (!mapped) { setFlash('Claim & verify your identity first to remove your records for you.'); return; }
+    if (!removableKeys.length) { setFlash("You're already requested everywhere we track — nothing left to submit."); return; }
+    let consented = false;
+    try { consented = localStorage.getItem(CONSENT_KEY) === '1'; } catch { /* ignore */ }
+    if (consented) doRemoveForMe(); else { setAgreed(false); setConsentOpen(true); }
+  };
+
+  const doRemoveForMe = async () => {
+    const keys = removableKeys;
+    setConsentOpen(false); setRunning(true); setFlash('');
+    try { localStorage.setItem(CONSENT_KEY, '1'); } catch { /* ignore */ }
+    setOverrides((o) => { const n = { ...o }; keys.forEach((k) => { n[k] = 'optout_requested'; }); return n; });
+    const res = await runOptOut({ sourceKeys: keys, consent: true });
+    setRunning(false);
+    if (res && res.error === 403) { setFlash('Claim & verify your identity first to remove your records for you.'); return; }
+    if (res && res.nodes) setGraph((g) => ({ ...g, nodes: res.nodes, summary: res.summary || g.summary }));
+    setFlash(`Requested removal on your behalf across ${keys.length} site${keys.length !== 1 ? 's' : ''}. We'll track each one and flag re-appearances.`);
+  };
+
   // ── Compact (Dashboard) ────────────────────────────────────────────────────
   if (compact) {
     return (
@@ -187,6 +224,16 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         and breaches. <strong>You can't delete yourself from the internet</strong>, but you can see it all and take control.
       </p>
 
+      {/* Done-for-you: Remove for me across all removable sources (authorized-agent consent). */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '4px 0 6px' }}>
+        <button type="button" onClick={startRemoveForMe} disabled={running}
+          style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 10, padding: '11px 20px', fontSize: 14.5, fontWeight: 800, cursor: running ? 'default' : 'pointer', opacity: running ? 0.7 : 1 }}>
+          {running ? 'Requesting removals…' : `✨ Remove me — we do it for you${removableKeys.length ? ` (${removableKeys.length})` : ''}`}
+        </button>
+        <span style={{ fontSize: 12.5, color: '#6b7280' }}>We submit the opt-outs on your behalf, as your authorized agent, and track each one.</span>
+      </div>
+      {flash && <div style={{ fontSize: 12.5, fontWeight: 600, color: flash.startsWith('Claim') ? '#b45309' : GREEN, margin: '0 0 6px' }}>{flash}</div>}
+
       {/* The map — category cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 14, marginTop: 8 }}>
         {cats.map((c) => {
@@ -222,9 +269,34 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         <Dot c="#dc2626" /> Exposed <Dot c="#d97706" /> Removal requested <Dot c={GREEN} /> Removed / hidden <Dot c="#d1d5db" /> Not yet detected
       </div>
       <p style={{ margin: '10px 0 0', fontSize: 11.5, color: '#9ca3af', lineHeight: 1.5 }}>
-        Remove opens each site's own opt-out form and tracks the request here. Data can re-list — we keep monitoring
-        and flag re-appearances. Coverage grows as we scan more sources; automated removal is coming.
+        "Remove me" submits opt-outs on your behalf; the per-site "Remove →" opens that site's own form. Data can
+        re-list — we keep monitoring and flag re-appearances. Coverage grows as we add sources.
       </p>
+
+      {/* Authorized-agent consent — required once before we act on the member's behalf. */}
+      {consentOpen && (
+        <div role="dialog" aria-modal="true" onClick={() => setConsentOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 16, padding: '22px 24px', maxWidth: 460, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#111827', marginBottom: 8 }}>Remove you automatically</div>
+            <p style={{ fontSize: 13.5, color: '#4b5563', lineHeight: 1.55, margin: '0 0 14px' }}>
+              Authorize {brand.name} to submit opt-out requests <strong>on your behalf, as your authorized agent</strong>, to the
+              people-search and data-broker sites where your information appears. We track each request and flag re-appearances,
+              and you can stop any time.
+            </p>
+            <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', fontSize: 13, color: '#374151', marginBottom: 16, cursor: 'pointer', lineHeight: 1.5 }}>
+              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+              <span>I authorize {brand.name} to act as my authorized agent to request removal of my personal information from the sites listed here.</span>
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" onClick={doRemoveForMe} disabled={!agreed}
+                style={{ background: agreed ? GREEN : '#e5e7eb', color: agreed ? '#fff' : '#9ca3af', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: agreed ? 'pointer' : 'not-allowed' }}>Authorize &amp; start</button>
+              <button type="button" onClick={() => setConsentOpen(false)}
+                style={{ background: 'none', color: '#6b7280', border: '1px solid #d1d5db', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

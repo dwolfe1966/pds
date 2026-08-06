@@ -329,6 +329,33 @@ export function linkSelfReport(commerceContentId, selfPerson) {
 // ── Suppression ("Hide me" — Identity Management) ────────────────────────────
 function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'suppression'); }
 function exposureUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'exposure'); }
+function optoutUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'optout'); }
+
+/** "Remove for me" — authorize IDLookup to request removal on the member's behalf across the given sources.
+ *  Runs our own opt-out engine (build-the-head); marks each node optout_requested. Requires consent (the
+ *  authorized-agent authorization) + a claimed identity (the backend gates on both). Returns { results,
+ *  nodes, summary } or { error }. */
+export async function runOptOut({ sourceKeys, consent = true } = {}) {
+  const userId = currentUserId();
+  if (!userId || !Array.isArray(sourceKeys) || !sourceKeys.length) return null;
+  let identity = {};
+  try {
+    const id = getMappedIdentity();
+    if (id) identity = {
+      firstName: id.firstName, middleName: id.middleName, lastName: id.lastName,
+      name: id.name || [id.firstName, id.lastName].filter(Boolean).join(' ').trim(),
+      city: id.city, state: id.state, age: id.age,
+    };
+  } catch { /* ignore */ }
+  try {
+    const res = await fetch(optoutUrl(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, sourceKeys, consent: !!consent, identity }),
+    });
+    if (!res.ok) return { error: res.status };
+    return await res.json();
+  } catch { return { error: 'network' }; }
+}
 
 const EMPTY_GRAPH = { nodes: [], registry: [], annotations: [], summary: { score: 0, found: 0, controlled: 0, inProgress: 0, exposed: 0 } };
 
