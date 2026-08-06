@@ -37,27 +37,6 @@ function isCsrReply(type) { return (type || '').toLowerCase() === 'contactcsrrep
 function isUserReply(type) { return (type || '').toLowerCase() === 'contactuserreply'; }
 function isMailThread(type) { return isCsrMail(type) || isUserContact(type); }
 
-// The message system currently rejects CSR replies/emails longer than this many
-// characters (server-side limit, not enforced in our code). We do NOT hard-block —
-// BC may raise it — but we surface a live counter so a CSR isn't surprised by a
-// silent "Failed to send." One-line update (or removal) when the limit changes.
-const CSR_MSG_LIMIT = 1000;
-
-// Live character counter shown under the CSR compose/reply textareas. Muted until
-// ~90% of the limit, amber approaching, red once over (the send may be rejected).
-function MsgCharCount({ value }) {
-  const n = (value || '').length;
-  const over = n > CSR_MSG_LIMIT;
-  const near = !over && n > CSR_MSG_LIMIT * 0.9;
-  const color = over ? '#c62828' : near ? '#b26a00' : '#8a8f98';
-  return (
-    <div style={{ fontSize: '0.78rem', color, marginTop: 4, textAlign: 'right' }}>
-      {n.toLocaleString()} / {CSR_MSG_LIMIT.toLocaleString()} characters
-      {over && <span> — over the current send limit; shorten or send in parts, or it may be rejected.</span>}
-    </div>
-  );
-}
-
 function contactMessageSubject(item) {
   const input = item?.content?.input || {};
   if (input.topic) return input.topic;
@@ -774,7 +753,6 @@ const EmailTicketsPage = () => {
             value={composeMessage}
             onChange={(e) => setComposeMessage(e.target.value)}
           />
-          <MsgCharCount value={composeMessage} />
           <div className={styles.replyActions}>
             <button type="button" className={styles.cancelBtn} onClick={() => setComposing(false)}>Cancel</button>
             <button type="submit" className={styles.replyBtn} disabled={sending || !composeSubject.trim() || !composeMessage.trim()}>
@@ -1350,7 +1328,6 @@ const EmailTicketsPage = () => {
                         placeholder="Type your reply..."
                         disabled={sending}
                       />
-                      <MsgCharCount value={replyMessage} />
                       <div className={styles.replyActions}>
                         <button type="submit" className={styles.replyBtn} disabled={sending || !replyMessage.trim()}>
                           {sending ? 'Sending...' : 'Send Reply'}
