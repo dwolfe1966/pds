@@ -8,7 +8,7 @@ CSR_USER='<csr account>' CSR_PWD='<pwd>' node scripts/demo-bc-csr-asks.js
 ```
 
 It prints, per ask: what we call → what BC returns → what we expected → verdict, plus a working
-contrast. **Eight open asks + one question** (ASK I — opt-out approve — added 2026-07-28 after reviewing the latest csrApi doc): A/B/C (in the demo script), D-residual (byte-verified, download-to-disk only), and E/F/G/H (registered 2026-07-02 from **production** evidence — BC is live on prod since 2026-06-23, and we do NOT run mutation probes on prod, so E–H are evidenced by prod payloads/screenshots + cited artifacts rather than the dev demo script; see each block). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
+contrast. **Nine open asks + one question** (ASK I — opt-out approve — added 2026-07-28 after reviewing the latest csrApi doc; ASK J — CSR message-size cap — added 2026-08-06 from a full send-path code trace): A/B/C (in the demo script), D-residual (byte-verified, download-to-disk only), and E/F/G/H (registered 2026-07-02 from **production** evidence — BC is live on prod since 2026-06-23, and we do NOT run mutation probes on prod, so E–H are evidenced by prod payloads/screenshots + cited artifacts rather than the dev demo script; see each block). **Setup + run instructions: `BC_CSR_DEMO_HOWTO.md`** (no embedded
 credentials — the runner supplies their own CSR account via env). (A/B/C re-checked across `idlookup` / `bytecrtrs` / no-brand so a
 brand filter can't be the cause.)
 
@@ -277,6 +277,31 @@ happening, requests silently age past their SLA.
 | **Function chain** | `api.adminListDataRemoval` → `apiWrapperCsr.csrFindOptOuts` → `optOut.find` (read) ✅; **no** approve method to call → button `disabled` (`DataRemovalPage.js:290`) |
 | **Feature impacted** | CSR fulfilling consumer data-removal requests in-app (compliance SLA) |
 | **Interim** | Confirm where these are approved today (BC admin panel); until the method exists, the button stays disabled by design |
+
+## ASK J — CSR reply/email body is capped at ~1000 characters server-side  (RAISE + CONFIRM)  ❌ open
+
+**Evidence (code trace, 2026-08-06):** a CSR reply longer than ~1000 characters is rejected when sent.
+We traced the **entire** send path and confirmed **our stack imposes no cap** — the body flows untouched:
+textarea (`EmailTicketsPage` — no `maxLength`) → `api.adminCreateCsrReply` → `apiRouterAdmin` (passes
+`body` through) → `apiWrapperCsr.csrCreateCsrReply` → `POST /contactMessage/admin/csrReply` with the full
+`message`. (Same for CSR compose: `csrCreateCsrMail` → `csrCreateCsrReply`.) The only `maxLength={1000}` in
+our codebase is an **unrelated** consumer owner-note widget (`InlineOwnerNote.js`); the CSR composer has
+**none**. So the ~1000-char limit is a **BC server-side validation on the `csrReply` `message` field**, and
+today it surfaces to the CSR only as a generic "Failed to send" (silent) — we've since added a live char
+counter as interim relief, but that only warns, it can't raise the ceiling.
+**Ask:** (a) **raise** the server-side length limit on the `csrReply` `message` field (real support replies
+routinely exceed 1000 chars — order histories, cancellation explanations, multi-step instructions);
+(b) **confirm the exact field + current limit** (is it 1000 on `message` specifically? does the same
+validator cap `contactMessage.create` `description` / admin notes?); and (c) if there's a hard reason for a
+ceiling, return a **specific, catchable error** (field + limit) instead of a generic failure so we can show
+the CSR an accurate message.
+
+| | |
+|---|---|
+| **App / Page** | CSR/Admin — `EmailTicketsPage` (Messages) reply + "New Email to user" composers |
+| **Function chain** | `api.adminCreateCsrReply` / `adminCreateCsrMail` → `apiWrapperCsr.csrCreateCsrReply` → `POST /contactMessage/admin/csrReply` (BC caps `message` server-side) |
+| **Feature impacted** | CSR sending substantive support replies (billing walkthroughs, cancellation/retention detail) |
+| **Interim** | Live char counter under both composers (`CSR_MSG_LIMIT = 1000`, soft-warn, no hard block) so the CSR isn't surprised by a silent rejection — but longer replies still fail until the server limit is raised |
 
 ## CONFIRM — `userContact` data model (a question, not a defect)
 
