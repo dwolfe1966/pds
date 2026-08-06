@@ -64,26 +64,10 @@ function buildRefer() {
      'refer_partnerId', 'refer_afid', 'refer_abc'].forEach((k) => {
       if (params[k]) refer[k] = params[k];
     });
-    const shn = sessionStorage.getItem('attribution.shn');
-    const shl = sessionStorage.getItem('attribution.shl');
-    if (shn) refer.shn = shn;
-    if (shl) refer.shl = shl;
-    // Resolved partner identity (CampaignContext) for per-partner/channel reporting.
-    const shnName = sessionStorage.getItem('attribution.shnName');
-    const partner = sessionStorage.getItem('attribution.partner');
-    const channel = sessionStorage.getItem('attribution.channel');
-    if (shnName) refer.shnName = shnName;
-    if (partner) refer.partner = partner;
-    if (channel) refer.channel = channel;
-    // SEO/referral from idlookup.me has NO shN, so partner/channel above are the DEFAULT
-    // shN's (which reads as "paid"). Override to an explicit referral channel so reporting
-    // books it as SEO, not paid. Only mutates the REPORTED refer object — NOT the stored
-    // sessionStorage attribution — so conversion gates / GTM context are unaffected.
-    if (isIdlookupReferral(params)) {
-      refer.source = 'idlookup.me';
-      refer.channel = 'referral';
-      refer.partner = 'idlookup.me';
-    }
+    // shn / shl / shnName / partner / channel are DELIBERATELY NOT sent (BC 2026-08-06): BC records
+    // shn/shl automatically for ALL tracking (data.tracking.partner.* is authoritative), and BC sets the
+    // default shn. Sending our own shn/partner/channel here overrode and "nullified" that automation.
+    // The stored sessionStorage attribution is untouched, so conversion gates / GTM context are unaffected.
     return Object.keys(refer).length ? refer : undefined;
   } catch { return undefined; }
 }
