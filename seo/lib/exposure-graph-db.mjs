@@ -44,7 +44,7 @@ async function ensureTables() {
       category TEXT, opt_out_url TEXT, removal_method TEXT, relist_days INT, weight INT NOT NULL DEFAULT 1,
       nature TEXT
     )`;
-    // nature = honest opt-out label (true_removal|suppression|file_access_only|account_deletion|search_delist|no_optout).
+    // nature = what the opt-out achieves (true_removal|suppression|file_access_only|account_deletion|search_delist|no_optout).
     await sql`ALTER TABLE source_registry ADD COLUMN IF NOT EXISTS nature TEXT`;
     await sql`CREATE TABLE IF NOT EXISTS owner_annotation (
       id BIGSERIAL PRIMARY KEY, subject_key TEXT NOT NULL, node_id BIGINT, record_key TEXT, label TEXT,
@@ -64,7 +64,8 @@ async function ensureTables() {
 // Seeded from the brokers already curated in the consumer DigitalFootprint component + Google + our
 // own surfaces + the major social nets. removal_method routes an action to the right engine later.
 // Fields: k=key t=surface_type n=name c=category u=opt_out_url m=removal_method r=relist_days w=weight
-// x=NATURE (honesty label: true_removal|suppression|file_access_only|account_deletion|search_delist|no_optout).
+// x=NATURE — what an opt-out actually ACHIEVES here (states the degree; most don't fully erase you):
+//   true_removal|suppression|file_access_only|account_deletion|search_delist|no_optout.
 // URLs + methods + nature verified per-vendor 2026-08-06 — see docs/product/broker-optout-automation-matrix.md.
 // NO vendor offers a removal API; m is the realistic automation path (browser|email|form_post|manual).
 const SEED_SOURCES = [

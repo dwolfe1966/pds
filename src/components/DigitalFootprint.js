@@ -92,6 +92,19 @@ function statusFor(node, override, hasUrl) {
   return <span style={{ fontSize: 12.5, color: '#6b7280' }}>{hasUrl ? 'Opt-out available' : 'Not detected'}</span>;
 }
 
+// What an opt-out ACTUALLY achieves at each source (from source_registry.nature). Deliberately states the
+// DEGREE — most of these don't fully erase you, and a few can't remove you at all — instead of a blanket
+// "Remove". `verb` is the accurate action word; null verb = no actionable opt-out. Unknown nature → generic.
+const OUTCOME = {
+  true_removal:     { label: 'Deletes your record here',            verb: 'Remove',        tone: '#166534' },
+  suppression:      { label: 'Hides your listing (data can return)', verb: 'Opt out',      tone: '#92400e' },
+  search_delist:    { label: 'Removes from search results, not the source', verb: 'Delist', tone: '#92400e' },
+  file_access_only: { label: 'View or dispute only — not removable', verb: 'Request file',  tone: '#6b7280' },
+  account_deletion: { label: 'Only by deleting your own account',    verb: 'Manage',        tone: '#6b7280' },
+  no_optout:        { label: 'No opt-out available',                 verb: null,            tone: '#6b7280' },
+};
+const outcomeFor = (nature) => OUTCOME[nature] || null;
+
 const CONSENT_KEY = 'optoutAgentConsent';
 
 export default function DigitalFootprint({ compact = false, onManage } = {}) {
@@ -121,7 +134,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   // Build the itemized list: registry catalog (or fallback) overlaid with node status, plus dynamic breach nodes.
   const items = useMemo(() => {
     const catalog = (graph.registry && graph.registry.length) ? graph.registry : FALLBACK;
-    const list = catalog.map((r) => ({ sourceKey: r.source_key, surfaceType: r.surface_type, category: r.category, name: r.display_name, url: r.opt_out_url, node: nodesBySource[r.source_key] }));
+    const list = catalog.map((r) => ({ sourceKey: r.source_key, surfaceType: r.surface_type, category: r.category, name: r.display_name, url: r.opt_out_url, nature: r.nature, node: nodesBySource[r.source_key] }));
     (graph.nodes || []).filter((n) => n.surface_type === 'breach').forEach((n) => {
       list.push({ sourceKey: n.source_key, surfaceType: 'breach', category: 'breach', name: (n.exposure_detail && n.exposure_detail.breach) || n.source_key.replace('breach:', ''), url: null, node: n });
     });
@@ -156,8 +169,12 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   // "Remove for me" — the done-for-you path. Targets removable sources (brokers + search) not already
   // handled; requires authorized-agent consent (captured once) + a claimed identity (backend-gated).
   const CONTROLLED = ['hidden', 'removed', 'optout_confirmed', 'optout_requested'];
+  // Natures an authorized-agent request CAN'T act on — exclude from "Remove for me" so we don't claim to
+  // remove what isn't removable (FCRA file-access, no opt-out, or account-deletion only you can do).
+  const NON_AGENT = new Set(['file_access_only', 'no_optout', 'account_deletion']);
   const removableKeys = useMemo(() => items
     .filter((it) => (it.surfaceType === 'data_broker' || it.surfaceType === 'search_result')
+      && !NON_AGENT.has(it.nature)
       && !CONTROLLED.includes(overrides[it.sourceKey] || (it.node && it.node.control_status)))
     .map((it) => it.sourceKey), [items, overrides]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -248,17 +265,23 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
                   ? <span style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', background: '#fef2f2', borderRadius: 999, padding: '1px 8px' }}>{exposedIn} exposed</span>
                   : <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700 }}>{list.length}</span>}
               </div>
-              {list.map((it) => (
+              {list.map((it) => {
+                const oc = c.key === 'ours' ? null : outcomeFor(it.nature);
+                return (
                 <div key={it.sourceKey} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #f3f4f6' }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor(it.node, overrides[it.sourceKey]), flexShrink: 0 }} aria-hidden="true" />
-                  <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#374151', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={it.name}>{it.name}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={it.name}>{it.name}</span>
+                    {oc && <span style={{ display: 'block', fontSize: 10.5, color: oc.tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{oc.label}</span>}
+                  </span>
                   {c.key === 'ours'
                     ? <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>{mapped ? 'Manage' : 'Claim'}</button>
-                    : it.url
-                      ? <a href={it.url} target="_blank" rel="noopener noreferrer" onClick={() => markRequested(it)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, textDecoration: 'none' }}>Remove →</a>
+                    : (it.url && (!oc || oc.verb))
+                      ? <a href={it.url} target="_blank" rel="noopener noreferrer" onClick={() => markRequested(it)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, textDecoration: 'none' }}>{(oc && oc.verb) || 'Remove'} →</a>
                       : null}
                 </div>
-              ))}
+                );
+              })}
             </div>
           );
         })}

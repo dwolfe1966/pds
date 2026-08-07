@@ -3,7 +3,7 @@
 Per-vendor research into whether we can **auto-manage a user's visibility** across data-provider
 categories — via (a) an official removal **API**, (b) a **browser emulator** (headless Playwright), (c) an
 **email/webform** CCPA request, or (d) **manual** only. Feeds the build-the-head opt-out engine's per-source
-`removal_method` and the honest per-source `nature` label. ~50 vendors, verified via web research; low/medium
+`removal_method` and the per-source `nature` label (what each opt-out actually achieves). ~50 vendors, verified via web research; low/medium
 confidence flagged. **This is the map for what removal automation is actually achievable — and what we must
 NOT market as "removal."**
 
@@ -18,7 +18,9 @@ NOT market as "removal."**
 3. **Most categories are NOT truly removable — labeling matters.** Credit bureaus, FCRA background-check CRAs,
    AI chatbots, search engines, and public-record-backed property/genealogy are *suppression*, *file-access*,
    *account-deletion*, *search-delist*, or *no-opt-out* — NOT record removal. Marketing them as "removed"
-   would over-promise. Each source carries an honest `nature` label (below).
+   would over-promise. Each source carries a `nature` label stating the actual degree it achieves (below).
+   The point isn't a virtue claim ("we're honest") — it's stating precisely how much a given opt-out does,
+   since most do *some* of the job, not all or none.
 
 ## The automation strategy this implies (build-the-head engine)
 
@@ -36,7 +38,7 @@ NOT market as "removal."**
   upload), credit bureaus, FCRA CRAs, AI chatbots, Google/Bing delist, genealogy account-deletion. Give the
   user a guided link + prefilled details; a human (them) completes it. **Never show these as auto-removed.**
 
-## Nature legend (the honesty label)
+## Nature legend (what each opt-out actually achieves)
 `true_removal` = record actually deleted · `suppression` = hidden/opted-out but data retained/re-listable ·
 `file_access_only` = FCRA disclosure/dispute, no removal · `account_deletion` = only by deleting your own
 account · `search_delist` = removed from search results, not the source · `no_optout` = no per-person removal.
