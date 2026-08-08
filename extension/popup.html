@@ -15,11 +15,24 @@
   .status { font-size: 12px; color: #0d5d2f; font-weight: 700; margin-top: 8px; min-height: 15px; }
   .foot { font-size: 11px; color: #6b7280; margin-top: 10px; line-height: 1.45; }
   a { color: #0d5d2f; }
+  .pagecard { border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; border: 1px solid #e5e7eb; }
+  .pagecard.warn { background: #fffbeb; border-color: #fde68a; }
+  .pagecard.info { background: #eff6ff; border-color: #bfdbfe; }
+  .pagecard.muted { background: #f9fafb; }
+  .pc-eyebrow { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; }
+  .pc-title { font-size: 13px; font-weight: 800; margin-top: 3px; color: #111827; }
+  .pc-body { font-size: 11.5px; color: #4b5563; line-height: 1.45; margin-top: 3px; }
 </style>
 </head>
 <body>
   <div class="hd">IDLookup Remove</div>
   <div class="body">
+    <!-- On this page — contextual identity insight for the current tab (activeTab; runs only on click) -->
+    <div id="pageCard" class="pagecard muted">
+      <div class="pc-eyebrow">On this page</div>
+      <div class="pc-title" id="pcTitle">Checking…</div>
+      <div class="pc-body" id="pcBody"></div>
+    </div>
     <p class="lead">Your details fill broker opt-out forms automatically, in your own browser. Nothing is sent to us — this stays on your device.</p>
     <label>Full name</label><input id="name" placeholder="Jane A. Doe">
     <label>Email</label><input id="email" type="email" placeholder="jane@example.com">
@@ -37,6 +50,8 @@
     <div class="status" id="status"></div>
     <p class="foot">Open <a href="https://www.idlookup.ai/my-identity" target="_blank" rel="noopener">your footprint on IDLookup</a> to see everywhere your data lives. Signing in there syncs these details automatically.</p>
   </div>
+  <script src="recipes.js"></script>
+  <script src="signals.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
