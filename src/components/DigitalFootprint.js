@@ -230,7 +230,14 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     setRunning(false);
     if (res && res.error === 403) { setFlash('Claim & verify your identity first to remove your records for you.'); return; }
     if (res && res.nodes) setGraph((g) => ({ ...g, nodes: res.nodes, summary: res.summary || g.summary }));
-    setFlash(`Requested removal on your behalf across ${keys.length} site${keys.length !== 1 ? 's' : ''}. We'll track each one and flag re-appearances.`);
+    // Honest outcome: only 'requested' means we actually submitted (agent-sent email / form). The rest are
+    // prepared and need the member to open + finish (CAPTCHA/verification we can't do for them).
+    const results = (res && res.results) || [];
+    const sent = results.filter((r) => r.status === 'requested').length;
+    const prepared = results.length - sent;
+    setFlash(sent
+      ? `Sent ${sent} removal request${sent !== 1 ? 's' : ''} on your behalf${prepared ? `; ${prepared} more are prepared — open each below to finish` : ''}.`
+      : `Prepared ${keys.length} request${keys.length !== 1 ? 's' : ''} — open each below to finish. We’ll auto-send the ones we can as soon as sending is enabled.`);
   };
 
   // ── Compact (Dashboard) ────────────────────────────────────────────────────

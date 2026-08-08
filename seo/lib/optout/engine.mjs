@@ -2,6 +2,7 @@
 // Returns { method, status, detail }. status: 'manual' (user opens the URL) | 'requested' (we submitted)
 // | 'prepared' (request built, sending gated) | 'pending_worker' (needs the phase-2 browser worker) | 'error'.
 import { getAdapter, buildOptOutRequest } from './adapters.mjs';
+import { sendEmail, hasEmail, isBlockedRecipient } from '../email/send.mjs';
 
 export async function submitOptOut({ sourceKey, registryRow, identity }) {
   const adapter = getAdapter(sourceKey, registryRow);
@@ -21,12 +22,19 @@ export async function submitOptOut({ sourceKey, registryRow, identity }) {
       }
 
       case 'email': {
+        const name = [identity.firstName, identity.lastName].filter(Boolean).join(' ') || identity.name || '';
         const text = buildOptOutRequest(identity, adapter.brokerName || sourceKey);
-        // Actual sending to broker privacy inboxes is gated — deliverability (SPF/DKIM) + legal authorization
-        // must be in place first. Until then we PREPARE the request (recorded on the node event).
-        if (process.env.OPTOUT_EMAIL_ENABLED === '1' && adapter.to) {
-          // TODO(phase-2): send `text` to adapter.to via the email provider, then status 'requested'.
-          return { method: 'email', status: 'requested', detail: { to: adapter.to } };
+        const subject = `Data deletion / opt-out request${name ? ` — ${name}` : ''}`;
+        // Agent-send is gated on OPTOUT_EMAIL_ENABLED + a configured, domain-authenticated sender (SPF/DKIM).
+        // We send AS the member's authorized agent with reply-to = the member, so any confirmation the broker
+        // sends back reaches them. Until enabled we PREPARE the request (the member sends it from the guide).
+        if (process.env.OPTOUT_EMAIL_ENABLED === '1' && hasEmail && adapter.to && !isBlockedRecipient(adapter.to)) {
+          try {
+            await sendEmail({ to: adapter.to, subject, text, replyTo: identity.email || undefined });
+            return { method: 'email', status: 'requested', detail: { to: adapter.to, sent: true } };
+          } catch (e) {
+            return { method: 'email', status: 'prepared', detail: { to: adapter.to, sendError: String((e && e.message) || e) } };
+          }
         }
         return { method: 'email', status: 'prepared', detail: { to: adapter.to || null, preview: text.slice(0, 140) } };
       }

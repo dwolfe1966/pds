@@ -5,20 +5,36 @@
 // so every catalog source is at least assisted, and we upgrade brokers to automation one adapter at a time.
 
 export const ADAPTERS = {
-  // ── Examples (disabled until verified per broker) ──
-  // A broker whose opt-out is a simple non-JS POST:
-  //   radaris: { method: 'form_post', url: 'https://…', build: (id) => ({ name: id.name, state: id.state }) },
-  // A broker that accepts a CCPA authorized-agent request by email (verify the address + that they accept email):
-  //   acxiom:  { method: 'email', to: 'privacy@acxiom.com', brokerName: 'Acxiom' },
-  // A JS/CAPTCHA form (needs the phase-2 Playwright worker):
-  //   spokeo:  { method: 'browser', url: 'https://www.spokeo.com/optout' },
+  // Explicit overrides go here (e.g. a form_post recipe, or a browser adapter for the phase-2 worker).
+  // Email targets are in EMAIL_TARGETS below; everything else derives from the registry removal_method.
 };
 
-/** Resolve the adapter for a source; default to manual (link-out) using the registry opt-out URL. */
+// Brokers that accept a CCPA authorized-agent removal request BY EMAIL (verified privacy inboxes — see
+// docs/product/broker-optout-automation-matrix.md). These are the phase-2 agent-executed tier: we send the
+// request on the member's behalf (reply-to = the member) once the email sender is enabled.
+export const EMAIL_TARGETS = {
+  apollo:    { to: 'privacy@apollo.io',        brokerName: 'Apollo.io' },
+  lusha:     { to: 'privacy@lusha.com',        brokerName: 'Lusha' },
+  cognism:   { to: 'privacy@cognism.com',      brokerName: 'Cognism' },
+  dataaxle:  { to: 'privacyteam@data-axle.com', brokerName: 'Data Axle' },
+  atdata:    { to: 'privacy@atdata.com',       brokerName: 'AtData' },
+  hiya:      { to: 'DPO@hiya.com',             brokerName: 'Hiya' },
+  checkr:    { to: 'hello@checkr.com',         brokerName: 'Checkr' },
+  goodhire:  { to: 'privacy@goodhire.com',     brokerName: 'GoodHire' },
+};
+
+/** Resolve the adapter for a source. Precedence: explicit ADAPTERS override → EMAIL_TARGETS (email tier)
+ *  → the registry's removal_method (email/browser/form_post/manual) with the opt-out URL → manual. */
 export function getAdapter(sourceKey, registryRow) {
   const a = ADAPTERS[sourceKey];
   if (a) return { sourceKey, ...a };
-  return { sourceKey, method: 'manual', url: (registryRow && registryRow.opt_out_url) || null };
+  const url = (registryRow && registryRow.opt_out_url) || null;
+  const et = EMAIL_TARGETS[sourceKey];
+  if (et) return { sourceKey, method: 'email', url, ...et };
+  const method = (registryRow && registryRow.removal_method) || 'manual';
+  // Only 'email' can be agent-sent; browser/form_post/manual all resolve to a member-driven action here
+  // (the guided experience prepares those). Keep them 'manual' at the engine until their adapter exists.
+  return { sourceKey, method: method === 'email' ? 'email' : 'manual', url };
 }
 
 /** The authorized-agent request text (email body / PDF) for a broker, built from the user's identity. */
@@ -33,9 +49,12 @@ export function buildOptOutRequest(identity = {}, brokerName) {
       + 'CCPA/CPRA and applicable U.S. state privacy laws.',
     '',
     `Name: ${name}`,
+    identity.email ? `Email: ${identity.email}` : null,
     loc ? `Location: ${loc}` : null,
-    identity.age ? `Approx. age: ${identity.age}` : null,
+    identity.address ? `Current address: ${identity.address}` : null,
+    identity.prevAddress ? `Previous addresses: ${identity.prevAddress}` : null,
+    identity.dob ? `Date of birth: ${identity.dob}` : (identity.age ? `Approx. age: ${identity.age}` : null),
     '',
-    'Please confirm completion. Signed authorization is available on request.',
+    'Please confirm completion to the reply-to address. Signed authorization is available on request.',
   ].filter((l) => l !== null).join('\n');
 }

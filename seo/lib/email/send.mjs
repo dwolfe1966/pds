@@ -246,7 +246,7 @@ function unsubEndpoint(email) {
 
 /** Send one email via the selected provider. Throws if the provider key is missing. Returns a SendGrid-shaped
  *  array ([{ headers: { 'x-message-id' } }]) so callers can extract a provider id uniformly. */
-export async function sendEmail({ to, subject, html, text }) {
+export async function sendEmail({ to, subject, html, text, replyTo }) {
   if (!hasEmail) throw new Error(`${emailProvider} not configured`);
   // Hard guarantee: no email ever reaches a blocked domain, whatever the caller.
   if (isBlockedRecipient(to)) throw new Error(`blocked recipient domain: ${to}`);
@@ -261,6 +261,7 @@ export async function sendEmail({ to, subject, html, text }) {
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from, to, subject, html, text,
+        ...(replyTo ? { reply_to: replyTo } : {}),
         headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
       }),
     });
@@ -272,6 +273,7 @@ export async function sendEmail({ to, subject, html, text }) {
   // sendgrid
   if (!process.env.SENDGRID_API_KEY) throw new Error('SENDGRID_API_KEY not set');
   const msg = { to, from, subject, html, text };
+  if (replyTo) msg.replyTo = replyTo;
   const asm = process.env.EMAIL_ASM_GROUP_ID;
   if (asm) msg.asm = { groupId: Number(asm) };
   return sgMail.send(msg);

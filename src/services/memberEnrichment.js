@@ -340,11 +340,15 @@ export async function runOptOut({ sourceKeys, consent = true } = {}) {
   if (!userId || !Array.isArray(sourceKeys) || !sourceKeys.length) return null;
   let identity = {};
   try {
-    const id = getMappedIdentity();
-    if (id) identity = {
+    const id = getMappedIdentity() || {};
+    let email = '';
+    try { const u = JSON.parse(localStorage.getItem('user') || 'null'); email = (u && u.email) || ''; } catch { /* ignore */ }
+    identity = {
       firstName: id.firstName, middleName: id.middleName, lastName: id.lastName,
       name: id.name || [id.firstName, id.lastName].filter(Boolean).join(' ').trim(),
       city: id.city, state: id.state, age: id.age,
+      // email = reply-to for agent-sent requests; address/dob complete the CCPA request when captured.
+      email: email || id.email, address: id.address, prevAddress: id.prevAddress, dob: id.dob,
     };
   } catch { /* ignore */ }
   try {
