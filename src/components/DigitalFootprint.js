@@ -129,7 +129,7 @@ function statusFor(node, override, hasUrl) {
 const OUTCOME = {
   true_removal:     { label: 'Deletes your record here',            verb: 'Remove',        tone: '#166534' },
   freeze:           { label: 'Freeze your file — blocks new access', verb: 'Freeze',        tone: '#166534' },
-  suppression:      { label: 'Hides your listing (data can return)', verb: 'Opt out',      tone: '#92400e' },
+  suppression:      { label: 'Hides your listing / monitors',        verb: 'Opt out',      tone: '#92400e' },
   search_delist:    { label: 'Removes from search results, not the source', verb: 'Delist', tone: '#92400e' },
   file_access_only: { label: 'View or dispute only — not removable', verb: 'Request file',  tone: '#6b7280' },
   account_deletion: { label: 'Only by deleting your own account',    verb: 'Manage',        tone: '#6b7280' },
