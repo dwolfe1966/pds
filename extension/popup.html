@@ -7,11 +7,7 @@
   .hd { background: #0d5d2f; color: #fff; padding: 12px 16px; font-weight: 800; font-size: 14px; }
   .body { padding: 14px 16px; }
   .lead { font-size: 12px; color: #4b5563; line-height: 1.5; margin: 0 0 12px; }
-  label { display: block; font-size: 11px; font-weight: 700; color: #374151; margin: 8px 0 3px; }
-  input { width: 100%; box-sizing: border-box; padding: 7px 9px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; }
-  .row { display: flex; gap: 8px; }
-  .row > div { flex: 1; }
-  .save { width: 100%; margin-top: 12px; background: #0d5d2f; color: #fff; border: none; border-radius: 9px; padding: 10px; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+  .save { width: 100%; margin-top: 8px; background: #0d5d2f; color: #fff; border: none; border-radius: 9px; padding: 10px; font-size: 13.5px; font-weight: 800; cursor: pointer; text-align: center; text-decoration: none; display: block; box-sizing: border-box; }
   .status { font-size: 12px; color: #0d5d2f; font-weight: 700; margin-top: 8px; min-height: 15px; }
   .foot { font-size: 11px; color: #6b7280; margin-top: 10px; line-height: 1.45; }
   a { color: #0d5d2f; }
@@ -22,6 +18,8 @@
   .pc-eyebrow { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; }
   .pc-title { font-size: 13px; font-weight: 800; margin-top: 3px; color: #111827; }
   .pc-body { font-size: 11.5px; color: #4b5563; line-height: 1.45; margin-top: 3px; }
+  .kv { font-size: 12px; color: #374151; margin-top: 4px; }
+  .kv b { color: #111827; }
 </style>
 </head>
 <body>
@@ -33,6 +31,7 @@
       <div class="pc-title" id="pcTitle">Checking…</div>
       <div class="pc-body" id="pcBody"></div>
     </div>
+
     <!-- History insights — opt-in, consented. Off by default; delete anytime. -->
     <div id="histCard" class="pagecard muted">
       <div class="pc-eyebrow">History insights</div>
@@ -40,22 +39,15 @@
       <div class="pc-body" id="histBody"></div>
       <button class="save" id="histBtn" style="margin-top:8px; display:none"></button>
     </div>
-    <p class="lead">Your details fill broker opt-out forms automatically, in your own browser. Nothing is sent to us unless you turn on History insights below.</p>
-    <label>Full name</label><input id="name" placeholder="Jane A. Doe">
-    <label>Email</label><input id="email" type="email" placeholder="jane@example.com">
-    <label>Street address</label><input id="address" placeholder="123 Main St">
-    <div class="row">
-      <div><label>City</label><input id="city"></div>
-      <div><label>State</label><input id="state" placeholder="CA"></div>
-      <div><label>ZIP</label><input id="zip"></div>
+
+    <!-- Your identity — READ-ONLY. Mapped once on IDLookup (server-side); used to autofill removals. -->
+    <div id="idCard" class="pagecard muted">
+      <div class="pc-eyebrow">Your identity</div>
+      <div class="pc-title" id="idTitle">Not linked</div>
+      <div class="pc-body" id="idBody"></div>
+      <a class="save" id="idBtn" href="https://www.idlookup.ai/my-identity" target="_blank" rel="noopener">Map my identity on IDLookup</a>
     </div>
-    <div class="row">
-      <div><label>Phone</label><input id="phone"></div>
-      <div><label>Date of birth</label><input id="dob" placeholder="MM/DD/YYYY"></div>
-    </div>
-    <button class="save" id="save">Save details</button>
-    <div class="status" id="status"></div>
-    <p class="foot">Open <a href="https://www.idlookup.ai/my-identity" target="_blank" rel="noopener">your footprint on IDLookup</a> to see everywhere your data lives. Signing in there syncs these details automatically.</p>
+    <p class="foot">Your details are mapped once on IDLookup and stored to your account, then used to autofill broker opt-out forms here. Nothing extra is collected in the extension.</p>
   </div>
   <script src="config.js"></script>
   <script src="recipes.js"></script>

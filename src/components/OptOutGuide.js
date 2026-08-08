@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { INFO, haveInfo, getPlaybook, buildRequestEmail, CAPTURABLE } from '../services/optOutPlaybook';
-import { updateMappedIdentity } from '../services/memberEnrichment';
+import { INFO, haveInfo, getPlaybook, buildRequestEmail } from '../services/optOutPlaybook';
 
 const GREEN = '#0d5d2f';
+const CAPTURABLE_KEYS = ['address', 'prevAddress', 'dob', 'phone']; // captured on My Identity, not inline here
 
 /**
  * OptOutGuide — the "prepare & pre-fill" experience for a single provider (friction ladder rungs 1–2).
@@ -10,20 +10,17 @@ const GREEN = '#0d5d2f';
  * already hold), the steps + the verification hurdle you'll hit, the timeline, and a PRE-WRITTEN request
  * built from the member's identity. onProceed() marks the node opt-out-requested (same as the old link).
  */
-export default function OptOutGuide({ item, identity, onClose, onProceed }) {
+export default function OptOutGuide({ item, identity, onClose, onProceed, onManageIdentity }) {
   const pb = getPlaybook(item);
-  const [id, setId] = useState(identity || {}); // local so inline captures update the checklist + prefill live
+  const id = identity || {}; // read-only: identity is mapped once on My Identity (server-side), not edited here
   const have = haveInfo(id);
   const [copied, setCopied] = useState('');
-  const [editing, setEditing] = useState(null);
-  const [draft, setDraft] = useState('');
   const email = pb.prefill === 'ccpa_email' ? buildRequestEmail(id, item, pb) : null;
+  const missing = (pb.needs || []).filter((k) => CAPTURABLE_KEYS.includes(k) && !have[k]);
 
   const copy = (text, tag) => {
     try { navigator.clipboard.writeText(text); setCopied(tag); setTimeout(() => setCopied(''), 1800); } catch { /* ignore */ }
   };
-  // Save a captured field once → identity (prefills this + every future request).
-  const saveField = (k) => { const v = draft.trim(); if (!v) return; updateMappedIdentity({ [k]: v }); setId((p) => ({ ...p, [k]: v })); setEditing(null); setDraft(''); };
 
   const idLine = [id.name, [id.city, id.state].filter(Boolean).join(', '), id.address].filter(Boolean).join(' · ');
   const mailto = email && email.to
@@ -60,28 +57,24 @@ export default function OptOutGuide({ item, identity, onClose, onProceed }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {pb.needs.map((k) => {
                   const got = have[k];
-                  const canAdd = !got && CAPTURABLE[k];
                   return (
-                    <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5 }}>
-                        <span aria-hidden="true" style={{ color: got ? GREEN : '#9ca3af', fontWeight: 800 }}>{got ? '✓' : '○'}</span>
-                        <span style={{ color: got ? '#6b7280' : '#111827', flex: 1 }}>{INFO[k] || k}{got && k !== 'name' && k !== 'email' ? `: ${id[k]}` : ''}</span>
-                        {got && <span style={{ fontSize: 11, color: GREEN, fontWeight: 700 }}>we have this</span>}
-                        {canAdd && editing !== k && <button type="button" onClick={() => { setEditing(k); setDraft(''); }} style={addBtn}>＋ Add</button>}
-                        {!got && k === 'ssn' && <span style={{ fontSize: 11, color: '#9ca3af' }}>have it ready — we don’t store this</span>}
-                      </div>
-                      {canAdd && editing === k && (
-                        <div style={{ display: 'flex', gap: 6, paddingLeft: 22 }}>
-                          <input autoFocus type={CAPTURABLE[k]} value={draft} onChange={(e) => setDraft(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') saveField(k); }}
-                            placeholder={INFO[k]} style={{ flex: 1, fontSize: 13, padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 8 }} />
-                          <button type="button" onClick={() => saveField(k)} style={{ ...btnPrimary, padding: '7px 14px' }}>Save</button>
-                        </div>
-                      )}
+                    <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5 }}>
+                      <span aria-hidden="true" style={{ color: got ? GREEN : '#9ca3af', fontWeight: 800 }}>{got ? '✓' : '○'}</span>
+                      <span style={{ color: got ? '#6b7280' : '#111827', flex: 1 }}>{INFO[k] || k}{got && k !== 'name' && k !== 'email' ? `: ${id[k]}` : ''}</span>
+                      {got && <span style={{ fontSize: 11, color: GREEN, fontWeight: 700 }}>we have this</span>}
+                      {!got && k === 'ssn' && <span style={{ fontSize: 11, color: '#9ca3af' }}>have it ready — we don’t store this</span>}
                     </div>
                   );
                 })}
               </div>
+              {missing.length > 0 && (
+                <div style={{ marginTop: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 12.5, color: '#166534', marginBottom: 8 }}>
+                    Add your {missing.map((k) => (INFO[k] || k).toLowerCase()).join(', ')} to your identity once, and we’ll pre-fill this and every future removal.
+                  </div>
+                  <button type="button" onClick={() => { if (onManageIdentity) onManageIdentity(); onClose(); }} style={btnPrimary}>Complete my identity →</button>
+                </div>
+              )}
             </section>
           )}
 
@@ -144,4 +137,3 @@ export default function OptOutGuide({ item, identity, onClose, onProceed }) {
 const btnPrimary = { flexShrink: 0, background: GREEN, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13.5, fontWeight: 800, textDecoration: 'none', cursor: 'pointer' };
 const btnGhost = { flexShrink: 0, background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 9, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' };
 const metaChip = { fontSize: 12, color: '#4b5563', background: '#f3f4f6', borderRadius: 999, padding: '5px 11px' };
-const addBtn = { flexShrink: 0, background: '#f0fdf4', color: GREEN, border: '1px solid #bbf7d0', borderRadius: 999, padding: '2px 10px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' };

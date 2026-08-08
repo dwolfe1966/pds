@@ -247,7 +247,7 @@ export async function getMemberEnrichment(userId) {
   if (!userId) return null;
   const rows = await sql`
     SELECT user_id, occupation, employer, relatives, city, state, high_school, college,
-           report_id, self_person, verified_level, enriched_at, past_locations, source
+           report_id, self_person, verified_level, enriched_at, past_locations, source, attributes
     FROM member_enrichment WHERE user_id = ${userId}`;
   return rows[0] || null;
 }

@@ -61,6 +61,28 @@ export function getWsfyIdentity(user) {
     selfUserId: currentUserId() || undefined,
   };
 }
+// Persist the removal-profile fields (address/DOB/phone) as part of the member's mapped identity — SERVER
+// is the source of truth (stored in member_enrichment.attributes), mirrored locally. Captured ONCE on My
+// Identity; the opt-out guide + extension only READ it. Returns true if anything was saved.
+export async function updateRemovalProfile(fields = {}) {
+  const clean = {};
+  for (const k of ['address', 'prevAddress', 'dob', 'phone']) {
+    const v = fields[k]; if (v != null && String(v).trim() !== '') clean[k] = String(v).trim();
+  }
+  if (!Object.keys(clean).length) return false;
+  updateMappedIdentity(clean); // local mirror
+  const userId = currentUserId();
+  if (userId) {
+    try {
+      await fetch(enrichUrl(), {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+        body: JSON.stringify({ userId, attributes: clean, source: 'removal-profile' }),
+      });
+    } catch { /* best-effort; local mirror already holds it */ }
+  }
+  return true;
+}
+
 export function updateMappedIdentity(partial) {
   try {
     const cur = getMappedIdentity() || {};

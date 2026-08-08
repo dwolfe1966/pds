@@ -40,12 +40,19 @@ export async function GET(req) {
   try {
     const r = await getMemberEnrichment(userId);
     const sp = (r && r.self_person && typeof r.self_person === 'object') ? r.self_person : {};
+    const attr = (r && r.attributes && typeof r.attributes === 'object') ? r.attributes : {};
     const identity = r ? {
       confirmed: true,
       name: sp.name || null,
       age: sp.age || null,
       city: r.city || null,
       state: r.state || null,
+      // Removal-profile fields live in the attributes bag (no schema change). Server is the source of truth;
+      // captured once on My Identity, read by the opt-out guide + extension.
+      address: attr.address || null,
+      dob: attr.dob || null,
+      phone: attr.phone || null,
+      prevAddress: attr.prevAddress || null,
       occupation: r.occupation || null,
       employer: r.employer || null,
       highSchool: r.high_school || null,

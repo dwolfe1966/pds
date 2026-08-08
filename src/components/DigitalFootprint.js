@@ -341,6 +341,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
       {guideItem && (
         <OptOutGuide item={guideItem} identity={identity}
           onClose={() => setGuideItem(null)}
+          onManageIdentity={() => navigate('/my-identity?sub=footprint')}
           onProceed={(it) => { markRequested(it); setGuideItem(null); }} />
       )}
 

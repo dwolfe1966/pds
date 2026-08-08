@@ -1,25 +1,30 @@
-// Popup: view/edit the removal profile stored locally (also auto-synced from idlookup.ai by the bridge).
-const FIELDS = ['name', 'email', 'address', 'city', 'state', 'zip', 'phone', 'dob'];
+// Popup: READ-ONLY view of the identity mapped on IDLookup (server-side, synced by the bridge). Identity is
+// captured once on My Identity — never edited here — so there's one source of truth.
+function esc(s) { return String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-function load() {
-  chrome.storage.local.get('idlIdentity', (r) => {
-    const id = (r && r.idlIdentity) || {};
-    FIELDS.forEach((f) => { const el = document.getElementById(f); if (el) el.value = id[f] || ''; });
-    if (id.syncedAt) setStatus('Synced from your IDLookup account.');
-  });
+async function renderIdentity() {
+  const r = await chrome.storage.local.get('idlIdentity');
+  const id = (r && r.idlIdentity) || {};
+  const card = document.getElementById('idCard');
+  const title = document.getElementById('idTitle');
+  const bodyEl = document.getElementById('idBody');
+  const btn = document.getElementById('idBtn');
+  if (id.name || id.email) {
+    card.className = 'pagecard info';
+    title.textContent = id.name || 'Linked';
+    const loc = [id.city, id.state].filter(Boolean).join(', ');
+    let html = '<div class="kv">' + (id.email ? '<b>' + esc(id.email) + '</b>' : '') + (loc ? (id.email ? '<br>' : '') + esc(loc) : '') + (id.address ? '<br>' + esc(id.address) : '') + '</div>';
+    if (!id.address || !id.dob) html += '<div class="kv" style="color:#92400e">Add your address + DOB on IDLookup so removals pre-fill fully.</div>';
+    bodyEl.innerHTML = html;
+    btn.textContent = 'Manage my identity on IDLookup';
+  } else {
+    card.className = 'pagecard muted';
+    title.textContent = 'Not linked';
+    bodyEl.textContent = 'Map your identity once on IDLookup — then broker opt-out forms autofill here automatically.';
+    btn.textContent = 'Map my identity on IDLookup';
+  }
 }
-
-function save() {
-  const id = {};
-  FIELDS.forEach((f) => { const el = document.getElementById(f); if (el) id[f] = el.value.trim(); });
-  id.updatedAt = new Date().toISOString();
-  chrome.storage.local.set({ idlIdentity: id }, () => setStatus('Saved. Broker forms will autofill with these.'));
-}
-
-function setStatus(t) { const s = document.getElementById('status'); if (s) { s.textContent = t; setTimeout(() => { s.textContent = ''; }, 2500); } }
-
-document.getElementById('save').addEventListener('click', save);
-load();
+renderIdentity();
 
 // ── On-this-page insight (activeTab; runs only because the user clicked the icon) ──────────────────
 // Injected into the active tab — must be self-contained (no outside refs) and return serializable data.
