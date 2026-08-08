@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut } from '../services/memberEnrichment';
 import { useBrand } from '../services/brand';
+import OptOutGuide from './OptOutGuide';
 
 /**
  * "Your Digital Footprint" — the Transparency + Control panel, now rendered off the Exposure Graph
@@ -146,6 +147,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [graph, setGraph] = useState({ nodes: [], registry: [], summary: { score: 0, found: 0, controlled: 0, exposed: 0 } });
   const [overrides, setOverrides] = useState({}); // optimistic per-source control after a Remove click
+  const [guideItem, setGuideItem] = useState(null); // per-provider prepare-&-prefill guide
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [running, setRunning] = useState(false);
@@ -166,7 +168,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   // Build the itemized list: registry catalog (or fallback) overlaid with node status, plus dynamic breach nodes.
   const items = useMemo(() => {
     const catalog = (graph.registry && graph.registry.length) ? graph.registry : FALLBACK;
-    const list = catalog.map((r) => ({ sourceKey: r.source_key, surfaceType: r.surface_type, category: r.category, name: r.display_name, url: r.opt_out_url, nature: r.nature, node: nodesBySource[r.source_key] }));
+    const list = catalog.map((r) => ({ sourceKey: r.source_key, surfaceType: r.surface_type, category: r.category, name: r.display_name, url: r.opt_out_url, nature: r.nature, method: r.removal_method, node: nodesBySource[r.source_key] }));
     (graph.nodes || []).filter((n) => n.surface_type === 'breach').forEach((n) => {
       list.push({ sourceKey: n.source_key, surfaceType: 'breach', category: 'breach', name: (n.exposure_detail && n.exposure_detail.breach) || n.source_key.replace('breach:', ''), url: null, node: n });
     });
@@ -308,8 +310,8 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
                   </span>
                   {c.key === 'ours'
                     ? <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>{mapped ? 'Manage' : 'Claim'}</button>
-                    : (it.url && (!oc || oc.verb))
-                      ? <a href={it.url} target="_blank" rel="noopener noreferrer" onClick={() => markRequested(it)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, textDecoration: 'none' }}>{(oc && oc.verb) || 'Remove'} →</a>
+                    : (!oc || oc.verb)
+                      ? <button type="button" onClick={() => setGuideItem(it)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{(oc && oc.verb) || 'Remove'} →</button>
                       : null}
                 </div>
                 );
@@ -327,6 +329,13 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         "Remove me" submits opt-outs on your behalf; the per-site "Remove →" opens that site's own form. Data can
         re-list — we keep monitoring and flag re-appearances. Coverage grows as we add sources.
       </p>
+
+      {/* Per-provider prepare-&-prefill guide (friction ladder rungs 1–2). */}
+      {guideItem && (
+        <OptOutGuide item={guideItem} identity={identity}
+          onClose={() => setGuideItem(null)}
+          onProceed={(it) => { markRequested(it); setGuideItem(null); }} />
+      )}
 
       {/* Authorized-agent consent — required once before we act on the member's behalf. */}
       {consentOpen && (
