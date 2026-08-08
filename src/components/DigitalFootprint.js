@@ -19,16 +19,43 @@ import { useBrand } from '../services/brand';
 const GREEN = '#0d5d2f';
 
 // Fallback catalog (used only if the graph backend returns no registry — same honest opt-out directory as before).
+// Static fallback ONLY when the live registry can't be fetched — mirrors a representative slice of the
+// backend catalog across every category (with category + nature) so a degraded fetch still shows the full
+// map with correct labels, never collapses to a few categories. The live registry (source_registry) is the
+// full, authoritative list.
+const F = (source_key, surface_type, category, display_name, opt_out_url, nature) => ({ source_key, surface_type, category, display_name, opt_out_url, nature });
 const FALLBACK = [
-  { source_key: 'idlookup', surface_type: 'idlookup', display_name: 'IDLookup', opt_out_url: null },
-  { source_key: 'spokeo', surface_type: 'data_broker', display_name: 'Spokeo', opt_out_url: 'https://www.spokeo.com/optout' },
-  { source_key: 'beenverified', surface_type: 'data_broker', display_name: 'BeenVerified', opt_out_url: 'https://www.beenverified.com/app/optout/search' },
-  { source_key: 'peoplefinders', surface_type: 'data_broker', display_name: 'PeopleFinders', opt_out_url: 'https://www.peoplefinders.com/opt-out' },
-  { source_key: 'whitepages', surface_type: 'data_broker', display_name: 'Whitepages', opt_out_url: 'https://www.whitepages.com/suppression-requests' },
-  { source_key: 'intelius', surface_type: 'data_broker', display_name: 'Intelius', opt_out_url: 'https://www.intelius.com/opt-out/' },
-  { source_key: 'radaris', surface_type: 'data_broker', display_name: 'Radaris', opt_out_url: 'https://radaris.com/control/privacy' },
-  { source_key: 'mylife', surface_type: 'data_broker', display_name: 'MyLife', opt_out_url: 'https://www.mylife.com/ccpa/index.pubview' },
-  { source_key: 'google', surface_type: 'search_result', display_name: 'Google Search results', opt_out_url: 'https://myactivity.google.com/results-about-you' },
+  F('idlookup', 'idlookup', 'people_search', 'IDLookup', null, 'suppression'),
+  F('spokeo', 'data_broker', 'people_search', 'Spokeo', 'https://www.spokeo.com/optout', 'suppression'),
+  F('whitepages', 'data_broker', 'people_search', 'Whitepages', 'https://www.whitepages.com/suppression-requests', 'suppression'),
+  F('truepeoplesearch', 'data_broker', 'people_search', 'TruePeopleSearch', 'https://www.truepeoplesearch.com/removal', 'suppression'),
+  F('thatsthem', 'data_broker', 'people_search', "That'sThem", 'https://thatsthem.com/optout', 'suppression'),
+  F('checkr', 'data_broker', 'background_check', 'Checkr', 'https://help.checkr.com/s/article/11280401834903-How-do-I-delete-my-personal-information-from-Checkr', 'file_access_only'),
+  F('peoplelooker', 'data_broker', 'background_check', 'PeopleLooker', 'https://www.peoplelooker.com/f/optout/search', 'suppression'),
+  F('lexisnexis', 'data_broker', 'marketing', 'LexisNexis', 'https://consumer.risk.lexisnexis.com/optrequest', 'suppression'),
+  F('acxiom', 'data_broker', 'marketing', 'Acxiom', 'https://www.acxiom.com/optout/', 'suppression'),
+  F('zoominfo', 'data_broker', 'b2b_data', 'ZoomInfo', 'https://privacy.zoominfo.com', 'suppression'),
+  F('apollo', 'data_broker', 'b2b_data', 'Apollo.io', 'https://www.apollo.io/privacy-policy/remove', 'suppression'),
+  F('google', 'search_result', 'search', 'Google Search results', 'https://myactivity.google.com/results-about-you', 'search_delist'),
+  F('bing', 'search_result', 'search', 'Bing', 'https://www.microsoft.com/en-us/concern/bing', 'search_delist'),
+  F('linkedin', 'social_profile', 'social', 'LinkedIn', null, 'account_deletion'),
+  F('facebook', 'social_profile', 'social', 'Facebook', null, 'account_deletion'),
+  F('ancestry', 'data_broker', 'genealogy', 'Ancestry', 'https://www.ancestry.com/c/privacy-center', 'account_deletion'),
+  F('zillow', 'data_broker', 'property', 'Zillow', 'https://zillow.zendesk.com/hc/en-us/articles/213217797-How-do-I-remove-my-home-from-Zillow', 'suppression'),
+  F('experian', 'data_broker', 'credit', 'Experian', 'https://consumerprivacy.experian.com/request', 'suppression'),
+  F('optoutprescreen', 'data_broker', 'credit', 'Prescreened offers (OptOutPrescreen)', 'https://www.optoutprescreen.com/', 'suppression'),
+  F('transunion_smartmove', 'data_broker', 'tenant_screening', 'TransUnion SmartMove', 'https://www.transunion.com/client-support/rental-screening-disputes', 'file_access_only'),
+  F('saferent', 'data_broker', 'tenant_screening', 'SafeRent (ex-CoreLogic)', 'https://saferentsolutions.com/consumer-support/', 'file_access_only'),
+  F('the_work_number', 'data_broker', 'employment_data', 'The Work Number (Equifax)', 'https://employees.theworknumber.com/employee-data-freeze', 'freeze'),
+  F('truework', 'data_broker', 'employment_data', 'Truework', 'https://help.truework.com/hc/en-us/articles/27167920594455-FCRA-Requests-and-Consumer-Rights', 'freeze'),
+  F('lexisnexis_clue', 'data_broker', 'insurance_data', 'LexisNexis C.L.U.E.', 'https://consumer.risk.lexisnexis.com/request', 'file_access_only'),
+  F('mib_group', 'data_broker', 'insurance_data', 'MIB Group', 'https://www.mib.com/request_your_record.html', 'file_access_only'),
+  F('truecaller', 'data_broker', 'caller_id', 'Truecaller', 'https://www.truecaller.com/unlist', 'true_removal'),
+  F('sync_me', 'data_broker', 'caller_id', 'Sync.me', 'https://sync.me/unsubscribe/', 'true_removal'),
+  F('safegraph', 'data_broker', 'location', 'SafeGraph', 'https://www.safegraph.com/do-not-sell-my-info/', 'suppression'),
+  F('county_court', 'public_record', 'public_record', 'County court records', null, 'no_optout'),
+  F('openai', 'ai_answer', 'ai', 'ChatGPT (OpenAI)', 'https://privacy.openai.com/', 'suppression'),
+  F('pimeyes', 'image', 'images', 'PimEyes', 'https://pimeyes.com/en/opt-out-request-form', 'true_removal'),
 ];
 
 // The "map" is grouped by CATEGORY — every place your data may live, across the web.
@@ -43,6 +70,10 @@ const CATS = [
   { key: 'genealogy', label: 'Genealogy & family history', icon: '🌳' },
   { key: 'property', label: 'Property & real estate', icon: '🏡' },
   { key: 'credit', label: 'Credit bureaus', icon: '💳' },
+  { key: 'tenant_screening', label: 'Tenant & rental screening', icon: '🔑' },
+  { key: 'employment_data', label: 'Employment & income', icon: '🧾' },
+  { key: 'insurance_data', label: 'Insurance data', icon: '🛡️' },
+  { key: 'caller_id', label: 'Caller ID & spam apps', icon: '📱' },
   { key: 'location', label: 'Location data brokers', icon: '📡' },
   { key: 'public_record', label: 'Public records', icon: '🏛️' },
   { key: 'ai', label: 'AI & chatbots', icon: '🤖' },
@@ -97,6 +128,7 @@ function statusFor(node, override, hasUrl) {
 // "Remove". `verb` is the accurate action word; null verb = no actionable opt-out. Unknown nature → generic.
 const OUTCOME = {
   true_removal:     { label: 'Deletes your record here',            verb: 'Remove',        tone: '#166534' },
+  freeze:           { label: 'Freeze your file — blocks new access', verb: 'Freeze',        tone: '#166534' },
   suppression:      { label: 'Hides your listing (data can return)', verb: 'Opt out',      tone: '#92400e' },
   search_delist:    { label: 'Removes from search results, not the source', verb: 'Delist', tone: '#92400e' },
   file_access_only: { label: 'View or dispute only — not removable', verb: 'Request file',  tone: '#6b7280' },
@@ -171,7 +203,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const CONTROLLED = ['hidden', 'removed', 'optout_confirmed', 'optout_requested'];
   // Natures an authorized-agent request CAN'T act on — exclude from "Remove for me" so we don't claim to
   // remove what isn't removable (FCRA file-access, no opt-out, or account-deletion only you can do).
-  const NON_AGENT = new Set(['file_access_only', 'no_optout', 'account_deletion']);
+  const NON_AGENT = new Set(['file_access_only', 'no_optout', 'account_deletion', 'freeze']); // freeze needs the user's own SSN/ID verification
   const removableKeys = useMemo(() => items
     .filter((it) => (it.surfaceType === 'data_broker' || it.surfaceType === 'search_result')
       && !NON_AGENT.has(it.nature)

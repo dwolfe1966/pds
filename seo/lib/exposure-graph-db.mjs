@@ -153,6 +153,24 @@ const SEED_SOURCES = [
   { k: 'pimeyes', t: 'image', n: 'PimEyes', c: 'images', u: 'https://pimeyes.com/en/opt-out-request-form', m: 'form_post', r: 90, w: 2, x: 'true_removal' },
   { k: 'clearview', t: 'image', n: 'Clearview AI', c: 'images', u: 'https://www.clearview.ai/privacy-and-requests', m: 'form_post', r: null, w: 2, x: 'true_removal' },
   { k: 'facecheck', t: 'image', n: 'FaceCheck.ID', c: 'images', u: 'https://facecheck.id/en/RemoveMyPhotos', m: 'form_post', r: null, w: 2, x: 'true_removal' },
+  // ── Tenant & rental screening — FCRA specialty bureaus (housing decisions): see/dispute your file, not delete ──
+  { k: 'transunion_smartmove', t: 'data_broker', n: 'TransUnion SmartMove', c: 'tenant_screening', u: 'https://www.transunion.com/client-support/rental-screening-disputes', m: 'manual', r: null, w: 2, x: 'file_access_only' },
+  { k: 'saferent', t: 'data_broker', n: 'SafeRent (ex-CoreLogic)', c: 'tenant_screening', u: 'https://saferentsolutions.com/consumer-support/', m: 'form_post', r: null, w: 2, x: 'file_access_only' },
+  { k: 'realpage_leasingdesk', t: 'data_broker', n: 'RealPage LeasingDesk', c: 'tenant_screening', u: 'https://www.realpage.com/support/consumer/', m: 'form_post', r: null, w: 1, x: 'file_access_only' },
+  { k: 'experian_rentbureau', t: 'data_broker', n: 'Experian RentBureau', c: 'tenant_screening', u: 'https://www.experian.com/rental-property-solutions/rentbureau/rental-history', m: 'manual', r: null, w: 1, x: 'file_access_only' },
+  // ── Employment & income verification — payroll data sold to lenders/landlords; a FREEZE blocks access (strong) ──
+  { k: 'the_work_number', t: 'data_broker', n: 'The Work Number (Equifax)', c: 'employment_data', u: 'https://employees.theworknumber.com/employee-data-freeze', m: 'form_post', r: null, w: 3, x: 'freeze' },
+  { k: 'truework', t: 'data_broker', n: 'Truework', c: 'employment_data', u: 'https://help.truework.com/hc/en-us/articles/27167920594455-FCRA-Requests-and-Consumer-Rights', m: 'form_post', r: null, w: 1, x: 'freeze' },
+  // ── Insurance data bureaus — claims/Rx history driving premiums; FCRA free annual disclosure + dispute, not removal ──
+  { k: 'lexisnexis_clue', t: 'data_broker', n: 'LexisNexis C.L.U.E.', c: 'insurance_data', u: 'https://consumer.risk.lexisnexis.com/request', m: 'form_post', r: null, w: 2, x: 'file_access_only' },
+  { k: 'mib_group', t: 'data_broker', n: 'MIB Group', c: 'insurance_data', u: 'https://www.mib.com/request_your_record.html', m: 'form_post', r: null, w: 2, x: 'file_access_only' },
+  { k: 'verisk_aplus', t: 'data_broker', n: 'Verisk / ISO A-PLUS', c: 'insurance_data', u: 'https://fcra.verisk.com/', m: 'form_post', r: null, w: 1, x: 'file_access_only' },
+  { k: 'milliman_intelliscript', t: 'data_broker', n: 'Milliman IntelliScript (Rx)', c: 'insurance_data', u: 'https://www.rxhistories.com/for-consumers/#request', m: 'form_post', r: null, w: 1, x: 'file_access_only' },
+  // ── Caller-ID / spam-block apps — publish your name against your number; "unlist" is a genuine removal ──
+  { k: 'truecaller', t: 'data_broker', n: 'Truecaller', c: 'caller_id', u: 'https://www.truecaller.com/unlist', m: 'browser', r: null, w: 2, x: 'true_removal' },
+  { k: 'hiya', t: 'data_broker', n: 'Hiya', c: 'caller_id', u: 'https://hiyahelp.zendesk.com/hc/en-us/articles/360001093027-Manage-My-Data', m: 'email', r: null, w: 1, x: 'true_removal' }, // DPO@hiya.com + proof of ownership
+  { k: 'sync_me', t: 'data_broker', n: 'Sync.me', c: 'caller_id', u: 'https://sync.me/unsubscribe/', m: 'browser', r: null, w: 1, x: 'true_removal' },
+  { k: 'callapp', t: 'data_broker', n: 'CallApp', c: 'caller_id', u: 'https://callapp.com/how-to/unlist-phone-number', m: 'browser', r: null, w: 1, x: 'suppression' },
 ];
 
 let _seeded = false;

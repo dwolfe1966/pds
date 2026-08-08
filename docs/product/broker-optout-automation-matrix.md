@@ -41,7 +41,8 @@ NOT market as "removal."**
 ## Nature legend (what each opt-out actually achieves)
 `true_removal` = record actually deleted · `suppression` = hidden/opted-out but data retained/re-listable ·
 `file_access_only` = FCRA disclosure/dispute, no removal · `account_deletion` = only by deleting your own
-account · `search_delist` = removed from search results, not the source · `no_optout` = no per-person removal.
+account · `search_delist` = removed from search results, not the source · `freeze` = lock your file so new
+requesters can't access it (data not deleted) · `no_optout` = no per-person removal.
 
 ---
 
@@ -129,6 +130,36 @@ submission. Cyber/Advanced/SearchPeopleFree/USPhoneBook share one anti-bot form 
 | **FaceCheck.ID** | facecheck.id/en/RemoveMyPhotos | form_post | true_removal | live selfie OR gov ID | high |
 | Google (Results about you) | myactivity.google.com/results-about-you | google_rar | search_delist | manual review | high |
 | Bing | microsoft.com/en-us/concern/bing | manual | search_delist | manual review | high |
+
+## High-stakes life-decision categories (added 2026-08-08) — mostly file-access/freeze, NOT removal
+
+Added per owner. These are the data domains that gate housing, jobs, and insurance — high relevance, but
+almost all are FCRA-regulated consumer files: you can **see and dispute**, and in two cases **freeze**, but
+not delete. No APIs; all need identity verification (SSN/DOB/ID), so automation ceiling is form/manual.
+
+| Vendor | Category | Opt-out URL | Method | Nature | Conf |
+|---|---|---|---|---|---|
+| TransUnion SmartMove | tenant screening | transunion.com/client-support/rental-screening-disputes | manual | file_access_only | high |
+| SafeRent (ex-CoreLogic) | tenant screening | saferentsolutions.com/consumer-support | form_post | file_access_only | high |
+| RealPage LeasingDesk | tenant screening | realpage.com/support/consumer | form_post | file_access_only | high |
+| Experian RentBureau | tenant screening | experian.com/rental-property-solutions/rentbureau/rental-history | manual | file_access_only | med |
+| **The Work Number (Equifax)** | employment/income | employees.theworknumber.com/employee-data-freeze | form_post | **freeze** ⭐ | high |
+| **Truework** | employment/income | help.truework.com (FCRA consumer rights) | form_post | **freeze** | high |
+| LexisNexis C.L.U.E. | insurance | consumer.risk.lexisnexis.com/request | form_post | file_access_only | high |
+| MIB Group | insurance | mib.com/request_your_record.html | form_post | file_access_only | high |
+| Verisk / ISO A-PLUS | insurance | fcra.verisk.com | form_post | file_access_only | high |
+| Milliman IntelliScript (Rx) | insurance | rxhistories.com/for-consumers | form_post | file_access_only | high |
+| Truecaller | caller-ID | truecaller.com/unlist | browser | true_removal | high |
+| Hiya | caller-ID | hiyahelp.zendesk.com (Manage My Data → DPO@hiya.com) | email | true_removal | med |
+| Sync.me | caller-ID | sync.me/unsubscribe | browser | true_removal | high |
+| CallApp | caller-ID | callapp.com/how-to/unlist-phone-number | browser | suppression | high |
+
+**The two standout controls:** The Work Number and Truework both offer a genuine **file FREEZE** — the
+strongest real action here (blocks lenders/landlords from pulling your employment/income data). Caller-ID
+apps offer genuine **unlist** removals (user-doable; hard to fully automate — captcha + phone OTP). Insurance
++ tenant bureaus are **file-access/dispute only** — surfaced so people can see & correct them, never labeled
+"removed". Skipped low-confidence resellers (RentPrep, TenantAlert → route to underlying CRA) and Robokiller
+(device blocker, no public listing).
 
 ## Confidence caveats to re-verify before shipping user-facing links
 - **Medium/low URLs** (vendor pages 403 our fetch — the anti-bot evidence itself): PeopleFinders, PeekYou,
