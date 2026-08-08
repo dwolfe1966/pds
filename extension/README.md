@@ -11,8 +11,11 @@ extension sends **nothing** to us or anyone — it just fills forms locally.
 ## How it works
 - **`identity-bridge.js`** runs on idlookup.ai / idlookup.me, reads the member's already-claimed identity +
   removal profile from localStorage, and syncs it into extension storage. So there's nothing to re-type.
-- **`content.js`** runs on known broker domains. It shows a small panel (what removal here achieves + the
-  exact verification hurdle) and an **Autofill** button. Autofill is **heuristic** — it matches form fields
+- **`content.js`** runs on **all sites** (broad host access granted once at install — the user revokes
+  per-site via Chrome's native "site access" control; no per-domain granting, no need to open the popup).
+  It stays **quiet unless there's something to flag**: on a known broker it shows the autofill panel; on a
+  social site or a page with an account form it shows a light identity tip; on ordinary pages, nothing.
+  Autofill is **heuristic** — it matches form fields
   by attribute/label patterns (email / first / last / name / address / city / state / zip / phone) and fills
   them React-safely. This works across *most* opt-out forms **without per-broker selectors**, which keeps the
   maintenance surface small.

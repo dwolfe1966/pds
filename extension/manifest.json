@@ -21,32 +21,8 @@
       "run_at": "document_idle"
     },
     {
-      "matches": [
-        "*://*.spokeo.com/*",
-        "*://*.beenverified.com/*",
-        "*://*.peoplefinders.com/*",
-        "*://*.whitepages.com/*",
-        "*://*.radaris.com/*",
-        "*://*.mylife.com/*",
-        "*://*.truepeoplesearch.com/*",
-        "*://*.fastpeoplesearch.com/*",
-        "*://*.instantcheckmate.com/*",
-        "*://*.truthfinder.com/*",
-        "*://*.peekyou.com/*",
-        "*://*.ussearch.com/*",
-        "*://*.nuwber.com/*",
-        "*://*.checkpeople.com/*",
-        "*://*.thatsthem.com/*",
-        "*://*.clustrmaps.com/*",
-        "*://*.searchpeoplefree.com/*",
-        "*://*.advancedbackgroundchecks.com/*",
-        "*://*.cyberbackgroundchecks.com/*",
-        "*://*.usphonebook.com/*",
-        "*://*.intelius.com/*",
-        "*://*.peopleconnect.us/*",
-        "*://*.safegraph.com/*"
-      ],
-      "js": ["recipes.js", "content.js"],
+      "matches": ["<all_urls>"],
+      "js": ["recipes.js", "signals.js", "content.js"],
       "css": ["panel.css"],
       "run_at": "document_idle"
     }
