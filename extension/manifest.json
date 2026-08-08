@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "IDLookup Remove — opt-out assistant",
+  "version": "0.1.0",
+  "description": "Autofills data-broker opt-out forms with your details and walks you through each removal — in your own browser session. Your info never leaves your browser.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.idlookup.ai/*",
+    "https://idlookup.me/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "IDLookup Remove"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.idlookup.ai/*", "https://idlookup.ai/*", "https://idlookup.me/*"],
+      "js": ["identity-bridge.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://*.spokeo.com/*",
+        "*://*.beenverified.com/*",
+        "*://*.peoplefinders.com/*",
+        "*://*.whitepages.com/*",
+        "*://*.radaris.com/*",
+        "*://*.mylife.com/*",
+        "*://*.truepeoplesearch.com/*",
+        "*://*.fastpeoplesearch.com/*",
+        "*://*.instantcheckmate.com/*",
+        "*://*.truthfinder.com/*",
+        "*://*.peekyou.com/*",
+        "*://*.ussearch.com/*",
+        "*://*.nuwber.com/*",
+        "*://*.checkpeople.com/*",
+        "*://*.thatsthem.com/*",
+        "*://*.clustrmaps.com/*",
+        "*://*.searchpeoplefree.com/*",
+        "*://*.advancedbackgroundchecks.com/*",
+        "*://*.cyberbackgroundchecks.com/*",
+        "*://*.usphonebook.com/*",
+        "*://*.intelius.com/*",
+        "*://*.peopleconnect.us/*",
+        "*://*.safegraph.com/*"
+      ],
+      "js": ["recipes.js", "content.js"],
+      "css": ["panel.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
