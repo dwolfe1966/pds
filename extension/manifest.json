@@ -4,10 +4,12 @@
   "version": "0.1.0",
   "description": "Autofills data-broker opt-out forms with your details and walks you through each removal — in your own browser session. Your info never leaves your browser.",
   "permissions": ["storage", "activeTab", "scripting"],
+  "optional_permissions": ["history"],
   "host_permissions": [
     "https://www.idlookup.ai/*",
     "https://idlookup.me/*"
   ],
+  "background": { "service_worker": "background.js" },
   "action": {
     "default_popup": "popup.html",
     "default_title": "IDLookup Remove"

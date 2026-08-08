@@ -7,7 +7,13 @@
     const raw = localStorage.getItem('wsfyMappedIdentity');
     const id = raw ? JSON.parse(raw) : {};
     let email = '';
-    try { const u = JSON.parse(localStorage.getItem('user') || 'null'); email = (u && u.email) || ''; } catch { /* ignore */ }
+    let userId = '';
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || 'null');
+      email = (u && u.email) || '';
+      userId = (u && (u.id || u._id || u.userId || u.uniqueId)) || '';
+    } catch { /* ignore */ }
+    if (userId) chrome.storage.local.set({ idlUserId: String(userId) });
     const parts = String(id.name || '').trim().split(/\s+/).filter(Boolean);
     const identity = {
       name: id.name || '',

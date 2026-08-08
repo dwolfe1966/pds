@@ -59,3 +59,70 @@ async function analyzePage() {
   } catch { renderInsight(null); }
 }
 analyzePage();
+
+// ── History insights — opt-in + consented; user can delete anytime ────────────────────────────────
+const CFG = self.IDL_CONFIG || {};
+const histTitle = document.getElementById('histTitle');
+const histBody = document.getElementById('histBody');
+const histBtn = document.getElementById('histBtn');
+const histCard = document.getElementById('histCard');
+
+async function getUserId() { const r = await chrome.storage.local.get('idlUserId'); return r.idlUserId || ''; }
+
+async function renderHistory() {
+  const userId = await getUserId();
+  const { idlHistoryOn } = await chrome.storage.local.get('idlHistoryOn');
+  if (!userId) {
+    histCard.className = 'pagecard muted';
+    histTitle.textContent = 'Sign in to enable';
+    histBody.textContent = 'Sign in at idlookup.ai first, then history insights can link where your data spreads to your account.';
+    histBtn.style.display = 'none';
+    return;
+  }
+  if (idlHistoryOn) {
+    histCard.className = 'pagecard info';
+    histTitle.textContent = 'History insights: ON';
+    histBody.textContent = 'Syncing where you browse to power your footprint. You can remove it all anytime.';
+    // best-effort count
+    try {
+      const res = await fetch(`${CFG.historyUrl}?userId=${encodeURIComponent(userId)}`, { headers: { 'X-App-Key': CFG.appKey } });
+      const d = await res.json();
+      if (d && d.ok) histBody.textContent = `${(d.total || 0).toLocaleString()} page visits synced across ${(d.topHosts || []).length} sites. Remove it all anytime.`;
+    } catch { /* ignore */ }
+    histBtn.style.display = 'block';
+    histBtn.textContent = 'Delete my history & turn off';
+    histBtn.style.background = '#b91c1c';
+    histBtn.onclick = deleteHistory;
+  } else {
+    histCard.className = 'pagecard muted';
+    histTitle.textContent = 'History insights: Off';
+    histBody.textContent = 'Turn on to map where your data spreads based on the sites you visit. This sends your browsing history to your IDLookup account — you can delete it all at any time.';
+    histBtn.style.display = 'block';
+    histBtn.textContent = 'Turn on history insights';
+    histBtn.style.background = '#0d5d2f';
+    histBtn.onclick = enableHistory;
+  }
+}
+
+async function enableHistory() {
+  const userId = await getUserId();
+  if (!userId) { renderHistory(); return; }
+  // Request the sensitive permission ONLY now, on this explicit click (never at install).
+  let granted = false;
+  try { granted = await chrome.permissions.request({ permissions: ['history'] }); } catch { granted = false; }
+  if (!granted) { histBody.textContent = 'History access is needed to enable this. You can turn it on anytime.'; return; }
+  await chrome.runtime.sendMessage({ type: 'enableHistory', userId });
+  renderHistory();
+}
+
+async function deleteHistory() {
+  const userId = await getUserId();
+  if (!userId) return;
+  histBtn.disabled = true; histBtn.textContent = 'Deleting…';
+  await chrome.runtime.sendMessage({ type: 'deleteHistory', userId });
+  try { await chrome.permissions.remove({ permissions: ['history'] }); } catch { /* ignore */ }
+  histBtn.disabled = false;
+  renderHistory();
+}
+
+renderHistory();

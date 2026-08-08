@@ -33,7 +33,14 @@
       <div class="pc-title" id="pcTitle">Checking…</div>
       <div class="pc-body" id="pcBody"></div>
     </div>
-    <p class="lead">Your details fill broker opt-out forms automatically, in your own browser. Nothing is sent to us — this stays on your device.</p>
+    <!-- History insights — opt-in, consented. Off by default; delete anytime. -->
+    <div id="histCard" class="pagecard muted">
+      <div class="pc-eyebrow">History insights</div>
+      <div class="pc-title" id="histTitle">Off</div>
+      <div class="pc-body" id="histBody"></div>
+      <button class="save" id="histBtn" style="margin-top:8px; display:none"></button>
+    </div>
+    <p class="lead">Your details fill broker opt-out forms automatically, in your own browser. Nothing is sent to us unless you turn on History insights below.</p>
     <label>Full name</label><input id="name" placeholder="Jane A. Doe">
     <label>Email</label><input id="email" type="email" placeholder="jane@example.com">
     <label>Street address</label><input id="address" placeholder="123 Main St">
@@ -50,6 +57,7 @@
     <div class="status" id="status"></div>
     <p class="foot">Open <a href="https://www.idlookup.ai/my-identity" target="_blank" rel="noopener">your footprint on IDLookup</a> to see everywhere your data lives. Signing in there syncs these details automatically.</p>
   </div>
+  <script src="config.js"></script>
   <script src="recipes.js"></script>
   <script src="signals.js"></script>
   <script src="popup.js"></script>

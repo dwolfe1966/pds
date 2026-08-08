@@ -26,16 +26,25 @@ extension sends **nothing** to us or anyone — it just fills forms locally.
   never "your data is on this page" (that's the scan we don't have). The popup also holds the removal profile.
 
 ## Broadening beyond opt-out forms (owner direction, 2026-08-08)
-Two asks: (i) capture browsing history for insights, (ii) per-page identity feedback. **(ii) is built** (the
-per-page copilot above — local-only, `activeTab`, honest). **(i) is gated on a data-model decision** because
-browsing history is the most sensitive data an extension can touch and adding the `history` permission flips
-the install prompt to "read your browsing history on all sites." The fork (recommend the middle):
-1. **Local-only** — analyze history on-device, show insights, transmit nothing.
-2. **Local + derived, per-item, consented sync** — e.g. "you appear to have a Spokeo account" → one footprint
-   node; raw history NEVER leaves the device. ⭐ recommended default.
-3. **Raw history to backend** — powerful, but the trust / legal / Web-Store "Limited Use" landmine for a
-   privacy company; not recommended.
-Build (i) only after the model is chosen; even locally, prefer derived/aggregated state over a raw history copy.
+Two asks, both now built: (ii) per-page identity feedback (the copilot above), and (i) **browsing-history
+capture — owner chose raw-to-backend WITH upfront global consent + full delete control.**
+
+### History insights (i) — how the consent + delete guarantees work
+- **Off by default.** `history` is an **optional permission** — it is NOT requested at install (the install
+  prompt stays narrow). It's requested ONLY when the user clicks "Turn on history insights" in the popup.
+- **Consent is upfront + recorded.** Turning it on requires the `history` grant AND records a consent row
+  server-side (`history_consent`); the backend refuses to store anything without it (defense in depth).
+- **What syncs:** `background.js` backfills past history once (chunked) + listens for new visits, POSTing
+  `{url,title,visitedAt}` to `/api/history` keyed by the signed-in userId.
+- **Delete is real + total.** "Delete my history & turn off" wipes every stored row (`DELETE /api/history`),
+  flips consent off, removes the listener, and revokes the `history` permission.
+- **Sign-in required** — history is attributed to the member's account (userId synced by the bridge).
+
+### ⚠️ Required before go-live (raw browsing history = highest-sensitivity)
+- A **prominent in-product disclosure** + a **public privacy policy** describing exactly what's collected,
+  why, retention, and deletion (Chrome Web Store **Limited Use** policy — mandatory for history data).
+- Confirm **encryption at rest** (Neon default) + access controls on `browsing_history`.
+- Consider a retention cap / auto-expiry and a "download my data" export.
 
 ## What this MVP proves (and what it doesn't)
 - ✅ End-to-end model: sync identity → land on a broker → autofill → user completes verification.
