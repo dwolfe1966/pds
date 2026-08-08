@@ -236,15 +236,28 @@ export function enrichFromReport(reportResult, selfPerson) {
   const state = (addrs[0] && addrs[0].state) || (selfPerson && selfPerson.state) || undefined;
   // Prior addresses (address history minus the current) → "once lived in ..." teases.
   const pastLocations = [...new Set(addrs.slice(1).map((a) => [a.city, a.state].filter(Boolean).join(', ')).filter(Boolean))].slice(0, 12);
+  // Removal-profile fields — DERIVED from the member's own claimed record (we already have these; never
+  // ask them to re-type PII). Full current address, prior addresses, DOB, primary phone.
+  const fmtAddr = (a) => [a.street, a.city, a.state, [a.zip, a.zip4].filter(Boolean).join('-')].filter(Boolean).join(', ');
+  const address = addrs[0] ? fmtAddr(addrs[0]) : undefined;
+  const prevAddress = addrs.slice(1, 4).map(fmtAddr).filter(Boolean).join(' · ') || undefined;
+  const phone = (x.phones && x.phones[0] && x.phones[0].number) ? String(x.phones[0].number) : undefined;
+  const dob = x.dob || undefined;
   // Local mirror FIRST, unconditionally (see saveMemberProfile note) — then best-effort server POST.
   updateMappedIdentity({
     confirmed: true, hasReport: true,
     name: selfPerson && selfPerson.name, age: selfPerson && selfPerson.age, city, state,
     occupation: deriveIndustry(job.title, job.employer), jobTitle: job.title, employer: job.employer,
     relativesCount: (x.relatives || []).length, pastLocationsCount: pastLocations.length,
+    address, prevAddress, phone, dob,
   });
   const userId = currentUserId();
   if (!userId) return;
+  const attributes = {};
+  if (address) attributes.address = address;
+  if (prevAddress) attributes.prevAddress = prevAddress;
+  if (phone) attributes.phone = phone;
+  if (dob) attributes.dob = dob;
   post({
     userId,
     // The CANONICAL, re-fetchable link to the member's own record (unlike the ephemeral extId).
@@ -256,6 +269,7 @@ export function enrichFromReport(reportResult, selfPerson) {
     city,
     state,
     pastLocations,
+    ...(Object.keys(attributes).length ? { attributes } : {}),
     source: 'self-report',
   });
 }
