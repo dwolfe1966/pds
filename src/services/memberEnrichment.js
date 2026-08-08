@@ -61,7 +61,7 @@ export function getWsfyIdentity(user) {
     selfUserId: currentUserId() || undefined,
   };
 }
-function updateMappedIdentity(partial) {
+export function updateMappedIdentity(partial) {
   try {
     const cur = getMappedIdentity() || {};
     const next = { ...cur };
