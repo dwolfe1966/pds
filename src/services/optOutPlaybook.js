@@ -168,6 +168,34 @@ const SPECIFIC = {
   safegraph:         { verification: 'Just an email in a simple form — no CAPTCHA (one of the easiest)' },
   google:            { needs: ['name', 'listingUrl'], note: '“Results about you” needs a Google login; the detailed removal form works without one.' },
   openai:            { note: 'No per-person deletion — this is a training-data opt-out / removal request, reviewed case-by-case.' },
+  // ── Slice 2 (2026-08-08): finish the remaining catalog with exact detail ──
+  bing:              { needs: ['name', 'listingUrl'], verification: 'Public “report a concern” form (no login); manual review', note: 'Delists from Bing results — remove at the source page too.' },
+  experian_marketing:{ verification: 'Email verification; ad-targeting opt-outs are cookie-based (per browser)' },
+  gemini:            { needs: ['account'], note: 'Turn off “Gemini Apps Activity” to opt out of training; AI-likeness removal needs a selfie + liveness check.' },
+  perplexity:        { needs: ['account'], note: 'Toggle AI data retention off or delete your account; DSAR via their privacy form.' },
+  // Genealogy
+  ancestry:          { note: 'Removing your data = deleting your own account (irreversible). Records others posted need a privacy request.' },
+  myheritage:        { note: 'Own-data removal = delete your account in settings, or a DSAR to privacy@myheritage.com.' },
+  familysearch:      { needs: ['name', 'listingUrl'], verification: 'Record URL + proof of relationship/guardianship', note: 'Living-person records only; historical records generally remain.' },
+  // Property
+  zillow:            { needs: ['account'], note: 'Zillow won’t remove the property page; claim your home to hide photos/details.' },
+  realtor:           { prefill: 'ccpa_email', note: 'No dedicated opt-out page — email a “Data Deletion Request” to their privacy team.' },
+  propertyshark:     { note: 'Data is scraped from county records, so it can reappear after suppression.' },
+  // Location
+  cuebiq:            { needs: ['email'], verification: 'Requires your device advertising ID (IDFA/GAID) + validation' },
+  foursquare:        { needs: ['name', 'dob', 'email'], verification: 'Jira portal — name, DOB, country, and your Foursquare user ID' },
+  daa_webchoices:    { needs: [], verification: 'Per-browser cookie opt-out', note: 'Cookie-based — applies to this browser/device only, lost if you clear cookies.' },
+  nai:               { needs: [], verification: 'Per-browser cookie opt-out', note: 'Cookie-based — applies to this browser/device only.' },
+  // Insurance / tenant (specialty FCRA)
+  experian_rentbureau:   { verification: 'Mailed request form (identity via the form)', note: 'Specialty FCRA bureau — disclosure + dispute, not removal.' },
+  milliman_intelliscript:{ note: 'Prescription-history bureau (FCRA) — free report + written dispute; not removable.' },
+  // Caller-ID
+  sync_me:           { needs: ['phone', 'email'], verification: 'Phone/email code confirmation (+ CAPTCHA)' },
+  callapp:           { needs: ['phone'], verification: 'Async — you’ll get a confirmation email over the next few days' },
+  // Public records → these often need a legal remedy, not a form (bridges to the partner/escalation track)
+  county_court:      { note: 'Court records are public — removal usually needs expungement or sealing through the court. An attorney can advise if you qualify.' },
+  property_records:  { note: 'County assessor records are public; some counties allow redaction for safety (e.g., law enforcement, judges). Ask the assessor/recorder.' },
+  voter_records:     { note: 'Voter rolls are public in most states; some allow confidential status for safety. Ask your county elections office.' },
 };
 
 // Resolve the full playbook for a catalog item ({ sourceKey, name, url, nature, method }).
