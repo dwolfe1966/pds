@@ -243,6 +243,25 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     } catch { /* ignore */ }
   }, [tracked]);
 
+  // Foundational tier done-state — tracked in the graph as surfaceType 'foundational' (separate from the
+  // broker categories), self-reported. Set of `${provider}:${action}` keys.
+  const foundationalDone = useMemo(() => {
+    const s = new Set();
+    (graph.nodes || []).forEach((n) => { if (n.surface_type === 'foundational' && n.control_status === 'done') s.add(n.source_key); });
+    return s;
+  }, [graph.nodes]);
+  const toggleFoundational = (key, done) => {
+    setGraph((prev) => {
+      const nodes = [...(prev.nodes || [])];
+      const i = nodes.findIndex((n) => n.source_key === key && n.surface_type === 'foundational');
+      if (i >= 0) nodes[i] = { ...nodes[i], control_status: done ? 'done' : 'none' };
+      else nodes.push({ source_key: key, surface_type: 'foundational', control_status: done ? 'done' : 'none', found_status: 'found' });
+      return { ...prev, nodes };
+    });
+    setExposureControl({ sourceKey: key, surfaceType: 'foundational', controlStatus: done ? 'done' : 'none', controlMethod: 'self_reported' })
+      .then((g) => { if (g && g.nodes) setGraph((prev) => ({ ...prev, nodes: g.nodes, summary: g.summary || prev.summary })); });
+  };
+
   const exposedCount = graph.summary?.exposed ?? 0;
   const controlledCount = graph.summary?.controlled ?? 0;
   const catalogSize = items.filter((it) => it.surfaceType !== 'idlookup').length;
@@ -382,8 +401,8 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
       </div>
       {flash && <div style={{ fontSize: 12.5, fontWeight: 600, color: flash.startsWith('Claim') ? '#b45309' : GREEN, margin: '0 0 6px' }}>{flash}</div>}
 
-      {/* Foundational sources — the high-impact wholesale providers (LexisNexis/TransUnion), above retail. */}
-      <FoundationalSources />
+      {/* Foundational sources — the high-impact wholesale providers (credit bureaus + specialty files), above retail. */}
+      <FoundationalSources doneKeys={foundationalDone} onToggle={toggleFoundational} />
 
       {/* Removal progress — headline proof the loop is working: confirmed vs pending vs re-appeared. */}
       {progress.total > 0 && (
@@ -529,10 +548,16 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
       {/* Rung 5 — records that need a legal/financial remedy, not an opt-out form. Referral only. */}
       <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>Some records need a specialist</div>
-        <div style={{ fontSize: 12.5, color: '#6b7280', margin: '2px 0 10px' }}>Court &amp; criminal records and your credit file can’t be opted out of — but a vetted partner can help. Referral only, no obligation.</div>
+        <div style={{ fontSize: 12.5, color: '#6b7280', margin: '2px 0 10px' }}>Court &amp; criminal records, your credit file, identity theft, and false content online can’t be opted out of — but each has free first steps you can take now, and a specialist can help with the rest.</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => setReferralTrack('expungement')} style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, background: '#fff', border: '1px solid #bbf7d0', borderRadius: 999, padding: '6px 14px', cursor: 'pointer' }}>Expungement attorney →</button>
-          <button type="button" onClick={() => setReferralTrack('credit')} style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, background: '#fff', border: '1px solid #bbf7d0', borderRadius: 999, padding: '6px 14px', cursor: 'pointer' }}>Credit specialist →</button>
+          {[
+            ['expungement', 'Expungement & sealing'],
+            ['credit', 'Credit remediation'],
+            ['identity_theft', 'Identity theft recovery'],
+            ['defamation', 'False / harmful content'],
+          ].map(([key, label]) => (
+            <button key={key} type="button" onClick={() => setReferralTrack(key)} style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, background: '#fff', border: '1px solid #bbf7d0', borderRadius: 999, padding: '6px 14px', cursor: 'pointer' }}>{label} →</button>
+          ))}
         </div>
       </div>
       {referralTrack && <PartnerReferralModal track={referralTrack} onClose={() => setReferralTrack(null)} />}

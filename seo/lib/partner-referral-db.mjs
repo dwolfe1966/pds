@@ -9,7 +9,7 @@ const URL = process.env.LEADS_DATABASE_URL || process.env.DATABASE_URL || proces
 export const hasReferralDb = !!URL;
 const sql = hasReferralDb ? neon(URL) : null;
 
-const TRACKS = new Set(['expungement', 'credit']);
+const TRACKS = new Set(['expungement', 'credit', 'identity_theft', 'defamation']);
 
 let _ensured = false;
 async function ensure() {

@@ -82,6 +82,7 @@
 - [Exposure Graph (digital-footprint spine)](project_exposure_graph.md) — see/control everywhere a person appears; v1 built (seo); vendor-agnostic; Expose-axis wedge; Optery pricey→alts
 - [WSFY self-build](project_wsfy_self_build.md) — built Who's-Searching-For-You (BC has none); ingest+tiered reveal+affinity tease shipped; open: enrichment, auth-harden, opt-out
 - [DF monitoring loop closed](project_monitoring_loop.md) — optout-recheck cron (recheck-only, never `reappeared`) + subject_user_key email bridge + revived NotificationBell; reach via /activity + bell
+- [DF depth: foundational + partner track](project_df_depth.md) — 6 foundational providers (3 bureaus) trackable via graph surfaceType='foundational'; partner track reframed honest (no live partners → self-serve steps + waitlist)
 - [PersonSearch enrichment](project_personsearch_enrichment.md) — Enformion PersonSearch → member_enrichment relatives/past_locations → lights WSFY; blocker = retention rights (owner)
 - [Social presence enrichment](project_social_presence.md) — PDL+Gravatar getSocialPresence + /api/social-presence; experimenting, legal flags
 - [Signals augmentation](project_signals_augmentation.md) — presence=data-driven/emphasis=flow-driven; 3 viewer-lenses; getPersonSignals + 6-phase plan

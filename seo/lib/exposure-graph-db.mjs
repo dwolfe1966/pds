@@ -393,6 +393,7 @@ const CONTROLLED = new Set(['hidden', 'removed', 'optout_confirmed']);
 export function summarizeNodes(nodes) {
   let exposedW = 0, totalW = 0, found = 0, controlled = 0, inProgress = 0;
   for (const n of nodes || []) {
+    if (n.surface_type === 'foundational') continue; // separate self-reported checklist, not a footprint exposure
     const w = n.severity || 1;
     if (n.found_status === 'found') {
       found += 1; totalW += w;
