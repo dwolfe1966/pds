@@ -4,6 +4,7 @@ import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposure
 import { useBrand } from '../services/brand';
 import OptOutGuide from './OptOutGuide';
 import PartnerReferralModal from './PartnerReferralModal';
+import FoundationalSources from './FoundationalSources';
 
 /**
  * "Your Digital Footprint" — the Transparency + Control panel, now rendered off the Exposure Graph
@@ -313,6 +314,9 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         <span style={{ fontSize: 12.5, color: '#6b7280' }}>We submit the opt-outs on your behalf, as your authorized agent, and track each one.</span>
       </div>
       {flash && <div style={{ fontSize: 12.5, fontWeight: 600, color: flash.startsWith('Claim') ? '#b45309' : GREEN, margin: '0 0 6px' }}>{flash}</div>}
+
+      {/* Foundational sources — the high-impact wholesale providers (LexisNexis/TransUnion), above retail. */}
+      <FoundationalSources />
 
       {/* Removal tracker — status + re-check cadence per requested removal (brokers re-list, so we remind). */}
       {tracked.length > 0 && (
