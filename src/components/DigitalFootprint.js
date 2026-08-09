@@ -161,6 +161,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const [history, setHistory] = useState([]); // protection-score trend [{day, score}]
   const graphLoaded = useRef(false);
   const snapRecorded = useRef(false);
+  const foundationalRef = useRef(null); // first-run plan scrolls here for the freeze steps
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [running, setRunning] = useState(false);
@@ -450,11 +451,51 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     );
   }
 
+  // ── First-run protection plan — the top 5 highest-impact steps, each auto-derived from real state. Shows
+  // until complete, then disappears so it never nags a set-up member. ──
+  const scrollToFoundational = () => { try { foundationalRef.current && foundationalRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ } };
+  const creditFreezeKeys = ['transunion:freeze', 'equifax:freeze', 'experian:freeze'];
+  const otherFreezeKeys = ['the_work_number:freeze', 'chexsystems:freeze', 'lexisnexis:freeze'];
+  const planSteps = [
+    { id: 'identity', label: 'Claim & verify your identity', desc: 'So we can find and act on your records.', done: mapped, cta: { text: 'Claim now', onClick: manage } },
+    { id: 'credit', label: 'Freeze your credit at all 3 bureaus', desc: 'The strongest guard against new-account fraud.', done: creditFreezeKeys.every((k) => foundationalDone.has(k)), cta: { text: 'Freeze', onClick: scrollToFoundational } },
+    { id: 'brokers', label: 'Remove yourself from data brokers', desc: 'Where most people find your address & phone.', done: progress.total > 0 || controlledCount > 0, cta: { text: 'Remove me', onClick: startRemoveForMe } },
+    { id: 'files', label: 'Lock your income, banking & risk files', desc: 'The Work Number, ChexSystems & LexisNexis.', done: otherFreezeKeys.every((k) => foundationalDone.has(k)), cta: { text: 'Lock', onClick: scrollToFoundational } },
+    { id: 'extension', label: 'Add the browser assistant', desc: 'Autofills opt-outs and watches for re-listings.', done: hasExtension, cta: { text: 'Get it', url: 'https://idlookup.me/extension' } },
+  ];
+  const planDone = planSteps.filter((s) => s.done).length;
+  const planComplete = planDone === planSteps.length;
+
   // ── Full (My Identity → Digital Footprint) — the MAP of everywhere your data lives ──────────────
   const cats = CATS.filter((c) => byCategory[c.key] && byCategory[c.key].length);
   return (
     <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, padding: '20px 22px', background: '#fff', boxShadow: '0 2px 10px rgba(13,93,47,0.06)' }}>
       <div style={{ fontSize: 18, fontWeight: 800, color: '#111827' }}>Your Digital Footprint <span style={{ fontWeight: 600, fontSize: 12.5, color: '#9ca3af' }}>· a map of where your data lives</span></div>
+
+      {/* First-run protection plan — guided top-5 setup; auto-hides once every step is done. */}
+      {!planComplete && (
+        <div style={{ border: '1px solid #bbf7d0', background: '#f0fdf4', borderRadius: 12, padding: '14px 16px', marginTop: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#111827' }}>Your protection plan <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280' }}>· start here</span></div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: GREEN }}>{planDone} of {planSteps.length} done</div>
+          </div>
+          <div style={{ fontSize: 12, color: '#4b5563', margin: '2px 0 10px' }}>The five highest-impact moves, in order. Knock them out and your protection score climbs.</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {planSteps.map((s, i) => (
+              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? '1px solid #dcfce7' : 'none' }}>
+                <span aria-hidden="true" style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', background: s.done ? GREEN : '#fff', border: s.done ? 'none' : '1.5px solid #cbd5e1', color: '#fff', fontSize: 12, fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{s.done ? '✓' : i + 1}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: '#111827', textDecoration: s.done ? 'line-through' : 'none', opacity: s.done ? 0.65 : 1 }}>{s.label}</span>
+                  {!s.done && <span style={{ display: 'block', fontSize: 12, color: '#4b5563', marginTop: 1, lineHeight: 1.4 }}>{s.desc}</span>}
+                </span>
+                {!s.done && (s.cta.url
+                  ? <a href={s.cta.url} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: '#fff', background: GREEN, borderRadius: 8, padding: '6px 12px', textDecoration: 'none' }}>{s.cta.text} →</a>
+                  : <button type="button" onClick={s.cta.onClick} style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, color: '#fff', background: GREEN, border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>{s.cta.text} →</button>)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Identity Protection Score — one honest headline (share of recommended protections in place) + the
           single highest-impact next step. */}
@@ -654,7 +695,9 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
       {/* Foundational sources — high-impact wholesale providers (credit bureaus + specialty files). Placed
           BELOW the people-search / background-check map: it's higher-leverage but the retail broker exposure
           is what most members come in for, so lead with that and surface foundational as the deeper next step. */}
-      <FoundationalSources doneKeys={foundationalDone} onToggle={toggleFoundational} />
+      <div ref={foundationalRef}>
+        <FoundationalSources doneKeys={foundationalDone} onToggle={toggleFoundational} />
+      </div>
 
       {/* Rung 5 — records that need a legal/financial remedy, not an opt-out form. Referral only. */}
       <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
