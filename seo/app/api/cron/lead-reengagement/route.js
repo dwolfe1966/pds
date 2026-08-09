@@ -12,9 +12,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// ⚠️ TEST TIMER (2026-07-27) — floor lowered to 0 so a fresh test signup is drip-eligible immediately.
-// RATCHET BACK UP before launch: set env LEAD_RM_FLOOR_HOURS=12 on Vercel, or revert this default to 12.
-const FLOOR_H = Number(process.env.LEAD_RM_FLOOR_HOURS || 0);             // don't email a just-captured lead
+// Don't email a just-captured lead — hold off FLOOR_H hours after capture. Default 12h (launch-safe). For a
+// fast end-to-end test of the cron flow, set LEAD_RM_FLOOR_HOURS=0 on Vercel (env override, no code change).
+const FLOOR_H = Number(process.env.LEAD_RM_FLOOR_HOURS ?? 12);           // don't email a just-captured lead
 const GAP_DAYS = (process.env.LEAD_RM_GAP_DAYS || '2,3,4').split(',').map((n) => Number(n) || 3); // gaps for steps 2/3/4
 const BATCH = Number(process.env.LEAD_RM_BATCH || 20);                    // sends per run (× runs/day ≤ ESP cap)
 const DELAY_MS = Number(process.env.LEAD_RM_DELAY_MS || 600);            // pacing between sends
