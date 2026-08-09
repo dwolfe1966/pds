@@ -6,6 +6,8 @@
 // Returns null when unconfigured (adapters then self-gate to []).
 //
 // 2Captcha flow: POST in.php (submit) → captcha id → poll res.php until "OK|<answer>".
+import { tryConsumeService } from './serviceBudget.mjs';
+
 const BASE = 'https://2captcha.com';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -33,6 +35,7 @@ async function poll(key, id, { tries = 20, delay = 5000 } = {}) {
 export async function solveImageCaptcha(base64, opts = {}) {
   const key = apiKey();
   if (!key || !base64) return null;
+  if (!(await tryConsumeService('captcha'))) return null; // daily 2Captcha spend cap reached → self-gate
   const body = new URLSearchParams({ key, method: 'base64', body: base64.replace(/^data:[^,]+,/, ''), json: '1' });
   if (opts.numeric) body.set('numeric', '1');
   if (opts.caseSensitive) body.set('regsense', '1');
@@ -57,6 +60,7 @@ export async function solveImageCaptcha(base64, opts = {}) {
 export async function solveRecaptcha(p = {}) {
   const key = apiKey();
   if (!key || !p.sitekey || !p.pageurl) return null;
+  if (!(await tryConsumeService('captcha'))) return null; // daily 2Captcha spend cap reached → self-gate
   const body = new URLSearchParams({ key, method: 'userrecaptcha', googlekey: p.sitekey, pageurl: p.pageurl, json: '1' });
   if (p.enterprise) body.set('enterprise', '1');
   if (p.v3) { body.set('version', 'v3'); if (p.action) body.set('action', p.action); if (p.minScore) body.set('min_score', String(p.minScore)); }

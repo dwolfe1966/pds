@@ -119,9 +119,12 @@ export function parseDetail(html, base) {
 }
 
 // ---- Browserless runner (residential; retries flaky exit IPs) ----
+import { tryConsumeService } from './serviceBudget.mjs';
+
 async function browserFunction(code, tries = 4) {
   const svc = process.env.BROWSER_SERVICE_URL;
   if (!svc) return null;
+  if (!(await tryConsumeService('browser'))) return null; // daily Browser.io spend cap reached → self-gate
   let url;
   try {
     url = new URL(svc);

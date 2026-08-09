@@ -51,6 +51,21 @@ export async function enformionUsageToday(env = process.env) {
   } catch { return null; }
 }
 
+/** Usage summary (today + trailing 30 days + cap) for the service-usage dashboard. Null on no-DB/error. */
+export async function enformionUsageSummary(env = process.env) {
+  if (!sql) return null;
+  await ensureTable();
+  const cap = parseInt(env.ENFORMION_DAILY_CAP || '', 10);
+  try {
+    const [today] = await sql`SELECT count FROM enformion_usage WHERE day = CURRENT_DATE`;
+    const [month] = await sql`SELECT COALESCE(sum(count),0)::int total FROM enformion_usage WHERE day > CURRENT_DATE - INTERVAL '30 days'`;
+    return {
+      label: 'Enformion', cap: Number.isFinite(cap) && cap > 0 ? cap : null,
+      today: { calls: today?.count || 0 }, last30: { calls: month?.total || 0 },
+    };
+  } catch { return null; }
+}
+
 // ── Per-channel lanes ────────────────────────────────────────────────────────
 // A SEPARATE daily counter per named channel (its own table row), so one feature's usage can't starve
 // another's. Used to isolate 'who lives here' (address→resident teaser) from the shared divorce/marriage cap —

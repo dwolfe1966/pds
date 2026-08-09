@@ -12,6 +12,7 @@
 // Cache-first (phoneIntelDb): a number's line type/carrier is stable, so the first lookup is stored in Neon
 // and reused for later checks (teaser retries, repeat searches) without re-incurring Twilio cost.
 import { getCachedPhoneIntel, setCachedPhoneIntel } from './phoneIntelDb.mjs';
+import { tryConsumeService } from './serviceBudget.mjs';
 
 const LOOKUP_BASE = 'https://lookups.twilio.com/v2/PhoneNumbers';
 
@@ -44,6 +45,7 @@ export async function getPhoneIntel({ phone } = {}) {
 
   const cached = await getCachedPhoneIntel(phone);
   if (cached) return cached;
+  if (!(await tryConsumeService('twilio'))) return EMPTY; // daily Twilio Lookup spend cap reached → skip live call
 
   const fields = ['line_type_intelligence'];
   if (process.env.TWILIO_SMS_PUMPING_RISK === '1') fields.push('sms_pumping_risk');
