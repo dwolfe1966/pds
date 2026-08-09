@@ -516,6 +516,14 @@ export async function setExposureControl({ nodeId, sourceKey, surfaceType, contr
   } catch { return null; }
 }
 
+/** Member confirms a SUSPECTED reappearance (from the extension detection) is real → flip the node to
+ *  'reappeared'. This is the only authorized writer of that status: an in-session DOM match only SUSPECTS;
+ *  the member's one-click confirm is what makes it a fact. Brokers only (data_broker surface). */
+export async function confirmReappearance(sourceKey, surfaceType = 'data_broker') {
+  if (!sourceKey) return null;
+  return setExposureControl({ sourceKey, surfaceType, controlStatus: 'reappeared', controlMethod: 'member_confirmed' });
+}
+
 export async function fetchSuppression() {
   const userId = currentUserId();
   const empty = { activityHidden: false, hiddenFields: [], dispositions: {} };
