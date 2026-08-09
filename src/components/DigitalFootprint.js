@@ -220,6 +220,19 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   }, [items, graph.registry, overrides]);
   const dueCount = tracked.filter((t) => t.overdue || t.cs === 'reappeared').length;
 
+  // Removal progress — the member's proof the loop is working over time. Confirmed-removed vs still-pending
+  // vs re-appeared, across everything they've acted on.
+  const progress = useMemo(() => {
+    let requested = 0, removed = 0, reappeared = 0;
+    tracked.forEach((t) => {
+      if (t.cs === 'removed' || t.cs === 'optout_confirmed') removed += 1;
+      else if (t.cs === 'reappeared') reappeared += 1;
+      else requested += 1;
+    });
+    const total = tracked.length;
+    return { total, requested, removed, reappeared, pct: total ? Math.round((removed / total) * 100) : 0 };
+  }, [tracked]);
+
   // Publish the brokers the member is actively managing (opted out of) to localStorage, so the browser
   // extension can SCOPE reappearance detection to only these sources — nothing about any other broker visit
   // ever leaves the browser. Broker surfaces only (that's where in-session detection applies).
@@ -257,6 +270,17 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const dismissSuspect = (sourceKey) => {
     const s = suspected[sourceKey]; if (s) markHandled(s.id);
     setSuspected((m) => { const n = { ...m }; delete n[sourceKey]; return n; });
+  };
+
+  // Batch "Re-check all" — asks the extension (via a same-window message the identity-bridge relays) to open
+  // each managed broker's search page in a background tab and scan it. Extension-only (the bridge marks pages
+  // with data-idl-ext). Results flow back as suspected reappearance/removal signals.
+  const hasExtension = (() => { try { return !!document.documentElement.getAttribute('data-idl-ext'); } catch { return false; } })();
+  const recheckAll = () => {
+    const keys = Array.from(new Set(tracked.filter((t) => t.surfaceType === 'data_broker').map((t) => t.sourceKey)));
+    if (!keys.length) return;
+    try { window.postMessage({ source: 'idlookup-web', type: 'recheck', sourceKeys: keys }, '*'); } catch { /* ignore */ }
+    setFlash('Re-checking your brokers in background tabs — we’ll flag anything found. You can close the tabs when they finish.');
   };
 
   const removeBtn = (it) => (
@@ -361,14 +385,38 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
       {/* Foundational sources — the high-impact wholesale providers (LexisNexis/TransUnion), above retail. */}
       <FoundationalSources />
 
+      {/* Removal progress — headline proof the loop is working: confirmed vs pending vs re-appeared. */}
+      {progress.total > 0 && (
+        <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>Removal progress</div>
+            <div style={{ fontSize: 12.5, color: '#4b5563' }}><b style={{ color: GREEN }}>{progress.removed}</b> of {progress.total} confirmed removed{progress.total ? ` · ${progress.pct}%` : ''}</div>
+          </div>
+          {/* Segmented bar: removed (green) · requested (amber) · re-appeared (red) */}
+          <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', background: '#f3f4f6', margin: '9px 0 8px' }}>
+            {progress.removed > 0 && <div style={{ width: `${(progress.removed / progress.total) * 100}%`, background: GREEN }} />}
+            {progress.requested > 0 && <div style={{ width: `${(progress.requested / progress.total) * 100}%`, background: '#f59e0b' }} />}
+            {progress.reappeared > 0 && <div style={{ width: `${(progress.reappeared / progress.total) * 100}%`, background: '#dc2626' }} />}
+          </div>
+          <div style={{ display: 'flex', gap: '4px 14px', flexWrap: 'wrap', fontSize: 11.5, color: '#6b7280' }}>
+            <span><Dot c={GREEN} /> {progress.removed} confirmed removed</span>
+            <span><Dot c="#f59e0b" /> {progress.requested} in progress</span>
+            {progress.reappeared > 0 && <span><Dot c="#dc2626" /> {progress.reappeared} re-appeared — needs re-submit</span>}
+          </div>
+        </div>
+      )}
+
       {/* Removal tracker — status + re-check cadence per requested removal (brokers re-list, so we remind). */}
       {tracked.length > 0 && (
         <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>Removal tracker</div>
-            {dueCount > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 999, padding: '2px 9px' }}>{dueCount} need a re-check</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {dueCount > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 999, padding: '2px 9px' }}>{dueCount} need a re-check</span>}
+              {hasExtension && <button type="button" onClick={recheckAll} style={{ fontSize: 11.5, fontWeight: 800, color: GREEN, background: '#fff', border: '1px solid #bbf7d0', borderRadius: 999, padding: '3px 11px', cursor: 'pointer' }}>🔁 Re-check all</button>}
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 8px' }}>We track each request and remind you to re-verify — brokers often re-list over time.</div>
+          <div style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 8px' }}>We track each request and remind you to re-verify — brokers often re-list over time.{hasExtension ? ' “Re-check all” scans your brokers in the background.' : ''}</div>
           {tracked.map((t) => {
             const reappeared = t.cs === 'reappeared';
             const done = t.cs === 'removed' || t.cs === 'optout_confirmed';

@@ -47,4 +47,14 @@
       if (Array.isArray(keys)) chrome.storage.local.set({ idlManagedSourceKeys: keys.filter(Boolean).map(String) });
     } catch { /* ignore */ }
   } catch { /* storage unavailable or not logged in */ }
+
+  // Relay a "Re-check all" request from the web app (same-window postMessage) to the background worker,
+  // which opens each broker's search page for the content script to scan. Strictly scoped: same window +
+  // our tag only.
+  window.addEventListener('message', (e) => {
+    if (e.source !== window || !e.data || e.data.source !== 'idlookup-web' || e.data.type !== 'recheck') return;
+    const sourceKeys = Array.isArray(e.data.sourceKeys) ? e.data.sourceKeys.filter(Boolean).map(String) : [];
+    if (!sourceKeys.length) return;
+    try { chrome.runtime.sendMessage({ type: 'recheckSources', sourceKeys }); } catch { /* ignore */ }
+  });
 })();

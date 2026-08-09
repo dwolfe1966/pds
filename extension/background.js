@@ -76,6 +76,34 @@ async function reportDetection(userId, payload) {
   } catch { return false; }
 }
 
+// Batch "Re-check all" — open the member's search-listing page on each managed broker (that has a template)
+// in a BACKGROUND tab, marked #idl-recheck so the content script scans it and reports present/absent. No
+// popup-blocker issue (extension-opened). Best-effort; the member can close the tabs. Bounded so we never
+// open a wall of tabs.
+const RECHECK_MAX = 6;
+async function recheckSources(sourceKeys) {
+  const SEARCH = self.IDL_SEARCH_URLS || {};
+  const { idlIdentity } = await chrome.storage.local.get('idlIdentity');
+  const id = idlIdentity || {};
+  const parts = String(id.name || '').trim().split(/\s+/).filter(Boolean);
+  const idf = {
+    first: id.firstName || parts[0] || '',
+    last: id.lastName || (parts.length > 1 ? parts[parts.length - 1] : '') || '',
+    city: id.city || '', state: id.state || '', zip: id.zip || '',
+  };
+  if (!idf.last) return 0;
+  const enc = (s) => encodeURIComponent(String(s || '').trim());
+  const build = (tpl) => tpl.replace(/\{(\w+)\}/g, (_, k) => enc(idf[k] || '')) + '#idl-recheck';
+  let opened = 0;
+  for (const sk of (sourceKeys || [])) {
+    if (opened >= RECHECK_MAX) break;
+    const tpl = SEARCH[sk];
+    if (!tpl) continue;
+    try { chrome.tabs.create({ url: build(tpl), active: false }); opened += 1; } catch { /* ignore */ }
+  }
+  return opened;
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     try {
@@ -84,6 +112,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (msg && msg.type === 'enableHistory' && uid) { await enableHistory(uid); sendResponse({ ok: true }); }
       else if (msg && msg.type === 'deleteHistory' && uid) { await deleteHistory(uid); sendResponse({ ok: true }); }
       else if (msg && msg.type === 'reportDetection' && uid && msg.payload) { const ok = await reportDetection(uid, msg.payload); sendResponse({ ok }); }
+      else if (msg && msg.type === 'recheckSources' && Array.isArray(msg.sourceKeys)) { const opened = await recheckSources(msg.sourceKeys); sendResponse({ ok: true, opened }); }
       else sendResponse({ ok: false, error: 'no_user_or_type' });
     } catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }
   })();

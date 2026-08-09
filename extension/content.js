@@ -93,12 +93,16 @@
     detection = detectListing(identity);
     const base = { sourceKey: candidate, host: location.host, email: identity.email || '' };
     let payload = null;
+    // App-initiated sweep (we navigated here with the name in the URL) — so name-in-URL is NOT independent
+    // evidence of a real results page. Require the broker's OWN "no results" text before calling it removed.
+    const appInitiated = /(^|[#&])idl-recheck\b/.test(location.hash);
     if (detection) {
       payload = { ...base, signal: 'present', matched: detection };
     } else {
-      // Listing not found — only report as a possible REMOVAL if a search for this person actually ran.
+      // Listing not found — only report a possible REMOVAL if a search for this person actually ran.
       const context = searchedForMember(identity);
-      if (context) payload = { ...base, signal: 'absent', context };
+      const ok = appInitiated ? context === 'no_results' : !!context;
+      if (ok) payload = { ...base, signal: 'absent', context };
     }
     if (!payload) return;
     window.__idlReported = true;
