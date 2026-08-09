@@ -367,6 +367,22 @@ function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 
 function exposureUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'exposure'); }
 function optoutUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'optout'); }
 function historyUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'history'); }
+function referralUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'partner-referral'); }
+
+/** Rung 5 — connect the member to a vetted expungement attorney or credit specialist. Referral only
+ *  (consent required). Contact details come from the mapped identity; we don't re-capture PII. */
+export async function submitPartnerReferral({ track, name, email, phone, state, context, consent = true }) {
+  const userId = currentUserId();
+  if (!userId) return { error: 'no_user' };
+  try {
+    const res = await fetch(referralUrl(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, track, name, email, phone, state, context, consent: !!consent }),
+    });
+    if (!res.ok) return { error: res.status };
+    return await res.json();
+  } catch { return { error: 'network' }; }
+}
 
 /** "From your browsing" insight — which sites the member actually visits are data brokers / socials /
  *  known-breach sites (populated only if they enabled History insights in the extension). Read-only. */

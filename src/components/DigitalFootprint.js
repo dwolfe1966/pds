@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut, fetchHistoryInsights } from '../services/memberEnrichment';
 import { useBrand } from '../services/brand';
 import OptOutGuide from './OptOutGuide';
+import PartnerReferralModal from './PartnerReferralModal';
 
 /**
  * "Your Digital Footprint" — the Transparency + Control panel, now rendered off the Exposure Graph
@@ -149,6 +150,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const [overrides, setOverrides] = useState({}); // optimistic per-source control after a Remove click
   const [guideItem, setGuideItem] = useState(null); // per-provider prepare-&-prefill guide
   const [browsing, setBrowsing] = useState(null); // "from your browsing" history insight (extension-fed)
+  const [referralTrack, setReferralTrack] = useState(null); // Rung 5 partner referral (expungement|credit)
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [running, setRunning] = useState(false);
@@ -408,6 +410,17 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         "Remove me" submits opt-outs on your behalf; the per-site "Remove →" opens that site's own form. Data can
         re-list — we keep monitoring and flag re-appearances. Coverage grows as we add sources.
       </p>
+
+      {/* Rung 5 — records that need a legal/financial remedy, not an opt-out form. Referral only. */}
+      <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>Some records need a specialist</div>
+        <div style={{ fontSize: 12.5, color: '#6b7280', margin: '2px 0 10px' }}>Court &amp; criminal records and your credit file can’t be opted out of — but a vetted partner can help. Referral only, no obligation.</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => setReferralTrack('expungement')} style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, background: '#fff', border: '1px solid #bbf7d0', borderRadius: 999, padding: '6px 14px', cursor: 'pointer' }}>Expungement attorney →</button>
+          <button type="button" onClick={() => setReferralTrack('credit')} style={{ fontSize: 12.5, fontWeight: 700, color: GREEN, background: '#fff', border: '1px solid #bbf7d0', borderRadius: 999, padding: '6px 14px', cursor: 'pointer' }}>Credit specialist →</button>
+        </div>
+      </div>
+      {referralTrack && <PartnerReferralModal track={referralTrack} onClose={() => setReferralTrack(null)} />}
 
       {/* Per-provider prepare-&-prefill guide (friction ladder rungs 1–2). */}
       {guideItem && (
