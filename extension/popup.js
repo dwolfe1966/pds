@@ -101,7 +101,7 @@ async function renderHistory() {
   } else {
     histCard.className = 'pagecard muted';
     histTitle.textContent = 'History insights: Off';
-    histBody.textContent = 'Turn on to map where your data spreads based on the sites you visit. This sends your browsing history to your IDLookup account — you can delete it all at any time.';
+    histBody.innerHTML = 'Turn on to map where your data spreads based on the sites you visit. This sends your browsing history to your IDLookup account — you can delete it all anytime. <a href="' + (CFG.privacyUrl || 'https://idlookup.me/extension-privacy') + '" target="_blank" rel="noopener">How we handle it</a>.';
     histBtn.style.display = 'block';
     histBtn.textContent = 'Turn on history insights';
     histBtn.style.background = '#0d5d2f';

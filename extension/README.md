@@ -43,11 +43,14 @@ capture — owner chose raw-to-backend WITH upfront global consent + full delete
   flips consent off, removes the listener, and revokes the `history` permission.
 - **Sign-in required** — history is attributed to the member's account (userId synced by the bridge).
 
-### ⚠️ Required before go-live (raw browsing history = highest-sensitivity)
-- A **prominent in-product disclosure** + a **public privacy policy** describing exactly what's collected,
-  why, retention, and deletion (Chrome Web Store **Limited Use** policy — mandatory for history data).
-- Confirm **encryption at rest** (Neon default) + access controls on `browsing_history`.
-- Consider a retention cap / auto-expiry and a "download my data" export.
+### Go-live (raw browsing history = highest-sensitivity)
+- ✅ **Public privacy policy** — https://idlookup.me/extension-privacy (linked in the popup + at the consent
+  point). Covers what's collected, why, storage, Limited Use, and deletion. Use this URL in the Chrome Web
+  Store listing's privacy field.
+- ✅ **In-product disclosure** — history is off by default; the enable copy states what's sent + links the policy.
+- ⏳ Still to confirm before store submission: **encryption at rest** (Neon default) + access controls on
+  `browsing_history`; a **retention cap / auto-expiry**; a "download my data" export; the Web Store listing +
+  screenshots + data-safety form.
 
 ## What this MVP proves (and what it doesn't)
 - ✅ End-to-end model: sync identity → land on a broker → autofill → user completes verification.
