@@ -6,6 +6,7 @@ import { useBrand } from '../services/brand';
 import OptOutGuide from './OptOutGuide';
 import PartnerReferralModal from './PartnerReferralModal';
 import FoundationalSources from './FoundationalSources';
+import { FOUNDATIONAL, FOUNDATIONAL_ACTION_COUNT } from '../services/foundationalProviders';
 
 /**
  * "Your Digital Footprint" — the Transparency + Control panel, now rendered off the Exposure Graph
@@ -266,6 +267,50 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const controlledCount = graph.summary?.controlled ?? 0;
   const catalogSize = items.filter((it) => it.surfaceType !== 'idlookup').length;
 
+  // Flat lookup of every foundational lever by its composite key, for the score + next-best-action.
+  const foundActions = useMemo(() => {
+    const m = {};
+    FOUNDATIONAL.forEach((p) => p.jobs.forEach((j) => j.actions.forEach((a) => { m[`${p.key}:${a.id}`] = { provider: p.name, providerKey: p.key, jobId: j.id, ...a }; })));
+    return m;
+  }, []);
+
+  // ── Identity Protection Score ────────────────────────────────────────────────
+  // ONE honest headline: the share of your RECOMMENDED protections that are in place — foundational levers
+  // (weighted higher, they're higher-leverage) + broker sources brought under control. It measures actions
+  // TAKEN, not "you're safe" — the copy says so. Plus the single highest-impact next step.
+  const protection = useMemo(() => {
+    const FW = 2, BW = 1; // foundational weighted above retail brokers
+    const foundDone = foundationalDone.size;
+    const foundTotal = FOUNDATIONAL_ACTION_COUNT;
+    const brokerTotal = controlledCount + exposedCount;
+    const num = FW * foundDone + BW * controlledCount;
+    const den = FW * foundTotal + BW * brokerTotal;
+    const score = den ? Math.round((num / den) * 100) : 0;
+
+    // Next best action — credit + high-stakes freezes first, then the worst exposed broker, then any remaining
+    // foundational lever.
+    const FREEZE_ORDER = ['transunion:freeze', 'equifax:freeze', 'experian:freeze', 'the_work_number:freeze', 'chexsystems:freeze', 'lexisnexis:freeze'];
+    let next = null;
+    for (const key of FREEZE_ORDER) {
+      if (foundActions[key] && !foundationalDone.has(key)) { const a = foundActions[key]; next = { kind: 'foundational', key, title: `${a.label} (${a.provider})`, url: a.url }; break; }
+    }
+    if (!next) {
+      const CTRL = ['hidden', 'removed', 'optout_confirmed', 'optout_requested', 'reappeared'];
+      const worst = items
+        .filter((it) => (it.surfaceType === 'data_broker' || it.surfaceType === 'search_result') && it.node && it.node.found_status === 'found'
+          && !CTRL.includes(overrides[it.sourceKey] || (it.node && it.node.control_status)))
+        .sort((a, b) => ((b.node && b.node.severity) || 1) - ((a.node && a.node.severity) || 1))[0];
+      if (worst) next = { kind: 'broker', item: worst, title: `Remove yourself from ${worst.name}` };
+    }
+    if (!next) {
+      const key = Object.keys(foundActions).find((k) => !foundationalDone.has(k));
+      if (key) { const a = foundActions[key]; next = { kind: 'foundational', key, title: `${a.label} (${a.provider})`, url: a.url }; }
+    }
+    return { score, next };
+  }, [foundationalDone, controlledCount, exposedCount, items, overrides, foundActions]);
+
+  const scoreTone = protection.score >= 70 ? GREEN : protection.score >= 35 ? '#b45309' : '#b91c1c';
+
   // Mark the node opt-out-requested (tracked in the graph). The OPEN is the anchor's own navigation —
   // a real <a> reliably opens the opt-out page (window.open was getting popup-blocked; owner 2026-08-04).
   const markRequested = (it) => {
@@ -349,25 +394,40 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
       : `Prepared ${keys.length} request${keys.length !== 1 ? 's' : ''} — open each below to finish. We’ll auto-send the ones we can as soon as sending is enabled.`);
   };
 
+  // Next-best-action button (full view): foundational → open the provider page; broker → open the guide.
+  const nextCta = { flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: '#fff', background: GREEN, borderRadius: 8, padding: '7px 13px', textDecoration: 'none', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' };
+  const nextActionButton = protection.next
+    ? (protection.next.kind === 'foundational'
+        ? <a href={protection.next.url} target="_blank" rel="noopener noreferrer" style={nextCta}>Do this →</a>
+        : <button type="button" onClick={() => setGuideItem(protection.next.item)} style={nextCta}>Do this →</button>)
+    : null;
+
   // ── Compact (Dashboard) ────────────────────────────────────────────────────
   if (compact) {
     return (
       <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, padding: '18px 20px', background: '#fff', boxShadow: '0 2px 10px rgba(13,93,47,0.06)' }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>Your Digital Footprint <span style={{ fontWeight: 600, fontSize: 12.5, color: '#9ca3af' }}>· across the web</span></div>
-        <p style={{ margin: '6px 0 14px', fontSize: 13.5, color: '#4b5563', lineHeight: 1.5 }}>
-          {exposedCount > 0
-            ? <>Your info is exposed in <strong>{exposedCount}</strong> place{exposedCount !== 1 ? 's' : ''} we track{controlledCount > 0 ? <> · <strong>{controlledCount}</strong> under control</> : ''}. You can't erase it all — but you can take control.</>
-            : <>Your personal info is spread across {catalogSize}+ people-search sites and data brokers. You can't erase it all — but you can take control.</>}
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => navigate('/my-identity')}
-            style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
-            {mapped ? 'Manage my footprint →' : 'See my digital footprint →'}
-          </button>
-          {exposedCount + controlledCount > 0 && (
-            <Badge label={`${controlledCount}/${exposedCount + controlledCount} under control`} color={GREEN} bg="#f0fdf4" />
-          )}
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#111827' }}>Identity protection <span style={{ fontWeight: 600, fontSize: 12.5, color: '#9ca3af' }}>· your footprint across the web</span></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '12px 0 12px' }}>
+          <div style={{ textAlign: 'center', minWidth: 60 }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: scoreTone, lineHeight: 1 }}>{protection.score}<span style={{ fontSize: 14 }}>%</span></div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: '#6b7280', marginTop: 2 }}>Protection score</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ height: 8, borderRadius: 999, background: '#f3f4f6', overflow: 'hidden', marginBottom: 6 }}>
+              <div style={{ width: `${protection.score}%`, height: '100%', background: scoreTone }} />
+            </div>
+            <div style={{ fontSize: 12.5, color: '#4b5563', lineHeight: 1.45 }}>
+              {protection.next
+                ? <><b>Next:</b> {protection.next.title}</>
+                : <span style={{ color: GREEN, fontWeight: 700 }}>✓ Every protection we recommend is in place.</span>}
+            </div>
+          </div>
         </div>
+        <button type="button" onClick={() => navigate('/my-identity')}
+          style={{ background: GREEN, color: '#fff', border: 'none', borderRadius: 8, padding: '10px 18px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>
+          {mapped ? 'Manage my protection →' : 'See my digital footprint →'}
+        </button>
+        <p style={{ margin: '9px 0 0', fontSize: 10.5, color: '#9ca3af', lineHeight: 1.45 }}>Share of recommended protections you’ve put in place — the actions taken, not a guarantee of safety.</p>
       </div>
     );
   }
@@ -377,6 +437,29 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   return (
     <div style={{ border: '1px solid #d7ddd9', borderRadius: 14, padding: '20px 22px', background: '#fff', boxShadow: '0 2px 10px rgba(13,93,47,0.06)' }}>
       <div style={{ fontSize: 18, fontWeight: 800, color: '#111827' }}>Your Digital Footprint <span style={{ fontWeight: 600, fontSize: 12.5, color: '#9ca3af' }}>· a map of where your data lives</span></div>
+
+      {/* Identity Protection Score — one honest headline (share of recommended protections in place) + the
+          single highest-impact next step. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 16px', marginTop: 14, background: '#fbfdfc' }}>
+        <div style={{ textAlign: 'center', minWidth: 74 }}>
+          <div style={{ fontSize: 36, fontWeight: 800, color: scoreTone, lineHeight: 1 }}>{protection.score}<span style={{ fontSize: 16 }}>%</span></div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', marginTop: 3 }}>Protection score</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ height: 8, borderRadius: 999, background: '#f3f4f6', overflow: 'hidden', marginBottom: 9 }}>
+            <div style={{ width: `${protection.score}%`, height: '100%', background: scoreTone }} />
+          </div>
+          {protection.next ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ flex: 1, minWidth: 160, fontSize: 12.5, color: '#374151' }}><b>Next best step:</b> {protection.next.title}</span>
+              {nextActionButton}
+            </div>
+          ) : (
+            <span style={{ fontSize: 12.5, color: GREEN, fontWeight: 700 }}>✓ You’ve done every protection we recommend — we’ll keep monitoring.</span>
+          )}
+        </div>
+      </div>
+      <p style={{ fontSize: 10.5, color: '#9ca3af', margin: '6px 0 0' }}>Your protection score is the share of recommended protections you’ve put in place — it tracks the actions you’ve taken, not a guarantee of safety.</p>
 
       {/* Summary — breadth + control, from the graph */}
       <div style={{ display: 'flex', gap: 24, marginTop: 14, flexWrap: 'wrap' }}>
