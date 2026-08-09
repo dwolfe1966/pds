@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut } from '../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut, fetchHistoryInsights } from '../services/memberEnrichment';
 import { useBrand } from '../services/brand';
 import OptOutGuide from './OptOutGuide';
 
@@ -148,6 +148,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const [graph, setGraph] = useState({ nodes: [], registry: [], summary: { score: 0, found: 0, controlled: 0, exposed: 0 } });
   const [overrides, setOverrides] = useState({}); // optimistic per-source control after a Remove click
   const [guideItem, setGuideItem] = useState(null); // per-provider prepare-&-prefill guide
+  const [browsing, setBrowsing] = useState(null); // "from your browsing" history insight (extension-fed)
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [running, setRunning] = useState(false);
@@ -157,6 +158,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     let alive = true;
     fetchMappedIdentity().then((i) => { if (alive && i) setIdentity(i); });
     fetchExposureGraph().then((g) => { if (alive && g) setGraph(g); });
+    fetchHistoryInsights().then((h) => { if (alive && h) setBrowsing(h); });
     return () => { alive = false; };
   }, []);
 
@@ -178,6 +180,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const byCategory = useMemo(() => {
     const g = {}; items.forEach((it) => { const c = catOf(it); (g[c] = g[c] || []).push(it); }); return g;
   }, [items]);
+  const itemsByKey = useMemo(() => { const m = {}; items.forEach((it) => { m[it.sourceKey] = it; }); return m; }, [items]);
 
   const exposedCount = graph.summary?.exposed ?? 0;
   const controlledCount = graph.summary?.controlled ?? 0;
@@ -291,6 +294,31 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         <span style={{ fontSize: 12.5, color: '#6b7280' }}>We submit the opt-outs on your behalf, as your authorized agent, and track each one.</span>
       </div>
       {flash && <div style={{ fontSize: 12.5, fontWeight: 600, color: flash.startsWith('Claim') ? '#b45309' : GREEN, margin: '0 0 6px' }}>{flash}</div>}
+
+      {/* From your browsing — real signal from the sites the member actually visits (extension history). */}
+      {browsing && ((browsing.brokers && browsing.brokers.length) || (browsing.socials && browsing.socials.length) || (browsing.breaches && browsing.breaches.length)) ? (
+        <div style={{ border: '1px solid #bfdbfe', background: '#eff6ff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#1e3a8a' }}>From your browsing</div>
+          <div style={{ fontSize: 12.5, color: '#3730a3', margin: '2px 0 10px' }}>Based on the sites you actually visit ({browsing.uniqueHosts} tracked).</div>
+          {browsing.brokers && browsing.brokers.length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#111827', marginBottom: 5 }}>Data brokers you’ve visited — opt-out available</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {browsing.brokers.map((b) => (
+                  <button key={b.sourceKey || b.name} type="button" onClick={() => { const it = itemsByKey[b.sourceKey]; if (it) setGuideItem(it); }}
+                    style={{ fontSize: 12, fontWeight: 700, color: GREEN, background: '#fff', border: '1px solid #bbf7d0', borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}>{b.name} →</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {browsing.socials && browsing.socials.length > 0 && (
+            <div style={{ fontSize: 12.5, color: '#374151', marginBottom: 6 }}>🔒 Social accounts you use: <b>{browsing.socials.map((s) => s.name).join(', ')}</b> — lock down public visibility; these feed people-search sites.</div>
+          )}
+          {browsing.breaches && browsing.breaches.length > 0 && (
+            <div style={{ fontSize: 12.5, color: '#92400e' }}>🔓 Sites you use that had a known breach: <b>{browsing.breaches.map((s) => s.name).join(', ')}</b> — use a unique password on each.</div>
+          )}
+        </div>
+      ) : null}
 
       {/* The map — category cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 14, marginTop: 8 }}>

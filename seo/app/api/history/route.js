@@ -1,7 +1,7 @@
 // Browsing-history sync for the IDLookup extension. Owner decision (2026-08-08): raw history to backend,
 // WITH upfront global consent + full delete control. App-key gated; nothing stored without an on-record
 // consent; the user can wipe everything (DELETE). ⚠️ Ships with a prominent disclosure + privacy policy.
-import { hasHistoryDb, recordConsent, hasConsent, insertVisits, deleteUserHistory, historySummary } from '../../../lib/history-db.mjs';
+import { hasHistoryDb, recordConsent, hasConsent, insertVisits, deleteUserHistory, historySummary, historyInsights } from '../../../lib/history-db.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
@@ -51,7 +51,7 @@ export async function GET(req) {
   if (!userId) return new Response(JSON.stringify({ error: 'userId required' }), { status: 400, headers });
   if (!hasHistoryDb) return new Response(JSON.stringify({ ok: true, total: 0, topHosts: [], consented: false }), { status: 200, headers });
   try {
-    const [summary, consented] = await Promise.all([historySummary(String(userId)), hasConsent(String(userId))]);
-    return new Response(JSON.stringify({ ok: true, ...summary, consented }), { status: 200, headers });
+    const [summary, consented, insights] = await Promise.all([historySummary(String(userId)), hasConsent(String(userId)), historyInsights(String(userId))]);
+    return new Response(JSON.stringify({ ok: true, ...summary, consented, insights }), { status: 200, headers });
   } catch { return new Response(JSON.stringify({ error: 'read failed' }), { status: 500, headers }); }
 }

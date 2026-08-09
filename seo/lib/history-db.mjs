@@ -68,6 +68,68 @@ export async function deleteUserHistory(userId) {
   return { deleted: (del && del.count) || 0 };
 }
 
+// Host → signal map for turning raw history into HONEST insight. We only assert what's true: a host is a
+// known data broker (opt-out available), a social profile (feeds people-search), or was in a widely-reported
+// public breach. "You visited X" is a fact; we never claim "your data is listed there." sourceKey ties a
+// broker match to the footprint catalog so the client can open its opt-out guide.
+const HOST_SIGNALS = {
+  // People-search / data brokers (sourceKey matches source_registry)
+  'spokeo.com': { kind: 'broker', name: 'Spokeo', sourceKey: 'spokeo' },
+  'whitepages.com': { kind: 'broker', name: 'Whitepages', sourceKey: 'whitepages' },
+  'beenverified.com': { kind: 'broker', name: 'BeenVerified', sourceKey: 'beenverified' },
+  'peoplefinders.com': { kind: 'broker', name: 'PeopleFinders', sourceKey: 'peoplefinders' },
+  'radaris.com': { kind: 'broker', name: 'Radaris', sourceKey: 'radaris' },
+  'mylife.com': { kind: 'broker', name: 'MyLife', sourceKey: 'mylife' },
+  'truepeoplesearch.com': { kind: 'broker', name: 'TruePeopleSearch', sourceKey: 'truepeoplesearch' },
+  'intelius.com': { kind: 'broker', name: 'Intelius', sourceKey: 'intelius' },
+  'truthfinder.com': { kind: 'broker', name: 'TruthFinder', sourceKey: 'truthfinder' },
+  'instantcheckmate.com': { kind: 'broker', name: 'Instant Checkmate', sourceKey: 'instantcheckmate' },
+  'thatsthem.com': { kind: 'broker', name: "That'sThem", sourceKey: 'thatsthem' },
+  'peekyou.com': { kind: 'broker', name: 'PeekYou', sourceKey: 'peekyou' },
+  // Social profiles (feed people-search; common breach targets)
+  'linkedin.com': { kind: 'social', name: 'LinkedIn' },
+  'facebook.com': { kind: 'social', name: 'Facebook' },
+  'instagram.com': { kind: 'social', name: 'Instagram' },
+  'twitter.com': { kind: 'social', name: 'X / Twitter' },
+  'x.com': { kind: 'social', name: 'X / Twitter' },
+  'tiktok.com': { kind: 'social', name: 'TikTok' },
+  'reddit.com': { kind: 'social', name: 'Reddit' },
+  // Widely-reported public breaches (well-documented — advise password hygiene, not a per-account claim)
+  'adobe.com': { kind: 'breach', name: 'Adobe', year: 2013 },
+  'dropbox.com': { kind: 'breach', name: 'Dropbox', year: 2012 },
+  'canva.com': { kind: 'breach', name: 'Canva', year: 2019 },
+  'myfitnesspal.com': { kind: 'breach', name: 'MyFitnessPal', year: 2018 },
+  'lastpass.com': { kind: 'breach', name: 'LastPass', year: 2022 },
+  'yahoo.com': { kind: 'breach', name: 'Yahoo', year: 2013 },
+  'ticketmaster.com': { kind: 'breach', name: 'Ticketmaster', year: 2024 },
+};
+
+// Turn stored history into insight: which of the sites the member ACTUALLY visits are data brokers (opt-out),
+// social profiles, or known-breach sites. Honest — states "you visited", never "you're listed there".
+export async function historyInsights(userId) {
+  if (!sql || !userId) return { totalVisits: 0, uniqueHosts: 0, brokers: [], socials: [], breaches: [] };
+  await ensure();
+  const s = await historySummary(userId);
+  const norm = (h) => String(h || '').toLowerCase().replace(/^www\./, '');
+  const match = (host) => {
+    const h = norm(host);
+    for (const key of Object.keys(HOST_SIGNALS)) if (h === key || h.endsWith('.' + key)) return HOST_SIGNALS[key];
+    return null;
+  };
+  const brokers = [], socials = [], breaches = [];
+  const seen = new Set();
+  for (const row of s.topHosts || []) {
+    const sig = match(row.host); if (!sig) continue;
+    const key = sig.sourceKey || sig.name;
+    if (seen.has(key)) continue; seen.add(key);
+    const item = { name: sig.name, host: norm(row.host), visits: row.n, sourceKey: sig.sourceKey || null, year: sig.year || null };
+    if (sig.kind === 'broker') brokers.push(item);
+    else if (sig.kind === 'social') socials.push(item);
+    else if (sig.kind === 'breach') breaches.push(item);
+  }
+  return { totalVisits: s.total, uniqueHosts: (s.topHosts || []).length, brokers, socials, breaches };
+}
+
 // Aggregated view for insights (host counts) — never raw rows off the box beyond the user's own device.
 export async function historySummary(userId) {
   if (!sql || !userId) return { total: 0, topHosts: [] };

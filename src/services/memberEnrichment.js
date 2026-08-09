@@ -366,6 +366,20 @@ export function linkSelfReport(commerceContentId, selfPerson) {
 function suppressionUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'suppression'); }
 function exposureUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'exposure'); }
 function optoutUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'optout'); }
+function historyUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'history'); }
+
+/** "From your browsing" insight — which sites the member actually visits are data brokers / socials /
+ *  known-breach sites (populated only if they enabled History insights in the extension). Read-only. */
+export async function fetchHistoryInsights() {
+  const userId = currentUserId();
+  if (!userId) return null;
+  try {
+    const res = await fetch(`${historyUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data && data.consented) ? (data.insights || null) : null;
+  } catch { return null; }
+}
 
 /** "Remove for me" — authorize IDLookup to request removal on the member's behalf across the given sources.
  *  Runs our own opt-out engine (build-the-head); marks each node optout_requested. Requires consent (the
