@@ -401,9 +401,6 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
       </div>
       {flash && <div style={{ fontSize: 12.5, fontWeight: 600, color: flash.startsWith('Claim') ? '#b45309' : GREEN, margin: '0 0 6px' }}>{flash}</div>}
 
-      {/* Foundational sources — the high-impact wholesale providers (credit bureaus + specialty files), above retail. */}
-      <FoundationalSources doneKeys={foundationalDone} onToggle={toggleFoundational} />
-
       {/* Removal progress — headline proof the loop is working: confirmed vs pending vs re-appeared. */}
       {progress.total > 0 && (
         <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
@@ -544,6 +541,11 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         "Remove me" submits opt-outs on your behalf; the per-site "Remove →" opens that site's own form. Data can
         re-list — we keep monitoring and flag re-appearances. Coverage grows as we add sources.
       </p>
+
+      {/* Foundational sources — high-impact wholesale providers (credit bureaus + specialty files). Placed
+          BELOW the people-search / background-check map: it's higher-leverage but the retail broker exposure
+          is what most members come in for, so lead with that and surface foundational as the deeper next step. */}
+      <FoundationalSources doneKeys={foundationalDone} onToggle={toggleFoundational} />
 
       {/* Rung 5 — records that need a legal/financial remedy, not an opt-out form. Referral only. */}
       <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
