@@ -3,6 +3,12 @@
 // autofill on broker sites has the member's details WITHOUT them re-typing anything. One-way, local-only:
 // the extension never sends this anywhere.
 (function () {
+  // Signal to the web app that the extension is installed (so the opt-out guide can offer autofill instead
+  // of promoting an install). Read via document.documentElement.getAttribute('data-idl-ext').
+  try {
+    const ver = (chrome.runtime && chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '1';
+    document.documentElement.setAttribute('data-idl-ext', ver);
+  } catch { /* ignore */ }
   try {
     const raw = localStorage.getItem('wsfyMappedIdentity');
     const id = raw ? JSON.parse(raw) : {};

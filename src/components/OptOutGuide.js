@@ -3,6 +3,9 @@ import { INFO, haveInfo, getPlaybook, buildRequestEmail } from '../services/optO
 
 const GREEN = '#0d5d2f';
 const CAPTURABLE_KEYS = ['address', 'prevAddress', 'dob', 'phone']; // captured on My Identity, not inline here
+const EXT_INSTALL_URL = 'https://idlookup.me/extension';
+// The extension marks our pages via <html data-idl-ext="…"> (see extension/identity-bridge.js).
+const hasExtension = () => { try { return !!document.documentElement.getAttribute('data-idl-ext'); } catch { return false; } };
 
 /**
  * OptOutGuide — the "prepare & pre-fill" experience for a single provider (friction ladder rungs 1–2).
@@ -17,6 +20,7 @@ export default function OptOutGuide({ item, identity, onClose, onProceed, onMana
   const [copied, setCopied] = useState('');
   const email = pb.prefill === 'ccpa_email' ? buildRequestEmail(id, item, pb) : null;
   const missing = (pb.needs || []).filter((k) => CAPTURABLE_KEYS.includes(k) && !have[k]);
+  const ext = hasExtension();
 
   const copy = (text, tag) => {
     try { navigator.clipboard.writeText(text); setCopied(tag); setTimeout(() => setCopied(''), 1800); } catch { /* ignore */ }
@@ -46,6 +50,18 @@ export default function OptOutGuide({ item, identity, onClose, onProceed, onMana
         </div>
 
         <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* Assistance level — the least effort we can offer for this source. */}
+          {ext ? (
+            <div style={{ fontSize: 12.5, color: '#166534', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 12px' }}>
+              <strong>⚡ Autofill is on.</strong> Open {item.name} below and the IDLookup extension fills the form for you — you just clear any CAPTCHA and click the confirmation. {missing.length ? 'Add your missing details first (below) so it can fill everything.' : ''}
+            </div>
+          ) : (
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ fontSize: 12.5, color: '#1e3a8a', marginBottom: 7, lineHeight: 1.5 }}><strong>✨ Skip the typing.</strong> Install the IDLookup extension and it fills these opt-out forms for you, right in your browser — including finding your listing.</div>
+              <a href={EXT_INSTALL_URL} target="_blank" rel="noopener noreferrer" style={{ ...btnPrimary, display: 'inline-block' }}>Get the extension →</a>
+            </div>
+          )}
+
           {pb.note && (
             <div style={{ fontSize: 12.5, color: '#1e3a8a', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '9px 12px' }}>💡 {pb.note}</div>
           )}
