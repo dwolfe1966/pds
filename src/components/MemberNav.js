@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import styles from './MemberNav.module.css';
 import BrandLogo from './BrandLogo';
 import { useBrand } from '../services/brand';
+import NotificationBell from './NotificationBell';
 
 /**
  * Navigation bar for authenticated member pages.
@@ -130,6 +131,7 @@ const MemberNav = () => {
 
         {/* Desktop Auth Section */}
         <div className={styles.authButtons}>
+          {user && <NotificationBell />}
           {user && (
             <div className={styles.userDisplay}>
               <div className={styles.userAvatar}>

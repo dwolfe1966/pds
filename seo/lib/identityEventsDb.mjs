@@ -51,6 +51,25 @@ export async function addIdentityEvent(email, { type, title, detail, data, dedup
   } catch { return false; }
 }
 
+/**
+ * Append an event addressed by the member's user_key (sha256 email) directly — for callers that hold the
+ * hash but not the plaintext email (e.g. the exposure re-check cron, where the graph stores only the hash).
+ * Same idempotency contract as addIdentityEvent. Returns true if a NEW row was inserted.
+ */
+export async function addIdentityEventByUserKey(uk, { type, title, detail, data, dedupKey, nowIso } = {}) {
+  if (!sql || !uk || !type || !title) return false;
+  await ensureTable();
+  const id = `ie_${String(uk).slice(0, 12)}_${(dedupKey || Math.random().toString(36).slice(2)).slice(0, 40)}`;
+  try {
+    const rows = await sql`INSERT INTO identity_events (id, user_key, dedup_key, type, title, detail, data, created_at)
+      VALUES (${id}, ${uk}, ${dedupKey || null}, ${type}, ${title}, ${detail || null},
+        ${JSON.stringify(data || {})}::jsonb, COALESCE(${nowIso || null}::timestamptz, now()))
+      ON CONFLICT DO NOTHING
+      RETURNING id`;
+    return Array.isArray(rows) && rows.length > 0;
+  } catch { return false; }
+}
+
 /** Recent events for a member (newest first), or [] on miss/error. */
 export async function getIdentityEvents(email, limit = 50) {
   if (!sql || !email) return [];

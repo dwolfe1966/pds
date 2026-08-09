@@ -34,6 +34,11 @@ async function ensureTables() {
       UNIQUE (subject_key, source_key, url)
     )`;
     await sql`CREATE INDEX IF NOT EXISTS idx_expnode_subject ON exposure_node(subject_key)`;
+    // Bridge to the identity-events feed: sha256(email) of the member who owns this node, captured on the
+    // write path when their email is available. Lets the re-check cron address the member (whose events are
+    // keyed by email-hash) without storing plaintext email here. Nullable — older/anonymous nodes just miss.
+    await sql`ALTER TABLE exposure_node ADD COLUMN IF NOT EXISTS subject_user_key TEXT`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_expnode_recheck ON exposure_node(control_status, last_changed) WHERE subject_user_key IS NOT NULL`;
     await sql`CREATE TABLE IF NOT EXISTS exposure_event (
       id BIGSERIAL PRIMARY KEY, node_id BIGINT, subject_key TEXT NOT NULL,
       event_type TEXT NOT NULL, method TEXT, detail JSONB, screenshot_url TEXT,
@@ -213,30 +218,32 @@ export async function upsertNode(n) {
   const common = {
     st: n.surfaceType, fs: n.foundStatus || 'unknown', dt: dataTypes, ed: detail, ss: n.screenshotUrl || null,
     se: n.sentiment || null, cf: n.confidence || 'medium', sv: n.severity ?? 1, cs: n.controlStatus || 'none',
-    cm: n.controlMethod || null, xr: n.externalRef || null,
+    cm: n.controlMethod || null, xr: n.externalRef || null, uk: n.subjectUserKey || null,
   };
   try {
     const rows = n.syncControl
       ? await sql`
-        INSERT INTO exposure_node (subject_key, surface_type, source_key, url, found_status, data_types, exposure_detail, screenshot_url, sentiment, confidence, severity, control_status, control_method, external_ref, last_checked, last_changed)
-        VALUES (${n.subjectKey}, ${common.st}, ${n.sourceKey}, ${url}, ${common.fs}, ${common.dt}, ${common.ed}, ${common.ss}, ${common.se}, ${common.cf}, ${common.sv}, ${common.cs}, ${common.cm}, ${common.xr}, now(), now())
+        INSERT INTO exposure_node (subject_key, surface_type, source_key, url, found_status, data_types, exposure_detail, screenshot_url, sentiment, confidence, severity, control_status, control_method, external_ref, subject_user_key, last_checked, last_changed)
+        VALUES (${n.subjectKey}, ${common.st}, ${n.sourceKey}, ${url}, ${common.fs}, ${common.dt}, ${common.ed}, ${common.ss}, ${common.se}, ${common.cf}, ${common.sv}, ${common.cs}, ${common.cm}, ${common.xr}, ${common.uk}, now(), now())
         ON CONFLICT (subject_key, source_key, url) DO UPDATE SET
           found_status = EXCLUDED.found_status, data_types = EXCLUDED.data_types,
           exposure_detail = COALESCE(EXCLUDED.exposure_detail, exposure_node.exposure_detail),
           screenshot_url = COALESCE(EXCLUDED.screenshot_url, exposure_node.screenshot_url),
           sentiment = COALESCE(EXCLUDED.sentiment, exposure_node.sentiment), confidence = EXCLUDED.confidence, severity = EXCLUDED.severity,
           control_status = EXCLUDED.control_status, control_method = EXCLUDED.control_method,
+          subject_user_key = COALESCE(EXCLUDED.subject_user_key, exposure_node.subject_user_key),
           last_checked = now(),
           last_changed = CASE WHEN exposure_node.found_status IS DISTINCT FROM EXCLUDED.found_status OR exposure_node.control_status IS DISTINCT FROM EXCLUDED.control_status THEN now() ELSE exposure_node.last_changed END
         RETURNING id`
       : await sql`
-        INSERT INTO exposure_node (subject_key, surface_type, source_key, url, found_status, data_types, exposure_detail, screenshot_url, sentiment, confidence, severity, control_status, control_method, external_ref, last_checked, last_changed)
-        VALUES (${n.subjectKey}, ${common.st}, ${n.sourceKey}, ${url}, ${common.fs}, ${common.dt}, ${common.ed}, ${common.ss}, ${common.se}, ${common.cf}, ${common.sv}, ${common.cs}, ${common.cm}, ${common.xr}, now(), now())
+        INSERT INTO exposure_node (subject_key, surface_type, source_key, url, found_status, data_types, exposure_detail, screenshot_url, sentiment, confidence, severity, control_status, control_method, external_ref, subject_user_key, last_checked, last_changed)
+        VALUES (${n.subjectKey}, ${common.st}, ${n.sourceKey}, ${url}, ${common.fs}, ${common.dt}, ${common.ed}, ${common.ss}, ${common.se}, ${common.cf}, ${common.sv}, ${common.cs}, ${common.cm}, ${common.xr}, ${common.uk}, now(), now())
         ON CONFLICT (subject_key, source_key, url) DO UPDATE SET
           found_status = EXCLUDED.found_status, data_types = EXCLUDED.data_types,
           exposure_detail = COALESCE(EXCLUDED.exposure_detail, exposure_node.exposure_detail),
           screenshot_url = COALESCE(EXCLUDED.screenshot_url, exposure_node.screenshot_url),
           sentiment = COALESCE(EXCLUDED.sentiment, exposure_node.sentiment), confidence = EXCLUDED.confidence, severity = EXCLUDED.severity,
+          subject_user_key = COALESCE(EXCLUDED.subject_user_key, exposure_node.subject_user_key),
           last_checked = now(),
           last_changed = CASE WHEN exposure_node.found_status IS DISTINCT FROM EXCLUDED.found_status THEN now() ELSE exposure_node.last_changed END
         RETURNING id`;
@@ -245,17 +252,44 @@ export async function upsertNode(n) {
 }
 
 /** Set the control status/method on a node (routes downstream later) + log the event. */
-export async function setNodeControl(nodeId, { subjectKey, controlStatus, controlMethod, externalRef, eventType, detail } = {}) {
+export async function setNodeControl(nodeId, { subjectKey, controlStatus, controlMethod, externalRef, subjectUserKey, eventType, detail } = {}) {
   if (!sql || !nodeId) return false;
   await ensureTables();
   try {
     await sql`UPDATE exposure_node SET control_status = ${controlStatus}, control_method = ${controlMethod || null},
-      external_ref = COALESCE(${externalRef || null}, external_ref), last_changed = now() WHERE id = ${nodeId}`;
+      external_ref = COALESCE(${externalRef || null}, external_ref),
+      subject_user_key = COALESCE(${subjectUserKey || null}, subject_user_key), last_changed = now() WHERE id = ${nodeId}`;
     await sql`INSERT INTO exposure_event (node_id, subject_key, event_type, method, detail)
       VALUES (${nodeId}, ${subjectKey || null}, ${eventType || 'control_changed'}, ${controlMethod || null},
         ${detail ? JSON.stringify(detail) : null})`;
     return true;
   } catch { return false; }
+}
+
+/**
+ * Removals due for a re-check — the honest monitoring loop's data source. Returns requested/removed nodes
+ * whose re-list window (source_registry.relist_days) has fully lapsed since last_changed, that carry a
+ * subject_user_key (so we can address the member). `windowN` = how many full relist windows have elapsed;
+ * the cron folds it into the dedup key so a member is reminded once PER window (not once ever, not repeatedly).
+ * This schedules a re-VERIFY prompt only — it never asserts a listing is back (that needs real detection).
+ */
+export async function listRemovalsDueForRecheck(limit = 200) {
+  if (!sql) return [];
+  await ensureTables();
+  try {
+    return await sql`
+      SELECT n.subject_user_key AS user_key, n.source_key, n.control_status, n.last_changed,
+             r.display_name, r.opt_out_url, r.relist_days,
+             floor(extract(epoch FROM (now() - n.last_changed)) / (r.relist_days * 86400))::int AS window_n
+      FROM exposure_node n
+      JOIN source_registry r ON r.source_key = n.source_key
+      WHERE n.subject_user_key IS NOT NULL
+        AND n.control_status IN ('optout_requested', 'removed', 'optout_confirmed')
+        AND r.relist_days IS NOT NULL AND r.relist_days > 0
+        AND n.last_changed + (r.relist_days || ' days')::interval < now()
+      ORDER BY n.last_changed ASC
+      LIMIT ${Math.min(1000, Math.max(1, limit))}`;
+  } catch { return []; }
 }
 
 export async function getNodesForSubject(subjectKey) {

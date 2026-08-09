@@ -8,6 +8,7 @@ import {
 import { submitOptOut, controlStatusFor } from '../../../lib/optout/engine.mjs';
 import { hasMappedIdentity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
+import { userKey } from '../../../lib/identityEventsDb.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,9 @@ export async function POST(req) {
   }
 
   const identity = (body.identity && typeof body.identity === 'object') ? body.identity : {};
+  // Bridge to the identity-events feed so the re-check cron can reach this member later (their events are
+  // keyed by sha256(email)). Stored as a hash on the node — no plaintext email in the exposure graph.
+  const subjectUserKey = identity.email ? userKey(identity.email) : null;
   try {
     const registry = await getSourceRegistry();
     const byKey = {}; registry.forEach((r) => { byKey[r.source_key] = r; });
@@ -49,7 +53,7 @@ export async function POST(req) {
         const nodeId = await upsertNode({
           subjectKey: String(userId), surfaceType: (registryRow && registryRow.surface_type) || 'data_broker',
           sourceKey, foundStatus: 'found', severity: (registryRow && registryRow.weight) || 2,
-          controlStatus: control, controlMethod: result.method, syncControl: true,
+          controlStatus: control, controlMethod: result.method, subjectUserKey, syncControl: true,
         });
         await logExposureEvent({ nodeId, subjectKey: String(userId), eventType: 'optout_submitted', method: result.method, detail: { status: result.status, consent: true, ...result.detail } });
       }

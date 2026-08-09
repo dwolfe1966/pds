@@ -502,11 +502,14 @@ export async function deleteOwnerNote(id) {
 export async function setExposureControl({ nodeId, sourceKey, surfaceType, controlStatus, controlMethod }) {
   const userId = currentUserId();
   if (!userId || !controlStatus || !(nodeId || (sourceKey && surfaceType))) return null;
+  let email = '';
+  try { const u = JSON.parse(localStorage.getItem('user') || 'null'); email = (u && u.email) || ''; } catch { /* ignore */ }
   try {
     const res = await fetch(exposureUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
-      body: JSON.stringify({ userId, nodeId, sourceKey, surfaceType, controlStatus, controlMethod: controlMethod || null }),
+      // email → server hashes it to bridge this node to the identity-events feed (re-check monitoring loop).
+      body: JSON.stringify({ userId, email, nodeId, sourceKey, surfaceType, controlStatus, controlMethod: controlMethod || null }),
     });
     if (!res.ok) return null;
     return await res.json();

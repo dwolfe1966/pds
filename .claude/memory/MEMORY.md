@@ -34,6 +34,7 @@
 - [PS challenger flows portfolio](project_ps_challenger_flows.md) — 3 isolated A/B flows: honest(/people-search) + proof-first(/proof-check) + self-check(/my-exposure); one funnelVariant slot; distinct hypotheses/metrics
 - [Feedback: never claim searches are private](feedback_no_private_search_claim.md) — no "confidential/anonymous/they're never notified"; contradicts WSFY
 - [Feedback: funnel design principles](feedback_funnel_design_principles.md) — sell benefits not features; consumer not SaaS; build/verify/confirm
+- [Feedback: flag honest-approach changes](feedback_honest_approach_flag.md) — 🚩 IMPORTANT on any transparency-vs-conversion change; owner decides; "honest" label implies others dishonest — rename to mechanism-name
 - [Feedback: always push to main](feedback_always_push_to_main.md) — after every commit, push origin main; don't gate on the push
 - [Feedback: map records to members/profiles](feedback_map_records_to_members.md) — every public-record source maps to a member+profile, never standalone
 - [Feedback: first-party data independence](feedback_first_party_data_independence.md) — return max data independent of any downstream provider status
@@ -78,7 +79,9 @@
 - [Master growth plan 2026-07-11](project_growth_plan_2026_07_11.md) — 5 areas as one Acquire→Convert→Retain lifecycle; docs/design/2026-07-11-master-growth-plan.md
 - [Modular Profile (profile-as-product)](project_modular_profile.md) — report→Profile; modular My Profile (Protect/Promote, tiers, View As); 3-tab My Identity
 - [Identity Management product](project_identity_management.md) — 3-state /my-identity; exposure score; per-item suppression enforced in WSFY
+- [Exposure Graph (digital-footprint spine)](project_exposure_graph.md) — see/control everywhere a person appears; v1 built (seo); vendor-agnostic; Expose-axis wedge; Optery pricey→alts
 - [WSFY self-build](project_wsfy_self_build.md) — built Who's-Searching-For-You (BC has none); ingest+tiered reveal+affinity tease shipped; open: enrichment, auth-harden, opt-out
+- [DF monitoring loop closed](project_monitoring_loop.md) — optout-recheck cron (recheck-only, never `reappeared`) + subject_user_key email bridge + revived NotificationBell; reach via /activity + bell
 - [PersonSearch enrichment](project_personsearch_enrichment.md) — Enformion PersonSearch → member_enrichment relatives/past_locations → lights WSFY; blocker = retention rights (owner)
 - [Social presence enrichment](project_social_presence.md) — PDL+Gravatar getSocialPresence + /api/social-presence; experimenting, legal flags
 - [Signals augmentation](project_signals_augmentation.md) — presence=data-driven/emphasis=flow-driven; 3 viewer-lenses; getPersonSignals + 6-phase plan

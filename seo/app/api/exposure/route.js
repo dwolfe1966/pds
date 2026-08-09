@@ -13,6 +13,7 @@ import {
 import { getSuppressionState, hasMappedIdentity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
 import { getMonitorState } from '../../../lib/breachMonitorDb.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
+import { userKey } from '../../../lib/identityEventsDb.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -101,6 +102,8 @@ export async function POST(req) {
     return new Response(JSON.stringify({ error: 'identity_unverified', message: 'Claim and verify your identity to control your exposure.' }), { status: 403, headers });
   }
   const userId = String(body.userId);
+  // Bridge to the identity-events feed (re-check cron addresses members by sha256(email)). Stored as a hash.
+  const subjectUserKey = body.email ? userKey(body.email) : null;
   try {
     // Owner Voice — add/remove the owner's context on a record/exposure.
     if (body.action === 'annotate') {
@@ -125,15 +128,15 @@ export async function POST(req) {
       ok = await setNodeControl(body.nodeId, {
         subjectKey: String(body.userId), controlStatus: String(body.controlStatus),
         controlMethod: body.controlMethod || null, externalRef: body.externalRef || null,
-        eventType: body.eventType || 'control_changed', detail: body.detail || null,
+        subjectUserKey, eventType: body.eventType || 'control_changed', detail: body.detail || null,
       });
     } else {
       const id = await upsertNode({
         subjectKey: String(body.userId), surfaceType: String(body.surfaceType), sourceKey: String(body.sourceKey),
         foundStatus: 'found', severity: body.severity ?? 2, controlStatus: String(body.controlStatus),
-        controlMethod: body.controlMethod || 'manual', syncControl: true,
+        controlMethod: body.controlMethod || 'manual', subjectUserKey, syncControl: true,
       });
-      if (id) { await setNodeControl(id, { subjectKey: String(body.userId), controlStatus: String(body.controlStatus), controlMethod: body.controlMethod || 'manual', eventType: body.eventType || 'optout_submitted' }); ok = true; }
+      if (id) { await setNodeControl(id, { subjectKey: String(body.userId), controlStatus: String(body.controlStatus), controlMethod: body.controlMethod || 'manual', subjectUserKey, eventType: body.eventType || 'optout_submitted' }); ok = true; }
     }
     const nodes = await getNodesForSubject(String(body.userId));
     return new Response(JSON.stringify({ ok, nodes, summary: summarizeNodes(nodes) }), { status: 200, headers });
