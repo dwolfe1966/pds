@@ -368,6 +368,31 @@ function exposureUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'ex
 function optoutUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'optout'); }
 function historyUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'history'); }
 function referralUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'partner-referral'); }
+function protectionHistoryUrl() { return enrichUrl().replace(/member-enrichment\/?$/, 'protection-history'); }
+
+/** Persist today's Identity Protection Score snapshot (for the trend). Best-effort. */
+export async function recordProtectionSnapshot(score) {
+  const userId = currentUserId();
+  if (!userId || typeof score !== 'number') return;
+  try {
+    await fetch(protectionHistoryUrl(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...appKeyHeaders() },
+      body: JSON.stringify({ userId, score }),
+    });
+  } catch { /* ignore */ }
+}
+
+/** Fetch the protection-score trend (oldest→newest [{day, score}]). [] on any failure. */
+export async function fetchProtectionHistory() {
+  const userId = currentUserId();
+  if (!userId) return [];
+  try {
+    const res = await fetch(`${protectionHistoryUrl()}?userId=${encodeURIComponent(userId)}`, { headers: { ...appKeyHeaders() } });
+    if (!res.ok) return [];
+    const d = await res.json();
+    return Array.isArray(d.snapshots) ? d.snapshots : [];
+  } catch { return []; }
+}
 
 /** Rung 5 — connect the member to a vetted expungement attorney or credit specialist. Referral only
  *  (consent required). Contact details come from the mapped identity; we don't re-capture PII. */

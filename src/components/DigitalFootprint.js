@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut, fetchHistoryInsights, confirmReappearance, confirmRemoved } from '../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut, fetchHistoryInsights, confirmReappearance, confirmRemoved, recordProtectionSnapshot, fetchProtectionHistory } from '../services/memberEnrichment';
 import { getIdentityEvents } from '../services/identityMonitorService';
 import { useBrand } from '../services/brand';
 import OptOutGuide from './OptOutGuide';
@@ -158,6 +158,9 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const [browsing, setBrowsing] = useState(null); // "from your browsing" history insight (extension-fed)
   const [suspected, setSuspected] = useState({}); // sourceKey → suspected-reappearance event (extension-detected)
   const [referralTrack, setReferralTrack] = useState(null); // Rung 5 partner referral (expungement|credit)
+  const [history, setHistory] = useState([]); // protection-score trend [{day, score}]
+  const graphLoaded = useRef(false);
+  const snapRecorded = useRef(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [running, setRunning] = useState(false);
@@ -166,8 +169,9 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   useEffect(() => {
     let alive = true;
     fetchMappedIdentity().then((i) => { if (alive && i) setIdentity(i); });
-    fetchExposureGraph().then((g) => { if (alive && g) setGraph(g); });
+    fetchExposureGraph().then((g) => { if (alive && g) setGraph(g); graphLoaded.current = true; });
     fetchHistoryInsights().then((h) => { if (alive && h) setBrowsing(h); });
+    fetchProtectionHistory().then((h) => { if (alive && Array.isArray(h)) setHistory(h); });
     // Suspected reappearances (extension-detected) — surface them here too, not just in the bell. Exclude
     // ones the member already confirmed/dismissed (shared handled set). Keyed by sourceKey for the tracker.
     let email = '';
@@ -311,6 +315,20 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
 
   const scoreTone = protection.score >= 70 ? GREEN : protection.score >= 35 ? '#b45309' : '#b91c1c';
 
+  // Record today's snapshot once the graph has actually loaded (not the initial empty score), and fold it into
+  // the trend so the latest point reflects this visit.
+  useEffect(() => {
+    if (!graphLoaded.current || snapRecorded.current) return;
+    snapRecorded.current = true;
+    recordProtectionSnapshot(protection.score);
+    const today = new Date().toISOString().slice(0, 10);
+    setHistory((h) => [...h.filter((p) => String(p.day).slice(0, 10) !== today), { day: today, score: protection.score }]);
+  }, [protection.score]);
+
+  // Trend delta over the recorded window (for the "▲ N since you started" label).
+  const trend = history.map((p) => Number(p.score) || 0);
+  const trendDelta = trend.length >= 2 ? trend[trend.length - 1] - trend[0] : 0;
+
   // Mark the node opt-out-requested (tracked in the graph). The OPEN is the anchor's own navigation —
   // a real <a> reliably opens the opt-out page (window.open was getting popup-blocked; owner 2026-08-04).
   const markRequested = (it) => {
@@ -445,7 +463,15 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
           <div style={{ fontSize: 36, fontWeight: 800, color: scoreTone, lineHeight: 1 }}>{protection.score}<span style={{ fontSize: 16 }}>%</span></div>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', marginTop: 3 }}>Protection score</div>
         </div>
-        <div style={{ flex: 1, minWidth: 220 }}>
+        {trend.length >= 2 && (
+          <div style={{ textAlign: 'center' }}>
+            <Sparkline values={trend} color={scoreTone} />
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: trendDelta > 0 ? GREEN : trendDelta < 0 ? '#b91c1c' : '#9ca3af', marginTop: 2 }}>
+              {trendDelta > 0 ? `▲ +${trendDelta} since you started` : trendDelta < 0 ? `▼ ${trendDelta} since you started` : 'Trend'}
+            </div>
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ height: 8, borderRadius: 999, background: '#f3f4f6', overflow: 'hidden', marginBottom: 9 }}>
             <div style={{ width: `${protection.score}%`, height: '100%', background: scoreTone }} />
           </div>
@@ -685,4 +711,19 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
 
 function Dot({ c }) {
   return <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: c, marginRight: 2, verticalAlign: 'middle' }} aria-hidden="true" />;
+}
+
+// Tiny protection-score trend line (values are 0–100). Endpoint dot marks the current score.
+function Sparkline({ values, color = '#0d5d2f', width = 112, height = 30 }) {
+  if (!values || values.length < 2) return null;
+  const n = values.length;
+  const x = (i) => (i / (n - 1)) * (width - 2) + 1;
+  const y = (v) => height - 2 - (Math.max(0, Math.min(100, v)) / 100) * (height - 4);
+  const pts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" style={{ display: 'block' }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={x(n - 1)} cy={y(values[n - 1])} r="2.6" fill={color} />
+    </svg>
+  );
 }
