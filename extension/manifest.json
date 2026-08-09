@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "IDLookup Remove — opt-out assistant",
-  "version": "0.1.0",
-  "description": "Autofills data-broker opt-out forms with your details and walks you through each removal — in your own browser session. Your info never leaves your browser.",
+  "version": "1.0.0",
+  "description": "Autofills data-broker opt-out forms with your details, tracks each removal, and flags privacy risks on the pages you visit. Optional monitoring, with your consent.",
   "permissions": ["storage", "activeTab", "scripting"],
   "optional_permissions": ["history"],
   "host_permissions": [
@@ -13,9 +13,9 @@
   "action": {
     "default_popup": "popup.html",
     "default_title": "IDLookup Remove",
-    "default_icon": { "48": "icon48.png", "128": "icon128.png" }
+    "default_icon": { "16": "icon16.png", "32": "icon32.png", "48": "icon48.png", "128": "icon128.png" }
   },
-  "icons": { "48": "icon48.png", "128": "icon128.png" },
+  "icons": { "16": "icon16.png", "32": "icon32.png", "48": "icon48.png", "128": "icon128.png" },
   "content_scripts": [
     {
       "matches": ["https://www.idlookup.ai/*", "https://idlookup.ai/*", "https://idlookup.me/*"],
