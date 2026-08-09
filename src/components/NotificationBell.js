@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getIdentityEvents } from '../services/identityMonitorService';
-import { confirmReappearance } from '../services/memberEnrichment';
+import { confirmReappearance, confirmRemoved } from '../services/memberEnrichment';
 
 // Global notification bell — surfaces the member's identity-events stream (breach alerts, opt-out re-check
 // reminders, suspected reappearances) so an ABSENT user sees them on their next visit without hunting through
@@ -16,6 +16,7 @@ const HANDLED_KEY = 'idlNotifHandled'; // event ids the member has confirmed/dis
 const iconFor = (type) => {
   if (type === 'optout_recheck') return '🔁';
   if (type === 'reappearance_suspected') return '👀';
+  if (type === 'removal_verified_suspected') return '✅';
   if (type === 'breach_new' || type === 'breach_found') return '🔓';
   if (type === 'exposure' || type === 'new_record') return '🛡️';
   return '🔔';
@@ -58,9 +59,11 @@ const NotificationBell = () => {
 
   const onConfirm = async (e) => {
     const sk = e && e.data && e.data.sourceKey;
+    const site = (e.data && e.data.displayName) || 'that site';
+    const isRemoval = e.type === 'removal_verified_suspected';
     markHandled(e.id); // optimistic — remove the prompt immediately
-    setFlash(`Marked as back on ${(e.data && e.data.displayName) || 'that site'}. Re-submit from Digital Footprint.`);
-    if (sk) { try { await confirmReappearance(sk); } catch { /* best effort */ } }
+    setFlash(isRemoval ? `Marked removed on ${site}. We'll keep monitoring for re-listings.` : `Marked as back on ${site}. Re-submit from Digital Footprint.`);
+    if (sk) { try { await (isRemoval ? confirmRemoved(sk) : confirmReappearance(sk)); } catch { /* best effort */ } }
   };
   const onDismiss = (e) => { markHandled(e.id); setFlash(''); };
 
@@ -105,7 +108,8 @@ const NotificationBell = () => {
           ) : (
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, maxHeight: 360, overflowY: 'auto' }}>
               {visible.slice(0, 8).map((e) => {
-                const suspected = e.type === 'reappearance_suspected';
+                const isRemoval = e.type === 'removal_verified_suspected';
+                const suspected = e.type === 'reappearance_suspected' || isRemoval;
                 return (
                   <li key={e.id} style={{ display: 'flex', gap: 10, padding: '10px 14px', borderTop: '1px solid #f6f7f6' }}>
                     <span aria-hidden="true" style={{ fontSize: 16, flexShrink: 0 }}>{iconFor(e.type)}</span>
@@ -115,9 +119,9 @@ const NotificationBell = () => {
                       {suspected ? (
                         <div style={{ display: 'flex', gap: 8, marginTop: 7 }}>
                           <button type="button" onClick={() => onConfirm(e)}
-                            style={{ fontSize: 12, fontWeight: 800, color: '#fff', background: GREEN, border: 'none', borderRadius: 8, padding: '5px 11px', cursor: 'pointer' }}>Yes, I'm listed</button>
+                            style={{ fontSize: 12, fontWeight: 800, color: '#fff', background: isRemoval ? GREEN : '#b91c1c', border: 'none', borderRadius: 8, padding: '5px 11px', cursor: 'pointer' }}>{isRemoval ? 'Yes, removed' : "Yes, I'm listed"}</button>
                           <button type="button" onClick={() => onDismiss(e)}
-                            style={{ fontSize: 12, fontWeight: 700, color: '#4b5563', background: '#fff', border: '1px solid #d1d5db', borderRadius: 8, padding: '5px 11px', cursor: 'pointer' }}>Not there</button>
+                            style={{ fontSize: 12, fontWeight: 700, color: '#4b5563', background: '#fff', border: '1px solid #d1d5db', borderRadius: 8, padding: '5px 11px', cursor: 'pointer' }}>{isRemoval ? 'Not yet' : 'Not there'}</button>
                         </div>
                       ) : (
                         <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{tsOf(e) ? new Date(tsOf(e)).toLocaleDateString() : ''}</div>

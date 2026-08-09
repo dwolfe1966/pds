@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut, fetchHistoryInsights, confirmReappearance } from '../services/memberEnrichment';
+import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut, fetchHistoryInsights, confirmReappearance, confirmRemoved } from '../services/memberEnrichment';
 import { getIdentityEvents } from '../services/identityMonitorService';
 import { useBrand } from '../services/brand';
 import OptOutGuide from './OptOutGuide';
@@ -174,9 +174,10 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     if (email) getIdentityEvents(email, 50).then((events) => {
       if (!alive) return;
       const handled = readHandled();
+      const SUSPECT_TYPES = ['reappearance_suspected', 'removal_verified_suspected'];
       const map = {};
-      (events || []).filter((e) => e.type === 'reappearance_suspected' && !handled.has(e.id) && e.data && e.data.sourceKey)
-        .forEach((e) => { if (!map[e.data.sourceKey]) map[e.data.sourceKey] = { id: e.id, ...e.data }; });
+      (events || []).filter((e) => SUSPECT_TYPES.includes(e.type) && !handled.has(e.id) && e.data && e.data.sourceKey)
+        .forEach((e) => { if (!map[e.data.sourceKey]) map[e.data.sourceKey] = { id: e.id, type: e.type, ...e.data }; });
       setSuspected(map);
     });
     return () => { alive = false; };
@@ -243,13 +244,15 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     }).then((g) => { if (g && g.nodes) setGraph((prev) => ({ ...prev, nodes: g.nodes, summary: g.summary || prev.summary })); });
   };
 
-  // Member confirms a suspected reappearance is real → flip the node to 'reappeared' (the only authorized
-  // writer of that status). Dismiss = "not there" (false positive), just clears the prompt.
+  // Member confirms a suspected signal is real → flip the node (the only authorized writer of these states).
+  // Reappearance → 'reappeared'; completed removal → 'removed'. Dismiss = false positive, just clears it.
   const confirmSuspect = (sourceKey) => {
     const s = suspected[sourceKey]; if (s) markHandled(s.id);
+    const removal = s && s.type === 'removal_verified_suspected';
     setSuspected((m) => { const n = { ...m }; delete n[sourceKey]; return n; });
-    setOverrides((o) => ({ ...o, [sourceKey]: 'reappeared' }));
-    confirmReappearance(sourceKey).then((g) => { if (g && g.nodes) setGraph((prev) => ({ ...prev, nodes: g.nodes, summary: g.summary || prev.summary })); });
+    setOverrides((o) => ({ ...o, [sourceKey]: removal ? 'removed' : 'reappeared' }));
+    (removal ? confirmRemoved(sourceKey) : confirmReappearance(sourceKey))
+      .then((g) => { if (g && g.nodes) setGraph((prev) => ({ ...prev, nodes: g.nodes, summary: g.summary || prev.summary })); });
   };
   const dismissSuspect = (sourceKey) => {
     const s = suspected[sourceKey]; if (s) markHandled(s.id);
@@ -372,7 +375,9 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
             const label = reappeared ? 'Re-appeared' : done ? 'Removed' : 'Requested';
             const color = reappeared ? '#b91c1c' : done ? GREEN : '#92400e';
             const dueTxt = reappeared ? 'Re-submit now' : t.overdue ? 'Due for re-check' : (t.dueMs ? `Re-check ~${new Date(t.dueMs).toLocaleDateString()}` : 'Tracking');
-            const suspect = !reappeared && suspected[t.sourceKey]; // extension spotted a possible re-listing
+            const sus = suspected[t.sourceKey]; // extension in-session signal (present → re-listing / absent → removed)
+            const susRemoval = sus && sus.type === 'removal_verified_suspected';
+            const suspect = sus && !(sus.type === 'reappearance_suspected' && reappeared);
             return (
               <div key={t.sourceKey} style={{ borderTop: '1px solid #f3f4f6' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
@@ -383,11 +388,19 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
                     : <span style={{ flexShrink: 0, fontSize: 11, color: '#9ca3af' }}>{dueTxt}</span>}
                 </div>
                 {suspect && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '7px 10px', margin: '0 0 6px' }}>
-                    <span style={{ flex: 1, minWidth: 140, fontSize: 11.5, color: '#92400e' }}>👀 We may have spotted your listing here again — is it back?</span>
-                    <button type="button" onClick={() => confirmSuspect(t.sourceKey)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: '#fff', background: '#b91c1c', border: 'none', borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}>Yes, I'm listed</button>
-                    <button type="button" onClick={() => dismissSuspect(t.sourceKey)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#4b5563', background: '#fff', border: '1px solid #d1d5db', borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}>Not there</button>
-                  </div>
+                  susRemoval ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '7px 10px', margin: '0 0 6px' }}>
+                      <span style={{ flex: 1, minWidth: 140, fontSize: 11.5, color: '#166534' }}>✅ We didn't find your listing here after your opt-out — mark it removed?</span>
+                      <button type="button" onClick={() => confirmSuspect(t.sourceKey)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}>Yes, removed</button>
+                      <button type="button" onClick={() => dismissSuspect(t.sourceKey)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#4b5563', background: '#fff', border: '1px solid #d1d5db', borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}>Not yet</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '7px 10px', margin: '0 0 6px' }}>
+                      <span style={{ flex: 1, minWidth: 140, fontSize: 11.5, color: '#92400e' }}>👀 We may have spotted your listing here again — is it back?</span>
+                      <button type="button" onClick={() => confirmSuspect(t.sourceKey)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: '#fff', background: '#b91c1c', border: 'none', borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}>Yes, I'm listed</button>
+                      <button type="button" onClick={() => dismissSuspect(t.sourceKey)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#4b5563', background: '#fff', border: '1px solid #d1d5db', borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}>Not there</button>
+                    </div>
+                  )
                 )}
               </div>
             );

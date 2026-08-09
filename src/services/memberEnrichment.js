@@ -524,6 +524,14 @@ export async function confirmReappearance(sourceKey, surfaceType = 'data_broker'
   return setExposureControl({ sourceKey, surfaceType, controlStatus: 'reappeared', controlMethod: 'member_confirmed' });
 }
 
+/** Member confirms a SUSPECTED completed removal (the extension searched and found no listing) is real →
+ *  advance the node to 'removed'. Like confirmReappearance, only the member's click asserts it — an absence
+ *  in-session only suspects. Brokers only. */
+export async function confirmRemoved(sourceKey, surfaceType = 'data_broker') {
+  if (!sourceKey) return null;
+  return setExposureControl({ sourceKey, surfaceType, controlStatus: 'removed', controlMethod: 'member_confirmed' });
+}
+
 export async function fetchSuppression() {
   const userId = currentUserId();
   const empty = { activityHidden: false, hiddenFields: [], dispositions: {} };

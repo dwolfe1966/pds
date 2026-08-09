@@ -66,20 +66,43 @@
     }
     return null;
   }
+  // Did the member actually search themselves here? Absence of a listing only means "removed" if a search
+  // for this person ran — otherwise a bare homepage visit would read as removed. Evidence: name in the
+  // URL/title, a search box carrying the name, or an explicit "no results" message.
+  function searchedForMember(id) {
+    const first = (id.firstName || '').toLowerCase().trim();
+    const last = (id.lastName || '').toLowerCase().trim();
+    if (last.length < 3) return null;
+    const hay = (location.href + ' ' + (document.title || '')).toLowerCase();
+    if (hay.includes(last) && (!first || hay.includes(first))) return 'url';
+    let inInput = false;
+    document.querySelectorAll('input[type=text],input[type=search],input:not([type])').forEach((i) => {
+      const v = (i.value || '').toLowerCase(); if (v && v.includes(last)) inInput = true;
+    });
+    if (inInput) return 'input';
+    const body = (document.body && document.body.textContent || '').toLowerCase();
+    if (body.length > 200 && /no results|no records|0 results|couldn.?t find|no matches|nothing found/.test(body)) return 'no_results';
+    return null;
+  }
+
   let detection = null; // computed once, reused by the panel note
   function maybeReportReappearance(userId) {
     if (window.__idlReported) return;
     const candidate = sldToSourceKey(location.host);
     if (!Array.isArray(managedKeys) || managedKeys.indexOf(candidate) === -1) return; // not a managed broker
     detection = detectListing(identity);
-    if (!detection) return;
+    const base = { sourceKey: candidate, host: location.host, email: identity.email || '' };
+    let payload = null;
+    if (detection) {
+      payload = { ...base, signal: 'present', matched: detection };
+    } else {
+      // Listing not found — only report as a possible REMOVAL if a search for this person actually ran.
+      const context = searchedForMember(identity);
+      if (context) payload = { ...base, signal: 'absent', context };
+    }
+    if (!payload) return;
     window.__idlReported = true;
-    try {
-      chrome.runtime.sendMessage({
-        type: 'reportDetection', userId,
-        payload: { sourceKey: candidate, host: location.host, matched: detection, email: identity.email || '' },
-      });
-    } catch { /* ignore */ }
+    try { chrome.runtime.sendMessage({ type: 'reportDetection', userId, payload }); } catch { /* ignore */ }
   }
 
   function pageSignals() {

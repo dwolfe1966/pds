@@ -39,11 +39,21 @@ export async function POST(req) {
     return new Response(JSON.stringify({ error: 'identity_unverified' }), { status: 403, headers });
   }
 
-  // Defense in depth: a name-only match can't drive a signal — require a 2nd identifier (the extension
-  // already enforces element-level co-occurrence, but never trust the client alone).
+  // Two symmetric signals from the in-session scan:
+  //   'present' — the member's listing was FOUND (element-level match) → suspect a REAPPEARANCE.
+  //   'absent'  — the member searched themselves and the listing was NOT found → suspect a completed REMOVAL.
+  const signal = body.signal === 'absent' ? 'absent' : 'present';
   const m = (body.matched && typeof body.matched === 'object') ? body.matched : {};
-  const strong = !!m.name && !!(m.city || m.state || m.age || m.phone);
-  if (!strong) return new Response(JSON.stringify({ ok: true, ignored: 'weak_match' }), { status: 200, headers });
+  if (signal === 'present') {
+    // Defense in depth: a name-only match can't drive a signal — require a 2nd identifier (the extension
+    // enforces element-level co-occurrence, but never trust the client alone).
+    const strong = !!m.name && !!(m.city || m.state || m.age || m.phone);
+    if (!strong) return new Response(JSON.stringify({ ok: true, ignored: 'weak_match' }), { status: 200, headers });
+  } else if (!body.context) {
+    // Absence is only meaningful if we know a search for THIS person actually happened (name in URL/input,
+    // or an explicit "no results"). Without that, a bare homepage visit would falsely read as "removed".
+    return new Response(JSON.stringify({ ok: true, ignored: 'no_search_context' }), { status: 200, headers });
+  }
 
   try {
     // sourceKey must be a real catalog source (host→slug guess from the extension), and we only act on an
@@ -53,24 +63,38 @@ export async function POST(req) {
     if (!row) return new Response(JSON.stringify({ ok: true, ignored: 'unknown_source' }), { status: 200, headers });
 
     const nodes = await getNodeBySource(String(userId), String(sourceKey));
-    const node = nodes.find((n) => REMOVAL_STATES.has(n.control_status));
-    if (!node) return new Response(JSON.stringify({ ok: true, suspected: false }), { status: 200, headers });
-
     const name = row.display_name || sourceKey;
-    const evt = {
-      type: 'reappearance_suspected',
-      title: `You may be listed on ${name} again`,
-      detail: `We spotted what looks like your listing on ${name} after your removal. Re-check it and, if it's back, re-submit your opt-out.`,
-      data: { sourceKey: String(sourceKey), displayName: name, optOutUrl: row.opt_out_url || null, source: 'extension' },
-      // Once per removal episode: last_changed only moves when the member re-acts, so repeated visits while
-      // still in the same removal state collapse to one alert.
-      dedupKey: `reappear_suspect:${sourceKey}:${String(node.last_changed).slice(0, 10)}`,
-    };
+
+    let evt = null;
+    let node = null;
+    if (signal === 'present') {
+      // Reappearance: relevant to any removal-state node (requested/removed/confirmed).
+      node = nodes.find((n) => REMOVAL_STATES.has(n.control_status));
+      if (node) evt = {
+        type: 'reappearance_suspected',
+        title: `You may be listed on ${name} again`,
+        detail: `We spotted what looks like your listing on ${name} after your removal. Re-check it and, if it's back, re-submit your opt-out.`,
+        data: { sourceKey: String(sourceKey), displayName: name, optOutUrl: row.opt_out_url || null, source: 'extension' },
+        dedupKey: `reappear_suspect:${sourceKey}:${String(node.last_changed).slice(0, 10)}`,
+      };
+    } else {
+      // Completion: only relevant while the removal is still pending or had re-appeared (not already 'removed').
+      node = nodes.find((n) => n.control_status === 'optout_requested' || n.control_status === 'reappeared');
+      if (node) evt = {
+        type: 'removal_verified_suspected',
+        title: `You may no longer be listed on ${name}`,
+        detail: `We didn't find your listing on ${name} after your opt-out. If that looks right, mark it removed — we'll keep monitoring for re-listings.`,
+        data: { sourceKey: String(sourceKey), displayName: name, optOutUrl: row.opt_out_url || null, source: 'extension' },
+        dedupKey: `removed_suspect:${sourceKey}:${String(node.last_changed).slice(0, 10)}`,
+      };
+    }
+    if (!node || !evt) return new Response(JSON.stringify({ ok: true, suspected: false }), { status: 200, headers });
+
     let logged = false;
     if (node.subject_user_key) logged = await addIdentityEventByUserKey(node.subject_user_key, evt);
     else if (body.email) logged = await addIdentityEvent(body.email, evt);
 
-    return new Response(JSON.stringify({ ok: true, suspected: true, logged }), { status: 200, headers });
+    return new Response(JSON.stringify({ ok: true, suspected: true, signal, logged }), { status: 200, headers });
   } catch {
     return new Response(JSON.stringify({ error: 'detection failed' }), { status: 500, headers });
   }
