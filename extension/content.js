@@ -89,13 +89,18 @@
   function maybeReportReappearance(userId) {
     if (window.__idlReported) return;
     const candidate = sldToSourceKey(location.host);
-    if (!Array.isArray(managedKeys) || managedKeys.indexOf(candidate) === -1) return; // not a managed broker
+    // App-initiated sweep = the web app navigated us here on purpose (re-check OR discovery scan), name in the
+    // URL. That's explicit consent to scan THIS broker even if it isn't one the member has opted out of yet —
+    // which is what lets a discovery scan find NEW exposure. Organic visits stay scoped to managed brokers only
+    // (no passive scanning of random sites).
+    const appInitiated = /(^|[#&])idl-recheck\b/.test(location.hash);
+    const managed = Array.isArray(managedKeys) && managedKeys.indexOf(candidate) !== -1;
+    if (!managed && !appInitiated) return;
     detection = detectListing(identity);
     const base = { sourceKey: candidate, host: location.host, email: identity.email || '' };
     let payload = null;
-    // App-initiated sweep (we navigated here with the name in the URL) — so name-in-URL is NOT independent
-    // evidence of a real results page. Require the broker's OWN "no results" text before calling it removed.
-    const appInitiated = /(^|[#&])idl-recheck\b/.test(location.hash);
+    // Because app-initiated pages carry the name in the URL, name-in-URL is NOT independent evidence of a real
+    // results page — require the broker's OWN "no results" text before calling it removed.
     if (detection) {
       payload = { ...base, signal: 'present', matched: detection };
     } else {

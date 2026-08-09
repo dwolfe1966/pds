@@ -22,4 +22,10 @@ self.IDL_SEARCH_URLS = {
   searchpeoplefree: 'https://www.searchpeoplefree.com/find/{first}-{last}/{state}',
   clustrmaps: 'https://clustrmaps.com/persons/{first}-{last}',
   nuwber: 'https://nuwber.com/search?name={first} {last}&state={state}',
+  radaris: 'https://radaris.com/p/{first}/{last}/',
+  advancedbackgroundchecks: 'https://www.advancedbackgroundchecks.com/names/{first}-{last}',
+  cyberbackgroundchecks: 'https://www.cyberbackgroundchecks.com/people/{first}-{last}',
+  peekyou: 'https://www.peekyou.com/{first}_{last}',
+  mylife: 'https://www.mylife.com/{first}-{last}',
+  peoplefinders: 'https://www.peoplefinders.com/name/{first}-{last}',
 };

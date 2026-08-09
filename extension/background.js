@@ -80,7 +80,7 @@ async function reportDetection(userId, payload) {
 // in a BACKGROUND tab, marked #idl-recheck so the content script scans it and reports present/absent. No
 // popup-blocker issue (extension-opened). Best-effort; the member can close the tabs. Bounded so we never
 // open a wall of tabs.
-const RECHECK_MAX = 6;
+const RECHECK_MAX = 10;
 async function recheckSources(sourceKeys) {
   const SEARCH = self.IDL_SEARCH_URLS || {};
   const { idlIdentity } = await chrome.storage.local.get('idlIdentity');

@@ -366,6 +366,19 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     setFlash('Re-checking your brokers in background tabs — we’ll flag anything found. You can close the tabs when they finish.');
   };
 
+  // Discovery scan — find WHERE the member is actually exposed. Sweeps ALL data brokers (not just opted-out
+  // ones) via the extension: it opens each broker's search page in the member's own browser (their IP/session
+  // beats bot walls, no vendor, no server cost) and reports listings it finds → the graph fills with real
+  // exposure. We poll the graph briefly so discovered nodes surface without a manual refresh.
+  const scanForExposure = () => {
+    const keys = Array.from(new Set(items.filter((it) => it.surfaceType === 'data_broker').map((it) => it.sourceKey)));
+    if (!keys.length) return;
+    try { window.postMessage({ source: 'idlookup-web', type: 'recheck', sourceKeys: keys }, '*'); } catch { /* ignore */ }
+    setFlash('Scanning data brokers in your browser to find where you appear — new exposures will show here as they’re found. You can close the tabs that open.');
+    let n = 0;
+    const iv = setInterval(() => { n += 1; fetchExposureGraph().then((g) => { if (g) setGraph(g); }); if (n >= 5) clearInterval(iv); }, 12000);
+  };
+
   const removeBtn = (it) => (
     <a href={it.url} target="_blank" rel="noopener noreferrer" onClick={() => markRequested(it)}
       style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: GREEN, textDecoration: 'none', background: 'none', border: '1px solid #bbf7d0', borderRadius: 999, padding: '5px 12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -549,6 +562,15 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         </button>
         <span style={{ fontSize: 12.5, color: '#6b7280' }}>We submit the opt-outs on your behalf, as your authorized agent, and track each one.</span>
       </div>
+      {hasExtension && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '0 0 6px' }}>
+          <button type="button" onClick={scanForExposure}
+            style={{ background: '#fff', color: GREEN, border: '1px solid #bbf7d0', borderRadius: 10, padding: '9px 16px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>
+            🔎 Find where I’m exposed
+          </button>
+          <span style={{ fontSize: 12, color: '#6b7280' }}>Scans data brokers in your own browser to surface listings we haven’t detected yet.</span>
+        </div>
+      )}
       {flash && <div style={{ fontSize: 12.5, fontWeight: 600, color: flash.startsWith('Claim') ? '#b45309' : GREEN, margin: '0 0 6px' }}>{flash}</div>}
 
       {/* Removal progress — headline proof the loop is working: confirmed vs pending vs re-appeared. */}

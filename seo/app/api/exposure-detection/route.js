@@ -10,9 +10,9 @@
 //
 // Gated on app key + a CLAIMED identity. Only acts when the member has an ACTIVE removal for that source
 // (extension already scopes reporting to opted-out sources; this is defense in depth). Vendor-agnostic.
-import { hasExposureDb, getNodeBySource, getSourceRegistry } from '../../../lib/exposure-graph-db.mjs';
+import { hasExposureDb, getNodeBySource, getSourceRegistry, upsertNode } from '../../../lib/exposure-graph-db.mjs';
 import { hasMappedIdentity, hasSearchDb } from '../../../lib/search-activity-db.mjs';
-import { addIdentityEvent, addIdentityEventByUserKey } from '../../../lib/identityEventsDb.mjs';
+import { addIdentityEvent, addIdentityEventByUserKey, userKey } from '../../../lib/identityEventsDb.mjs';
 import { checkAppKey, unauthorized } from '../../../lib/app-auth.mjs';
 
 export const runtime = 'nodejs';
@@ -70,13 +70,27 @@ export async function POST(req) {
     if (signal === 'present') {
       // Reappearance: relevant to any removal-state node (requested/removed/confirmed).
       node = nodes.find((n) => REMOVAL_STATES.has(n.control_status));
-      if (node) evt = {
-        type: 'reappearance_suspected',
-        title: `You may be listed on ${name} again`,
-        detail: `We spotted what looks like your listing on ${name} after your removal. Re-check it and, if it's back, re-submit your opt-out.`,
-        data: { sourceKey: String(sourceKey), displayName: name, optOutUrl: row.opt_out_url || null, source: 'extension' },
-        dedupKey: `reappear_suspect:${sourceKey}:${String(node.last_changed).slice(0, 10)}`,
-      };
+      if (node) {
+        evt = {
+          type: 'reappearance_suspected',
+          title: `You may be listed on ${name} again`,
+          detail: `We spotted what looks like your listing on ${name} after your removal. Re-check it and, if it's back, re-submit your opt-out.`,
+          data: { sourceKey: String(sourceKey), displayName: name, optOutUrl: row.opt_out_url || null, source: 'extension' },
+          dedupKey: `reappear_suspect:${sourceKey}:${String(node.last_changed).slice(0, 10)}`,
+        };
+      } else {
+        // DISCOVERY: found on a broker with no active removal → record the exposure so the footprint reflects
+        // where the member actually appears. The strong element-level match (name + a 2nd identifier in one
+        // listing card) is the safeguard; found_status='found', control preserved, medium confidence (a
+        // first-party in-session scan, not a vendor). This is the "find where I'm exposed" payoff.
+        const already = nodes.find((n) => n.found_status === 'found');
+        const id = await upsertNode({
+          subjectKey: String(userId), surfaceType: row.surface_type || 'data_broker', sourceKey: String(sourceKey),
+          foundStatus: 'found', confidence: 'medium', severity: row.weight || 2,
+          subjectUserKey: body.email ? userKey(body.email) : null,
+        });
+        return new Response(JSON.stringify({ ok: true, discovered: !!id && !already, exposed: true }), { status: 200, headers });
+      }
     } else {
       // Completion: only relevant while the removal is still pending or had re-appeared (not already 'removed').
       node = nodes.find((n) => n.control_status === 'optout_requested' || n.control_status === 'reappeared');
