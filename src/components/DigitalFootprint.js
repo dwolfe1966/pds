@@ -182,6 +182,23 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   }, [items]);
   const itemsByKey = useMemo(() => { const m = {}; items.forEach((it) => { m[it.sourceKey] = it; }); return m; }, [items]);
 
+  // Monitoring: every requested/removed source, with a re-check due date from its re-list window (relist_days).
+  // Removals lapse silently otherwise — this is the honest "loop": schedule + prompt re-verification, and
+  // surface reappearances. (Automated in-session detection is the extension follow-on.)
+  const tracked = useMemo(() => {
+    const relist = {}; (graph.registry || []).forEach((r) => { relist[r.source_key] = r.relist_days; });
+    const now = Date.now();
+    return items.map((it) => {
+      const cs = overrides[it.sourceKey] || (it.node && it.node.control_status);
+      if (!['optout_requested', 'removed', 'optout_confirmed', 'reappeared'].includes(cs)) return null;
+      const changedMs = it.node && it.node.last_changed ? new Date(it.node.last_changed).getTime() : null;
+      const days = relist[it.sourceKey];
+      const dueMs = (changedMs && days) ? changedMs + days * 86400000 : null;
+      return { ...it, cs, dueMs, overdue: dueMs ? dueMs < now : false };
+    }).filter(Boolean).sort((a, b) => (a.cs === 'reappeared' ? -1 : b.cs === 'reappeared' ? 1 : (a.overdue === b.overdue ? 0 : a.overdue ? -1 : 1)));
+  }, [items, graph.registry, overrides]);
+  const dueCount = tracked.filter((t) => t.overdue || t.cs === 'reappeared').length;
+
   const exposedCount = graph.summary?.exposed ?? 0;
   const controlledCount = graph.summary?.controlled ?? 0;
   const catalogSize = items.filter((it) => it.surfaceType !== 'idlookup').length;
@@ -294,6 +311,33 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         <span style={{ fontSize: 12.5, color: '#6b7280' }}>We submit the opt-outs on your behalf, as your authorized agent, and track each one.</span>
       </div>
       {flash && <div style={{ fontSize: 12.5, fontWeight: 600, color: flash.startsWith('Claim') ? '#b45309' : GREEN, margin: '0 0 6px' }}>{flash}</div>}
+
+      {/* Removal tracker — status + re-check cadence per requested removal (brokers re-list, so we remind). */}
+      {tracked.length > 0 && (
+        <div style={{ border: '1px solid #e5e7eb', background: '#fff', borderRadius: 12, padding: '14px 16px', marginTop: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#111827' }}>Removal tracker</div>
+            {dueCount > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 999, padding: '2px 9px' }}>{dueCount} need a re-check</span>}
+          </div>
+          <div style={{ fontSize: 12, color: '#6b7280', margin: '2px 0 8px' }}>We track each request and remind you to re-verify — brokers often re-list over time.</div>
+          {tracked.map((t) => {
+            const reappeared = t.cs === 'reappeared';
+            const done = t.cs === 'removed' || t.cs === 'optout_confirmed';
+            const label = reappeared ? 'Re-appeared' : done ? 'Removed' : 'Requested';
+            const color = reappeared ? '#b91c1c' : done ? GREEN : '#92400e';
+            const dueTxt = reappeared ? 'Re-submit now' : t.overdue ? 'Due for re-check' : (t.dueMs ? `Re-check ~${new Date(t.dueMs).toLocaleDateString()}` : 'Tracking');
+            return (
+              <div key={t.sourceKey} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: '1px solid #f3f4f6' }}>
+                <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#374151', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color }}>{label}</span>
+                {(reappeared || t.overdue) && t.url
+                  ? <button type="button" onClick={() => setGuideItem(t)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, background: 'none', border: '1px solid #bbf7d0', borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>Re-check →</button>
+                  : <span style={{ flexShrink: 0, fontSize: 11, color: '#9ca3af' }}>{dueTxt}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* From your browsing — real signal from the sites the member actually visits (extension history). */}
       {browsing && ((browsing.brokers && browsing.brokers.length) || (browsing.socials && browsing.socials.length) || (browsing.breaches && browsing.breaches.length)) ? (

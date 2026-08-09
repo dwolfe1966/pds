@@ -94,10 +94,19 @@
     const hasId = !!(identity && (identity.name || identity.firstName || identity.email));
     const wrap = document.createElement('div');
     wrap.id = 'idl-optout-panel';
+    // In-session monitoring: if the member's own name still appears on this broker page, they're likely
+    // still listed — the honest re-check that beats the anti-bot wall (it's their own browser).
+    let stillListed = false;
+    try {
+      const nm = (identity && identity.name || '').trim().toLowerCase();
+      if (recipe && nm && nm.length > 4 && document.body && document.body.innerText) stillListed = document.body.innerText.toLowerCase().includes(nm);
+    } catch { /* ignore */ }
+
     if (recipe) {
       wrap.innerHTML = `
         <div class="idl-hd"><span class="idl-logo">IDLookup</span><button class="idl-x" title="Hide">×</button></div>
         <div class="idl-title">Remove yourself from ${esc(recipe.name)}</div>
+        ${stillListed ? `<div class="idl-note" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">⚠ Your name appears on this page — you may still be listed here.</div>` : ''}
         ${recipe.verification ? `<div class="idl-meta">🔐 ${esc(recipe.verification)}</div>` : ''}
         ${recipe.note ? `<div class="idl-note">💡 ${esc(recipe.note)}</div>` : ''}
         ${hasId
