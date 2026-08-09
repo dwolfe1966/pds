@@ -17,8 +17,70 @@
   window.__idlPanelMounted = true;
 
   let identity = {};
-  try { chrome.storage.local.get('idlIdentity', (r) => { identity = (r && r.idlIdentity) || {}; mount(); }); }
-  catch { mount(); }
+  let managedKeys = [];
+  try {
+    chrome.storage.local.get(['idlIdentity', 'idlManagedSourceKeys', 'idlUserId'], (r) => {
+      identity = (r && r.idlIdentity) || {};
+      managedKeys = (r && r.idlManagedSourceKeys) || [];
+      maybeReportReappearance(r && r.idlUserId);
+      mount();
+    });
+  } catch { mount(); }
+
+  // ── Reappearance detection (in-session, first-party) ────────────────────────
+  // Only for brokers the member has ACTIVELY opted out of (managedKeys), and only on an ELEMENT-LEVEL match
+  // (their name co-occurring with a 2nd identifier inside one listing card) — a page-wide name match is
+  // meaningless here because the broker echoes the searched name. We SUSPECT, the backend never asserts.
+  const sldToSourceKey = (host) => {
+    const h = String(host || '').toLowerCase().replace(/^www\./, '');
+    const parts = h.split('.').filter(Boolean);
+    return parts.length >= 2 ? parts[parts.length - 2] : h;
+  };
+  const digitsOnly = (s) => String(s || '').replace(/\D/g, '');
+  function detectListing(id) {
+    const first = (id.firstName || '').toLowerCase().trim();
+    const last = (id.lastName || '').toLowerCase().trim();
+    const full = (id.name || '').toLowerCase().trim();
+    const city = (id.city || '').toLowerCase().trim();
+    const state = (id.state || '').toLowerCase().trim();
+    const age = id.age ? String(id.age) : '';
+    const phone = digitsOnly(id.phone);
+    const lastOk = last.length >= 3;
+    const fullOk = full.length >= 5;
+    if (!lastOk && !fullOk) return null;
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const stateRe = state.length >= 2 ? new RegExp('\\b' + esc(state) + '\\b') : null;
+    const ageRe = age ? new RegExp('\\b' + age + '\\b') : null;
+    let scanned = 0;
+    for (const el of document.querySelectorAll('article,li,tr,section,div')) {
+      if (scanned++ > 4000) break;
+      const txt = (el.textContent || '').toLowerCase();
+      if (txt.length < 6 || txt.length > 800) continue; // card-sized only, not the whole page
+      const hasName = (fullOk && txt.includes(full)) || (first && lastOk && txt.includes(first) && txt.includes(last));
+      if (!hasName) continue;
+      const mCity = !!(city.length >= 3 && txt.includes(city));
+      const mState = !!(stateRe && stateRe.test(txt));
+      const mAge = !!(ageRe && ageRe.test(txt));
+      const mPhone = !!(phone.length >= 7 && digitsOnly(txt).includes(phone));
+      if (mCity || mState || mAge || mPhone) return { name: true, city: mCity, state: mState, age: mAge, phone: mPhone };
+    }
+    return null;
+  }
+  let detection = null; // computed once, reused by the panel note
+  function maybeReportReappearance(userId) {
+    if (window.__idlReported) return;
+    const candidate = sldToSourceKey(location.host);
+    if (!Array.isArray(managedKeys) || managedKeys.indexOf(candidate) === -1) return; // not a managed broker
+    detection = detectListing(identity);
+    if (!detection) return;
+    window.__idlReported = true;
+    try {
+      chrome.runtime.sendMessage({
+        type: 'reportDetection', userId,
+        payload: { sourceKey: candidate, host: location.host, matched: detection, email: identity.email || '' },
+      });
+    } catch { /* ignore */ }
+  }
 
   function pageSignals() {
     let hasPassword = false, hasEmailField = false;
@@ -94,13 +156,10 @@
     const hasId = !!(identity && (identity.name || identity.firstName || identity.email));
     const wrap = document.createElement('div');
     wrap.id = 'idl-optout-panel';
-    // In-session monitoring: if the member's own name still appears on this broker page, they're likely
-    // still listed — the honest re-check that beats the anti-bot wall (it's their own browser).
-    let stillListed = false;
-    try {
-      const nm = (identity && identity.name || '').trim().toLowerCase();
-      if (recipe && nm && nm.length > 4 && document.body && document.body.innerText) stillListed = document.body.innerText.toLowerCase().includes(nm);
-    } catch { /* ignore */ }
+    // In-session monitoring: element-level match (name + a 2nd identifier in one listing card) — the honest
+    // re-check that beats the anti-bot wall (it's the member's own browser). `detection` is computed above;
+    // fall back to a fresh element scan if the storage callback hadn't run yet.
+    const stillListed = !!(recipe && (detection || detectListing(identity)));
 
     if (recipe) {
       wrap.innerHTML = `

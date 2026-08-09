@@ -13,6 +13,7 @@ const SEEN_KEY = 'idlNotifSeenAt';
 // Icon per identity-event type. Re-check reminders and breach alerts are the two live producers today.
 const iconFor = (type) => {
   if (type === 'optout_recheck') return '🔁';
+  if (type === 'reappearance_suspected') return '👀';
   if (type === 'breach_new' || type === 'breach_found') return '🔓';
   if (type === 'exposure' || type === 'new_record') return '🛡️';
   return '🔔';

@@ -299,6 +299,17 @@ export async function getNodesForSubject(subjectKey) {
   catch { return []; }
 }
 
+/** Nodes for one (subject, source) — used by extension reappearance detection to find an active removal.
+ *  Removal-state nodes first (that's the row a "still listed?" signal acts on). */
+export async function getNodeBySource(subjectKey, sourceKey) {
+  if (!sql || !subjectKey || !sourceKey) return [];
+  await ensureTables();
+  try {
+    return await sql`SELECT * FROM exposure_node WHERE subject_key = ${subjectKey} AND source_key = ${sourceKey}
+      ORDER BY (control_status IN ('optout_requested','removed','optout_confirmed')) DESC, last_changed DESC`;
+  } catch { return []; }
+}
+
 export async function logExposureEvent(e) {
   if (!sql || !e || !e.subjectKey || !e.eventType) return;
   await ensureTables();

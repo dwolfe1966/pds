@@ -3,6 +3,7 @@
 self.IDL_CONFIG = {
   appKey: 'JQV5HXGO80RIGE9XRSPI',
   historyUrl: 'https://idlookup.me/api/history',
+  detectionUrl: 'https://idlookup.me/api/exposure-detection',
   privacyUrl: 'https://idlookup.me/extension-privacy',
   consentVersion: '2026-08-08',
 };

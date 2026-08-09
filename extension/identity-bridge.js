@@ -38,5 +38,13 @@
     if (identity.name || identity.firstName || identity.email) {
       chrome.storage.local.set({ idlIdentity: identity });
     }
+    // Managed sources = the brokers the member has actively opted out of (written by the web app's Digital
+    // Footprint when it loads the exposure graph). Reappearance detection ONLY runs/reports for these — so
+    // nothing about a random broker visit ever leaves the browser. Consent-scoped by construction.
+    try {
+      const raw = localStorage.getItem('idlManagedSourceKeys');
+      const keys = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(keys)) chrome.storage.local.set({ idlManagedSourceKeys: keys.filter(Boolean).map(String) });
+    } catch { /* ignore */ }
   } catch { /* storage unavailable or not logged in */ }
 })();

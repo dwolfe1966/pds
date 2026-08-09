@@ -202,6 +202,16 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   }, [items, graph.registry, overrides]);
   const dueCount = tracked.filter((t) => t.overdue || t.cs === 'reappeared').length;
 
+  // Publish the brokers the member is actively managing (opted out of) to localStorage, so the browser
+  // extension can SCOPE reappearance detection to only these sources — nothing about any other broker visit
+  // ever leaves the browser. Broker surfaces only (that's where in-session detection applies).
+  useEffect(() => {
+    try {
+      const keys = tracked.filter((t) => t.surfaceType === 'data_broker').map((t) => t.sourceKey);
+      localStorage.setItem('idlManagedSourceKeys', JSON.stringify(Array.from(new Set(keys))));
+    } catch { /* ignore */ }
+  }, [tracked]);
+
   const exposedCount = graph.summary?.exposed ?? 0;
   const controlledCount = graph.summary?.controlled ?? 0;
   const catalogSize = items.filter((it) => it.surfaceType !== 'idlookup').length;

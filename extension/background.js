@@ -63,6 +63,19 @@ async function deleteHistory(userId) {
   try { await fetch(`${CFG.historyUrl}?userId=${encodeURIComponent(userId)}`, { method: 'DELETE', headers: { 'X-App-Key': CFG.appKey } }); } catch { /* ignore */ }
 }
 
+// Reappearance detection report — the content script found the member's listing on a broker they've opted
+// out of. POSTs to the (host-permission-granted, so CORS-exempt) detection endpoint, which SUSPECTS a
+// reappearance and logs a member-confirmable event. Best-effort, fire-and-forget.
+async function reportDetection(userId, payload) {
+  try {
+    const res = await fetch(CFG.detectionUrl, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Key': CFG.appKey },
+      body: JSON.stringify({ userId, ...payload }),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     try {
@@ -70,6 +83,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const uid = (msg && msg.userId) || stored.idlUserId;
       if (msg && msg.type === 'enableHistory' && uid) { await enableHistory(uid); sendResponse({ ok: true }); }
       else if (msg && msg.type === 'deleteHistory' && uid) { await deleteHistory(uid); sendResponse({ ok: true }); }
+      else if (msg && msg.type === 'reportDetection' && uid && msg.payload) { const ok = await reportDetection(uid, msg.payload); sendResponse({ ok }); }
       else sendResponse({ ok: false, error: 'no_user_or_type' });
     } catch (e) { sendResponse({ ok: false, error: String((e && e.message) || e) }); }
   })();
