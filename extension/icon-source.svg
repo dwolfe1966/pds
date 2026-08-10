@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128">
+  <!-- IDLookup Remove store icon: green tile, white shield, keyhole -->
+  <rect x="0" y="0" width="128" height="128" rx="28" ry="28" fill="#0d5d2f"/>
+  <!-- White protection shield (flat, rounded top corners, tapered point) -->
+  <path d="M42,34 H86 Q92,34 92,40 V62 C92,83 80,98 64,106 C48,98 36,83 36,62 V40 Q36,34 42,34 Z" fill="#ffffff"/>
+  <!-- Keyhole cut through the shield (shows green background) -->
+  <circle cx="64" cy="58" r="11" fill="#0d5d2f"/>
+  <path d="M59,60 H69 L72,84 H56 Z" fill="#0d5d2f"/>
+</svg>
