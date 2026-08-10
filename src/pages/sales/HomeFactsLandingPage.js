@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation, Navigate } from 'react-router-dom';
 import VerticalIntentLanding from './VerticalIntentLanding';
 
 // Dedicated HomeFacts partner landing — /name/landing/homefacts.
@@ -48,5 +49,20 @@ const HOMEFACTS_CFG = {
   finalList: ['Criminal & offender records', 'Address history', 'Relatives & associates', 'Court & vital records'],
 };
 
-const HomeFactsLandingPage = () => <VerticalIntentLanding cfg={HOMEFACTS_CFG} />;
+// Smart routing: the HomeFacts experience is built for PRIMED traffic (a person passed in). If the core name
+// params are missing (case-insensitively — any alias), there's nothing to prime, so fall through to the
+// proven general funnel (/name/landing/v3), preserving the query string (shn/tracking) and the HomeFacts
+// co-brand so the downstream results still read IDLookup.AI × HomeFacts.
+const HomeFactsLandingPage = () => {
+  const location = useLocation();
+  const lc = {};
+  for (const [k, v] of new URLSearchParams(location.search).entries()) { const lk = k.toLowerCase(); if (v && lc[lk] === undefined) lc[lk] = v; }
+  const first = lc.firstname || lc.fn || lc.first || '';
+  const last = lc.lastname || lc.ln || lc.last || '';
+  if (!first.trim() || !last.trim()) {
+    try { sessionStorage.setItem('idlPartnerBrand', 'homefacts'); } catch { /* ignore */ }
+    return <Navigate to={`/name/landing/v3${location.search}`} replace />;
+  }
+  return <VerticalIntentLanding cfg={HOMEFACTS_CFG} />;
+};
 export default HomeFactsLandingPage;
