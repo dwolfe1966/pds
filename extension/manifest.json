@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "IDLookup Remove — opt-out assistant",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Autofills data-broker opt-out forms, tracks each removal, and flags privacy risks as you browse — in your own browser.",
   "permissions": ["storage", "activeTab", "scripting"],
   "optional_permissions": ["history"],

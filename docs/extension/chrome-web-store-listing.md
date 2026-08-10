@@ -1,9 +1,9 @@
-# Chrome Web Store submission — IDLookup Remove (v1.0.0)
+# Chrome Web Store submission — IDLookup Remove (v1.0.1)
 
 Everything below is copy-paste ready for the Web Store dashboard. Target visibility: **UNLISTED**
 (link-only early access) — hand the link out, gather feedback, flip to Public later.
 
-**Package to upload:** `docs/extension/idlookup-remove-1.0.0.zip`
+**Package to upload:** `docs/extension/idlookup-remove-1.0.1.zip`
 
 ---
 
@@ -13,10 +13,10 @@ Everything below is copy-paste ready for the Web Store dashboard. Target visibil
 3. (If asked) verify the `idlookup.me` / `idlookup.ai` domains so listed URLs are trusted.
 
 ## Upload + fill the listing
-1. **New item** → upload `idlookup-remove-1.0.0.zip`.
+1. **New item** → upload `idlookup-remove-1.0.1.zip`.
 2. Paste the fields below.
 3. **Visibility → Unlisted.**
-4. Submit for review. (Expect a longer review — this item uses broad host access + optional history; that's normal.)
+4. Submit for review. (Host access is scoped to a fixed broker/social list — no broad host access; the optional history permission may still add some review time.)
 
 ---
 

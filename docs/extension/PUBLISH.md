@@ -1,10 +1,10 @@
-# Publish the browser extension — IDLookup Remove v1.0.0 (Unlisted)
+# Publish the browser extension — IDLookup Remove v1.0.1 (Unlisted)
 
 The single guide to publish. **Do the steps here; paste the field copy from
 [`chrome-web-store-listing.md`](./chrome-web-store-listing.md).** Target visibility: **Unlisted** (link-only
 early access — hand out the link, gather feedback, flip to Public later).
 
-**Upload package:** `docs/extension/idlookup-remove-1.0.0.zip` (already built; rebuild command at the bottom
+**Upload package:** `docs/extension/idlookup-remove-1.0.1.zip` (already built; rebuild command at the bottom
 if you change anything under `extension/`).
 
 Includes: autofill opt-out forms, removal tracking, in-session reappearance/removal detection, "Re-check all,"
@@ -32,7 +32,7 @@ Format: **1280×800** or **640×400** PNG/JPG. Aim for 3:
 - [ ] Don't show a real SSN/DOB/card in any shot (name + city is fine). *(Optional promo tile 440×280.)*
 
 ## 3 · Create the item
-- [ ] Dev console → **Add new item** → upload `docs/extension/idlookup-remove-1.0.0.zip`.
+- [ ] Dev console → **Add new item** → upload `docs/extension/idlookup-remove-1.0.1.zip`.
 
 ## 4 · Fill the listing — copy verbatim from `chrome-web-store-listing.md`
 - [ ] **Store listing**: name, summary, description, category = Productivity, language = English; upload the
@@ -40,14 +40,15 @@ Format: **1280×800** or **640×400** PNG/JPG. Aim for 3:
 - [ ] Homepage `https://idlookup.me/extension` · support `privacy@idlookup.ai`.
 - [ ] **Privacy** tab: policy URL `https://idlookup.me/extension-privacy`.
 - [ ] Paste the **single-purpose** statement.
-- [ ] Paste each **permission justification** — storage, activeTab, scripting, host permissions, `<all_urls>`,
-      history. (Unchanged; no new permissions were added.)
+- [ ] Paste each **permission justification** — storage, activeTab, scripting, host permissions, content-script
+      host access (the fixed broker/social list), history.
 - [ ] Complete the **data-use disclosures** + tick the **3 certifications** (all true for us).
 
 ## 5 · Set visibility + submit
 - [ ] **Visibility → Unlisted.**
-- [ ] **Submit for review.** Expect a longer review — broad host access + optional `history` are "sensitive."
-      Our live privacy policy + in-product consent already cover Limited Use, so this is expected, not a blocker.
+- [ ] **Submit for review.** Host access is now scoped to a fixed broker/social list (no `<all_urls>`), which
+      clears the earlier "Broad Host Permissions" flag. The optional `history` permission is still "sensitive,"
+      so expect some review time; our privacy policy + in-product consent cover Limited Use.
 
 ## 6 · After it's approved
 - [ ] Copy the Unlisted store URL.
@@ -61,7 +62,7 @@ Format: **1280×800** or **640×400** PNG/JPG. Aim for 3:
 ### File map
 | What | Where |
 |---|---|
-| Upload package | `docs/extension/idlookup-remove-1.0.0.zip` |
+| Upload package | `docs/extension/idlookup-remove-1.0.1.zip` |
 | Field copy to paste | `docs/extension/chrome-web-store-listing.md` |
 | Source (load-unpacked / rebuild) | `extension/` |
 | Privacy policy (live) | https://idlookup.me/extension-privacy |
@@ -69,7 +70,7 @@ Format: **1280×800** or **640×400** PNG/JPG. Aim for 3:
 
 ### Rebuild the zip after any `extension/` change
 ```
-cd extension && rm -f ../docs/extension/idlookup-remove-1.0.0.zip && zip -q ../docs/extension/idlookup-remove-1.0.0.zip \
+cd extension && rm -f ../docs/extension/idlookup-remove-1.0.1.zip && zip -q ../docs/extension/idlookup-remove-1.0.1.zip \
   manifest.json background.js config.js content.js identity-bridge.js \
   popup.html popup.js panel.css recipes.js signals.js icon16.png icon32.png icon48.png icon128.png
 ```
