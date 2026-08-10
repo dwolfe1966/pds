@@ -12,7 +12,7 @@ import { syncBreach } from '../../services/identityMonitorService';
 import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import DlScanVerify from '../../components/DlScanVerify';
 import DigitalFootprint from '../../components/DigitalFootprint';
-import IdentityDetailsCard from '../../components/IdentityDetailsCard';
+import BrowserAssistantTab from '../../components/BrowserAssistantTab';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
 import { getLatestBillingZip, getLatestBillingState } from '../../utils/orderFinancials';
@@ -227,7 +227,7 @@ const AccountPage = () => {
   // (Overview / My Profile / Digital Footprint).
   useEffect(() => {
     const sub = searchParams.get('sub');
-    if (sub && ['profile', 'modular', 'footprint'].includes(sub)) setIdentitySubTab(sub);
+    if (sub && ['profile', 'modular', 'footprint', 'extension'].includes(sub)) setIdentitySubTab(sub);
   }, [searchParams]);
 
   // Follow ?tab= changes (e.g., the mobile hamburger sub-nav links to /account?tab=X while we're
@@ -1226,7 +1226,7 @@ const AccountPage = () => {
           {/* Desktop subnav — on mobile these tabs live in the hamburger menu instead. */}
           <style>{`@media (max-width: 768px){ [data-identity-subnav]{ display: none !important; } }`}</style>
           <div data-identity-subnav style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e5e7eb', marginBottom: 20, flexWrap: 'wrap' }}>
-            {[{ k: 'profile', label: 'Overview' }, { k: 'modular', label: 'My Profile' }, { k: 'footprint', label: 'Digital Footprint' }].map((t) => (
+            {[{ k: 'profile', label: 'Overview' }, { k: 'modular', label: 'My Profile' }, { k: 'footprint', label: 'Digital Footprint' }, { k: 'extension', label: 'Browser Assistant' }].map((t) => (
               <button key={t.k} type="button" onClick={() => setIdentitySubTab(t.k)}
                 style={{ background: 'none', border: 'none', borderBottom: `2px solid ${identitySubTab === t.k ? '#0d5d2f' : 'transparent'}`, color: identitySubTab === t.k ? '#0d5d2f' : '#6b7280', fontSize: 14.5, fontWeight: 700, padding: '9px 14px', cursor: 'pointer', marginBottom: -1 }}>
                 {t.label}
@@ -1240,7 +1240,9 @@ const AccountPage = () => {
               ? 'Your identity protection at a glance — your score, what’s exposed, and quick actions.'
               : identitySubTab === 'modular'
                 ? 'Curate what you show and hide what you don’t — protect or promote each part of your profile, and preview exactly how others see you.'
-                : 'Everywhere you appear online, and how to take control.'}
+                : identitySubTab === 'extension'
+                  ? 'The browser assistant that autofills removals and watches for your info re-appearing — plus your saved details for removals.'
+                  : 'Everywhere you appear online, and how to take control.'}
           </p>
 
           {/* Incarceration/court records are MERGED into MyProfileModularLive's "Court & Criminal" module.
@@ -1259,13 +1261,14 @@ const AccountPage = () => {
 
           {identitySubTab === 'footprint' && (
             <>
-              <IdentityDetailsCard />
               <DigitalFootprint onManage={() => setIdentitySubTab('profile')} />
               <div style={{ marginTop: 16 }}>
                 <ProtectionScoreRing />
               </div>
             </>
           )}
+
+          {identitySubTab === 'extension' && <BrowserAssistantTab />}
 
           {identitySubTab === 'profile' && (
           <>

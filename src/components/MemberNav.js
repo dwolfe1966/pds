@@ -52,6 +52,7 @@ const MemberNav = () => {
     { sub: 'profile', label: 'Overview' },
     { sub: 'modular', label: 'My Profile' },
     { sub: 'footprint', label: 'Digital Footprint' },
+    { sub: 'extension', label: 'Browser Assistant' },
   ];
   const currentIdentitySub = (() => {
     if (location.pathname !== '/my-identity') return null;
