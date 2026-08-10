@@ -1,8 +1,10 @@
 ---
 name: project_homefacts_traffic
 description: homefacts.com partner traffic test (70k visitors) — 4 landing experiences for public-records/background-check/sex-offender intents
-metadata:
+metadata: 
+  node_type: memory
   type: project
+  originSessionId: c559d3ef-73d6-4bd2-ae57-b22ea4c6528f
 ---
 
 **Test (owner 2026-07-23):** capture ~70k visitors from **homefacts.com** (a PARTNER — confirmed) into our
@@ -37,5 +39,7 @@ Ties to [[project_life_events_vertical]] (NSOPW/criminal), [[project_signals_aug
 [[project_adunit_funnel_review]] (promise→payoff), Check-Your-Date pilot (same safety report/teaser).
 
 **⚠️ STRATEGIC PARTNERSHIP (2026-07-29) — supersedes the "traffic test" framing below.** The 70k traffic-switch was DESIGNED + funnels BUILT but is **NOT deployed/live** — turning it on is part of the ask. Now pursuing a deeper deal with **Nations Info Corp (NIC)** — HomeFacts's owner since 2022 (bought from ATTOM/RealtyTrac), David = NIC founder + a major investor in PDS/IDLookup (⚠️ NIC does NOT own IDLookup — never imply it; pitch on strategic value + economics only). Deliverables: `docs/partnerships/homefacts-{strategy.md, deck-slides.md, cover-note.md}` + a published deck artifact. Thesis: HomeFacts is a **people-search engine in a real-estate costume** — #1 organic = sex-offender/person-name; it brokers that traffic to TruthFinder+Intelius (PeopleConnect, **non-exclusive** per owner) for a per-lead fee. We propose: run/**rebuild** its SEO (off the 2013 PHP-5.3 stack) + convert traffic to our OWNED funnel (full LTV vs affiliate sliver) + merge place×person data. Verified facts: **Moz DA 47**, ~2,100 referring domains, domain **est. 1996**, **~135K visits/mo declining** (SimilarWeb), 10.3M indexed pages. TruthFinder/Intelius are OUR competitors, **not NIC's — Zillow is** (real estate). Credibility anchor: David Wolfe built MyLife.com SEO → ~20M/mo Google + 4M Bing (2014–18). Rev-share kept flexible. Owner GST direction: facts straight → sell synergies/combined value → detailed plan → "we could basically rebuild homefacts."
+
+**Dedicated HomeFacts landing (2026-08-10, David Teng @ NIC integration):** `/name/landing/homefacts` = `HomeFactsLandingPage` → `VerticalIntentLanding cfg={HOMEFACTS_CFG}` (variant 'homefacts', flow/teaser 'publicRecords', autoPrime, safety+records copy). Link owner gives HomeFacts: `idlookup.ai/name/landing/homefacts?shn=<BC token>&firstName=<>&lastName=<>&state=<>` (owner gets real shn from BC; owner manages consumer builds/deploy). Params: VerticalIntentLanding now reads KEYS CASE-INSENSITIVELY (lc-map `qp()` helper) + aliases (fn/firstname/first, ln/lastname/last, mn/middlename/middle, state/st, city, age) — no casing assumptions. State: `normalizeState` assumes 2-letter, falls back to parsing full names ("California"→CA). **Co-branded SERP header:** `cfg.partnerBrand:'homefacts'` → VerticalIntentLanding persists sessionStorage `idlPartnerBrand` → SearchResultsPage header shows "{brand} × HomeFacts" + "In partnership with HomeFacts" (also falls back to `attribution.shnName/partner` matching /homefacts/i). NOT deployed (owner uploads bundle). The older `/records/*` funnels (homefacts-so/bg/pr) still exist for the 3-intent split; the dedicated route is the single branded experience David requested.
 
 **shN per URL (owner req, 2026-07-23):** placeholder registry keys in campaignRegistry.js — `homefacts-so` / `homefacts-bg` / `homefacts-pr` (partner=Homefacts, channel=the intent, landing.route null). Verified: ?shn=homefacts-so → attribution.partner=Homefacts + GTM partnerName/partnerChannel. Swap for real BC shConIds when minted. FINAL URLs carry both `type` (fine placement) + `shn` (experience). Teaser fixes 2026-07-23: split mashed firstName, city→teaser subject, teaser renders on ERROR (loader carries subject on error), background/publicRecords lead with real record when found.

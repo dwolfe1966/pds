@@ -74,13 +74,21 @@ const VerticalIntentLanding = ({ cfg }) => {
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const V = cfg.variant;
 
-  const [pFirst, pMiddle] = splitFirstMiddle(queryParams.get('fn') || queryParams.get('firstName') || '', queryParams.get('mn') || queryParams.get('middleName') || '');
+  // Accept whatever casing/alias a partner (e.g. HomeFacts) passes — KEY lookup is case-insensitive (no
+  // assumption about how they capitalize), and we accept common aliases; first present wins.
+  const lcParams = useMemo(() => {
+    const m = {};
+    for (const [k, v] of queryParams.entries()) { const lk = k.toLowerCase(); if (v && m[lk] === undefined) m[lk] = v; }
+    return m;
+  }, [queryParams]);
+  const qp = (...keys) => { for (const k of keys) { const v = lcParams[k.toLowerCase()]; if (v) return v; } return ''; };
+  const [pFirst, pMiddle] = splitFirstMiddle(qp('fn', 'firstname', 'first'), qp('mn', 'middlename', 'middle'));
   const [firstName, setFirstName] = useState(pFirst);
   const [middleName, setMiddleName] = useState(pMiddle);
-  const [lastName, setLastName] = useState(queryParams.get('ln') || queryParams.get('lastName') || '');
-  const [city, setCity] = useState(queryParams.get('city') || '');
-  const [state, setState] = useState(normalizeState(queryParams.get('state') || ''));
-  const [age, setAge] = useState(queryParams.get('age') || '');
+  const [lastName, setLastName] = useState(qp('ln', 'lastname', 'last'));
+  const [city, setCity] = useState(qp('city'));
+  const [state, setState] = useState(normalizeState(qp('state', 'st')));
+  const [age, setAge] = useState(qp('age'));
   const [step, setStep] = useState('name');
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
@@ -91,6 +99,13 @@ const VerticalIntentLanding = ({ cfg }) => {
 
   const stepIndex = getStepIndex(step);
   useEffect(() => { window.scrollTo(0, 0); }, [step]);
+
+  // Persist the partner brand (e.g. HomeFacts) so the downstream results page can co-brand its header.
+  useEffect(() => {
+    try {
+      if (cfg.partnerBrand) sessionStorage.setItem('idlPartnerBrand', cfg.partnerBrand);
+    } catch { /* ignore */ }
+  }, [cfg.partnerBrand]);
 
   useEffect(() => {
     let timer;
