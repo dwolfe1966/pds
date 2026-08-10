@@ -131,6 +131,22 @@ export const CAMPAIGN_REGISTRY = {
     optOut:  true,                              // optout: yes
   },
 
+  // HomeFacts — REAL BC shConId (David Teng @ NIC, 2026-08-10). The partner links root at
+  // idlookup.ai?shn=6a7a2af6…&firstName=&lastName=&state= — this entry boot-redirects "/" to the dedicated
+  // co-branded /name/landing/homefacts experience (auto-primes on name; param-less traffic falls through to
+  // v3 inside HomeFactsLandingPage). partner:'HomeFacts' also drives the results co-brand via attribution.
+  // No awaitTheme (not an A/B). If BC ever sets a theme.landing for this shN, it must be homefacts to win.
+  '6a7a2af6d8e615c6c6562e8b:*': {
+    identity: {
+      shnName: 'HomeFacts', brand: 'IDL', partner: 'HomeFacts', channel: 'People Search',
+      purpose: 'HomeFacts place→person traffic → co-branded records/safety funnel',
+    },
+    landing: { route: '/name/landing/homefacts' },
+    search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' },
+    detail:  { variant: 'a' },
+    optOut:  true,
+  },
+
   // ── Homefacts partner traffic (records intent, 2026-07-23). One PLACEHOLDER shN per records experience so
   // BC + GTM attribute each URL distinctly (partner=Homefacts, channel=the intent). The partner links go
   // DIRECTLY to /records/* so landing.route stays null (no boot redirect). Finer placement within an intent
