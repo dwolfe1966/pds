@@ -17,6 +17,7 @@ import { saveDeclaredIdentity } from '../../services/identityProfile';
 import { useCampaign } from '../../context/CampaignContext';
 import styles from './SearchResultsPage.module.css';
 import { useBrand } from '../../services/brand';
+import { getPartner, partnerKeyFromAttribution } from '../../services/partnerRegistry';
 import { useFunnelTheme } from '../../hooks/useFunnelTheme';
 
 /**
@@ -28,14 +29,16 @@ const SalesSearchResultsPage = () => {
   const brand = useBrand();
   const theme = useFunnelTheme(); // funnel palette carried from the landing; null = green
   const campaign = useCampaign(); // bug #51: shN drives thin-match vs no-records
-  // Partner co-branding: set by the partner landing (idlPartnerBrand) or the campaign attribution (shn).
-  const partnerBrand = (() => {
+  // Partner co-branding: the funnel persists the partner key (idlPartnerBrand); fall back to the shn
+  // attribution. Registry-driven so any registered partner co-brands, not just HomeFacts.
+  const partner = (() => {
     try {
-      if (sessionStorage.getItem('idlPartnerBrand') === 'homefacts') return 'homefacts';
+      const key = sessionStorage.getItem('idlPartnerBrand');
+      const byKey = getPartner(key);
+      if (byKey) return byKey;
       const attr = sessionStorage.getItem('attribution.shnName') || sessionStorage.getItem('attribution.partner') || '';
-      if (/homefacts/i.test(attr)) return 'homefacts';
-    } catch { /* ignore */ }
-    return null;
+      return getPartner(partnerKeyFromAttribution(attr));
+    } catch { return null; }
   })();
   const location = useLocation();
   const navigate = useNavigate();
@@ -354,18 +357,18 @@ const SalesSearchResultsPage = () => {
       {/* Minimal self-chrome header — matches the landing wizard. Co-brands for partner traffic (e.g. HomeFacts). */}
       <header style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#0d5d2f', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
         <a href="/" style={{ fontSize: '1.15rem', fontWeight: 800, color: theme && theme.onDark ? theme.accent : '#ffffff', textDecoration: 'none', letterSpacing: '-0.01em' }}>{brand.name}</a>
-        {partnerBrand === 'homefacts' && (
+        {partner && (
           <>
             <span aria-hidden="true" style={{ color: theme && theme.onDark ? theme.line : 'rgba(255,255,255,0.5)', fontWeight: 600 }}>×</span>
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: theme && theme.onDark ? theme.ink : '#ffffff', letterSpacing: '-0.01em' }}>HomeFacts</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: theme && theme.onDark ? theme.ink : '#ffffff', letterSpacing: '-0.01em' }}>{partner.name}</span>
           </>
         )}
       </header>
-      {/* HomeFacts partner ribbon — reinforces the co-brand + the continuity from their site. */}
-      {partnerBrand === 'homefacts' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.5rem 1.25rem', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.35, color: '#1f3a5f', background: '#eef2f7', borderBottom: '1px solid #dbe4ef' }}>
-          <span aria-hidden="true">🏠</span>
-          <span>Continuing your search from <b style={{ fontWeight: 800 }}>HomeFacts</b><span className={styles.ribbonDetail}> — full people &amp; neighborhood-safety records, powered by <b style={{ fontWeight: 800 }}>IDLookup.AI</b></span>.</span>
+      {/* Partner ribbon — reinforces the co-brand + continuity from the partner's site (registry-driven). */}
+      {partner && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.5rem 1.25rem', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.35, color: partner.color, background: partner.colorSoft, borderBottom: `1px solid ${partner.colorLine}` }}>
+          {partner.icon && <span aria-hidden="true">{partner.icon}</span>}
+          <span>{partner.ribbon}<span className={styles.ribbonDetail}>{partner.ribbonDetail}</span>.</span>
         </div>
       )}
       <div className={styles.contentContainer} style={theme ? { background: theme.surface, border: theme.onDark ? `1px solid ${theme.line}` : undefined } : undefined}>
