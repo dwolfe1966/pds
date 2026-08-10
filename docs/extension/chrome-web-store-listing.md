@@ -91,12 +91,13 @@ it into the extension (one-way, local) and sends the user's consented monitoring
 API. No other sites are contacted by the background service.
 ```
 
-**Broad content-script match (<all_urls>)**
+**Content-script host access (a fixed list of ~30 data-broker + social sites)**
 ```
-The assistant must be able to run on whatever data-broker or people-search site the user visits, in order
-to recognize a known broker, offer to autofill its opt-out form, and — only for brokers the user has
-already opted out of — flag if their listing has re-appeared. Access is granted once and can be revoked
-per-site by the user at any time.
+The content script runs ONLY on a specified list of known data-broker / people-search sites (Spokeo,
+Whitepages, TruePeopleSearch, etc.) plus the major social networks — never on all sites. On a broker site it
+recognizes the broker, offers to autofill that site's own opt-out form, and (only for brokers the user has
+opted out of) flags if their listing has re-appeared; on a social site it offers a public-visibility tip.
+The full list is enumerated in the manifest's content_scripts matches.
 ```
 
 **history (optional — requested at runtime, not on install)**
