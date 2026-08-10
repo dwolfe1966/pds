@@ -116,3 +116,8 @@
   line-height: var(--line-height-relaxed);
 }
 
+
+/* HomeFacts partner ribbon: hide the long tail on mobile → just "Continuing your search from HomeFacts." */
+@media (max-width: 600px) {
+  .ribbonDetail { display: none; }
+}

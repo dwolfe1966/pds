@@ -365,7 +365,7 @@ const SalesSearchResultsPage = () => {
       {partnerBrand === 'homefacts' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.5rem 1.25rem', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.35, color: '#1f3a5f', background: '#eef2f7', borderBottom: '1px solid #dbe4ef' }}>
           <span aria-hidden="true">🏠</span>
-          <span>Continuing your search from <b style={{ fontWeight: 800 }}>HomeFacts</b> — full people &amp; neighborhood-safety records, powered by <b style={{ fontWeight: 800 }}>IDLookup.AI</b>.</span>
+          <span>Continuing your search from <b style={{ fontWeight: 800 }}>HomeFacts</b><span className={styles.ribbonDetail}> — full people &amp; neighborhood-safety records, powered by <b style={{ fontWeight: 800 }}>IDLookup.AI</b></span>.</span>
         </div>
       )}
       <div className={styles.contentContainer} style={theme ? { background: theme.surface, border: theme.onDark ? `1px solid ${theme.line}` : undefined } : undefined}>
