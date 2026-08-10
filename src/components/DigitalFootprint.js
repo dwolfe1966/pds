@@ -5,6 +5,7 @@ import { getIdentityEvents } from '../services/identityMonitorService';
 import { useBrand } from '../services/brand';
 import OptOutGuide from './OptOutGuide';
 import PartnerReferralModal from './PartnerReferralModal';
+import BreachRemediation from './BreachRemediation';
 import FoundationalSources from './FoundationalSources';
 import { FOUNDATIONAL, FOUNDATIONAL_ACTION_COUNT } from '../services/foundationalProviders';
 
@@ -158,6 +159,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const [browsing, setBrowsing] = useState(null); // "from your browsing" history insight (extension-fed)
   const [suspected, setSuspected] = useState({}); // sourceKey → suspected-reappearance event (extension-detected)
   const [referralTrack, setReferralTrack] = useState(null); // Rung 5 partner referral (expungement|credit)
+  const [breachItem, setBreachItem] = useState(null); // breach remediation modal
   const [history, setHistory] = useState([]); // protection-score trend [{day, score}]
   const graphLoaded = useRef(false);
   const snapRecorded = useRef(false);
@@ -377,6 +379,14 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
     setFlash('Scanning data brokers in your browser to find where you appear — new exposures will show here as they’re found. You can close the tabs that open.');
     let n = 0;
     const iv = setInterval(() => { n += 1; fetchExposureGraph().then((g) => { if (g) setGraph(g); }); if (n >= 5) clearInterval(iv); }, 12000);
+  };
+
+  // Breach "secured" — self-reported (we can't verify a password change). Marks the breach node controlled
+  // (control_status 'hidden' → green/controlled) so it drops off the exposed list.
+  const markSecured = (it) => {
+    setOverrides((o) => ({ ...o, [it.sourceKey]: 'hidden' }));
+    return setExposureControl({ nodeId: it.node && it.node.id, sourceKey: it.sourceKey, surfaceType: 'breach', controlStatus: 'hidden', controlMethod: 'self_secured' })
+      .then((g) => { if (g && g.nodes) setGraph((prev) => ({ ...prev, nodes: g.nodes, summary: g.summary || prev.summary })); });
   };
 
   const removeBtn = (it) => (
@@ -692,11 +702,16 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
                     <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={it.name}>{it.name}</span>
                     {oc && <span style={{ display: 'block', fontSize: 10.5, color: oc.tone, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{oc.label}</span>}
                   </span>
-                  {c.key === 'ours'
-                    ? <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>{mapped ? 'Manage' : 'Claim'}</button>
-                    : (!oc || oc.verb)
+                  {(() => {
+                    const controlled = ['hidden', 'removed', 'optout_confirmed'].includes(overrides[it.sourceKey] || (it.node && it.node.control_status));
+                    if (c.key === 'ours') return <button type="button" onClick={manage} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: '#fff', background: GREEN, border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>{mapped ? 'Manage' : 'Claim'}</button>;
+                    if (c.key === 'breach') return controlled
+                      ? <span style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN }}>✓ Secured</span>
+                      : <button type="button" onClick={() => setBreachItem(it)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Secure →</button>;
+                    return (!oc || oc.verb)
                       ? <button type="button" onClick={() => setGuideItem(it)} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 700, color: GREEN, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{(oc && oc.verb) || 'Remove'} →</button>
-                      : null}
+                      : null;
+                  })()}
                 </div>
                 );
               })}
@@ -737,6 +752,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         </div>
       </div>
       {referralTrack && <PartnerReferralModal track={referralTrack} onClose={() => setReferralTrack(null)} />}
+      {breachItem && <BreachRemediation item={breachItem} onClose={() => setBreachItem(null)} onSecured={markSecured} />}
 
       {/* Per-provider prepare-&-prefill guide (friction ladder rungs 1–2). */}
       {guideItem && (
