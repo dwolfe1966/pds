@@ -352,18 +352,13 @@ const SalesSearchResultsPage = () => {
     <main className={styles.main} style={theme ? { background: theme.pageBg, minHeight: '100vh' } : undefined}>
       {onboarding && <OnboardingReveal person={onboarding.person} onDone={onboarding.onDone} variant={getFlow() || flow || 'general'} />}
       {/* Minimal self-chrome header — matches the landing wizard. Co-brands for partner traffic (e.g. HomeFacts). */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#0d5d2f', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <a href="/" style={{ fontSize: '1.15rem', fontWeight: 800, color: theme && theme.onDark ? theme.accent : '#ffffff', textDecoration: 'none', letterSpacing: '-0.01em' }}>{brand.name}</a>
-          {partnerBrand === 'homefacts' && (
-            <>
-              <span aria-hidden="true" style={{ color: theme && theme.onDark ? theme.line : 'rgba(255,255,255,0.5)', fontWeight: 600 }}>×</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: theme && theme.onDark ? theme.ink : '#ffffff', letterSpacing: '-0.01em' }}>HomeFacts</span>
-            </>
-          )}
-        </span>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '0.85rem 1.25rem', background: theme && theme.onDark ? theme.surface : '#0d5d2f', borderBottom: theme && theme.onDark ? `1px solid ${theme.line}` : 'none' }}>
+        <a href="/" style={{ fontSize: '1.15rem', fontWeight: 800, color: theme && theme.onDark ? theme.accent : '#ffffff', textDecoration: 'none', letterSpacing: '-0.01em' }}>{brand.name}</a>
         {partnerBrand === 'homefacts' && (
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: theme && theme.onDark ? theme.muted : 'rgba(255,255,255,0.82)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>In partnership with HomeFacts</span>
+          <>
+            <span aria-hidden="true" style={{ color: theme && theme.onDark ? theme.line : 'rgba(255,255,255,0.5)', fontWeight: 600 }}>×</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: theme && theme.onDark ? theme.ink : '#ffffff', letterSpacing: '-0.01em' }}>HomeFacts</span>
+          </>
         )}
       </header>
       <div className={styles.contentContainer} style={theme ? { background: theme.surface, border: theme.onDark ? `1px solid ${theme.line}` : undefined } : undefined}>
