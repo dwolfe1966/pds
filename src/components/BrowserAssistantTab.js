@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import IdentityDetailsCard from './IdentityDetailsCard';
 import { fetchHistoryInsights } from '../services/memberEnrichment';
 import { getIdentityEvents } from '../services/identityMonitorService';
+import { extensionInstall } from '../services/browserEnv';
 
 const GREEN = '#0d5d2f';
 const EXT_URL = 'https://idlookup.me/extension'; // extension landing → Chrome Web Store when published
@@ -19,12 +21,14 @@ const EXT_EVENT = { reappearance_suspected: '👀', removal_verified_suspected: 
  * removals (the form moved here from Digital Footprint).
  */
 export default function BrowserAssistantTab() {
+  const navigate = useNavigate();
   const [ver, setVer] = useState(extVersion);
   const [insights, setInsights] = useState(null);
   const [events, setEvents] = useState([]);
 
   const email = (() => { try { const u = JSON.parse(localStorage.getItem('user') || 'null'); return (u && u.email) || ''; } catch { return ''; } })();
   const active = !!ver;
+  const install = extensionInstall(EXT_URL); // browser-aware: supported + CTA, or an honest fallback
 
   useEffect(() => {
     let alive = true;
@@ -53,13 +57,22 @@ export default function BrowserAssistantTab() {
           </div>
           <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 800, padding: '5px 12px', borderRadius: 999, background: active ? '#f0fdf4' : '#f3f4f6', color: active ? GREEN : '#6b7280', border: `1px solid ${active ? '#bbf7d0' : '#e5e7eb'}` }}>
             <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: active ? GREEN : '#9ca3af' }} />
-            {active ? `Active${ver && ver !== '1' ? ` · v${ver}` : ''}` : 'Not installed'}
+            {active ? `Active${ver && ver !== '1' ? ` · v${ver}` : ''}` : install.statusLabel}
           </span>
         </div>
         {!active && (
           <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <a href={EXT_URL} target="_blank" rel="noopener noreferrer" style={{ background: GREEN, color: '#fff', textDecoration: 'none', borderRadius: 9, padding: '10px 18px', fontSize: 14, fontWeight: 800 }}>Add to Chrome →</a>
-            <span style={{ fontSize: 12.5, color: '#6b7280' }}>Free · works in your browser · nothing runs until you turn it on.</span>
+            {install.cta && (
+              <a href={install.cta.url} target="_blank" rel="noopener noreferrer" style={{ background: GREEN, color: '#fff', textDecoration: 'none', borderRadius: 9, padding: '10px 18px', fontSize: 14, fontWeight: 800 }}>{install.cta.label}</a>
+            )}
+            {install.supported
+              ? <span style={{ fontSize: 12.5, color: '#6b7280' }}>Free · works in your browser · nothing runs until you turn it on.</span>
+              : (
+                <>
+                  <span style={{ fontSize: 12.5, color: '#6b7280', maxWidth: 420, lineHeight: 1.45 }}>{install.note}</span>
+                  <button type="button" onClick={() => navigate('/my-identity?sub=footprint')} style={{ background: '#fff', color: GREEN, border: '1px solid #bbf7d0', borderRadius: 9, padding: '9px 15px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' }}>Use guided removals →</button>
+                </>
+              )}
           </div>
         )}
       </div>
