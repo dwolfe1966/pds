@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
@@ -28,7 +28,7 @@ function mapBookingRow(rec, strength) {
     disposition: [cleanReleaseStatus(rec.releaseStatus, rec.recordType), rec.facility].filter(Boolean).join(' · ') || null,
   };
 }
-import { enrichFromReport } from '../../services/memberEnrichment';
+import { enrichFromReport, getMappedIdentity } from '../../services/memberEnrichment';
 import { captureProfileView } from '../../services/searchActivity';
 import { track } from '../../services/trackingService';
 
@@ -244,8 +244,12 @@ const SearchResultDetailPage = () => {
   let extractError = null;
   try { data = report ? extractAll(report) : null; } catch (e) { extractError = e; }
   // Report renders as the modular Profile (others mode, paid tier → full detail, no data loss). The
-  // exhaustive grid stays available via a "Full details" toggle.
+  // exhaustive grid stays available via a "Full details" toggle. DEFAULT: someone looking at a report of
+  // SOMEONE ELSE defaults to 'details' (they came for the full record); viewing your OWN record keeps the
+  // curated Profile view. Set once the report loads, unless the member has manually chosen a view.
   const [reportView, setReportView] = useState('profile'); // 'profile' | 'details'
+  const userChoseView = useRef(false);
+  const chooseView = (v) => { userChoseView.current = true; setReportView(v); };
 
   // First-party incarceration/court records → MERGED into the report's "Legal & Court Records" section (owner
   // 2026-07-19), not a separate block. TIGHT match (age±1 + gender when known) so a same-name stranger isn't
@@ -260,6 +264,26 @@ const SearchResultDetailPage = () => {
       || (String((d && d.currentLocation) || '').match(/,\s*([A-Za-z]{2})\b/) || [])[1] || '';
     return { parts, st };
   };
+
+  // Is this report the member's OWN identity? Compare first+last (+ state) to their claimed identity.
+  const isSelfReport = useMemo(() => {
+    if (!data) return false;
+    const id = getMappedIdentity() || {};
+    const idParts = String(id.name || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const { parts, st } = subjectFrom(data);
+    if (idParts.length < 2 || parts.length < 2) return false;
+    const sameName = idParts[0] === parts[0].toLowerCase() && idParts[idParts.length - 1] === parts[parts.length - 1].toLowerCase();
+    const idState = String(id.state || '').trim().toUpperCase();
+    const sameState = !idState || !st || idState === String(st).toUpperCase();
+    return sameName && sameState;
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Default the view once the report is available: OTHERS → Full details; SELF → curated Profile. Never
+  // override a manual toggle.
+  useEffect(() => {
+    if (!data || userChoseView.current) return;
+    setReportView(isSelfReport ? 'profile' : 'details');
+  }, [data, isSelfReport]);
 
   // ── ONE engine call (member-other, post-pay) populates the state the derivations below read: booking →
   //    incRows (merged into Criminal), marriage/divorce + corroborated sex-offender → lifeEvents. ─────────────
@@ -501,7 +525,7 @@ const SearchResultDetailPage = () => {
           ].map((t) => {
             const active = reportView === t.k;
             return (
-              <button key={t.k} type="button" role="tab" aria-selected={active} onClick={() => setReportView(t.k)}
+              <button key={t.k} type="button" role="tab" aria-selected={active} onClick={() => chooseView(t.k)}
                 style={{
                   flex: 1, border: 'none', cursor: 'pointer', borderRadius: 9, padding: '10px 14px',
                   background: active ? '#0d5d2f' : 'transparent',
@@ -528,7 +552,7 @@ const SearchResultDetailPage = () => {
             {/* In-context path from the Overview into the exhaustive grid — so a member reading the
                 summary can open everything without hunting for the tab. */}
             <button type="button"
-              onClick={() => { setReportView('details'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onClick={() => { chooseView('details'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, width: '100%',
                 marginTop: 16, padding: '16px 18px', cursor: 'pointer', textAlign: 'left',
