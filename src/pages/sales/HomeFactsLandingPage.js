@@ -22,7 +22,9 @@ const HOMEFACTS_CFG = {
                    // /name/landing/homefacts-v2 for review; flip primeToConfirm here to make it the default
                    // once the owner signs off (2026-08-13: value-prop added, pending final review).
   // Value proposition shown under the primed "view the records" heading (Move 2 — reason to push through).
-  primedValueProp: 'See what public records reveal about them — criminal & offender history, current & past addresses, relatives, and phone numbers — compiled into one report.',
+  // A short lead + a scannable bulleted list (a single long sentence didn't scan).
+  primedValueLead: 'See what public records reveal about them:',
+  primedValueItems: ['Criminal & offender history', 'Current & past addresses', 'Relatives', '…and more'],
   headline: 'Public Records & Safety Check',
   benefits: [
     ['shield', 'Criminal & registered-offender records'],

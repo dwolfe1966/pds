@@ -319,8 +319,18 @@ const VerticalIntentLanding = ({ cfg }) => {
                 <SignalTeaser subject={{ firstName, lastName, state, city, age }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
               )}
               <h2 className={s.sectionTitle}>{primed && firstName.trim() ? `${firstName.trim()} ${lastName.trim()} — view the records` : cfg.confirmTitle}</h2>
-              {primed && cfg.primedValueProp && (
-                <p style={{ margin: '0 0 14px', fontSize: '1rem', lineHeight: 1.5, color: '#374151', fontWeight: 500 }}>{cfg.primedValueProp}</p>
+              {primed && cfg.primedValueLead && (
+                <div style={{ margin: '0 0 14px' }}>
+                  <p style={{ margin: '0 0 7px', fontSize: '1rem', lineHeight: 1.45, color: '#111827', fontWeight: 600 }}>{cfg.primedValueLead}</p>
+                  <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {(cfg.primedValueItems || []).map((it) => (
+                      <li key={it} style={{ display: 'flex', gap: 9, alignItems: 'baseline', fontSize: '0.95rem', color: '#374151' }}>
+                        <span aria-hidden="true" style={{ color: '#0d5d2f', fontWeight: 800, flexShrink: 0 }}>✓</span>
+                        <span>{it}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
               <p className={s.helper}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
               <label className={s.checkboxRow}>
