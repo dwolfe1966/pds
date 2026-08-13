@@ -319,6 +319,9 @@ const VerticalIntentLanding = ({ cfg }) => {
                 <SignalTeaser subject={{ firstName, lastName, state, city, age }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
               )}
               <h2 className={s.sectionTitle}>{primed && firstName.trim() ? `${firstName.trim()} ${lastName.trim()} — view the records` : cfg.confirmTitle}</h2>
+              {primed && cfg.primedValueProp && (
+                <p style={{ margin: '0 0 14px', fontSize: '1rem', lineHeight: 1.5, color: '#374151', fontWeight: 500 }}>{cfg.primedValueProp}</p>
+              )}
               <p className={s.helper}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
               <label className={s.checkboxRow}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />

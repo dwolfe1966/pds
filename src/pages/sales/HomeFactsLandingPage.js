@@ -18,12 +18,11 @@ const HOMEFACTS_CFG = {
   flow: 'publicRecords',
   teaser: 'publicRecords',
   partnerBrand: 'homefacts', // co-brands the results header (persisted through the funnel)
-  autoPrime: true,
-  // Move 1+2 is now the DEFAULT experience (owner sign-off 2026-08-13, after review on /homefacts-v2): land
-  // primed visitors on the pre-filled CONFIRM step (records teaser + one-click "See <Name>'s records" CTA)
-  // instead of auto-firing the search straight into the CAPTCHA (which passed only ~12–29% for lack of a
-  // human gesture). /name/landing/homefacts-v2 remains as an identical, separately-attributed alias.
-  primeToConfirm: true,
+  autoPrime: true, // LIVE: auto-fires the search on arrival. The primed-confirm experience (Move 1+2) is on
+                   // /name/landing/homefacts-v2 for review; flip primeToConfirm here to make it the default
+                   // once the owner signs off (2026-08-13: value-prop added, pending final review).
+  // Value proposition shown under the primed "view the records" heading (Move 2 — reason to push through).
+  primedValueProp: 'See what public records reveal about them — criminal & offender history, current & past addresses, relatives, and phone numbers — compiled into one report.',
   headline: 'Public Records & Safety Check',
   benefits: [
     ['shield', 'Criminal & registered-offender records'],
