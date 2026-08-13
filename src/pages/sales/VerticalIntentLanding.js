@@ -194,7 +194,7 @@ const VerticalIntentLanding = ({ cfg }) => {
       {partnerCfg && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '0.5rem 1.25rem', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.35, color: partnerCfg.color, background: partnerCfg.colorSoft, borderBottom: `1px solid ${partnerCfg.colorLine}` }}>
           {partnerCfg.icon && <span aria-hidden="true">{partnerCfg.icon}</span>}
-          <span>{partnerCfg.ribbon}{partnerCfg.ribbonDetail}.</span>
+          <span>{partnerCfg.ribbon}</span>
         </div>
       )}
 
