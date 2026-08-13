@@ -242,7 +242,11 @@ function buildTimeline({ user, orders, logins, activities, notes, tickets }) {
       subject ? `${base} — ${subject}` : base, loc);
   }
   for (const n of notes || []) {
-    add(n.createdAt, 'note', 'CSR note', String(n?.content?.message || n?.message || '').replace(/<[^>]+>/g, '').slice(0, 70));
+    // Notes reaching buildTimeline are ALREADY mapped ({ text, subject, ... }, see fetchNotes) — the body
+    // lives on `.text`, NOT `.content.message`. Reading the raw shape left every note blank on the Timeline
+    // (rendered as just the "CSR note" label), which read as the note text being replaced by a marker.
+    const body = String(n?.text || n?.content?.message || n?.message || '').replace(/<[^>]+>/g, '').trim();
+    add(n.createdAt, 'note', 'CSR note', body.slice(0, 70));
   }
   for (const tk of tickets || []) {
     add(tk.createdAt, 'message', 'Support message', String(tk?.content?.input?.topic || tk?.content?.subject || '').slice(0, 70));

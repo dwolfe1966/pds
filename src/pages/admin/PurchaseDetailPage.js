@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../api';
-import { getOrderCollected, getOrderRefunded } from '../../utils/orderFinancials';
+import { getOrderCollected, getOrderRefunded, getRefundableSalePayments } from '../../utils/orderFinancials';
 import BillingLifecyclePanel from './BillingLifecyclePanel';
 import { getOrderCard } from '../../utils/orderCard';
 import styles from './PurchaseDetailPage.module.css';
@@ -154,6 +154,7 @@ const PurchaseDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  const [refundPaymentId, setRefundPaymentId] = useState('');
   const [acting, setActing] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
   const [actionSuccess, setActionSuccess] = useState(false);
@@ -176,18 +177,35 @@ const PurchaseDetailPage = () => {
 
   const handleRefund = async () => {
     if (!order) return;
-    const salePayment = (order.commercePayments || []).find(
-      (p) => p.type === 'sale' && p.status === 'fulfilled'
-    );
-    if (!salePayment) {
+    // BC refunds against ONE payment and returns `nonCorrectable` if the amount exceeds THAT payment's
+    // remaining refundable balance. Compute per-payment refundable, target the right one, and validate the
+    // amount client-side so BC never sees an impossible correction.
+    const refundables = getRefundableSalePayments(order);
+    const withBalance = refundables.filter((r) => r.refundable > 0.005);
+    if (withBalance.length === 0) {
       setActionSuccess(false);
-      setActionMsg('No fulfilled sale payment found on this order.');
+      setActionMsg('This order has no remaining refundable balance on any payment. Use "Request Billing Action" for a manual adjustment.');
       return;
     }
+    // Resolve the target payment: an explicit CSR selection, else the sole payment with a balance.
+    let target = refundPaymentId ? withBalance.find((r) => r.payment._id === refundPaymentId) : null;
+    if (!target && withBalance.length === 1) target = withBalance[0];
+    if (!target) {
+      setActionSuccess(false);
+      setActionMsg('This order has more than one refundable payment — choose which payment to refund against.');
+      return;
+    }
+    const salePayment = target.payment;
     const amount = parseFloat(refundAmount);
     if (!amount || amount <= 0) {
       setActionSuccess(false);
       setActionMsg('Enter a valid refund amount.');
+      return;
+    }
+    // Client-side guard against BC `nonCorrectable`: the target payment can only refund its remaining balance.
+    if (amount > target.refundable + 0.005) {
+      setActionSuccess(false);
+      setActionMsg(`That payment has only $${target.refundable.toFixed(2)} left to refund. Enter that amount or less, pick another payment, or use "Request Billing Action".`);
       return;
     }
     // Real-money action — require an explicit confirmation before firing.
@@ -234,7 +252,14 @@ const PurchaseDetailPage = () => {
       setRefundAmount('');
     } catch (err) {
       setActionSuccess(false);
-      setActionMsg(err.message || 'Refund failed.');
+      // BC returns a raw `nonCorrectable` when the targeted payment can't take the correction (e.g. balance
+      // already refunded, or a settlement/gateway limit). Translate it into something a CSR can act on.
+      const raw = String(err?.message || '');
+      setActionMsg(
+        /noncorrectable/i.test(raw)
+          ? 'BC could not refund this payment (nonCorrectable) — its balance may already be refunded or past the gateway window. Try another payment if listed, or use "Request Billing Action".'
+          : (raw || 'Refund failed.')
+      );
     } finally {
       setActing(false);
     }
@@ -273,6 +298,9 @@ const PurchaseDetailPage = () => {
   // See src/utils/orderFinancials.js for the full reasoning.
   const collected = order ? getOrderCollected(order) : null;
   const refunded  = order ? getOrderRefunded(order) : 0;
+  // Per-payment refundable balances — drive the refund target selector + client-side amount cap.
+  const refundablePayments = order ? getRefundableSalePayments(order).filter((r) => r.refundable > 0.005) : [];
+  const totalRefundable = refundablePayments.reduce((s, r) => s + r.refundable, 0);
   // Cancel-at-period-end orders are status=active + subStatus=canceled. Key off
   // subStatus too — otherwise the action button stays "Cancel Order" and a CSR
   // can't reactivate a cancelled-but-in-period order from this page.
@@ -512,7 +540,35 @@ const PurchaseDetailPage = () => {
                   </div>
                 )}
 
-                <p style={{ fontSize: '0.82rem', color: '#666', margin: '0 0 6px' }}>Refund amount ($)</p>
+                <p style={{ fontSize: '0.82rem', color: '#666', margin: '0 0 6px' }}>
+                  Refund amount ($)
+                  {order && (
+                    <span style={{ color: totalRefundable > 0.005 ? '#059669' : '#999', fontWeight: 600 }}>
+                      {' '}· ${totalRefundable.toFixed(2)} refundable
+                    </span>
+                  )}
+                </p>
+                {/* Multiple sale payments (e.g. initial + a rebill) each refund independently in BC — let the
+                    CSR pick which one, so we target a payment that actually has the balance (avoids nonCorrectable). */}
+                {refundablePayments.length > 1 && (
+                  <select
+                    className={styles.refundInput}
+                    style={{ width: '100%', marginBottom: 8 }}
+                    value={refundPaymentId}
+                    onChange={(e) => {
+                      setRefundPaymentId(e.target.value);
+                      const sel = refundablePayments.find((r) => r.payment._id === e.target.value);
+                      if (sel) setRefundAmount(sel.refundable.toFixed(2));
+                    }}
+                  >
+                    <option value="">Choose payment to refund…</option>
+                    {refundablePayments.map((r) => (
+                      <option key={r.payment._id} value={r.payment._id}>
+                        Payment …{(r.payment._id || '').slice(-6)} — ${r.refundable.toFixed(2)} of ${r.collected.toFixed(2)}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <div className={styles.refundForm}>
                   <input
                     className={styles.refundInput}

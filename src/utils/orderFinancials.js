@@ -49,6 +49,41 @@ export function getOrderRefunded(order) {
 }
 
 /**
+ * Per-payment refundable balance for each fulfilled `sale` on this order.
+ *
+ * BC's `commerceBilling/correct` refunds against ONE specific payment and rejects
+ * with `nonCorrectable` if the requested amount exceeds that payment's remaining
+ * correctable balance (collected − already-refunded ON THAT payment). An order with
+ * a rebill/renewal has multiple sale payments, and a prior partial refund exhausts
+ * only one of them — so blindly targeting the first sale (or over-asking) trips
+ * `nonCorrectable` even when the order as a whole still has money to refund.
+ *
+ * Returns one row per fulfilled sale: `{ payment, collected, refunded, refundable }`
+ * (dollars). Refunds are linked to their parent sale via `parentId` (BC's linkage);
+ * unlinked refunds are attributed to the sole sale when there is exactly one, else
+ * left unattributed (conservative — never inflates a payment's refundable).
+ */
+export function getRefundableSalePayments(order) {
+  const payments = Array.isArray(order?.commercePayments) ? order.commercePayments : [];
+  const amt = (p) => Number(p?.totalPrice?.amount ?? 0);
+  const sales = payments.filter((p) => p?.type === 'sale' && p?.status === 'fulfilled');
+  const refunds = payments.filter((p) => p?.type === 'refund' && p?.status === 'fulfilled');
+  const refundedByParent = {};
+  let unlinkedRefund = 0;
+  for (const r of refunds) {
+    const pid = r?.parentId || r?.parentPaymentId || r?.targetCommercePaymentId;
+    if (pid) refundedByParent[pid] = (refundedByParent[pid] || 0) + amt(r);
+    else unlinkedRefund += amt(r);
+  }
+  return sales.map((s) => {
+    let refunded = refundedByParent[s._id] || 0;
+    if (unlinkedRefund && sales.length === 1) refunded += unlinkedRefund; // single sale → all refunds are its
+    const refundable = Math.max(0, amt(s) - refunded);
+    return { payment: s, collected: amt(s), refunded, refundable };
+  });
+}
+
+/**
  * Normalize a commercePayment's timestamp to a comparable epoch (ms).
  *
  * BC's `paymentTimestamp` is a numeric Unix-ms; `createdAt` is an ISO string.
