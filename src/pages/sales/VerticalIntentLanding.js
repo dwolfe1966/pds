@@ -311,7 +311,7 @@ const VerticalIntentLanding = ({ cfg }) => {
               {primed && firstName.trim() && lastName.trim() && (
                 <SignalTeaser subject={{ firstName, lastName, state, city, age }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
               )}
-              <h2 className={s.sectionTitle}>{primed && firstName.trim() ? `${firstName.trim()} ${lastName.trim()} — view the full report` : cfg.confirmTitle}</h2>
+              <h2 className={s.sectionTitle}>{primed && firstName.trim() ? `${firstName.trim()} ${lastName.trim()} — view the records` : cfg.confirmTitle}</h2>
               <p className={s.helper}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
               <label className={s.checkboxRow}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
@@ -319,7 +319,7 @@ const VerticalIntentLanding = ({ cfg }) => {
               </label>
               {agreeError && <p className={s.errorText}>{agreeError}</p>}
               <div className={s.actions}>
-                <button type="button" className={s.cta} onClick={handleConfirm}>{primed && firstName.trim() ? `See ${firstName.trim()}’s report →` : 'I Agree — View Results'}</button>
+                <button type="button" className={s.cta} onClick={handleConfirm}>{primed && firstName.trim() ? `See ${firstName.trim()}’s records →` : 'I Agree — View Results'}</button>
                 <button type="button" className={s.buttonSecondary} onClick={() => setStep(primed ? 'name' : 'details')}>Back</button>
               </div>
             </div>
