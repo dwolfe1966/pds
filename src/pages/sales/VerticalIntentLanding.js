@@ -89,7 +89,11 @@ const VerticalIntentLanding = ({ cfg }) => {
   const [city, setCity] = useState(qp('city'));
   const [state, setState] = useState(normalizeState(qp('state', 'st')));
   const [age, setAge] = useState(qp('age'));
-  const [step, setStep] = useState('name');
+  // Primed partner traffic (autoPrime + primeToConfirm + a name in the URL) lands DIRECTLY on the confirm
+  // step (teaser + one-click CTA) — computed at mount so there's no flash of the empty name step.
+  const primedAtMount = !!(cfg.autoPrime && cfg.primeToConfirm && pFirst && qp('ln', 'lastname', 'last'));
+  const [step, setStep] = useState(primedAtMount ? 'confirm' : 'name');
+  const [primed, setPrimed] = useState(primedAtMount);
   const [agree, setAgree] = useState(false);
   const [nameError, setNameError] = useState('');
   const [locationError, setLocationError] = useState('');
@@ -137,8 +141,11 @@ const VerticalIntentLanding = ({ cfg }) => {
     if (sourceType) track('partner_landing', { partner: 'homefacts', placement: sourceType, variant: V, primed: !!(firstName.trim() && lastName.trim()) });
     if (cfg.autoPrime && !primedRef.current && firstName.trim() && lastName.trim()) {
       primedRef.current = true;
-      track('primed_search', { search_type: 'name', variant: V, placement: sourceType || undefined });
-      runSearch();
+      setPrimed(true);
+      track('primed_search', { search_type: 'name', variant: V, placement: sourceType || undefined, mode: cfg.primeToConfirm ? 'confirm' : 'auto' });
+      // primeToConfirm: land on the pre-filled confirm step (teaser + one-click CTA) instead of auto-firing
+      // the search straight into the CAPTCHA. The gesture lets Turnstile pass; the teaser earns the click.
+      if (cfg.primeToConfirm) setStep('confirm'); else runSearch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -288,7 +295,13 @@ const VerticalIntentLanding = ({ cfg }) => {
 
           {step === 'confirm' && (
             <div className={s.form}>
-              <h2 className={s.sectionTitle}>{cfg.confirmTitle}</h2>
+              {/* Move 2: for primed partner traffic, show the person's records teaser BEFORE the FCRA gate +
+                  search — value first, so they're motivated to push through the CAPTCHA. (Cold traffic already
+                  saw the teaser at the 'searching-two' step, so don't repeat it there.) */}
+              {primed && firstName.trim() && lastName.trim() && (
+                <SignalTeaser subject={{ firstName, lastName, state, city, age }} flow={cfg.flow || 'general'} viewerRelation="prospect" stage="pre-signup" />
+              )}
+              <h2 className={s.sectionTitle}>{primed && firstName.trim() ? `${firstName.trim()} ${lastName.trim()} — view the full report` : cfg.confirmTitle}</h2>
               <p className={s.helper}>Because this information can be misused, we ask every searcher to confirm they&apos;ll use it responsibly.</p>
               <label className={s.checkboxRow}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
@@ -296,8 +309,8 @@ const VerticalIntentLanding = ({ cfg }) => {
               </label>
               {agreeError && <p className={s.errorText}>{agreeError}</p>}
               <div className={s.actions}>
-                <button type="button" className={s.cta} onClick={handleConfirm}>I Agree — View Results</button>
-                <button type="button" className={s.buttonSecondary} onClick={() => setStep('details')}>Back</button>
+                <button type="button" className={s.cta} onClick={handleConfirm}>{primed && firstName.trim() ? `See ${firstName.trim()}’s report →` : 'I Agree — View Results'}</button>
+                <button type="button" className={s.buttonSecondary} onClick={() => setStep(primed ? 'name' : 'details')}>Back</button>
               </div>
             </div>
           )}

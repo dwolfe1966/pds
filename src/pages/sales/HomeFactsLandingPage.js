@@ -19,6 +19,11 @@ const HOMEFACTS_CFG = {
   teaser: 'publicRecords',
   partnerBrand: 'homefacts', // co-brands the results header (persisted through the funnel)
   autoPrime: true,
+  // Move 1+2 (2026-08-13): instead of auto-firing the search on arrival (which drops the visitor straight
+  // into the CAPTCHA with no human gesture → ~12–29% pass), land them on the pre-filled CONFIRM step showing
+  // a records teaser + a one-click "See <Name>'s report" CTA. The click is a real gesture (Turnstile passes)
+  // and the teaser gives a reason to push through. Same primed payoff, just one click.
+  primeToConfirm: true,
   headline: 'Public Records & Safety Check',
   benefits: [
     ['shield', 'Criminal & registered-offender records'],
