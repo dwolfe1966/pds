@@ -81,10 +81,30 @@ function buildRefer() {
     if (!refer.utm_medium && d.medium) refer.utm_medium = d.medium;
     if (!refer.utm_campaign && d.campaign) refer.utm_campaign = d.campaign;
     if (!refer.refer_partnerId && d.partnerId) refer.refer_partnerId = d.partnerId;
-    // shn / shl / shnName / partner / channel are DELIBERATELY NOT sent (BC 2026-08-06): BC records
-    // shn/shl automatically for ALL tracking (data.tracking.partner.* is authoritative), and BC sets the
-    // default shn. Sending our own shn/partner/channel here overrode and "nullified" that automation.
-    // The stored sessionStorage attribution is untouched, so conversion gates / GTM context are unaffected.
+    // Partner/channel LABELS for reporting. Removed 2026-08-06 on the theory BC's tracking.partner.*
+    // was authoritative — but our reporting reads data.refer, so that removal blacked out partner/channel
+    // classification SITE-WIDE from Aug 7 (all traffic incl. Google). Restored 2026-08-13. To eliminate the
+    // 8/06 concern (our value overriding/diverging from BC's): prefer BC's OWN resolved value (mirrored from
+    // the shape into attribution.bc.*) so what we report IS BC's value; fall back to the registry identity
+    // only where BC has none. Lowercased to BC's stored form (kills the 'Search' vs 'search' miscasing that
+    // motivated 8/06). shn/shl still NOT sent — those are the fields most entangled with BC's own automation
+    // and bigbot confirms the shN itself is fine.
+    const lc = (v) => (typeof v === 'string' && v ? v.toLowerCase() : undefined);
+    const partner = lc(sessionStorage.getItem('attribution.bc.partner') || sessionStorage.getItem('attribution.partner'));
+    const channel = lc(sessionStorage.getItem('attribution.bc.channel') || sessionStorage.getItem('attribution.channel'));
+    const shnName = sessionStorage.getItem('attribution.shnName');
+    if (shnName && !refer.shnName) refer.shnName = shnName;
+    if (partner && !refer.partner) refer.partner = partner;
+    if (channel && !refer.channel) refer.channel = channel;
+    // SEO/referral from idlookup.me has NO shN → partner/channel above resolve to the DEFAULT shN (which
+    // reads as "paid"). Override to an explicit referral channel so reporting books it as SEO, not paid —
+    // the 7/31 proven-good pattern (partner idlookup.me / channel referral). Only mutates the reported
+    // refer object, not the stored attribution.
+    if (isIdlookupReferral(params)) {
+      refer.source = 'idlookup.me';
+      refer.channel = 'referral';
+      refer.partner = 'idlookup.me';
+    }
     return Object.keys(refer).length ? refer : undefined;
   } catch { return undefined; }
 }

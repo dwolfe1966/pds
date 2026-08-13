@@ -112,6 +112,29 @@ export const CampaignProvider = ({ children }) => {
         const { shn, shl } = captureAttribution();
         const enriched = resolveCampaign(shn, shl, { shape });
         setCampaign({ ...enriched, _shapeSettled: true });
+        // Mirror BC's OWN resolved partner attribution (tracking.partner.*, the source of truth) into
+        // sessionStorage so trackingService reports BC's value VERBATIM — it can never diverge from or
+        // override BC's automation because it IS BC's value. Falls back to our registry identity only
+        // where BC has none (default/unconfigured shns). getShComp returns "" (not null/throw) when a
+        // component is absent — so treat empty as absent. (accessor confirmed: comp.tracking.partner.*)
+        try {
+          const readComp = (k) => {
+            try { const v = (shape && typeof shape.getShComp === 'function') ? shape.getShComp(k) : ''; return v || undefined; }
+            catch { return undefined; }
+          };
+          const bcPartner = readComp('comp.tracking.partner.name');
+          const bcChannel = readComp('comp.tracking.partner.channel');
+          if (bcPartner) sessionStorage.setItem('attribution.bc.partner', bcPartner);
+          if (bcChannel) sessionStorage.setItem('attribution.bc.channel', bcChannel);
+          // Drift alarm: BC HAS a value AND it disagrees with our registry → surface it so we fix the
+          // registry, not the tracking. With the registry currently proven consistent (all live shns
+          // match BC's sheet), this should stay silent; it fires only if BC/registry drift apart.
+          const id = (enriched && enriched.identity) || {};
+          const differs = (a, b) => a && b && String(a).toLowerCase() !== String(b).toLowerCase();
+          if (differs(bcPartner, id.partner) || differs(bcChannel, id.channel)) {
+            gtmPush('partner_attribution_divergence', { shn, bcPartner, registryPartner: id.partner, bcChannel, registryChannel: id.channel });
+          }
+        } catch { /* never block render on attribution mirror */ }
         if (enriched._matchKey === 'default' && (shn || shl)) {
           // Visibility for marketing: flag campaigns that hit our site
           // without a registry entry, so we know to add or fix them.
