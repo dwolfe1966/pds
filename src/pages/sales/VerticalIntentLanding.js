@@ -39,6 +39,7 @@ const Icon = ({ name, className }) => (
 );
 
 import SignalTeaser from '../../components/SignalTeaser';
+import { getPartner } from '../../services/partnerRegistry';
 import { useFunnelFlow } from '../../services/funnelFlow';
 
 const getStepIndex = (step) => ({ name: 1, location: 2, details: 3, confirm: 4 }[step] || 0);
@@ -73,6 +74,7 @@ const VerticalIntentLanding = ({ cfg }) => {
   const location = useLocation();
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const V = cfg.variant;
+  const partnerCfg = cfg.partnerBrand ? getPartner(cfg.partnerBrand) : null; // co-brand lockup in the header
 
   // Accept whatever casing/alias a partner (e.g. HomeFacts) passes — KEY lookup is case-insensitive (no
   // assumption about how they capitalize), and we accept common aliases; first present wins.
@@ -178,7 +180,15 @@ const VerticalIntentLanding = ({ cfg }) => {
   return (
     <main className={s.page}>
       <header className={s.nav}>
-        <a href="/" className={s.logo}>{brand.name}</a>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <a href="/" className={s.logo}>{brand.name}</a>
+          {partnerCfg && (
+            <>
+              <span aria-hidden="true" style={{ opacity: 0.5, fontWeight: 600 }}>×</span>
+              <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'inherit' }}>{partnerCfg.name}</span>
+            </>
+          )}
+        </span>
       </header>
 
       <div className={s.wrapper}>
@@ -187,7 +197,7 @@ const VerticalIntentLanding = ({ cfg }) => {
         )}
 
         <div className={s.card}>
-          {stepIndex >= 2 && stepIndex <= TOTAL_STEPS && (
+          {!primed && stepIndex >= 2 && stepIndex <= TOTAL_STEPS && (
             <div className={s.progress}>
               <p className={s.progressLabel}>Step {stepIndex} of {TOTAL_STEPS}</p>
               <div className={s.progressTrack} role="progressbar" aria-valuenow={stepIndex} aria-valuemin={1} aria-valuemax={TOTAL_STEPS}>
