@@ -18,12 +18,9 @@ const HOMEFACTS_CFG = {
   flow: 'publicRecords',
   teaser: 'publicRecords',
   partnerBrand: 'homefacts', // co-brands the results header (persisted through the funnel)
-  autoPrime: true,
-  // Move 1+2 (2026-08-13): instead of auto-firing the search on arrival (which drops the visitor straight
-  // into the CAPTCHA with no human gesture → ~12–29% pass), land them on the pre-filled CONFIRM step showing
-  // a records teaser + a one-click "See <Name>'s report" CTA. The click is a real gesture (Turnstile passes)
-  // and the teaser gives a reason to push through. Same primed payoff, just one click.
-  primeToConfirm: true,
+  autoPrime: true, // LIVE behavior: auto-fires the search on arrival. The primed-confirm variant (Move 1+2)
+                   // lives on /name/landing/homefacts-v2 for review — do NOT add primeToConfirm here until
+                   // it's validated and the owner signs off on switching the live experience.
   headline: 'Public Records & Safety Check',
   benefits: [
     ['shield', 'Criminal & registered-offender records'],
@@ -54,11 +51,18 @@ const HOMEFACTS_CFG = {
   finalList: ['Criminal & offender records', 'Address history', 'Relatives & associates', 'Court & vital records'],
 };
 
-// Smart routing: the HomeFacts experience is built for PRIMED traffic (a person passed in). If the core name
-// params are missing (case-insensitively — any alias), there's nothing to prime, so fall through to the
-// proven general funnel (/name/landing/v3), preserving the query string (shn/tracking) and the HomeFacts
+// PREVIEW/TEST config — Move 1+2 (2026-08-13): land primed visitors on the pre-filled CONFIRM step with a
+// records teaser + a one-click "See <Name>'s report" CTA, instead of auto-firing the search straight into the
+// CAPTCHA (which was passing only ~12–29% for lack of a human gesture). Runs on its OWN route
+// (/name/landing/homefacts-v2) so it can be reviewed side-by-side with the live experience before switching.
+// Distinct `variant` isolates its metrics. Everything else is identical to the live config.
+const HOMEFACTS_V2_CFG = { ...HOMEFACTS_CFG, variant: 'homefacts-v2', primeToConfirm: true };
+
+// Smart routing shared by both experiences: HomeFacts is built for PRIMED traffic (a person passed in). If the
+// core name params are missing (case-insensitively — any alias), there's nothing to prime, so fall through to
+// the proven general funnel (/name/landing/v3), preserving the query string (shn/tracking) and the HomeFacts
 // co-brand so the downstream results still read IDLookup.AI × HomeFacts.
-const HomeFactsLandingPage = () => {
+function HomeFactsFunnel({ cfg }) {
   const location = useLocation();
   const lc = {};
   for (const [k, v] of new URLSearchParams(location.search).entries()) { const lk = k.toLowerCase(); if (v && lc[lk] === undefined) lc[lk] = v; }
@@ -68,6 +72,11 @@ const HomeFactsLandingPage = () => {
     try { sessionStorage.setItem('idlPartnerBrand', 'homefacts'); } catch { /* ignore */ }
     return <Navigate to={`/name/landing/v3${location.search}`} replace />;
   }
-  return <VerticalIntentLanding cfg={HOMEFACTS_CFG} />;
-};
-export default HomeFactsLandingPage;
+  return <VerticalIntentLanding cfg={cfg} />;
+}
+
+// LIVE experience — /name/landing/homefacts (auto-fires the search on arrival; the current campaign behavior).
+export default function HomeFactsLandingPage() { return <HomeFactsFunnel cfg={HOMEFACTS_CFG} />; }
+
+// PREVIEW — /name/landing/homefacts-v2 (Move 1+2 primed-confirm; for review before switching the live one).
+export function HomeFactsPreviewPage() { return <HomeFactsFunnel cfg={HOMEFACTS_V2_CFG} />; }
