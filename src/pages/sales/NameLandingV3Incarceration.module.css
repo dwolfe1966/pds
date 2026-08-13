@@ -92,6 +92,20 @@
 .buttonSecondary:hover { background: #f8fafc; }
 .actions { margin-top: 0.4rem; }
 
+/* Mobile: anchor the primed-confirm CTA bar to the bottom of the screen so the
+   "See <name>'s records" button is always in reach (primed HomeFacts flow only).
+   The form gets bottom padding (.stickyPadMobile) so content isn't hidden behind it. */
+@media (max-width: 600px) {
+  .actionsStickyMobile {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    margin: 0; padding: 0.7rem 1.1rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
+    background: #fff; border-top: 1px solid #e5e7eb; box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+  }
+  .actionsStickyMobile .cta { margin-top: 0; }
+  .actionsStickyMobile .buttonSecondary { margin-top: 0.5rem; min-height: 40px; }
+  .stickyPadMobile { padding-bottom: 148px; }
+}
+
 /* ---- trust block (below CTA) ---- */
 .trustBlock { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid #f1f5f9; }
 .trustItem { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; color: #475569; }

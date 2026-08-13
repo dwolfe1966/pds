@@ -311,7 +311,7 @@ const VerticalIntentLanding = ({ cfg }) => {
           )}
 
           {step === 'confirm' && (
-            <div className={s.form}>
+            <div className={`${s.form}${primed ? ` ${s.stickyPadMobile}` : ''}`}>
               {/* Move 2: for primed partner traffic, show the person's records teaser BEFORE the FCRA gate +
                   search — value first, so they're motivated to push through the CAPTCHA. (Cold traffic already
                   saw the teaser at the 'searching-two' step, so don't repeat it there.) */}
@@ -325,7 +325,7 @@ const VerticalIntentLanding = ({ cfg }) => {
                 <span>I will not use information from {brand.name} for employment, insurance, tenant screening, consumer credit, or any other purpose restricted by the Fair Credit Reporting Act (FCRA).</span>
               </label>
               {agreeError && <p className={s.errorText}>{agreeError}</p>}
-              <div className={s.actions}>
+              <div className={`${s.actions}${primed ? ` ${s.actionsStickyMobile}` : ''}`}>
                 <button type="button" className={s.cta} onClick={handleConfirm}>{primed && firstName.trim() ? `See ${firstName.trim()}’s records →` : 'I Agree — View Results'}</button>
                 <button type="button" className={s.buttonSecondary} onClick={() => setStep(primed ? 'name' : 'details')}>Back</button>
               </div>
