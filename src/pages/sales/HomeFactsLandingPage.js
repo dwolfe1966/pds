@@ -21,8 +21,6 @@ const HOMEFACTS_CFG = {
   autoPrime: true, // LIVE: auto-fires the search on arrival. The primed-confirm experience (Move 1+2) is on
                    // /name/landing/homefacts-v2 for review; flip primeToConfirm here to make it the default
                    // once the owner signs off (2026-08-13: value-prop added, pending final review).
-  // Value proposition shown under the primed "view the records" heading (Move 2 — reason to push through).
-  primedValueLead: 'See what public records reveal about them',
   headline: 'Public Records & Safety Check',
   benefits: [
     ['shield', 'Criminal & registered-offender records'],
