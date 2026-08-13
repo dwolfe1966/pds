@@ -18,9 +18,13 @@ const HOMEFACTS_CFG = {
   flow: 'publicRecords',
   teaser: 'publicRecords',
   partnerBrand: 'homefacts', // co-brands the results header (persisted through the funnel)
-  autoPrime: true, // LIVE: auto-fires the search on arrival. The primed-confirm experience (Move 1+2) is on
-                   // /name/landing/homefacts-v2 for review; flip primeToConfirm here to make it the default
-                   // once the owner signs off (2026-08-13: value-prop added, pending final review).
+  autoPrime: true,
+  // DEFAULT as of 2026-08-13 (owner sign-off after review on /homefacts-v2): primed partner traffic lands on
+  // the pre-filled CONFIRM step (records teaser + one-click "See <Name>'s records" CTA) instead of auto-firing
+  // the search straight into the Turnstile CAPTCHA (which passed only ~12–29% for lack of a human gesture).
+  // The click gives Turnstile its gesture. HOMEFACTS_V2_CFG (below) now mirrors this — kept only as an isolated
+  // metrics/preview surface; the live /name/landing/homefacts route carries the same experience under variant 'homefacts'.
+  primeToConfirm: true,
   headline: 'Public Records & Safety Check',
   benefits: [
     ['shield', 'Criminal & registered-offender records'],
