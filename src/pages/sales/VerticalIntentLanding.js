@@ -184,12 +184,19 @@ const VerticalIntentLanding = ({ cfg }) => {
           <a href="/" className={s.logo}>{brand.name}</a>
           {partnerCfg && (
             <>
-              <span aria-hidden="true" style={{ opacity: 0.5, fontWeight: 600 }}>×</span>
-              <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'inherit' }}>{partnerCfg.name}</span>
+              <span aria-hidden="true" style={{ opacity: 0.55, fontWeight: 600, color: '#fff' }}>×</span>
+              <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#fff' }}>{partnerCfg.name}</span>
             </>
           )}
         </span>
       </header>
+      {/* Partner ribbon (same message bar as the results page) — reinforces the co-brand continuity. */}
+      {partnerCfg && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '0.5rem 1.25rem', fontSize: '0.82rem', fontWeight: 600, lineHeight: 1.35, color: partnerCfg.color, background: partnerCfg.colorSoft, borderBottom: `1px solid ${partnerCfg.colorLine}` }}>
+          {partnerCfg.icon && <span aria-hidden="true">{partnerCfg.icon}</span>}
+          <span>{partnerCfg.ribbon}{partnerCfg.ribbonDetail}.</span>
+        </div>
+      )}
 
       <div className={s.wrapper}>
         {step === 'name' && (
