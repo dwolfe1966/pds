@@ -149,6 +149,13 @@ export const CAMPAIGN_REGISTRY = {
     identity: {
       shnName: 'HomeFacts', brand: 'IDL', partner: 'NIC', channel: 'Affiliate',
       purpose: 'Capture search intent from HomeFacts — people & place based searches',
+      // Derived attribution stamped into BC tracking `data.refer` + the order's `commerceorders.refer`
+      // (trackingService), because HomeFacts partner links are shn-only — no utm/refer_ to capture — and
+      // BC's shape-level partner automation (tracking.partner.*, #77-Q4) isn't populating tracking records
+      // yet. Values mirror BC's DB source of truth (shapecomponents tracking.partner.*): name=nic,
+      // channel=affiliate. Sent under the utm/refer_ namespace ONLY (source/medium/campaign/partnerId) —
+      // NEVER the shn/partner/channel field names, which overrode + nullified BC's automation on 2026-08-06.
+      refer: { partnerId: 'nic', source: 'homefacts', medium: 'affiliate', campaign: 'homefacts' },
     },
     landing: { route: '/name/landing/homefacts' },
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, // thinmatch: yes

@@ -49,6 +49,17 @@ function isIdlookupReferral(params) {
   } catch { return false; }
 }
 
+// Derived, partner-specific attribution (source/medium/campaign/partnerId) resolved from the campaign
+// registry `identity.refer` block and persisted by CampaignContext. Used to gap-fill BC attribution when
+// the inbound link carried NO utm/refer_ of its own — e.g. shn-only HomeFacts links, where BC tracking
+// would otherwise show empty source/medium/campaign/partnerId. Deliberately scoped to the utm/refer_
+// namespace: it NEVER carries shn/partner/channel field names (those overrode + nullified BC's own
+// tracking.partner automation on 2026-08-06). Never throws.
+function derivedRefer() {
+  if (typeof sessionStorage === 'undefined') return {};
+  try { return JSON.parse(sessionStorage.getItem('attribution.refer') || '{}') || {}; } catch { return {}; }
+}
+
 function buildRefer() {
   if (typeof sessionStorage === 'undefined') return undefined;
   try {
@@ -64,6 +75,12 @@ function buildRefer() {
      'refer_partnerId', 'refer_afid', 'refer_abc'].forEach((k) => {
       if (params[k]) refer[k] = params[k];
     });
+    // Gap-fill from the derived partner attribution (real utm/refer_ from the URL always wins).
+    const d = derivedRefer();
+    if (!refer.source && d.source) refer.source = d.source;
+    if (!refer.utm_medium && d.medium) refer.utm_medium = d.medium;
+    if (!refer.utm_campaign && d.campaign) refer.utm_campaign = d.campaign;
+    if (!refer.refer_partnerId && d.partnerId) refer.refer_partnerId = d.partnerId;
     // shn / shl / shnName / partner / channel are DELIBERATELY NOT sent (BC 2026-08-06): BC records
     // shn/shl automatically for ALL tracking (data.tracking.partner.* is authoritative), and BC sets the
     // default shn. Sending our own shn/partner/channel here overrode and "nullified" that automation.
@@ -87,9 +104,13 @@ export function buildReferQueryString() {
     let params = {};
     try { params = JSON.parse(sessionStorage.getItem('referralParams') || '{}') || {}; } catch { params = {}; }
     const out = [];
-    const push = (k, v) => { if (v != null && v !== '') out.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`); };
-    // Sub-publisher params — already round-trip onto commerceorders.refer.
-    ['refer_partnerId', 'refer_afid', 'refer_abc'].forEach((k) => push(k, params[k]));
+    const seen = new Set();
+    const push = (k, v) => { if (v != null && v !== '' && !seen.has(k)) { seen.add(k); out.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`); } };
+    const d = derivedRefer();
+    // Sub-publisher params — already round-trip onto commerceorders.refer. Fall back to the derived
+    // partner attribution for partnerId so shn-only partner links (HomeFacts) still book to the partner.
+    push('refer_partnerId', params.refer_partnerId || d.partnerId);
+    ['refer_afid', 'refer_abc'].forEach((k) => push(k, params[k]));
     // Click-join keys under the refer_ convention so BC lands them as refer.gclid /
     // refer.fbclid / refer.msclkid on the order (raw gclid= is dropped — no slot).
     push('refer_gclid', params.gclid);
@@ -105,6 +126,12 @@ export function buildReferQueryString() {
     } else if (params.utm_source) {
       push('refer_source', params.utm_source);
     }
+    // Derived partner attribution — fills refer_source/medium/campaign for shn-only partner links
+    // (HomeFacts). `push` dedupes via `seen`, so any real utm/referral value set above wins. BC strips
+    // the refer_ prefix → commerceorders.refer.{source,medium,campaign}. (utm namespace only — no shn.)
+    push('refer_source', d.source);
+    push('refer_medium', d.medium);
+    push('refer_campaign', d.campaign);
     return out.length ? out.join('&') : undefined;
   } catch { return undefined; }
 }

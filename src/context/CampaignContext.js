@@ -61,6 +61,10 @@ function persistIdentity(campaign) {
     if (id.shnName) sessionStorage.setItem('attribution.shnName', id.shnName);
     if (id.partner) sessionStorage.setItem('attribution.partner', id.partner);
     if (id.channel) sessionStorage.setItem('attribution.channel', id.channel);
+    // Derived refer attribution (partner-specific source/medium/campaign/partnerId) — stamped into BC
+    // tracking data.refer + the order's commerceorders.refer by trackingService when the inbound link
+    // carried no utm/refer_ of its own (e.g. shn-only HomeFacts links). JSON so it round-trips intact.
+    if (id.refer && typeof id.refer === 'object') sessionStorage.setItem('attribution.refer', JSON.stringify(id.refer));
   } catch { /* sessionStorage unavailable */ }
   // Push the resolved partner identity into gtmContext so every dataLayer event
   // (incl. the post-payment `purchase` conversion) carries partnerName/partnerChannel.
