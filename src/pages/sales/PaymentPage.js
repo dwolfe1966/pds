@@ -26,6 +26,7 @@ import ThemedFunnelHeader from '../../components/ThemedFunnelHeader';
 // `brand.recurringPrice`; keep BC and brand config in sync when prices change.
 const SIGNUP_OFFER_KEY = 'comp.offer.signup.main';
 import styles from './PaymentPage.module.css';
+import PaymentTrustBadges from '../../components/PaymentTrustBadges';
 import { useBrand } from '../../services/brand';
 import CardBrandMarks from '../../components/CardBrandMarks';
 
@@ -1389,12 +1390,10 @@ const PaymentPage = () => {
                 </form>
               </div>
 
-              {/* Trust row */}
-              <div className={styles.trustRow}>
-                <span className={styles.trustItem}>🔒 256-bit SSL</span>
-                <span className={styles.trustItem}>✓ PCI Compliant</span>
-                <span className={styles.trustItem}>🔐 Encrypted</span>
-              </div>
+              {/* Trust / credibility badges — guarantee + generic secure/PCI/SSL markers +
+                  accepted-card marks. Deliberately NO payment-processor logos (see
+                  PaymentTrustBadges.js). Replaces the old emoji trust row. */}
+              <PaymentTrustBadges />
 
               {/* Only meaningful for an authenticated upgrader (e.g. clicked
                   "Upgrade to Pro" from AccountPage/DashboardHome). Hide for
