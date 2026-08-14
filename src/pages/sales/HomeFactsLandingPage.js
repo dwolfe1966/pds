@@ -19,12 +19,14 @@ const HOMEFACTS_CFG = {
   teaser: 'publicRecords',
   partnerBrand: 'homefacts', // co-brands the results header (persisted through the funnel)
   autoPrime: true,
-  // DEFAULT as of 2026-08-13 (owner sign-off after review on /homefacts-v2): primed partner traffic lands on
-  // the pre-filled CONFIRM step (records teaser + one-click "See <Name>'s records" CTA) instead of auto-firing
-  // the search straight into the Turnstile CAPTCHA (which passed only ~12–29% for lack of a human gesture).
-  // The click gives Turnstile its gesture. HOMEFACTS_V2_CFG (below) now mirrors this — kept only as an isolated
-  // metrics/preview surface; the live /name/landing/homefacts route carries the same experience under variant 'homefacts'.
-  primeToConfirm: true,
+  // BASELINE (owner 2026-08-14): /name/landing/homefacts auto-fires the search on arrival ("go to search
+  // results") — the original primed behavior. We briefly defaulted this to the primeToConfirm ("v2") flow, but
+  // after excluding bot + international traffic (~60% of the total) the auto-fire baseline was NOT performing
+  // poorly, so it's restored as the control. The primed-confirm variant now lives ONLY on HOMEFACTS_V2_CFG
+  // (/name/landing/homefacts-v2) — independent experiences, ready to split-test before moving all traffic to v2.
+  // NOTE: auto-fire drops primed traffic into BC Turnstile with no human gesture (the ~12–29% pass-rate concern);
+  // that trade-off is the point of the split test.
+  primeToConfirm: false,
   headline: 'Public Records & Safety Check',
   benefits: [
     ['shield', 'Criminal & registered-offender records'],
@@ -55,11 +57,11 @@ const HOMEFACTS_CFG = {
   finalList: ['Criminal & offender records', 'Address history', 'Relatives & associates', 'Court & vital records'],
 };
 
-// PREVIEW/TEST config — Move 1+2 (2026-08-13): land primed visitors on the pre-filled CONFIRM step with a
-// records teaser + a one-click "See <Name>'s report" CTA, instead of auto-firing the search straight into the
-// CAPTCHA (which was passing only ~12–29% for lack of a human gesture). Runs on its OWN route
-// (/name/landing/homefacts-v2) so it can be reviewed side-by-side with the live experience before switching.
-// Distinct `variant` isolates its metrics. Everything else is identical to the live config.
+// V2 config — the primed-confirm experience (Move 1+2): land primed visitors on the pre-filled CONFIRM step
+// with a records teaser + a one-click "See <Name>'s report" CTA, instead of auto-firing the search straight into
+// the CAPTCHA (which passed only ~12–29% for lack of a human gesture; the confirm click supplies the gesture).
+// Runs on its OWN route (/name/landing/homefacts-v2) with a distinct `variant` so its metrics stay isolated from
+// the auto-fire baseline (HOMEFACTS_CFG). The two are INDEPENDENT — this is the challenger for the split test.
 const HOMEFACTS_V2_CFG = { ...HOMEFACTS_CFG, variant: 'homefacts-v2', primeToConfirm: true };
 
 // Smart routing shared by both experiences: HomeFacts is built for PRIMED traffic (a person passed in). If the
@@ -79,8 +81,8 @@ function HomeFactsFunnel({ cfg }) {
   return <VerticalIntentLanding cfg={cfg} />;
 }
 
-// LIVE experience — /name/landing/homefacts (auto-fires the search on arrival; the current campaign behavior).
+// BASELINE experience — /name/landing/homefacts (auto-fires the search on arrival → "go to search results").
 export default function HomeFactsLandingPage() { return <HomeFactsFunnel cfg={HOMEFACTS_CFG} />; }
 
-// PREVIEW — /name/landing/homefacts-v2 (Move 1+2 primed-confirm; for review before switching the live one).
+// V2 experience — /name/landing/homefacts-v2 (primed-confirm; the challenger, kept independent from baseline).
 export function HomeFactsPreviewPage() { return <HomeFactsFunnel cfg={HOMEFACTS_V2_CFG} />; }
