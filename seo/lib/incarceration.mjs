@@ -86,8 +86,12 @@ export async function rosterTopNamesByState({ state, limit = 30 }) {
               WHERE first_norm ~ ${NAME_RE} AND last_norm ~ ${NAME_RE} AND last_norm <> ALL(${SUFFIX})
               GROUP BY first_norm, last_norm ORDER BY n DESC LIMIT ${lim}`.catch(() => [])
       : Promise.resolve([]),
+    // removed = FALSE mirrors queryInmates (the name-in-state page's own index predicate) so this
+    // top-names set aligns with which pages actually render index — a name whose only records are
+    // removed shows 0 on the page (→ noindex) and must NOT be counted here (else the state-hub links
+    // + the sitemap would point at a noindex page). See sitemap-directory.xml/route.js.
     flSql`SELECT first_norm, last_norm, count(*)::int n FROM inmates
-           WHERE upper(state)=${st} AND first_norm ~ ${NAME_RE} AND last_norm ~ ${NAME_RE} AND last_norm <> ALL(${SUFFIX})
+           WHERE upper(state)=${st} AND removed = FALSE AND first_norm ~ ${NAME_RE} AND last_norm ~ ${NAME_RE} AND last_norm <> ALL(${SUFFIX})
            GROUP BY first_norm, last_norm ORDER BY n DESC LIMIT ${lim}`.catch(() => []),
   ]);
   const counts = new Map();
