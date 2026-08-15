@@ -28,6 +28,7 @@ import { syncBreach } from '../services/identityMonitorService';
  */
 
 const ORANGE = '#f5a623';
+const GREEN = '#0d5d2f';
 const scoreColor = (s) => (s >= 65 ? '#dc2626' : s >= 35 ? '#f59e0b' : '#0d5d2f');
 
 const card = {
