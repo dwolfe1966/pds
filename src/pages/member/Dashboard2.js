@@ -856,9 +856,19 @@ const Dashboard2 = () => {
               </section>
             ) : null}
           </div>
-          {/* Free tier = Exposure (the problem, teaser); paid = Protection (the solution). Free members
-              land on the exposure hero; paid keep the protection ring. (owner 2026-08-15) */}
-          {isPaid ? <ProtectionScoreRing /> : <FreeExposureHero />}
+          {/* Free tier = Exposure only (the problem). Paid = the PAIR: Exposure (what's still public) →
+              Protection (how well you've secured it), with the connecting narrative so the two scores read
+              as one story — every protective action lowers Exposure and raises Protection. (owner 2026-08-15) */}
+          {isPaid ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <FreeExposureHero paid />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 700, color: '#6b7280', padding: '0 4px' }}>
+                <span aria-hidden="true">↓</span>
+                <span>Protection is what you <i>do</i> about your Exposure — every fix lowers one and raises the other.</span>
+              </div>
+              <ProtectionScoreRing />
+            </div>
+          ) : <FreeExposureHero />}
         </div>
 
         {/* Trial transparency banner — the upcoming first charge, front and center.

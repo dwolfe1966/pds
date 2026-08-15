@@ -74,7 +74,7 @@ function ExposureRow({ label, detail }) {
   );
 }
 
-export default function FreeExposureHero() {
+export default function FreeExposureHero({ paid = false } = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [identity, setIdentity] = useState(() => getMappedIdentity());
@@ -171,12 +171,25 @@ export default function FreeExposureHero() {
           )}
 
           <div>
-            <button type="button" style={primaryCta} onClick={() => goPay('exposure')}>
-              Hide what's exposed →
-            </button>
-            <p style={{ margin: '8px 0 0', fontSize: 12, color: '#9ca3af' }}>
-              Subscribe to see every exposed detail — the exact addresses, relatives, and breaches — and remove them from public view. Cancel anytime.
-            </p>
+            {paid ? (
+              <>
+                <button type="button" style={primaryCta} onClick={() => navigate('/my-identity')}>
+                  Reduce my exposure →
+                </button>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#9ca3af' }}>
+                  Hide these from public view in My Identity — every fix you make raises your Protection Score.
+                </p>
+              </>
+            ) : (
+              <>
+                <button type="button" style={primaryCta} onClick={() => goPay('exposure')}>
+                  Hide what's exposed →
+                </button>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: '#9ca3af' }}>
+                  Subscribe to see every exposed detail — the exact addresses, relatives, and breaches — and remove them from public view. Cancel anytime.
+                </p>
+              </>
+            )}
           </div>
         </>
       )}
