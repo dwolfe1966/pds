@@ -132,9 +132,10 @@ export default function FreeExposureHero() {
     <div style={card}>
       <div>
         <div style={eyebrow}>Your identity exposure</div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 34, fontWeight: 900, color, lineHeight: 1 }}>{exp.score}</span>
           <span style={{ fontSize: 14, fontWeight: 800, color }}>{exp.level} exposure</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#9ca3af' }}>· lower is better</span>
         </div>
         <p style={{ margin: '6px 0 10px', fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
           <strong style={{ color: '#374151' }}>{exp.count} categor{exp.count === 1 ? 'y' : 'ies'}</strong> of your personal

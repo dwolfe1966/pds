@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { getMappedIdentity, fetchMappedIdentity, fetchExposureGraph, setExposureControl, runOptOut, fetchHistoryInsights, confirmReappearance, confirmRemoved, recordProtectionSnapshot, fetchProtectionHistory } from '../services/memberEnrichment';
 import { getIdentityEvents } from '../services/identityMonitorService';
 import { useBrand } from '../services/brand';
@@ -150,6 +151,10 @@ const markHandled = (id) => { try { const s = readHandled(); s.add(id); localSto
 
 export default function DigitalFootprint({ compact = false, onManage } = {}) {
   const navigate = useNavigate();
+  // Free tier = Exposure only (owner 2026-08-15, option A/1): the Protection SCORE is the paid concept and
+  // was competing with the Exposure score on the free dashboard. Gate the score display to paid; the
+  // protection plan + "Remove me" stay visible for free as the upgrade teaser.
+  const { isPaid } = useAuth();
   const brand = useBrand();
   const manage = onManage || (() => navigate('/my-identity'));
   const [identity, setIdentity] = useState(() => getMappedIdentity());
@@ -502,7 +507,7 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
             <div style={{ fontSize: 14.5, fontWeight: 800, color: '#111827' }}>Your protection plan <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280' }}>· start here</span></div>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: GREEN }}>{planDone} of {planSteps.length} done</div>
           </div>
-          <div style={{ fontSize: 12, color: '#4b5563', margin: '2px 0 10px' }}>The five highest-impact moves, in order. Knock them out and your protection score climbs.</div>
+          <div style={{ fontSize: 12, color: '#4b5563', margin: '2px 0 10px' }}>The five highest-impact moves, in order. Knock them out to lock down your identity.</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {planSteps.map((s, i) => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? '1px solid #dcfce7' : 'none' }}>
@@ -520,8 +525,10 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
         </div>
       )}
 
-      {/* Identity Protection Score — one honest headline (share of recommended protections in place) + the
-          single highest-impact next step. */}
+      {/* Identity Protection Score — PAID ONLY (owner 2026-08-15, option A/1). Free members see Exposure
+          only (FreeExposureHero); Protection is the paid "how well you've secured it" measure, and showing
+          both to a free member was two competing scores. Higher is better; it counters the Exposure score. */}
+      {isPaid && (<>
       <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 16px', marginTop: 14, background: '#fbfdfc' }}>
         <div style={{ textAlign: 'center', minWidth: 74 }}>
           <div style={{ fontSize: 36, fontWeight: 800, color: scoreTone, lineHeight: 1 }}>{protection.score}<span style={{ fontSize: 16 }}>%</span></div>
@@ -549,7 +556,8 @@ export default function DigitalFootprint({ compact = false, onManage } = {}) {
           )}
         </div>
       </div>
-      <p style={{ fontSize: 10.5, color: '#9ca3af', margin: '6px 0 0' }}>Your protection score is the share of recommended protections you’ve put in place — it tracks the actions you’ve taken, not a guarantee of safety.</p>
+      <p style={{ fontSize: 10.5, color: '#9ca3af', margin: '6px 0 0' }}>Your <b>Identity Protection Score</b> is the share of recommended protections you’ve put in place — <b>higher is better</b>. It’s what you <i>do</i> about your Identity Exposure: every action here lowers your exposure. Tracks actions taken, not a guarantee of safety.</p>
+      </>)}
 
       {/* Summary — breadth + control, from the graph */}
       <div style={{ display: 'flex', gap: 24, marginTop: 14, flexWrap: 'wrap' }}>
