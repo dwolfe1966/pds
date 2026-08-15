@@ -39,6 +39,11 @@ const primaryCta = {
   alignSelf: 'flex-start', background: ORANGE, color: '#231a02', border: 'none', borderRadius: 8,
   padding: '11px 20px', fontSize: 14.5, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap',
 };
+const toggleBtn = {
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+  background: 'none', border: 'none', borderTop: '1px solid #f0f1f3', padding: '11px 0 0',
+  fontSize: 13, fontWeight: 700, color: GREEN, cursor: 'pointer',
+};
 
 function Bar({ score, color }) {
   return (
@@ -73,6 +78,17 @@ export default function FreeExposureHero() {
   const { user } = useAuth();
   const [identity, setIdentity] = useState(() => getMappedIdentity());
   const [breach, setBreach] = useState(null);
+  // Collapsed by default (owner 2026-08-15): the hero sits in the dashboard grid next to the WSFY count,
+  // so it shows only the score + summary line and folds the category detail behind a toggle — it shouldn't
+  // take over the dashboard. Expanded state persists so a member who opens it keeps it open.
+  const [expanded, setExpanded] = useState(() => {
+    try { return localStorage.getItem('exposureHeroExpanded') === '1'; } catch { return false; }
+  });
+  const toggle = () => setExpanded((v) => {
+    const n = !v;
+    try { localStorage.setItem('exposureHeroExpanded', n ? '1' : '0'); } catch { /* ignore */ }
+    return n;
+  });
 
   // Pull the server-side mapped identity + HIBP breaches (breach = the scary driver a fresh account has).
   useEffect(() => {
@@ -126,32 +142,42 @@ export default function FreeExposureHero() {
         <Bar score={exp.score} color={color} />
       </div>
 
-      {/* Where you're exposed — REAL details in the clear (teaser, not a wall). */}
-      <div>
-        {exp.breakdown.slice(0, 6).map((r) => (
-          <ExposureRow key={r.key} label={r.label} detail={r.detail} />
-        ))}
-      </div>
+      {/* Collapsed by default — fold the categories behind a toggle so the hero stays compact. */}
+      <button type="button" style={toggleBtn} onClick={toggle} aria-expanded={expanded}>
+        <span>{expanded ? 'Hide details' : `Show what's exposed (${exp.count})`}</span>
+        <span aria-hidden="true" style={{ fontSize: 11 }}>{expanded ? '▲' : '▼'}</span>
+      </button>
 
-      {breachCount > 0 && breachClasses.length > 0 && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 12px' }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#7f1d1d' }}>
-            Found in {breachCount} data breach{breachCount === 1 ? '' : 'es'}
+      {expanded && (
+        <>
+          {/* Where you're exposed — REAL details in the clear (teaser, not a wall). */}
+          <div>
+            {exp.breakdown.slice(0, 6).map((r) => (
+              <ExposureRow key={r.key} label={r.label} detail={r.detail} />
+            ))}
           </div>
-          <div style={{ fontSize: 12, color: '#9a3412', marginTop: 2 }}>
-            Exposed: {breachClasses.slice(0, 4).join(' · ').toLowerCase()}
+
+          {breachCount > 0 && breachClasses.length > 0 && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#7f1d1d' }}>
+                Found in {breachCount} data breach{breachCount === 1 ? '' : 'es'}
+              </div>
+              <div style={{ fontSize: 12, color: '#9a3412', marginTop: 2 }}>
+                Exposed: {breachClasses.slice(0, 4).join(' · ').toLowerCase()}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <button type="button" style={primaryCta} onClick={() => goPay('exposure')}>
+              Hide what's exposed →
+            </button>
+            <p style={{ margin: '8px 0 0', fontSize: 12, color: '#9ca3af' }}>
+              Subscribe to see every exposed detail — the exact addresses, relatives, and breaches — and remove them from public view. Cancel anytime.
+            </p>
           </div>
-        </div>
+        </>
       )}
-
-      <div>
-        <button type="button" style={primaryCta} onClick={() => goPay('exposure')}>
-          Hide what's exposed →
-        </button>
-        <p style={{ margin: '8px 0 0', fontSize: 12, color: '#9ca3af' }}>
-          Subscribe to see every exposed detail — the exact addresses, relatives, and breaches — and remove them from public view. Cancel anytime.
-        </p>
-      </div>
     </div>
   );
 }
