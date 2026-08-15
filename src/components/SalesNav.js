@@ -17,6 +17,9 @@ const SalesNav = () => {
   const navLinks = [
     { path: '/', label: 'Home' },
     { path: '/search/all', label: 'Search' },
+    // Free-tier front door — was orphaned from nav (every self/exposure experience was reachable only via
+    // ad deep links). Linking it here is the cheapest hit on the traffic constraint (owner 2026-08-15).
+    { path: '/my-exposure', label: 'Check My Exposure' },
     { path: '/about', label: 'About' },
     { path: '/contact', label: 'Contact' },
   ];

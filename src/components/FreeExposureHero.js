@@ -87,6 +87,15 @@ export default function FreeExposureHero() {
     return () => { alive = false; };
   }, [user && user.email]);
 
+  // Once we have a claimed identity — including one BRIDGED from the anonymous self-door (MyExposurePage) —
+  // enrich relatives / address-history from PersonSearch so the scary drivers populate. Self-guards to once
+  // per member and no-ops until logged in (needs a userId + city/age), so it's safe to fire on every mount.
+  useEffect(() => {
+    if (identity && identity.name && (identity.city || identity.age)) {
+      enrichViaPersonSearch({ name: identity.name, city: identity.city, state: identity.state, age: identity.age });
+    }
+  }, [identity]);
+
   const goPay = useCallback((reason) => {
     navigate(`/payment?upgrade=1&reason=${reason || 'exposure'}`);
   }, [navigate]);

@@ -6,6 +6,7 @@ import { track } from '../../services/trackingService';
 import { useBrand } from '../../services/brand';
 import { useFunnelFlow } from '../../services/funnelFlow';
 import { saveDeclaredIdentity } from '../../services/identityProfile';
+import { updateMappedIdentity } from '../../services/memberEnrichment';
 
 // Search-Yourself challenger (Flow C, 2026-07-29). Hypothesis: the strongest, most REPEATABLE emotion in this
 // category isn't curiosity about others — it's anxiety about your OWN exposure. A self-search hook converts on a
@@ -50,30 +51,25 @@ export default function MyExposurePage() {
   const [city, setCity] = useState('');
   const [nameError, setNameError] = useState('');
 
-  // EXACT same hand-off as the other funnels — do not change (search contextKey is our documented landmine).
-  const runSearch = () => {
-    gtmSetSearchInput({ firstName: firstName.trim(), lastName: lastName.trim(), middleName: '', city: city.trim(), state: state.trim() });
-    try { sessionStorage.removeItem('nameSearchResults'); } catch { /* ignore */ }
-    // WSFY/self flow: the data entered here IS the user's OWN identity (owner 2026-08-03: assume self-flow data
-    // is the user's identity). Stash it so email capture links it to their lead for WSFY. (Middle name is asked
-    // PROGRESSIVELY on the results refine, not here.)
+  // Free-tier seam (owner 2026-08-15): the free tier needs PII to have value, so the anonymous self-door's
+  // one job is to create a FREE account and carry the identity forward — NOT to run a paywall search. We
+  // capture the identity into the mapped-identity store (what FreeExposureHero reads) and route to a FREE
+  // signup that lands on /dashboard, where the exposure hero renders populated on first load. This also
+  // makes account creation EXPLICIT (kills the old silent-account-creation smell).
+  const proceedToFreeAccount = () => {
+    const first = firstName.trim(), last = lastName.trim(), c = city.trim(), st = state.trim();
+    gtmSetSearchInput({ firstName: first, lastName: last, middleName: '', city: c, state: st });
+    // The data entered here IS the user's OWN identity (owner 2026-08-03). Stash for WSFY lead-linking…
     try {
-      sessionStorage.setItem('selfIdentity', JSON.stringify({
-        firstName: firstName.trim(), lastName: lastName.trim(),
-        city: city.trim() || undefined, state: state.trim() || undefined,
-      }));
+      sessionStorage.setItem('selfIdentity', JSON.stringify({ firstName: first, lastName: last, city: c || undefined, state: st || undefined }));
     } catch { /* ignore */ }
-    // Durable first-party identity (owner 2026-08-03: this data IS the user's identity). Survives the session
-    // and populates /my-identity whether or not they pay. Middle name is added later on the results refine.
-    saveDeclaredIdentity({ firstName: firstName.trim(), lastName: lastName.trim(), city: city.trim(), state: state.trim() });
-    const params = new URLSearchParams();
-    params.set('firstName', firstName.trim());
-    params.set('lastName', lastName.trim());
-    if (state.trim()) params.set('state', state.trim());
-    if (city.trim()) params.set('city', city.trim());
-    params.set('flow', 'general');   // general people-search core — teaser leads with the strongest REAL signal
-    params.set('variant', 'self');   // DISPLAY-ONLY: self loader copy + standing-service checkout framing
-    navigate(`/name/loader?${params.toString()}`);
+    // …persist the durable declared identity…
+    saveDeclaredIdentity({ firstName: first, lastName: last, city: c, state: st });
+    // …and bridge it into the MAPPED-IDENTITY store (localStorage) that FreeExposureHero reads, so the
+    // exposure score renders populated the moment they land on the dashboard after signup.
+    updateMappedIdentity({ confirmed: true, name: [first, last].filter(Boolean).join(' '), city: c || undefined, state: st ? st.toUpperCase() : undefined });
+    // Free account (no card): redirect=/dashboard lands on the exposure hero, NOT the paywall.
+    navigate('/signup?redirect=%2Fdashboard&flow=exposure');
   };
 
   const onSubmit = (e) => {
@@ -84,8 +80,8 @@ export default function MyExposurePage() {
       track('validation_error', { reason: 'name_required', variant: 'self' });
       return;
     }
-    track('search_step', { step: 'final-search', search_type: 'name', variant: 'self' });
-    runSearch();
+    track('search_step', { step: 'free-account', search_type: 'name', variant: 'self' });
+    proceedToFreeAccount();
   };
 
   const input = {
@@ -138,10 +134,10 @@ export default function MyExposurePage() {
           {nameError && <p style={{ margin: 0, color: '#c0392b', fontSize: 13 }}>{nameError}</p>}
 
           <button type="submit" style={{ background: BLUE, color: '#fff', border: 0, borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-            Show me what's public →
+            See my exposure — free →
           </button>
           <p style={{ margin: 0, fontSize: 12, color: '#9aa4ad', textAlign: 'center' }}>
-            Free to search. You'll see what {brand.name} finds before you decide anything.
+            Create your free {brand.name} account to see your Exposure Score and everything public about you. No card required.
           </p>
         </form>
 
