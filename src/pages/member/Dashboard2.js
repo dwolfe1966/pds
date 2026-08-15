@@ -11,6 +11,7 @@ import SelfIdentifyCard from '../../components/SelfIdentifyCard';
 import ExposureTile from '../../components/ExposureTile';
 import DigitalFootprint from '../../components/DigitalFootprint';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
+import FreeExposureHero from '../../components/FreeExposureHero';
 import DashboardWsfyCount from '../../components/DashboardWsfyCount';
 import PageHeader from '../../components/PageHeader';
 import IdentityOnboardingModal from '../../components/IdentityOnboardingModal';
@@ -855,7 +856,9 @@ const Dashboard2 = () => {
               </section>
             ) : null}
           </div>
-          <ProtectionScoreRing />
+          {/* Free tier = Exposure (the problem, teaser); paid = Protection (the solution). Free members
+              land on the exposure hero; paid keep the protection ring. (owner 2026-08-15) */}
+          {isPaid ? <ProtectionScoreRing /> : <FreeExposureHero />}
         </div>
 
         {/* Trial transparency banner — the upcoming first charge, front and center.
