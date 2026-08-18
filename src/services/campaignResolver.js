@@ -66,7 +66,7 @@ function normalizeLandingRoute(raw) {
   // legacy '/name/landing/3' → '/name/landing/v3' (only when a bare digit follows /landing/)
   r = r.replace(/^(\/(?:name|phone|email)\/landing\/)(\d)/i, '$1v$2');
   // Whitelist to same-origin landing routes: the v-numbered funnels + named partner landings (e.g. homefacts).
-  return /^\/(?:name|phone|email)\/landing\/(?:v[0-9]+[a-z]?|homefacts|partner\/[a-z0-9-]+)$/i.test(r) ? r : undefined;
+  return /^\/(?:name|phone|email)\/landing\/(?:v[0-9]+[a-z]?|homefacts(?:-v[0-9]+)?|partner\/[a-z0-9-]+)$/i.test(r) ? r : undefined;
 }
 
 // BC theme.sup ('ver=i' | 'v=i' | 'i') → validated variant letter, else undefined.

@@ -132,9 +132,10 @@ export const CAMPAIGN_REGISTRY = {
   },
 
   // HomeFacts — REAL BC shConId (David Teng @ NIC, 2026-08-10). Partner links root at
-  // idlookup.ai?shn=6a7a2af6…&firstName=&lastName=&state= — boot-redirects "/" to the dedicated co-branded
-  // /name/landing/homefacts experience (auto-primes on name; param-less traffic falls through to v3 inside
-  // HomeFactsLandingPage). No awaitTheme (not an A/B).
+  // idlookup.ai?shn=6a7a2af6…&firstName=&lastName=&state= — boot-redirects "/" to the co-branded PROFILE-FIRST
+  // /name/landing/homefacts-v3 experience (owner 2026-08-18: moved HomeFacts partner traffic here from the
+  // auto-fire /homefacts baseline). No awaitTheme (not an A/B) → the boot redirect uses THIS registry route
+  // (pre-shape), so traffic goes to v3 even though BC's theme.landing still says /homefacts (see caveat below).
   //
   // IDENTITY MIRRORS BC'S SOURCE OF TRUTH (owner 2026-08-10): shN=HomeFacts, Brand=IDL, Partner=NIC,
   // Channel=Affiliate. BC's partner/channel may not be in the shape yet (#77-Q4 pending), so this local
@@ -142,9 +143,11 @@ export const CAMPAIGN_REGISTRY = {
   // for REPORTING; the consumer-facing CO-BRAND display is "HomeFacts" (partnerRegistry key, resolved from
   // shnName='HomeFacts' / the idlPartnerBrand flag) — display ≠ attribution here, both correct.
   //
-  // BC theme for this shN = { landing:'/name/landing/homefacts', sup:'ver=a', optout:'yes', thinmatch:'yes' }
-  // — matches every field below, and normalizeLandingRoute now whitelists /name/landing/homefacts so BC's
-  // theme.landing agrees with (doesn't fight) this registry route.
+  // ⚠️ BC theme for this shN still returns { landing:'/name/landing/homefacts', sup:'ver=a', optout:'yes',
+  // thinmatch:'yes' }. The boot redirect uses the registry route below (pre-shape, no awaitTheme), so partner
+  // traffic reaches v3. To make it airtight against a shape-enriched re-resolution, BC's theme.landing should
+  // be updated to '/name/landing/homefacts-v3' (owner, BC-side); normalizeLandingRoute now whitelists
+  // homefacts-v3 so that override lands on v3 too (not back on /homefacts).
   '6a7a2af6d8e615c6c6562e8b:*': {
     identity: {
       shnName: 'HomeFacts', brand: 'IDL', partner: 'NIC', channel: 'Affiliate',
@@ -157,7 +160,7 @@ export const CAMPAIGN_REGISTRY = {
       // NEVER the shn/partner/channel field names, which overrode + nullified BC's automation on 2026-08-06.
       refer: { partnerId: 'nic', source: 'homefacts', medium: 'affiliate', campaign: 'homefacts' },
     },
-    landing: { route: '/name/landing/homefacts' },
+    landing: { route: '/name/landing/homefacts-v3' },
     search:  { type: 'name', perPage: 5, zeroState: 'thinMatch' }, // thinmatch: yes
     detail:  { variant: 'a' },                                     // sup: ver=a
     optOut:  true,                                                 // optout: yes
