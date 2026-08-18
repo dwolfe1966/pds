@@ -107,7 +107,7 @@ export default function HomeFactsLandingV3Page() {
 
   const [results, setResults] = useState([]);   // resolved BC identities (other matches)
   const [active, setActive] = useState(null);    // the chosen individual (BC person) or null (shell)
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);  // starts true — we auto-resolve on mount (see below)
   const [error, setError] = useState('');
 
   const hasName = !!(firstName.trim() && lastName.trim());
@@ -303,7 +303,37 @@ export default function HomeFactsLandingV3Page() {
     );
   }
 
-  // ── STEP 1: shell (instant, first-party, captcha-safe) ──
+  // ── LOADING: auto-resolving the profile (identity known from the URL; real data on the way) ──
+  if (loading) {
+    return (
+      <main style={page}>
+        <style>{'@keyframes hfspin{to{transform:rotate(360deg)}}'}</style>
+        <div style={wrap}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.mut, textAlign: 'center' }}>Continuing your search from HomeFacts</div>
+          <div style={{ background: C.cardBg, border: `1px solid ${C.line}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 2px rgba(20,24,29,.05),0 14px 40px rgba(20,24,29,.07)' }}>
+            <div style={{ background: C.headerBg, color: '#fff', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 800, flex: '0 0 auto' }}>{initial}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.15 }}>{fullName}</div>
+                <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>{locLabel || 'Public records'}</div>
+              </div>
+            </div>
+            <div style={{ padding: '34px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', border: `3px solid ${C.line}`, borderTopColor: C.accent, animation: 'hfspin .8s linear infinite' }} aria-hidden="true" />
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.ink, textAlign: 'center' }}>Finding {fullName}'s full profile…</div>
+              <div style={{ fontSize: 12.5, color: C.mut, textAlign: 'center', lineHeight: 1.5 }}>Searching public records{state ? ` across ${stateName(state)}` : ''} — records, relatives &amp; addresses. This takes a few seconds.</div>
+            </div>
+          </div>
+          <p style={{ fontSize: 11, color: '#9aa4ad', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
+            {brand.name} is not a consumer reporting agency under the FCRA. Do not use this information for
+            employment, tenant, or credit screening.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // ── STEP 1: shell fallback (shown only if the auto-resolve found no match — a manual retry entry point) ──
   return (
     <main style={page}>
       <div style={wrap}>
