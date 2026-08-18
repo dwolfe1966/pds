@@ -282,26 +282,31 @@ export default function HomeFactsLandingV3Page() {
                 </button>
               </div>
 
-              {/* Other matches — switch which individual is shown */}
-              {others.length > 0 && (
-                <Section title={`Other people named ${fullName}`}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {others.map((p) => (
-                      <button key={p.id} type="button" onClick={() => selectPerson(p)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 10, padding: '9px 12px', cursor: 'pointer', textAlign: 'left' }}>
-                        <PersonAvatar person={p} size={34} />
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>{properCaseName(p.fullName)}{p.age || p.ageRange ? `, ${p.age || p.ageRange}` : ''}</div>
-                          <div style={{ fontSize: 12, color: C.mut }}>{p.location || 'View profile'}</div>
-                        </div>
-                        <span style={{ marginLeft: 'auto', fontSize: 13, color: C.accent, fontWeight: 700 }}>View →</span>
-                      </button>
-                    ))}
-                  </div>
-                </Section>
-              )}
             </div>
           </div>
+
+          {/* Other matches — a SEPARATE card below the profile so it's clearly divided from THIS person's
+              own data. Matters on mobile: the pinned CTA removed the old inline break, so without its own
+              card the matches ran straight into the profile. */}
+          {others.length > 0 && (
+            <div style={{ background: C.cardBg, border: `1px solid ${C.line}`, borderRadius: 16, padding: '16px 20px', boxShadow: '0 1px 2px rgba(20,24,29,.05),0 6px 20px rgba(20,24,29,.05)' }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>Not the {fullName} you're looking for?</div>
+              <div style={{ fontSize: 12, color: C.mut, margin: '2px 0 12px' }}>Other people named {fullName}:</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {others.map((p) => (
+                  <button key={p.id} type="button" onClick={() => selectPerson(p)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: `1px solid ${C.line}`, borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left' }}>
+                    <PersonAvatar person={p} size={34} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>{properCaseName(p.fullName)}{p.age || p.ageRange ? `, ${p.age || p.ageRange}` : ''}</div>
+                      <div style={{ fontSize: 12, color: C.mut }}>{p.location || 'View profile'}</div>
+                    </div>
+                    <span style={{ marginLeft: 'auto', fontSize: 13, color: C.accent, fontWeight: 700 }}>View →</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <p style={{ fontSize: 11, color: '#9aa4ad', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
             {brand.name} is not a consumer reporting agency under the FCRA. Do not use this information for
