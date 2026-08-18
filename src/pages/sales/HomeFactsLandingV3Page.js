@@ -57,11 +57,19 @@ const C = {
   cta: '#f5a623', ctaInk: '#231a02', accent: '#0d5d2f',
 };
 
-const TEASED_ROWS = [
-  ['📍', 'Address history', 'Current & past addresses'],
-  ['👪', 'Relatives & associates', 'Family and known associates'],
-  ['🚔', 'Criminal & court records', 'Arrests, charges, case records'],
+// Profile sections the FULL report unlocks. Framed as capabilities ("what's in the report"), NOT
+// fabricated per-person data — we have no real relative/address counts pre-click (those come from the BC
+// teaser, which we deliberately don't run on mount). Each renders as a locked profile section so the page
+// reads like a real profile being revealed.
+const REPORT_SECTIONS = [
+  ['🪪', 'Personal details', 'Full name, aliases, age & date of birth'],
+  ['📷', 'Photos', 'Available photos on record'],
+  ['📍', 'Location history', 'Current & past addresses'],
+  ['👪', 'Relatives & associates', 'Family members and known associates'],
+  ['🚔', 'Criminal & court records', 'Arrests, charges & court cases'],
+  ['⚖️', 'Sex-offender registry', 'Registered-offender status & details'],
   ['📞', 'Contact info', 'Phone numbers & email addresses'],
+  ['💼', 'Work & licenses', 'Employment history & professional licenses'],
 ];
 
 export default function HomeFactsLandingV3Page() {
@@ -146,18 +154,24 @@ export default function HomeFactsLandingV3Page() {
                 first-party records. NO Turnstile: this runs off getPersonSignals (our own endpoints). */}
             <SignalTeaser subject={subject} flow="sexOffender" strict stage="pre-signup" accent={C.accent} />
 
-            {/* Teased/locked sections — what the full report unlocks. */}
-            <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, overflow: 'hidden' }}>
-              {TEASED_ROWS.map(([icon, label, sub], i) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderTop: i ? `1px solid ${C.line}` : 'none' }}>
-                  <span style={{ fontSize: 17, flex: '0 0 auto' }} aria-hidden="true">{icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>{label}</div>
-                    <div style={{ fontSize: 12, color: C.mut, filter: 'blur(3px)', userSelect: 'none' }} aria-hidden="true">{sub}</div>
+            {/* What the full report unlocks — capability sections (honest: what the report CONTAINS, not
+                fabricated per-person data). Reads like a locked profile being revealed. */}
+            <div>
+              <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: C.mut, margin: '0 0 8px' }}>
+                {fullName}'s full report includes
+              </div>
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, overflow: 'hidden' }}>
+                {REPORT_SECTIONS.map(([icon, label, sub], i) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderTop: i ? `1px solid ${C.line}` : 'none' }}>
+                    <span style={{ fontSize: 17, flex: '0 0 auto' }} aria-hidden="true">{icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: C.ink }}>{label}</div>
+                      <div style={{ fontSize: 12, color: C.mut }}>{sub}</div>
+                    </div>
+                    <span style={{ fontSize: 12.5, color: C.mut, flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', gap: 4 }} aria-hidden="true">🔒</span>
                   </div>
-                  <span style={{ fontSize: 13, color: C.mut, flex: '0 0 auto' }} aria-hidden="true">🔒</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <button type="button" onClick={() => goToReport(false)}
