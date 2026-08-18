@@ -203,7 +203,9 @@ export default function HomeFactsLandingV3Page() {
     const pl = (n, s, p) => `${n} ${n === 1 ? s : (p || s + 's')}`;
 
     return (
-      <main style={page}>
+      <main style={page} className="hf-v3-profile">
+        {/* Mobile: pin the unlock CTA to the bottom; hide the inline one + pad the page so nothing hides under it. */}
+        <style>{'.hf-mobile-cta{display:none}@media(max-width:640px){.hf-mobile-cta{display:block}.hf-inline-cta{display:none}.hf-v3-profile{padding-bottom:96px}}'}</style>
         <div style={wrap}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: C.mut, textAlign: 'center' }}>Continuing your search from HomeFacts</div>
 
@@ -267,10 +269,18 @@ export default function HomeFactsLandingV3Page() {
                 </Section>
               )}
 
-              <button type="button" onClick={unlock}
+              <button type="button" onClick={unlock} className="hf-inline-cta"
                 style={{ background: C.cta, color: C.ctaInk, border: 'none', borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 800, cursor: 'pointer' }}>
                 Unlock {properCaseName(active.fullName).split(' ')[0]}'s full report →
               </button>
+
+              {/* Mobile: the same unlock CTA anchored to the bottom of the screen (owner 2026-08-18). */}
+              <div className="hf-mobile-cta" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff', borderTop: `1px solid ${C.line}`, padding: '10px 16px calc(10px + env(safe-area-inset-bottom))', boxShadow: '0 -4px 16px rgba(0,0,0,0.10)', zIndex: 50 }}>
+                <button type="button" onClick={unlock}
+                  style={{ width: '100%', background: C.cta, color: C.ctaInk, border: 'none', borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 800, cursor: 'pointer' }}>
+                  Unlock {properCaseName(active.fullName).split(' ')[0]}'s full report →
+                </button>
+              </div>
 
               {/* Other matches — switch which individual is shown */}
               {others.length > 0 && (
