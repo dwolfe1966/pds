@@ -200,6 +200,9 @@ const PaymentPage = () => {
   // header, create the account inline via the same api.signup call, then reveal the card section.
   // Gated on the explicit param so no existing funnel's behavior changes.
   const captureMode = searchParams.get('capture') === 'email';
+  // reveal=1: the searched NAME is already known (name funnels like HomeFacts v3), so show the person
+  // plainly even in capture mode. Phone/email flows omit it → identity stays masked (it's the paywalled prize).
+  const revealPerson = searchParams.get('reveal') === '1';
   const cardType = detectCardType(form.cardNumber);
 
   // Track page entry (after auth resolves so we know if it's an upgrade)
@@ -243,7 +246,7 @@ const PaymentPage = () => {
   // Phone capture flow keeps the searched owner's NAME masked pre-pay (owner) — location/age stay for
   // context. Mirrors the reveal's obfuscation (first initial + bullets). Non-phone flows show it plain.
   const maskFullName = (name = '') => String(name).trim().split(/\s+/).map((p) => (p.length <= 1 ? p : `${p[0]}${'•'.repeat(Math.max(2, p.length - 1))}`)).join(' ');
-  const displayPersonName = (p) => (captureMode ? maskFullName(p?.fullName) : properCaseName(p?.fullName));
+  const displayPersonName = (p) => ((captureMode && !revealPerson) ? maskFullName(p?.fullName) : properCaseName(p?.fullName));
 
   // ── Email-on-payment capture (captureMode) ────────────────────────────────
   // Phone reveal → /payment?capture=email: the email field lives IN the card form (one screen).
@@ -901,7 +904,7 @@ const PaymentPage = () => {
         // Unified engine teaser (specific person at payment → strict). Handles every flow incl. general.
         // Phone flow (captureMode): keep the owner's identity masked to match the masked vCard — identity is
         // the paywalled prize on a phone search. Name funnel leaves it fully exposed (they searched the name).
-        const teaser = <SignalTeaser subject={{ firstName: first, lastName: last, state: st, age: pAge, gender: pGender }} flow={flow || 'general'} viewerRelation="prospect" stage="pre-signup" strict accent="#0d5d2f" dark="#0a4a25" anonymize={captureMode} subjectLabel={captureMode ? 'this number’s owner' : undefined} />;
+        const teaser = <SignalTeaser subject={{ firstName: first, lastName: last, state: st, age: pAge, gender: pGender }} flow={flow || 'general'} viewerRelation="prospect" stage="pre-signup" strict accent="#0d5d2f" dark="#0a4a25" anonymize={captureMode && !revealPerson} subjectLabel={(captureMode && !revealPerson) ? 'this number’s owner' : undefined} />;
         return (
           <div style={{ maxWidth: 960, margin: '0 auto 1.25rem' }}>{teaser}</div>
         );
@@ -1100,7 +1103,7 @@ const PaymentPage = () => {
                         className={`${styles.input} ${captureErr ? styles.inputError : ''}`}
                       />
                       <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', color: '#6b7280', lineHeight: 1.5 }}>
-                        We'll set up your account and send your receipt here.
+                        So we can email you your report.
                       </p>
                       {captureErr && <p style={{ color: '#dc2626', fontSize: '0.82rem', margin: '0.4rem 0 0' }}>{captureErr}</p>}
                       {existingAccount && (

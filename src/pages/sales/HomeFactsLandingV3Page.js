@@ -185,7 +185,8 @@ export default function HomeFactsLandingV3Page() {
   const unlock = () => {
     if (!active) return;
     track('search_step', { step: 'unlock-report', search_type: 'name', variant: CFG.variant });
-    navigate('/payment?capture=email');
+    // reveal=1 → payment shows the person plainly (name search: identity already known, not the paywalled prize).
+    navigate('/payment?capture=email&reveal=1');
   };
 
   const wrap = { maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 };
