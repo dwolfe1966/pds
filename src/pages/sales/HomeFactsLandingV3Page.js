@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api';
 import { setSearchContext } from '../../services/searchContext';
@@ -113,7 +113,6 @@ export default function HomeFactsLandingV3Page() {
   const hasName = !!(firstName.trim() && lastName.trim());
   useEffect(() => { try { sessionStorage.setItem('idlPartnerBrand', CFG.partnerBrand); } catch { /* ignore */ } }, []);
   useEffect(() => { if (!hasName) navigate(`/name/landing/v3${location.search}`, { replace: true }); }, [hasName, navigate, location.search]);
-  if (!hasName) return null;
 
   const fullName = properCase([firstName, lastName].filter(Boolean).join(' '));
   const initial = (fullName[0] || '?').toUpperCase();
@@ -169,11 +168,24 @@ export default function HomeFactsLandingV3Page() {
     setLoading(false);
   }, [firstName, lastName, middleName, city, state, age, fullName, navigate]);
 
-  // Unlock a resolved individual → canonical signup → payment → report (person carries the BC extId).
+  // Auto-resolve on arrival (owner 2026-08-18): the HomeFacts click lands the visitor on a FILLED profile —
+  // no extra tap. The search runs on mount, so there's NO in-page gesture: if BC's teaser search still
+  // enforces Turnstile, this is the historical auto-fire captcha risk (must be verified on staging). The
+  // shell stays visible while it resolves, so it degrades gracefully rather than showing a blank loader.
+  const autoFired = useRef(false);
+  useEffect(() => {
+    if (hasName && !autoFired.current) { autoFired.current = true; resolveProfile(); }
+  }, [hasName, resolveProfile]);
+
+  if (!hasName) return null;
+
+  // Unlock → the EMAIL-ON-PAYMENT page (owner 2026-08-18: deprecate the create-account step). capture=email
+  // collects just the email (required), auto-generates the password, and creates the account inline during
+  // the sale. The chosen person is already stored (result_<id> + selectedPersonId) so /payment shows them.
   const unlock = () => {
     if (!active) return;
     track('search_step', { step: 'unlock-report', search_type: 'name', variant: CFG.variant });
-    navigate(`/name/signup?selected=${encodeURIComponent(active.id)}`);
+    navigate('/payment?capture=email');
   };
 
   const wrap = { maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 };
