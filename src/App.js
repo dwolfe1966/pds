@@ -34,6 +34,7 @@ import RecordsSexOffenderPage from './pages/sales/RecordsSexOffenderPage';
 import RecordsBackgroundCheckPage from './pages/sales/RecordsBackgroundCheckPage';
 import RecordsPublicPage from './pages/sales/RecordsPublicPage';
 import HomeFactsLandingPage, { HomeFactsPreviewPage } from './pages/sales/HomeFactsLandingPage';
+import HomeFactsLandingV3Page from './pages/sales/HomeFactsLandingV3Page';
 import SignalTeaserDevPage from './pages/dev/SignalTeaserDevPage';
 import NameSearchLandingV3aPage from './pages/sales/NameSearchLandingV3aPage';
 import NameSearchLandingV3bPage from './pages/sales/NameSearchLandingV3bPage';
@@ -212,6 +213,7 @@ const App = () => {
           <Route path="/name/landing/v3" element={<NameSearchLandingV3Page />} />
           <Route path="/name/landing/homefacts" element={<HomeFactsLandingPage />} />
           <Route path="/name/landing/homefacts-v2" element={<HomeFactsPreviewPage />} />
+          <Route path="/name/landing/homefacts-v3" element={<HomeFactsLandingV3Page />} />
           {/* `/people-search` is BOTH the member search AND the anonymous honest landing.
               PeopleSearchEntry branches on auth so members keep Name/Phone/Email search while
               anonymous funnel traffic still gets the honest challenger. (Two Route entries used
