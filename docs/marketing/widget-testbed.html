@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IDLookup Widget Test Bed</title>
+<style>
+  :root { --ink:#1a2430; --mut:#5b6672; --line:#e3e8ee; --bg:#f4f6f8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); }
+  .bar { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line); padding:12px 20px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .bar h1 { font-size:15px; margin:0; font-weight:800; }
+  .bar label { font-size:12px; color:var(--mut); font-weight:600; }
+  .bar input, .bar select { font-size:13px; padding:6px 9px; border:1px solid var(--line); border-radius:8px; }
+  .bar input#base { width:280px; }
+  .note { font-size:12px; color:var(--mut); }
+
+  /* Fake "partner page" (mimics a HomeFacts-style layout so we see the widget IN CONTEXT). */
+  .partner { max-width:1080px; margin:24px auto; padding:0 20px; }
+  .partner-hd { background:#153a5b; color:#fff; border-radius:12px; padding:22px 24px; }
+  .partner-hd .brand { font-weight:800; letter-spacing:.02em; opacity:.9; }
+  .partner-hd h2 { margin:8px 0 4px; font-size:24px; }
+  .layout { display:grid; grid-template-columns: 1fr 340px; gap:24px; margin-top:24px; }
+  @media (max-width:820px){ .layout{ grid-template-columns:1fr; } }
+  .content .row { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px; }
+  .content h3 { margin:0 0 6px; font-size:15px; }
+  .content p { margin:0; color:var(--mut); font-size:13.5px; line-height:1.5; }
+  .aside { position:sticky; top:70px; align-self:start; }
+  .slot { margin-bottom:22px; }
+  .slot .cap { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--mut); font-weight:700; margin-bottom:6px; }
+  iframe { width:100%; border:0; display:block; background:transparent; }
+</style>
+</head>
+<body>
+  <div class="bar">
+    <h1>🧪 IDLookup Widget Test Bed</h1>
+    <label>Widget origin:
+      <input id="base" value="http://localhost:3000" placeholder="https://staging.idlookup.ai">
+    </label>
+    <label>partner: <input id="partner" value="homefacts" style="width:120px"></label>
+    <label>shn: <input id="shn" value="6a7a2af6d8e615c6c6562e8b" style="width:160px"></label>
+    <span class="note">Change origin → all iframes reload. Open this file from disk (file://) to test the real CROSS-ORIGIN top-navigation breakout.</span>
+  </div>
+
+  <div class="partner">
+    <div class="partner-hd">
+      <div class="brand">HOMEFACTS.COM (simulated partner page)</div>
+      <h2>Robert Tapia — Victorville, CA</h2>
+      <div style="opacity:.85;font-size:13px">Neighborhood report · Registered offenders nearby</div>
+    </div>
+
+    <div class="layout">
+      <div class="content">
+        <div class="row"><h3>Area overview</h3><p>Placeholder partner content. The widget in the sidebar should read as a native, drop-in unit — and clicking its CTA should navigate THIS whole page (the top window) to the IDLookup free-tier funnel, not just reload the iframe.</p></div>
+        <div class="row"><h3>Registered offenders</h3><p>Placeholder list…</p></div>
+        <div class="row"><h3>Schools &amp; amenities</h3><p>Placeholder…</p></div>
+        <div class="row"><h3>Crime &amp; safety</h3><p>Placeholder…</p></div>
+      </div>
+
+      <div class="aside">
+        <div class="slot">
+          <div class="cap">Sidebar embed (partner + shn)</div>
+          <iframe class="wsfy" data-h="270"></iframe>
+        </div>
+        <div class="slot">
+          <div class="cap">Narrow / mobile column (300px)</div>
+          <div style="width:300px"><iframe class="wsfy" data-h="290"></iframe></div>
+        </div>
+        <div class="slot">
+          <div class="cap">No attribution (default)</div>
+          <iframe id="plain" data-h="270"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin:28px 0 8px">✅ What to verify</h3>
+    <ol class="note" style="line-height:1.8">
+      <li>Widget renders <b>bare</b> (no IDLookup header/footer) inside each iframe.</li>
+      <li>It's responsive — fills the iframe cleanly at sidebar and 300px widths.</li>
+      <li>Clicking <b>“See who's searching for you →”</b> navigates the <b>whole page</b> (top window) to <code>/my-exposure</code>, not just the iframe. (True cross-origin only when this file is opened from disk / a different host than the widget.)</li>
+      <li>The destination URL carries attribution: <code>utm_source=&lt;partner&gt;&amp;utm_medium=widget&amp;utm_campaign=wsfy&amp;shn=…</code>.</li>
+    </ol>
+  </div>
+
+<script>
+  function render() {
+    var base = document.getElementById('base').value.replace(/\/+$/, '');
+    var partner = encodeURIComponent(document.getElementById('partner').value.trim());
+    var shn = encodeURIComponent(document.getElementById('shn').value.trim());
+    document.querySelectorAll('iframe.wsfy').forEach(function (f) {
+      f.style.height = (f.dataset.h || 270) + 'px';
+      f.src = base + '/widget/wsfy?partner=' + partner + (shn ? '&shn=' + shn : '');
+    });
+    var plain = document.getElementById('plain');
+    plain.style.height = (plain.dataset.h || 270) + 'px';
+    plain.src = base + '/widget/wsfy';
+  }
+  ['base','partner','shn'].forEach(function (id) { document.getElementById(id).addEventListener('change', render); });
+  render();
+</script>
+</body>
+</html>
