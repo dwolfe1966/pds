@@ -74,6 +74,31 @@ function ExposureRow({ label, detail }) {
   );
 }
 
+// b.6 referral — "check a friend" viral share. Additive: shares a tracked link to the free-tier front door
+// (/my-exposure) via the native share sheet (mobile) or clipboard (desktop). No backend/referral codes yet;
+// attribution rides on utm. Every free member who shares seeds another free-tier check.
+function ReferralShare() {
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    const origin = (typeof window !== 'undefined' && window.location && window.location.origin) || 'https://www.idlookup.ai';
+    const url = `${origin}/my-exposure?utm_source=referral&utm_medium=share&utm_campaign=check-a-friend`;
+    const data = { title: 'Check your exposure — IDLookup.AI', text: "See what's public about you online — free.", url };
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try { await navigator.share(data); } catch { /* dismissed */ }
+      return;
+    }
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ }
+  };
+  return (
+    <div style={{ borderTop: '1px solid #f0f1f3', paddingTop: 11, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+      <span style={{ fontSize: 12.5, color: '#6b7280' }}>Know someone who should check theirs?</span>
+      <button type="button" onClick={share} style={{ background: 'none', border: '1px solid #d7ddd9', borderRadius: 8, padding: '7px 13px', fontSize: 13, fontWeight: 700, color: '#0d5d2f', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+        {copied ? '✓ Link copied' : 'Check a friend →'}
+      </button>
+    </div>
+  );
+}
+
 export default function FreeExposureHero({ paid = false } = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -191,6 +216,8 @@ export default function FreeExposureHero({ paid = false } = {}) {
               </>
             )}
           </div>
+
+          <ReferralShare />
         </>
       )}
     </div>
