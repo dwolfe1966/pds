@@ -49,6 +49,14 @@ const EXPOSED = [
   ['🔓', 'Data breaches', 'Where your email & passwords have leaked'],
 ];
 
+// The concrete payoff shown right at the email ask (teaser info on the email-capture card).
+const UNLOCK = [
+  ['📊', 'Your Exposure Score — exactly how exposed you are'],
+  ['🔓', 'Data breaches exposing your email & passwords'],
+  ['👁', 'Who’s been searching for you'],
+  ['📍', 'Your full public record — and how to remove it'],
+];
+
 export default function MyExposurePage() {
   const brand = useBrand();
   const navigate = useNavigate();
@@ -152,7 +160,15 @@ export default function MyExposurePage() {
           {/* Email-only unlock → free account → dashboard (full Exposure Score + breaches + who's-searching). */}
           <form onSubmit={createFreeAccount} style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 12, background: BLUE_SOFT, border: '1px solid #cfe0d6' }}>
             <div style={{ fontSize: 17, fontWeight: 800, color: INK }}>See your full Exposure Score &amp; who&apos;s searching for you</div>
-            <p style={{ margin: 0, fontSize: 13.5, color: MUTED, lineHeight: 1.5 }}>Enter your email to unlock your complete report — including data breaches on your email and the people who&apos;ve looked you up.</p>
+            <p style={{ margin: 0, fontSize: 13.5, color: MUTED, lineHeight: 1.5 }}>Enter your email — free, no card. Your report unlocks:</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '2px 0 4px' }}>
+              {UNLOCK.map(([icon, text]) => (
+                <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: INK, fontWeight: 600 }}>
+                  <span style={{ color: BLUE, fontWeight: 800, flex: '0 0 auto' }} aria-hidden="true">✓</span>
+                  <span><span aria-hidden="true">{icon}</span>&nbsp; {text}</span>
+                </div>
+              ))}
+            </div>
             <input type="email" inputMode="email" autoComplete="email" autoFocus style={input} placeholder="you@email.com" value={email} onChange={(e) => { setEmail(e.target.value); if (emailErr) setEmailErr(''); }} />
             {(emailErr || signupError) && <p style={{ margin: 0, color: '#c0392b', fontSize: 13 }}>{emailErr || signupError}</p>}
             <button type="submit" disabled={creating} style={{ ...cta, opacity: creating ? 0.7 : 1 }}>{creating ? 'Checking…' : 'Show my full exposure →'}</button>
