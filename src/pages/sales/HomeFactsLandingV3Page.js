@@ -6,7 +6,8 @@ import { useBrand } from '../../services/brand';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { useFunnelFlow } from '../../services/funnelFlow';
 import { track } from '../../services/trackingService';
-import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
+import { setSearchInput as gtmSetSearchInput, setSearchTarget } from '../../services/gtmContext';
+import { gtmSearchSubmit, gtmTeaserView } from '../../services/gtm';
 import { saveDeclaredIdentity } from '../../services/identityProfile';
 import SignalTeaser from '../../components/SignalTeaser';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
@@ -125,6 +126,11 @@ export default function HomeFactsLandingV3Page() {
       sessionStorage.setItem(`result_${p.id}`, JSON.stringify(p));
       sessionStorage.setItem('selectedPersonId', p.id);
     } catch { /* ignore */ }
+    // Canonical "profile shown" funnel event — v3 collapses SRP→SUP into this page, so without this the
+    // funnel is blind to the profile view that IS happening (incident 2026-08-19).
+    setSearchTarget(p);
+    track('teaser_view', { personId: p.id, sup_variant: CFG.variant });
+    gtmTeaserView({ identity_id: p.id, search_type: 'name' });
     setActive(p);
     if (typeof window !== 'undefined') window.scrollTo(0, 0);
   };
@@ -149,6 +155,12 @@ export default function HomeFactsLandingV3Page() {
         sessionStorage.setItem('nameSearchResults', JSON.stringify({ results: list, query: { firstName: f, lastName: l, middleName: m, age, city: c, state }, searchContext: response.searchContext || {}, pagination: response.pagination || {}, flow: CFG.flow }));
       } catch { /* ignore */ }
       if (!list.length) { setError('no-match'); setLoading(false); return; }
+      // Canonical funnel events — v3 collapses search→loader→results into one auto-resolve, so fire the
+      // whole sequence here so the funnel sees "searched → saw results" (it was blind to v3 — incident 8/19).
+      track('search_submit', { type: 'name', resultCount: list.length });
+      track('loader_complete', { search_type: 'name', result_count: list.length });
+      track('results_view', { search_type: 'name', query: `${f} ${l}`.trim(), state: state || '' });
+      gtmSearchSubmit({ search_type: 'name', result_count: list.length, state: state || undefined });
       // Best guess: prefer a result whose location matches the city; else the top result.
       const cl = c.toLowerCase();
       const best = (cl && list.find((r) => (r.location || '').toLowerCase().includes(cl))) || list[0];
@@ -184,6 +196,8 @@ export default function HomeFactsLandingV3Page() {
   // the sale. The chosen person is already stored (result_<id> + selectedPersonId) so /payment shows them.
   const unlock = () => {
     if (!active) return;
+    // Canonical "profile selected" funnel event (the profile-click step) + the v3-specific step.
+    track('serp_result_onboarding', { personId: active.id });
     track('search_step', { step: 'unlock-report', search_type: 'name', variant: CFG.variant });
     // reveal=1 → payment shows the person plainly (name search: identity already known, not the paywalled prize).
     navigate('/payment?capture=email&reveal=1');
