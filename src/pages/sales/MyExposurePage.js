@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
@@ -7,16 +7,14 @@ import { useBrand } from '../../services/brand';
 import { useFunnelFlow } from '../../services/funnelFlow';
 import { saveDeclaredIdentity } from '../../services/identityProfile';
 import { updateMappedIdentity } from '../../services/memberEnrichment';
+import { useSignup } from '../../hooks/useSignup';
+import SignalTeaser from '../../components/SignalTeaser';
 
-// Search-Yourself challenger (Flow C, 2026-07-29). Hypothesis: the strongest, most REPEATABLE emotion in this
-// category isn't curiosity about others — it's anxiety about your OWN exposure. A self-search hook converts on a
-// real, defensible worry AND sets up a subscription that has an ongoing job (monitor + claim + who's-searching)
-// — the only one of our challengers that structurally attacks CHURN, not just conversion.
-//
-// Same PROVEN search hand-off as every other funnel: it navigate()s to /name/loader with the same params, so
-// the search/contextKey core and BC billing are untouched (no price deviation). What's different is the
-// EXPERIENCE: you're searching yourself, the loader narrates YOUR exposure, and checkout sells a standing
-// service (see PaymentPage selfFunnel). No privacy claim (WSFY) and no takedown/suppression promise (stub).
+// Free-tier "Check my exposure" front door — VALUE-FIRST (owner 2026-08-19). Two steps:
+//   1. Enter your name → 2. SEE your exposure teaser (what's public + any records), NO account →
+//   a light EMAIL-ONLY step ("see your full Exposure Score & who's searching") creates the free account
+//   (auto-password, no card) and lands on /dashboard where the exposure hero renders populated + breaches.
+// The old flow dumped people on the create-account page BEFORE showing any value — that was the friction.
 
 const US_STATES = [
   ['', 'Select your state'], ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'],
@@ -31,19 +29,31 @@ const US_STATES = [
   ['WA', 'Washington'], ['WV', 'West Virginia'], ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
 ];
 
-const BLUE = '#0d5d2f';       // IDLookup brand green (was an off-brand navy #1f4e79)
-const BLUE_SOFT = '#e7f3ec';  // green-soft to match
+const BLUE = '#0d5d2f';
+const BLUE_SOFT = '#e7f3ec';
 const AMBER = '#a9781f';
 const AMBER_SOFT = '#f6edda';
 const INK = '#14181d';
 const MUTED = '#5b6672';
 const LINE = '#dfe5ea';
 
+const PAGE = { background: '#f4f6f7', minHeight: '100vh', padding: 'clamp(20px,5vw,56px) 16px', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif' };
+const CARD = { background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, padding: 'clamp(18px,4vw,26px)', boxShadow: '0 1px 2px rgba(20,24,29,.05),0 14px 40px rgba(20,24,29,.07)' };
+
+// What the full exposure check covers — shown as a teaser (capabilities + the breach hook that the email unlocks).
+const EXPOSED = [
+  ['📍', 'Address history', 'Current & past addresses on record'],
+  ['📞', 'Phone numbers', 'Landline & mobile numbers'],
+  ['👪', 'Relatives & associates', 'Family and known associates'],
+  ['🚔', 'Criminal & court records', 'Arrests, charges & court cases'],
+  ['🔓', 'Data breaches', 'Where your email & passwords have leaked'],
+];
+
 export default function MyExposurePage() {
   const brand = useBrand();
   const navigate = useNavigate();
   useLandingTrack('name', 'self');
-  useFunnelFlow('general'); // general people-search core; the SELF treatment rides on ?variant=self, not the flow
+  useFunnelFlow('general');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -51,25 +61,29 @@ export default function MyExposurePage() {
   const [city, setCity] = useState('');
   const [nameError, setNameError] = useState('');
 
-  // Free-tier seam (owner 2026-08-15): the free tier needs PII to have value, so the anonymous self-door's
-  // one job is to create a FREE account and carry the identity forward — NOT to run a paywall search. We
-  // capture the identity into the mapped-identity store (what FreeExposureHero reads) and route to a FREE
-  // signup that lands on /dashboard, where the exposure hero renders populated on first load. This also
-  // makes account creation EXPLICIT (kills the old silent-account-creation smell).
-  const proceedToFreeAccount = () => {
+  const [step, setStep] = useState('form'); // 'form' → 'teaser'
+  const [email, setEmail] = useState('');
+  const [emailErr, setEmailErr] = useState('');
+  // NOTE: useSignup seeds redirectTo='/dashboard' by default, so gate navigation on `success` — otherwise
+  // this fires on mount and bounces the anonymous visitor to /dashboard → /login.
+  const { submit: signupSubmit, loading: creating, error: signupError, success, redirectTo } = useSignup();
+  useEffect(() => { if (success && redirectTo) navigate(redirectTo); }, [success, redirectTo, navigate]);
+
+  const input = { width: '100%', border: `1.5px solid ${LINE}`, borderRadius: 10, padding: '13px 14px', fontSize: 16, color: INK, background: '#fbfdff', boxSizing: 'border-box' };
+  const label = { fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: MUTED, fontWeight: 600, marginBottom: 5, display: 'block' };
+  const metric = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: MUTED };
+  const cta = { background: BLUE, color: '#fff', border: 0, borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 700, cursor: 'pointer' };
+
+  const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
+
+  // Capture the person's OWN identity (owner 2026-08-03) + bridge it into the mapped-identity store the
+  // dashboard exposure hero reads, so it renders populated the moment they land after the free account.
+  const captureIdentity = () => {
     const first = firstName.trim(), last = lastName.trim(), c = city.trim(), st = state.trim();
     gtmSetSearchInput({ firstName: first, lastName: last, middleName: '', city: c, state: st });
-    // The data entered here IS the user's OWN identity (owner 2026-08-03). Stash for WSFY lead-linking…
-    try {
-      sessionStorage.setItem('selfIdentity', JSON.stringify({ firstName: first, lastName: last, city: c || undefined, state: st || undefined }));
-    } catch { /* ignore */ }
-    // …persist the durable declared identity…
+    try { sessionStorage.setItem('selfIdentity', JSON.stringify({ firstName: first, lastName: last, city: c || undefined, state: st || undefined })); } catch { /* ignore */ }
     saveDeclaredIdentity({ firstName: first, lastName: last, city: c, state: st });
-    // …and bridge it into the MAPPED-IDENTITY store (localStorage) that FreeExposureHero reads, so the
-    // exposure score renders populated the moment they land on the dashboard after signup.
     updateMappedIdentity({ confirmed: true, name: [first, last].filter(Boolean).join(' '), city: c || undefined, state: st ? st.toUpperCase() : undefined });
-    // Free account (no card): redirect=/dashboard lands on the exposure hero, NOT the paywall.
-    navigate('/signup?redirect=%2Fdashboard&flow=exposure');
   };
 
   const onSubmit = (e) => {
@@ -80,19 +94,78 @@ export default function MyExposurePage() {
       track('validation_error', { reason: 'name_required', variant: 'self' });
       return;
     }
+    captureIdentity();
+    track('search_step', { step: 'self-teaser', search_type: 'name', variant: 'self' });
+    setStep('teaser');
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+  };
+
+  // Auto-generated password — the free account is email-only (no card), same as email-on-payment.
+  const genPw = () => `Ix${Math.random().toString(36).slice(2, 11)}${Math.random().toString(36).slice(2, 5).toUpperCase()}9!`;
+
+  const createFreeAccount = async (e) => {
+    e.preventDefault();
+    setEmailErr('');
+    const em = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setEmailErr('Enter a valid email address.'); return; }
     track('search_step', { step: 'free-account', search_type: 'name', variant: 'self' });
-    proceedToFreeAccount();
+    // Free account: email only, auto-password, no card. Lands on /dashboard (exposure hero + breach + WSFY).
+    await signupSubmit({ email: em, password: genPw(), optin: true, redirectParam: '/dashboard' });
   };
 
-  const input = {
-    width: '100%', border: `1.5px solid ${LINE}`, borderRadius: 10, padding: '13px 14px',
-    fontSize: 16, color: INK, background: '#fbfdff', boxSizing: 'border-box',
-  };
-  const label = { fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: MUTED, fontWeight: 600, marginBottom: 5, display: 'block' };
-  const metric = { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: MUTED };
+  // ── STEP 2: exposure teaser (value first — no account) + email-only unlock ──
+  if (step === 'teaser') {
+    return (
+      <main style={PAGE}>
+        <div style={{ maxWidth: 620, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ alignSelf: 'flex-start', fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: BLUE, background: BLUE_SOFT, border: '1px solid #cfe0ef', padding: '5px 11px', borderRadius: 999 }}>Your exposure</span>
+            <h1 style={{ margin: 0, fontSize: 'clamp(24px,5vw,36px)', fontWeight: 800, letterSpacing: '-.025em', lineHeight: 1.14, color: INK }}>
+              Here&apos;s what&apos;s public about {fullName || 'you'}.
+            </h1>
+            <p style={{ margin: 0, color: MUTED, fontSize: 15.5, lineHeight: 1.5 }}>
+              Your personal information is out there right now — searchable by anyone. Here&apos;s what we found.
+            </p>
+          </header>
 
+          <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Real first-party records for this name (safe-by-default: renders nothing if none). */}
+            <SignalTeaser subject={{ firstName: firstName.trim(), lastName: lastName.trim(), state, city: city.trim() }} flow="publicRecords" strict stage="pre-signup" accent={BLUE} />
+
+            <div>
+              <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: MUTED, margin: '0 0 8px' }}>What&apos;s exposed about you</div>
+              <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, overflow: 'hidden' }}>
+                {EXPOSED.map(([icon, l, sub], i) => (
+                  <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderTop: i ? `1px solid ${LINE}` : 'none' }}>
+                    <span style={{ fontSize: 17, flex: '0 0 auto' }} aria-hidden="true">{icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>{l}</div>
+                      <div style={{ fontSize: 12, color: MUTED }}>{sub}</div>
+                    </div>
+                    <span style={{ fontSize: 12.5, color: MUTED, flex: '0 0 auto' }} aria-hidden="true">🔒</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Email-only unlock → free account → dashboard (full Exposure Score + breaches + who's-searching). */}
+          <form onSubmit={createFreeAccount} style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 12, background: BLUE_SOFT, border: '1px solid #cfe0d6' }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: INK }}>See your full Exposure Score &amp; who&apos;s searching for you</div>
+            <p style={{ margin: 0, fontSize: 13.5, color: MUTED, lineHeight: 1.5 }}>Enter your email to unlock your complete report — including data breaches on your email and the people who&apos;ve looked you up.</p>
+            <input type="email" inputMode="email" autoComplete="email" autoFocus style={input} placeholder="you@email.com" value={email} onChange={(e) => { setEmail(e.target.value); if (emailErr) setEmailErr(''); }} />
+            {(emailErr || signupError) && <p style={{ margin: 0, color: '#c0392b', fontSize: 13 }}>{emailErr || signupError}</p>}
+            <button type="submit" disabled={creating} style={{ ...cta, opacity: creating ? 0.7 : 1 }}>{creating ? 'Checking…' : 'Show my full exposure →'}</button>
+            <p style={{ margin: 0, fontSize: 12, color: '#9aa4ad', textAlign: 'center' }}>Free · no card required · we&apos;ll email you your report.</p>
+          </form>
+        </div>
+      </main>
+    );
+  }
+
+  // ── STEP 1: the name form ──
   return (
-    <main style={{ background: '#f4f6f7', minHeight: '100vh', padding: 'clamp(20px,5vw,56px) 16px', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif' }}>
+    <main style={PAGE}>
       <div style={{ maxWidth: 620, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
 
         <header style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -104,11 +177,11 @@ export default function MyExposurePage() {
           </h1>
           <p style={{ margin: 0, color: MUTED, fontSize: 16, lineHeight: 1.5, maxWidth: '52ch' }}>
             Your address history, phone numbers, and public records are out there right now — searchable by anyone.
-            Look yourself up, then decide what to do about it.
+            Look yourself up and see exactly what&apos;s exposed.
           </p>
         </header>
 
-        <form onSubmit={onSubmit} style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, padding: 'clamp(18px,4vw,26px)', boxShadow: '0 1px 2px rgba(20,24,29,.05),0 14px 40px rgba(20,24,29,.07)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <form onSubmit={onSubmit} style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={label} htmlFor="ex-first">Your first name</label>
@@ -133,17 +206,15 @@ export default function MyExposurePage() {
           </div>
           {nameError && <p style={{ margin: 0, color: '#c0392b', fontSize: 13 }}>{nameError}</p>}
 
-          <button type="submit" style={{ background: BLUE, color: '#fff', border: 0, borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-            See my exposure — free →
-          </button>
+          <button type="submit" style={cta}>See what&apos;s public about me →</button>
           <p style={{ margin: 0, fontSize: 12, color: '#9aa4ad', textAlign: 'center' }}>
-            Create your free {brand.name} account to see your Exposure Score and everything public about you. No card required.
+            Free · no card required. See what&apos;s exposed first, then get your full Exposure Score.
           </p>
         </form>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', alignItems: 'center' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 650, color: AMBER, background: AMBER_SOFT, border: '1px solid #e6d4a6', padding: '6px 12px', borderRadius: 999 }}>
-            ★ See who's been searching for you
+            ★ See who&apos;s been searching for you
           </span>
           <span style={metric}>✓&nbsp;Cancel anytime — no surprise subscriptions</span>
         </div>
