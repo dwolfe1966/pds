@@ -358,8 +358,11 @@ export default function HomeFactsLandingV4Page() {
   }
 
   // ── STEP 1: the SHELL — v4's primary first paint (instant, no search, no Turnstile). Tap resolves. ──
+  const shellCtaLabel = loading ? `Finding ${fullName}…` : `See ${fullName}'s full profile →`;
   return (
-    <main style={page}>
+    <main style={page} className="hf-v4-shell">
+      {/* Mobile: pin the CTA to the bottom so it's always reachable; hide the inline one + pad the page. */}
+      <style>{'.hf-mobile-cta{display:none}@media(max-width:640px){.hf-mobile-cta{display:block}.hf-inline-cta{display:none}.hf-v4-shell{padding-bottom:96px}}'}</style>
       <div style={wrap}>
         <div style={{ fontSize: 12.5, fontWeight: 700, color: C.mut, textAlign: 'center' }}>Continuing your search from HomeFacts</div>
 
@@ -373,9 +376,22 @@ export default function HomeFactsLandingV4Page() {
           </div>
 
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 700, color: C.ink }}>Is this the {fullName} you're looking for?</div>
+            {/* Offender safety flag leads (verify, not assert) — the reason they clicked. */}
             <SignalTeaser subject={subject} flow="sexOffender" strict stage="pre-signup" accent={C.accent} />
 
+            {/* PRIMARY CTA — high, right under the flag (owner 2026-08-20: was buried below the list). */}
+            <button type="button" onClick={resolveProfile} disabled={loading} className="hf-inline-cta"
+              style={{ background: C.cta, color: C.ctaInk, border: 'none', borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 800, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
+              {shellCtaLabel}
+            </button>
+
+            {error === 'no-match' && (
+              <div style={{ fontSize: 13, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px' }}>
+                We couldn't find an exact match for {fullName}{state ? ` in ${stateName(state)}` : ''}. Try a broader search.
+              </div>
+            )}
+
+            {/* Supporting detail — what unlocking reveals (below the CTA now). */}
             <div>
               <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: C.mut, margin: '0 0 8px' }}>{fullName}'s full profile includes</div>
               <div style={{ border: `1px solid ${C.line}`, borderRadius: 12, overflow: 'hidden' }}>
@@ -391,18 +407,15 @@ export default function HomeFactsLandingV4Page() {
                 ))}
               </div>
             </div>
-
-            {error === 'no-match' && (
-              <div style={{ fontSize: 13, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px' }}>
-                We couldn't find an exact match for {fullName}{state ? ` in ${stateName(state)}` : ''}. Try a broader search.
-              </div>
-            )}
-
-            <button type="button" onClick={resolveProfile} disabled={loading}
-              style={{ background: C.cta, color: C.ctaInk, border: 'none', borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 800, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
-              {loading ? `Finding ${fullName}…` : `See ${fullName}'s full profile →`}
-            </button>
           </div>
+        </div>
+
+        {/* Mobile: the same CTA anchored to the bottom, always visible. */}
+        <div className="hf-mobile-cta" style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff', borderTop: `1px solid ${C.line}`, padding: '10px 16px calc(10px + env(safe-area-inset-bottom))', boxShadow: '0 -4px 16px rgba(0,0,0,0.10)', zIndex: 50 }}>
+          <button type="button" onClick={resolveProfile} disabled={loading}
+            style={{ width: '100%', background: C.cta, color: C.ctaInk, border: 'none', borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 800, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
+            {shellCtaLabel}
+          </button>
         </div>
 
         <p style={{ fontSize: 11, color: '#9aa4ad', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
