@@ -35,6 +35,7 @@ import RecordsBackgroundCheckPage from './pages/sales/RecordsBackgroundCheckPage
 import RecordsPublicPage from './pages/sales/RecordsPublicPage';
 import HomeFactsLandingPage, { HomeFactsPreviewPage } from './pages/sales/HomeFactsLandingPage';
 import HomeFactsLandingV3Page from './pages/sales/HomeFactsLandingV3Page';
+import HomeFactsLandingV4Page from './pages/sales/HomeFactsLandingV4Page';
 import WsfyWidget from './pages/sales/WsfyWidget';
 import SignalTeaserDevPage from './pages/dev/SignalTeaserDevPage';
 import NameSearchLandingV3aPage from './pages/sales/NameSearchLandingV3aPage';
@@ -215,6 +216,7 @@ const App = () => {
           <Route path="/name/landing/homefacts" element={<HomeFactsLandingPage />} />
           <Route path="/name/landing/homefacts-v2" element={<HomeFactsPreviewPage />} />
           <Route path="/name/landing/homefacts-v3" element={<HomeFactsLandingV3Page />} />
+          <Route path="/name/landing/homefacts-v4" element={<HomeFactsLandingV4Page />} />
           {/* WSFY embeddable partner widget (a.3) — bare iframe target; CTA breaks out to the free-tier funnel. */}
           <Route path="/widget/wsfy" element={<WsfyWidget />} />
           {/* `/people-search` is BOTH the member search AND the anonymous honest landing.
