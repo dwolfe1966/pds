@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setSearchInput as gtmSetSearchInput } from '../../services/gtmContext';
+import api from '../../api';
+import { setSearchInput as gtmSetSearchInput, setSearchTarget } from '../../services/gtmContext';
+import { gtmTeaserView } from '../../services/gtm';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { track } from '../../services/trackingService';
 import { useBrand } from '../../services/brand';
@@ -49,13 +51,43 @@ const EXPOSED = [
   ['🔓', 'Data breaches', 'Where your email & passwords have leaked'],
 ];
 
-// The concrete payoff shown right at the email ask (teaser info on the email-capture card).
+// The concrete payoff shown right at the email ask (generic fallback when we couldn't resolve a record).
 const UNLOCK = [
   ['📊', 'Your Exposure Score — exactly how exposed you are'],
   ['🔓', 'Data breaches exposing your email & passwords'],
   ['👁', 'Who’s been searching for you'],
   ['📍', 'Your full public record — and how to remove it'],
 ];
+
+// Real exposure rows from the resolved BC teaser identity. records.* are the live *Count fields (apiAdapter
+// coerces every field to a number via num(), so 0 when absent). Only non-empty categories show — honest.
+// criminal/property carry a real count but are framed "matching your name — verify" (best-match can catch a
+// same-name person; the criminal DETAIL itself reveals post-pay from our licensed source).
+function exposureRows(person) {
+  const R = (person && person.records) || {}; const Fl = (person && person.flags) || {};
+  const rows = [];
+  if (R.address > 0)   rows.push(['📍', 'Address history',         R.address,   R.address === 1 ? '1 address on record' : `${R.address} addresses on record`]);
+  if (R.phone > 0)     rows.push(['📞', 'Phone numbers',           R.phone,     R.phone === 1 ? '1 number' : `${R.phone} numbers`]);
+  if (R.relatives > 0) rows.push(['👪', 'Relatives & associates',  R.relatives, R.relatives === 1 ? '1 relative' : `${R.relatives} relatives`]);
+  if (Fl.isPropertyOwner || R.property > 0) rows.push(['🏠', 'Property records', R.property, R.property > 0 ? (R.property === 1 ? '1 property' : `${R.property} properties`) : 'On record']);
+  if (Fl.isCriminal || R.criminal > 0)      rows.push(['🚔', 'Criminal & court records', R.criminal, R.criminal > 0 ? (R.criminal === 1 ? '1 possible record' : `${R.criminal} possible records`) : 'Possible record']);
+  if (R.email > 0)     rows.push(['✉️', 'Email addresses',         R.email,     R.email === 1 ? '1 email' : `${R.email} emails`]);
+  if (Fl.hasEmployment || R.employment > 0) rows.push(['💼', 'Employment history', R.employment, R.employment > 0 ? `${R.employment} on record` : 'On record']);
+  return rows;
+}
+
+// The email-card payoff, personalized to the strongest real finds when we have them (else the generic list).
+function emailPayoff(person) {
+  if (!person || !person.records) return UNLOCK;
+  const R = person.records || {}; const Fl = person.flags || {};
+  const out = [];
+  if (Fl.isCriminal || R.criminal > 0) out.push(['🚔', R.criminal > 0 ? `${R.criminal} criminal & court record${R.criminal === 1 ? '' : 's'} — full details` : 'Criminal & court records — full details']);
+  if (Fl.isPropertyOwner || R.property > 0) out.push(['🏠', R.property > 0 ? `${R.property} propert${R.property === 1 ? 'y' : 'ies'} on record` : 'Property records']);
+  out.push(['🔓', 'Data breaches exposing your email & passwords']);
+  out.push(['👁', 'Who’s been searching for you']);
+  out.push(['📊', 'Your full Exposure Score']);
+  return out.slice(0, 4);
+}
 
 export default function MyExposurePage() {
   const brand = useBrand();
@@ -70,6 +102,8 @@ export default function MyExposurePage() {
   const [nameError, setNameError] = useState('');
 
   const [step, setStep] = useState('form'); // 'form' → 'teaser'
+  const [resolving, setResolving] = useState(false); // BC teaser search in flight
+  const [person, setPerson] = useState(null);        // resolved BC identity (real counts) or null (generic)
   const [email, setEmail] = useState('');
   const [emailErr, setEmailErr] = useState('');
   // NOTE: useSignup seeds redirectTo='/dashboard' by default, so gate navigation on `success` — otherwise
@@ -94,6 +128,36 @@ export default function MyExposurePage() {
     updateMappedIdentity({ confirmed: true, name: [first, last].filter(Boolean).join(' '), city: c || undefined, state: st ? st.toUpperCase() : undefined });
   };
 
+  // Resolve REAL records for the entered name via the BC teaser search (owner 2026-08-19: show actual data —
+  // # criminal records, # properties, addresses, phones, relatives). The submit tap IS the Turnstile gesture
+  // (safer than v3's auto-fire-on-mount). On any failure we DEGRADE to the generic capability teaser — never
+  // the paid /name/loader — because this is the FREE front door; the email step still creates the free account.
+  const resolveProfile = async () => {
+    const f = firstName.trim(), l = lastName.trim(), c = city.trim(), st = state.trim();
+    setResolving(true); setPerson(null);
+    try {
+      const params = { firstName: f, lastName: l };
+      if (c) params.city = c;
+      if (st) params.state = st;
+      const response = await api.searchPeople(params);
+      const list = (response.data || []).map((r) => ({ ...r, id: r.id || r.extId, extId: r.extId }));
+      if (!list.length) { setResolving(false); return; } // no match → generic teaser
+      track('search_submit', { type: 'name', resultCount: list.length });
+      track('results_view', { search_type: 'name', query: `${f} ${l}`.trim(), state: st || '' });
+      // Best guess: a result whose location matches the city, else the top result.
+      const cl = c.toLowerCase();
+      const best = (cl && list.find((r) => (r.location || '').toLowerCase().includes(cl))) || list[0];
+      setSearchTarget(best);
+      track('teaser_view', { personId: best.id, sup_variant: 'self' });
+      gtmTeaserView({ identity_id: best.id, search_type: 'name' });
+      setPerson(best);
+    } catch (err) {
+      track('search_error', { variant: 'self', reason: (err && err.message) || 'search_failed' });
+      // person stays null → generic capability teaser (no dead end).
+    }
+    setResolving(false);
+  };
+
   const onSubmit = (e) => {
     e.preventDefault();
     setNameError('');
@@ -106,6 +170,7 @@ export default function MyExposurePage() {
     track('search_step', { step: 'self-teaser', search_type: 'name', variant: 'self' });
     setStep('teaser');
     if (typeof window !== 'undefined') window.scrollTo(0, 0);
+    resolveProfile(); // fetch real counts in the background; teaser shows a loader until it lands
   };
 
   // Auto-generated password — the free account is email-only (no card), same as email-on-payment.
@@ -123,6 +188,8 @@ export default function MyExposurePage() {
 
   // ── STEP 2: exposure teaser (value first — no account) + email-only unlock ──
   if (step === 'teaser') {
+    const rows = exposureRows(person);
+    const payoff = emailPayoff(person);
     return (
       <main style={PAGE}>
         <div style={{ maxWidth: 620, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -137,24 +204,52 @@ export default function MyExposurePage() {
           </header>
 
           <div style={{ ...CARD, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Real first-party records for this name (safe-by-default: renders nothing if none). */}
-            <SignalTeaser subject={{ firstName: firstName.trim(), lastName: lastName.trim(), state, city: city.trim() }} flow="publicRecords" strict stage="pre-signup" accent={BLUE} />
-
-            <div>
-              <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: MUTED, margin: '0 0 8px' }}>What&apos;s exposed about you</div>
-              <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, overflow: 'hidden' }}>
-                {EXPOSED.map(([icon, l, sub], i) => (
-                  <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderTop: i ? `1px solid ${LINE}` : 'none' }}>
-                    <span style={{ fontSize: 17, flex: '0 0 auto' }} aria-hidden="true">{icon}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>{l}</div>
-                      <div style={{ fontSize: 12, color: MUTED }}>{sub}</div>
-                    </div>
-                    <span style={{ fontSize: 12.5, color: MUTED, flex: '0 0 auto' }} aria-hidden="true">🔒</span>
-                  </div>
-                ))}
+            {resolving ? (
+              /* Real search in flight (BC teaser + Turnstile) — honest loader. */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '18px 0' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', border: `3px solid ${BLUE_SOFT}`, borderTopColor: BLUE, animation: 'idlspin 0.8s linear infinite' }} />
+                <div style={{ fontSize: 14, color: MUTED, textAlign: 'center', lineHeight: 1.5 }}>Searching public records for {fullName || 'you'}{state ? `, ${state}` : ''} — addresses, records &amp; relatives…</div>
+                <style>{'@keyframes idlspin{to{transform:rotate(360deg)}}'}</style>
               </div>
-            </div>
+            ) : rows.length > 0 ? (
+              /* Resolved REAL counts from the BC teaser identity (owner 2026-08-19). */
+              <>
+                <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: MUTED }}>What we found matching your name</div>
+                <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, overflow: 'hidden' }}>
+                  {rows.map(([icon, l, count, detail], i) => (
+                    <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: i ? `1px solid ${LINE}` : 'none' }}>
+                      <span style={{ fontSize: 18, flex: '0 0 auto' }} aria-hidden="true">{icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>{l}</div>
+                        <div style={{ fontSize: 12, color: MUTED }}>{detail}</div>
+                      </div>
+                      <span style={{ flex: '0 0 auto', minWidth: 30, height: 30, padding: '0 9px', borderRadius: 8, background: BLUE_SOFT, color: BLUE, fontWeight: 800, fontSize: count > 0 ? 15 : 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{count > 0 ? count : '✓'}</span>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ margin: 0, fontSize: 11.5, color: '#9aa4ad', lineHeight: 1.5 }}>Records are matched to your name and may include others who share it — verify the details inside your report.</p>
+              </>
+            ) : (
+              /* No resolved match (or search unavailable) — generic capability teaser. Still value, still the email. */
+              <>
+                <SignalTeaser subject={{ firstName: firstName.trim(), lastName: lastName.trim(), state, city: city.trim() }} flow="publicRecords" strict stage="pre-signup" accent={BLUE} />
+                <div>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: MUTED, margin: '0 0 8px' }}>What&apos;s exposed about you</div>
+                  <div style={{ border: `1px solid ${LINE}`, borderRadius: 12, overflow: 'hidden' }}>
+                    {EXPOSED.map(([icon, l, sub], i) => (
+                      <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderTop: i ? `1px solid ${LINE}` : 'none' }}>
+                        <span style={{ fontSize: 17, flex: '0 0 auto' }} aria-hidden="true">{icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>{l}</div>
+                          <div style={{ fontSize: 12, color: MUTED }}>{sub}</div>
+                        </div>
+                        <span style={{ fontSize: 12.5, color: MUTED, flex: '0 0 auto' }} aria-hidden="true">🔒</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Email-only unlock → free account → dashboard (full Exposure Score + breaches + who's-searching). */}
@@ -162,7 +257,7 @@ export default function MyExposurePage() {
             <div style={{ fontSize: 17, fontWeight: 800, color: INK }}>See your full Exposure Score &amp; who&apos;s searching for you</div>
             <p style={{ margin: 0, fontSize: 13.5, color: MUTED, lineHeight: 1.5 }}>Enter your email — free, no card. Your report unlocks:</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '2px 0 4px' }}>
-              {UNLOCK.map(([icon, text]) => (
+              {payoff.map(([icon, text]) => (
                 <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: INK, fontWeight: 600 }}>
                   <span style={{ color: BLUE, fontWeight: 800, flex: '0 0 auto' }} aria-hidden="true">✓</span>
                   <span><span aria-hidden="true">{icon}</span>&nbsp; {text}</span>
