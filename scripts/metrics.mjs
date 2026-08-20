@@ -8,12 +8,18 @@
  * lives in a gitignored file and is read at runtime.
  *
  * ── ONE-TIME SETUP (owner) ────────────────────────────────────────────────────────────────────────
- *  1. Google Cloud console → create a Service Account (any project) → Keys → Add key → JSON. Save it to
- *     ./secrets/ga-service-account.json  (this whole folder is gitignored — NEVER commit it).
- *  2. Enable the "Google Analytics Data API" (and "Search Console API" if you want GSC) on that project.
- *  3. GA4 Admin → Property Access Management → add the service-account email (client_email in the JSON)
- *     as a "Viewer". Grab the numeric Property ID (Admin → Property Settings, e.g. 123456789).
- *  4. (Optional GSC) Search Console → Settings → Users and permissions → add the same email as Restricted.
+ * Preferred — log in as YOURSELF (no service-account key; works even when the org blocks SA keys via
+ * iam.disableServiceAccountKeyCreation, and needs NO GA4 grant since you already have access):
+ *   1. gcloud auth application-default login \
+ *        --scopes=https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform
+ *   2. gcloud auth application-default set-quota-project <PROJECT_ID>   (a project with the Analytics
+ *      Data API enabled — enable at console.cloud.google.com/apis/library/analyticsdata.googleapis.com)
+ *   3. Grab the numeric GA4 Property ID (GA4 Admin → Property Settings, e.g. 542993529).
+ *   (For GSC add the webmasters.readonly scope to step 1.)
+ *
+ * Alternate — a service-account JSON key (only if your org ALLOWS SA keys): save to
+ *   ./secrets/ga-service-account.json (gitignored), enable the API, and add the client_email as a GA4
+ *   Viewer. Set GOOGLE_SA_KEY if it lives elsewhere.
  *
  * ── RUN ───────────────────────────────────────────────────────────────────────────────────────────
  *   GA4_PROPERTY_ID=123456789 node scripts/metrics.mjs                 # last 28 days
@@ -36,29 +42,57 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const KEY_PATH = process.env.GOOGLE_SA_KEY || path.join(ROOT, 'secrets', 'ga-service-account.json');
+const HOME = process.env.HOME || process.env.USERPROFILE || '';
+const ADC_PATH = path.join(HOME, '.config', 'gcloud', 'application_default_credentials.json');
+// Credential source, first that exists: explicit GOOGLE_SA_KEY → committed-secrets SA key → gcloud ADC
+// (user login). ADC ("authorized_user") is the default when the org blocks service-account keys.
+function resolveKeyPath() {
+  const candidates = [process.env.GOOGLE_SA_KEY, path.join(ROOT, 'secrets', 'ga-service-account.json'), ADC_PATH].filter(Boolean);
+  for (const p of candidates) { try { readFileSync(p); return p; } catch { /* next */ } }
+  return candidates[candidates.length - 1];
+}
+const KEY_PATH = resolveKeyPath();
 const PROPERTY_ID = (process.env.GA4_PROPERTY_ID || '').replace(/^properties\//, '').trim();
 const DAYS = Math.max(1, parseInt(process.env.DAYS || '28', 10));
 const GSC_SITE_URL = process.env.GSC_SITE_URL || '';
 const FOCUS_EVENT = process.env.EVENT || '';
 const AS_JSON = process.env.JSON === '1';
+// GA4 Data API bills quota to a project when the caller is a USER (ADC). Taken from the ADC file's
+// quota_project_id, or GOOGLE_CLOUD_QUOTA_PROJECT. Sent as x-goog-user-project.
+let USER_PROJECT = process.env.GOOGLE_CLOUD_QUOTA_PROJECT || '';
 
 const b64url = (buf) => Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 function die(msg) { console.error(`\n✖ ${msg}\n`); process.exit(1); }
 
+const ADC_LOGIN = 'gcloud auth application-default login --scopes=https://www.googleapis.com/auth/analytics.readonly,https://www.googleapis.com/auth/cloud-platform';
+
 function loadKey() {
   let raw;
   try { raw = readFileSync(KEY_PATH, 'utf8'); }
-  catch { die(`No service-account key at ${KEY_PATH}\n  Create one (see the header of this file for setup) or set GOOGLE_SA_KEY=/path/to/key.json`); }
+  catch { die(`No credentials found (looked in secrets/ and gcloud ADC).\n  Log in as yourself:  ${ADC_LOGIN}\n  (or point GOOGLE_SA_KEY at a service-account JSON key)`); }
   let key;
-  try { key = JSON.parse(raw); } catch { die(`Key file at ${KEY_PATH} is not valid JSON.`); }
-  if (!key.client_email || !key.private_key) die(`Key file is missing client_email / private_key — is it a Service Account JSON key?`);
+  try { key = JSON.parse(raw); } catch { die(`Credential file at ${KEY_PATH} is not valid JSON.`); }
+  const isSA = key.type === 'service_account' || (key.client_email && key.private_key);
+  const isUser = key.type === 'authorized_user' || (key.client_id && key.refresh_token);
+  if (!isSA && !isUser) die(`Credential file at ${KEY_PATH} is neither a service-account key nor a gcloud ADC login.`);
+  key._kind = isSA ? 'sa' : 'user';
   return key;
 }
 
-// Mint a signed JWT and exchange it for an OAuth2 access token (no googleapis dep).
+// Exchange credentials for an OAuth2 access token (no googleapis dep). Handles both a gcloud ADC user
+// login (refresh-token grant) and a service-account key (signed JWT bearer).
 async function getAccessToken(key, scopes) {
+  if (key._kind === 'user') {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: key.client_id, client_secret: key.client_secret, refresh_token: key.refresh_token, grant_type: 'refresh_token' }),
+    });
+    const json = await res.json();
+    if (!res.ok) die(`ADC token refresh failed (${res.status}): ${json.error_description || json.error || JSON.stringify(json)}\n  Re-login: ${ADC_LOGIN}`);
+    return json.access_token;
+  }
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
   const claim = b64url(JSON.stringify({
@@ -83,16 +117,23 @@ async function getAccessToken(key, scopes) {
   return json.access_token;
 }
 
+const authHeaders = (token) => ({
+  Authorization: `Bearer ${token}`,
+  'Content-Type': 'application/json',
+  ...(USER_PROJECT ? { 'x-goog-user-project': USER_PROJECT } : {}),
+});
+
 async function ga4RunReport(token, body) {
   const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY_ID}:runReport`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: authHeaders(token),
     body: JSON.stringify(body),
   });
   const json = await res.json();
   if (!res.ok) {
     const m = json.error?.message || JSON.stringify(json);
-    if (/permission|caller does not have/i.test(m)) die(`GA4 denied access: ${m}\n  → Add the service-account email as a Viewer on GA4 property ${PROPERTY_ID}.`);
+    if (/permission|caller does not have/i.test(m)) die(`GA4 denied access: ${m}\n  → You (the logged-in user) need at least Viewer on GA4 property ${PROPERTY_ID}.`);
+    if (/user.?project|quota project|billing/i.test(m)) die(`GA4 needs a quota project: ${m}\n  → gcloud auth application-default set-quota-project <PROJECT_ID>  (a project with the Analytics Data API enabled)`);
     die(`GA4 runReport failed (${res.status}): ${m}`);
   }
   return json;
@@ -119,6 +160,7 @@ const dateRange = () => [{ startDate: `${DAYS}daysAgo`, endDate: 'today' }];
 async function main() {
   if (!PROPERTY_ID) die('Set GA4_PROPERTY_ID=<numeric id> (GA4 Admin → Property Settings).');
   const key = loadKey();
+  if (!USER_PROJECT && key.quota_project_id) USER_PROJECT = key.quota_project_id;
   const scopes = ['https://www.googleapis.com/auth/analytics.readonly'];
   if (GSC_SITE_URL) scopes.push('https://www.googleapis.com/auth/webmasters.readonly');
   const token = await getAccessToken(key, scopes);
@@ -200,7 +242,7 @@ async function gscQuery(token, site) {
   const call = async (dimension) => {
     const res = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: authHeaders(token),
       body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), dimensions: [dimension], rowLimit: 15 }),
     });
     const json = await res.json();
