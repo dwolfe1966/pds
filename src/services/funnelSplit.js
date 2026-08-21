@@ -79,3 +79,33 @@ export function resolveSeoLanding(search) {
   if (!isSeoTraffic(search)) return null;
   return pickWeighted([[V2, 0.5], [V11, 0.5]], 'split.seo');
 }
+
+/**
+ * HomeFacts entry-experience A/B (owner 2026-08-21): 33/33/33 across v5 (Criminal-Record File),
+ * v6 (Instant Map), v9 (Mirror HomeFacts). The registry still resolves HomeFacts shn traffic to the
+ * homefacts-v3 pre-shape route; we OVERRIDE it here — same placement as the paid split, in HomePageRedirect.
+ * Sticky per session (pickWeighted). The chosen arm's useLandingTrack + web_events carry the variant, so the
+ * funnel-by-variant read needs no extra wiring. null = not a HomeFacts campaign (leave routing alone).
+ */
+const HOMEFACTS_SRC = ['/name/landing/homefacts', '/name/landing/homefacts-v2', '/name/landing/homefacts-v3', '/name/landing/homefacts-v4'];
+const HOMEFACTS_AB = [
+  ['/name/landing/homefacts-v5', 1 / 3],
+  ['/name/landing/homefacts-v6', 1 / 3],
+  ['/name/landing/homefacts-v9', 1 / 3],
+];
+export function resolveHomefactsAbRoute(campaignRoute) {
+  if (campaignRoute && HOMEFACTS_SRC.includes(campaignRoute)) {
+    const route = pickWeighted(HOMEFACTS_AB, 'split.homefacts_ab');
+    // We self-assign the arm (not BC's shape), so stamp it into BC's native A/B attribution slot
+    // (refer_abc). buildRefer() forwards refer_abc onto every tracking event's `refer` AND the sale/order,
+    // giving BC arm-level attribution with the SAME variant string web_events uses. Partner payout is still
+    // by shn (refer_partnerId) — unchanged.
+    try {
+      const arm = route.split('/').pop(); // e.g. 'homefacts-v5'
+      const rp = JSON.parse(sessionStorage.getItem('referralParams') || '{}') || {};
+      if (rp.refer_abc !== arm) { rp.refer_abc = arm; sessionStorage.setItem('referralParams', JSON.stringify(rp)); }
+    } catch { /* ignore */ }
+    return route;
+  }
+  return null;
+}

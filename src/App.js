@@ -4,7 +4,7 @@ import { useAuth } from './context/AuthContext';
 import { useCampaign } from './context/CampaignContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import { resolvePaidRoute, resolveSeoLanding } from './services/funnelSplit';
+import { resolvePaidRoute, resolveSeoLanding, resolveHomefactsAbRoute } from './services/funnelSplit';
 import ScrollToTop from './components/ScrollToTop';
 import BrandStyles from './components/BrandStyles';
 // Sales pages
@@ -142,12 +142,15 @@ const HomePageRedirect = () => {
   // 75% v3 / 25% v11 — intentionally dropping the BC v3a/v3b theme split. When we override
   // we don't wait for the theme (the override ignores which arm it would have picked).
   const paidRoute = resolvePaidRoute(campaignRoute);
-  const effectiveRoute = paidRoute || campaignRoute;
+  // HomeFacts entry-experience A/B (owner 2026-08-21): override the registry's homefacts-v3 route with a
+  // sticky 33/33/33 pick across v5/v6/v9. Same override pattern as the paid split (doesn't await theme).
+  const abRoute = resolveHomefactsAbRoute(campaignRoute);
+  const effectiveRoute = paidRoute || abRoute || campaignRoute;
   const willRedirect = effectiveRoute && effectiveRoute !== '/';
   // Only NON-overridden A/B campaigns (registry `landing.awaitTheme`) wait for the BC shape —
   // so we route to the theme's assigned arm instead of the static fallback. _shapeSettled always
   // flips true (shape success/fail/timeout) so this never hangs.
-  if (!paidRoute && willRedirect && campaign?.landing?.awaitTheme && !campaign._shapeSettled) {
+  if (!paidRoute && !abRoute && willRedirect && campaign?.landing?.awaitTheme && !campaign._shapeSettled) {
     return <CampaignBootSplash />;
   }
   // Settled (or nothing to redirect to) — consume the one-shot flag now.
