@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS web_events (
   ts          TIMESTAMPTZ NOT NULL DEFAULT now(),  -- server receive time
   client_ts   TIMESTAMPTZ,                          -- client event time (optional)
   event       TEXT NOT NULL,                        -- landing_view, search_step, teaser_view, unlock, purchase, …
-  user_id     TEXT,                                 -- BC user id; NULL when anonymous
+  user_id     TEXT,                                 -- BC user id, NULL when anonymous
   user_state  TEXT NOT NULL DEFAULT 'visitor',      -- visitor | member | paid
   anon_id     TEXT,                                 -- stable per-device id (stitches pre-login events)
   session_id  TEXT,                                 -- per-session id
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS web_events (
   page_data   JSONB NOT NULL DEFAULT '{}'::jsonb,   -- arbitrary event payload
   referrer    TEXT,
   user_agent  TEXT,
-  ip_hash     TEXT,                                 -- sha256(ip + salt); never the raw IP
+  ip_hash     TEXT,                                 -- sha256 of ip + salt, never the raw IP
   country     TEXT                                  -- from the CDN geo header
 );
 
