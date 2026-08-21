@@ -13,6 +13,7 @@
 
 import api from '../api';
 import { getContextSnapshot } from './gtmContext';
+import { logWebEvent } from './webEvents';
 
 const SESSION_KEY = 'trackingSessionId';
 
@@ -263,6 +264,10 @@ export function track(eventName, properties = {}) {
   const funnel = funnelContext();
   const stepTiming = funnelStepDuration(eventName); // { step_duration_ms } on search_step
   _sendToBC(eventName, { sessionId, timestamp, ...member, ...funnel, ...stepTiming, ...(refer ? { refer } : {}), ...properties });
+
+  // Mirror to our own web_events activity log (idlookup.me). Async, non-blocking, best-effort —
+  // logWebEvent never awaits or throws (owner: posting must never block the UI).
+  logWebEvent(eventName, properties, { sessionId, userId: member && member.userId, variant: funnel && funnel.variant });
 
   // GA4/GTM bridge — surface every CLIENT event on window.dataLayer so the GTM
   // container can forward it to GA4, segmentable by partner/channel and by
