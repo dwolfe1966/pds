@@ -9,7 +9,6 @@ import { track } from '../../services/trackingService';
 import { setSearchInput as gtmSetSearchInput, setSearchTarget } from '../../services/gtmContext';
 import { gtmSearchSubmit, gtmTeaserView } from '../../services/gtm';
 import { saveDeclaredIdentity } from '../../services/identityProfile';
-import SignalTeaser from '../../components/SignalTeaser';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
 import { US_STATES } from '../../data/usStates';
 
@@ -231,7 +230,6 @@ export default function HomeFactsLandingV4Page() {
 
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
               {/* First-party safety flag (offender — verify, not assert) */}
-              <SignalTeaser subject={subject} flow="sexOffender" strict stage="pre-signup" accent={C.accent} />
 
               {/* Also on file — real chips from the BC teaser counts */}
               {chips.length > 0 && (
@@ -377,7 +375,6 @@ export default function HomeFactsLandingV4Page() {
 
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Offender safety flag leads (verify, not assert) — the reason they clicked. */}
-            <SignalTeaser subject={subject} flow="sexOffender" strict stage="pre-signup" accent={C.accent} />
 
             {/* PRIMARY CTA — high, right under the flag (owner 2026-08-20: was buried below the list). */}
             <button type="button" onClick={resolveProfile} disabled={loading} className="hf-inline-cta"

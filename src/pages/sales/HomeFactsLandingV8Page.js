@@ -4,7 +4,7 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { useFunnelFlow } from '../../services/funnelFlow';
 import AreaMap from '../../components/AreaMap';
 import {
-  C, page, wrap, card, Continuity, IdentityHeader, OffenderFlag,
+  C, page, wrap, card, Continuity, IdentityHeader, 
   UnlockCta, Disclaimer, ResolveLoader,
   useHomeFactsSubject, useHomeFactsResolve, useRequireName,
 } from './homefactsShared';
@@ -43,7 +43,6 @@ export default function HomeFactsLandingV8Page() {
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, lineHeight: 1.2 }}>Is {S.fullName} near you or your family?</div>
             <AreaMap city={S.city} state={S.state} height={230} accent={C.accent} />
-            <OffenderFlag subject={S.subject} />
             <UnlockCta label={`See ${S.fullName}'s location & record →`} onClick={R.resolveAndPay} loading={R.loading} scopeClass="hfv8" />
             <div>
               <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: C.mut, margin: '0 0 8px' }}>Protect your family — see</div>

@@ -3,7 +3,7 @@ import { useBrand } from '../../services/brand';
 import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { useFunnelFlow } from '../../services/funnelFlow';
 import {
-  C, page, wrap, card, Continuity, OffenderFlag,
+  C, page, wrap, card, Continuity, 
   UnlockCta, Disclaimer, ResolveLoader,
   useHomeFactsSubject, useHomeFactsResolve, useRequireName,
 } from './homefactsShared';
@@ -50,7 +50,6 @@ export default function HomeFactsLandingV10Page() {
           </div>
 
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <OffenderFlag subject={S.subject} />
 
             {/* Redacted document rows */}
             <div style={{ border: `1px solid ${C.line}`, borderRadius: 10, overflow: 'hidden', fontFamily: 'ui-monospace,Menlo,Consolas,monospace' }}>
