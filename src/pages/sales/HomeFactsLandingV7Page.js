@@ -5,7 +5,7 @@ import { useFunnelFlow } from '../../services/funnelFlow';
 import AreaMap from '../../components/AreaMap';
 import { properCaseName } from '../../components/PersonAvatar';
 import {
-  C, page, wrap, card, Continuity, IdentityHeader, CountChips, ReportIncludes,
+  C, page, wrap, card, Continuity, IdentityHeader, CountChips, ReportIncludes, BookingSignal,
   UnlockCta, Disclaimer, ResolveLoader, Section, maskName, pl,
   useHomeFactsSubject, useHomeFactsResolve, useRequireName,
 } from './homefactsShared';
@@ -49,6 +49,7 @@ export default function HomeFactsLandingV7Page() {
           <div style={card}>
             <IdentityHeader person={p} />
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <BookingSignal subject={S.subject} />
               <CountChips person={p} />
               <PhotoSlot person={p} />
               <AreaMap city={S.city} state={S.state} label={p.location || S.locLabel} accent={C.accent} />
@@ -86,6 +87,7 @@ export default function HomeFactsLandingV7Page() {
         <div style={card}>
           <IdentityHeader fullName={S.fullName} initial={S.initial} sub={S.locLabel || 'Public records on file'} />
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <BookingSignal subject={S.subject} />
             <UnlockCta label={`See ${S.fullName}'s full profile →`} onClick={R.resolveProfile} loading={R.loading} scopeClass="hfv7" />
             <PhotoSlot person={null} />
             <AreaMap city={S.city} state={S.state} accent={C.accent} />

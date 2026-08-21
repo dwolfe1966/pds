@@ -5,7 +5,7 @@ import { useFunnelFlow } from '../../services/funnelFlow';
 import AreaMap from '../../components/AreaMap';
 import { properCaseName } from '../../components/PersonAvatar';
 import {
-  C, page, wrap, card, Continuity, IdentityHeader, CountChips,
+  C, page, wrap, card, Continuity, IdentityHeader, CountChips, BookingSignal,
   UnlockCta, Disclaimer, ResolveLoader, Section, maskName,
   useHomeFactsSubject, useHomeFactsResolve, useRequireName,
 } from './homefactsShared';
@@ -41,6 +41,7 @@ export default function HomeFactsLandingV9Page() {
           <div style={card}>
             <IdentityHeader person={p} />
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <BookingSignal subject={S.subject} />
               <CountChips person={p} />
               <AreaMap city={S.city} state={S.state} label={p.location || S.locLabel} accent={C.accent} />
               {rels.length > 0 && (
@@ -85,6 +86,8 @@ export default function HomeFactsLandingV9Page() {
             </div>
           </div>
 
+
+          <BookingSignal subject={S.subject} />
 
           {/* Blue "VIEW CRIMINAL RECORD" button (mirrors the HomeFacts CTA) */}
           <button type="button" onClick={R.resolveProfile} disabled={R.loading} className="hfv9-icta"

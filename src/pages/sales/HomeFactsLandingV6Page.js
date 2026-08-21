@@ -4,7 +4,7 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { useFunnelFlow } from '../../services/funnelFlow';
 import AreaMap from '../../components/AreaMap';
 import {
-  C, page, wrap, card, Continuity, IdentityHeader, ReportIncludes,
+  C, page, wrap, card, Continuity, IdentityHeader, ReportIncludes, BookingSignal,
   UnlockCta, Disclaimer, ResolveLoader,
   useHomeFactsSubject, useHomeFactsResolve, useRequireName,
 } from './homefactsShared';
@@ -35,6 +35,7 @@ export default function HomeFactsLandingV6Page() {
         <div style={card}>
           <IdentityHeader fullName={S.fullName} initial={S.initial} sub={S.locLabel || 'Public records on file'} />
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <BookingSignal subject={S.subject} />
             <AreaMap city={S.city} state={S.state} height={220} accent={C.accent} />
             <UnlockCta label={`Unlock ${S.fullName}'s record →`} onClick={R.resolveAndPay} loading={R.loading} scopeClass="hfv6" />
             <div style={{ fontSize: 12.5, color: C.mut, textAlign: 'center' }}>No wait — full criminal record, court cases, current address &amp; photo inside.</div>

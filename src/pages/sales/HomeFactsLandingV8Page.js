@@ -4,7 +4,7 @@ import { useLandingTrack } from '../../hooks/useLandingTrack';
 import { useFunnelFlow } from '../../services/funnelFlow';
 import AreaMap from '../../components/AreaMap';
 import {
-  C, page, wrap, card, Continuity, IdentityHeader, 
+  C, page, wrap, card, Continuity, IdentityHeader, BookingSignal,
   UnlockCta, Disclaimer, ResolveLoader,
   useHomeFactsSubject, useHomeFactsResolve, useRequireName,
 } from './homefactsShared';
@@ -42,6 +42,7 @@ export default function HomeFactsLandingV8Page() {
           <IdentityHeader fullName={S.fullName} initial={S.initial} sub={S.locLabel ? `Registered in ${S.locLabel}` : 'Public records on file'} />
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, lineHeight: 1.2 }}>Is {S.fullName} near you or your family?</div>
+            <BookingSignal subject={S.subject} />
             <AreaMap city={S.city} state={S.state} height={230} accent={C.accent} />
             <UnlockCta label={`See ${S.fullName}'s location & record →`} onClick={R.resolveAndPay} loading={R.loading} scopeClass="hfv8" />
             <div>

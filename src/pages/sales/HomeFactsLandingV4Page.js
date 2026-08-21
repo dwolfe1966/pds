@@ -10,6 +10,7 @@ import { setSearchInput as gtmSetSearchInput, setSearchTarget } from '../../serv
 import { gtmSearchSubmit, gtmTeaserView } from '../../services/gtm';
 import { saveDeclaredIdentity } from '../../services/identityProfile';
 import { PersonAvatar, properCaseName } from '../../components/PersonAvatar';
+import SignalTeaser from '../../components/SignalTeaser';
 import { US_STATES } from '../../data/usStates';
 
 /**
@@ -229,8 +230,8 @@ export default function HomeFactsLandingV4Page() {
             </div>
 
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {/* First-party safety flag (offender — verify, not assert) */}
-
+              {/* Real booking signal (mugshot + facility) when we have it — safe-by-default. */}
+              <SignalTeaser subject={subject} flow="inmate" stage="pre-signup" accent={C.accent} />
               {/* Also on file — real chips from the BC teaser counts */}
               {chips.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -374,9 +375,10 @@ export default function HomeFactsLandingV4Page() {
           </div>
 
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Offender safety flag leads (verify, not assert) — the reason they clicked. */}
+            {/* Real booking signal (mugshot + facility) when we have it — safe-by-default. */}
+            <SignalTeaser subject={subject} flow="inmate" stage="pre-signup" accent={C.accent} />
 
-            {/* PRIMARY CTA — high, right under the flag (owner 2026-08-20: was buried below the list). */}
+            {/* PRIMARY CTA — high (owner 2026-08-20). */}
             <button type="button" onClick={resolveProfile} disabled={loading} className="hf-inline-cta"
               style={{ background: C.cta, color: C.ctaInk, border: 'none', borderRadius: 10, padding: '15px 22px', fontSize: 16, fontWeight: 800, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
               {shellCtaLabel}

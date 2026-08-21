@@ -237,6 +237,14 @@ export function OffenderFlag({ subject }) {
   return <SignalTeaser subject={subject} flow="sexOffender" strict stage="pre-signup" accent={C.accent} />;
 }
 
+// Real booking signal (first-party incarceration) — leads with the actual record: mugshot + facility name +
+// charges when we have a match; renders NOTHING otherwise (safe-by-default). This is the SPECIFIC offender
+// treatment that replaces the generic box — it only earns its space when it has something real to show.
+// `flow="inmate"` leads booking and is not a capability flow, so no hollow teaser when the record is empty.
+export function BookingSignal({ subject }) {
+  return <SignalTeaser subject={subject} flow="inmate" stage="pre-signup" accent={C.accent} />;
+}
+
 export function CountChips({ person }) {
   const chips = foundChips(person);
   if (!chips.length) return null;

@@ -5,7 +5,7 @@ import { useFunnelFlow } from '../../services/funnelFlow';
 import AreaMap from '../../components/AreaMap';
 import { properCaseName } from '../../components/PersonAvatar';
 import {
-  C, page, wrap, card, Continuity, IdentityHeader, CountChips, ReportIncludes,
+  C, page, wrap, card, Continuity, IdentityHeader, CountChips, ReportIncludes, BookingSignal,
   UnlockCta, Disclaimer, ResolveLoader, Section, maskName, pl,
   useHomeFactsSubject, useHomeFactsResolve, useRequireName,
 } from './homefactsShared';
@@ -47,6 +47,7 @@ export default function HomeFactsLandingV5Page() {
           <div style={card}>
             <IdentityHeader person={p} />
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <BookingSignal subject={S.subject} />
               <CountChips person={p} />
               <AreaMap city={S.city} state={S.state} label={p.location || S.locLabel} accent={C.accent} />
               {rels.length > 0 && (
@@ -83,6 +84,7 @@ export default function HomeFactsLandingV5Page() {
         <div style={card}>
           <IdentityHeader fullName={`${S.fullName} — Criminal Record`} initial={S.initial} sub={S.locLabel || 'Public records on file'} />
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <BookingSignal subject={S.subject} />
             <AreaMap city={S.city} state={S.state} accent={C.accent} />
             <UnlockCta label={`See ${S.fullName}'s full criminal record →`} onClick={R.resolveProfile} loading={R.loading} scopeClass="hfv5" />
             <Section title="Criminal & court records">
