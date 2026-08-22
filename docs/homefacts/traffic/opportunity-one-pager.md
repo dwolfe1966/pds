@@ -22,6 +22,9 @@ HomeFacts has hard-won, decades-deep organic authority — the kind that takes y
   wall of people-search, zero real estate. Under the real-estate skin, it is **exactly our vertical.**
 - **The audience is real and domestic:** **96.9% United States**, ~72–87% organic search _(SimilarWeb / HypeStat)_
   — a genuine, high-intent US audience, distinct from the bot noise arriving on our partner link (see the brief).
+- **The demand behind it is enormous:** **917,000+ registered US offenders**, and **~20% of US adults check a
+  public registry every year** — tens of millions of searches. HomeFacts's #1 keyword set sits directly on that
+  demand. _(Registry statistics, 2026.)_
 
 > **Traffic volume needs the source of truth.** Third-party estimators disagree widely — SimilarWeb ~135K/mo,
 > HypeStat ~792K visits/mo, SEMrush ~47K organic/mo. A single "visits/mo" figure won't survive scrutiny. The
@@ -38,9 +41,10 @@ The value is idling because no one is actively running the site day-to-day:
 - It sits on a **2013-era stack (PHP 5.3)** with **no active SEO program, product work, or traffic filtering** —
   yet it still draws a real ~150K+/mo US audience (recently *growing*, per SimilarWeb). Untended, not abandoned —
   which is exactly the point: imagine it operated.
-- Its **best intent is brokered away**: a redirect hands name/offender searches to **TruthFinder & Intelius**
-  (non-exclusive affiliate) for a thin **per-lead fee** — the operator on the other end keeps the customer and
-  **all of their lifetime value**.
+- Its **best intent is brokered away — to competitors many times its size.** A redirect hands name/offender
+  searches to **TruthFinder (global rank #4,311) and Intelius (#12,255)** — 20–50× HomeFacts's own rank
+  (#237,802) — for a thin **per-lead fee**, while the operator on the other end keeps the customer and **all of
+  their lifetime value**. HomeFacts feeds the giants and keeps a sliver.
 - And with no active operator at the front door, **the partner link that reaches us is unfiltered** — our
   first-party log shows **~97% Singapore bot/proxy**, while HomeFacts's real 96.9%-US audience goes elsewhere
   (see the traffic-quality brief).
