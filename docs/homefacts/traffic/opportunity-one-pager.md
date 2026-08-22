@@ -6,15 +6,25 @@ operated — and operating it fixes the traffic problem while unlocking real val
 
 ---
 
-## The asset is real
+## The asset is real (verified, Aug 2026)
 
 HomeFacts has hard-won, decades-deep organic authority — the kind that takes years and can't be bought:
 
-- **Moz DA 47 · ~2,100 referring domains · domain since 1996 (~30 years).** Real authority. _(Moz / HypeStat / WHOIS.)_
-- **~135K visits/mo, ~71% organic · 10.3M indexed pages.** _(SimilarWeb, 2026.)_
-- **Its engine is people-search, not property.** Top organic queries are **person names + "sex offender"** —
-  high-intent neighborhood-safety and identity searches. That audience overlaps **Intelius / TruthFinder**, not
-  Zillow. It is, under the real-estate skin, **exactly our vertical.**
+- **Authority:** **Moz DA 47** · Page Authority 51 · **54,188 backlinks from 2,106 referring domains** · domain
+  **since 1996 (~30 years).** _(Moz / HypeStat / WHOIS.)_
+- **Organic footprint:** **258,562 keywords ranking in Google's top 20** · **87% of all traffic comes from
+  organic search** · that organic traffic is worth **~$26,000/month** if bought as ads. _(SEMrush / HypeStat.)_
+  This is an SEO asset, not an ad-bought one.
+- **The engine is person/offender search — verifiable in Google today.** Its top-ranking pages are its
+  **sex-offender registries** (`/offenders.html`, `/offenders/California.html`, `/offenders/Florida.html`…) —
+  they rank for offender and person-name queries. Audience overlaps **Intelius / TruthFinder**, not Zillow. It
+  is, under the real-estate skin, **exactly our vertical.**
+
+> **Traffic volume needs the source of truth.** Third-party estimators disagree widely — SimilarWeb ~135K/mo,
+> HypeStat ~792K visits/mo, SEMrush ~47K organic/mo. A single "visits/mo" figure won't survive scrutiny. The
+> audited number lives in **homefacts.com's Google Search Console** — actual Google clicks, impressions, and the
+> exact top queries. With access (NIC owns the property), we can pull it directly and replace every estimate
+> above with hard, first-party Google data — including precisely how much of it is offender / person-name search.
 
 ---
 
