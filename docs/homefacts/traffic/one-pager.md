@@ -8,8 +8,10 @@ partner link (shN `6a7a2af6…`). This is our own server-side log, not a sampled
 
 ## Headline
 
-**Of 1,571 sessions HomeFacts sent us in ~22.5 hours, 97.4% was automated bot/proxy traffic. Only 2.6% (41
-sessions) was real US traffic — and that slice behaved like real people.**
+**Of 1,571 sessions that reached our funnel through the HomeFacts partner link in ~22.5 hours, 97.4% was
+automated bot/proxy traffic. Only 2.6% (41 sessions) was real US traffic — and that slice behaved like real
+people.** Critically, this is **not** a picture of HomeFacts's real audience: HomeFacts itself is **96.9% US**
+(SimilarWeb). The partner link is delivering us **bots, not the people HomeFacts actually reaches.**
 
 | Cohort | Sessions | Share | Engaged past landing |
 |---|---:|---:|---:|
@@ -36,25 +38,39 @@ Any one of these is suggestive; together they are conclusive.
 
 ---
 
+## This is not HomeFacts's real audience — and that's the point
+
+HomeFacts's *own* audience is **96.9% United States** (SimilarWeb), **~72–87% organic search** across estimators,
+and its top organic queries are **real person names** (e.g. "andrew james davis," "connor whitworth"). So the 97%
+Singapore bot traffic is specific to the **partner link we're receiving — not the people HomeFacts reaches.**
+
+That sharpens the finding: **HomeFacts has a real, US, organic people-search audience, and it is not arriving in
+our funnel.** Either the link is being crawled by bots, or the real users are still routed to the
+TruthFinder / Intelius affiliate — either way, we are getting the noise and not the signal.
+
+---
+
 ## There is a real audience underneath
 
-- **41 real US sessions** in ~22.5h (≈44/day at this rate).
+- **41 real US sessions** in ~22.5h (≈44/day *through this link*) — and HomeFacts as a whole draws a **96.9%-US**
+  organic audience (SimilarWeb), so the real pool is far larger than what the link is passing us.
 - **17% engaged** — searched or viewed a profile — normal human behavior.
 - **0 purchases from HomeFacts yet** (expected at 41 landings), **but** our general funnels converted **11 real
-  US buyers** in the same window — proving the product and checkout work end-to-end. The HomeFacts channel
-  simply isn't delivering enough *real* people to convert.
+  US buyers** in the same window — proving the product and checkout work end-to-end. The HomeFacts *link* simply
+  isn't delivering the real people to convert.
 
 ---
 
 ## Why this matters (and the opportunity)
 
-- **~97% of HomeFacts traffic has no commercial value.** However the channel is currently valued or monetized,
-  the overwhelming majority is Singapore bot/proxy traffic that will never convert for anyone.
-- **A real, engaged US offender-lookup audience exists** beneath the noise — today tiny in our funnel and
-  historically handed off to TruthFinder / Intelius for a per-lead sliver.
-- **This is a management problem, not a demand problem.** Filtering the bot traffic and properly monetizing the
-  real audience is exactly the case for **idlookup taking over management of HomeFacts** — but first, the
-  immediate step is aligning with leadership on what the traffic actually is.
+- **The HomeFacts link is passing us ~97% commercially-worthless traffic** — Singapore bot/proxy that will never
+  convert — while HomeFacts's real, 96.9%-US, organic people-search audience goes elsewhere.
+- **The real audience is large and it's exactly our vertical** (top queries are person names; nearest sites are
+  Intelius / TruePeopleSearch / public-records, not Zillow) — today handed to TruthFinder / Intelius for a
+  per-lead sliver rather than routed to an owned funnel.
+- **This is a routing / operations problem, not a demand problem.** Filtering the bots and routing the real
+  audience is the case for **idlookup operating HomeFacts** — but first, the immediate step is aligning with
+  leadership on what the traffic actually is.
 
 ---
 

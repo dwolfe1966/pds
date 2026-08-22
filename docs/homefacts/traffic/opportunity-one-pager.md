@@ -16,9 +16,12 @@ HomeFacts has hard-won, decades-deep organic authority — the kind that takes y
   organic search** · that organic traffic is worth **~$26,000/month** if bought as ads. _(SEMrush / HypeStat.)_
   This is an SEO asset, not an ad-bought one.
 - **The engine is person/offender search — verifiable in Google today.** Its top-ranking pages are its
-  **sex-offender registries** (`/offenders.html`, `/offenders/California.html`, `/offenders/Florida.html`…) —
-  they rank for offender and person-name queries. Audience overlaps **Intelius / TruthFinder**, not Zillow. It
-  is, under the real-estate skin, **exactly our vertical.**
+  **sex-offender registries** (`/offenders.html`, `/offenders/California.html`, `/offenders/Florida.html`…), and
+  its top organic queries are **real person names** ("andrew james davis," "connor whitworth," "brian oneal
+  bowling north carolina"). Its nearest sites are **Intelius, TruePeopleSearch, city-data, public-records** — a
+  wall of people-search, zero real estate. Under the real-estate skin, it is **exactly our vertical.**
+- **The audience is real and domestic:** **96.9% United States**, ~72–87% organic search _(SimilarWeb / HypeStat)_
+  — a genuine, high-intent US audience, distinct from the bot noise arriving on our partner link (see the brief).
 
 > **Traffic volume needs the source of truth.** Third-party estimators disagree widely — SimilarWeb ~135K/mo,
 > HypeStat ~792K visits/mo, SEMrush ~47K organic/mo. A single "visits/mo" figure won't survive scrutiny. The
@@ -32,12 +35,15 @@ HomeFacts has hard-won, decades-deep organic authority — the kind that takes y
 
 The value is idling because no one is actively running the site day-to-day:
 
-- It sits on a **2013-era stack (PHP 5.3)** and its SEO is **gradually declining** — decaying, not abandoned.
+- It sits on a **2013-era stack (PHP 5.3)** with **no active SEO program, product work, or traffic filtering** —
+  yet it still draws a real ~150K+/mo US audience (recently *growing*, per SimilarWeb). Untended, not abandoned —
+  which is exactly the point: imagine it operated.
 - Its **best intent is brokered away**: a redirect hands name/offender searches to **TruthFinder & Intelius**
   (non-exclusive affiliate) for a thin **per-lead fee** — the operator on the other end keeps the customer and
   **all of their lifetime value**.
-- And with no active operator filtering the front door, **the outbound traffic is unfiltered.** Our first-party
-  log shows **~97% of what currently reaches the funnel is bot/proxy noise** (see the traffic-quality brief).
+- And with no active operator at the front door, **the partner link that reaches us is unfiltered** — our
+  first-party log shows **~97% Singapore bot/proxy**, while HomeFacts's real 96.9%-US audience goes elsewhere
+  (see the traffic-quality brief).
 
 None of this is a criticism of NIC — it's simply what any authoritative site does when it's **held passively
 rather than operated.** The upside is that everything above is fixable by an operator.
