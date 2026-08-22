@@ -1,6 +1,6 @@
 # HomeFacts Traffic Quality — first-party analysis
 
-**Window:** 2026-08-21 20:54 → 2026-08-22 12:24 PT (~22.5 hours, continuous).
+**Window:** 2026-08-21 1:54 PM → 2026-08-22 12:24 PM PT (~22.5 hours, continuous).
 **Source:** idlookup.ai first-party event log (`web_events`) — every session that arrived from the HomeFacts
 partner link (shN `6a7a2af6…`). This is our own server-side log, not a sampled analytics estimate.
 
