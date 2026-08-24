@@ -194,7 +194,9 @@ const WsfyLandingPage = () => {
     if (!ok) { setErr('That email may already be in use — try logging in instead.'); setStep('account'); return; }
     try { saveMemberProfile({ selfPerson, city: selfPerson && selfPerson.city, state: selfPerson && selfPerson.state, verified: verifiedVia || 'kba', source: 'wsfy-landing' }); } catch { /* mirror is best-effort */ }
     track('wsfy_free_account_created', { verified: verifiedVia || 'kba' });
-    navigate('/payment?reason=wsfy');
+    // Value-first (owner 2026-08-24, "b"): land on the FREE member WSFY page (masked searchers + counts +
+    // upgrade CTA) — the direct payoff of "see who's searching for you" — instead of a hard paywall.
+    navigate('/who-is-searching');
   };
 
   const input = { width: '100%', boxSizing: 'border-box', padding: '0.85rem 0.95rem', fontSize: '1rem', border: `1.5px solid ${P.line}`, borderRadius: 10, outline: 'none', background: '#fff', color: P.ink };
