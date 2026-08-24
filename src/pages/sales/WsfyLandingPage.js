@@ -86,6 +86,7 @@ const WsfyLandingPage = () => {
   const [kbaAnswers, setKbaAnswers] = useState({});
   const [kbaAttempts, setKbaAttempts] = useState(0);
   const [showDlScan, setShowDlScan] = useState(false);
+  const [verifiedVia, setVerifiedVia] = useState('kba');
   const KBA_MAX = 5;
   const kbaLocked = kbaAttempts >= KBA_MAX;
   const stepIndex = getStepIndex(step);
@@ -168,19 +169,31 @@ const WsfyLandingPage = () => {
         return;
       }
     }
-    confirmIdentity(selfPerson, 'kba');
+    onIdentityVerified(selfPerson, 'kba');
   };
 
-  // Confirmed (via KBA or DL scan) → silently create the account, complete the profile, → payment.
-  const confirmIdentity = async (sp, verified) => {
+  // Identity verified (KBA or DL) → show the EXPLICIT free-account step (owner 2026-08-24: no silent create —
+  // the user consciously creates the free account, matching the /my-exposure value-first flow).
+  const onIdentityVerified = (sp, verified) => {
+    setErr('');
+    if (sp) setSelfPerson(sp);
+    setVerifiedVia(verified || 'kba');
+    track('wsfy_identity_confirmed', { verified: verified || 'kba' });
+    setStep('account');
+    if (typeof window !== 'undefined') window.scrollTo(0, 0);
+  };
+
+  // Explicit "Create my free account" tap → create the account + profile, then continue.
+  const createFreeAccount = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setErr('Enter a valid email to create your free account.'); return; }
     setErr(''); setStep('creating');
     const ok = await signupSubmit({
       email: email.trim(), password: genPassword(),
       extraPayload: { firstName: firstName.trim(), lastName: lastName.trim(), fullName: [firstName, middleName, lastName].filter(Boolean).join(' ').trim(), phone: phone.trim() || undefined, intent: 'wsfy' },
     });
-    if (!ok) { setErr('That email may already be in use — try logging in instead.'); setStep('contact'); return; }
-    try { saveMemberProfile({ selfPerson: sp, city: sp.city, state: sp.state, verified: verified || 'kba', source: 'wsfy-landing' }); } catch { /* mirror is best-effort */ }
-    track('wsfy_identity_confirmed', { verified: verified || 'kba' });
+    if (!ok) { setErr('That email may already be in use — try logging in instead.'); setStep('account'); return; }
+    try { saveMemberProfile({ selfPerson, city: selfPerson && selfPerson.city, state: selfPerson && selfPerson.state, verified: verifiedVia || 'kba', source: 'wsfy-landing' }); } catch { /* mirror is best-effort */ }
+    track('wsfy_free_account_created', { verified: verifiedVia || 'kba' });
     navigate('/payment?reason=wsfy');
   };
 
@@ -271,11 +284,24 @@ const WsfyLandingPage = () => {
               <input id="wsfy-phone" type="tel" style={{ ...input, marginBottom: '1rem' }} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" />
               {err && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{err}</p>}
               <button type="button" style={cta} onClick={findMyRecord}>Find my record →</button>
-              <p style={{ margin: '0.9rem 0 0', fontSize: '0.78rem', color: P.mut, textAlign: 'center', lineHeight: 1.5 }}>We create your account automatically and email you a secure login link — no password to remember.</p>
+              <p style={{ margin: '0.9rem 0 0', fontSize: '0.78rem', color: P.mut, textAlign: 'center', lineHeight: 1.5 }}>Free · no card required. You&apos;ll verify it&apos;s you, then create your free account.</p>
             </div>
           )}
 
-          {(step === 'searching' || step === 'creating') && <Spinner title={step === 'searching' ? 'Finding your record…' : 'Confirming your identity…'} P={P} />}
+          {step === 'account' && (
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', fontWeight: 700, color: P.green, background: '#f0fdf4', border: `1px solid ${P.line}`, borderRadius: 999, padding: '4px 11px', marginBottom: '0.7rem' }}>✓ Identity verified</div>
+              <h2 style={{ margin: '0 0 0.2rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>Create your free account</h2>
+              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: P.mut }}>Your free account unlocks who&apos;s been searching for you — and lets you control what&apos;s public about your identity.</p>
+              <label style={label} htmlFor="wsfy-acct-email">Email</label>
+              <input id="wsfy-acct-email" type="email" style={{ ...input, marginBottom: '1rem', borderColor: err ? '#b91c1c' : P.line }} value={email} onChange={(e) => { setEmail(e.target.value); if (err) setErr(''); }} placeholder="you@example.com" required />
+              {err && <p style={{ color: '#b91c1c', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{err}</p>}
+              <button type="button" style={cta} onClick={createFreeAccount}>Create my free account →</button>
+              <p style={{ margin: '0.9rem 0 0', fontSize: '0.78rem', color: P.mut, textAlign: 'center', lineHeight: 1.5 }}>Free · no card required. We&apos;ll email you a secure login link — no password to remember.</p>
+            </div>
+          )}
+
+          {(step === 'searching' || step === 'creating') && <Spinner title={step === 'searching' ? 'Finding your record…' : 'Creating your free account…'} P={P} />}
 
           {step === 'choose' && (
             <div>
@@ -301,7 +327,7 @@ const WsfyLandingPage = () => {
           {step === 'verify' && (showDlScan ? (
             <div>
               <h2 style={{ margin: '0 0 0.3rem', fontSize: '1.25rem', fontWeight: 800, color: P.ink }}>🛡️ Verify with your license</h2>
-              <DlScanVerify recordName={selfPerson && selfPerson.name} onVerified={() => confirmIdentity(selfPerson, 'id')} onCancel={() => setShowDlScan(false)} />
+              <DlScanVerify recordName={selfPerson && selfPerson.name} onVerified={() => onIdentityVerified(selfPerson, 'id')} onCancel={() => setShowDlScan(false)} />
               <button type="button" onClick={() => setShowDlScan(false)} style={{ marginTop: 12, background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}>← Answer a question instead</button>
             </div>
           ) : (
