@@ -41,6 +41,22 @@ Any one of these is suggestive; together they are conclusive.
 
 ---
 
+## Independently confirmed by Google Analytics
+
+GA4 (idlookup.ai property, 30 days: Jul 25 – Aug 23) tells the same story from a **second, independent source.**
+Across **11,202 users** on the /homefacts landing pages:
+
+- **96.7% non-US** — Singapore 60% (average engagement **1.70 seconds**) plus a broad international tail (Brazil,
+  Vietnam, Pakistan, Ukraine, Russia…), all with near-zero engagement.
+- **3.3% US** (372 users, average engagement 25.2s) — **the only cohort that converted (1 key event).**
+- **0 conversions from any non-US traffic.**
+
+GA4 also shows the HomeFacts channel is the **source** of the bot flood: **95% of idlookup.ai's entire Singapore
+traffic (6,739 of 7,125) entered through the HomeFacts pages.** Our first-party log (~98% bot) and GA4 (~96.7%
+non-US) — two independent measurement systems — **agree.** Data: [GA4 "HomeFacts Traffic Origin" sheet](https://docs.google.com/spreadsheets/d/1KeZKF11RszaNHUmV2iWaUbql6Q_PTWcBTas6dZoKAa8/edit).
+
+---
+
 ## This is not HomeFacts's real audience — and that's the point
 
 HomeFacts's *own* audience is **96.9% United States** (SimilarWeb), **~72–87% organic search**, and its top
@@ -73,8 +89,11 @@ TruthFinder / Intelius affiliate — either way, we are getting the noise and no
 
 ---
 
-## Supporting data (attached / reproducible)
+## Supporting data
 
-- `homefacts-sessions.csv` — raw, one row per session: timestamp, country, cohort, arm, events, engaged, deepest
-  step, user-agent · `homefacts-country-summary.csv` · `homefacts-hourly.csv`.
-- Reproducible any time: `seo/scripts/homefacts-traffic-analysis.mjs` (regenerates all of the above).
+- **GA4 export (independent corroboration):** [HomeFacts Traffic Origin sheet](https://docs.google.com/spreadsheets/d/1KeZKF11RszaNHUmV2iWaUbql6Q_PTWcBTas6dZoKAa8/edit)
+  — all traffic by country + traffic to the /homefacts landing pages (idlookup.ai property, 30 days). Saved copy:
+  `sources/ga4-homefacts-traffic-origin-30d.csv`.
+- **First-party log:** `homefacts-sessions.csv` (one row per session: time, country, cohort, arm, events, engaged,
+  deepest step, user-agent) · `homefacts-country-summary.csv` · `homefacts-hourly.csv`. Reproducible via
+  `seo/scripts/homefacts-traffic-analysis.mjs`.
