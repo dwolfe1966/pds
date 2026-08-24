@@ -53,13 +53,13 @@ TruthFinder / Intelius affiliate — either way, we are getting the noise and no
 
 ---
 
-## The real slice behaves like real people
+## The real slice behaves like real people — and converts
 
 - **135 real US sessions** in ~3 days (≈45/day *through this link*).
-- **20% engaged** — searched or viewed a profile; a handful reached checkout — normal human behavior (bots: 0%).
-- **0 purchases through the HomeFacts link yet** (expected at this volume) — while our general funnels are
-  converting real US buyers in the same window. The product and checkout work; the **link simply isn't
-  delivering the real people** to convert.
+- **20% engaged** — searched or viewed a profile; several reached checkout — normal human behavior (bots: 0%).
+- **1 purchase** from that tiny real slice — the **first real conversion through the link.** At ~135 US landings
+  it's a small sample, but it proves the **real US audience does convert.** The 98% that are bots never will — so
+  the more of HomeFacts's *real* audience the link delivers instead of bots, the more revenue it produces.
 
 ---
 
