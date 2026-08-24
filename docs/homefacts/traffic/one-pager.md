@@ -1,38 +1,41 @@
-# HomeFacts Traffic Quality — first-party analysis
+# The HomeFacts partner traffic we're receiving — a profile
 
-**Window:** 2026-08-21 1:54 PM → 2026-08-22 12:24 PM PT (~22.5 hours, continuous).
-**Source:** idlookup.ai first-party event log (`web_events`) — every session that arrived from the HomeFacts
-partner link (shN `6a7a2af6…`). This is our own server-side log, not a sampled analytics estimate.
+_Prepared for the NIC / HomeFacts discussion (D. Teng). This brief profiles **the traffic that currently reaches
+our funnel through the HomeFacts partner link** — measured with our own server-side event log, not sampled
+analytics. Its companion profiles HomeFacts's *own* audience and the opportunity to grow and monetize it._
+
+**Window:** 2026-08-21 → 2026-08-24 (~68.7 hours continuous) · **13,218 events · 6,860 sessions.**
+**Source:** idlookup.ai first-party log (`web_events`), every session arriving from the HomeFacts link (shN `6a7a2af6…`).
 
 ---
 
 ## Headline
 
-**Of 1,571 sessions that reached our funnel through the HomeFacts partner link in ~22.5 hours, 97.4% was
-automated bot/proxy traffic. Only 2.6% (41 sessions) was real US traffic — and that slice behaved like real
-people.** Critically, this is **not** a picture of HomeFacts's real audience: HomeFacts itself is **96.9% US**
-(SimilarWeb). The partner link is delivering us **bots, not the people HomeFacts actually reaches.**
+**Of the 6,860 sessions the HomeFacts link delivered to us over ~3 days, 98.0% was automated bot/proxy traffic.
+Only 2.0% (135 sessions) was real US traffic — and that slice behaved like real people.** Critically, this is
+**not** a picture of HomeFacts's real audience: HomeFacts itself is **96.9% US** (SimilarWeb). The partner link
+is passing us **bots, not the people HomeFacts actually reaches.**
 
 | Cohort | Sessions | Share | Engaged past landing |
 |---|---:|---:|---:|
-| **Total** | 1,571 | 100% | — |
-| **Real (US)** | 41 | 2.6% | **17.1%** |
-| **Bot / proxy (non-US)** | 1,530 | 97.4% | **0.0%** |
+| **Total** | 6,860 | 100% | — |
+| **Real (US)** | 135 | 2.0% | **20.0%** |
+| **Bot / proxy (non-US)** | 6,725 | 98.0% | **0.0%** |
 
 ---
 
-## Why we're certain the 97% is automated
+## Why we're certain the 98% is automated
 
 Four independent signals, all pointing the same way:
 
-1. **Geography.** 97.3% originates in **Singapore** (a global datacenter/proxy hub); 2.6% US; 0.1% Colombia.
-   A genuine US offender-lookup audience does not come 97% from Singapore.
-2. **Zero engagement.** **1,530 of 1,530 non-US sessions (100%) loaded a single page and left** — not one fired
-   a second event (no click, no search). Exactly **1.00 events/session** vs **1.68** for US traffic.
-3. **One fingerprint.** **1,529 of 1,530** share an *identical* browser user-agent (`Mac OS X 10_15_7 / WebKit`)
-   — the signature of a single automation, not 1,500 distinct real devices.
-4. **No human rhythm.** Non-US arrivals are a flat **~50–114 landings/hour around the clock**, including 4–8am,
-   with no day/night curve. Humans sleep; this traffic doesn't.
+1. **Geography.** **97.9% originates in Singapore** (a global datacenter/proxy hub); 2.0% US; a handful of
+   one-off others. A genuine US offender-lookup audience does not come 98% from Singapore.
+2. **Zero engagement.** **6,725 of 6,725 non-US sessions (100%) loaded one page and left** — not one fired a
+   second event. Exactly **1.00 events/session**, vs **2.30** for US traffic.
+3. **One fingerprint.** **6,720 of 6,725** share an *identical* browser user-agent (`Mac OS X 10_15_7 / WebKit`)
+   — the signature of a single automation, not thousands of distinct real devices.
+4. **No human rhythm.** Non-US arrivals are a steady drip around the clock, including overnight hours, with no
+   day/night curve. Humans sleep; this traffic doesn't.
 
 Any one of these is suggestive; together they are conclusive.
 
@@ -40,9 +43,9 @@ Any one of these is suggestive; together they are conclusive.
 
 ## This is not HomeFacts's real audience — and that's the point
 
-HomeFacts's *own* audience is **96.9% United States** (SimilarWeb), **~72–87% organic search** across estimators,
-and its top organic queries are **real person names** (e.g. "andrew james davis," "connor whitworth"). So the 97%
-Singapore bot traffic is specific to the **partner link we're receiving — not the people HomeFacts reaches.**
+HomeFacts's *own* audience is **96.9% United States** (SimilarWeb), **~72–87% organic search**, and its top
+organic queries are **real person names** (e.g. "andrew james davis," "connor whitworth"). So the 98% Singapore
+bot traffic is specific to the **partner link we're receiving — not the people HomeFacts reaches.**
 
 That sharpens the finding: **HomeFacts has a real, US, organic people-search audience, and it is not arriving in
 our funnel.** Either the link is being crawled by bots, or the real users are still routed to the
@@ -50,34 +53,28 @@ TruthFinder / Intelius affiliate — either way, we are getting the noise and no
 
 ---
 
-## There is a real audience underneath
+## The real slice behaves like real people
 
-- **41 real US sessions** in ~22.5h (≈44/day *through this link*) — and HomeFacts as a whole draws a **96.9%-US**
-  organic audience (SimilarWeb), so the real pool is far larger than what the link is passing us.
-- **17% engaged** — searched or viewed a profile — normal human behavior.
-- **0 purchases from HomeFacts yet** (expected at 41 landings), **but** our general funnels converted **11 real
-  US buyers** in the same window — proving the product and checkout work end-to-end. The HomeFacts *link* simply
-  isn't delivering the real people to convert.
+- **135 real US sessions** in ~3 days (≈45/day *through this link*).
+- **20% engaged** — searched or viewed a profile; a handful reached checkout — normal human behavior (bots: 0%).
+- **0 purchases through the HomeFacts link yet** (expected at this volume) — while our general funnels are
+  converting real US buyers in the same window. The product and checkout work; the **link simply isn't
+  delivering the real people** to convert.
 
 ---
 
-## Why this matters (and the opportunity)
+## What this means
 
-- **The HomeFacts link is passing us ~97% commercially-worthless traffic** — Singapore bot/proxy that will never
+- **The HomeFacts link is passing us ~98% commercially-worthless traffic** — Singapore bot/proxy that will never
   convert — while HomeFacts's real, 96.9%-US, organic people-search audience goes elsewhere.
-- **The real audience is large and it's exactly our vertical** (top queries are person names; nearest sites are
-  Intelius / TruePeopleSearch / public-records, not Zillow) — today handed to TruthFinder / Intelius for a
-  per-lead sliver rather than routed to an owned funnel.
-- **This is a routing / operations problem, not a demand problem.** Filtering the bots and routing the real
-  audience is the case for **idlookup operating HomeFacts** — but first, the immediate step is aligning with
-  leadership on what the traffic actually is.
+- **This is a routing / traffic-quality problem, not a demand problem.** The immediate step is simply to align on
+  what this traffic is (this brief), then fix what the link delivers so HomeFacts's *real* audience is what flows
+  — and can be monetized properly (see the companion brief).
 
 ---
 
-## Supporting data (attached)
+## Supporting data (attached / reproducible)
 
-- `homefacts-sessions.csv` — raw, one row per session (1,571): timestamp, country, cohort, arm, events, engaged,
-  deepest step reached, user-agent.
-- `homefacts-country-summary.csv` — sessions + engagement by country.
-- `homefacts-hourly.csv` — hourly landings, US vs non-US (shows the flat 24/7 bot pattern).
-- Reproducible any time: `seo/scripts/homefacts-traffic-analysis.mjs`.
+- `homefacts-sessions.csv` — raw, one row per session: timestamp, country, cohort, arm, events, engaged, deepest
+  step, user-agent · `homefacts-country-summary.csv` · `homefacts-hourly.csv`.
+- Reproducible any time: `seo/scripts/homefacts-traffic-analysis.mjs` (regenerates all of the above).

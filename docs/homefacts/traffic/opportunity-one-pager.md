@@ -1,91 +1,97 @@
-# HomeFacts — an authoritative asset on autopilot
+# HomeFacts.com — traffic profile & the opportunity to grow and monetize it
 
-_Companion to the traffic-quality brief. Where that one documents **what the traffic is**, this one frames
-**the opportunity**: HomeFacts is a genuinely valuable people-search asset that simply isn't being actively
-operated — and operating it fixes the traffic problem while unlocking real value for NIC and IDLookup both._
-
----
-
-## The asset is real (verified, Aug 2026)
-
-HomeFacts has hard-won, decades-deep organic authority — the kind that takes years and can't be bought:
-
-- **Authority:** **Moz DA 47** · Page Authority 51 · **54,188 backlinks from 2,106 referring domains** · domain
-  **since 1996 (~30 years).** _(Moz / HypeStat / WHOIS.)_
-- **Organic footprint:** **258,562 keywords ranking in Google's top 20** · **87% of all traffic comes from
-  organic search** · that organic traffic is worth **~$26,000/month** if bought as ads. _(SEMrush / HypeStat.)_
-  This is an SEO asset, not an ad-bought one.
-- **The engine is person/offender search — verifiable in Google today.** Its top-ranking pages are its
-  **sex-offender registries** (`/offenders.html`, `/offenders/California.html`, `/offenders/Florida.html`…), and
-  its top organic queries are **real person names** ("andrew james davis," "connor whitworth," "brian oneal
-  bowling north carolina"). Its nearest sites are **Intelius, TruePeopleSearch, city-data, public-records** — a
-  wall of people-search, zero real estate. Under the real-estate skin, it is **exactly our vertical.**
-- **The audience is real and domestic:** **96.9% United States**, ~72–87% organic search _(SimilarWeb / HypeStat)_
-  — a genuine, high-intent US audience, distinct from the bot noise arriving on our partner link (see the brief).
-- **The demand behind it is enormous:** **917,000+ registered US offenders**, and **~20% of US adults check a
-  public registry every year** — tens of millions of searches. HomeFacts's #1 keyword set sits directly on that
-  demand. _(Registry statistics, 2026.)_
-
-> **Traffic volume needs the source of truth.** Third-party estimators disagree widely — SimilarWeb ~135K/mo,
-> HypeStat ~792K visits/mo, SEMrush ~47K organic/mo. A single "visits/mo" figure won't survive scrutiny. The
-> audited number lives in **homefacts.com's Google Search Console** — actual Google clicks, impressions, and the
-> exact top queries. With access (NIC owns the property), we can pull it directly and replace every estimate
-> above with hard, first-party Google data — including precisely how much of it is offender / person-name search.
+_Prepared for the NIC / HomeFacts discussion (D. Teng). Companion to the traffic brief. Where that one profiles
+the (bot-heavy) traffic reaching our funnel through the link, this one profiles **HomeFacts's own audience** and
+the opportunity to **improve it and monetize it better** — whether directly on HomeFacts or through downstream
+affiliates. Figures are third-party estimates (SimilarWeb / SEMrush / HypeStat / WHOIS) unless noted; the exact
+numbers firm up with a paid-tool pull and, ultimately, HomeFacts's Search Console._
 
 ---
 
-## It's on autopilot — not mismanaged, just not operated
+## 1. What HomeFacts's traffic actually is
 
-The value is idling because no one is actively running the site day-to-day:
+Under the real-estate surface, HomeFacts is a **people-search traffic engine** with hard-won, decades-deep
+authority:
 
-- It sits on a **2013-era stack (PHP 5.3)** with **no active SEO program, product work, or traffic filtering** —
-  yet it still draws a real ~150K+/mo US audience (recently *growing*, per SimilarWeb). Untended, not abandoned —
-  which is exactly the point: imagine it operated.
+- **Authority:** **Moz DA 47** · **54,188 backlinks / 2,106 referring domains** · domain **since 1996 (~30 yrs).**
+- **Organic footprint:** **258,562 keywords ranking in Google's top 20** · **~72–87% of traffic is organic
+  search** · worth **~$26,000/mo** if bought as ads (SEMrush). An SEO asset, not ad-bought.
+- **Audience:** **96.9% United States** (SimilarWeb) — real, domestic, high-intent.
+- **The engine is person/offender search, not property.** Top queries are **real person names** ("andrew james
+  davis," "connor whitworth") and offender registries (`/offenders/<State>.html`). Its nearest sites are
+  **Intelius, TruthFinder, TruePeopleSearch, public-records** — a wall of people-search, **zero real estate.**
+- **The demand base is enormous:** **917,000+ registered US offenders**, and **~20% of US adults check a public
+  registry every year** — tens of millions of searches.
+
+_This is a genuinely valuable, US, organic people-search audience — the exact intent that Intelius and TruthFinder
+pay for._
+
+---
+
+## 2. Today, that value is under-captured
+
+The asset is idling — not mismanaged, just not actively operated:
+
+- It runs on a **2013-era stack (PHP 5.3)** with **no active SEO or product program** — yet still draws a real
+  ~150K+/mo US audience (recently *growing*, SimilarWeb). Untended, not abandoned.
 - Its **best intent is brokered away — to competitors many times its size.** A redirect hands name/offender
   searches to **TruthFinder (global rank #4,311) and Intelius (#12,255)** — 20–50× HomeFacts's own rank
-  (#237,802) — for a thin **per-lead fee**, while the operator on the other end keeps the customer and **all of
-  their lifetime value**. HomeFacts feeds the giants and keeps a sliver.
-- And with no active operator at the front door, **the partner link that reaches us is unfiltered** — our
-  first-party log shows **~97% Singapore bot/proxy**, while HomeFacts's real 96.9%-US audience goes elsewhere
-  (see the traffic-quality brief).
-
-None of this is a criticism of NIC — it's simply what any authoritative site does when it's **held passively
-rather than operated.** The upside is that everything above is fixable by an operator.
+  (#237,802) — for a thin **per-lead fee**. The affiliate keeps the customer and all lifetime value; HomeFacts
+  keeps a sliver.
 
 ---
 
-## Operating it fixes the traffic problem — and unlocks the value
+## 3. The opportunity — improve the traffic, then monetize it better
 
-If IDLookup runs HomeFacts, the same facts flip from liabilities to gains:
+Two moves, in order:
 
-| On autopilot today | Under active operation |
-|---|---|
-| ~97% of outbound traffic is unfiltered bot/proxy | **Filter bots at the source** — only real people reach monetization; partners stop paying for/valuing noise |
-| Best intent brokered to competitors for a per-lead sliver | **Route the real clicks into IDLookup's owned funnel** → full customer lifetime value, not a referral fee |
-| 2013 stack, SEO declining | **Re-platform (preserving URL/301 equity)** and protect/grow the offender & person-name rankings |
-| Place data and person data live apart | **Bridge them** — address → who lives here → the person — two audiences and two monetization lanes on the same pages, compounding each other's SEO |
+**A. Improve the traffic (grow the asset).**
+Re-platform off the 2013 stack while **preserving the URL architecture + 301 integrity** so a decade of SEO
+equity carries over, and run an **active SEO program** on the offender / person-name footprint. It's already
+growing untended — operated, it grows faster. This also lets us **filter the bot/proxy noise** so the real,
+US, human audience is what actually flows.
 
-**NIC keeps 100% of its property/real-estate monetization** (different intent, same pages), takes on **zero cost
-and zero effort**, and earns a **revenue share that beats the affiliate check** — more money from the *identical
-clicks*.
+**B. Monetize the improved traffic — two paths, your choice:**
+- **Directly on HomeFacts** — a people-search funnel + billing on the domain itself, capturing **full customer
+  lifetime value** instead of a per-lead referral.
+- **Or route to downstream affiliates on better terms** — if direct monetization isn't the path, optimize the
+  affiliate yield and routing (higher-paying partners, better match, cleaner traffic) so each real click earns
+  more than today's flat per-lead fee.
 
----
-
-## Why IDLookup is the right operator
-
-- **We are a people-search operator** — the exact vertical HomeFacts's organic strength already feeds. The
-  receiving funnels are **already built**; the switch simply isn't on yet.
-- **Proven at scale:** IDLookup's founder built people-search SEO that drove **MyLife.com to ~20M monthly Google
-  uniques + 4M+ from Bing (2014–2018)** — the same discipline HomeFacts needs, at 100× this scale.
-- **The traffic brief is the first proof point:** it shows precisely what an un-operated asset leaks — and
-  precisely what active operation would recover.
+Either path beats the status quo. NIC keeps 100% of its property/real-estate monetization (different intent,
+same pages), at **zero cost and zero effort.**
 
 ---
 
-## First things first
+## 4. But first — prove the value
 
-Before any operating agreement, the immediate step is simply to **align on what the traffic is** — the brief
-does that with our own server-side data. The opportunity follows naturally from it: an authoritative, high-intent
-people-search asset, idling on autopilot, that an operator built for exactly this vertical can turn back on.
+The honest caveat: **we should confirm the traffic monetizes before scaling anything.** Two low-risk steps:
 
-<sub>Figures are cited third-party estimates (SimilarWeb traffic; Moz/HypeStat authority; WHOIS domain age; MyLife figures per founder) — directional, not audited. Traffic-quality figures are our own first-party server logs. Fuller detail: `docs/partnerships/homefacts-strategy.md`.</sub>
+1. **Firm up the numbers** — a paid-tool pull (SEMrush / Ahrefs) for per-keyword search volumes and traffic
+   value, and (post-agreement) HomeFacts's Search Console for the audited figures.
+2. **A controlled live test** — fix what the link delivers (the current link is passing us ~98% bots, not the
+   real audience — see the traffic brief), route a real slice of HomeFacts's US traffic through a proper funnel,
+   and measure actual conversion and revenue-per-click **directly against the current affiliate payout.**
+
+If it proves out, scale the path (direct or affiliate) that earns the most. If it doesn't, we've spent very
+little to find out. Low risk, fast, and it answers the only question that matters: **is this traffic truly
+valuable, and what's the best way to capture it?**
+
+---
+
+## 5. Why IDLookup is the right operator
+
+- **We're a people-search operator** — the exact vertical HomeFacts's organic strength feeds. The receiving
+  funnels are **already built**.
+- **Proven SEO at scale:** our founder built people-search SEO that drove **MyLife.com to ~20M monthly Google
+  uniques + 4M+ from Bing (2014–2018).**
+- **First-party data to enrich the pages** — identity, contact, relatives, incarceration/mugshots, life-events —
+  bridging HomeFacts's *place* data to the *person*, compounding both audiences' SEO.
+
+---
+
+**Next step:** firm up the numbers and run the controlled test. That confirms the value, shows the best path to
+capture it, and does it at minimal cost and zero risk to NIC's existing business.
+
+<sub>Sources (Aug 2026): Moz / HypeStat / SEMrush / SimilarWeb / WHOIS (directional third-party estimates);
+registry statistics; IDLookup first-party server logs for the traffic-quality figures. Detail: `data-appendix.md`.</sub>
