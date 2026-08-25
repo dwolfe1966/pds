@@ -1,0 +1,177 @@
+Campaign report,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+"August 1, 2026 - August 25, 2026",,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Campaign status,Campaign,Budget,Budget name,Budget type,Currency code,Status,Status reasons,Optimization score,Account,Campaign type,Avg. CPM,Impr.,Interactions,Interaction rate,Avg. cost,Cost,Conv. (Platform Comparable),Cost / Conv. (Platform Comparable),Conv. value / Cost (Platform Comparable),Bid strategy type,Viewable CTR,Avg. viewable CPM,Viewable impr.,Clicks,Conv. rate,Conv. value,Conv. value / cost,Conversions,Avg. CPC,Cost / conv.,Original conv. value
+Paused,Names ps Campaign (PU),300,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize clicks,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,"Crim Rec - Arrests, Jail (BC)",30,--,Daily,USD,Eligible (Limited),missing enough relevant keywords,81.37,Original,Search,154.27,1005,81,8.06%,1.91,155.05,0,0,0,Target CPA,--,0,0,81,11.11%,310,2,9,1.91,17.23,310
+Enabled,Inmates - Mugshots,950,--,Daily,USD,Eligible (Limited),search volume limited; missing enough relevant keywords,67.93,Original,Search,55.53,310,25,8.06%,0.69,17.21,0,0,0,Target CPA,--,0,0,25,4%,40,2.32,1,0.69,17.21,40
+Enabled,inmate (search) - tCPA,2600,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,locate (Search Phrase) - No $1 in Ad copy (just Credit Card required),310,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Compet - General (PSs),300,--,Daily,USD,Eligible,,84.76,Main,Search,107.21,420,22,5.24%,2.05,45.03,0,0,0,Target CPA,--,0,0,22,13.64%,70,1.55,3,2.05,15.01,70
+Paused,Names CA (Search Phrase),500,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_Mugshots,20,--,Daily,USD,Paused,campaign paused; most ads disapproved,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,people find (search) - HHI upper 50,310,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Arrests (Search),200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Manual CPC,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Dating - Cheating,300,--,Daily,USD,Eligible (Limited),unknown; some ads disapproved,83,Original,Search,0,6,0,0%,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Dating OLD Female - Cheating,300,--,Daily,USD,Paused,campaign paused; some ads disapproved,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_Criminal Records,20,--,Daily,USD,Paused,campaign paused; most ads disapproved,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Crim - Sex Offender,460,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,crim (Search Phrase) - No $1 in Ad copy (just Credit Card required),200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,TV_Display Computer,100,--,Daily,USD,Paused,campaign paused,--,Original,Display,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - divorce lower (PS123),200,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,BG - Main Upper (BC),30,--,Daily,USD,Paused,campaign paused; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Compet - Intelius,50,--,Daily,USD,Paused,campaign paused; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - Divorce Upper (PS123),250,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Compet - General,300,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D-Compet,100,--,Daily,USD,Paused,campaign paused; most ads limited by policy,--,Main,Demand Gen,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - Marriage Upper HHI (PS),100,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Ad GRoup test,70,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - Marriage - Upper HHI (PS123),560,--,Daily,USD,Eligible (Limited),bidding strategy constrained; search volume limited; missing enough relevant keywords,49.32,Main,Search,84.85,704,65,9.23%,0.92,59.73,0,0,0,Target CPA,--,0,0,65,7.69%,200,3.35,5,0.92,11.95,200
+Enabled,Crim - Police,650,--,Daily,USD,Eligible (Limited),bidding strategy constrained; search volume limited; missing enough relevant keywords,48.92,Original,Search,119.71,2838,329,11.59%,1.03,339.74,0,0,0,Target CPA,--,0,0,329,4.86%,490,1.44,16,1.03,21.23,490
+Enabled,inmate (search) - $1.95,2600,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Pub Rec - Pub Rec,350,--,Daily,USD,Eligible (Limited),bidding strategy constrained; missing enough relevant keywords,58.14,Original,Search,169.54,1841,213,11.57%,1.47,312.12,0,0,0,Target CPA,--,0,0,213,11.74%,650,2.08,25,1.47,12.48,650
+Paused,D_Crim Smart Display,2500,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,PR clone,410,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Pub Rec - SSN Lower,125,--,Daily,USD,Eligible (Limited),bidding strategy constrained; missing enough relevant keywords,63.2,Original,Search,245.63,1273,210,16.5%,1.49,312.68,0,0,0,Target CPA,--,0,0,210,15.24%,780,2.49,32,1.49,9.77,780
+Enabled,Compet - TF (BC),560,--,Daily,USD,Eligible (Limited),missing enough relevant keywords,77.13,Main,Search,115.1,359,35,9.75%,1.18,41.32,0,0,0,Target CPA,--,0,0,35,14.29%,200,4.84,5,1.18,8.26,200
+Enabled,people search - target cpa,200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,xx_RD_Background Check #2,20,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_Background Check,20,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,crim bg (search) - target cpa,200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Remarketing RLSA,100,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Reverse Phone - Track,450,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; unknown; some ads limited by policy,63.92,Main,Search,22.7,51,6,11.76%,0.19,1.16,0,0,0,Target CPA,--,0,0,6,0%,0,0,0,0.19,0,0
+Paused,RD_,5,--,Daily,USD,Paused,campaign paused,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_Find People,20,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,ps main - UPPER (ps123) - PR clone,600,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,BG - Main Upper,30,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; some ads disapproved,88.55,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - divorce (lower hhi) 2022-04 LE Low Divorce,200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Dating Smart Display,600,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Crim (Search),200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Manual CPC,--,0,0,0,0%,0,0,0,0,0,0
+Paused,DS - Crim,100,--,Daily,USD,Paused,campaign paused; most ads disapproved,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Crim (Custom Intent),130,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x bg (search) - interactive SUP,300,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - Divorce (Upper HHI) 2022-04 LE High Divorce,500,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,PS Free (PS123),400,--,Daily,USD,Eligible (Limited),search volume limited,57.04,Original,Search,56.27,209,12,5.74%,0.98,11.76,0,0,0,Target CPA,--,0,0,12,8.33%,40,3.4,1,0.98,11.76,40
+Enabled,Inmates (PR - IS) |2022-07,2600,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Jail (Search),200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Manual CPC,--,0,0,0,0%,0,0,0,0,0,0
+Paused,PS Main - lower (PS),200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_Marriage-Divorce,20,--,Daily,USD,Paused,campaign paused; most ads disapproved,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,PS Main - UPPER (PS),200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Compet - Spokeo,70,--,Daily,USD,Paused,campaign paused; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Pub Rec - Pub Rec  Trial 780,350,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - death (lower hhi),1000,--,Daily,USD,Eligible,some ads disapproved; some ads limited by policy,86.48,Main,Search,142.62,1342,145,10.8%,1.32,191.39,0,0,0,Target CPA,--,0,0,145,5.52%,195,1.02,8,1.32,23.92,195
+Paused,TV_ PeopleSearch,100,--,Daily,USD,Paused,campaign paused; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Manual CPC,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Crim (Placements),250,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x PS clone,50,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Crim - Sex Offender (PSs),50,--,Daily,USD,Eligible (Limited),search volume limited; missing enough relevant keywords; some ads limited by policy,54.11,Original,Search,145.48,580,60,10.34%,1.41,84.38,0,0,0,Target CPA,--,0,0,60,5%,70,0.83,3,1.41,28.13,70
+Paused,Pub Rec - Court Cases,50,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_All_old #2,40,--,Daily,USD,Paused,campaign paused; most ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,xx_RD_Arrest Records,5,--,Daily,USD,Paused,campaign paused,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_All,40,--,Daily,USD,Paused,campaign paused; most ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Dating - BG,100,--,Daily,USD,Eligible (Limited),unknown,84.27,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Reverse Phone - Text,100,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - Death (Upper HHI) 2022-04 LE High Death,1400,--,Daily,USD,Ended,campaign ended; All ad groups paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - death (lower hhi) (CS),275,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,crim (Search Exact) - No $1 in Ad copy (just Credit Card required),50,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Names (Search Exact),200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Crim,300,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,crim (search) - male,200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,ps main - orig (ps123) - PR clone,300,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Names (Search Phrase),200,--,Daily,USD,Paused,campaign paused; No ads,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,PS Clone,600,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Phone Search,200,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_PS,75,--,Daily,USD,Paused,campaign paused,--,Original,Display,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Paused,ps main - lower (ps123) - PR clone,400,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_LE - Death (Obit Competitors),100,--,Daily,USD,Paused,campaign paused; most ads limited by policy,--,Main,Display,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x bg (search) - interactive SUP (2nd try),300,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Compet - WP,100,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - Marriage - Upper HHI (PS123) 2022-04 LE High Marriage,560,--,Daily,USD,Ended,campaign ended; All ad groups paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,le - marriage - UPPER (PS123) - PR clone,680,--,Daily,USD,Paused,campaign paused; some ads disapproved,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,"Crim Rec - Court, Crim (BC)",30,--,Daily,USD,Eligible (Limited),bidding strategy constrained; search volume limited; missing enough relevant keywords,35.55,Original,Search,147.54,480,58,12.08%,1.22,70.82,0,0,0,Target CPA,--,0,0,58,13.79%,195,2.75,8,1.22,8.85,195
+Enabled,LE - marriage - lower hhi (PS123),50,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; unknown,86,Main,Search,99.57,70,4,5.71%,1.74,6.97,0,0,0,Target CPA,--,0,0,4,0%,0,0,0,1.74,0,0
+Enabled,LE - Death (Upper HHI),1400,--,Daily,USD,Eligible (Limited),bidding strategy constrained; search volume limited; missing enough relevant keywords; some ads disapproved; some ads limited by policy,52.36,Main,Search,185.23,2810,374,13.31%,1.39,520.51,0,0,0,Target CPA,--,0,0,374,9.36%,1050,2.02,35,1.39,14.87,1050
+Paused,PS Other,200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Reverse Phone - Competitors,100,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; unknown,88.55,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Crim BG (Search),200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target ROAS,--,0,0,0,0%,0,0,0,0,0,0
+Paused,TV_S2_S_Background,100,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Manual CPC,--,0,0,0,0%,0,0,0,0,0,0
+Paused,BG - Main low,300,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x compet - tf - $22.86 immediate,560,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Dating - Catfishing,100,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,locate (search phrase) - exclude top 30 HHI,310,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x bg (search) - $3.95,300,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,BG - Free (BC),30,--,Daily,USD,Eligible,,69.28,Main,Search,0,8,0,0%,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Pub Rec,150,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Reverse Phone - Find,170,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_All_old,40,--,Daily,USD,Paused,campaign paused; most ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,jail (search) - 18 65 unknown age,200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,BG - Misc Cheap,50,--,Daily,USD,Eligible,some ads disapproved,71.64,Main,Search,273.33,12,1,8.33%,3.28,3.28,0,0,0,Target CPA,--,0,0,1,100%,40,12.2,1,3.28,3.28,40
+Enabled,arrests (search) - 18 55 65 age,200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Compet - ICM (BC),200,--,Daily,USD,Eligible,,70.03,Main,Search,0,21,0,0%,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,BG - Misc Misc,30,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; unknown,88.55,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,TV_ PublicRecords,100,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Manual CPC,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Compet - BV (BC),200,--,Daily,USD,Eligible (Limited),unknown; some ads disapproved,87.73,Main,Search,73.66,41,1,2.44%,3.02,3.02,0,0,0,Target CPA,--,0,0,1,100%,40,13.25,1,3.02,3.02,40
+Enabled,PS Free - Orig (PS123),200,--,Daily,USD,Eligible (Limited),search volume limited; missing enough relevant keywords,53.16,Original,Search,87.41,557,55,9.87%,0.89,48.69,0,0,0,Target CPA,--,0,0,55,5.45%,45,0.92,3,0.89,16.23,45
+Enabled,sex offenders (search) - male,460,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,xx_RD_Jail Records,20,--,Daily,USD,Paused,campaign paused,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Locate Addr (Search),100,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x compet - bv - $22.86 immediate,200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Dating - PS,180,--,Daily,USD,Eligible,some ads disapproved,81.58,Original,Search,183.32,140,19,13.57%,1.35,25.66,0,0,0,Target CPA,--,0,0,19,21.05%,110,4.29,4,1.35,6.42,110
+Paused,ps free (ps123) - PR clone,200,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D-BG (Custom Intent),120,--,Daily,USD,Paused,campaign paused,--,Main,Display,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - Death (Upper HHI) (PU),800,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x bg (search) - HHI upper 50,300,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_All_old #3,40,--,Daily,USD,Paused,campaign paused; most ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Police PMAX,150,--,Daily,USD,Paused,campaign paused; most asset groups limited by policy,--,Original,Performance Max,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,le - marriage - lower  (ps123) - PR clone,800,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,PS Main - UPPER (PS123),600,--,Daily,USD,Eligible (Limited),unknown,83.44,Original,Search,8.19,100,2,2%,0.41,0.82,0,0,0,Target CPA,--,0,0,2,0%,0,0,0,0.41,0,0
+Paused,Inmates - Prison,100,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Landlord Smart Display,100,--,Daily,USD,Paused,campaign paused; some ads disapproved; some ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Dating Smart Display (upper),100,--,Daily,USD,Paused,campaign paused,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,BG - Free,70,--,Daily,USD,Eligible (Limited),search volume limited; some ads limited by policy,62.7,Main,Search,105.95,15,1,6.67%,1.59,1.59,0,0,0,Target CPA,--,0,0,1,100%,15,9.44,1,1.59,1.59,15
+Enabled,sex offenders (search) - male only,460,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,TV Locate (Search Exact),400,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Paused,TV_Search Computer,100,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - death (lower hhi) (PU),700,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,TV_Truth Viewer (Google Build) - Cheating,100,--,Daily,USD,Paused,campaign paused; some ads disapproved,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x PS Clone,560,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,TV_Display Mobile,100,--,Daily,USD,Paused,campaign paused,--,Original,Display,0,0,0,--,0,0,0,0,0,CPC (enhanced),--,0,0,0,0%,0,0,0,0,0,0
+Enabled,BG - Main low (BC),30,--,Daily,USD,Eligible,,87.8,Main,Search,0,4,0,0%,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Inmates (PR - IS) (Upper HHI),2600,--,Daily,USD,Eligible (Limited),bidding strategy constrained; limited by bidding strategy type; missing enough relevant keywords,56.56,Original,Search,61.95,11634,1105,9.5%,0.65,720.68,0,0,0,Target CPA,--,0,0,1105,4.71%,1755,2.44,52,0.65,13.86,1755
+Enabled,Pub Rec - SSN,220,--,Daily,USD,Eligible (Limited),bidding strategy constrained; missing enough relevant keywords; some ads limited by policy,60.26,Original,Search,97.89,910,84,9.23%,1.06,89.08,0,0,0,Target CPA,--,0,0,84,11.9%,250,2.81,10,1.06,8.91,250
+Paused,Dating - Stages,100,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Inmates (PR - IS) (Lower HHI),2600,--,Daily,USD,Eligible (Limited),bidding strategy constrained; limited by bidding strategy type,60.54,Original,Search,103.22,3677,504,13.71%,0.75,379.54,0,0,0,Target CPA,--,0,0,504,7.94%,1162.5,3.06,40,0.75,9.49,1162.5
+Enabled,PS Main - lower (PS123),410,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; unknown,84.27,Original,Search,0,55,0,0%,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Public Records,1100,--,Daily,USD,Paused,campaign paused; some ads disapproved,--,Original,Display,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - Birth,50,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,court (search) - male only,50,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,BG - Main Upper (BC),30,--,Daily,USD,Eligible,,86.98,Main,Search,36.22,24,3,12.5%,0.29,0.87,0,0,0,Target CPA,--,0,0,3,0%,0,0,0,0.29,0,0
+Enabled,PS clone,410,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - Divorce (Upper HHI),500,--,Daily,USD,Eligible (Limited),bidding strategy constrained; search volume limited; missing enough relevant keywords,46.43,Main,Search,268.17,2000,342,17.1%,1.57,536.35,0,0,0,Target CPA,--,0,0,342,9.36%,1105,2.06,32,1.57,16.76,1105
+Paused,names ca (Search Phrase) - Direct to Loader Test,500,--,Daily,USD,Paused,campaign paused; campaign ended,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - marriage lower hhi (PS),200,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,names (Search Phrase) - Direct to Loader Test,200,--,Daily,USD,Paused,campaign paused; campaign ended,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Crim2 (Search Broad+),50,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - death (lower hhi) LE Low Death,1000,--,Daily,USD,Ended,campaign ended; All ad groups paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_LE - Death,100,--,Daily,USD,Paused,campaign paused; most ads limited by policy,--,Main,Display,0,0,0,--,0,0,0,0,0,Viewable CPM,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,LE - divorce (lower hhi),200,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; unknown; search volume limited; some ads limited by policy,59.8,Main,Search,0,7,0,0%,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,locate (Search Exact) - No $1 in Ad copy (just Credit Card required),200,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,PS Main - Orig (PS123),310,--,Daily,USD,Eligible (Limited),search volume limited,58.45,Original,Search,27.44,287,11,3.83%,0.72,7.88,0,0,0,Target CPA,--,0,0,11,18.18%,55,6.98,2,0.72,3.94,55
+Enabled,sex offenders (search) - interactive SUP,460,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_Inmates,20,--,Daily,USD,Paused,campaign paused; most ads disapproved,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x bg main (search) - $22.86 immediate,300,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,LE - Death (Upper HHI) (CS),600,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Inmates (PSs),1800,--,Daily,USD,Paused,campaign paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,Reverse Phone - Call,100,--,Daily,USD,Eligible (Misconfigured),your website is missing a Google tag; unknown; some ads limited by policy,88.12,Main,Search,0,19,0,0%,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,BG - Misc Crim,30,--,Daily,USD,Paused,campaign paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,x bg main (search) - tCPA,300,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,public records (search) - HHI upper 50,150,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Main,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,RD_Court Records,20,--,Daily,USD,Paused,campaign paused; most ads disapproved,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,D_Crim Smart Display (upper),250,--,Daily,USD,Paused,campaign paused; most ads limited by policy,--,Original,Display,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Paused,Reverse Phone - RP,100,--,Daily,USD,Paused,campaign paused; some ads limited by policy,--,Main,Search,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Paused,PMAX Inmates (PR-IS),200,--,Daily,USD,Paused,campaign paused; most asset groups limited by policy,--,Original,Performance Max,0,0,0,--,0,0,0,0,0,Target CPA,--,0,0,0,0%,0,0,0,0,0,0
+Enabled,sex offenders (search) - max conv,460,--,Daily,USD,Ended,campaign ended; All ad groups paused,--,Original,Search,0,0,0,--,0,0,0,0,0,Maximize Conversions,--,0,0,0,0%,0,0,0,0,0,0
+Total: Campaigns,--,--,--,--,USD,--,,--,--,--,117.94,33809,3767,11.14%,1.06,3987.32,0,0,0,--,--,0,0,3767,7.88%,8867.5,2.22,297,1.06,13.43,8867.5
+Total: Manager account,,,,,USD,,,,,,117.94,33809,3767,11.14%,1.06,3987.32,0,0,0,,--,0,0,3767,7.88%,8867.5,2.22,297,1.06,13.43,8867.5
+Total: Display,,,,,USD,,,,,Display,0,0,0,--,0,0,0,0,0,,--,0,0,0,0%,0,0,0,0,0,0
+Total: Demand Gen,,,,,USD,,,,,Demand Gen,0,0,0,--,0,0,0,0,0,,--,0,0,0,0%,0,0,0,0,0,0
+Total: Search,,,,,USD,,,,,Search,117.94,33809,3767,11.14%,1.06,3987.32,0,0,0,,--,0,0,3767,7.88%,8867.5,2.22,297,1.06,13.43,8867.5
+Total: Performance Max,,,,,USD,,,,,Performance Max,0,0,0,--,0,0,0,0,0,,--,0,0,0,0%,0,0,0,0,0,0

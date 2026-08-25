@@ -11,43 +11,55 @@
 
 ## Current state — the campaign selection (account snapshot)
 
-Conversion tracking is **LIVE + verified** (GA4 + Google Ads) — the signal everything optimizes against,
-and the same signal affiliate postbacks hang off. Winners get replicated on our funnel
-(`idlookup.ai/name/landing/v11?shns=1`). Below is the enabled set with real economics, ranked by
-efficiency. **These are volume-constrained, not budget-constrained** (see the scaling note under WS1).
+The account runs **profitably in aggregate: 2.22× value/cost, $13.43 cost/conv, 7.88% CVR** across 297
+conversions (source: `docs/growth/Campaign report - Campaign report.csv`). Conversion tracking is
+**LIVE + verified** (GA4 + Google Ads) — the signal everything optimizes against and the one affiliate
+postbacks hang off. Winners get replicated on our funnel (`idlookup.ai/name/landing/v11?shns=1`).
+**These are volume-constrained, not budget-constrained** (see the scaling note under WS1).
 
-### Scale now — positive ROAS + real conversions
+### Scale now — positive ROAS + real conversion volume
 | Campaign | Vertical | Cost/conv | Value/cost | CVR | Conv | Note |
 |---|---|---|---|---|---|---|
-| **Pub Rec – SSN** | Public records | **$5.19** | **4.96×** | 22.6% | 7 | ⭐ best efficiency in the account |
-| **Inmates (PR-IS) Lower HHI** | Inmate | **$9.18** | **3.12×** | 7.8% | 23 | ⭐ best volume × ROAS (1,951 impr) |
-| **Crim Rec – Arrests/Jail (BC)** | Criminal | $10.90 | **3.67×** | 16.2% | 6 | |
-| **Crim Rec – Court/Crim (BC)** | Criminal | $8.99 | **3.06×** | 13.3% | 4 | |
-| **Pub Rec – SSN Lower** | Public records | $9.03 | 2.72× | 15.5% | 13 | |
-| **Pub Rec – Pub Rec** | Public records | $11.61 | 2.55× | 16.2% | 12 | |
-| **Inmates (PR-IS) Upper HHI** | Inmate | $16.29 | 1.87× | 4.3% | 21 | highest volume (4,114 impr) = "inmates-upper" |
-| **PS Free – Orig (PS123)** | People search | $9.55 | 1.57× | 12.5% | 2 | general-intent flagship |
-| **Crim – Police** | Criminal | $19.07 | 1.72× | 5.0% | 7 | positive, but watch CPA |
+| **Inmates (PR-IS) Lower HHI** | Inmate | **$9.49** | **3.06×** | 7.9% | 40 | ⭐ best volume × ROAS |
+| **Pub Rec – SSN Lower** | Public records | **$9.77** | **2.49×** | 15.2% | 32 | ⭐ |
+| **LE – Death (Upper HHI)** | Life-events | $14.87 | **2.02×** | 9.4% | 35 | life-events is now a core vertical |
+| **LE – Divorce (Upper HHI)** | Life-events | $16.76 | 1.57× | 9.4% | 32 | |
+| **Inmates (PR-IS) Upper HHI** | Inmate | $13.86 | 1.87× | 4.7% | 52 | ⭐ most volume in the account (~11.6k impr) |
+| **Pub Rec – Pub Rec** | Public records | $12.48 | 2.08× | 11.7% | 25 | |
+| **Crim – Police** | Criminal | $21.23 | 1.44× | 4.9% | 16 | positive, watch CPA |
+| **Pub Rec – SSN** | Public records | $8.91 | **2.81×** | 11.9% | 10 | |
+| **Crim Rec – Court/Crim (BC)** | Criminal | $8.85 | **2.75×** | 13.8% | 8 | |
+| **Crim Rec – Arrests/Jail (BC)** | Criminal | $17.23 | 2.0× | 11.1% | 9 | |
+| **LE – death (lower HHI)** | Life-events | $23.92 | 1.02× | 5.5% | 8 | breakeven — optimize or hold |
 
-### Test — great ratios, thin volume (don't scale yet)
+### Test — strong ratios, thin volume (prove before scaling)
 | Campaign | Vertical | Cost/conv | Value/cost | CVR | Conv | Note |
 |---|---|---|---|---|---|---|
-| **Dating – PS** | Dating | $3.26 | 9.72× | 37.5% | 3 | outlier efficiency; small controlled test |
-| **PS Main – Orig (PS123)** | People search | $6.77 | 5.91× | 10% | 1 | promising ratios, 1 conv |
-| **Inmates – Mugshots** | Inmate | — | — | 0% | 0 | spend, no conv yet; mugshot angle → ties to BookingSignal |
+| **Compet – TF (BC)** | Competitor conquest | $8.26 | **4.84×** | 14.3% | 5 | conquest vs. a competitor brand |
+| **Dating – PS** | Dating | $6.42 | **4.29×** | 21.1% | 4 | efficiency star |
+| **LE – Marriage (Upper HHI)** | Life-events | $11.95 | **3.35×** | 7.7% | 5 | |
+| **PS Main – Orig (PS123)** | People search | $3.94 | **6.98×** | 18.2% | 2 | best ratios, thin |
+| **Inmates – Mugshots** | Inmate | $17.21 | 2.32× | 4.0% | 1 | mugshot angle → BookingSignal |
+| **Compet – General (PSs)** | Competitor conquest | $15.01 | 1.55× | 13.6% | 3 | |
 
-### Fix / hold
-- **FIX first — `PS Main – lower (PS123)` is misconfigured** (missing Google tag → conversions not
-  tracked). Don't judge it until the tag is fixed. Same caution for thin-impression `PS Main – UPPER` /
-  `PS Free (PS123)`.
-- **HOLD — sex-offender + "arrests" copy.** `Crim – Sex Offender` runs at 0.39× ROAS + policy limits;
-  every other sex-offender variant is ended. Gate on legal review before reviving.
-- **LEGAL** — the `"No $1 in ad copy (just Credit Card required)"` creative pattern (several ended
-  locate/crim variants) needs a compliance read before reuse.
+### Fix — misconfigured, converting blind (recover first)
+Several **enabled** campaigns read **"Eligible (Misconfigured) — missing a Google tag"**, so conversions
+aren't tracked and they can't be judged. **Fix the tag before deciding on them:** `Reverse Phone –
+Track / Competitors / Call`, `PS Main – lower (PS123)`, `LE – marriage lower`, `LE – divorce (lower)`,
+`BG – Misc Misc`. Reverse-phone (a whole vertical) is spending with **zero visible conversions** — likely
+converting blind.
 
-**The through-line:** the proven core is **Public Records + Inmate + Criminal** — and **Inmate is also the
-SEO lead vertical and our first-party data moat.** One vertical that paid proves, SEO compounds, and we
-own the data on. Point new budget + ad units there first.
+### Hold — legal / underwater
+- **Sex-offender + "arrests" copy** — `Crim – Sex Offender` runs at **0.83× (a loss)** + policy limits;
+  every other sex-offender/arrests variant is ended. Gate on legal review before reviving.
+- **`PS Free – Orig (PS123)`** — **0.92× this window (slightly underwater)**; the generic "free" people-
+  search play is marginal — optimize or deprioritize vs. the winners above.
+- **LEGAL** — the `"No $1 in ad copy (just Credit Card required)"` creative pattern needs a compliance read.
+
+**The through-line:** the proven core is **Inmate + Public Records + Life-events + Criminal** — four
+verticals above breakeven, Inmate carrying the volume. **Inmate + Life-events are also our SEO lead +
+first-party-data verticals** — paid proves them, SEO compounds them, we own the data. Point new budget +
+ad units there.
 
 ---
 
@@ -55,20 +67,23 @@ own the data on. Point new budget + ad units there first.
 
 ### WS1 — Relight & scale the proven core (fastest revenue)
 
-Priority order (efficiency × volume × strategic fit):
-1. **Public Records / SSN** — `Pub Rec – SSN` (4.96×), `SSN Lower` (2.72×), `Pub Rec` (2.55×). Best unit
-   economics in the account.
-2. **Inmate** — `Inmates Lower HHI` (3.12×) + `Upper HHI` (1.87×). Highest paid volume **and** the SEO/data
-   moat — the strategic center; also test `Inmates – Mugshots`.
-3. **Criminal** — `Crim Rec Arrests/Jail` (3.67×) + `Court/Crim` (3.06×); `Crim – Police` watch CPA.
-4. **People Search** — `PS Free – Orig` (1.57×) as the general-intent base; plan already written in
-   `docs/ads/idl-general-intent-campaign-plan.md` (v11 landing, ad units A/B, keywords).
-5. **Dating – PS** — a **small** test only (stellar ratios on 3 conv).
+Priority order (ROAS × volume × strategic fit):
+1. **Inmate** — `Inmates Lower HHI` (3.06×, 40 conv) + `Upper HHI` (1.87×, 52 conv — biggest volume in the
+   account). Highest paid volume **and** the SEO/data moat — the strategic center; also test `Mugshots`.
+2. **Public Records / SSN** — `SSN Lower` (2.49×, 32) + `Pub Rec` (2.08×, 25) + `SSN` (2.81×, 10). Deep,
+   efficient demand.
+3. **Life-events** — `Death Upper` (2.02×, 35) + `Divorce Upper` (1.57×, 32) + `Marriage Upper` (3.35×).
+   Aligns with the Enformion divorce/marriage data vertical.
+4. **Criminal** — `Court/Crim` (2.75×) + `Arrests/Jail` (2.0×); `Crim – Police` (1.44×, watch CPA).
+5. **Tests (small, controlled; scale on proof):** `Dating – PS` (4.29×), `Compet – TF` conquest (4.84×),
+   `PS Main – Orig` (6.98×).
+6. **Recover the misconfigured campaigns** — fix the Google tag before writing any of them off (esp. the
+   whole Reverse Phone vertical).
 
 **Scaling note — volume-limited, not budget-limited.** Nearly every campaign reads "limited by search
-volume" despite large daily budgets (inmate = $2,600/day). More budget alone won't scale them — **broaden
-keywords/match types + add ad units**, and grow coverage via the vertical pages (SEO×paid compounding).
-Port winning ad units verbatim first, then iterate — don't rewrite proven creative from scratch.
+volume / missing enough relevant keywords" despite large daily budgets (inmate = $2,600/day). More budget
+alone won't scale them — **broaden keywords/match types + add ad units**, and grow coverage via the
+vertical pages (SEO×paid compounding). Port winning ad units verbatim first, then iterate.
 
 ### WS2 — Segmentation (the "upper" approach)
 
