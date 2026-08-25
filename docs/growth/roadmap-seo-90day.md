@@ -12,7 +12,7 @@ The goal by Day 90: a **proven, differentiated vertical model** + the authority 
 organic traffic compound after the window.
 
 **Design principle — don't block on the domain decision.** Months 1–3 below are **domain-agnostic**
-(WS2–WS5). The WS1 domain/hosting decision (Kwan) only affects *where* the pages live; if it slips, the
+(WS2–WS5). The WS1 domain/hosting decision (techBC) only affects *where* the pages live; if it slips, the
 differentiation + authority work still proceeds and simply moves with the domain when it lands.
 
 **Owner key:** Lead (L) · Developer (D) · Analyst/Report Dev (A) · Designer (Dz). *(Names per `team_roles`.)*
@@ -29,7 +29,7 @@ differentiation + authority work still proceeds and simply moves with the domain
 | 1 | **Measurement baseline (WS5)** | GSC baseline snapshot (impressions, clicks, index coverage valid/excluded); rank-tracking set for inmate + how-to terms; organic→report funnel event confirmed | A | — |
 | 1–2 | **Inmate pilot v1 (WS3)** | Stand up a bounded set from existing `stateInmates` data: "inmates named [X] in [state]" + per-facility roster pages + state DOC hub, for roster-covered states (FL + 2–3). Internal-link from existing hubs. JSON-LD schema. | D | data pipelines exist (`stateInmates.mjs`, `inmatesDb`) |
 | 1–2 | **Authority seed (WS4)** | Publish cornerstone how-to #1: "How to find an inmate in [state]" | L/Dz | — |
-| 2 | **Domain decision (WS1)** | Put A1 hosting options to Kwan; if subdomain approved → file the one BC DNS ask + add `people.idlookup.ai` in Vercel + prep GSC Change-of-Address | L | **Kwan decision** |
+| 2 | **Domain decision (WS1)** | Put A1 hosting options to techBC; if subdomain approved → file the one BC DNS ask + add `people.idlookup.ai` in Vercel + prep GSC Change-of-Address | L | **techBC decision** |
 | 3–4 | **Domain move (if approved)** | Canonical swap → new host; 301 every `idlookup.me/*` → new host (keep .me as redirector); regenerate sitemaps/robots; GSC Change-of-Address; request-index ~10 hero pages. **Move CURATED set only — not the ~41k thin pages.** | D | DNS ask done |
 | 3–4 | **Inmate pilot v2** | Expand states/facilities; county roster hubs; tighten internal linking | D | pilot v1 live |
 | 3–4 | **Authority seed x2** | How-to #2 + #3 (e.g. "look up divorce records in [state]", "remove your info from data brokers"); begin link/PR outreach off the inmate dataset | L | — |
@@ -89,7 +89,7 @@ go/no-go per vertical + next-quarter plan.
 
 ## Dependencies & risks
 
-- **WS1 domain/hosting decision (Kwan)** — gates only the domain move; everything else proceeds. If it
+- **WS1 domain/hosting decision (techBC)** — gates only the domain move; everything else proceeds. If it
   slips past Month 1, do the differentiation + authority work on idlookup.me and migrate later.
 - **Legal review** for criminal/inmate/sex-offender page copy + claims before scaling those page types.
 - **Authority is the real constraint** — if pilots don't rank despite unique data, the answer is more
@@ -101,4 +101,4 @@ go/no-go per vertical + next-quarter plan.
 1. Confirm/close the duplicate-tree collapse + thin-prune state (D).
 2. Ship inmate pilot v1 from existing `stateInmates` data (D).
 3. Publish cornerstone how-to #1 + capture the GSC baseline (L/A).
-4. Put the A1 domain/hosting options to Kwan (L).
+4. Put the A1 domain/hosting options to techBC (L).

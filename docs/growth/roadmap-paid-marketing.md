@@ -3,7 +3,7 @@
 **Status:** roadmap for review
 **Goal:** scale the channel that already generates our conversions and revenue, profitably.
 
-> Paid is the one channel with **proven unit economics** — a model that worked at prior companies, with
+> Paid is the one channel with **proven unit economics** — a proven model, with
 > early CPAs trending down. This roadmap is about **pressing a working advantage**, not validating an
 > unknown one.
 

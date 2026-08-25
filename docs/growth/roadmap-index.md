@@ -23,7 +23,7 @@ feeders — not three separate products.
 
 ---
 
-## Cross-cutting decision — app hosting & architecture (open for Kwan, BC CTO)
+## Cross-cutting decision — app hosting & architecture (open for techBC, BC CTO)
 
 This one decision touches **two** roadmaps, so it lives here. Presented as **options, not a fait
 accompli** — it's a genuine architecture call we want reviewed.
@@ -40,7 +40,7 @@ accompli** — it's a genuine architecture call we want reviewed.
 
 **Team's working lean (open):** proceed on **A1-a now** (reversible) to keep the SEO recovery moving,
 with an explicit **checkpoint to revisit consolidation** once the model proves out. This is exactly the
-point to align with Kwan — if the direction is consolidation, build toward it deliberately vs. migrate
+point to align with techBC — if the direction is consolidation, build toward it deliberately vs. migrate
 twice.
 
 **Why it's cross-cutting:**
@@ -70,7 +70,7 @@ collision). Moot if A1 lands on BC infra.
 
 ## Consolidated open decisions
 
-1. **A1 hosting** — Vercel (lean) / BC infra / hybrid. *Kwan's call; touches SEO + affiliate.*
+1. **A1 hosting** — Vercel (lean) / BC infra / hybrid. *techBC's call; touches SEO + affiliate.*
 2. **A2 DNS** — confirm subdomain `people.idlookup.ai` (if Vercel).
 3. **SEO** — pivot-vs-fix appetite (hybrid works either way) + vertical priority (inmate first).
 4. **Affiliate** — CasA/CasD definitions + postback URLs + receiver placement (gates the postback build).
