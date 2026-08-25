@@ -5,7 +5,7 @@ import { getOrderCollected, getLatestPaymentDeviceInfo, getLatestBillingZip } fr
 import { getOrderCard } from '../../utils/orderCard';
 import styles from './UserDetailPage.module.css';
 import RefundEmailModal from './RefundEmailModal';
-import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, findActiveOrder, CSR_TERMS } from './userState';
+import { getPlanState, isSuspendedStatus, orderIsRefunded, invalidatePlanState, findCancelableOrder, CSR_TERMS } from './userState';
 import { useZipCity } from './zipCity';
 import { useAuth } from '../../context/AuthContext';
 import BillingEventsTable from './BillingEventsTable';
@@ -1540,7 +1540,7 @@ const UserDetailPage = () => {
               a reason when there's no active order. The suspend≠cancel warning lives in the confirm dialog +
               hover tooltip (owner 2026-08-04: keep the surface clean). */}
           {(() => {
-            const activeOrder = findActiveOrder(orders);
+            const activeOrder = findCancelableOrder(orders);
             const oid = activeOrder ? (activeOrder._id || activeOrder.id) : null;
             const busy = !!oid && cancelProcessing === oid;
             const canCancel = !!oid && !ordersLoading;
@@ -1670,7 +1670,7 @@ const UserDetailPage = () => {
                           subscription state shows (owner 2026-08-04). Per-order edge cases still use the
                           "View / act →" links in the table below. */}
                       {(() => {
-                        const activeOrder = findActiveOrder(orders);
+                        const activeOrder = findCancelableOrder(orders);
                         const primary = activeOrder || orders[0];
                         const oid = primary ? (primary._id || primary.id) : null;
                         const norm = (s) => String(s || '').toLowerCase();
@@ -2327,7 +2327,7 @@ const UserDetailPage = () => {
                 <div className={styles.actionsList}>
                   {(() => {
                     // Mirrors the left-rail Cancel Subscription (owner 2026-08-04) — same active-order target.
-                    const activeOrder = findActiveOrder(orders);
+                    const activeOrder = findCancelableOrder(orders);
                     const oid = activeOrder ? (activeOrder._id || activeOrder.id) : null;
                     const busy = !!oid && cancelProcessing === oid;
                     const canCancel = !!oid && !ordersLoading;

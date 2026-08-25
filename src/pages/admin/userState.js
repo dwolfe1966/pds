@@ -105,6 +105,28 @@ export function findActiveOrder(orders) {
   return list.filter(orderIsPaid).find((o) => norm(o?.status) === 'active' && !isCanceled(o) && !isExpired(o)) || null;
 }
 
+// True when BC has a FUTURE charge scheduled on this order (dueTimestamp in the future) — i.e. it will
+// attempt a payment. Handles seconds- or ms-epoch. This is what "scheduled to acquire a payment" means.
+function scheduledForPayment(o) {
+  const raw = Number(o?.dueTimestamp ?? o?.schedule?.data?.dueTimestamp);
+  if (!Number.isFinite(raw) || raw <= 0) return false;
+  const ms = raw < 1e12 ? raw * 1000 : raw;
+  return ms > Date.now();
+}
+
+// The order a CSR can CANCEL to stop future billing — broader than findActiveOrder (owner 2026-08-25):
+// any active order that is EITHER (i) paid OR (ii) scheduled to acquire a payment (future dueTimestamp),
+// and not already canceled/expired. Trial-first means most orders are unpaid-but-scheduled (e.g. a
+// declining card BC retries every few days) — a CSR must be able to cancel those to stop the retries.
+// NOTE: intentionally NOT gated on orderIsPaid, unlike findActiveOrder / paid-subscriber logic.
+export function findCancelableOrder(orders) {
+  const list = Array.isArray(orders) ? orders : [];
+  const norm = (s) => (s || '').toLowerCase();
+  const isCanceled = (o) => o?.transient?.canceled || norm(o?.subStatus) === 'canceled' || norm(o?.subStatus) === 'cancelled';
+  const isExpired = (o) => norm(o?.subStatus) === 'expired';
+  return list.find((o) => norm(o?.status) === 'active' && !isCanceled(o) && !isExpired(o) && (orderIsPaid(o) || scheduledForPayment(o))) || null;
+}
+
 // BC suspends via status='blocked' (no 'suspended' in its enum). Treat 'suspended' too.
 export function isSuspendedStatus(status) {
   const s = (status || '').toLowerCase();
