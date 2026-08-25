@@ -67,6 +67,9 @@ ad units there.
 
 ### WS1 — Relight & scale the proven core (fastest revenue)
 
+> **Execution plan (Part 1):** [`roadmap-paid-google-search-migration.md`](roadmap-paid-google-search-migration.md)
+> — which campaigns to migrate, with what mods, in what wave order (Google Search focused).
+
 Priority order (ROAS × volume × strategic fit):
 1. **Inmate** — `Inmates Lower HHI` (3.06×, 40 conv) + `Upper HHI` (1.87×, 52 conv — biggest volume in the
    account). Highest paid volume **and** the SEO/data moat — the strategic center; also test `Mugshots`.

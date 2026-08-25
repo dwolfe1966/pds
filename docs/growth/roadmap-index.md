@@ -10,7 +10,7 @@ that cut across them.
 
 | Channel | Doc | Role in the plan |
 |---|---|---|
-| **Paid marketing** | [`roadmap-paid-marketing.md`](roadmap-paid-marketing.md) | **The proven engine** — real conversions/revenue, CPAs dropping. Scale it. |
+| **Paid marketing** | [`roadmap-paid-marketing.md`](roadmap-paid-marketing.md) · [Search migration](roadmap-paid-google-search-migration.md) | **The proven engine** — real conversions/revenue, profitable account. Scale it. |
 | **Affiliate platform** | [`roadmap-affiliate.md`](roadmap-affiliate.md) | **Near-term new traffic** — reusable platform; Fluent/MobileMarketing as instances. |
 | **SEO** | [`roadmap-seo.md`](roadmap-seo.md) · [90-day](roadmap-seo-90day.md) | **The durable moat** — cheap organic later; first-party data + authority. |
 
