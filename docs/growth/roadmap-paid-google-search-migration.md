@@ -19,9 +19,13 @@ target.
    exists — see per-campaign column).
 2. **Tracking** → GA4 + Google Ads conversion action wired **and verified on a real purchase** before the
    campaign is trusted. (The account's misconfigured campaigns prove this is the #1 failure mode.)
-3. **Bid strategy** → start **Maximize Conversions** (no target) to gather data → switch to **Target CPA**
-   at the proven number once ≥~30 conversions accrue in *our* account. Don't paste the source tCPA and
-   expect instant performance. Seed tCPA ~proven cost/conv, +20% to gather volume, then tighten.
+3. **Bid strategy** → **Target CPA from day one, seeded at the proven eCPA** (or a hair below) — this
+   instructs Google to *hold* the CPA instead of letting it float. Do **not** launch on uncapped
+   *Maximize Conversions* — that's the eCPA-risk mode. With no history in our account, pool signal via a
+   **portfolio Target CPA** across the migrated core so it learns faster. If tCPA throttles volume early,
+   that's the **safe** failure (low spend), not a blown CPA. Thin-vertical alternative: a hard **CPC cap =
+   the proven Avg. CPC** (Manual / Max-Clicks) so eCPA is bounded by CVR while data accrues, then move to
+   tCPA. See **Protecting eCPA** below.
 4. **Budget** → reset to a controlled start (below). Budget is a **ceiling, not a target** — these are
    volume-limited (see note), so budget rarely binds.
 5. **Attribution** → distinct `shns=<id>` per campaign so partner/segment persists to BC
@@ -31,9 +35,38 @@ target.
 8. **Policy** → rewrite every disapproved / policy-limited ad before launch (criminal, arrests,
    life-events, and the `"$1 / credit-card-required"` disclosure pattern all tripped policy).
 
-**Scaling note (applies throughout):** almost every campaign reads *"limited by search volume / missing
-enough relevant keywords"* despite large budgets. **Scaling = broaden keywords/match types + add ad units
-+ grow the vertical pages (SEO×paid)** — not raising budget.
+**Scaling note (applies throughout):** almost every campaign is *"limited by search volume"* despite large
+budgets — but **scaling ≠ migration.** Migration ports the winners **like-for-like to protect eCPA**;
+volume expansion (broader keywords/match) is a **separate, guarded phase** (see Protecting eCPA). The
+**lowest-eCPA-risk way to add volume is SEO** — the inmate/life-events vertical pages feed the same intent
+at near-zero marginal cost — not aggressive paid keyword broadening.
+
+---
+
+## Protecting eCPA — the core constraint
+
+Migration can't be zero-risk: the **landing changes** (source → our v11) and the **account changes**, and
+both move eCPA (`eCPA = Avg.CPC ÷ CVR`). The goal is to **isolate, bound, and guard** the risk — not
+pretend it's absent.
+
+1. **Isolate the one unavoidable variable — the landing.** Hold everything else *identical*: exact
+   keywords, match types, negatives, geo, schedule, and a tCPA seeded at the proven number. Then any eCPA
+   move is attributable to the landing, and the fix is the landing/SUP — not a hunt through confounded
+   changes. Pre-validate v11 CVR per vertical in Wave 0 where possible; match the SUP tightly to ad intent.
+2. **Never move two levers at once.** Bid, keywords, match types, budget are each eCPA levers. Migrate
+   with them **frozen at the proven values**; change exactly one per test afterward.
+3. **Bound the downside per campaign:** tCPA seeded at proven (fails safe by throttling volume, not
+   overspending) · **small daily budget** · an **eCPA kill-switch** — automated rule to pause/alert if
+   trailing-7-day eCPA > proven **×1.4** *after ≥ ~15 conversions* (below that it's noise).
+4. **Respect conversion lag.** Early eCPA reads inflated because conversions lag clicks + the conversion
+   window. **Don't react before the window closes and ~15–30 conversions accrue** — knee-jerk edits reset
+   learning and make eCPA worse.
+5. **Decouple scale from the proven core.** Volume expansion goes in a **separate "expansion" sibling
+   campaign** with its own test budget + guardrail — **never** added to the proven campaign, so the core's
+   eCPA is never contaminated. Prove the expansion at target eCPA before folding budget in.
+6. **Prefer in-place modification.** If a campaign already lives in **our** account, don't rebuild it —
+   **repoint the landing to v11 and keep its bid learning.** That isolates to the single unavoidable
+   variable and preserves the most eCPA history. Rebuild only what lives solely in the source account.
 
 ---
 
@@ -46,24 +79,30 @@ Nothing scales on broken tracking.
 - Create conversion actions; standardize naming; build shared **negative-keyword** + brand lists; set
   **geo = US**, ad schedule.
 - Confirm account structure = **one campaign per vertical × segment** (mirrors what already works).
+- **Check account ownership per campaign.** Anything already in **our** account gets **modified in place**
+  (repoint landing to v11, keep its bid learning) — lowest eCPA risk. Only *rebuild* what lives solely in
+  the source account.
+- Build the **portfolio Target CPA** + the **eCPA kill-switch** automated rule (pause/alert at proven
+  ×1.4 after ≥15 conv) so guardrails exist before spend starts.
 
 ### Wave 1 — Proven core (migrate first) — positive ROAS + real volume
 The four-vertical profitable core. Ordered by ROAS × volume × strategic fit.
 
-| # | Campaign → new name | Vertical | Landing / SUP | Bid: start → target | Start $/day | Target CPA | Campaign mods |
+| # | Campaign → new name | Vertical | Landing / SUP | Bid strategy | Start $/day | Target CPA | Campaign mods |
 |---|---|---|---|---|---|---|---|
-| 1 | Inmates Lower HHI → `Inmate – Lower – v1` | Inmate | v11 + **inmate/booking SUP** (BookingSignal) | MaxConv → tCPA | $100 | ~$10 | port inmate kw; broaden to lift volume cap |
-| 2 | Inmates Upper HHI → `Inmate – Upper – v1` | Inmate | inmate/booking SUP | MaxConv → tCPA | $250 | ~$14 | **biggest volume** — keyword expansion is the lever |
-| 3 | Pub Rec – SSN Lower → `PubRec-SSN – Lower – v1` | Public records | v11 + **records/SSN** framing | MaxConv → tCPA | $100 | ~$10 | |
-| 4 | LE – Death (Upper HHI) → `LifeEvents-Death – Upper – v1` | Life-events | **life-events teaser** (death/obit) | MaxConv → tCPA | $200 | ~$15 | fix policy-disapproved ads |
-| 5 | LE – Divorce (Upper HHI) → `LifeEvents-Divorce – Upper – v1` | Life-events | LE teaser (divorce) | MaxConv → tCPA | $200 | ~$17 | aligns w/ Enformion divorce data |
-| 6 | Pub Rec – Pub Rec → `PubRec – Broad – v1` | Public records | records SUP | MaxConv → tCPA | $150 | ~$13 | |
-| 7 | Pub Rec – SSN → `PubRec-SSN – Broad – v1` | Public records | records/SSN | MaxConv → tCPA | $75 | ~$9 | some ads policy-limited → fix |
-| 8 | Crim Rec – Court/Crim (BC) → `Criminal-Court – v1` | Criminal | v11 + **criminal SUP** | MaxConv → tCPA | $75 | ~$9 | criminal-copy compliance |
-| 9 | Crim Rec – Arrests/Jail (BC) → `Criminal-Arrests – v1` | Criminal | criminal SUP | MaxConv → tCPA | $75 | ~$17 | arrests-copy compliance (careful) |
+| 1 | Inmates Lower HHI → `Inmate – Lower – v1` | Inmate | v11 + **inmate/booking SUP** (BookingSignal) | Portfolio tCPA @proven | $100 | ~$10 | port EXACT winning kw + match; **no broadening at migration** |
+| 2 | Inmates Upper HHI → `Inmate – Upper – v1` | Inmate | inmate/booking SUP | Portfolio tCPA @proven | $250 | ~$14 | **biggest volume**; expansion = separate guarded phase |
+| 3 | Pub Rec – SSN Lower → `PubRec-SSN – Lower – v1` | Public records | v11 + **records/SSN** framing | Portfolio tCPA @proven | $100 | ~$10 | |
+| 4 | LE – Death (Upper HHI) → `LifeEvents-Death – Upper – v1` | Life-events | **life-events teaser** (death/obit) | Portfolio tCPA @proven | $200 | ~$15 | fix policy-disapproved ads |
+| 5 | LE – Divorce (Upper HHI) → `LifeEvents-Divorce – Upper – v1` | Life-events | LE teaser (divorce) | Portfolio tCPA @proven | $200 | ~$17 | aligns w/ Enformion divorce data |
+| 6 | Pub Rec – Pub Rec → `PubRec – Broad – v1` | Public records | records SUP | Portfolio tCPA @proven | $150 | ~$13 | |
+| 7 | Pub Rec – SSN → `PubRec-SSN – Broad – v1` | Public records | records/SSN | Portfolio tCPA @proven | $75 | ~$9 | some ads policy-limited → fix |
+| 8 | Crim Rec – Court/Crim (BC) → `Criminal-Court – v1` | Criminal | v11 + **criminal SUP** | Portfolio tCPA @proven | $75 | ~$9 | criminal-copy compliance |
+| 9 | Crim Rec – Arrests/Jail (BC) → `Criminal-Arrests – v1` | Criminal | criminal SUP | Portfolio tCPA @proven | $75 | ~$17 | arrests-copy compliance (careful) |
 
-**Wave-1 exit gate:** each campaign firing tracked conversions and holding near its target CPA/ROAS in
-*our* account for ~2–3 weeks; tCPA switched on. Only then raise budgets / start Wave 2.
+**Wave-1 exit gate:** each campaign firing tracked conversions and **holding near its proven eCPA
+(kill-switch quiet)** across ≥~15–30 conversions in *our* account. Only then raise budgets / open an
+expansion sibling / start Wave 2.
 
 ### Wave 2 — Recover & tighten (after Wave 1 proves the pipe)
 | Campaign | Vertical | Why here | Mod focus |
