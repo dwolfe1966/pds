@@ -3,6 +3,15 @@
 Source content extracted from the compet **Search keyword report** + **Ad report** (`docs/ads/compet/`).
 Companion to [`paid-search-build-sheet.md`](paid-search-build-sheet.md).
 
+> **Paste-ready import:** [`paid-search-wave1-google-ads-import.csv`](paid-search-wave1-google-ads-import.csv)
+> — 7 campaigns · 83 keywords · 7 RSAs, all within Google limits (headlines ≤30, descriptions ≤90).
+> **Import in Google Ads Editor:** Account → Import → From file → select the CSV → review the proposed
+> changes → *keep the campaigns Paused* → Post. **SSN is excluded** (prohibited — punch-list D1).
+> **Set in-UI, not in the CSV:** location = **US**, the **portfolio Target CPA** (attach each campaign;
+> the CSV seeds a standard tCPA at the proven number), the **eCPA kill-switch** rule, audiences
+> (upper/lower-HHI for the two Inmate campaigns), and shared negative lists. Confirm the `shns` ids
+> resolve to each vertical's SUP before enabling.
+
 ## Two rules the source data forces
 
 1. **Keywords port near-verbatim — EXCEPT SSN.** The proven keyword sets are portable, but the **SSN**

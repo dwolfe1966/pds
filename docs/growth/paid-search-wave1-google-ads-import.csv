@@ -1,0 +1,105 @@
+Campaign,Campaign Type,Campaign Daily Budget,Networks,Bid Strategy Type,Target CPA,Ad Group,Max CPC,Keyword,Match Type,Ad Type,Headline 1,Headline 2,Headline 3,Headline 4,Headline 5,Headline 6,Headline 7,Headline 8,Headline 9,Headline 10,Description 1,Description 2,Description 3,Description 4,Path 1,Path 2,Final URL,Status
+Inmate - Lower - v1,Search,100.00,Google search,Target CPA,10.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Inmate - Lower - v1,,,,,,Inmate,,,,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,inmate search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,inmate search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,find an inmate,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,find an inmate,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,inmate locator,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,inmate lookup,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,find inmate,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,inmate finder,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,convict search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,federal inmate search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,federal inmate search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,inmates,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,texas inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,arizona inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,nevada inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,tennessee inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Lower - v1,,,,,,Inmate,,,,Responsive search ad,Inmate Search,Find an Inmate Online,Nationwide Inmate Search,Federal Inmate Search,"Search Local, State & Federal",Inmate Locator,Find People in Jail,County Jail Inmate Search,Search Dept. of Corrections,Enter a Name to Start,"Search jail & prison records nationwide by name. Local, state & federal.","Enter a name to find where someone is incarcerated. Fast, accurate, easy.",Free to search; full inmate report available. All 50 states.,Find an inmate across every state. Enter a name and state to start.,inmate-search,locator,https://idlookup.ai/name/landing/v11?shns=inmate-lo,Enabled
+Inmate - Upper - v1,Search,250.00,Google search,Target CPA,14.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Inmate - Upper - v1,,,,,,Inmate,,,,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,inmate search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,inmate search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,find an inmate,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,find an inmate,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,inmate locator,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,inmate lookup,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,find inmate,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,inmate finder,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,convict search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,federal inmate search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,federal inmate search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,inmates,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,texas inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,arizona inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,nevada inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,tennessee inmate search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Inmate - Upper - v1,,,,,,Inmate,,,,Responsive search ad,Inmate Search,Find an Inmate Online,Nationwide Inmate Search,Federal Inmate Search,"Search Local, State & Federal",Inmate Locator,Find People in Jail,County Jail Inmate Search,Search Dept. of Corrections,Enter a Name to Start,"Search jail & prison records nationwide by name. Local, state & federal.","Enter a name to find where someone is incarcerated. Fast, accurate, easy.",Free to search; full inmate report available. All 50 states.,Find an inmate across every state. Enter a name and state to start.,inmate-search,locator,https://idlookup.ai/name/landing/v11?shns=inmate-up,Enabled
+PubRec - Broad - v1,Search,150.00,Google search,Target CPA,13.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+PubRec - Broad - v1,,,,,,Public Records,,,,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,free public records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,public records free,Broad,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,free public records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,public record finder,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,public eviction records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,public records websites,Broad,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,public records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,public records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,public records search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,texas public records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,california public records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+PubRec - Broad - v1,,,,,,Public Records,,,,Responsive search ad,Search Public Records,Free Public Records Search,Public Records by Name,Public Record Finder,Eviction & Court Records,Search Records by Name,Enter a Name to Start,Nationwide Public Records,Instant Public Records,Look Up Public Records,Search public records by name - nationwide. Free to start.,Enter a name to find available public records. Fast and easy.,"Public record finder: addresses, records, and more.",Search public-records databases by name and state.,public-records,search,https://idlookup.ai/name/landing/v11?shns=pubrec,Enabled
+LifeEvents-Death - Upper - v1,Search,200.00,Google search,Target CPA,15.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,,,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,public death records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,birth and death records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,free death certificates,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,death notices,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,public death records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,free death records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,death records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,death certificate lookup,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,obituaries,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,obituary search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Upper - v1,,,,,,Death Records,,,,Responsive search ad,Search Death Records,Public Death Records,Obituary Search,Find Obituaries Online,Death Records & Obituaries,Death Certificate Lookup,Find Out Who Died & When,Enter a Name to Start,Search Records by Name,Nationwide Death Records,Search public death records and obituaries by name. Nationwide.,"Find out who died, when, and their age. Enter a name to start.",Free to search; full death record & obituary details available.,Look up death records and obituaries across all states.,death-records,obituaries,https://idlookup.ai/name/landing/v11?shns=le-death-up,Enabled
+LifeEvents-Divorce - Upper - v1,Search,200.00,Google search,Target CPA,17.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,,,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,free divorce records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,view divorce records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,texas divorce records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,marriage divorce records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,divorce records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,view divorce records online,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,california divorce records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,new york divorce records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,divorce records online,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,marriage and divorce records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,divorce certificate,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,check divorce records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,view divorce records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Divorce - Upper - v1,,,,,,Divorce Records,,,,Responsive search ad,Search Divorce Records,Public Divorce Records,Divorce Record Lookup,View Divorce Records Online,Find Out Who Got Divorced,Divorce Certificates,State Divorce Records,Enter a Name to Start,Search Records by Name,Nationwide Divorce Records,"Search public divorce records by name - nationwide, local & state.",Find out who got divorced. Enter a name to view divorce records.,Free to search; full divorce record details available.,Look up divorce records and certificates across all states.,divorce-records,lookup,https://idlookup.ai/name/landing/v11?shns=le-div-up,Enabled
+Criminal-Court - v1,Search,75.00,Google search,Target CPA,9.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Criminal-Court - v1,,,,,,Criminal Court,,,,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,criminal records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,criminal reports,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,criminal records search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,criminal background check,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,free criminal records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,court record,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,check criminal,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,public criminal record lookup,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,criminal record search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Court - v1,,,,,,Criminal Court,,,,Responsive search ad,Criminal Records Search,Court Records Lookup,Criminal Background Check,Public Criminal Records,Search Court Records,Criminal History Lookup,Local & Federal Records,Enter a Name to Start,Search Records by Name,Nationwide Criminal Records,Search public criminal & court records by name. Nationwide.,Enter a name to find available criminal and court records.,Criminal background records - local and federal. Free to search.,Look up court and criminal records across all states.,criminal,records,https://idlookup.ai/name/landing/v11?shns=crim-court,Enabled
+Criminal-Arrests - v1,Search,75.00,Google search,Target CPA,17.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Criminal-Arrests - v1,,,,,,Arrests,,,,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Arrests - v1,,,,,,Arrests,,arrest records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Arrests - v1,,,,,,Arrests,,jail records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Arrests - v1,,,,,,Arrests,,warrant search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Arrests - v1,,,,,,Arrests,,active warrant search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Arrests - v1,,,,,,Arrests,,do i have a warrant,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Arrests - v1,,,,,,Arrests,,how to check if i have a warrant,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Arrests - v1,,,,,,Arrests,,,,Responsive search ad,Arrest Records Search,Jail Records Lookup,Public Arrest Records,Warrant Search,Search Arrest Records,Local & County Records,Enter a Name to Start,Search Records by Name,Nationwide Arrest Records,Check Public Records,Search public arrest & jail records by name. Nationwide.,Enter a name to find available arrest and jail records.,"Public arrest records - local, county & state. Free to search.",Look up arrest and jail records across all states.,arrest-records,jail,https://idlookup.ai/name/landing/v11?shns=crim-arrest,Enabled
