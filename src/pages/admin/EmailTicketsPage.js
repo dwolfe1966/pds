@@ -127,10 +127,13 @@ const EmailTicketsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'awaiting' | 'replied'
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'billing' | 'general'
-  // Resolution filter — defaults to 'open' so resolved threads drop out of the
-  // queue. BC has no native status field on contactMessage; we use a reserved
-  // 'resolved' tag (csrSetContactTags) as the marker.
-  const [resolutionFilter, setResolutionFilter] = useState('open'); // 'open' | 'resolved' | 'all'
+  // Resolution filter — defaults to 'all' so the queue never hides tickets on
+  // load. BC has no native status field on contactMessage; we mark resolved with
+  // a reserved 'resolved' tag (csrSetContactTags) stored in the doc's `index`
+  // array. Defaulting to 'open' was hiding EVERY thread whose `index` carried
+  // that tag (queue rendered empty though tickets loaded) — so resolved-hiding is
+  // now an opt-in filter, not the default. CSRs pick 'open' to focus the queue.
+  const [resolutionFilter, setResolutionFilter] = useState('all'); // 'open' | 'resolved' | 'all'
   const [resolving, setResolving] = useState(false);
   const [myAssignedOnly, setMyAssignedOnly] = useState(false);
 
