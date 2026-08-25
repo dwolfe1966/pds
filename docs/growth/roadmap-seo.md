@@ -1,6 +1,6 @@
 # Roadmap — SEO (organic acquisition)
 
-**Date:** 2026-08-25   **Status:** roadmap for review
+**Status:** roadmap for review
 **Goal:** recover + grow organic traffic into a durable, near-zero-marginal-cost acquisition channel.
 **Execution plan:** [`roadmap-seo-90day.md`](roadmap-seo-90day.md) — the time-phased 12-week version.
 
@@ -19,7 +19,7 @@ Grounded in `docs/seo/seo-recovery-brainstorm.md` + GSC evidence:
    millions of them *plus* authority *plus* links. We can't out-rank them on their own page type.
 2. **New domain, ~zero authority** — idlookup.me is a young standalone `.me` that took a deindex hit.
 3. **Thin pages actively hurt** — ~360k near-duplicate pages tripped a site-quality / helpful-content
-   filter (the 7/13 impressions collapse). More thin pages = more dilution.
+   filter (the impressions collapse). More thin pages = more dilution.
 4. **Split domains** — SEO on idlookup.me vs. product on idlookup.ai may split authority.
 5. **The moat is unused** — `seo/lib/` holds first-party incarceration, sex-offender, life-events, and
    person-search data. None of it powers an SEO page. We're fighting where we can't win with the one
@@ -31,7 +31,7 @@ Grounded in `docs/seo/seo-recovery-brainstorm.md` + GSC evidence:
 
 - Name×location directory live (Vercel + Neon): ~214M profiles, ~27M name hubs, 52 states, ~1,909
   cities, roster-state counties, ~980 unique-content name pages. Pipelines in `seo/scripts`.
-- Technical hygiene largely done: thin tier noindexed/de-listed (7/20), conservative `sitemapv2.xml`
+- Technical hygiene largely done: thin tier noindexed/de-listed, conservative `sitemapv2.xml`
   holding, robots/canonicals correct, legacy→name-in-state 301s.
 - First-party data pipelines exist but don't render SEO pages yet: `incarceration.mjs`,
   `stateInmates.mjs`, `inmatesDb`, life-events.

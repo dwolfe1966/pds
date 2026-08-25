@@ -1,6 +1,6 @@
 # Roadmap — Affiliate platform
 
-**Date:** 2026-08-25   **Status:** roadmap for review
+**Status:** roadmap for review
 **Goal:** a reusable affiliate platform that onboards traffic partners fast — with the first partners
 (Fluent, MobileMarketing) as instances of the framework, not one-offs.
 

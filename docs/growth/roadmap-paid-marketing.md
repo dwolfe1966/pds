@@ -1,6 +1,6 @@
 # Roadmap — Paid marketing (the proven engine)
 
-**Date:** 2026-08-25   **Status:** roadmap for review
+**Status:** roadmap for review
 **Goal:** scale the channel that already generates our conversions and revenue, profitably.
 
 > Paid is the one channel with **proven unit economics** — a model that worked at prior companies, with
@@ -11,7 +11,7 @@
 
 ## Current state (proven, with real numbers)
 
-Legacy compet account, **Jul 17–30 2026** (`docs/ads/compet/`) — the winners we replicate:
+Legacy compet account, **a recent 14-day window** (`docs/ads/compet/`) — the winners we replicate:
 
 | Campaign (legacy) | Vertical | Spend | Conv. | CPA / cost-per-conv | CVR | Value/Cost |
 |---|---|---|---|---|---|---|

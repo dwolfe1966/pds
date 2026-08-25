@@ -1,6 +1,6 @@
 # SEO — 90-day execution roadmap
 
-**Date:** 2026-08-25   **Window:** Aug 25 → Nov 16, 2026 (12 weeks)
+**Window:** ~90 days · 12 weeks (relative to kickoff; no fixed calendar dates)
 **Companion strategy:** [`roadmap-seo.md`](roadmap-seo.md) (the why + workstreams WS1–WS5).
 
 ## Framing (set expectations before the plan)
@@ -19,7 +19,7 @@ differentiation + authority work still proceeds and simply moves with the domain
 
 ---
 
-## Month 1 — Foundation + differentiator launch (Aug 25 – Sep 21)
+## Month 1 — Foundation + differentiator launch (Weeks 1–4)
 
 *Stop the bleed, launch the moat vertical, seed authority, set the baseline.*
 
@@ -40,7 +40,7 @@ to watch: pilot pages moving into "valid/indexed," first impressions on vertical
 
 ---
 
-## Month 2 — Differentiate at scale + prove the model (Sep 22 – Oct 19)
+## Month 2 — Differentiate at scale + prove the model (Weeks 5–8)
 
 *Scale the vertical, kill remaining thinness, read the pilot, build links.*
 
@@ -60,7 +60,7 @@ page volume.*
 
 ---
 
-## Month 3 — Compound + expand + authority push (Oct 20 – Nov 16)
+## Month 3 — Compound + expand + authority push (Weeks 9–12)
 
 *Scale what's proven, add the second vertical, run a real PR/link campaign, decide next quarter.*
 
@@ -69,7 +69,7 @@ page volume.*
 | 9–10 | **Scale proven vertical(s)** | Expand the winning page types; add life-events at scale **only if** its pilot proved (M2); prune anything that didn't rank | D/A | M2 read |
 | 9–10 | **Conversion path (WS5)** | Optimize organic→report/paywall path on vertical pages (CTAs, teaser→unlock); measure conversion, not just traffic | Dz/A | — |
 | 11–12 | **Authority campaign (WS4)** | Digital-PR data study off a unique first-party dataset (e.g. "incarceration by county") as a linkable asset; outreach | L | dataset ready |
-| 11–12 | **Quarter review + next plan (WS5)** | Full measurement review; go/no-go per vertical; Q1-2027 SEO plan; confirm domain-authority trajectory | L/A | — |
+| 11–12 | **Quarter review + next plan (WS5)** | Full measurement review; go/no-go per vertical; next-quarter SEO plan; confirm domain-authority trajectory | L/A | — |
 
 **Month-3 exit gate (KPIs):** **sustained** organic impression/click growth vs. Day-0 baseline; ranking
 gains on vertical + how-to; **measurable organic→revenue**; **referring-domain count up**; documented

@@ -1,8 +1,8 @@
 # Growth roadmaps — index + cross-cutting decisions
 
-**Date:** 2026-08-25   **Status:** for team + BC architecture review
+**Status:** for team + BC architecture review
 
-From the 2026-08-25 growth review ($20k/mo burn vs ~$500/mo revenue → close a ~40× gap; the gap is
+From the growth review ($20k/mo burn vs ~$500/mo revenue → close a ~40× gap; the gap is
 **qualified traffic, not product**). Each channel is its own full roadmap; this index holds the pieces
 that cut across them.
 
