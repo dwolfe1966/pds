@@ -166,6 +166,19 @@ SSN — migrating these verbatim risks **account suspension**.
 
 ---
 
+## Wave 3 — efficiency tests (separate import)
+
+Paste-ready: [`paid-search-wave3-google-ads-import.csv`](paid-search-wave3-google-ads-import.csv) — 4
+campaigns · 30 keywords · 4 compliant RSAs, small test budgets ($40–50/day), tCPA seeded at proven.
+Import Paused; judge on ≥10–15 conversions before graduating any to the core.
+
+| Campaign | `shns` | $/day · tCPA | Proven keyword (source CPA) | Policy note |
+|---|---|---|---|---|
+| **Dating – PS** | `dating-ps` | $50 · $7 | `find dating profile free` ($15.24) | Safety/verification framing ("see if someone's on dating sites") — **not** the "catch a cheater" angle (that's a separate, more sensitive campaign). |
+| **Compet – TF** | `compet-tf` | $40 · $8 | `truthfinder` (broad, $7.68) | ⚠ **Conquest** — the competitor brand is fine **as a keyword** but **must NOT appear in ad copy** (trademark policy). RSAs are deliberately generic. |
+| **PS Main – Orig** | `ps-main` | $40 · $5 | `people search` (phrase) | Low risk — general people search. |
+| **Inmates – Mugshots** | `inmate-mug` | $50 · $15 | `mugshot search` ($3.74), `how to find mugshots` ($3.02) | ⚠⚠ **Highest policy/legal exposure** — several states restrict mugshot publication/monetization + Google's exploitative-content policy. Legal review before scaling; ties to first-party BookingSignal data. |
+
 ## Cross-campaign build notes
 - **Negatives (shared):** `jobs`, `how to`, `my own`, `free` (where a paywall follows — avoids deceptive-
   free), `template`, `form`, DIY/self-service, competitor brands.

@@ -1,0 +1,43 @@
+Campaign,Campaign Type,Campaign Daily Budget,Networks,Bid Strategy Type,Target CPA,Ad Group,Max CPC,Keyword,Match Type,Ad Type,Headline 1,Headline 2,Headline 3,Headline 4,Headline 5,Headline 6,Headline 7,Headline 8,Headline 9,Headline 10,Description 1,Description 2,Description 3,Description 4,Path 1,Path 2,Final URL,Status
+Dating - PS - v1,Search,50.00,Google search,Target CPA,7.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Dating - PS - v1,,,,,,Dating Profile,,,,,,,,,,,,,,,,,,,,,,Enabled
+Dating - PS - v1,,,,,,Dating Profile,,find dating profile,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Dating - PS - v1,,,,,,Dating Profile,,find dating profile free,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Dating - PS - v1,,,,,,Dating Profile,,find someones dating profile,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Dating - PS - v1,,,,,,Dating Profile,,find someone on dating sites by email,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Dating - PS - v1,,,,,,Dating Profile,,find out if someone is on a dating site,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Dating - PS - v1,,,,,,Dating Profile,,search dating sites by email,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Dating - PS - v1,,,,,,Dating Profile,,,,Responsive search ad,Dating Profile Search,See If They're on Dating Apps,Find a Dating Profile,Search Dating Profiles,Online Dating Safety Check,Search by Name or Email,Is Your Match Real?,Enter a Name to Start,Check Before You Meet,Find Hidden Dating Profiles,See if someone has a dating profile. Search by name or email. Fast and private.,Online dating safety: verify who you're really talking to before you meet.,Free to search. Find dating profiles and public records by name.,Know who's real before the date. Search dating profiles and records.,dating-search,profiles,https://idlookup.ai/name/landing/v11?shns=dating-ps,Enabled
+Compet - TF - v1,Search,40.00,Google search,Target CPA,8.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Compet - TF - v1,,,,,,Conquest,,,,,,,,,,,,,,,,,,,,,,Enabled
+Compet - TF - v1,,,,,,Conquest,,truthfinder,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Compet - TF - v1,,,,,,Conquest,,truthfinder,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Compet - TF - v1,,,,,,Conquest,,truthfinder free trial,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Compet - TF - v1,,,,,,Conquest,,truthfinder public records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Compet - TF - v1,,,,,,Conquest,,truthfinder background check,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Compet - TF - v1,,,,,,Conquest,,truthfinder people search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+Compet - TF - v1,,,,,,Conquest,,,,Responsive search ad,A Smarter People Search,Search Public Records,Look Up Anyone by Name,Background & Public Records,People Search Done Right,Find Contact Info Fast,Free to Search,Enter a Name to Start,"Address, Phone & Records",Search by Name,"Search public records by name - addresses, phone, and more. Free to start.","Look up anyone in the US. Fast, accurate people search.",Find contact info and public records. Enter a name to begin.,A better way to search people and public records online.,people-search,records,https://idlookup.ai/name/landing/v11?shns=compet-tf,Enabled
+PS Main - Orig - v1,Search,40.00,Google search,Target CPA,5.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+PS Main - Orig - v1,,,,,,People Search,,,,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,people search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,people search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,usa people search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,name search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,people records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,trying to find someone,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,find anyone,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,people finder websites,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,how do i find someone,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+PS Main - Orig - v1,,,,,,People Search,,,,Responsive search ad,People Search,Find Anyone by Name,USA People Search,Search by Name,Free People Search,Find Old Friends & Family,"Address, Phone & More",Look Up Anyone Online,Enter a Name to Start,People Finder,"Search for anyone by name. Find addresses, phone numbers, and more.",Free people search - reconnect with friends and family.,Enter a name to look up people and public records. Fast and easy.,Find people across the US. Search by name to get started.,people-search,by-name,https://idlookup.ai/name/landing/v11?shns=ps-main,Enabled
+Inmates - Mugshots - v1,Search,50.00,Google search,Target CPA,15.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Inmates - Mugshots - v1,,,,,,Mugshots,,,,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,mugshot search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,how to find mugshots,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,find mugshot,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,public mugshots,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,mugshot finder,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,free mugshot finder,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,find my mugshot,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,jail mugshots,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,free inmate mugshots,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Inmates - Mugshots - v1,,,,,,Mugshots,,,,Responsive search ad,Mugshot Search,Find Mugshots Online,Search Booking Photos,Public Mugshot Lookup,Find Your Mugshot,Search Mugshots by Name,Nationwide Mugshots,Arrest & Booking Records,Enter a Name to Start,County Jail Mugshots,Search mugshots and booking photos by name. Nationwide.,Find arrest booking photos and records. Enter a name to start.,"Public mugshot lookup - local, county, and state.",Look up mugshots and arrest records across all states.,mugshots,search,https://idlookup.ai/name/landing/v11?shns=inmate-mug,Enabled
