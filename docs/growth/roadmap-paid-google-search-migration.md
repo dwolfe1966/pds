@@ -4,6 +4,8 @@
 scope here — nearly all are paused/policy-limited in the account).
 **Parent:** [`roadmap-paid-marketing.md`](roadmap-paid-marketing.md) (WS1). Data source:
 `Campaign report - Campaign report.csv`.
+**Build doc:** [`paid-search-build-sheet.md`](paid-search-build-sheet.md) — Wave 0 checklist + Wave 1
+per-campaign build sheet.
 
 ## What "migrate" means
 
