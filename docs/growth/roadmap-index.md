@@ -12,7 +12,7 @@ that cut across them.
 |---|---|---|
 | **Paid marketing** | [`roadmap-paid-marketing.md`](roadmap-paid-marketing.md) | **The proven engine** — real conversions/revenue, CPAs dropping. Scale it. |
 | **Affiliate platform** | [`roadmap-affiliate.md`](roadmap-affiliate.md) | **Near-term new traffic** — reusable platform; Fluent/MobileMarketing as instances. |
-| **SEO** | [`roadmap-seo.md`](roadmap-seo.md) | **The durable moat** — cheap organic later; first-party data + authority. |
+| **SEO** | [`roadmap-seo.md`](roadmap-seo.md) · [90-day](roadmap-seo-90day.md) | **The durable moat** — cheap organic later; first-party data + authority. |
 
 Companion: [`growth-scorecard.csv`](growth-scorecard.csv) (one-line status of all channels).
 

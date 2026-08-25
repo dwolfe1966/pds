@@ -2,6 +2,7 @@
 
 **Date:** 2026-08-25   **Status:** roadmap for review
 **Goal:** recover + grow organic traffic into a durable, near-zero-marginal-cost acquisition channel.
+**Execution plan:** [`roadmap-seo-90day.md`](roadmap-seo-90day.md) — the time-phased 12-week version.
 
 > The idlookup.ai migration is **one workstream inside this roadmap, and it is not a given** — it's a
 > lever within the domain-strategy decision (WS1), which is open for BC architecture review. SEO is
