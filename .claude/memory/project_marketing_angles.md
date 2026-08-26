@@ -13,6 +13,11 @@ budget / landing exp / conversion flow.
   doubles as the freemium-identity north-star wedge. ⚠️ real reverse-search counts ONLY, never fabricated.
 - **B.3 Check-Your-Date** — composite (criminal + NSOPW sex-offender + marriage + identity/catfish); highest
   intent, best showcases full report breadth; recommended FIRST pilot.
+**Progressed 2026-07-23:** added `docs/marketing/2026-07-23-campaign-specs.md` (real ad copy + landing
+wireframes wired to SupTeaserA/vCard/loader/teasers + flow/tracking) and `docs/marketing/2026-07-23-pilot-check-your-date.md`
+(full launch package: Meta 4 ad sets + Google 4 ad groups, 8 copy variants, /name/landing/v14 build spec —
+only NEW dev = composite safety teaser from getPersonSignals — 14-day test/kill schedule, compliance).
+Assumed pilot = B.3 + Meta/Google (owner was away; confirm). Budget still the one blocker (need CAC/LTV).
 Core thesis: these are ASSEMBLY of existing verticals into 3 branded funnels, low build cost. Guardrails:
 FCRA (no eligibility framing), no fabricated data, private search, NSOPW display limits. **Open (blocks
 firming budget):** owner's real monthly budget, channels/pixels ready, current+target CAC & subscriber LTV,

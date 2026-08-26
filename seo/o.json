@@ -1,0 +1,1283 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.4 2390de5a",
+  "osm3s": {
+    "timestamp_osm_base": "2026-07-30T20:46:36Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 367823332,
+  "lat": 25.7863162,
+  "lon": -80.2012591,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "350",
+    "addr:postcode": "33136",
+    "addr:state": "FL",
+    "addr:street": "Northwest 13th Street",
+    "amenity": "library",
+    "ele": "7",
+    "email": "darbeaul@mdpls.org",
+    "gnis:feature_id": "2078587",
+    "internet_access": "yes",
+    "internet_access:fee": "no",
+    "name": "Culmer-Overtown Library",
+    "opening_hours": "Mo-Th 09:30-20:00; Fr-Sa 09:30-18:00",
+    "operator": "Miami-Dade Public Library System",
+    "operator:type": "public",
+    "operator:wikidata": "Q6827243",
+    "phone": "+1 305-579-5322",
+    "source": "USGS Geonames",
+    "website": "https://mdpls.org/branch-culmerovertown"
+  }
+},
+{
+  "type": "node",
+  "id": 367823974,
+  "lat": 25.7923206,
+  "lon": -80.1858807,
+  "tags": {
+    "addr:state": "FL",
+    "amenity": "library",
+    "ele": "0",
+    "gnis:feature_id": "282545",
+    "name": "Flagler Memorial Library",
+    "source": "USGS Geonames"
+  }
+},
+{
+  "type": "node",
+  "id": 367824130,
+  "lat": 25.7776300,
+  "lon": -80.1909910,
+  "tags": {
+    "addr:state": "FL",
+    "amenity": "library",
+    "ele": "3",
+    "gnis:feature_id": "2449738",
+    "name": "Miami - Dade Community College Wolfson Campus Library",
+    "source": "USGS Geonames"
+  }
+},
+{
+  "type": "node",
+  "id": 367824134,
+  "lat": 25.7746140,
+  "lon": -80.1951980,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "73",
+    "addr:postcode": "33130",
+    "addr:state": "FL",
+    "addr:street": "West Flagler Street",
+    "amenity": "library",
+    "ele": "2",
+    "gnis:feature_id": "2449739",
+    "name": "Miami - Dade County Law Library",
+    "source": "USGS Geonames"
+  }
+},
+{
+  "type": "node",
+  "id": 462517397,
+  "lat": 25.7637907,
+  "lon": -80.1954604,
+  "tags": {
+    "name": "Brickell",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 462599402,
+  "lat": 25.7809166,
+  "lon": -80.1962822,
+  "tags": {
+    "name": "Historic Overtown/Lyric Theatre",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "wikidata": "Q14685898"
+  }
+},
+{
+  "type": "node",
+  "id": 462625340,
+  "lat": 25.7845569,
+  "lon": -80.2075405,
+  "tags": {
+    "name": "Culmer",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "subway",
+    "subway": "yes",
+    "wikidata": "Q5193079"
+  }
+},
+{
+  "type": "node",
+  "id": 462742178,
+  "lat": 25.7627299,
+  "lon": -80.1952735,
+  "tags": {
+    "monorail": "yes",
+    "name": "Brickell",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail"
+  }
+},
+{
+  "type": "node",
+  "id": 462742181,
+  "lat": 25.7640118,
+  "lon": -80.1925708,
+  "tags": {
+    "gtfs_id": "8212",
+    "monorail": "yes",
+    "name": "Tenth Street Promenade",
+    "network": "MDT",
+    "ntd_id": "4034",
+    "old_route_ref": "24",
+    "operator": "Miami-Dade Transit",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "was:highway": "bus_stop",
+    "wikidata": "Q7700881"
+  }
+},
+{
+  "type": "node",
+  "id": 462742184,
+  "lat": 25.7668873,
+  "lon": -80.1921416,
+  "tags": {
+    "monorail": "yes",
+    "name": "Brickell City Centre",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wheelchair": "yes",
+    "wikidata": "Q5349123"
+  }
+},
+{
+  "type": "node",
+  "id": 462742189,
+  "lat": 25.7691598,
+  "lon": -80.1922875,
+  "tags": {
+    "monorail": "yes",
+    "name": "Fifth Street",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q5447552"
+  }
+},
+{
+  "type": "node",
+  "id": 462742190,
+  "lat": 25.7710458,
+  "lon": -80.1926051,
+  "tags": {
+    "monorail": "yes",
+    "name": "Riverwalk",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q7338787"
+  }
+},
+{
+  "type": "node",
+  "id": 463206890,
+  "lat": 25.7824746,
+  "lon": -80.1906637,
+  "tags": {
+    "monorail": "yes",
+    "name": "Park West",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q7138139"
+  }
+},
+{
+  "type": "node",
+  "id": 463206891,
+  "lat": 25.7848627,
+  "lon": -80.1908096,
+  "tags": {
+    "monorail": "yes",
+    "name": "Eleventh Street",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q5359818"
+  }
+},
+{
+  "type": "node",
+  "id": 463206894,
+  "lat": 25.7859186,
+  "lon": -80.1879666,
+  "tags": {
+    "monorail": "yes",
+    "name": "Museum Park",
+    "network": "MDT",
+    "old_name": "Bicentennial Park",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q4903565"
+  }
+},
+{
+  "type": "node",
+  "id": 463206897,
+  "lat": 25.7894688,
+  "lon": -80.1880115,
+  "tags": {
+    "monorail": "yes",
+    "name": "Adrienne Arsht Center",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q4685681"
+  }
+},
+{
+  "type": "node",
+  "id": 463206899,
+  "lat": 25.7893596,
+  "lon": -80.1932068,
+  "tags": {
+    "monorail": "yes",
+    "name": "School Board",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wheelchair": "yes",
+    "wikidata": "Q7432149",
+    "wikipedia": "en:School Board station"
+  }
+},
+{
+  "type": "node",
+  "id": 463206900,
+  "lat": 25.7776151,
+  "lon": -80.1899352,
+  "tags": {
+    "monorail": "yes",
+    "name": "College Bayside",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q5146304",
+    "wikipedia": "en:College Bayside station"
+  }
+},
+{
+  "type": "node",
+  "id": 463206906,
+  "lat": 25.7789657,
+  "lon": -80.1921314,
+  "tags": {
+    "monorail": "yes",
+    "name": "College North",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q5146484",
+    "wikipedia": "en:College North station"
+  }
+},
+{
+  "type": "node",
+  "id": 463206907,
+  "lat": 25.7788575,
+  "lon": -80.1953586,
+  "tags": {
+    "monorail": "yes",
+    "name": "Wilkie D. Ferguson, Jr.",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q8002495",
+    "wikipedia": "en:Wilkie D. Ferguson Jr. station"
+  }
+},
+{
+  "type": "node",
+  "id": 463206908,
+  "lat": 25.7804960,
+  "lon": -80.1905950,
+  "tags": {
+    "monorail": "yes",
+    "name": "Freedom Tower",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q5500640",
+    "wikipedia": "en:Freedom Tower station"
+  }
+},
+{
+  "type": "node",
+  "id": 463206909,
+  "lat": 25.7720250,
+  "lon": -80.1935218,
+  "tags": {
+    "monorail": "yes",
+    "name": "Third Street",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q7784963"
+  }
+},
+{
+  "type": "node",
+  "id": 463206910,
+  "lat": 25.7734240,
+  "lon": -80.1935991,
+  "tags": {
+    "monorail": "yes",
+    "name": "Miami Avenue",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q6827267"
+  }
+},
+{
+  "type": "node",
+  "id": 463206911,
+  "lat": 25.7718781,
+  "lon": -80.1914361,
+  "tags": {
+    "monorail": "yes",
+    "name": "Knight Center",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q6422209",
+    "wikipedia": "en:Knight Center station"
+  }
+},
+{
+  "type": "node",
+  "id": 463206912,
+  "lat": 25.7731462,
+  "lon": -80.1873259,
+  "tags": {
+    "monorail": "yes",
+    "name": "Bayfront Park",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q4874525"
+  }
+},
+{
+  "type": "node",
+  "id": 463206913,
+  "lat": 25.7757582,
+  "lon": -80.1898654,
+  "tags": {
+    "monorail": "yes",
+    "name": "First Street",
+    "network": "MDT",
+    "public_transport": "station",
+    "railway": "station",
+    "station": "monorail",
+    "wikidata": "Q5453841"
+  }
+},
+{
+  "type": "node",
+  "id": 1024679363,
+  "lat": 25.7726040,
+  "lon": -80.1919040,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "194",
+    "addr:postcode": "33131",
+    "addr:state": "FL",
+    "addr:street": "Southeast 1st Avenue",
+    "amenity": "restaurant",
+    "cuisine": "latin_american",
+    "name": "El Cartel Colombian Restaurant",
+    "phone": "+1-305-358-7800"
+  }
+},
+{
+  "type": "node",
+  "id": 1024680688,
+  "lat": 25.7728400,
+  "lon": -80.1917960,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Wok Town"
+  }
+},
+{
+  "type": "node",
+  "id": 1025619350,
+  "lat": 25.7743020,
+  "lon": -80.1905630,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "169",
+    "addr:postcode": "33131",
+    "addr:state": "FL",
+    "addr:street": "East Flagler Street",
+    "amenity": "restaurant",
+    "cuisine": "salad",
+    "name": "Giardino Gourmet Salads",
+    "phone": "+1-305-358-0167",
+    "website": "https://giardinosalads.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 1025627486,
+  "lat": 25.7743481,
+  "lon": -80.1909595,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "New York Bagel Deli"
+  }
+},
+{
+  "type": "node",
+  "id": 1025635627,
+  "lat": 25.7741593,
+  "lon": -80.1888305,
+  "tags": {
+    "amenity": "pharmacy",
+    "brand": "Walgreens",
+    "brand:wikidata": "Q1591889",
+    "healthcare": "pharmacy",
+    "name": "Walgreens"
+  }
+},
+{
+  "type": "node",
+  "id": 1025636215,
+  "lat": 25.7727726,
+  "lon": -80.1890987,
+  "tags": {
+    "amenity": "pharmacy",
+    "brand": "CVS Pharmacy",
+    "brand:website": "https://www.cvs.com/",
+    "brand:wikidata": "Q2078880",
+    "healthcare": "pharmacy",
+    "name": "CVS Pharmacy",
+    "short_name": "CVS",
+    "website": "https://www.cvs.com/store-locator/miami-fl-pharmacies/170-se-3rd-ave-miami-fl-33131/storeid=402"
+  }
+},
+{
+  "type": "node",
+  "id": 1025645943,
+  "lat": 25.7733596,
+  "lon": -80.1891523,
+  "tags": {
+    "amenity": "restaurant",
+    "brand": "Pizza Hut",
+    "brand:wikidata": "Q191615",
+    "cuisine": "pizza",
+    "name": "Pizza Hut"
+  }
+},
+{
+  "type": "node",
+  "id": 1025646223,
+  "lat": 25.7732300,
+  "lon": -80.1891740,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "120",
+    "addr:postcode": "33131-2004",
+    "addr:state": "FL",
+    "addr:street": "Southeast 3rd Avenue",
+    "amenity": "restaurant",
+    "cuisine": "sushi",
+    "name": "Iron Sushi",
+    "phone": "+1-305-373-2000"
+  }
+},
+{
+  "type": "node",
+  "id": 1025649433,
+  "lat": 25.7741905,
+  "lon": -80.1890611,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Tre Italian Bistro"
+  }
+},
+{
+  "type": "node",
+  "id": 1025659681,
+  "lat": 25.7727393,
+  "lon": -80.1916754,
+  "tags": {
+    "addr:housenumber": "129",
+    "addr:postcode": "33131",
+    "addr:street": "Southeast 1st Avenue",
+    "amenity": "restaurant",
+    "cuisine": "brazilian",
+    "name": "Camila's Restaurante Brasileiro",
+    "phone": "+1 305-375-0992"
+  }
+},
+{
+  "type": "node",
+  "id": 1025684469,
+  "lat": 25.7665364,
+  "lon": -80.1986243,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Sushi Sake"
+  }
+},
+{
+  "type": "node",
+  "id": 1025685386,
+  "lat": 25.7660150,
+  "lon": -80.1985870,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "250",
+    "addr:postcode": "33130",
+    "addr:state": "FL",
+    "addr:street": "Southwest 8th Street",
+    "amenity": "restaurant",
+    "cuisine": "chicken",
+    "name": "Chick'n Grill",
+    "phone": "+1-786-621-4800"
+  }
+},
+{
+  "type": "node",
+  "id": 1670843023,
+  "lat": 25.7938833,
+  "lon": -80.1891917,
+  "tags": {
+    "addr:housename": "1800 Biscayne Plaza",
+    "addr:housenumber": "1800",
+    "addr:postcode": "33132",
+    "addr:street": "Biscayne Boulevard",
+    "amenity": "restaurant",
+    "cuisine": "chinese",
+    "name": "3 Chefs Chinese & Vietnamese Food",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 1707834630,
+  "lat": 25.7784559,
+  "lon": -80.1863219,
+  "tags": {
+    "amenity": "restaurant",
+    "brand": "Hooters",
+    "brand:wikidata": "Q1025921",
+    "cuisine": "burger",
+    "name": "Hooters"
+  }
+},
+{
+  "type": "node",
+  "id": 1813316250,
+  "lat": 25.7783245,
+  "lon": -80.1870173,
+  "tags": {
+    "amenity": "restaurant",
+    "brand": "Bubba Gump Shrimp Company",
+    "brand:wikidata": "Q50024",
+    "cuisine": "seafood",
+    "internet_access": "wlan",
+    "internet_access:fee": "no",
+    "name": "Bubba Gump Shrimp Company"
+  }
+},
+{
+  "type": "node",
+  "id": 2294769837,
+  "lat": 25.7753719,
+  "lon": -80.1880120,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housename": "New World Tower",
+    "addr:housenumber": "100",
+    "addr:postcode": "33132",
+    "addr:street": "North Biscayne Boulevard",
+    "brand": "7-Eleven",
+    "brand:wikidata": "Q259340",
+    "name": "7-Eleven",
+    "shop": "convenience"
+  }
+},
+{
+  "type": "node",
+  "id": 2294769838,
+  "lat": 25.7763999,
+  "lon": -80.1882724,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "200",
+    "addr:postcode": "33132",
+    "addr:street": "North Biscayne Boulevard",
+    "amenity": "pharmacy",
+    "brand": "CVS Pharmacy",
+    "brand:website": "https://www.cvs.com/",
+    "brand:wikidata": "Q2078880",
+    "healthcare": "pharmacy",
+    "name": "CVS Pharmacy",
+    "opening_hours": "24/7",
+    "short_name": "CVS",
+    "website": "https://www.cvs.com/store-locator/miami-fl-pharmacies/200-biscayne-blvd-miami-fl-33132/storeid=4613"
+  }
+},
+{
+  "type": "node",
+  "id": 2937860391,
+  "lat": 25.7664378,
+  "lon": -80.1951584,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "97",
+    "addr:state": "FL",
+    "addr:street": "Southwest 8th Street",
+    "amenity": "restaurant",
+    "cuisine": "latin;columbia",
+    "name": "La Moon",
+    "phone": "+1-305-860-6209"
+  }
+},
+{
+  "type": "node",
+  "id": 3045461500,
+  "lat": 25.7649069,
+  "lon": -80.1906508,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Sushi Siam",
+    "payment:bitcoincash": "yes",
+    "website": "https://sushisiambrickell.menufy.com"
+  }
+},
+{
+  "type": "node",
+  "id": 3106608956,
+  "lat": 25.7653459,
+  "lon": -80.1931002,
+  "tags": {
+    "amenity": "restaurant",
+    "brand": "P.F. Chang's",
+    "brand:wikidata": "Q5360181",
+    "cuisine": "asian",
+    "name": "P.F. Chang's",
+    "official_name": "P.F. Chang's China Bistro"
+  }
+},
+{
+  "type": "node",
+  "id": 3247965416,
+  "lat": 25.7754409,
+  "lon": -80.1884655,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "105",
+    "addr:postcode": "33132",
+    "addr:state": "FL",
+    "addr:street": "Northeast 3rd Avenue",
+    "amenity": "restaurant",
+    "cuisine": "peruvian",
+    "name": "CVI.CHE 105",
+    "website": "https://www.ceviche105.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 3843182874,
+  "lat": 25.7676270,
+  "lon": -80.1919656,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:country": "US",
+    "addr:housenumber": "33",
+    "addr:postcode": "33131",
+    "addr:state": "FL",
+    "addr:street": "Southeast 7th Street",
+    "addr:unit": "100",
+    "amenity": "restaurant",
+    "contact:phone": "+1 305-530-1915",
+    "contact:website": "https://www.therivermiami.com/",
+    "cuisine": "seafood",
+    "delivery": "yes",
+    "name": "The River Oyster Bar",
+    "opening_hours": "Mo-Su 12:00-16:00,17:30-22:30",
+    "takeaway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4235821639,
+  "lat": 25.7611532,
+  "lon": -80.1915783,
+  "tags": {
+    "amenity": "restaurant",
+    "brand": "Vapiano",
+    "brand:wikidata": "Q506252",
+    "cuisine": "italian",
+    "name": "Vapiano"
+  }
+},
+{
+  "type": "node",
+  "id": 4235831895,
+  "lat": 25.7619442,
+  "lon": -80.1914768,
+  "tags": {
+    "amenity": "pharmacy",
+    "brand": "CVS Pharmacy",
+    "brand:website": "https://www.cvs.com/",
+    "brand:wikidata": "Q2078880",
+    "dispensing": "yes",
+    "drive_through": "no",
+    "healthcare": "pharmacy",
+    "name": "CVS Pharmacy",
+    "opening_hours": "24/7",
+    "opening_hours:dispensing": "Mo-Fr 08:00-20:00; Sa 10:00-18:00; Su 12:00-17:00",
+    "payment:snap_ebt": "yes",
+    "ref": "10132",
+    "short_name": "CVS",
+    "website": "https://www.cvs.com/store-locator/miami-fl-pharmacies/1201-brickell-ave-miami-fl-33131/storeid=10132"
+  }
+},
+{
+  "type": "node",
+  "id": 4235831896,
+  "lat": 25.7769700,
+  "lon": -80.1906110,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "133",
+    "addr:postcode": "33132",
+    "addr:state": "FL",
+    "addr:street": "Northeast 2nd Avenue",
+    "atm": "yes",
+    "brand": "7-Eleven",
+    "brand:wikidata": "Q259340",
+    "fast_food": "yes",
+    "fuel:propane": "yes",
+    "name": "7-Eleven",
+    "phone": "+1 786-472-3644",
+    "ref": "35002",
+    "shop": "convenience",
+    "website": "https://www.7-eleven.com/locations/fl/miami/133-ne-2nd-ave-35002"
+  }
+},
+{
+  "type": "node",
+  "id": 4406235892,
+  "lat": 25.7940154,
+  "lon": -80.1891304,
+  "tags": {
+    "addr:housenumber": "1800",
+    "addr:street": "Biscayne Boulevard",
+    "amenity": "restaurant",
+    "name:fr": "BIN 18",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 4535082493,
+  "lat": 25.7757499,
+  "lon": -80.1885319,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "115",
+    "addr:postcode": "33132",
+    "addr:state": "FL",
+    "addr:street": "Northeast 3rd Avenue",
+    "amenity": "restaurant",
+    "cuisine": "peruvian",
+    "name": "Pollos & Jarras",
+    "name:en": "Pollos & Jarras",
+    "phone": "+17865674940",
+    "website": "https://www.pollosyjarras.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 4664689089,
+  "lat": 25.7775841,
+  "lon": -80.1859493,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "caribbean",
+    "name": "Latin American Cuisine",
+    "name:en": "Latin American Cuisine",
+    "name:es": "Latin American Cuisine"
+  }
+},
+{
+  "type": "node",
+  "id": 4686160889,
+  "lat": 25.7640743,
+  "lon": -80.1932678,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Baires Restaurant"
+  }
+},
+{
+  "type": "node",
+  "id": 4705938191,
+  "lat": 25.7773631,
+  "lon": -80.2038532,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "seafood;fish",
+    "name": "García,s Seafood",
+    "name:es": "García's Seafood",
+    "opening_hours": "Mo-Su 10:00-23:00"
+  }
+},
+{
+  "type": "node",
+  "id": 4713855493,
+  "lat": 25.7750028,
+  "lon": -80.1904505,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "80",
+    "addr:postcode": "33132",
+    "addr:state": "FL",
+    "addr:street": "Northeast 2nd Avenue",
+    "amenity": "restaurant",
+    "diet:vegan": "yes",
+    "diet:vegetarian": "yes",
+    "name": "Manna Life Food",
+    "name:en": "Manna Life Food",
+    "opening_hours": "Mo-Fr 10:00-19:00; Sa 11:00-16:00",
+    "website": "https://www.mannalifefood.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 4773221378,
+  "lat": 25.7722816,
+  "lon": -80.1895294,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "299",
+    "addr:postcode": "33131",
+    "addr:state": "FL",
+    "addr:street": "Southeast 3rd Avenue",
+    "branch": "Downtown Miami",
+    "brand": "Whole Foods Market",
+    "brand:wikidata": "Q1809448",
+    "check_date": "2024-10-03",
+    "check_date:opening_hours": "2024-10-03",
+    "name": "Whole Foods Market",
+    "opening_hours": "Mo-Su 07:30-23:00",
+    "phone": "+1 305-995-0600",
+    "ref": "downtownmiami",
+    "shop": "supermarket",
+    "website": "https://www.wholefoodsmarket.com/stores/downtownmiami"
+  }
+},
+{
+  "type": "node",
+  "id": 4773376559,
+  "lat": 25.7861011,
+  "lon": -80.1860858,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Verde",
+    "opening_hours": "Mo-Tu,Fr-Su 11:00-17:00; Th 11:00-21:00; We off"
+  }
+},
+{
+  "type": "node",
+  "id": 4845538427,
+  "lat": 25.7672551,
+  "lon": -80.1901859,
+  "tags": {
+    "amenity": "bank",
+    "brand": "Banco do Brasil",
+    "brand:wikidata": "Q610817",
+    "name": "Banco do Brasil"
+  }
+},
+{
+  "type": "node",
+  "id": 4845539626,
+  "lat": 25.7670185,
+  "lon": -80.1906417,
+  "tags": {
+    "amenity": "bank",
+    "brand": "Banco do Brasil",
+    "brand:wikidata": "Q610817",
+    "name": "Banco do Brasil",
+    "name:en": "Banco do Brasil"
+  }
+},
+{
+  "type": "node",
+  "id": 4866021122,
+  "lat": 25.7649178,
+  "lon": -80.1938022,
+  "tags": {
+    "amenity": "restaurant",
+    "cuisine": "american",
+    "name": "B&B Joint",
+    "website": "https://bnbjoint.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 5036098663,
+  "lat": 25.7722518,
+  "lon": -80.1914324,
+  "tags": {
+    "addr:housenumber": "100",
+    "addr:postcode": "33131",
+    "addr:street": "Southeast 2nd Street",
+    "amenity": "bank",
+    "name": "Total Bank",
+    "phone": "+1-305-982-3310",
+    "website": "https://www.totalbank.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 5164895529,
+  "lat": 25.7694810,
+  "lon": -80.1902710,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "444",
+    "addr:postcode": "33131-2015",
+    "addr:state": "FL",
+    "addr:street": "Brickell Avenue",
+    "amenity": "restaurant",
+    "cuisine": "steak_house",
+    "name": "The Capital Grille",
+    "phone": "+1-305-374-4500",
+    "website": "https://www.thecapitalgrille.com/locations/fl/miami/miami/8006"
+  }
+},
+{
+  "type": "node",
+  "id": 5227403521,
+  "lat": 25.7783211,
+  "lon": -80.2059324,
+  "tags": {
+    "addr:housenumber": "668",
+    "addr:street": "Northwest 5th Street",
+    "amenity": "restaurant",
+    "name": "Crust"
+  }
+},
+{
+  "type": "node",
+  "id": 5384777421,
+  "lat": 25.7741266,
+  "lon": -80.1880536,
+  "tags": {
+    "amenity": "bank",
+    "brand": "HSBC",
+    "brand:wikidata": "Q190464",
+    "name": "HSBC",
+    "name:en": "HSBC",
+    "name:zh": "匯豐銀行"
+  }
+},
+{
+  "type": "node",
+  "id": 5422749426,
+  "lat": 25.7732800,
+  "lon": -80.1892196,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "270",
+    "addr:postcode": "33131",
+    "addr:state": "FL",
+    "addr:street": "East Flagler Street",
+    "amenity": "restaurant",
+    "name": "Jar and Fork"
+  }
+},
+{
+  "type": "node",
+  "id": 5422777121,
+  "lat": 25.7758169,
+  "lon": -80.1904640,
+  "tags": {
+    "addr:housenumber": "80",
+    "addr:street": "Northeast 2nd Avenue",
+    "amenity": "restaurant",
+    "name": "Manna Life Food"
+  }
+},
+{
+  "type": "node",
+  "id": 5634060961,
+  "lat": 25.7776520,
+  "lon": -80.1957242,
+  "tags": {
+    "iata": "EKW",
+    "internet_access": "yes",
+    "name": "Miami Central",
+    "network": "Brightline",
+    "operator": "Brightline",
+    "public_transport": "station",
+    "railway": "station",
+    "train": "yes",
+    "wikidata": "Q22079319"
+  }
+},
+{
+  "type": "node",
+  "id": 5712856822,
+  "lat": 25.7722969,
+  "lon": -80.1995909,
+  "tags": {
+    "addr:housenumber": "114",
+    "addr:postcode": "33130",
+    "addr:street": "SW North River Dr",
+    "amenity": "restaurant",
+    "name": "La Santa Taqueria",
+    "website": "https://www.lasantataqueria.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 5811137032,
+  "lat": 25.7861180,
+  "lon": -80.1733344,
+  "tags": {
+    "amenity": "restaurant"
+  }
+},
+{
+  "type": "node",
+  "id": 5814849753,
+  "lat": 25.7640782,
+  "lon": -80.1916423,
+  "tags": {
+    "amenity": "restaurant",
+    "name": "Nusr-Et"
+  }
+},
+{
+  "type": "node",
+  "id": 6010863681,
+  "lat": 25.7639513,
+  "lon": -80.1934450,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "1010",
+    "addr:postcode": "33130",
+    "addr:state": "FL",
+    "addr:street": "South Miami Avenue",
+    "amenity": "restaurant",
+    "cuisine": "argentinian;steak_house;barbecue",
+    "name": "Baires grill",
+    "opening_hours": "Mo-Th 12:00-23:00; Fr-Sa 12:00-23:30; Su 12:00-24:00",
+    "outdoor_seating": "yes",
+    "phone": "+1-786-580-4923",
+    "reservation": "yes",
+    "website": "https://www.bairesgrill.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 6010864364,
+  "lat": 25.7667450,
+  "lon": -80.1931460,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "701",
+    "addr:postcode": "33130",
+    "addr:state": "FL",
+    "addr:street": "South Miami Avenue",
+    "amenity": "restaurant",
+    "cuisine": "american",
+    "level": "0",
+    "name": "The Henry",
+    "phone": "+1-786-471-0070"
+  }
+},
+{
+  "type": "node",
+  "id": 6010865589,
+  "lat": 25.7660770,
+  "lon": -80.1940736,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "34",
+    "addr:postcode": "33130",
+    "addr:state": "FL",
+    "addr:street": "Southwest 8th Street",
+    "amenity": "restaurant",
+    "name": "La Sandwicherie",
+    "opening_hours": "Mo-Su 09:00-05:00",
+    "website": "https://www.lasandwicherie.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 6010865603,
+  "lat": 25.7623915,
+  "lon": -80.1935757,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "1250",
+    "addr:postcode": "33130",
+    "addr:state": "FL",
+    "addr:street": "South Miami Avenue",
+    "amenity": "restaurant",
+    "contact:instagram": "https://www.instagram.com/tacosatarantados.us",
+    "cuisine": "mexican;tacos",
+    "diet:chicken": "yes",
+    "diet:gluten_free": "yes",
+    "diet:meat": "yes",
+    "diet:vegan": "yes",
+    "diet:vegetarian": "yes",
+    "internet_access": "yes",
+    "name": "Tacos Atarantados Brickell",
+    "payment:american_express": "yes",
+    "payment:apple_pay": "yes",
+    "payment:contactless": "yes",
+    "payment:credit_cards": "yes",
+    "payment:mastercard": "yes",
+    "payment:visa": "yes",
+    "phone": "+1-786-261-2504",
+    "reservation": "no",
+    "website": "http://tacosatarantados.us/"
+  }
+},
+{
+  "type": "node",
+  "id": 6010865904,
+  "lat": 25.7684417,
+  "lon": -80.1907873,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "70",
+    "addr:postcode": "33131",
+    "addr:state": "FL",
+    "addr:street": "Southeast 5th Street",
+    "amenity": "restaurant",
+    "check_date": "2024-10-06",
+    "currency:XBT": "no",
+    "name": "The Cocinita Miami",
+    "payment:lightning": "no",
+    "payment:lightning_contactless": "no",
+    "payment:onchain": "no",
+    "phone": "+1-954-504-9298",
+    "survey:date": "2022-10-04",
+    "website": "https://www.thecocinitamiami.getsauce.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 6055472235,
+  "lat": 25.7658708,
+  "lon": -80.2031616,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "500",
+    "addr:postcode": "33130",
+    "addr:state": "FL",
+    "addr:street": "Southwest 8th Street",
+    "email": "pres19@presidentesupermarkets.com",
+    "name": "Presidente Supermarket",
+    "opening_hours": "Mo-Sa 07:00-21:45; Su 07:00-20:45",
+    "phone": "+1-305-856-1314",
+    "shop": "supermarket",
+    "website": "https://presidentesupermarkets.com/supermarket-19/"
+  }
+},
+{
+  "type": "node",
+  "id": 6085553396,
+  "lat": 25.7756138,
+  "lon": -80.1901765,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "133",
+    "addr:postcode": "33132",
+    "addr:state": "FL",
+    "addr:street": "Northeast 2nd Avenue",
+    "brand": "7-Eleven",
+    "brand:wikidata": "Q259340",
+    "name": "7-Eleven",
+    "opening_hours": "24/7",
+    "phone": "+1-786-472-3644",
+    "shop": "convenience",
+    "website": "https://www.7-eleven.com/locations/fl/miami/133-ne-2-nd-ave-cu-1-35002"
+  }
+},
+{
+  "type": "node",
+  "id": 6085553688,
+  "lat": 25.7735584,
+  "lon": -80.1903765,
+  "tags": {
+    "addr:city": "Miami",
+    "addr:housenumber": "165",
+    "addr:postcode": "33131",
+    "addr:state": "FL",
+    "addr:street": "Southeast 1st Street",
+    "amenity": "bank",
+    "atm": "yes",
+    "brand": "Ocean Bank",
+    "brand:wikidata": "Q7075934",
+    "drive_through": "no",
+    "name": "Ocean Bank",
+    "opening_hours": "Mo-Th 08:30-16:00; Fr 08:30-15:00",
+    "phone": "+1-305-373-3379",
+    "website": "https://www.oceanbank.com/"
+  }
+}
+
+  ]
+}

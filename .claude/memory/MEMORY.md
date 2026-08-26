@@ -16,6 +16,7 @@
 - [Active backlog and known gaps](project_backlog.md) — BACKLOG-1..5, HP-1..4, plus untracked gaps
 - [Funnel UX research](project_funnel_ux_research.md) — competitor analysis (BeenVerified/TruthFinder/Spokeo/Intelius)
 - [Payment UX research](project_payment_ux_research.md) — competitor analysis for checkout/subscription
+- [Payment trust badges](project_payment_trust_badges.md) — which seals convert; ⚠️ can't show PCI logo unless QSA — use vendor's seal + AoC link; guarantee badge = highest leverage
 - [Member search result limit caveat](project_member_search_result_limit.md) — test BC >5 results before relying on it
 - [Team roles](team_roles.md) — Lead, Developer, Tester, Designer, Analyst/Report Developer
 - [Feedback: narrow paywall to /people/:id](feedback_narrow_paywall.md) — do NOT guard /search or /alerts
@@ -114,3 +115,8 @@
 - [Email-on-payment one-screen checkout](project_email_on_payment_flow.md) — phone reveal → /payment?capture=email; ensureAccount ordering (_pendingPw before sale or 401) + visitorSearchLog replay = Activity
 - [Phone/email flow roadmap + competitor synthesis](project_phone_email_flow_roadmap.md) — Twilio approved; P1/P2/P3 phone + E3 email; phone=safety-product, honest-loader, descriptive-spam-only
 - [Identity Control & Owner Voice (product thesis)](project_identity_control_owner_voice.md) — owner controls visibility of every facet + UGC comments on records; Hide enforcement is a STUB (isSuppressed→member_suppression); spec in docs/product
+- [Metrics harness (plug-in data)](project_metrics_harness.md) — scripts/metrics.mjs no-dep GA4+GSC puller; auth verified; BLOCKED on owner SA key + GA4 property id
+- [SEO migration + affiliate roadmap](project_seo_migration_affiliate_roadmap.md) — Aug-25 two-track: SEO→idlookup.ai (A1 hosting open for Kwan / A2 subdomain DNS) + Fluent/MobileMarketing affiliates (postbacks, CasA/CasD open); docs/growth/roadmap-seo-migration-and-affiliates.md
+- [P0: rotate OpenAI key](project_p0_openai_key_rotate.md) — seo/docs/openai-key.rtf + credentials.rtf hold live secrets; UNTRACKED (no repo leak); rotate key + gitignore seo/docs/*.rtf
+- [Feedback: redact identities/sources in deliverables](feedback_deliverable_redaction.md) — outputs use techBC (not Kwan), Hana (not Jerome); no weinform.org (say "compet"); no "prior company"; keep real names in memory only
+- [Paid Search migration](project_paid_search_migration.md) — eCPA-safe doctrine (tCPA@proven, kill-switch, no bid/kw reset); SSN keywords PROHIBITED (do not migrate); source ad copy = $1/CC pattern → rebuild compliant; docs in docs/growth/

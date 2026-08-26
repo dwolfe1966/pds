@@ -1,0 +1,1 @@
+{"status":400,"statusCode":400,"category":"InvalidParameter","context":"Getting persons","message":"Either a personContextRefId value, a courtCaseRefId value or both the personFirstName & personLastName values must be provided","statusMessage":"Either a personContextRefId value, a courtCaseRefId value or both the personFirstName & personLastName values must be provided"}

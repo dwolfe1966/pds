@@ -84,21 +84,20 @@ Injects the autofill/assist helper into the active data-broker page to complete 
 form and show page-specific privacy guidance.
 ```
 
-**Host permissions — https://www.idlookup.ai/* and https://idlookup.me/***
+**Host permission justification (ONE field in the dashboard — must cover BOTH our own sites AND the broker/social list)**
 ```
-Reads the signed-in user's already-claimed identity and opt-out profile from IDLookup's own site to sync
-it into the extension (one-way, local) and sends the user's consented monitoring signals to the IDLookup
-API. No other sites are contacted by the background service.
+The extension needs host access to two categories. (1) idlookup.ai / idlookup.me — our own site — to read the
+signed-in user's already-claimed identity and opt-out profile (one-way, local) and send their consented
+monitoring signals to our API. (2) A fixed, specified list of ~30 known data-broker / people-search sites
+(Spokeo, Whitepages, TruePeopleSearch, etc.) plus major social networks — where the content script recognizes
+the broker, offers to autofill that site's own opt-out form, and (only for brokers the user has opted out of)
+flags if their listing has re-appeared. It never runs on all sites; the full list is enumerated in the
+manifest's content_scripts matches. This host access IS the extension's single purpose — removing the user's
+info from data brokers.
 ```
-
-**Content-script host access (a fixed list of ~30 data-broker + social sites)**
-```
-The content script runs ONLY on a specified list of known data-broker / people-search sites (Spokeo,
-Whitepages, TruePeopleSearch, etc.) plus the major social networks — never on all sites. On a broker site it
-recognizes the broker, offers to autofill that site's own opt-out form, and (only for brokers the user has
-opted out of) flags if their listing has re-appeared; on a social site it offers a public-visibility tip.
-The full list is enumerated in the manifest's content_scripts matches.
-```
+> ⚠️ The "Due to the Host Permission… in-depth review" warning is EXPECTED for a data-broker opt-out extension
+> (it must run on broker sites) — it's a review delay, not a rejection. Scoping to a named list (vs `<all_urls>`)
+> already minimized it. This justification is what the reviewer reads; make sure it's the one pasted.
 
 **history (optional — requested at runtime, not on install)**
 ```

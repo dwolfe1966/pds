@@ -1,11 +1,15 @@
 ---
 name: project_csr_billing_classification
-description: CSR billing lifecycle classification — the M-code taxonomy, BC data mapping, files, and live-validated cases
-metadata:
+description: "CSR billing lifecycle classification — the M-code taxonomy, BC data mapping, files, and live-validated cases"
+metadata: 
+  node_type: memory
   type: project
+  originSessionId: c559d3ef-73d6-4bd2-ae57-b22ea4c6528f
 ---
 
 Built 2026-07-22: a per-customer billing lifecycle classifier that mirrors the legacy M-code business rules across the whole CSR/admin app. Replaces the old confusing two-axis account-status + plan-badge.
+
+**⚠️ SUSPEND ≠ CANCEL — CSR action confusion FIXED 2026-08-04 (owner-reported harm; admin bundle NOT yet uploaded).** CSRs were clicking **Suspend Account** believing it cancels the subscription. It does NOT: Suspend = `adminSuspendUser` → `user.update` status='blocked' (blocks LOGIN only, immediate); **billing keeps running** → customer locked out AND still charged = chargeback machine. The real cancel = `handleCancelOrder`→`cancelUncancelOrder` (POST /commerceMgnt/cancelUncancelOrder), **cancel-at-period-end** (stops billing, access until dueTimestamp, reversible via Reactivate). It was ONLY wired on the per-order `PurchaseDetailPage` (line ~248), never on `UserDetailPage` (the account page) — so the account page offered only Suspend. Fix (UserDetailPage + userState.js): (1) Suspend confirm dialog + inline helper under the button now state "blocks login only, does NOT stop billing, they keep getting charged → use Cancel Subscription"; (2) new **Cancel Subscription** button on the account aside (amber, distinct from red Suspend) → cancels `findActiveOrder(orders)` (new export in userState.js; same predicate as getPlanState.isActive) at period-end w/ explicit confirm. Correct defs already existed in `CSR_TERMS` (userState.js) but only as hover tooltips. When-to-use: Cancel = customer leaving (normal); Suspend = block bad actor/fraud (rare, usually Cancel too). OPEN: owner to confirm period-end vs immediate access-cut semantics. Consumer self-cancel is separate → [[project_cancel_ca_nyc_online]].
 
 **Core module:** `src/pages/admin/billingClassification.js` — `classifyBilling(order)` (per-order) + `getCustomerStatus(user, orders)` (customer rollup, folds account suspension). Spec/evidence: `docs/admin/csr-billing-classification-spec.md`; legacy defs (gitignored, local): `docs/legacy/` (KPI deck kpi1-3.jpeg + P&L CSV + PDS Data Dictionary).
 

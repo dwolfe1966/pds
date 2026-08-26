@@ -87,3 +87,8 @@ docs/bugs/csr-admin-user-billing-state-*.csv
 
 # Google service-account keys for scripts/metrics.mjs — NEVER commit
 secrets/
+
+# secrets — never commit (P0 2026-08)
+seo/docs/*.rtf
+# oversized data export (>100MB, exceeds GitHub limit)
+docs/ads/compet/Search keyword report.csv

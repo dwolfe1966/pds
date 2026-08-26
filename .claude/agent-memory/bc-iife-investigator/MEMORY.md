@@ -3,3 +3,4 @@
 - [/shape/compiled full surface](reference_shape_compiled_surface.md) — creds-free GET probe; backs getShComp; registry→shape 3-bucket map (retireable / empty shN-sheet / real gap=shnName); resolver partner-fallback dead code
 - [Voicemail caller-ID field](reference_voicemail_callerid_field.md) — ANI at data.calleridnum (+ content.input.phone dup); no transcription in any CSV; sample is brandId:idlookup, blank-prod voicemail (brandId:unknown) still unconfirmed
 - [Sale 2nd-submit billingId 406](reference_sale_billingid_dedup.md) — BC billingId = full billingSeriesId; dedup on STABLE clientId segment; prod=IIFE path; fix=rotate wrapper.clientId post-406 (hypothesis, attribution risk)
+- [getShComp accessor](reference_getshcomp_accessor.md) — key = `comp.`+component name (mandatory prefix); absent→`""` not undefined (use `if(!v)`); read after getShapeCompiled; partner.name/channel/type
