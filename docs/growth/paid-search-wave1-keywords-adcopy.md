@@ -179,7 +179,24 @@ Import Paused; judge on ≥10–15 conversions before graduating any to the core
 | **PS Main – Orig** | `ps-main` | $40 · $5 | `people search` (phrase) | Low risk — general people search. |
 | **Inmates – Mugshots** | `inmate-mug` | $50 · $15 | `mugshot search` ($3.74), `how to find mugshots` ($3.02) | ⚠⚠ **Highest policy/legal exposure** — several states restrict mugshot publication/monetization + Google's exploitative-content policy. Legal review before scaling; ties to first-party BookingSignal data. |
 
-## Cross-campaign build notes
+## Wave 2 — recover & tighten (separate import)
+
+Paste-ready: [`paid-search-wave2-google-ads-import.csv`](paid-search-wave2-google-ads-import.csv) — 4
+campaigns · 40 keywords · 4 compliant RSAs. **These are recovery cases, not clean like-for-like** — each
+has a specific mod:
+
+| Campaign | `shns` · landing | Bid | Recovery mod |
+|---|---|---|---|
+| **Criminal-Police** | `crim-police` · v11+criminal SUP | tCPA **$14** | Campaign CPA was high ($21) but the winners are cheap (`police records` $13.83, `police records search` $3.99) — the cost came from a few pricey exacts. **Tighten the tCPA + keep the converters + add negatives**, don't rebuild. |
+| **LifeEvents-Death-Lower** | `le-death-lo` · LE teaser | tCPA **$16** | Was **breakeven** (1.02× / $23.92). Seed tCPA **below** the old CPA to force profitability; optimize copy/landing. |
+| **LifeEvents-Marriage-Upper** | `le-marriage-up` · LE teaser | tCPA **$12** | 3.35× proven but thin; migrate + gather volume. |
+| **ReversePhone** | `revphone` · **/phone/landing/v2** | **Manual CPC, $2 cap** | ⚠ Was **converting blind** (missing tag → zero reliable CPA), so **no tCPA to seed** — start on a **CPC cap** to bound cost, accrue real conversions, then switch to tCPA. **Routes to the PHONE landing, not name/v11.** Gated on Wave-0 tag fix (A1–A5). Competitor-conquest terms held out (trademark). Frame per the phone roadmap: identify/spam-check, honest loader. |
+
+> **Reverse Phone is the recovery headline:** a whole vertical spending with no visible conversions.
+> Fix the tag first (Wave 0), point it at the phone funnel, bound cost with a CPC cap, and only then judge
+> it. It may already be a winner we simply couldn't see.
+
+## Wave 3 — efficiency tests (separate import)
 - **Negatives (shared):** `jobs`, `how to`, `my own`, `free` (where a paywall follows — avoids deceptive-
   free), `template`, `form`, DIY/self-service, competitor brands.
 - **Match types:** port exactly as the source ran them (exact/phrase/broad mix above) — that mix earned the

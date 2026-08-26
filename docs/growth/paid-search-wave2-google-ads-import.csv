@@ -1,0 +1,53 @@
+Campaign,Campaign Type,Campaign Daily Budget,Networks,Bid Strategy Type,Target CPA,Ad Group,Max CPC,Keyword,Match Type,Ad Type,Headline 1,Headline 2,Headline 3,Headline 4,Headline 5,Headline 6,Headline 7,Headline 8,Headline 9,Headline 10,Description 1,Description 2,Description 3,Description 4,Path 1,Path 2,Final URL,Status
+Criminal-Police - v1,Search,100.00,Google search,Target CPA,14.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+Criminal-Police - v1,,,,,,Police,,,,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police records search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police record search,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police report,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,public police records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police record search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police records online,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police record check,Broad,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,police report search,Exact,,,,,,,,,,,,,,,,,,,Enabled
+Criminal-Police - v1,,,,,,Police,,,,Responsive search ad,Police Records Search,Public Police Records,Search Police Reports,Police Report Lookup,Arrest & Police Records,Search Records by Name,Enter a Name to Start,Local & County Records,Public Records Search,Police Record Check,Search public police records and reports by name. Nationwide.,Enter a name to find available police and arrest records.,Public police records - local and county. Free to search.,Look up police reports and records across all states.,police-records,search,https://idlookup.ai/name/landing/v11?shns=crim-police,Enabled
+LifeEvents-Death - Lower - v1,Search,75.00,Google search,Target CPA,16.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,,,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,death certificate,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,obituaries,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,death notices,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,birth and death records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,death records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,death certificate,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,free death records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,public death records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,death records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,obituary,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Death - Lower - v1,,,,,,Death Records,,,,Responsive search ad,Search Death Records,Public Death Records,Obituary Search,Find Obituaries Online,Death Records & Obituaries,Death Certificate Lookup,Find Out Who Died & When,Enter a Name to Start,Search Records by Name,Nationwide Death Records,Search public death records and obituaries by name. Nationwide.,"Find out who died, when, and their age. Enter a name to start.",Free to search; full death record & obituary details available.,Look up death records and obituaries across all states.,death-records,obituaries,https://idlookup.ai/name/landing/v11?shns=le-death-lo,Enabled
+LifeEvents-Marriage - Upper - v1,Search,100.00,Google search,Target CPA,12.00,,,,,,,,,,,,,,,,,,,,,,,Paused
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,,,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,marriage records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,search marriage records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,marriage license search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,birth and marriage records,Broad,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,check marriage records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,marriage certificate,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,free marriage records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,marriage records,Exact,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,marriage license records,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+LifeEvents-Marriage - Upper - v1,,,,,,Marriage,,,,Responsive search ad,Search Marriage Records,Public Marriage Records,Marriage Record Lookup,Marriage License Search,Find Out Who Got Married,Marriage Certificates,Check Marital Status,Search Records by Name,Enter a Name to Start,State Marriage Records,"Search public marriage records by name. Nationwide, local & state.",Find out who got married and when. Enter a name to start.,Marriage records and certificates - free to search.,Look up marriage records and licenses across all states.,marriage,records,https://idlookup.ai/name/landing/v11?shns=le-marriage-up,Enabled
+ReversePhone - v1,Search,75.00,Google search,Manual CPC,,,,,,,,,,,,,,,,,,,,,,,,Paused
+ReversePhone - v1,,,,,,Reverse Phone,2.00,,,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,reverse phone lookup,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,reverse phone search,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,reverse lookup,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,phone owner lookup,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,reverse phone lookup service,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,reverse cell look up,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,who called,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,who is calling me,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,what number is this,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,whose number is this,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,caller id,Broad,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,reverse phone book,Phrase,,,,,,,,,,,,,,,,,,,Enabled
+ReversePhone - v1,,,,,,Reverse Phone,,,,Responsive search ad,Reverse Phone Lookup,Who Called Me?,Find Out Who's Calling,Reverse Phone Search,Identify Unknown Callers,Phone Number Lookup,Search by Phone Number,Enter a Number to Start,Whose Number Is This?,Look Up a Phone Number,Enter a phone number to see the owner's name and details. Fast and easy.,Find out who's calling. Reverse lookup by phone number.,Identify unknown and spam callers. Search any phone number.,Look up any US phone number. Enter a number to start.,reverse-phone,lookup,https://idlookup.ai/phone/landing/v2?shns=revphone,Enabled
