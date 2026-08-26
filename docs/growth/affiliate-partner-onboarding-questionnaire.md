@@ -34,9 +34,10 @@ Rules of the road:
 
 ## Part B — what we need from you (please fill + return)
 
-1. **CasA vs CasD — define both.** They're distinct tiers in your reporting. For each: what is it, and
-   **which tier are we paid on?** Map each to a concrete conversion event on our side (e.g. first sale /
-   rebill / qualified lead) so our postback fires on the right one.
+1. **Payout event — confirm.** *(We already know what CasA/CasD are: they're our internal **cascade**
+   post-signup offer-waterfall outcomes — **CasA = Cascade Acceptor**, **CasD = Cascade Decliner**,
+   **CasX = Cascade Exit**.)* Just confirm: are you paid on a **cascade acceptance (CasA)**, the **base
+   sale**, or both? And on which event should our postback fire?
 2. **Postback URL + macros.** The server-to-server URL we should call on a confirmed conversion, and the
    exact parameter names/macros you expect (which of your `refer_*` values to echo, plus any
    payout/event fields). Example: `https://you.example/postback?clickid={refer_clickid}&sub1={refer_s1}&event=sale`.

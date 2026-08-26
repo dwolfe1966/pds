@@ -54,7 +54,8 @@ For each new partner, capture:
 
 - **Traffic:** incentivized (Incent) → low-intent. **"Direct to SUP"** fits. Creative + funnel must
   expect incent quality (affects CasA definition + any quality gating).
-- **Conversion:** need **CasA** — *confirm exact BC-event definition + that Fluent is paid on CasA.* ⚠️ open.
+- **Conversion:** need **CasA** (= our Cascade-Acceptor event) — confirm Fluent is paid on cascade
+  acceptance; firing it depends on porting the cascade flow (see Open items).
 - **Reporting:** **monthly** sales (explicitly *not* CasD or CasA tiers) → monthly deliverable.
 - **Postback:** S2S on sale, echoing the URL params they passed.
 - **Placement:** on their wall → **marketing creative** needed.
@@ -78,12 +79,17 @@ For each new partner, capture:
 
 ---
 
-## Open items (gate the postback build — do not guess)
+## Open items (gate the postback build)
 
-- **CasA vs CasD** — distinct partner-facing sale/conversion tiers. Need each one's exact definition +
-  which tier each partner is paid on, mapped to a concrete BC order/sale event. Confirm with
-  Fluent/MobileMarketing + BC billing.
-- **Postback URLs + macro/param spec** per partner.
+- **CasA vs CasD — KNOWN, not a partner unknown.** They're our internal **cascade** (post-signup
+  offer-waterfall) outcomes: **CasA = Cascade Acceptor**, **CasD = Cascade Decliner**, **CasX = Cascade
+  Exit** (evidence: legacy GTM triggers `Partner=Internal` / `Channel=Cascade *`, pixel on
+  `/pixelforsignup`; legacy `casD%` KPI; Fluent "cascades implemented"). **The real dependency is a
+  BUILD:** the cascade flow exists in the legacy GTM/compet but **not** in our current React funnel — to
+  fire CasA/CasD we must port it. (Our funnel today has upsells — WSFY, name/phone — not the CasA/D/X
+  offer-waterfall.)
+- **Postback URLs + macro/param spec** per partner, + which event = their payout (cascade-accept vs base
+  sale). This is the only genuinely partner-gated item.
 - **Postback-receiver placement** (BC-emitted vs. our backend) — decide with the hosting decision.
 
 ## Phasing
