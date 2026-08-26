@@ -88,10 +88,13 @@ For each new partner, capture:
 
 ## Phasing
 
-- **Phase 0 — now (no open item blocks it):** extend the refer passthrough to carry arbitrary partner
-  sub-IDs verbatim; verify end-to-end that a MobileMarketing-style URL's params persist onto the BC
-  order (`commerceorders.refer`). Reuse `/name/landing/v2`. In parallel, send partners the CasA/CasD +
-  postback-URL questionnaire.
+- **Phase 0 — ✅ passthrough shipped:** arbitrary partner sub-IDs now round-trip via generic `refer_*`
+  capture → `commerceorders.refer` (`gtm.js` + `trackingService.js`; verified in-code). **Remaining:** a
+  live end-to-end verify (a real purchase from a `refer_*` link → confirm the values land on the order),
+  and send partners the **onboarding link spec + questionnaire**
+  ([`affiliate-partner-onboarding-questionnaire.md`](affiliate-partner-onboarding-questionnaire.md)) —
+  CasA/CasD + postback URLs. Partner links pass sub-IDs as `refer_<name>` to our `/name/landing/v2`
+  (people-search) or `/phone/landing/v2` (phone); shn/shl stay owned by BC automation.
 - **Phase 1 — postback service:** build/port the S2S postback off the confirmed-sale signal; wire
   CasA/CasD mapping once confirmed; placement per hosting decision.
 - **Phase 2 — Fluent landing + creative:** new direct-to-SUP landing; wall-placement creative.
