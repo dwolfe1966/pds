@@ -1,8 +1,7 @@
 # Affiliate partner onboarding — link spec + questionnaire
 
-Send to each partner (Fluent, MobileMarketing, …). Part A is **what we give them** (the tracking link);
-Part B is **what we need back** to finish the integration. Companion to
-[`roadmap-affiliate.md`](roadmap-affiliate.md).
+**Parts A–B are partner-facing** (Part A = the tracking link we give them; Part B = what we need back).
+**Part C is internal — do NOT send.** Companion to [`roadmap-affiliate.md`](roadmap-affiliate.md).
 
 ---
 
@@ -34,40 +33,39 @@ Rules of the road:
 
 ## Part B — what we need from you (please fill + return)
 
-1. **Payout event — confirm.** *(We already know what CasA/CasD are: they're our internal **cascade**
-   post-signup offer-waterfall outcomes — **CasA = Cascade Acceptor**, **CasD = Cascade Decliner**,
-   **CasX = Cascade Exit**.)* Just confirm: are you paid on a **cascade acceptance (CasA)**, the **base
-   sale**, or both? And on which event should our postback fire?
-2. **Postback URL + macros.** The server-to-server URL we should call on a confirmed conversion, and the
-   exact parameter names/macros you expect (which of your `refer_*` values to echo, plus any
-   payout/event fields). Example: `https://you.example/postback?clickid={refer_clickid}&sub1={refer_s1}&event=sale`.
-3. **Your sub-ID params.** List every macro you pass and what it means, and the `refer_<name>` you want it
+> We fire your postback **only on a captured/confirmed sale** (our standard — we don't postback on an
+> unconverted signup).
+
+1. **Postback URL + macros.** The server-to-server URL we call when a sale is confirmed, and the exact
+   parameter names/macros you expect (which of your `refer_*` values to echo back, plus any payout/event
+   fields). Example: `https://you.example/postback?clickid={refer_clickid}&sub1={refer_s1}&event=sale`.
+2. **Your sub-ID params.** List every macro you pass and what it means, and the `refer_<name>` you want it
    mapped to (Part A).
-4. **Reporting.** Cadence + format you expect from us (Fluent = **monthly**; MobileMarketing = **daily,
+3. **Reporting.** Cadence + format you expect from us (Fluent = **monthly**; MobileMarketing = **daily,
    Google Sheet** — confirm). Which fields per row.
-5. **Funnel + traffic type.** People-search / background / phone? Traffic type (incentivized, app,
+4. **Funnel + traffic type.** People-search / background / phone? Traffic type (incentivized, app,
    search)? This sets the landing + quality expectations.
-6. **Creative.** For wall/placement: what sizes/assets do you need from us?
+5. **Creative.** For wall/placement: what sizes/assets do you need from us?
 
 ---
 
-## Part C — what we already know (pre-filled; confirm/correct)
+## Part C — internal reference (do NOT send to partners)
 
-### Fluent (Incent)
-- Traffic: **incentivized** → **direct-to-SUP** landing (new). Quality expectations set accordingly.
-- Paid on: **CasA** — *need the definition (Q1)*.
-- Reporting: **monthly** sales (not CasD/CasA tiers).
-- Postback: yes — echo the `refer_*` you pass.
-- Placement: on your wall → **we owe you creative** (Q6).
+**Payout eligibility is ours, on BC's backend — never a partner conversation.** BC decides when we pay a
+partner via internal cascade states: **CasA = captured payment** (a referral that converted; **pay**) vs
+**CasD = cascade decliner** (provisioned/trialed but payment never captured; **don't pay**). We routinely
+provision a trial "in the door" even when the card first fails for certain reasons (e.g. ISF) and attempt
+capture at subscription conversion — so **payout fires on actual capture, not signup.** This maps to the
+same billing signal we already classify (`sale`/`fulfilled` = captured; `D{n}.{x}` = declining) — see
+[`../../.claude/... project_csr_billing_classification`]. Partners only ever see: a postback on a
+confirmed sale + their report.
 
-### MobileMarketing (App)
-- Funnel: **people-search or background** → reuse `/name/landing/v2`.
-- Paid on: **CasA** — *need the definition (Q1)*.
-- Reporting: **daily**, likely a **Google Sheet** (not CasD/CasA).
-- Postback: yes — echo the `refer_*` you pass.
-- Front-end: pass your custom IDs as `refer_*` (Part A) — they persist to the order automatically.
-
-### Dimitri — *awaiting requirements* (slot into Parts A/B when they land).
+Per-partner:
+- **Fluent (Incent):** incentivized → **direct-to-SUP** landing (new); **monthly** report; postback echoes
+  `refer_*`; **we owe creative** for the wall.
+- **MobileMarketing (App):** people-search/background → reuse `/name/landing/v2`; **daily Google Sheet**;
+  postback echoes `refer_*`; front-end passes custom IDs as `refer_*` (persist to order automatically).
+- **Dimitri:** awaiting requirements.
 
 ---
 

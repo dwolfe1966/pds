@@ -26,13 +26,18 @@
 
 ## Postback design note (ties to the hosting decision)
 
-- Postbacks **fire server-side from a conversion-confirmed point** (BC sale) — client pixels get blocked
-  and prod strips `console.*`. Hang the postback off the **same confirmed-sale signal GA4/Ads already
-  uses**.
-- Open design question: **where the receiver runs** — BC emits the postback directly, or a backend of
-  ours receives the BC conversion and fans out to partners. This depends on the **SEO/app hosting
-  decision** (Vercel vs BC infra) — pin CasA/CasD + partner postback URLs first, finalize placement with
-  that decision.
+- **Placement is resolved: BC emits the postback.** The pay-eligibility logic (CasA/CasD — see below) lives
+  on **BC's backend**, and BC holds the order's persisted `refer_*` sub-IDs, so BC is the natural emitter —
+  it fires the S2S postback **on captured payment**, echoing the partner's `refer_*`. (Not a client pixel —
+  those get blocked, and prod strips `console.*`.)
+- **CasA/CasD is our INTERNAL pay gate, never partner-facing.** BC pays a partner only on **CasA = captured
+  payment** (the referral converted); **CasD = cascade decliner** (trial provisioned "in the door" — often
+  despite an ISF-type card failure — but payment never captured) earns **no payout**. Payout fires on
+  actual capture, not signup. Maps to the billing signal we already classify (`sale`/`fulfilled` vs
+  `D{n}.{x}`).
+- **Our side is nearly done:** persist the partner sub-IDs onto the order (Phase 0 ✅). Remaining is a
+  **BC-coordination** item — hand BC each partner's postback URL/macros + confirm capture-gated firing —
+  not a build on our funnel. (Supersedes the earlier "port a cascade offer-waterfall" reading — wrong.)
 
 ---
 
@@ -79,18 +84,16 @@ For each new partner, capture:
 
 ---
 
-## Open items (gate the postback build)
+## Open items
 
-- **CasA vs CasD — KNOWN, not a partner unknown.** They're our internal **cascade** (post-signup
-  offer-waterfall) outcomes: **CasA = Cascade Acceptor**, **CasD = Cascade Decliner**, **CasX = Cascade
-  Exit** (evidence: legacy GTM triggers `Partner=Internal` / `Channel=Cascade *`, pixel on
-  `/pixelforsignup`; legacy `casD%` KPI; Fluent "cascades implemented"). **The real dependency is a
-  BUILD:** the cascade flow exists in the legacy GTM/compet but **not** in our current React funnel — to
-  fire CasA/CasD we must port it. (Our funnel today has upsells — WSFY, name/phone — not the CasA/D/X
-  offer-waterfall.)
-- **Postback URLs + macro/param spec** per partner, + which event = their payout (cascade-accept vs base
-  sale). This is the only genuinely partner-gated item.
-- **Postback-receiver placement** (BC-emitted vs. our backend) — decide with the hosting decision.
+- **CasA vs CasD — our INTERNAL pay gate, on BC's backend. Not a build on our side, not partner-facing.**
+  BC pays a partner only on **CasA = captured payment**; **CasD = cascade decliner** (trial provisioned
+  "in the door" despite a non-capturing card, e.g. ISF) earns no payout — payout fires on actual capture,
+  not signup. It's the same billing capture signal we already classify (`sale`/`fulfilled` vs `D{n}.{x}`).
+  **No cascade "offer-waterfall" to port — that reading was wrong.**
+- **Postback URLs + macro/param spec** per partner → **hand to BC** (BC emits the postback on capture,
+  echoing the persisted `refer_*`). The main remaining coordination item.
+- **Placement: resolved — BC-emitted** (logic + refer_* live on BC). No longer tied to the hosting decision.
 
 ## Phasing
 
@@ -98,11 +101,13 @@ For each new partner, capture:
   capture → `commerceorders.refer` (`gtm.js` + `trackingService.js`; verified in-code). **Remaining:** a
   live end-to-end verify (a real purchase from a `refer_*` link → confirm the values land on the order),
   and send partners the **onboarding link spec + questionnaire**
-  ([`affiliate-partner-onboarding-questionnaire.md`](affiliate-partner-onboarding-questionnaire.md)) —
-  CasA/CasD + postback URLs. Partner links pass sub-IDs as `refer_<name>` to our `/name/landing/v2`
-  (people-search) or `/phone/landing/v2` (phone); shn/shl stay owned by BC automation.
-- **Phase 1 — postback service:** build/port the S2S postback off the confirmed-sale signal; wire
-  CasA/CasD mapping once confirmed; placement per hosting decision.
+  ([`affiliate-partner-onboarding-questionnaire.md`](affiliate-partner-onboarding-questionnaire.md)) — the
+  partner-facing ask is just their **postback URL/macros** (no CasA/CasD — that's internal). Partner links
+  pass sub-IDs as `refer_<name>` to our `/name/landing/v2` (people-search) or `/phone/landing/v2` (phone);
+  shn/shl stay owned by BC automation.
+- **Phase 1 — postback (BC-emitted):** BC fires the S2S postback on **captured payment** (CasA), echoing
+  the persisted `refer_*`; CasD (no capture) → no payout. Our task is **coordination, not a build** — hand
+  BC each partner's postback URL/macros + confirm capture-gated firing.
 - **Phase 2 — Fluent landing + creative:** new direct-to-SUP landing; wall-placement creative.
 - **Phase 3 — reporting:** monthly (Fluent) + daily Google Sheet (MobileMarketing).
 - **Phase 4 — go live per partner** once postbacks reconcile against partner-side numbers.
