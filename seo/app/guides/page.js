@@ -1,29 +1,12 @@
 // Guides hub — topic-cluster index for the how-to authority content (SEO WS4). Links every guide;
 // each guide links back here + to the others. Not in the sitemap yet (owner) — reachable by link.
 import Link from 'next/link';
+import { GUIDES } from '../../lib/guides.mjs';
 import { crumbsJsonLd } from '../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../lib/ui';
 import { SITE } from '../../lib/site';
 
 export const revalidate = 5184000; // 60d
-
-export const GUIDES = [
-  {
-    path: '/guides/how-to-find-an-inmate',
-    title: 'How to Find an Inmate',
-    blurb: 'Federal, state, and county — the free official locators and how to search by name.',
-  },
-  {
-    path: '/guides/how-to-find-a-federal-inmate',
-    title: 'How to Find a Federal Inmate',
-    blurb: 'The Federal Bureau of Prisons locator, register numbers, and contacting federal inmates.',
-  },
-  {
-    path: '/guides/county-jail-roster',
-    title: 'How to Find Someone in County Jail',
-    blurb: 'Why jail detainees aren’t in the prison locators, and how to search a county jail roster.',
-  },
-];
 
 export const metadata = {
   title: 'Public Records Guides — Find People, Inmates & Records | IDLookup',

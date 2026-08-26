@@ -8,7 +8,13 @@
 // One flat <urlset> (no index). This is the only sitemap advertised in robots.txt.
 import { getDirectoryUrls, getStateList } from '../../lib/directory';
 import { rosterTopNamesByState } from '../../lib/incarceration.mjs';
+import { GUIDES } from '../../lib/guides.mjs';
 import { SITE } from '../../lib/site';
+
+// Authority guides (/guides cluster) — hand-written, unique, index,follow. Exactly the quality/
+// differentiated page type this sitemap is for (the opposite of the pruned thin long-tail). Own lastmod
+// (they're new); bump when a guide's content materially changes.
+const GUIDES_LASTMOD = '2026-08-26';
 
 export const dynamic = 'force-static';
 export const revalidate = 86400; // 1d
@@ -67,7 +73,13 @@ export async function GET() {
     return `  <url><loc>${SITE}${path}</loc><lastmod>${LASTMOD}</lastmod>` +
       `<changefreq>weekly</changefreq><priority>${priority}</priority></url>`;
   }).join('\n');
+  // Authority guides: the /guides hub + each guide. Own (recent) lastmod + a steady 0.7 priority.
+  const guideItems = ['/guides', ...GUIDES.map((g) => g.path)]
+    .map((path) =>
+      `  <url><loc>${SITE}${path}</loc><lastmod>${GUIDES_LASTMOD}</lastmod>` +
+      `<changefreq>monthly</changefreq><priority>0.7</priority></url>`)
+    .join('\n');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n</urlset>\n`;
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n${guideItems}\n</urlset>\n`;
   return new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
 }
