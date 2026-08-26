@@ -106,6 +106,24 @@ export async function rosterTopNamesByState({ state, limit = 30 }) {
     .map(([slug, n]) => ({ slug, name: titleCase(slug), count: n }));
 }
 
+/** Per-state incarceration-record counts from our own roster (`inmates` table + FL `fl_inmates`) — grounds
+ *  the "How to find an inmate" authority guide in real first-party coverage. Never throws → {}. Cached by
+ *  the guide page's ISR (not called per-request). */
+export async function stateInmateCounts() {
+  if (!flSql) return {};
+  try {
+    const [gen, flTot] = await Promise.all([
+      flSql`SELECT upper(state) st, count(*)::int n FROM inmates WHERE removed = FALSE AND state IS NOT NULL GROUP BY upper(state)`.catch(() => []),
+      flSql`SELECT count(*)::int n FROM fl_inmates`.catch(() => [{ n: 0 }]),
+    ]);
+    const out = {};
+    for (const r of gen) if (r.st) out[r.st] = (out[r.st] || 0) + Number(r.n || 0);
+    const fl = Number(flTot?.[0]?.n || 0);
+    if (fl) out.FL = (out.FL || 0) + fl;
+    return out;
+  } catch { return {}; }
+}
+
 export async function rosterByNameState({ state, firstName, lastName, limit = 12 }) {
   if (!lastName || !state) return [];
   const st = String(state).toUpperCase();

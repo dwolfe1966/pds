@@ -93,7 +93,8 @@ export default async function StateLanding({ params }) {
           <h2 style={ui.h2}>Incarceration &amp; inmate records in {st.name}</h2>
           <p style={{ ...ui.muted, margin: '0 0 12px', fontSize: 14, lineHeight: 1.65 }}>
             People with public booking, incarceration, and criminal records in {st.name} — from state and county
-            correctional rosters. Pick a name to see matching records, or search directly.
+            correctional rosters. Pick a name to see matching records, or search directly.{' '}
+            <a href="/guides/how-to-find-an-inmate" style={{ ...ui.link, fontSize: 14 }}>How to find an inmate →</a>
           </p>
           <div style={ui.linkGrid}>
             {topNames.map((n) => (
