@@ -73,7 +73,7 @@ const FAQS = [
 export default async function InmateGuide() {
   const counts = await withTimeout(stateInmateCounts(), {});
   const crumbs = [
-    { name: 'Guides', path: '/guides/how-to-find-an-inmate' },
+    { name: 'Guides', path: '/guides' },
     { name: 'How to Find an Inmate', path: PATH },
   ];
   // States we actually have records for, richest first — real coverage, self-gating.
@@ -176,6 +176,14 @@ export default async function InmateGuide() {
             <p style={{ margin: 0, color: ui.color.body }}>{f.a}</p>
           </div>
         ))}
+      </section>
+
+      <section style={ui.card}>
+        <h2 style={ui.h2}>Related guides</h2>
+        <div style={ui.linkGrid}>
+          <Link href="/guides/how-to-find-a-federal-inmate" style={ui.link}>How to find a federal inmate →</Link>
+          <Link href="/guides/county-jail-roster" style={ui.link}>How to find someone in county jail →</Link>
+        </div>
       </section>
 
       <FcraFooter />
