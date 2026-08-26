@@ -47,6 +47,14 @@ export function captureReferralParams() {
       const v = params.get(f);
       if (v) captured[f] = v;
     });
+    // Affiliate sub-IDs: capture ANY `refer_`-prefixed param verbatim. BC ingests
+    // refer_* onto commerceorders.refer (prefix stripped), so a partner can pass
+    // arbitrary sub-IDs (refer_clickid, refer_s1, refer_afid, …) in their link and
+    // they round-trip to the billable order — the affiliate postback join keys.
+    // shn/shl are deliberately NOT captured here (BC's own automation owns them).
+    params.forEach((v, k) => {
+      if (v && /^refer_/i.test(k) && !(k in captured)) captured[k] = v;
+    });
     if (Object.keys(captured).length === 0) return;
     const existing = readReferralParams();
     const merged = { ...existing, ...captured };

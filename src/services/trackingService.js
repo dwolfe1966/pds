@@ -76,6 +76,9 @@ function buildRefer() {
      'refer_partnerId', 'refer_afid', 'refer_abc'].forEach((k) => {
       if (params[k]) refer[k] = params[k];
     });
+    // Affiliate sub-IDs: carry every captured refer_* into the tracking refer too, so
+    // data.refer and the order's commerceorders.refer stay in sync. shn/shl excluded.
+    Object.keys(params).forEach((k) => { if (/^refer_/i.test(k) && params[k] && !(k in refer)) refer[k] = params[k]; });
     // Gap-fill from the derived partner attribution (real utm/refer_ from the URL always wins).
     const d = derivedRefer();
     if (!refer.source && d.source) refer.source = d.source;
@@ -132,6 +135,11 @@ export function buildReferQueryString() {
     // partner attribution for partnerId so shn-only partner links (HomeFacts) still book to the partner.
     push('refer_partnerId', params.refer_partnerId || d.partnerId);
     ['refer_afid', 'refer_abc'].forEach((k) => push(k, params[k]));
+    // Affiliate sub-IDs: emit EVERY captured refer_* param verbatim so BC lands each
+    // on commerceorders.refer (prefix stripped) — the arbitrary partner join keys
+    // (refer_clickid, refer_s1, …) the postback echoes back. `seen` dedups the
+    // explicit keys above; refer_source/medium/campaign are still set below.
+    Object.keys(params).forEach((k) => { if (/^refer_/i.test(k)) push(k, params[k]); });
     // Click-join keys under the refer_ convention so BC lands them as refer.gclid /
     // refer.fbclid / refer.msclkid on the order (raw gclid= is dropped — no slot).
     push('refer_gclid', params.gclid);
