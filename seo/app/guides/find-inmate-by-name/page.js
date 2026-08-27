@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { crumbsJsonLd, faqJsonLd } from '../../../lib/schema';
 import { ui, Breadcrumbs, FcraFooter, JsonLd } from '../../../lib/ui';
-import { SITE, MAIN } from '../../../lib/site';
+import { SITE } from '../../../lib/site';
 
 export const revalidate = 5184000; // 60d
 const PATH = '/guides/find-inmate-by-name';
@@ -53,7 +53,7 @@ export default function FindByNameGuide() {
         <p style={ui.eyebrow}>Public Records Guide</p>
         <h1 style={ui.h1}>How to Find an Inmate by Name</h1>
         <p style={ui.lead}>When all you have is a name — no facility, no case number — here’s how to locate someone in custody across the federal, state, and county systems, and how to tell look-alikes apart.</p>
-        <a href={`${MAIN}`} target="_blank" rel="noopener" style={ui.cta}>Search by name →</a>
+        <Link href="/people" style={ui.cta}>Browse inmate records by state →</Link>
       </header>
       <section style={ui.card}>
         <h2 style={ui.h2}>Step by step</h2>
