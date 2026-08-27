@@ -127,3 +127,35 @@ Programmatic pages don't build authority — content, links, and brand do.
 - Ship an **inmate-vertical SEO pilot** from existing `stateInmates` data (differentiated, renderable,
   no Turnstile issue).
 - Draft the first cornerstone how-to article.
+
+---
+
+## Appendix — Architecture & data sources (idlookup.me/people)
+
+**Stack.** Next.js (App Router) on **Vercel** + **Neon Postgres**. Rendering is **ISR**: a page generates
+on first hit and caches (`generateStaticParams: []` + `dynamicParams`, `revalidate` 60d); the sitemap is
+`force-static`. **No live render or external API call per crawl** — the key design constraint (crawl-safe,
+fast, no third-party rate-limits on Googlebot).
+
+**Taxonomy.** `/people/[state] → [city] → [name] → [id]`, a county grain
+(`/people/[state]/county/[county]/[name]`), name-in-state pages (fallback in the `[state]/[city]` route),
+and the `/guides` authority cluster. Thin long-tail name-in-city pages are **noindexed/pruned**; the
+canonical `sitemap-directory.xml` lists only the quality core + record-proven name-in-state hubs + guides.
+
+**The data-management principle:** `ingest / scrape → store in Neon → serve server-side on SEO pages`.
+First-party **record** data lives in our own DB and is read server-side (fast, cacheable, opt-out-enforced).
+Third-party **enrichment** APIs are called directly but **budget-capped + cached**, and kept **off** the
+indexable crawl pages.
+
+| Data source | Where it lives | How we manage it |
+|---|---|---|
+| Geo skeleton (states, cities, demographics) | **In-repo static** | Census/ACS public data shipped in the bundle (`lib/directory`). |
+| **Inmate / incarceration** | **Our DB (Neon)** | First-party: `inmates` (622k) + `fl_inmates` (670k; 480k mugshots). Ingested via crawls + state scrapers (`stateInmates` adapters) & write-through; read server-side. **Renders full & free** (`InmateRecordsSection`). |
+| **Sex offender** | **Our DB (Neon)** | Ingested (NSOPW/scrapers) → `sexOffenderDb`; location-native pages. |
+| **Life events** (marriage/divorce/death) | **Our DB (Neon)** + API at ingest | Stored in `lifeEventsDb`; Enformion (divorce live) fetched at ingest, not per crawl. |
+| **Enrichment** (PersonSearch, PDL, Gravatar, phone) | **Direct API** (capped, cached) | Enformion / PDL / Gravatar — **budget-capped** (`serviceBudget`), results cached. Used in **interactive flows, NOT on indexable pages**. |
+| **BC consumer teaser** | **Not on SEO pages** | Turnstile-gated → can't render at crawl time. This is **why first-party data is the SEO fuel**. |
+
+**Compliance.** Opt-out enforced (`removed` flag + member suppression via `suppressPublicRecords`), FCRA
+footer on every record page, thin pages noindexed, conservative sitemap. **Ties to WS1:** whichever domain/
+host the WS1 decision picks, this data architecture is unchanged — only the hostname in front of it moves.
