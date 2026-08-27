@@ -76,7 +76,7 @@ pretend it's absent.
 
 ## Priority — migrate in waves
 
-### Wave 0 — Foundations (before any migration; days, not weeks)
+### Prerequisites (before any wave — not a wave itself; days, not weeks)
 Nothing scales on broken tracking.
 - **Fix conversion tracking / the Google tag** and verify GA4 + Ads fire on a **real v11 purchase**
   (not headless — GA4 drops bot hits).
@@ -139,12 +139,17 @@ Start each at **$30–50/day**, MaxConv, judge on ≥10–15 conversions before 
 ## Sequencing summary
 
 ```
-Wave 0  Foundations (tracking + structure)      ── prerequisite, days
-Wave 1  Inmate ×2 · PubRec ×3 · LifeEvents ×2 · Criminal ×2   ── the profitable core
-Wave 2  Reverse Phone (fix tag) · Crim-Police · LE-death-lower · LE-Marriage
-Wave 3  Dating-PS · Compet-TF · PS-Main-Orig · Mugshots · Compet-General   ── small tests
-Hold    sex-offender/arrests · PS-Free-Orig · "$1" creatives · non-Search
+Prereq   Foundations (tracking + structure)      ── not a wave; days
+Wave 1   Inmate ×2 · PubRec ×3 · LifeEvents ×2 · Criminal ×2   ── the compet-positive core
+Wave 2   Reverse Phone (fix tag) · Crim-Police · LE-death-lower · LE-Marriage
+Wave 3   Dating-PS · Compet-TF · PS-Main-Orig · Mugshots · Compet-General   ── small tests
+Wave 4+  Explore other paid channels (paid social, native, …)  ── after search economics validate for PDS
+Hold     sex-offender/arrests · PS-Free-Orig · "$1" creatives
 ```
+
+**Wave 4+ — other paid channels.** Once paid *search* economics are validated for PDS (Waves 1–3), extend
+the same operational template to additional channels (e.g. paid social, native). Scope with the team; not
+started.
 
 **Through-line:** Wave 1 leads with **Inmate + Life-events**, which are *also* our SEO lead verticals +
 first-party data moat — the same investment compounds across paid and organic. Keyword/volume expansion

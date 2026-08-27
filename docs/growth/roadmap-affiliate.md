@@ -77,7 +77,7 @@ For each new partner, capture:
   passthrough extension in stage 1. Most other work is backend.
 - **Landing:** **reuse `/name/landing/v2`** (no new landing).
 
-### Dimitri — *backlog*
+### Inmate Search partner — *backlog*
 
 - Named in the ex-CEO's partner notes, no spec yet. Slot into the onboarding playbook once requirements
   land. Placeholder so it isn't lost.

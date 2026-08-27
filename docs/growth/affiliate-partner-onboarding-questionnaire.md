@@ -65,7 +65,7 @@ Per-partner:
   `refer_*`; **we owe creative** for the wall.
 - **MobileMarketing (App):** people-search/background → reuse `/name/landing/v2`; **daily Google Sheet**;
   postback echoes `refer_*`; front-end passes custom IDs as `refer_*` (persist to order automatically).
-- **Dimitri:** awaiting requirements.
+- **Inmate Search partner:** awaiting requirements.
 
 ---
 

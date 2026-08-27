@@ -1,11 +1,14 @@
-# Roadmap — Paid marketing (the proven engine)
+# Roadmap — Paid search
 
 **Status:** roadmap for review
-**Goal:** scale the channel that already generates our conversions and revenue, profitably.
+**Goal:** run and expand paid search as an acquisition channel, and validate its unit economics for PDS.
 
-> Paid is the one channel with **proven unit economics** — a proven model, with
-> early CPAs trending down. This roadmap is about **pressing a working advantage**, not validating an
-> unknown one.
+> Paid search (Google Ads) is **live**. Directionally we are **generating trials and reducing cost per
+> trial** — we do **not** yet claim it scales; validating whether the economics hold for PDS is the point.
+> **Read the numbers precisely: the favorable unit economics we replicate are proven at the `compet`
+> account, not yet at PDS.** This doc is the **justification + operational template**; the migration
+> **waves** (1, 2, 3, and later 4+ for other paid channels) live in
+> [`roadmap-paid-google-search-migration.md`](roadmap-paid-google-search-migration.md).
 
 ---
 

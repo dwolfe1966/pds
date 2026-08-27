@@ -162,16 +162,16 @@ and the `/guides` authority cluster. Thin long-tail name-in-city pages are **noi
 canonical `sitemap-directory.xml` lists only the quality core + record-proven name-in-state hubs + guides.
 
 **The data-management principle:** `ingest / scrape → store in Neon → serve server-side on SEO pages`.
-First-party **record** data lives in our own DB and is read server-side (fast, cacheable, opt-out-enforced).
+Record data is held in the Neon database and read server-side (fast, cacheable, opt-out-enforced).
 Third-party **enrichment** APIs are called directly but **budget-capped + cached**, and kept **off** the
 indexable crawl pages.
 
 | Data source | Where it lives | How we manage it |
 |---|---|---|
 | Geo skeleton (states, cities, demographics) | **In-repo static** | Census/ACS public data shipped in the bundle (`lib/directory`). |
-| **Inmate / incarceration** | **Our DB (Neon)** | First-party: `inmates` (622k) + `fl_inmates` (670k; 480k mugshots). Ingested via crawls + state scrapers (`stateInmates` adapters) & write-through; read server-side. **Renders full & free** (`InmateRecordsSection`). |
-| **Sex offender** | **Our DB (Neon)** | Ingested (NSOPW/scrapers) → `sexOffenderDb`; location-native pages. |
-| **Life events** (marriage/divorce/death) | **Our DB (Neon)** + API at ingest | Stored in `lifeEventsDb`; Enformion (divorce live) fetched at ingest, not per crawl. |
+| **Inmate / incarceration** | **In the DB (Neon)** | First-party: `inmates` (622k) + `fl_inmates` (670k; 480k mugshots). Ingested via crawls + state scrapers (`stateInmates` adapters) & write-through; read server-side. **Renders full & free** (`InmateRecordsSection`). |
+| **Sex offender** | **In the DB (Neon)** | Ingested (NSOPW/scrapers) → `sexOffenderDb`; location-native pages. |
+| **Life events** (marriage/divorce/death) | **In the DB (Neon)** + API at ingest | Stored in `lifeEventsDb`; Enformion (divorce live) fetched at ingest, not per crawl. |
 | **Enrichment** (PersonSearch, PDL, Gravatar, phone) | **Direct API** (capped, cached) | Enformion / PDL / Gravatar — **budget-capped** (`serviceBudget`), results cached. Used in **interactive flows, NOT on indexable pages**. |
 | **BC consumer teaser** | **Not on SEO pages** | Turnstile-gated → can't render at crawl time. This is **why first-party data is the SEO fuel**. |
 
