@@ -153,3 +153,19 @@ Proven-or-promising verticals in the legacy account to test against our first-pa
   Paused-for-review → $50/day.
 - Verify the GA4/Ads conversion fires on the live v11 landing (real purchase, not headless).
 - Pull the current-account CPA trend to anchor scale decisions.
+
+## Owners (RACI)
+
+*Roles, not names (assign in planning): **Lead** growth · **Eng** · **Analyst** · **Design** · **techBC**
+BC eng · **Legal** · **CEO** · **Partner**. RACI: R does the work · A accountable/sign-off (one per row) ·
+C consulted · I informed. Weeks map to the Gantt timeline.*
+
+| Phase / task | Wks | R | A | C | I |
+|---|---|---|---|---|---|
+| Wave 0 · tracking + GCLID | W1–2 | Eng, Analyst | Lead | techBC | CEO |
+| Legal sign-off (SSN/arrests/mugshots) | W1–3 | Lead | CEO | Legal | Eng |
+| Wave 1 · launch (Paused→live) | W2–3 | Lead | Lead | Eng | CEO |
+| Wave 1 · eCPA proving | W3–6 | Lead, Analyst | Lead | — | CEO |
+| Wave 2 · recover (tags, Rev-Phone) | W4–8 | Eng, Lead | Lead | Analyst | CEO |
+| Wave 3 · efficiency tests | W6–9 | Lead | Lead | Analyst | — |
+| Scale winners + budget up | W6–12 | Lead | Lead | Analyst | CEO |

@@ -130,6 +130,25 @@ Programmatic pages don't build authority — content, links, and brand do.
 
 ---
 
+## Owners (RACI)
+
+*Roles, not names (assign in planning): **Lead** growth · **Eng** · **Analyst** · **Design** · **techBC**
+BC eng · **Legal** · **CEO**. RACI: R does the work · A accountable/sign-off (one per row) · C consulted ·
+I informed. Weeks map to the SEO Gantt.*
+
+| Phase / task | Wks | R | A | C | I |
+|---|---|---|---|---|---|
+| Guide cluster *(shipped)* | W0–2 | Eng, Lead | Lead | — | — |
+| M1 · hygiene + inmate pilot | W1–3 | Eng | Lead | Analyst | CEO |
+| M1 · domain decision → techBC | W2 | Lead | CEO | techBC | Eng |
+| M1 · GSC baseline + how-tos | W2–4 | Analyst, Lead | Lead | — | — |
+| M2 · scale vertical + augment + links | W5–8 | Eng, Lead | Lead | Analyst | CEO |
+| M2 · life-events pilot | W6–8 | Eng | Lead | Legal | CEO |
+| M3 · compound + conversion path | W9–11 | Eng, Analyst | Lead | Design | CEO |
+| M3 · digital-PR + quarter review | W11–12 | Lead | CEO | — | Analyst |
+
+---
+
 ## Appendix — Architecture & data sources (idlookup.me/people)
 
 **Stack.** Next.js (App Router) on **Vercel** + **Neon Postgres**. Rendering is **ISR**: a page generates

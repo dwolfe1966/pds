@@ -116,3 +116,19 @@ For each new partner, capture:
 
 - Phase 0: sub-ID passthrough + BC-persistence verification (pure client work, reversible).
 - Send the CasA/CasD + postback-URL questionnaire to both partners.
+
+## Owners (RACI)
+
+*Roles, not names (assign in planning): **Lead** growth · **Eng** · **Analyst** · **Design** · **techBC**
+BC eng · **Legal** · **CEO** · **Partner** (Fluent/MobileMarketing, external). RACI: R does the work ·
+A accountable (one per row) · C consulted · I informed. **techBC/Partner rows are external-paced.***
+
+| Phase / task | Wks | R | A | C | I |
+|---|---|---|---|---|---|
+| Phase 0 · sub-ID passthrough *(shipped)* | W0–1 | Eng | Lead | — | CEO |
+| Live e2e verify (real purchase) | W1 | Eng, Analyst | Lead | techBC | — |
+| Partners · postback URLs | W1–3 | Lead | Lead | Partner | Eng |
+| BC · postback on capture (emit) | W3–6 | techBC | Lead | Eng | CEO |
+| Fluent landing + creative | W3–5 | Eng, Design | Lead | — | CEO |
+| Reporting (monthly / daily sheet) | W5–6 | Analyst | Lead | — | Partner |
+| Go-live per partner | W6–8 | Lead | Lead | Partner, techBC | CEO |
