@@ -16,3 +16,20 @@ Google Search campaign migration (compet → our v11 funnel). Docs in `docs/grow
 2. **Ad copy must be REBUILT, not ported.** Every source campaign runs `$1 / Credit Card Required / Cheapest` copy pointing at competitor domains (inmatessearcher/privaterecords/backgroundcheckers). Keep value-prop headlines, drop price/CC hooks, no guilt implication (criminal/arrests). The `$1` hook drove CVR → compliant copy is the isolated change to watch on eCPA.
 
 **Proven core (account 2.22× overall):** Inmate (Lower 3.06×/Upper 1.87×, top volume) · Public Records (2.08–2.81×) · Life-events (Death-Upper 2.02×, Divorce-Upper 1.57×) · Criminal (Court 2.75×, Arrests 2.0×, Police 1.44× watch). Widespread **missing-Google-tag** misconfig hides conversions (whole Reverse Phone vertical). Landings = `idlookup.ai/name/landing/v11?shns=<id>`.
+
+**⚠️ WHY PAID SEARCH TOOK 12 WEEKS (owner-authoritative 2026-09-01 — I had this WRONG).** I inferred it was a
+conversion-tracking/measurement chain. It was not. Truth:
+1. Tracking problems existed **at the start only** and were fixed in **~1 month**.
+2. The rest was the **Google Ads bid-strategy learning loop**, which is paced by Google, not by us:
+   (a) set bidding to **Maximize Conversions** → (b) reach **~30 conversions** (Google's threshold) →
+   (c) add a **fixed tCPA** → (d) see whether volume holds → (e.1) if volume **collapses**, go back to (a) and
+   rebuild → (e.2) if volume holds, step tCPA down over a **5–7 stage sequence**, each stage needing to
+   re-stabilise. Each stage has its own learning period; going too fast undoes the previous stage.
+3. Goal = **parity with compet's efficiency** so we can say the platform is "close enough to support the key
+   partner migration."
+
+**⚠️ The bid work leaves NO commit trace** — it happens in the Google Ads console. Any commit-based effort
+analysis therefore UNDERSTATES paid effort. Say so when charting it.
+
+**Key partner postbacks: UNKNOWN.** Do NOT assert the key partner needs a postback — that has never been
+established. The 2026-09-01 postback spec was for **Fluent**, a different partner. See [[project_seo_migration_affiliate_roadmap]].
