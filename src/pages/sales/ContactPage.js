@@ -183,13 +183,23 @@ const EmailCustomerCareModal = ({ isOpen, onClose, user, token }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Prefill the topic when a CA member is redirected here to cancel (HP-4: ?topic=cancel).
+  // Prefill when a member is redirected here to cancel (?topic=cancel[&reason=...]). Since
+  // 2026-09-01 this is EVERY cancellation, not just the CA/NYC carve-out. `reason` is the topic
+  // select — 'Cancel subscription' matches an <option value> exactly — and the cancel reason
+  // captured in the Account modal seeds the description so Customer Care has context up front.
   useEffect(() => {
     if (!isOpen) return;
     try {
-      if (new URLSearchParams(window.location.search).get('topic') === 'cancel') {
-        setForm((f) => (f.reason ? f : { ...f, reason: 'Cancel subscription' }));
-      }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('topic') !== 'cancel') return;
+      const why = (params.get('reason') || '').trim();
+      setForm((f) => ({
+        ...f,
+        reason: f.reason || 'Cancel subscription',
+        description: f.description || (why
+          ? `I'd like to cancel my subscription. Reason: ${why}`
+          : "I'd like to cancel my subscription."),
+      }));
     } catch { /* ignore */ }
   }, [isOpen]);
   const [threadUrl, setThreadUrl] = useState('');
@@ -740,7 +750,15 @@ const ContactPage = () => {
   const navigate = useNavigate();
   const brand = useBrand();
   const { user, token } = useAuth();
-  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  // Cancellation hand-off (2026-09-01): all cancellations route here from Account, so open the
+  // Customer Care form immediately — landing on the generic contact page and expecting the member
+  // to hunt for the right button IS the cancellation flow now. Lazy initializer so there's no
+  // render-then-open flash.
+  const [emailModalOpen, setEmailModalOpen] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('topic') === 'cancel';
+    } catch { return false; }
+  });
   const [billingModalOpen, setBillingModalOpen] = useState(false);
   const [helpTopic, setHelpTopic] = useState('');
   const faqItems = buildFaqItems(brand);

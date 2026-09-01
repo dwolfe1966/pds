@@ -106,7 +106,7 @@
 - [idlookup.ai/people migration scoping](project_seo_indexing_incident.md) — docs/seo/idlookup-ai-people-migration-scoping.md; subdomain people.idlookup.ai via 1 CNAME (grey-cloud DNS + /people/:id collision rule out subpath)
 - [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on SEO Vercel; PAUSED pending owner domain-auth + Vercel envs
 - [Auto-login for abandon emails](project_autologin_abandon.md) — WORKING e2e via existing BC methods (no ask); CSR login→userId→getAutoLoginUrl; redirect MUST be /auth/session?next=; TTL open
-- [Cancel: online only for CA + NYC](project_cancel_ca_nyc_online.md) — reverses HP-4; ZIP-driven (city/state uncollected); NYC=5-borough zip set; else Customer Support
+- [Cancel: ALL cancellations via Customer Care](project_cancel_ca_nyc_online.md) — 2026-09-01 no online self-serve cancel for anyone (CA/NYC carve-out removed on purpose, legal flagged); `cancel_redirect_cs` replaces `subscription_cancel`
 - [CSR billing classification](project_csr_billing_classification.md) — M-code taxonomy (M0/M{n}+D declines, owner/CEO 2026-07-23); fraud/stolen decline does NOT pause access (flag only); Inactive splits voluntary/involuntary; aligned to admin view 72/72 live; admin.40bd8cf3.js
 - [3 new marketing angles + source-zip](project_marketing_angles.md) — marriage/divorce, WSFY, check-your-date funnels (docs/marketing); ⚠️ hardcoded creds in csrApiService.js flagged
 - [Homefacts 70k partner traffic test](project_homefacts_traffic.md) — 4 landing experiences (SO/background/public, primed+cold); params pre-fill; gates resolved
@@ -120,3 +120,5 @@
 - [P0: rotate OpenAI key](project_p0_openai_key_rotate.md) — seo/docs/openai-key.rtf + credentials.rtf hold live secrets; UNTRACKED (no repo leak); rotate key + gitignore seo/docs/*.rtf
 - [Feedback: redact identities/sources in deliverables](feedback_deliverable_redaction.md) — outputs use techBC (not Kwan), Hana (not Jerome); no weinform.org (say "compet"); no "prior company"; keep real names in memory only
 - [Paid Search migration](project_paid_search_migration.md) — eCPA-safe doctrine (tCPA@proven, kill-switch, no bid/kw reset); SSN keywords PROHIBITED (do not migrate); source ad copy = $1/CC pattern → rebuild compliant; docs in docs/growth/
+- [SEO inmate pilot](project_seo_inmate_pilot.md) — ~1.3M inmate records (NC 450k/fl_inmates 670k); facility column DIRTY (placeholders+county/city) → facility pages deferred; cornerstone /guides/how-to-find-an-inmate shipped (not in sitemap)
+- [Feedback: presentation hub](feedback_presentation_hub.md) — package all presentation info as single-page Artifacts under a master hub (op-master, 97714d84); add new roadmap pages to it; artifacts private→must share

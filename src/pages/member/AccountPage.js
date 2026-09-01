@@ -15,38 +15,17 @@ import DigitalFootprint from '../../components/DigitalFootprint';
 import BrowserAssistantTab from '../../components/BrowserAssistantTab';
 import ProtectionScoreRing from '../../components/ProtectionScoreRing';
 import MyProfileReport from '../../components/MyProfileReport';
-import { getLatestBillingZip, getLatestBillingState } from '../../utils/orderFinancials';
 
-// Cancellation routing (owner 2026-07-28). ONLINE cancel ONLY for California, New York CITY, or when we can't
-// determine location; everyone else → Customer Support.
-// ⚠️ Our checkout collects ONLY ZIP — city & state are sent bogus (PaymentPage bogusFields city/state:true),
-// so CA and NYC are determined from ZIP, not the city/state fields, and "unknown location" = no valid ZIP
-// (ZIP is required at checkout, so that's rare — externally-created/legacy orders only). A real state==CA is
-// honored too if an outside order happens to carry one.
-// Returns true = route to Contact Support; false = online cancel.
-const CA_ZIP = (z) => z >= 90001 && z <= 96162;
-// New York CITY only (5 boroughs) — a NON-contiguous ZIP set. NY state spans 10001–14975, but 105xx–109xx
-// (Westchester/Hudson Valley), 115xx (Long Island), and 14xxx (upstate) are NOT NYC and get CS.
-const NYC_ZIP = (z) =>
-  (z >= 10001 && z <= 10282) ||    // Manhattan
-  (z >= 10301 && z <= 10314) ||    // Staten Island
-  (z >= 10451 && z <= 10475) ||    // Bronx
-  (z === 11004 || z === 11005) ||  // Queens (Glen Oaks / Floral Park)
-  (z >= 11101 && z <= 11109) ||    // Queens (Long Island City / Astoria)
-  (z >= 11201 && z <= 11256) ||    // Brooklyn
-  (z >= 11351 && z <= 11499) ||    // Queens (Flushing / Jamaica)
-  (z >= 11691 && z <= 11697);      // Queens (Rockaways)
-function mustCancelViaCs(orders) {
-  const list = Array.isArray(orders) ? orders : (orders ? [orders] : []);
-  const state = String(getLatestBillingState(list) || '').trim().toUpperCase();
-  if (state === 'CA') return false;                                 // real CA state (rare) → online
-  const zip = String(getLatestBillingZip(list) || '').replace(/\D/g, '').slice(0, 5);
-  if (zip.length < 5) return false;                                 // no reliable location → online
-  const z = parseInt(zip, 10);
-  if (CA_ZIP(z)) return false;                                      // California → online
-  if (NYC_ZIP(z)) return false;                                     // New York City → online
-  return true;                                                      // everyone else → Customer Support
-}
+// CANCELLATION POLICY (owner 2026-09-01): ALL cancellations go through Customer Care. There is no
+// online self-serve cancel any more, for anyone. This SUPERSEDES the 2026-07-28 location rule (online
+// cancel for California / New York City / unknown ZIP), which itself reversed HP-4. The ZIP-based
+// `mustCancelViaCs()` helper that implemented it is gone — see handleCancelConfirm below.
+//
+// ⚠️ Deliberate owner decision, not an oversight: the owner was shown that California's ARL and NYC's
+// online-cancellation law require a self-serve online path for members who enrolled online, and chose
+// full-CSR routing anyway (on top of the federal FTC click-to-cancel exposure already acknowledged for
+// the other 48 states). Do NOT "restore" the CA/NYC carve-out as a bug fix — it was removed on purpose.
+// The retired CA/NYC ZIP sets live in git history and in memory (project_cancel_ca_nyc_online).
 import MyProfileModularLive from '../../components/MyProfileModularLive';
 import MyProfileSummary from '../../components/MyProfileSummary';
 import MarriageDivorceSection from '../../components/MarriageDivorceSection';
@@ -891,14 +870,12 @@ const AccountPage = () => {
   };
 
   // ─── Subscription & Billing handlers ─────────────────────────────────────────
-  const handleCancelConfirm = async () => {
-    if (!token) {
-      setCancelError('Not authenticated');
-      return;
-    }
-    // Find the user's currently-active order to target with the cancel call.
-    // BC's cancelOrUncancelOrder requires an explicit orderId; we resolve it
-    // from the orders state already loaded by the billing-history fetch.
+  // Hands the member off to Customer Care — the app no longer cancels anything itself
+  // (owner 2026-09-01, see CANCELLATION POLICY at the top of this file). We still capture the reason first so churn
+  // analytics and the save-offer survive the routing change; the reason rides along in the
+  // URL and pre-fills the Customer Care message.
+  const handleCancelConfirm = () => {
+    // Keep the active-order guard: don't send someone with nothing to cancel to Customer Care.
     const activeOrder = (orders || []).find(
       (o) => o.status === 'active' && !o?.transient?.canceled
     );
@@ -907,29 +884,22 @@ const AccountPage = () => {
       setShowCancelModal(false);
       return;
     }
-    // Cancellation routing (2026-07-28): confirmed non-CA/NY billing location → Customer Support; CA/NY/unknown
-    // are forced online above (mustCancelViaCs === false), so they never hit this branch.
-    if (mustCancelViaCs(orders)) {
-      setShowCancelModal(false);
-      track('cancel_redirect_cs', { orderId: activeOrder._id || activeOrder.id, via: 'confirm' });
-      navigate('/contact?topic=cancel');
-      return;
-    }
     setShowCancelModal(false);
-    try {
-      await api.cancelSubscription(activeOrder._id || activeOrder.id);
-      track('subscription_cancel', { orderId: activeOrder._id || activeOrder.id, reason: cancelReason || 'unspecified', reasonText: cancelReasonText || undefined });
-      refreshSubscription();
-      setCancelError('');
-      // The action previously completed with zero feedback (bug list 7/2 #11).
-      setCancelSuccess("Your subscription has been cancelled. You'll keep access until the end of your paid period — no further charges.");
-    } catch (err) {
-      setCancelSuccess('');
-      // Instrument the failed-cancel path so churn analytics can see attempts
-      // that errored (not just the ones that completed).
-      track('subscription_cancel_error', { orderId: activeOrder._id || activeOrder.id, reason: cancelReason || 'unspecified', message: err?.message || err?.data?.error?.message });
-      setCancelError(err?.message || err?.data?.error?.message || 'Failed to cancel subscription');
-    }
+    // `cancel_redirect_cs` is now the ONLY cancellation-intent signal the consumer app emits —
+    // `subscription_cancel` can no longer fire from here (see docs/EVENTS_CATALOG.md).
+    track('cancel_redirect_cs', {
+      orderId: activeOrder._id || activeOrder.id,
+      via: 'confirm',
+      reason: cancelReason || 'unspecified',
+      reasonText: cancelReasonText || undefined,
+    });
+    // Send the human-readable label (not the analytics id) — this text lands in the message a
+    // CSR reads. 'Other' carries the member's own words when they typed them.
+    const params = new URLSearchParams({ topic: 'cancel' });
+    const label = CANCEL_REASONS.find((r) => r.id === cancelReason)?.label;
+    const why = cancelReason === 'other' ? (cancelReasonText.trim() || label) : label;
+    if (why) params.set('reason', why);
+    navigate(`/contact?${params.toString()}`);
   };
 
   // Reactivate a cancelled-but-still-in-period order. BC's
@@ -1134,15 +1104,19 @@ const AccountPage = () => {
                   <div style={{ fontSize: '2rem', lineHeight: 1 }} aria-hidden="true">{pitch.emoji}</div>
                   <h3 style={{ margin: '0.5rem 0 0.5rem', color: '#111827' }}>{pitch.title}</h3>
                   <p style={{ color: '#6b7280', lineHeight: '1.6', margin: '0 0 0.75rem' }}>{pitch.body}</p>
+                  {/* Copy states what actually happens now: we hand off to Customer Care, we don't
+                      cancel here. Promising "no further charges" would be a promise this screen can
+                      no longer keep (owner 2026-09-01 — all cancellations go through Customer Care). */}
                   <p style={{ color: '#9ca3af', fontSize: '0.82rem', lineHeight: '1.5', margin: 0 }}>
-                    If you still cancel, you&apos;ll keep access until the end of your billing period — no further charges — then lose your saved reports and member features.
+                    To cancel, our Customer Care team will take it from here — they&apos;ll confirm your
+                    cancellation and what happens to your access. You can also call {brand.supportPhone}.
                   </p>
                   <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                     <button
                       onClick={handleCancelConfirm}
                       style={{ padding: '0.6rem 1rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem', background: '#fff', color: '#6b7280', cursor: 'pointer', fontSize: '0.9rem' }}
                     >
-                      No thanks, cancel
+                      Continue to Customer Care
                     </button>
                     <button
                       onClick={() => { track('subscription_save', { reason: cancelReason }); setShowCancelModal(false); }}
@@ -1857,13 +1831,8 @@ const AccountPage = () => {
                   </button>
                 ) : (
                   <button className={styles.cancelBtn} onClick={() => {
-                    // 2026-07-28: non-CA/NY billing location → Customer Support; CA/NY/unknown cancel online.
-                    const active = (orders || []).find((o) => o.status === 'active' && !o?.transient?.canceled);
-                    if (mustCancelViaCs(orders)) {
-                      track('cancel_redirect_cs', { orderId: active?._id || active?.id });
-                      navigate('/contact?topic=cancel');
-                      return;
-                    }
+                    // 2026-09-01: every cancellation is handled by Customer Care. We still open the
+                    // reason + save-offer modal first, then hand off from step 2 (handleCancelConfirm).
                     track('cancel_lightbox_view', {}); setCancelStep(1); setCancelReason(''); setCancelReasonText(''); setShowCancelModal(true);
                   }}>
                     Cancel Subscription

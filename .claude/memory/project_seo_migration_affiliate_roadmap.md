@@ -8,14 +8,14 @@ metadata:
 ---
 
 From the 2026-08-25 growth review. THREE full roadmaps + index in `docs/growth/` (team + BC architecture review by Kwan; keep options open, non-adversarial — see [[project_org_dynamic_nic_team]]):
-- `roadmap-paid-marketing.md` — PROVEN engine (never call it unproven). Real compet numbers: PS Free $11.61 CPA/8.15% CVR (best ad group `Find Free` $7.68), Crim Rec $17/1.45× value/cost, LE-death $16/1.78×. Replicate profitable ad units from compet + inmates-upper/people-search-upper (upper-HHI). Landings `idlookup.ai/name/landing/v11?shns=1`; plan in docs/ads/idl-general-intent-campaign-plan.md.
+- `roadmap-paid-marketing.md` — paid search, LIVE. ⚠️ Do NOT say "engine"/"scales" — economics are proven at compet, NOT yet at PDS (owner 2026-08-27, see [[feedback_deliverable_redaction]]). Real compet numbers: PS Free $11.61 CPA/8.15% CVR (best ad group `Find Free` $7.68), Crim Rec $17/1.45× value/cost, LE-death $16/1.78×. Replicate profitable ad units from compet + inmates-upper/people-search-upper (upper-HHI). Landings `idlookup.ai/name/landing/v11?shns=1`; plan in docs/ads/idl-general-intent-campaign-plan.md.
 - `roadmap-affiliate.md` — reusable platform (capture→persist→convert→postback→report); Fluent/MobileMarketing/Dimitri as instances.
 - `roadmap-seo.md` — full SEO; **migration is ONE workstream, NOT a given**. Hybrid: prune thin → first-party differentiation (inmate lead) → authority/editorial (docs/seo/seo-recovery-brainstorm.md).
 - `roadmap-index.md` — cross-cutting A1 hosting decision (Kwan) + P0 security + ladder.
 
 **Track A — SEO → idlookup.ai.** TWO separate decisions (the scoping doc `docs/seo/idlookup-ai-people-migration-scoping.md` only covered the 2nd):
-- **A1 hosting (open, Kwan's call):** stay Vercel+Neon (team lean, reversible) / move to BC infra / hybrid.
-- **A2 DNS (only if Vercel):** subdomain `people.idlookup.ai` via ONE CNAME→cname.vercel-dns.com grey-cloud (team lean) vs subpath (blocked: grey-cloud DNS + `/people/:id` report-route collision).
+- **DECIDED 2026-08-27 (team onboard): move SEO to idlookup.ai** via a **path-based router** — requests with `/people` → the SEO app; everything else → the existing IDL app. All traffic on one domain, inheriting idlookup.ai authority. (Supersedes the earlier open A1 hosting / A2 subdomain-vs-subpath debate.)
+- **SEO ideas from review (2026-08-27):** (a) fold **stored teaser results from already-completed searches** into name/location pages — ⚠️ validate usage-rights for teaser data outside a signup/pay wall before building; (b) shift rendering from on-demand ISR → **pre-generated static (SSG)**.
 - Move CURATED set only (hub+states+cities+counties+~980 unique name pages); NOT the ~41k thin pages. Keep idlookup.me as 301 redirector. See [[project_seo_indexing_incident]].
 
 **Track B — affiliates (port from compet).** Built already: shN/shL capture (campaignResolver/campaignRegistry) + attribution persists to BC `data.refer`/`commerceorders.refer` (order-level confirmed). NEW: server-side postback (fire off confirmed-sale signal GA4/Ads uses — never client pixel; port Fluent's compet pattern), widen refer passthrough to carry arbitrary partner sub-IDs, CasA/CasD mapping, landings.
