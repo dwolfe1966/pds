@@ -1,7 +1,7 @@
 # IDLookup — Event Tracking Catalog
 
 **Audience:** Jerome (reporting) + anyone configuring GTM/GA4.
-**Last updated:** 2026-09-01 (all cancellations now route to Customer Care — `subscription_cancel`/`subscription_cancel_error` RETIRED, `cancel_redirect_cs` is the cancellation-intent signal; bundle pending upload). Previously 2026-07-11 (added funnel `loader_start`/`loader_complete` + cancel-flow `subscription_cancel_error`/`subscription_reactivate`/`subscription_reactivate_error`).
+**Last updated:** 2026-09-02 (cancellation split by billing location again — online cancel for CA/NYC emits `subscription_cancel`; everyone else emits `cancel_redirect_cs`. Sum both for total cancellation intent; bundle pending upload). Previously 2026-07-11 (added funnel `loader_start`/`loader_complete` + cancel-flow `subscription_cancel_error`/`subscription_reactivate`/`subscription_reactivate_error`).
 **Owner note:** this is the source-of-truth list of *what events we emit and where they go*. Keep it in sync when events are added/changed.
 
 ---
@@ -120,9 +120,10 @@ Each appears in BC as `CLIENT:<name>` and in GA4 as `client_<name>`. All carry t
 | `subscription_keep` | Step 1 "Keep it for next time" — dismissed at reason step |
 | `subscription_cancel_reason` | Step 1 → Step 2 (a cancel reason was chosen) |
 | `subscription_save` | Step 2 save-pitch accepted — stayed |
-| `subscription_cancel` | ⚠️ **RETIRED 2026-09-01** — the consumer app no longer cancels anything (all cancellations go through Customer Care), so this can no longer fire. Historical data only. Churn dashboards keyed on it will read as zero — use `cancel_redirect_cs` instead. |
-| `subscription_cancel_error` | ⚠️ **RETIRED 2026-09-01** — same reason (there is no client-side BC cancel call left to fail). |
-| `cancel_redirect_cs` | **The cancellation-intent signal** (2026-09-01 onward). Member confirmed cancel and was handed off to Customer Care. Carries `orderId`, `via`, `reason`, `reasonText`. Terminal event on our side — the actual cancellation happens in CSR/BC, so completion must be reconciled there, not in GA4. |
+| `subscription_cancel` | Cancel **completed online** (BC call succeeded) — carries `reason`. ⚠️ **Fires only for members routed to online cancel (California / New York City).** Was briefly retired 2026-09-01 when all cancellations went to Customer Care; live again from 2026-09-02. |
+| `subscription_cancel_error` | Online cancel attempt **errored** (BC call failed). Same CA/NYC-only population as above. |
+| `cancel_redirect_cs` | Member confirmed cancel and was **handed off to Customer Care** — everyone outside CA/NYC, plus anyone whose location we cannot determine. Carries `orderId`, `via`, `reason`, `reasonText`. Terminal on our side: the cancellation itself happens in CSR/BC and must be reconciled there, not in GA4. |
+| — | **Total cancellation intent = `subscription_cancel` + `subscription_cancel_error` + `cancel_redirect_cs`.** Neither event alone measures churn intent, because the population is split by billing location. |
 | `subscription_reactivate` | Cancelled-in-period member turned auto-renew back on (win-back) |
 | `subscription_reactivate_error` | Reactivation attempt errored |
 

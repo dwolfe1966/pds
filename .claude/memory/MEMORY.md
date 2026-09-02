@@ -106,7 +106,7 @@
 - [idlookup.ai/people migration scoping](project_seo_indexing_incident.md) — docs/seo/idlookup-ai-people-migration-scoping.md; subdomain people.idlookup.ai via 1 CNAME (grey-cloud DNS + /people/:id collision rule out subpath)
 - [Abandoned-checkout recovery email](project_email_recovery_pipeline.md) — SendGrid on SEO Vercel; PAUSED pending owner domain-auth + Vercel envs
 - [Auto-login for abandon emails](project_autologin_abandon.md) — WORKING e2e via existing BC methods (no ask); CSR login→userId→getAutoLoginUrl; redirect MUST be /auth/session?next=; TTL open
-- [Cancel: ALL cancellations via Customer Care](project_cancel_ca_nyc_online.md) — 2026-09-01 no online self-serve cancel for anyone (CA/NYC carve-out removed on purpose, legal flagged); `cancel_redirect_cs` replaces `subscription_cancel`
+- [Cancel: online only for CA + NYC](project_cancel_ca_nyc_online.md) — ZIP-driven; unknown ZIP now FAILS CLOSED → CSR (2026-09-02); reason+save modal universal; `subscription_cancel`+`cancel_redirect_cs` must be summed
 - [CSR billing classification](project_csr_billing_classification.md) — M-code taxonomy (M0/M{n}+D declines, owner/CEO 2026-07-23); fraud/stolen decline does NOT pause access (flag only); Inactive splits voluntary/involuntary; aligned to admin view 72/72 live; admin.40bd8cf3.js
 - [3 new marketing angles + source-zip](project_marketing_angles.md) — marriage/divorce, WSFY, check-your-date funnels (docs/marketing); ⚠️ hardcoded creds in csrApiService.js flagged
 - [Homefacts 70k partner traffic test](project_homefacts_traffic.md) — 4 landing experiences (SO/background/public, primed+cold); params pre-fill; gates resolved
