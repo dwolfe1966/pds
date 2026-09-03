@@ -10,27 +10,30 @@ that cut across them.
 
 | Channel | Doc | Role in the plan |
 |---|---|---|
-| **Paid marketing** | [`roadmap-paid-marketing.md`](roadmap-paid-marketing.md) · [Search migration](roadmap-paid-google-search-migration.md) | **The proven engine** — real conversions/revenue, profitable account. Scale it. |
+| **Paid search** | [`roadmap-paid-marketing.md`](roadmap-paid-marketing.md) · [Search migration](roadmap-paid-google-search-migration.md) | **Live.** Generating trials with cost/trial improving. Favourable unit economics are proven on the **legacy account, not yet here** — validating that is the point. |
 | **Affiliate platform** | [`roadmap-affiliate.md`](roadmap-affiliate.md) | **Near-term new traffic** — reusable platform; Fluent/MobileMarketing as instances. |
-| **SEO** | [`roadmap-seo.md`](roadmap-seo.md) · [90-day](roadmap-seo-90day.md) | **The durable moat** — cheap organic later; first-party data + authority. |
+| **SEO** | [`roadmap-seo.md`](roadmap-seo.md) · [90-day](roadmap-seo-90day.md) | **Future-stage.** Near-zero-marginal-cost organic later, built on first-party data + authority. |
 
 Companion: [`growth-scorecard.csv`](growth-scorecard.csv) (one-line status of all channels).
 
-**How they ladder:** paid is what works today → scale it (fastest revenue). Affiliates add new partner
-traffic on top of the same funnel. SEO builds the near-zero-marginal-cost channel underneath, using the
-same first-party data (inmate, life-events) that the paid winners already convert on. One funnel, three
-feeders — not three separate products.
+**How they ladder:** paid search is live and is the fastest route to revenue — but note it is
+**volume-constrained, not budget-constrained** (see the scaling note under paid WS1), so spending more
+cannot close the gap on its own. Affiliates add new partner traffic on top of the same funnel. SEO builds
+the near-zero-marginal-cost channel underneath, using the same first-party data (inmate, life-events) the
+paid winners already convert on. One funnel, three feeders — not three separate products.
 
 ---
 
-## Cross-cutting decision — app hosting & architecture (open for techBC, BC CTO)
+## Cross-cutting decision — app hosting & architecture · **DECIDED 2026-08-27**
 
-This one decision touches **two** roadmaps, so it lives here. Presented as **options, not a fait
-accompli** — it's a genuine architecture call we want reviewed.
+> **RESOLVED (team, 2026-08-27): move the directory onto `idlookup.ai` via a path-based router** —
+> requests under `/people` route to the directory app, everything else to the existing app. All traffic on
+> one domain, inheriting its authority. This **supersedes both open questions below** (A1 hosting and A2
+> subdomain-vs-subpath). The options are kept for the reasoning, not as live choices.
 
-**There are two separate decisions. Keep them apart.**
+This decision touches **two** roadmaps, so it lives here.
 
-### A1 — Where the app(s) run (hosting) ← *the open call*
+### A1 — Where the app(s) run (hosting) · *superseded by the decision above*
 
 | Option | Means | Pros | Cons / cost |
 |---|---|---|---|
@@ -49,7 +52,7 @@ twice.
 - **Affiliate** ([postback](roadmap-affiliate.md)) — *where the postback receiver runs* (BC-emitted vs.
   our backend) depends on A1.
 
-### A2 — How idlookup.ai authority reaches the app (DNS) ← *only if A1 = Vercel*
+### A2 — How idlookup.ai authority reaches the app (DNS) · *superseded — path-based router chosen*
 
 Fully worked in [`../seo/idlookup-ai-people-migration-scoping.md`](../seo/idlookup-ai-people-migration-scoping.md).
 Team lean: subdomain **`people.idlookup.ai`** via **one CNAME → `cname.vercel-dns.com`, grey-cloud** —
@@ -63,18 +66,19 @@ collision). Moot if A1 lands on BC infra.
 - **Live OpenAI key on disk:** `seo/docs/openai-key.rtf` holds a real `sk-proj-…` key. **Untracked —
   never committed, not in git history** → no repo leak. **Rotate/revoke it anyway** (plaintext on disk;
   surfaced in a session). Sibling `seo/docs/credentials.rtf` too.
-- **`seo/docs/` is not gitignored** — one stray `git add` commits both. Recommend gitignore
-  `seo/docs/*.rtf` (mirrors `docs/admin/*.rtf`). Files not deleted (owner's) — gitignore on request.
+- **✅ DONE — `seo/docs/*.rtf` is now gitignored** (`.gitignore:92`), so a stray `git add` can't commit
+  them. Files not deleted (owner's). **Key rotation is still outstanding.**
 
 ---
 
 ## Consolidated open decisions
 
-1. **A1 hosting** — Vercel (lean) / BC infra / hybrid. *techBC's call; touches SEO + affiliate.*
-2. **A2 DNS** — confirm subdomain `people.idlookup.ai` (if Vercel).
+1. ~~**A1 hosting**~~ — **decided 2026-08-27**: path-based router on `idlookup.ai`.
+2. ~~**A2 DNS**~~ — **moot** under the path-based router.
 3. **SEO** — pivot-vs-fix appetite (hybrid works either way) + vertical priority (inmate first).
-4. **Affiliate** — CasA/CasD definitions + postback URLs + receiver placement (gates the postback build).
-5. **P0** — rotate the OpenAI key + gitignore `seo/docs/*.rtf`.
+4. **Affiliate** — partner postback URLs + macros. *(CasA/CasD is settled: an internal pay-eligibility gate
+   on the backend, never partner-facing. Fluent's postback spec received 2026-09-01.)*
+5. **P0** — **rotate the OpenAI key** (gitignore already applied).
 
 ## First visible progress (no decision gated)
 

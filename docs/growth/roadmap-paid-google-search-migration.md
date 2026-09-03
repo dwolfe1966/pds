@@ -96,11 +96,11 @@ The four-vertical profitable core. Ordered by ROAS × volume × strategic fit.
 |---|---|---|---|---|---|---|---|
 | 1 | Inmates Lower HHI → `Inmate – Lower – v1` | Inmate | v11 + **inmate/booking SUP** (BookingSignal) | Portfolio tCPA @proven | $100 | ~$10 | port EXACT winning kw + match; **no broadening at migration** |
 | 2 | Inmates Upper HHI → `Inmate – Upper – v1` | Inmate | inmate/booking SUP | Portfolio tCPA @proven | $250 | ~$14 | **biggest volume**; expansion = separate guarded phase |
-| 3 | Pub Rec – SSN Lower → `PubRec-SSN – Lower – v1` | Public records | v11 + **records/SSN** framing | Portfolio tCPA @proven | $100 | ~$10 | |
+| 3 | Pub Rec – SSN Lower → `PubRec-SSN – Lower – v1` | Public records | v11 + **public-records** framing (never "find their SSN") | Portfolio tCPA @proven | $100 | ~$10 | ⛔ **GATED on punch-list D1.** Prohibited SSN keywords are **excluded** from the import; only the compliant public-records slice migrates. Do not assume the legacy ROAS. |
 | 4 | LE – Death (Upper HHI) → `LifeEvents-Death – Upper – v1` | Life-events | **life-events teaser** (death/obit) | Portfolio tCPA @proven | $200 | ~$15 | fix policy-disapproved ads |
 | 5 | LE – Divorce (Upper HHI) → `LifeEvents-Divorce – Upper – v1` | Life-events | LE teaser (divorce) | Portfolio tCPA @proven | $200 | ~$17 | aligns w/ Enformion divorce data |
 | 6 | Pub Rec – Pub Rec → `PubRec – Broad – v1` | Public records | records SUP | Portfolio tCPA @proven | $150 | ~$13 | |
-| 7 | Pub Rec – SSN → `PubRec-SSN – Broad – v1` | Public records | records/SSN | Portfolio tCPA @proven | $75 | ~$9 | some ads policy-limited → fix |
+| 7 | Pub Rec – SSN → `PubRec-SSN – Broad – v1` | Public records | public-records framing | Portfolio tCPA @proven | $75 | ~$9 | ⛔ **GATED on punch-list D1** — same exclusion as row 3; some ads also policy-limited → fix |
 | 8 | Crim Rec – Court/Crim (BC) → `Criminal-Court – v1` | Criminal | v11 + **criminal SUP** | Portfolio tCPA @proven | $75 | ~$9 | criminal-copy compliance |
 | 9 | Crim Rec – Arrests/Jail (BC) → `Criminal-Arrests – v1` | Criminal | criminal SUP | Portfolio tCPA @proven | $75 | ~$17 | arrests-copy compliance (careful) |
 

@@ -14,8 +14,16 @@
 
 ## Current state — the campaign selection (account snapshot)
 
-The account runs **profitably in aggregate: 2.22× value/cost, $13.43 cost/conv, 7.88% CVR** across 297
-conversions (source: `docs/growth/Campaign report - Campaign report.csv`). Conversion tracking is
+> **⚠️ Read every figure in this section as a LEGACY-ACCOUNT OBSERVATION, not a PDS forecast.**
+> All campaign numbers below were earned on the legacy people-search property — its funnel, its offer, its
+> creative. They tell us **which intents convert and roughly how well**, which is why they drive the
+> migration order. They do **not** predict what the same campaign will do on our funnel: the landing page,
+> the offer framing and the ad copy all change in migration (copy is **rebuilt, not ported** — see the
+> keyword doc). Results here could be better or worse. That is precisely what Wave 1 is designed to
+> measure, campaign by campaign, against the eCPA guardrails.
+
+The legacy account runs **profitably in aggregate: 2.22× value/cost, $13.43 cost/conv, 7.88% CVR** across
+297 conversions (source: `docs/growth/Campaign report - Campaign report.csv`). Conversion tracking is
 **LIVE + verified** (GA4 + Google Ads) — the signal everything optimizes against and the one affiliate
 postbacks hang off. Winners get replicated on our funnel (`idlookup.ai/name/landing/v11?shns=1`).
 **These are volume-constrained, not budget-constrained** (see the scaling note under WS1).
@@ -24,16 +32,23 @@ postbacks hang off. Winners get replicated on our funnel (`idlookup.ai/name/land
 | Campaign | Vertical | Cost/conv | Value/cost | CVR | Conv | Note |
 |---|---|---|---|---|---|---|
 | **Inmates (PR-IS) Lower HHI** | Inmate | **$9.49** | **3.06×** | 7.9% | 40 | ⭐ best volume × ROAS |
-| **Pub Rec – SSN Lower** | Public records | **$9.77** | **2.49×** | 15.2% | 32 | ⭐ |
+| **Pub Rec – SSN Lower** | Public records | **$9.77** | **2.49×** | 15.2% | 32 | ⛔ **NOT PORTABLE** — earned on Google-prohibited SSN keywords; see note below |
 | **LE – Death (Upper HHI)** | Life-events | $14.87 | **2.02×** | 9.4% | 35 | life-events is now a core vertical |
 | **LE – Divorce (Upper HHI)** | Life-events | $16.76 | 1.57× | 9.4% | 32 | |
 | **Inmates (PR-IS) Upper HHI** | Inmate | $13.86 | 1.87× | 4.7% | 52 | ⭐ most volume in the account (~11.6k impr) |
 | **Pub Rec – Pub Rec** | Public records | $12.48 | 2.08× | 11.7% | 25 | |
 | **Crim – Police** | Criminal | $21.23 | 1.44× | 4.9% | 16 | positive, watch CPA |
-| **Pub Rec – SSN** | Public records | $8.91 | **2.81×** | 11.9% | 10 | |
+| **Pub Rec – SSN** | Public records | $8.91 | **2.81×** | 11.9% | 10 | ⛔ **NOT PORTABLE** — same reason |
 | **Crim Rec – Court/Crim (BC)** | Criminal | $8.85 | **2.75×** | 13.8% | 8 | |
 | **Crim Rec – Arrests/Jail (BC)** | Criminal | $17.23 | 2.0× | 11.1% | 9 | |
 | **LE – death (lower HHI)** | Life-events | $23.92 | 1.02× | 5.5% | 8 | breakeven — optimize or hold |
+
+> **⛔ On the two SSN rows.** Their 2.49×/2.81× is real *on the legacy account* but was earned on
+> keywords Google **prohibits** (`find someone by social security number`, `ssn finder`, `find ssn` —
+> facilitating access to a person's SSN). Migrating them verbatim risks **account suspension**. Treat that
+> ROAS as **not portable** and do not bank on it. The compliant slice folds into Public Records, framed
+> strictly as public records — never "find their SSN" — and is gated on legal sign-off
+> (**punch-list D1**). Full detail: [`paid-search-wave1-keywords-adcopy.md`](paid-search-wave1-keywords-adcopy.md).
 
 ### Test — strong ratios, thin volume (prove before scaling)
 | Campaign | Vertical | Cost/conv | Value/cost | CVR | Conv | Note |
@@ -53,10 +68,17 @@ Track / Competitors / Call`, `PS Main – lower (PS123)`, `LE – marriage lower
 converting blind.
 
 ### Hold — legal / underwater
-- **Sex-offender + "arrests" copy** — `Crim – Sex Offender` runs at **0.83× (a loss)** + policy limits;
-  every other sex-offender/arrests variant is ended. Gate on legal review before reviving.
-- **`PS Free – Orig (PS123)`** — **0.92× this window (slightly underwater)**; the generic "free" people-
-  search play is marginal — optimize or deprioritize vs. the winners above.
+> **These two are underwater *on the legacy platform*.** That is a reason to deprioritise them relative to
+> the proven winners, **not** proof they would fail here — our funnel, offer and creative differ, and the
+> result could go either way. If either is revived, treat it as a fresh test with its own guardrails rather
+> than a continuation of the legacy result.
+
+- **Sex-offender + "arrests" copy** — `Crim – Sex Offender` ran at **0.83× (a loss)** on the legacy
+  platform, plus policy limits; every other sex-offender/arrests variant is ended there. Gate on legal
+  review before reviving in any account.
+- **`PS Free – Orig (PS123)`** — **0.92× in the legacy window (slightly underwater)**; the generic "free"
+  people-search play was marginal there. Deprioritise vs. the winners above unless we deliberately re-test
+  it on our own funnel.
 - **LEGAL** — the `"No $1 in ad copy (just Credit Card required)"` creative pattern needs a compliance read.
 
 **The through-line:** the proven core is **Inmate + Public Records + Life-events + Criminal** — four
