@@ -480,8 +480,8 @@ describe('rejected refunds are not refunds', () => {
     const refundRows = rows.filter((r) => /refund/i.test(r.charge || ''));
     expect(refundRows.length).toBeGreaterThan(0);
     for (const r of refundRows) {
-      expect(r.outcome).not.toBe('Refunded');
-      expect(r.outcome).toMatch(/FAILED/);
+      expect(r.outcome).not.toMatch(/^Successfully/);
+      expect(r.outcome).toBe('Unsuccessfully refunded');
       expect(r.tone).toBe('red');
       expect(r.notes).toMatch(/NOT returned/i);
     }

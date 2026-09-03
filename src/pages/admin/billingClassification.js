@@ -63,10 +63,10 @@ function latestChargeEvent(order) {
   // you cannot refund to a dead card). Labelling a rejected refund "Refunded" tells a CSR the customer
   // got their money back when it is still held. Live case 2026-09-03: order 6a8a8c29951c99a1faf05134.
   if (ty === 'refund' || ty === 'void') {
-    const noun = ty === 'void' ? 'Void' : 'Refund';
-    if (st === 'fulfilled') return ty === 'void' ? 'Voided' : 'Refunded';
+    const verb = ty === 'void' ? 'voided' : 'refunded';
+    if (st === 'fulfilled') return `Successfully ${verb}`;
     const whyR = p?.requestResult?.primaryCodeMessage || p?.subStatus;
-    return `${noun} FAILED${whyR ? ` (${whyR})` : ''} — money not returned`;
+    return `Unsuccessfully ${verb}${whyR ? ` (${whyR})` : ''} — money not returned`;
   }
   if (st === 'fulfilled') return `${which} captured`;
   const why = p?.requestResult?.primaryCodeMessage || p?.subStatus;
@@ -517,11 +517,9 @@ export function billingEvents(order) {
     // a rejected refund is the difference between a CSR saying "your money is on its way" and the truth.
     // Live case 2026-09-03, order 6a8a8c29951c99a1faf05134: two refund payments, both rejected.
     const isSettled = st === 'fulfilled';
-    if (ty === 'refund') {
-      outcome = isSettled ? 'Refunded' : 'Refund FAILED';
-      tone = isSettled ? 'purple' : 'red';
-    } else if (ty === 'void') {
-      outcome = isSettled ? 'Voided' : 'Void FAILED';
+    if (ty === 'refund' || ty === 'void') {
+      const verb = ty === 'void' ? 'voided' : 'refunded';
+      outcome = isSettled ? `Successfully ${verb}` : `Unsuccessfully ${verb}`;
       tone = isSettled ? 'purple' : 'red';
     }
     else if (isSettled) { outcome = ty === 'validate' ? 'Validated' : 'Captured'; tone = ty === 'validate' ? 'gray' : 'green'; }
