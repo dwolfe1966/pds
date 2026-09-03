@@ -59,7 +59,15 @@ function latestChargeEvent(order) {
   const ty = lc(p.type), st = lc(p.status), seq = Number(p.sequence);
   const which = seq === 0 ? 'Initial charge' : seq === 1 ? 'First bill' : Number.isFinite(seq) ? `Cycle-${seq} charge` : 'Charge';
   if (ty === 'validate') return 'Initial charge not captured';
-  if (ty === 'refund' || ty === 'void') return 'Refunded';
+  // ⚠️ Check STATUS, not just type. A `refund` payment can be rejected (processor 46 Closed Account —
+  // you cannot refund to a dead card). Labelling a rejected refund "Refunded" tells a CSR the customer
+  // got their money back when it is still held. Live case 2026-09-03: order 6a8a8c29951c99a1faf05134.
+  if (ty === 'refund' || ty === 'void') {
+    const noun = ty === 'void' ? 'Void' : 'Refund';
+    if (st === 'fulfilled') return ty === 'void' ? 'Voided' : 'Refunded';
+    const whyR = p?.requestResult?.primaryCodeMessage || p?.subStatus;
+    return `${noun} FAILED${whyR ? ` (${whyR})` : ''} — money not returned`;
+  }
   if (st === 'fulfilled') return `${which} captured`;
   const why = p?.requestResult?.primaryCodeMessage || p?.subStatus;
   return `${which} failed${why ? ` (${why})` : ''}`;
@@ -504,14 +512,27 @@ export function billingEvents(order) {
       charge = `${name}${retry > 0 ? ` · retry ${retry}` : ''}`;
     }
     let outcome, tone;
-    if (ty === 'refund') { outcome = 'Refunded'; tone = 'purple'; }
-    else if (ty === 'void') { outcome = 'Voided'; tone = 'purple'; }
-    else if (st === 'fulfilled') { outcome = ty === 'validate' ? 'Validated' : 'Captured'; tone = ty === 'validate' ? 'gray' : 'green'; }
+    // ⚠️ Refunds and voids MUST be judged on status, not type. A refund payment can be rejected — you
+    // cannot refund to a closed card (processor 46) — and the money stays with us. Showing "Refunded" for
+    // a rejected refund is the difference between a CSR saying "your money is on its way" and the truth.
+    // Live case 2026-09-03, order 6a8a8c29951c99a1faf05134: two refund payments, both rejected.
+    const isSettled = st === 'fulfilled';
+    if (ty === 'refund') {
+      outcome = isSettled ? 'Refunded' : 'Refund FAILED';
+      tone = isSettled ? 'purple' : 'red';
+    } else if (ty === 'void') {
+      outcome = isSettled ? 'Voided' : 'Void FAILED';
+      tone = isSettled ? 'purple' : 'red';
+    }
+    else if (isSettled) { outcome = ty === 'validate' ? 'Validated' : 'Captured'; tone = ty === 'validate' ? 'gray' : 'green'; }
     else if (/reject|declin|fail|error|block/.test(st)) { outcome = 'Declined'; tone = 'red'; }
     else { outcome = st || '—'; tone = 'gray'; }
+    const failedCorrection = (ty === 'refund' || ty === 'void') && !isSettled;
     const notes = (outcome === 'Declined' && ty === 'sale')
       ? declineNote(p)
-      : (p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || (ty === 'validate' ? '$0 auth (no capture)' : ''));
+      : failedCorrection
+        ? `${p?.requestResult?.primaryCodeMessage || p?.subStatus || 'rejected'} — money NOT returned; refund another way`
+        : (p?.requestResult?.primaryCodeMessage || p?.gatewayTransactionSubStatus || (ty === 'validate' ? '$0 auth (no capture)' : ''));
     rows.push({ ts, amount, charge, outcome, tone, notes });
   }
   const seen = new Set();

@@ -436,3 +436,54 @@ describe('helpers', () => {
     expect(ev.some((r) => r.outcome === 'Order suspended')).toBe(true);
   });
 });
+
+// ─── Rejected refunds must never read as completed refunds ────────────────────
+// LIVE case 2026-09-03, order 6a8a8c29951c99a1faf05134: $49.98 captured, then TWO refund payments both
+// `status:'rejected'` (processor 46 Closed Account — you cannot refund to a dead card). The order also
+// carried `type:'refund'`. Before this fix the CSR vCard read "Refunded" and the billing-events table
+// showed "Refunded" twice, so staff would have told the customer their money was on its way. It was not:
+// we still held $49.98. Money-correctness — do not let this regress.
+describe('rejected refunds are not refunds', () => {
+  let tick = 100;
+  const rejectedRefund = (amount = 49.98) => ({
+    type: 'refund', status: 'rejected', totalPrice: { amount },
+    requestResult: { primaryCodeMessage: '46: Closed Account' }, paymentTimestamp: ++tick,
+  });
+  const settledSale = (amount = 49.98) => ({
+    type: 'sale', status: 'fulfilled', sequence: 1, totalPrice: { amount }, paymentTimestamp: 1,
+  });
+  const liveOrder = () => ({
+    status: 'active', subStatus: 'canceled', type: 'refund',      // BC sets type on ATTEMPT, not on success
+    commercePayments: [settledSale(), rejectedRefund(), rejectedRefund()],
+  });
+
+  test('orderIsRefunded is false when every refund payment was rejected', () => {
+    const { orderIsRefunded, orderRefundFailed } = require('../pages/admin/userState');
+    expect(orderIsRefunded(liveOrder())).toBe(false);
+    expect(orderRefundFailed(liveOrder())).toBe(true);
+  });
+
+  test('order.type=refund still counts when there are no refund payment rows to inspect', () => {
+    const { orderIsRefunded } = require('../pages/admin/userState');
+    expect(orderIsRefunded({ type: 'refund', commercePayments: [settledSale()] })).toBe(true);
+  });
+
+  test('a settled refund is still reported as refunded', () => {
+    const { orderIsRefunded, orderRefundFailed } = require('../pages/admin/userState');
+    const o = { commercePayments: [settledSale(), { ...rejectedRefund(), status: 'fulfilled' }] };
+    expect(orderIsRefunded(o)).toBe(true);
+    expect(orderRefundFailed(o)).toBe(false);
+  });
+
+  test('billing events label a rejected refund as FAILED, not Refunded', () => {
+    const rows = billingEvents(liveOrder());
+    const refundRows = rows.filter((r) => /refund/i.test(r.charge || ''));
+    expect(refundRows.length).toBeGreaterThan(0);
+    for (const r of refundRows) {
+      expect(r.outcome).not.toBe('Refunded');
+      expect(r.outcome).toMatch(/FAILED/);
+      expect(r.tone).toBe('red');
+      expect(r.notes).toMatch(/NOT returned/i);
+    }
+  });
+});

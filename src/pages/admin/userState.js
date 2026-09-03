@@ -49,17 +49,41 @@ function orderIsPaid(o) {
   return cps.some((p) => p?.type === 'sale' && p?.status === 'fulfilled');
 }
 
-// A refund happened when a refund payment settled, or BC marked the order itself
-// as a refund (order.type / statusReason carry 'refund' — observed live 2026-06-30
-// on order 6a44100827aa861231e1f584: type='refund', statusReason='correct|refund').
+// A refund happened only when money actually went back.
+//
+// ⚠️ `order.type === 'refund'` means a refund was ATTEMPTED, not that it settled. BC sets it as soon as a
+// correction is raised, and it stays set even when every refund payment is rejected. Observed live
+// 2026-09-03 on order 6a8a8c29951c99a1faf05134: type='refund' with TWO `refund` payments both
+// `status:'rejected'` (processor 46 Closed Account) — the customer was never refunded, but the CSR vCard
+// read "Refunded" and staff could have told them their money was on its way.
+//
+// Precedence: explicit payment rows beat the order-level flag. Only fall back to type/statusReason when
+// there are no refund payments to inspect (the 2026-06-30 case, order 6a44100827aa861231e1f584, where
+// type='refund' + statusReason='correct|refund' was the only evidence available).
 export function orderIsRefunded(o) {
   const norm = (s) => (s || '').toLowerCase();
-  if (norm(o?.type) === 'refund') return true;
-  if (/refund/.test(norm(o?.statusReason))) return true;
+  const cps = Array.isArray(o?.commercePayments) ? o.commercePayments : [];
+  const attempts = cps.filter((p) => ['refund', 'void'].includes(norm(p?.type)));
+  if (attempts.length) {
+    // We can see the refund payments — only a settled one counts, whatever order.type says.
+    return attempts.some((p) => norm(p?.status) === 'fulfilled');
+  }
   const refunded = Number(o?.transient?.amount?.refunded ?? 0);
   if (refunded > 0) return true;
+  if (norm(o?.type) === 'refund') return true;
+  if (/refund/.test(norm(o?.statusReason))) return true;
+  return false;
+}
+
+// Was a refund ATTEMPTED but rejected by the processor? Money is still held and the attempt will keep
+// failing until the underlying cause is fixed (a closed/dead card cannot receive a refund). CSRs need
+// this surfaced loudly — it is the difference between "resolved" and "we still owe this customer".
+export function orderRefundFailed(o) {
+  const norm = (s) => (s || '').toLowerCase();
   const cps = Array.isArray(o?.commercePayments) ? o.commercePayments : [];
-  return cps.some((p) => (p?.type || '').toLowerCase() === 'refund' && p?.status === 'fulfilled');
+  const attempts = cps.filter((p) => ['refund', 'void'].includes(norm(p?.type)));
+  if (!attempts.length) return false;
+  return !attempts.some((p) => norm(p?.status) === 'fulfilled');
 }
 
 export function getPlanState(orders) {
