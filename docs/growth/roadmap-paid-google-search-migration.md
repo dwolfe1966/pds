@@ -152,7 +152,7 @@ the same operational template to additional channels (e.g. paid social, native).
 started.
 
 **Through-line:** Wave 1 leads with **Inmate + Life-events**, which are *also* our SEO lead verticals +
-first-party data moat — the same investment compounds across paid and organic. Keyword/volume expansion
+first-party data position — the same investment compounds across paid and organic. Keyword/volume expansion
 (the real scaling lever) is exactly where the SEO vertical pages feed paid.
 
 ## Open items to confirm before Wave 1

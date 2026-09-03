@@ -97,7 +97,7 @@ ad units there.
 
 Priority order (ROAS × volume × strategic fit):
 1. **Inmate** — `Inmates Lower HHI` (3.06×, 40 conv) + `Upper HHI` (1.87×, 52 conv — biggest volume in the
-   account). Highest paid volume **and** the SEO/data moat — the strategic center; also test `Mugshots`.
+   account). Highest paid volume **and** the vertical our first-party data covers — the strategic centre; also test `Mugshots`.
 2. **Public Records / SSN** — `SSN Lower` (2.49×, 32) + `Pub Rec` (2.08×, 25) + `SSN` (2.81×, 10). Deep,
    efficient demand.
 3. **Life-events** — `Death Upper` (2.02×, 35) + `Divorce Upper` (1.57×, 32) + `Marriage Upper` (3.35×).
