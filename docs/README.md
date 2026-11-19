@@ -1,4 +1,4 @@
-# IDLookup.AI - React Front-End Application
+# IDLookup - React Front-End Application
 
 A React-based front-end application for IDLookup.AI, a service that helps users find public information about people and monitor when others search for them.
 
